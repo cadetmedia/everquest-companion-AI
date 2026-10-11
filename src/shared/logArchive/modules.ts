@@ -26,5 +26,6 @@ export const CAPTURED_MODULES: readonly string[] = [
   'consider',
   'resist',
   'bazaar',
+  'gaps',
   'eventFeed'
 ]
