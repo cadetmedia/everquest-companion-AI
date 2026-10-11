@@ -93,6 +93,13 @@ in `spellCorrectionsList.ts` and `engine/crates/eqlog/data/spell-overlay.json`
 ## The ETL, as the owner wants it run (2026-10-10)
 
 1. **Extract**: a real run fetches changed pages into the committed caches. Owner's word, 1 req/s.
+   Run the delta where `scripts/sources/cache/{items,mobs}` exist (junction the main clone's into a
+   worktree first): the 2026-10-10 run tree had neither, so its item and mob text was never kept
+   and those files could not be re-parsed later; only its parsed output survives. After a top-up,
+   `npm run fetch:images` (one request per missing icon; 41 on 2026-10-10) and, for new spell
+   names, `scrape-page-era-spells.mts`. `mobFactions.json`/`mobRaces.json` read the mob CACHE,
+   so a mob page the wiki renamed (`a dwarven merc`, `Cazic-Thule (God)`) misses its faction and
+   race rows until the next mob scrape refreshes that cache.
 2. **Transform**: the parsers, run offline over the caches. A parser fix means a re-parse, never a
    hand edit of a data file.
 3. **Compare against what is known** before a data commit: `npx tsx scripts/data-diff.mts` (what
