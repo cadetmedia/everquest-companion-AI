@@ -169,6 +169,15 @@ test("an achievement's status is its own row's, whatever its lines say", () => {
   assert.equal(progressText(paladin), 'Complete')
 })
 
+test('a class unlock counts its rewards only: the confirm and token rows are how it can be granted, not requirements', () => {
+  // Bard in the fixture: four of six rewards obtained, both grant rows open. Counting the grant
+  // rows showed `4 of 8` (owner, 2026-10-11: "5 of 8" on a live dump).
+  const bard = at('Primary Class Unlock - Bard').achievement
+  assert.equal(bard.components.length, 8)
+  assert.equal(progressText(bard), '4 of 6')
+  assert.equal(Math.round(achievementPct(bard, INDEX)), 67)
+})
+
 // ---------------------------------------------------------------------------
 // WHAT A LINE SAYS
 // ---------------------------------------------------------------------------
