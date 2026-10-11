@@ -209,6 +209,9 @@ export function BazaarChart({ item, endDay }: { item: BazaarItem; endDay: string
   const hp = hov === null ? undefined : item.points.find((p) => p.day === hov.day)
   return (
     <Stack spacing={1}>
+      <Typography variant="caption" color="text.secondary" data-testid="bazaar-chart-title">
+        Price by day
+      </Typography>
       <Legend />
       <Box ref={box} sx={{ position: 'relative', width: '100%' }} data-testid="bazaar-chart">
         <svg width={w} height={H} role="img" aria-label={`${item.item} asking and offered prices by day`}>
