@@ -90,6 +90,8 @@ function QuestUseChip({ use, links }: { use: ItemQuestUse; links: KnowledgeLinks
   const key = use.poskyKey
   const openQuest = links.onOpenQuest
   const linked = key !== undefined && openQuest !== undefined
+  // A non-Sky use opens its wiki page instead (owner ask, 2026-10-11); a Sky use keeps the tab door.
+  const wiki = use.source === 'posky' ? undefined : wikiPageUrl(use.page ?? use.quest)
   const outcomes = questUseOutcomes(use)
   return (
     <Stack direction="row" spacing={0.5} alignItems="center" sx={{ minWidth: 0 }}>
@@ -99,8 +101,9 @@ function QuestUseChip({ use, links }: { use: ItemQuestUse; links: KnowledgeLinks
         data-testid="loot-quest-use"
         color={use.source === 'posky' ? 'primary' : 'default'}
         label={questUseLabel(use)}
-        clickable={linked}
+        clickable={linked || wiki !== undefined}
         onClick={linked ? () => openQuest(key) : undefined}
+        {...(wiki !== undefined && { component: 'a', href: wiki, target: '_blank', rel: 'noreferrer', title: 'open on eqlwiki.com' })}
         sx={{ height: 22 }}
       />
       {outcomes.length > 0 && (
