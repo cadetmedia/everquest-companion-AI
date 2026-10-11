@@ -161,7 +161,7 @@ always takes the latest `main`. Release notes are his: on a conflict in `release
 Failures that are not regressions, so the gate can tell a new red from an old one:
 
 - 2 `enginePackaging` signing assertions (the TEST neutering turns signing off on purpose).
-- 1 `rustFactoring` register count (pending a hand edit to `engine/factoring-baseline.json`).
+- 1 `rustFactoring` register count (pending a hand edit to `engine/factoring-baseline.json`; since 2026-10-11 the same edit also records `crates/fold/src/lib.rs` at 1494, the shrink `gaps-tab` paid for its registration, because the register may only be written when nothing grew and `combat/routing.rs` stands at 1068 against its 1063).
 
 The delta-data reds that stood here from 2026-09-04 cleared with the 2026-09-27 top-up. A
 top-up is not finished until the creator's data-pinned tests are re-measured against it: wiki
