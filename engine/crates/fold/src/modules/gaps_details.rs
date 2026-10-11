@@ -8,11 +8,19 @@
 //! What the events carry decides what is tallied. A loot line is always the player's own (there is
 //! no "Soandso has looted" line), so who looted is not a list. A cast-begin line names the caster
 //! and the spell and never a target.
+//!
+//! THE COIN IS READ OFF THE RAW LINE. The loot event says `sold` and no more, and the purchase
+//! event's price is an object the fold's event reader does not hand out, so both prices come from
+//! the line's own clause (`sold it for 2 gold 5 silver.`, `for  5 platinum 2 gold.`), normalised
+//! to one spelling. A SALE ON LOOT IS NOT THE REAL PRICE: an item sold instantly, to no vendor, is
+//! sold at a discount, so its amount is a floor, and the list is named so wherever it is shown.
 
 use crate::event::Event;
+use regex::Regex;
 use serde::ser::{Serialize, Serializer};
 use serde_json::{json, Map, Value};
 use std::collections::{HashMap, VecDeque};
+use std::sync::OnceLock;
 
 /// Entries served per list.
 const LIST_CAP: usize = 8;
@@ -65,7 +73,43 @@ pub struct Details {
     killers: Tally,
     /// A spell: who cast it, player-shaped names kept as they are; `you` for the player's own.
     casters: Tally,
+    /// An item: what an instant sale on loot paid — a discounted floor, never the vendor price.
+    sales: Tally,
+    /// An item: what a purchase line paid, the whole stack's price.
+    paid: Tally,
+    /// The two above summed, in copper, so a row can say what it brought in all.
+    sales_copper: i64,
+    paid_copper: i64,
     samples: VecDeque<String>,
+}
+
+/// `4 platinum, 2 gold, 1 silver and 4 copper` → (`4 platinum 2 gold 1 silver 4 copper`, copper
+/// total); `None` for `free` or a clause with no coin in it.
+fn coin_of(clause: &str) -> Option<(String, i64)> {
+    static TOKEN: OnceLock<Regex> = OnceLock::new();
+    let token = TOKEN.get_or_init(|| {
+        Regex::new(r"([0-9][0-9,]*) (platinum|gold|silver|copper)").expect("a valid pattern")
+    });
+    let mut words = Vec::new();
+    let mut copper = 0i64;
+    for m in token.captures_iter(clause) {
+        let amount: i64 = m[1].replace(',', "").parse().ok()?;
+        let per = match &m[2] {
+            "platinum" => 1000,
+            "gold" => 100,
+            "silver" => 10,
+            _ => 1,
+        };
+        copper += amount * per;
+        words.push(format!("{amount} {}", &m[2]));
+    }
+    (!words.is_empty()).then(|| (words.join(" "), copper))
+}
+
+/// The coin a line printed after the last `marker`, up to the final full stop — see [`coin_of`].
+fn price_of(raw: &str, marker: &str) -> Option<(String, i64)> {
+    let at = raw.rfind(marker)? + marker.len();
+    coin_of(raw[at..].trim().trim_end_matches('.'))
 }
 
 impl Details {
@@ -74,19 +118,48 @@ impl Details {
         if let Some(z) = zone {
             self.zones.add(z);
         }
-        match (domain, ev.kind()) {
-            ("item", "loot") => {
+        match domain {
+            "item" => self.item(ev),
+            "mob" => self.mob(ev),
+            "spell" => self.spell(ev),
+            _ => {}
+        }
+        if self.samples.len() == SAMPLES {
+            self.samples.pop_front();
+        }
+        self.samples.push_back(ev.raw().to_string());
+    }
+
+    fn item(&mut self, ev: &Event) {
+        match ev.kind() {
+            "loot" => {
                 self.sources.add(ev.str("source").unwrap_or_default());
                 self.dispositions.add(ev.str("disposition").unwrap_or_default());
+                if let Some((coin, copper)) = price_of(ev.raw(), " and sold it for ") {
+                    self.sales.add(&coin);
+                    self.sales_copper += copper;
+                }
             }
-            ("item", "purchase") => self.sources.add(ev.str("npc").unwrap_or_default()),
-            ("mob", "loot") => self.drops.add(ev.str("item").unwrap_or_default()),
-            ("mob", "consider") => {
+            "purchase" => {
+                self.sources.add(ev.str("npc").unwrap_or_default());
+                if let Some((coin, copper)) = price_of(ev.raw(), " for ") {
+                    self.paid.add(&coin);
+                    self.paid_copper += copper;
+                }
+            }
+            _ => {}
+        }
+    }
+
+    fn mob(&mut self, ev: &Event) {
+        match ev.kind() {
+            "loot" => self.drops.add(ev.str("item").unwrap_or_default()),
+            "consider" => {
                 let level = ev.int("level").unwrap_or_default();
                 let faction = ev.str("faction").unwrap_or_default();
                 self.cons.add(&format!("L{level} {faction}"));
             }
-            ("mob", "death") => {
+            "death" => {
                 let killer = if ev.bool("bySelf") {
                     "you"
                 } else {
@@ -94,14 +167,16 @@ impl Details {
                 };
                 self.killers.add(killer);
             }
-            ("spell", "castBegin") => self.casters.add("you"),
-            ("spell", "otherCastBegin") => self.casters.add(ev.str("caster").unwrap_or_default()),
             _ => {}
         }
-        if self.samples.len() == SAMPLES {
-            self.samples.pop_front();
+    }
+
+    fn spell(&mut self, ev: &Event) {
+        match ev.kind() {
+            "castBegin" => self.casters.add("you"),
+            "otherCastBegin" => self.casters.add(ev.str("caster").unwrap_or_default()),
+            _ => {}
         }
-        self.samples.push_back(ev.raw().to_string());
     }
 }
 
@@ -117,10 +192,18 @@ impl Serialize for Details {
             ("cons", &self.cons),
             ("killers", &self.killers),
             ("casters", &self.casters),
+            ("sales", &self.sales),
+            ("paid", &self.paid),
         ];
         for (name, tally) in lists {
             if let Some(v) = tally.serve() {
                 out.insert(name.to_string(), v);
+            }
+        }
+        let sums = [("salesCopper", self.sales_copper), ("paidCopper", self.paid_copper)];
+        for (name, copper) in sums {
+            if copper > 0 {
+                out.insert(name.to_string(), json!(copper));
             }
         }
         out.insert("samples".to_string(), json!(self.samples));

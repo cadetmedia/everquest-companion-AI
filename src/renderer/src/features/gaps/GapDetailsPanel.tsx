@@ -5,6 +5,9 @@ import type { JSX } from 'react'
 import { Box, Chip, Stack, Typography } from '@mui/material'
 import { GAP_LISTS, type GapDetails, type GapTally } from '@shared/gaps'
 
+/** Under the sale-on-loot chips: the amount is a floor, never the vendor price. */
+const SALES_CAVEAT = 'Instant sale on loot pays a discounted price; the real vendor price is higher.'
+
 function TallyChips({ label, tally }: { label: string; tally: GapTally }): JSX.Element {
   const more = tally.distinct - tally.entries.length
   return (
@@ -29,7 +32,17 @@ export default function GapDetailsPanel({ details }: { details: GapDetails }): J
     <Stack spacing={1} sx={{ py: 1 }} data-testid="gaps-details">
       {GAP_LISTS.map(({ key, label }) => {
         const tally = details[key]
-        return tally === undefined ? null : <TallyChips key={key} label={label} tally={tally} />
+        if (tally === undefined) return null
+        return (
+          <Stack key={key} spacing={0.25}>
+            <TallyChips label={label} tally={tally} />
+            {key === 'sales' && (
+              <Typography variant="caption" color="warning.main" sx={{ pl: 8 }} data-testid="gaps-sales-caveat">
+                {SALES_CAVEAT}
+              </Typography>
+            )}
+          </Stack>
+        )
       })}
       {details.samples.length > 0 && (
         <Box component="pre" sx={{ m: 0, px: 1, py: 0.5, fontSize: 12, bgcolor: 'action.hover', borderRadius: 1, whiteSpace: 'pre-wrap' }}>

@@ -38,6 +38,16 @@ export interface GapDetails {
   killers?: GapTally
   /** A spell: who cast it; `you` for the player's own. */
   casters?: GapTally
+  /**
+   * An item: what an instant sale on loot paid, as the line printed it (`4 platinum 2 gold`).
+   * NOT the real price: a sale on loot, to no vendor, is at a discount, so each amount is a floor.
+   */
+  sales?: GapTally
+  /** An item: what a purchase line paid, the whole stack's price. */
+  paid?: GapTally
+  /** The two lists summed, in copper; absent when zero. */
+  salesCopper?: number
+  paidCopper?: number
   /** The last three raw log lines, oldest first. */
   samples: string[]
 }
@@ -65,14 +75,18 @@ export interface GapsSnap {
 }
 
 /** The lists in display order, with the words the tab and the copy text use for them. */
-export const GAP_LISTS: { key: keyof Omit<GapDetails, 'samples'>; label: string }[] = [
+export type GapListKey = 'zones' | 'sources' | 'dispositions' | 'drops' | 'cons' | 'killers' | 'casters' | 'sales' | 'paid'
+export const GAP_LISTS: { key: GapListKey; label: string }[] = [
   { key: 'zones', label: 'zones' },
   { key: 'sources', label: 'from' },
   { key: 'dispositions', label: 'disposed' },
   { key: 'drops', label: 'dropped' },
   { key: 'cons', label: 'con' },
   { key: 'killers', label: 'killed by' },
-  { key: 'casters', label: 'cast by' }
+  { key: 'casters', label: 'cast by' },
+  // The caveat travels in the word: a sale on loot is discounted, so these amounts are floors.
+  { key: 'sales', label: 'sold on loot (discounted)' },
+  { key: 'paid', label: 'paid' }
 ]
 
 /** The rows of one domain whose name or kinds contain the query, case-folded; engine order kept. */

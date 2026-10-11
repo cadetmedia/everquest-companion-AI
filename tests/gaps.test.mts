@@ -92,6 +92,23 @@ test('gapDetailsText is the row line, then only the lists it has, then its sampl
   assert.equal(gapDetailsText(ROWS[1]), 'Envenomed Bolt\tcrafted\t2\t2026-10-06 18:12:26\t2026-10-10 17:48:36')
 })
 
+test('the sale-on-loot and paid lists print with the discount caveat in the word', () => {
+  const sold = row(['item', 'Spider Legs', ['looted', 'bought'], 3], {
+    sales: { entries: [{ name: '7 copper', n: 2 }], distinct: 1 },
+    salesCopper: 14,
+    paid: { entries: [{ name: '5 platinum 2 gold', n: 1 }], distinct: 1 },
+    paidCopper: 5200
+  })
+  assert.equal(
+    gapDetailsText(sold),
+    [
+      'Spider Legs\tlooted, bought\t3\t2026-10-06 18:12:26\t2026-10-10 17:48:36',
+      '\tsold on loot (discounted): 7 copper (2)',
+      '\tpaid: 5 platinum 2 gold (1)'
+    ].join('\n')
+  )
+})
+
 test('gapsAsText is the header then every row with its details', () => {
   assert.equal(
     gapsAsText(visibleGaps(ROWS, 'spell', '')),
