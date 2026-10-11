@@ -31,7 +31,6 @@ impl Knowledge for Corpus {
     }
 }
 
-const RAW: &str = "[Tue Oct 06 18:12:26 2026] (the line)";
 
 fn module() -> GapsModule {
     let mut m = GapsModule::new();
@@ -42,7 +41,9 @@ fn module() -> GapsModule {
 fn feed(m: &mut GapsModule, seq: i64, mut ev: Value) {
     ev["seq"] = json!(seq);
     ev["ts"] = json!(1_791_339_146_000_i64 + seq);
-    ev["raw"] = json!(RAW);
+    if ev.get("raw").is_none() {
+        ev["raw"] = json!(format!("[Tue Oct 06 18:12:26 2026] line {seq}"));
+    }
     m.on_event(&Event::from_value(ev), false);
 }
 
@@ -133,4 +134,84 @@ fn nothing_is_checked_before_the_knowledge_is_installed_and_an_epoch_clears() {
     feed(&mut m, 2, json!({ "kind": "epoch" }));
     assert!(rows(&m).is_empty());
     assert_eq!(m.snapshot()["state"]["seen"], json!({ "item": 0, "mob": 0, "spell": 0 }));
+}
+
+#[test]
+fn details_say_where_and_from_whom_and_keep_the_last_lines() {
+    let mut m = module();
+    feed(&mut m, 1, json!({ "kind": "zone", "zone": "Paineel" }));
+    feed(&mut m, 2, json!({ "kind": "loot", "item": "Glowing Widget", "source": "a nameless thing", "disposition": "depot" }));
+    feed(&mut m, 3, json!({ "kind": "zone", "zone": "The Hole" }));
+    feed(&mut m, 4, json!({ "kind": "loot", "item": "Glowing Widget", "source": "a nameless thing" }));
+    feed(&mut m, 5, json!({ "kind": "purchase", "item": "Glowing Widget", "npc": "Klok Koglin" }));
+    feed(&mut m, 6, json!({ "kind": "consider", "mob": "A nameless thing", "level": 12, "faction": "scowls" }));
+    feed(&mut m, 7, json!({ "kind": "death", "name": "a nameless thing", "bySelf": true }));
+    let rows = m.snapshot()["state"]["rows"].clone();
+    let item = &rows[0]["details"];
+    assert_eq!(
+        item["zones"],
+        json!({ "entries": [{ "name": "The Hole", "n": 2 }, { "name": "Paineel", "n": 1 }], "distinct": 2 })
+    );
+    assert_eq!(
+        item["sources"],
+        json!({ "entries": [{ "name": "a nameless thing", "n": 2 }, { "name": "Klok Koglin", "n": 1 }], "distinct": 2 })
+    );
+    assert_eq!(item["dispositions"]["entries"], json!([{ "name": "depot", "n": 1 }]));
+    assert_eq!(
+        item["samples"],
+        json!(["[Tue Oct 06 18:12:26 2026] line 2", "[Tue Oct 06 18:12:26 2026] line 4", "[Tue Oct 06 18:12:26 2026] line 5"])
+    );
+    assert!(item.get("drops").is_none(), "an item has no drops list");
+    let mob = &rows[1]["details"];
+    assert_eq!(mob["drops"]["entries"], json!([{ "name": "Glowing Widget", "n": 2 }]));
+    assert_eq!(mob["cons"]["entries"], json!([{ "name": "L12 scowls", "n": 1 }]));
+    assert_eq!(mob["killers"]["entries"], json!([{ "name": "you", "n": 1 }]));
+}
+
+#[test]
+fn a_capped_list_serves_the_most_frequent_and_still_counts_the_rest() {
+    let mut m = module();
+    let mut seq = 0;
+    for zone in 0..10 {
+        seq += 1;
+        feed(&mut m, seq, json!({ "kind": "zone", "zone": format!("Zone {zone:02}") }));
+        for _ in 0..(if zone == 9 { 3 } else { 1 }) {
+            seq += 1;
+            feed(&mut m, seq, json!({ "kind": "castBegin", "spell": "Totally Made Up" }));
+        }
+    }
+    let zones = m.snapshot()["state"]["rows"][0]["details"]["zones"].clone();
+    assert_eq!(zones["distinct"], json!(10));
+    let names: Vec<&str> = zones["entries"].as_array().expect("entries").iter().filter_map(|e| e["name"].as_str()).collect();
+    assert_eq!(names.len(), 8);
+    assert_eq!(names[0], "Zone 09", "the most frequent first");
+    assert_eq!(&names[1..], ["Zone 00", "Zone 01", "Zone 02", "Zone 03", "Zone 04", "Zone 05", "Zone 06"]);
+    assert_eq!(m.snapshot()["state"]["rows"][0]["count"], json!(12));
+    assert_eq!(m.snapshot()["state"]["rows"][0]["details"]["casters"]["entries"], json!([{ "name": "you", "n": 12 }]));
+}
+
+#[test]
+fn the_coin_a_sale_on_loot_or_a_purchase_printed_is_read_off_the_line() {
+    let sold = "[Sat Oct 10 16:11:23 2026] You looted a Glowing Widget from a treant's corpse and sold it for 4 platinum, 2 gold, 1 silver and 4 copper.";
+    let free = "[Sat Oct 10 16:11:24 2026] You looted a Glowing Widget from a treant's corpse and sold it for free.";
+    let bought = "[Sat Oct 10 19:20:04 2026] You purchased 100 Glowing Widgets from Klok Koglin for  5 platinum 2 gold.";
+    let mut m = module();
+    feed(&mut m, 1, json!({ "kind": "loot", "item": "Glowing Widget", "source": "a treant", "disposition": "sold", "raw": sold }));
+    feed(&mut m, 2, json!({ "kind": "loot", "item": "Glowing Widget", "source": "a treant", "disposition": "sold", "raw": sold }));
+    feed(&mut m, 3, json!({ "kind": "loot", "item": "Glowing Widget", "source": "a treant", "disposition": "sold", "raw": free }));
+    feed(&mut m, 4, json!({ "kind": "purchase", "item": "Glowing Widget", "npc": "Klok Koglin", "count": 100, "raw": bought }));
+    let d = m.snapshot()["state"]["rows"][0]["details"].clone();
+    assert_eq!(
+        d["sales"],
+        json!({ "entries": [{ "name": "4 platinum 2 gold 1 silver 4 copper", "n": 2 }], "distinct": 1 })
+    );
+    assert_eq!(d["salesCopper"], json!(2 * 4214));
+    assert_eq!(d["paid"], json!({ "entries": [{ "name": "5 platinum 2 gold", "n": 1 }], "distinct": 1 }));
+    assert_eq!(d["paidCopper"], json!(5200));
+    assert_eq!(d["dispositions"]["entries"], json!([{ "name": "sold", "n": 3 }]), "free is still a sale");
+
+    let mut only_free = module();
+    feed(&mut only_free, 1, json!({ "kind": "loot", "item": "Glowing Widget", "source": "a treant", "disposition": "sold", "raw": free }));
+    let d = only_free.snapshot()["state"]["rows"][0]["details"].clone();
+    assert!(d.get("sales").is_none() && d.get("salesCopper").is_none(), "free is no price");
 }
