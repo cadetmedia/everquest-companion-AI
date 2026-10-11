@@ -65,6 +65,14 @@ function collect(names: readonly string[]): Record<string, ItemMarks> {
   return out
 }
 
+/** The store as a hook can read it: subscribe + version for `useSyncExternalStore`, and a
+ *  synchronous read, for a surface that asks for a whole list at once (the Bazaar's facts). */
+export const subscribeItemMarks = subscribe
+export const itemMarksVersion = (): number => version
+export function itemMarksOf(name: string): ItemMarks | undefined {
+  return marks.get(name) ?? undefined
+}
+
 /** The marks for an item name: undefined until its batch answers, or when the DB does not know it. */
 export function useItemMarks(name: string): ItemMarks | undefined {
   useSyncExternalStore(subscribe, () => version)
