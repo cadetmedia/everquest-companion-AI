@@ -1,8 +1,8 @@
 {
-  "scrapedAt": "2026-08-22T19:37:30.196Z",
+  "scrapedAt": "2026-10-11T04:19:33.641Z",
   "schema": 3,
-  "count": 2006,
-  "withEffects": 2003,
+  "count": 2013,
+  "withEffects": 2010,
   "spells": [
     {
       "name": "Aanya's Animation",
@@ -361,6 +361,7 @@
       "name": "Affliction Efficiency I",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -378,6 +379,7 @@
       "name": "Affliction Efficiency II",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -395,6 +397,7 @@
       "name": "Affliction Haste I",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -413,6 +416,7 @@
       "name": "Affliction Haste II",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -949,24 +953,6 @@
       "effects": [
         "Decrease Poison Counter by 2",
         "Decrease Disease Counter by 2"
-      ]
-    },
-    {
-      "name": "Aria of Asceticism",
-      "durationText": "3 ticks",
-      "durationMs": 18000,
-      "castTimeMs": 3000,
-      "recastMs": 0,
-      "targetType": "Group",
-      "spellType": "Beneficial",
-      "classes": "* Bard - Level 39",
-      "msgCastOnYou": "Your weapons whir with a magical rhythm.",
-      "msgWearsOff": "The magical rhythm fades.",
-      "illusion": false,
-      "mana": 0,
-      "effects": [
-        "Add Melee Proc:",
-        "Increase DEX by 75"
       ]
     },
     {
@@ -1526,9 +1512,9 @@
       "mana": 60,
       "effects": [
         "Summon Item: Bandoleer of Luclin",
-        "Summon Item:",
-        "Summon Item:",
-        "Summon Item:"
+        "Summon Item: Summoned: Knife of Luclin",
+        "Summon Item: Summoned: Knife of Luclin",
+        "Summon Item: Summoned: Knife of Luclin"
       ]
     },
     {
@@ -1711,7 +1697,7 @@
       "recastMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
-      "classes": "This spell is is the right-click effect of the Wizard epic weapon, the .",
+      "classes": "This spell is is the right-click effect of the Wizard epic weapon, the Staff of the Four.",
       "msgCastOnYou": "You are surrounded by a swirling maelstrom of magical force.",
       "msgCastOnOther": "Someone is surrounded by a swirling maelstrom of magical force.",
       "msgWearsOff": "The maelstrom dissipates.",
@@ -2233,6 +2219,23 @@
       "effects": [
         "Memblur(20%)",
         "Memblur(20%)"
+      ]
+    },
+    {
+      "name": "Blast of Cold",
+      "durationText": "Instant",
+      "durationMs": null,
+      "castTimeMs": 1500,
+      "recastMs": 1500,
+      "targetType": "Single",
+      "spellType": "Detrimental",
+      "classes": "* Wizard - Level 1 (Autogranted)",
+      "msgCastOnYou": "Your skin goes numb.",
+      "msgCastOnOther": "Someone 's skin goes numb.",
+      "illusion": false,
+      "mana": 8,
+      "effects": [
+        "Decrease Hitpoints by 11 (L1) to 28 (L9)"
       ]
     },
     {
@@ -2820,7 +2823,7 @@
       "illusion": false,
       "mana": 136,
       "effects": [
-        "Decrease Hitpoints by 24 per tick"
+        "Decrease Hitpoints by 67 per tick"
       ]
     },
     {
@@ -3124,14 +3127,27 @@
       ]
     },
     {
-      "name": "Brass Resonance 14| spellicon = C",
+      "name": "Brass Resonance 14",
       "durationText": "2:15:00",
       "durationMs": 8100000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "classes": "BRD",
       "illusion": false,
       "effects": [
         "Increases the power of brass instrument based bard songs by up to 140%"
+      ]
+    },
+    {
+      "name": "Brass Resonance 15",
+      "durationText": "2:27:00",
+      "durationMs": 8820000,
+      "castTimeMs": 0,
+      "targetType": "Self",
+      "classes": "BRD",
+      "illusion": false,
+      "effects": [
+        "Increases the power of brass instrument based bard songs by up to 150%"
       ]
     },
     {
@@ -3296,10 +3312,10 @@
       "illusion": false,
       "mana": 50,
       "effects": [
-        "Summon Item:",
-        "Summon Item:",
-        "Summon Item:",
-        "Summon Item:"
+        "Summon Item: Summoned: Ale",
+        "Summon Item: Summoned: Cake",
+        "Summon Item: Summoned: Spinning Bottle",
+        "Summon Item: Summoned: A Firework"
       ]
     },
     {
@@ -3481,6 +3497,7 @@
       "name": "Burning Affliction I",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -3498,6 +3515,7 @@
       "name": "Burning Affliction II",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -3515,6 +3533,7 @@
       "name": "Burning Affliction III",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -3532,6 +3551,7 @@
       "name": "Burning Affliction IV",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -4221,6 +4241,24 @@
       ]
     },
     {
+      "name": "Cannibalize II",
+      "durationText": "Instant",
+      "durationMs": null,
+      "castTimeMs": 1250,
+      "recastMs": 1500,
+      "targetType": "Self",
+      "spellType": "Beneficial",
+      "classes": "* Shaman - Level 38",
+      "msgCastOnYou": "Your body aches as your mind clears.",
+      "msgCastOnOther": "Someone winces.",
+      "illusion": false,
+      "mana": 0,
+      "effects": [
+        "Decrease Hitpoints by 67",
+        "Increase Mana by 30 (L39) to 36 (L60)"
+      ]
+    },
+    {
       "name": "Cannibalize III",
       "durationText": "Instant",
       "durationMs": null,
@@ -4257,7 +4295,7 @@
       ]
     },
     {
-      "name": "Cantana of Replenishment",
+      "name": "Cantata of Replenishment",
       "durationText": "3 ticks",
       "durationMs": 18000,
       "castTimeMs": 3000,
@@ -4275,7 +4313,7 @@
       ]
     },
     {
-      "name": "Cantana of Soothing",
+      "name": "Cantata of Soothing",
       "durationText": "3 ticks",
       "durationMs": 18000,
       "castTimeMs": 3000,
@@ -4295,7 +4333,7 @@
       "instrumentEnhanced": "Required"
     },
     {
-      "name": "Captain Nalots Quickening",
+      "name": "Captain Nalot's Quickening",
       "durationText": "1.2 minutes @L1 to 10 minutes @L45",
       "durationMs": 600000,
       "castTimeMs": 0,
@@ -5081,7 +5119,8 @@
       "illusion": false,
       "mana": 200,
       "effects": [
-        "Increase Hitpoints by 10 (L39) to 16 (L50) per tick"
+        "Increase Hitpoints by 10 (L39) to 16 (L50) per tick",
+        "Increase Endurance by 7 (L39) to 10 (L50) per tick"
       ]
     },
     {
@@ -5193,6 +5232,23 @@
       ]
     },
     {
+      "name": "Circle of Butcherblock",
+      "durationText": "Instant",
+      "durationMs": null,
+      "castTimeMs": 16000,
+      "recastMs": 10000,
+      "targetType": "Group",
+      "spellType": "Beneficial",
+      "classes": "* Druid - Level 25",
+      "msgCastOnOther": "Player creates a mystic portal.",
+      "msgWearsOff": "The portal shimmers and fades.",
+      "illusion": false,
+      "mana": 300,
+      "effects": [
+        "Teleport group to -2135,1984,3 in Butcherblock Mountains"
+      ]
+    },
+    {
       "name": "Circle of Cobalt Scar",
       "durationText": "Instant",
       "durationMs": null,
@@ -5295,23 +5351,6 @@
       ]
     },
     {
-      "name": "Circle of Karana",
-      "durationText": "Instant",
-      "durationMs": null,
-      "castTimeMs": 16000,
-      "recastMs": 12000,
-      "targetType": "Group",
-      "spellType": "Beneficial",
-      "classes": "* Druid - Level 25",
-      "msgCastOnOther": "Someone creates a mystic portal.",
-      "msgWearsOff": "The portal shimmers and fades.",
-      "illusion": false,
-      "mana": 300,
-      "effects": [
-        "Teleport group to -2706,-1494,-4 in North Karana"
-      ]
-    },
-    {
       "name": "Circle of Lavastorm",
       "durationText": "Instant",
       "durationMs": null,
@@ -5360,6 +5399,23 @@
       "mana": 300,
       "effects": [
         "Teleport group to -490,-1896,120 in Misty Thicket"
+      ]
+    },
+    {
+      "name": "Circle of North Karana",
+      "durationText": "Instant",
+      "durationMs": null,
+      "castTimeMs": 16000,
+      "recastMs": 12000,
+      "targetType": "Group",
+      "spellType": "Beneficial",
+      "classes": "* Druid - Level 25",
+      "msgCastOnOther": "Someone creates a mystic portal.",
+      "msgWearsOff": "The portal shimmers and fades.",
+      "illusion": false,
+      "mana": 300,
+      "effects": [
+        "Teleport group to -2706,-1494,-4 in North Karana"
       ]
     },
     {
@@ -5971,7 +6027,7 @@
       "illusion": false,
       "mana": 15,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Summoned: Coldlight"
       ]
     },
     {
@@ -6251,6 +6307,41 @@
       ]
     },
     {
+      "name": "Composition of Ervaj",
+      "durationText": "3 ticks",
+      "durationMs": 18000,
+      "castTimeMs": 3000,
+      "recastMs": 0,
+      "targetType": "Party",
+      "spellType": "Beneficial",
+      "classes": "* Bard - Level 60",
+      "msgCastOnYou": "A song of inspiration fills your weapon arm with strength.",
+      "illusion": false,
+      "mana": 0,
+      "effects": [
+        "Increase Haste v2 by 10%",
+        "Increase AC by 9 (L60) to 9 (L65)"
+      ],
+      "instrumentEnhanced": "Yes (except attack speed)"
+    },
+    {
+      "name": "Composition of Ervaj",
+      "durationText": "3 ticks",
+      "durationMs": 18000,
+      "castTimeMs": 3000,
+      "recastMs": 0,
+      "targetType": "Party",
+      "spellType": "Beneficial",
+      "classes": "* Bard - Level 60",
+      "msgCastOnYou": "A song of inspiration fills your weapon arm with strength.",
+      "illusion": false,
+      "mana": 0,
+      "effects": [
+        "Increase Haste v2 by 10%",
+        "Increase AC by 9 (L60) to 9 (L65)"
+      ]
+    },
+    {
       "name": "Concussion",
       "durationText": "Instant",
       "durationMs": null,
@@ -6527,7 +6618,7 @@
       "illusion": false,
       "mana": 25,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Summoned: Black Bread"
       ]
     },
     {
@@ -6837,7 +6928,7 @@
       "illusion": false,
       "mana": 100,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Summoned: Dagger of Symbols"
       ]
     },
     {
@@ -6873,7 +6964,7 @@
       "illusion": false,
       "mana": 10,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Summoned: Firefly Globe"
       ]
     },
     {
@@ -7357,7 +7448,7 @@
         "Decrease Hitpoints by 315",
         "Requires 800 Mana"
       ],
-      "instrumentEnhanced": "Yes"
+      "instrumentEnhanced": "No"
     },
     {
       "name": "Denon's Disruptive Discord",
@@ -7554,7 +7645,7 @@
       "illusion": false,
       "mana": 60,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Summoned: Dimensional Hole"
       ]
     },
     {
@@ -7569,7 +7660,7 @@
       "illusion": false,
       "mana": 40,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Summoned: Dimensional Pocket"
       ]
     },
     {
@@ -7994,7 +8085,7 @@
       ]
     },
     {
-      "name": "Divine Might Effect",
+      "name": "Divine Might Strike",
       "durationText": "Instant",
       "durationMs": null,
       "castTimeMs": 0,
@@ -9620,6 +9711,21 @@
       ]
     },
     {
+      "name": "Enchant Adamantite",
+      "durationText": "Instant",
+      "durationMs": null,
+      "castTimeMs": 6000,
+      "recastMs": 2250,
+      "targetType": "Self",
+      "spellType": "Beneficial",
+      "classes": "* Enchanter - Level 48",
+      "illusion": false,
+      "mana": 325,
+      "effects": [
+        "Summon Item: Enchanted Lrg. Brick of Adamantite"
+      ]
+    },
+    {
       "name": "Enchant Brellium",
       "durationText": "Instant",
       "durationMs": null,
@@ -9740,22 +9846,7 @@
       ]
     },
     {
-      "name": "Enchant: Adamantite",
-      "durationText": "Instant",
-      "durationMs": null,
-      "castTimeMs": 6000,
-      "recastMs": 2250,
-      "targetType": "Self",
-      "spellType": "Beneficial",
-      "classes": "* Enchanter - Level 48",
-      "illusion": false,
-      "mana": 325,
-      "effects": [
-        "Summon Item: Enchanted Lrg. Brick of Adamantite"
-      ]
-    },
-    {
-      "name": "Enchant: Velium",
+      "name": "Enchant Velium",
       "durationText": "Instant",
       "durationMs": null,
       "castTimeMs": 6000,
@@ -10012,6 +10103,7 @@
       "name": "Enhancement Haste I",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -10029,6 +10121,7 @@
       "name": "Enhancement Haste II",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -10446,23 +10539,6 @@
       ]
     },
     {
-      "name": "Evacuate: Greater Nektulos",
-      "durationText": "Instant",
-      "durationMs": null,
-      "castTimeMs": 9000,
-      "recastMs": 1500,
-      "targetType": "Group",
-      "spellType": "Beneficial",
-      "classes": "* Wizard - Level 42",
-      "msgCastOnOther": "Player creates a shimmering portal.",
-      "msgWearsOff": "The portal shimmers and fades.",
-      "illusion": false,
-      "mana": 300,
-      "effects": [
-        "Evacuate group to 432,-772,35 in Nektulos Forest"
-      ]
-    },
-    {
       "name": "Evacuate: Nek",
       "durationText": "Instant",
       "durationMs": null,
@@ -10477,6 +10553,23 @@
       "mana": 300,
       "effects": [
         "Evacuate to 432,-772,35 in nektulos"
+      ]
+    },
+    {
+      "name": "Evacuate: Nektulos",
+      "durationText": "Instant",
+      "durationMs": null,
+      "castTimeMs": 9000,
+      "recastMs": 1500,
+      "targetType": "Group",
+      "spellType": "Beneficial",
+      "classes": "* Wizard - Level 42",
+      "msgCastOnOther": "Player creates a shimmering portal.",
+      "msgWearsOff": "The portal shimmers and fades.",
+      "illusion": false,
+      "mana": 300,
+      "effects": [
+        "Evacuate group to 432,-772,35 in Nektulos Forest"
       ]
     },
     {
@@ -10593,7 +10686,7 @@
       "illusion": false,
       "mana": 25,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Summoned: Globe of Water"
       ]
     },
     {
@@ -10727,6 +10820,7 @@
       "name": "Extended Enhancement I",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -10746,6 +10840,7 @@
       "name": "Extended Enhancement II",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -10765,6 +10860,7 @@
       "name": "Extended Enhancement III",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -10784,6 +10880,7 @@
       "name": "Extended Range I",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -10798,6 +10895,7 @@
       "name": "Extended Range II",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -10812,6 +10910,7 @@
       "name": "Extended Range III",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -10848,7 +10947,7 @@
       "recastMs": 3500,
       "targetType": "Single",
       "spellType": "Beneficial",
-      "classes": "* Cleric - Level 19 * Druid - Level 29 * Shaman - Level 39 * Enchanter - Level 44 * Ranger - Level 52 {{Era | Kunark",
+      "classes": "* Cleric - Level 19 * Druid - Level 29 * Shaman - Level 39 * Enchanter - Level 44 * Ranger - Level 52",
       "msgCastOnYou": "Your body zings with energy.",
       "msgCastOnOther": "Someone looks energized.",
       "illusion": false,
@@ -11585,7 +11684,7 @@
       ]
     },
     {
-      "name": "Firestrike (Effect)",
+      "name": "Firestrike",
       "durationText": "Instant",
       "durationMs": null,
       "castTimeMs": 0,
@@ -11669,7 +11768,7 @@
       ]
     },
     {
-      "name": "Fist of Mastry",
+      "name": "Fist of Mastery",
       "durationText": "Instant",
       "durationMs": null,
       "castTimeMs": 0,
@@ -12259,9 +12358,9 @@
       "illusion": false,
       "mana": 100,
       "effects": [
-        "Increase ATK by 20",
-        "Increase Damage Shield by 5",
         "Increase Hitpoints by 6 per tick. Max: 19 per tick",
+        "Increase Damage Shield by 5",
+        "Increase ATK by 20",
         "Increase Endurance by 6 per tick. Max: 19 per tick"
       ]
     },
@@ -12581,7 +12680,7 @@
       "illusion": false,
       "mana": 90,
       "effects": [
-        "Increase STR by 40 (effect decreases over time)"
+        "Increase STR by 40 (effect decreases over time). Upgrading the spell increases the strength gained (+100 STR at level III)"
       ]
     },
     {
@@ -12926,6 +13025,22 @@
       "instrumentEnhanced": "Yes"
     },
     {
+      "name": "Full Heal",
+      "durationText": "Instant",
+      "durationMs": null,
+      "castTimeMs": 0,
+      "recastMs": 0,
+      "targetType": "Single Friendly (or Self)",
+      "spellType": "Heal",
+      "classes": "* None",
+      "msgCastOnYou": "Your wounds are gone.",
+      "illusion": false,
+      "mana": 0,
+      "effects": [
+        "Increase Hitpoints by 100%"
+      ]
+    },
+    {
       "name": "Fungal Regrowth",
       "durationText": "1.2 minutes @L1 to 5 minutes @L20",
       "durationMs": 300000,
@@ -13069,6 +13184,7 @@
       "name": "Gallenite's Chaos",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -13091,6 +13207,7 @@
       "name": "Gallenite's Destruction",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -13113,6 +13230,7 @@
       "name": "Gallenite's Major Destruction",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -13135,6 +13253,7 @@
       "name": "Gallenite's Minor Destruction",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -13279,7 +13398,7 @@
       ]
     },
     {
-      "name": "GelatRot",
+      "name": "GelatRoot",
       "durationText": "1 ticks @L1 to 3.2 minutes @L65",
       "durationMs": 192000,
       "castTimeMs": 0,
@@ -13417,10 +13536,10 @@
       "illusion": false,
       "mana": 60,
       "effects": [
-        "Summon Item:",
-        "Summon Item:",
-        "Summon Item:",
-        "Summon Item:"
+        "Summon Item: Glowing Backpack",
+        "Summon Item: Summoned: Black Bread",
+        "Summon Item: Summoned: Globe of Water",
+        "Summon Item: Summoned: Bandages"
       ]
     },
     {
@@ -13753,22 +13872,6 @@
       ]
     },
     {
-      "name": "Greater Healing",
-      "durationText": "Instant",
-      "durationMs": null,
-      "castTimeMs": 750,
-      "recastMs": 6000,
-      "targetType": "Single Friendly (or Self)",
-      "spellType": "Beneficial",
-      "classes": "* Druid - Level 34",
-      "msgCastOnYou": "Healing water flows over you.",
-      "illusion": false,
-      "mana": 150,
-      "effects": [
-        "Increase Hitpoints by 345 (L34) to 425 (L50)"
-      ]
-    },
-    {
       "name": "Greater Mass Imbue Fire Opal",
       "durationText": "Instant",
       "durationMs": null,
@@ -13780,7 +13883,7 @@
       "illusion": false,
       "mana": 2400,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Imbued Fire Opal"
       ]
     },
     {
@@ -14218,7 +14321,7 @@
       "illusion": false,
       "mana": 40,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Summoned: Halo of Light"
       ]
     },
     {
@@ -14311,7 +14414,7 @@
       "spellType": "Beneficial",
       "classes": "* Shadow Knight - Level 50 * Necromancer - Level 20",
       "msgCastOnYou": "You no longer feel pain.",
-      "msgWearsOff": "Your invulnerability fades. || where_to_obtain = Necromancer Spell Vendors Shadow Knight Spell Vendors",
+      "msgWearsOff": "Your invulnerability fades.",
       "illusion": false,
       "mana": 85,
       "effects": [
@@ -14518,22 +14621,6 @@
       ]
     },
     {
-      "name": "Healing",
-      "durationText": "Instant",
-      "durationMs": null,
-      "castTimeMs": 0,
-      "recastMs": 0,
-      "targetType": "Single Friendly (or Self)",
-      "spellType": "Heal",
-      "classes": "* None",
-      "msgCastOnYou": "Your wounds are gone.",
-      "illusion": false,
-      "mana": 0,
-      "effects": [
-        "Increase Hitpoints by 100%"
-      ]
-    },
-    {
       "name": "Healing Light",
       "durationText": "Instant",
       "durationMs": null,
@@ -14650,6 +14737,22 @@
       "mana": 0,
       "effects": [
         "Increase Current HP by 453 (Random: 423 to 484)"
+      ]
+    },
+    {
+      "name": "Healing Water",
+      "durationText": "Instant",
+      "durationMs": null,
+      "castTimeMs": 750,
+      "recastMs": 6000,
+      "targetType": "Single Friendly (or Self)",
+      "spellType": "Beneficial",
+      "classes": "* Druid - Level 34",
+      "msgCastOnYou": "Healing water flows over you.",
+      "illusion": false,
+      "mana": 150,
+      "effects": [
+        "Increase Hitpoints by 345 (L34) to 425 (L50)"
       ]
     },
     {
@@ -14833,6 +14936,7 @@
       "name": "Heritage of Mistmoore",
       "durationText": "10:00",
       "durationMs": 600000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "illusion": false,
@@ -15277,7 +15381,6 @@
       "recastMs": 2250,
       "targetType": "Single",
       "spellType": "Beneficial",
-      "classes": "* Bard - Level 14 (Lyssa's Cataloging Libretto) * Wizard - Level 16 * Magician - Level 16 * Enchanter - Level 16 * Necromancer - Level 20",
       "illusion": false,
       "mana": 50,
       "effects": [
@@ -15373,25 +15476,6 @@
       "mana": 50,
       "effects": [
         "Illusion: 75",
-        "Levitate(1)"
-      ]
-    },
-    {
-      "name": "Illusion: Air Elemental",
-      "durationText": "36 Min",
-      "durationMs": 2160000,
-      "castTimeMs": 3500,
-      "recastMs": 7000,
-      "targetType": "Self",
-      "spellType": "Beneficial",
-      "classes": "* Enchanter - Level 45",
-      "msgCastOnYou": "You feel different.",
-      "msgCastOnOther": "Player's image shimmers.",
-      "msgWearsOff": "Your illusion fades.",
-      "illusion": true,
-      "mana": 110,
-      "effects": [
-        "Illusion: Imp",
         "Levitate(1)"
       ]
     },
@@ -15579,7 +15663,7 @@
       ]
     },
     {
-      "name": "Illusion: Half Elf",
+      "name": "Illusion: Half-Elf",
       "durationText": "36 minutes 6 seconds",
       "durationMs": 2166000,
       "castTimeMs": 3000,
@@ -15666,6 +15750,25 @@
       "mana": 50,
       "effects": [
         "Illusion: 128"
+      ]
+    },
+    {
+      "name": "Illusion: Imp",
+      "durationText": "36 Min",
+      "durationMs": 2160000,
+      "castTimeMs": 3500,
+      "recastMs": 7000,
+      "targetType": "Self",
+      "spellType": "Beneficial",
+      "classes": "* Enchanter - Level 45",
+      "msgCastOnYou": "You feel different.",
+      "msgCastOnOther": "Player's image shimmers.",
+      "msgWearsOff": "Your illusion fades.",
+      "illusion": true,
+      "mana": 110,
+      "effects": [
+        "Illusion: Imp",
+        "Levitate(1)"
       ]
     },
     {
@@ -15907,22 +16010,7 @@
       "illusion": false,
       "mana": 200,
       "effects": [
-        "Summon Item:"
-      ]
-    },
-    {
-      "name": "Imbue Emerald",
-      "durationText": "Instant",
-      "durationMs": null,
-      "castTimeMs": 10000,
-      "recastMs": 1500,
-      "targetType": "Self",
-      "spellType": "Beneficial",
-      "classes": "* Cleric - Level 29 * Druid - Level 29",
-      "illusion": false,
-      "mana": 600,
-      "effects": [
-        "Summon Item:"
+        "Summon Item: Imbued Emerald"
       ]
     },
     {
@@ -15937,7 +16025,7 @@
       "illusion": false,
       "mana": 200,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Imbued Fire Opal"
       ]
     },
     {
@@ -16012,7 +16100,7 @@
       "illusion": false,
       "mana": 200,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Imbued Plains Pebble"
       ]
     },
     {
@@ -16170,6 +16258,7 @@
       "name": "Improved Damage I",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -16192,6 +16281,7 @@
       "name": "Improved Damage II",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -16214,6 +16304,7 @@
       "name": "Improved Damage III",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -16236,6 +16327,7 @@
       "name": "Improved Healing I",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -16256,6 +16348,7 @@
       "name": "Improved Healing II",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -16276,6 +16369,7 @@
       "name": "Improved Healing III",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -16293,7 +16387,7 @@
       ]
     },
     {
-      "name": "Improved Invis vs Undead",
+      "name": "Improved Invis to Undead",
       "durationText": "10 minutes",
       "durationMs": 600000,
       "castTimeMs": 4000,
@@ -16351,24 +16445,6 @@
       "durationText": "10 minutes",
       "durationMs": 600000,
       "castTimeMs": 5000,
-      "recastMs": 1500,
-      "targetType": "Self",
-      "spellType": "Beneficial",
-      "classes": "* Druid - Level 48",
-      "msgCastOnYou": "You vanish.",
-      "msgCastOnOther": "Someone fades away.",
-      "msgWearsOff": "You appear.",
-      "illusion": false,
-      "mana": 75,
-      "effects": [
-        "Improved Invisibility"
-      ]
-    },
-    {
-      "name": "Improved Superior Camou",
-      "durationText": "10 minutes",
-      "durationMs": 600000,
-      "castTimeMs": 5000,
       "recastMs": 2250,
       "targetType": "Self",
       "spellType": "Beneficial",
@@ -16383,9 +16459,28 @@
       ]
     },
     {
+      "name": "Improved Superior Camouflage",
+      "durationText": "10 minutes",
+      "durationMs": 600000,
+      "castTimeMs": 5000,
+      "recastMs": 1500,
+      "targetType": "Self",
+      "spellType": "Beneficial",
+      "classes": "* Druid - Level 48",
+      "msgCastOnYou": "You vanish.",
+      "msgCastOnOther": "Someone fades away.",
+      "msgWearsOff": "You appear.",
+      "illusion": false,
+      "mana": 75,
+      "effects": [
+        "Improved Invisibility"
+      ]
+    },
+    {
       "name": "Improved Vampirism II",
       "durationText": "1:33:00",
       "durationMs": 5580000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "illusion": false
@@ -16394,6 +16489,7 @@
       "name": "Improved Vampirism III",
       "durationText": "1:33:00",
       "durationMs": 5580000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "illusion": false
@@ -17066,6 +17162,24 @@
       ]
     },
     {
+      "name": "Invisibility versus Undead",
+      "durationText": "27 Min",
+      "durationMs": 1620000,
+      "castTimeMs": 4000,
+      "recastMs": 4000,
+      "targetType": "Single Friendly (or Self)",
+      "spellType": "Beneficial",
+      "classes": "* Necromancer - Level 1 * Shadowknight - Level 4 (Autogranted) * Cleric - Level 11 * Enchanter - Level 14 * Paladin - Level 17",
+      "msgCastOnYou": "You feel your skin tingle.",
+      "msgCastOnOther": "Someone fades a little.",
+      "msgWearsOff": "Your skin stops tingling.",
+      "illusion": false,
+      "mana": 40,
+      "effects": [
+        "Invisibility versus Undead"
+      ]
+    },
+    {
       "name": "Invisibility Versus Undead",
       "durationText": "27 minutes",
       "durationMs": 1620000,
@@ -17081,24 +17195,6 @@
       "mana": 30,
       "effects": [
         "Invisibility(1)"
-      ]
-    },
-    {
-      "name": "Invisibility vs. Undead",
-      "durationText": "27 Min",
-      "durationMs": 1620000,
-      "castTimeMs": 4000,
-      "recastMs": 4000,
-      "targetType": "Single Friendly (or Self)",
-      "spellType": "Beneficial",
-      "classes": "* Necromancer - Level 1 * Shadowknight - Level 4 (Autogranted) * Cleric - Level 11 * Enchanter - Level 14 * Paladin - Level 17",
-      "msgCastOnYou": "You feel your skin tingle.",
-      "msgCastOnOther": "Someone fades a little.",
-      "msgWearsOff": "Your skin stops tingling.",
-      "illusion": false,
-      "mana": 40,
-      "effects": [
-        "Invisibility versus Undead"
       ]
     },
     {
@@ -17189,6 +17285,7 @@
       "name": "Jedah's Conservation",
       "durationText": "195min",
       "durationMs": 11700000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -17204,6 +17301,7 @@
       "name": "Jedah's Greater Conservation",
       "durationText": "195min",
       "durationMs": 11700000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -17219,6 +17317,7 @@
       "name": "Jedah's Lesser Conservation",
       "durationText": "195min",
       "durationMs": 11700000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -17234,6 +17333,7 @@
       "name": "Jedah's Superior Conservation",
       "durationText": "195min",
       "durationMs": 11700000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -17267,6 +17367,7 @@
       "name": "Jolum's Abatement",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -17283,6 +17384,7 @@
       "name": "Jolum's Major Abatement",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -17299,6 +17401,7 @@
       "name": "Jolum's Minor Abatement",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -17315,6 +17418,7 @@
       "name": "Jolum's Superior Abatement",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -17492,6 +17596,24 @@
       ]
     },
     {
+      "name": "Katta's Song of Sword Dancing",
+      "durationText": "3 ticks",
+      "durationMs": 18000,
+      "castTimeMs": 3000,
+      "recastMs": 0,
+      "targetType": "Group",
+      "spellType": "Beneficial",
+      "classes": "* Bard - Level 39",
+      "msgCastOnYou": "Your weapons whir with a magical rhythm.",
+      "msgWearsOff": "The magical rhythm fades.",
+      "illusion": false,
+      "mana": 0,
+      "effects": [
+        "Add Melee Proc:",
+        "Increase DEX by 75"
+      ]
+    },
+    {
       "name": "Kazumi's Note of Preservation",
       "durationText": "3 ticks",
       "durationMs": 18000,
@@ -17586,7 +17708,7 @@
       ]
     },
     {
-      "name": "Kilva's Skin of Flame (Spell)",
+      "name": "Kilva's Skin of Flame",
       "durationText": "1.2 minutes @L1 to 13 minutes @L60",
       "durationMs": 780000,
       "castTimeMs": 0,
@@ -17745,7 +17867,7 @@
       ]
     },
     {
-      "name": "Largo's Assonant Binding",
+      "name": "Largo's Absonant Binding",
       "durationText": "3 ticks",
       "durationMs": 18000,
       "castTimeMs": 3000,
@@ -17840,23 +17962,6 @@
     },
     {
       "name": "Leach",
-      "durationText": "54 Sec",
-      "durationMs": 54000,
-      "castTimeMs": 2400,
-      "recastMs": 10000,
-      "targetType": "Single",
-      "spellType": "Detrimental",
-      "classes": "* Necromancer - Level 9",
-      "msgCastOnYou": "You feel your blood begin to leech away.",
-      "msgCastOnOther": "Someone pales.",
-      "illusion": false,
-      "mana": 72,
-      "effects": [
-        "Decrease Hitpoints by 8 per tick"
-      ]
-    },
-    {
-      "name": "Leach",
       "durationText": "7 ticks @L12 to 9 ticks @L15",
       "durationMs": 54000,
       "castTimeMs": 2400,
@@ -17888,6 +17993,23 @@
       "mana": 83,
       "effects": [
         "UNKNOWN CALC 112 base 71 max 118 attrib Absorb Damage"
+      ]
+    },
+    {
+      "name": "Leech",
+      "durationText": "54 Sec",
+      "durationMs": 54000,
+      "castTimeMs": 2400,
+      "recastMs": 10000,
+      "targetType": "Single",
+      "spellType": "Detrimental",
+      "classes": "* Necromancer - Level 9",
+      "msgCastOnYou": "You feel your blood begin to leech away.",
+      "msgCastOnOther": "Someone pales.",
+      "illusion": false,
+      "mana": 72,
+      "effects": [
+        "Decrease Hitpoints by 8 per tick"
       ]
     },
     {
@@ -19082,9 +19204,31 @@
       ]
     },
     {
+      "name": "Malaisement",
+      "durationText": "11 Min",
+      "durationMs": 660000,
+      "castTimeMs": 4000,
+      "recastMs": 6000,
+      "targetType": "Single",
+      "spellType": "Detrimental",
+      "classes": "* Shaman - Level 32 * Magician - Level 44",
+      "msgCastOnYou": "You feel vulnerable.",
+      "msgCastOnOther": "Someone looks uncomfortable.",
+      "msgWearsOff": "Your vulnerability fades.",
+      "illusion": false,
+      "mana": 100,
+      "effects": [
+        "Decrease Cold Resist by 36 (L32) to 40 (L40)",
+        "Decrease Magic Resist by 37 (L34) to 40 (L40)",
+        "Decrease Poison Resist by 37 (L34) to 40 (L40)",
+        "Decrease Fire Resist by 37 (L34) to 40 (L40)"
+      ]
+    },
+    {
       "name": "Malaria",
       "durationText": "12 ticks",
       "durationMs": 72000,
+      "castTimeMs": 0,
       "recastMs": 1500,
       "targetType": "Single",
       "spellType": "Damage Over Time",
@@ -19133,27 +19277,6 @@
       ]
     },
     {
-      "name": "Malisement",
-      "durationText": "11 Min",
-      "durationMs": 660000,
-      "castTimeMs": 4000,
-      "recastMs": 6000,
-      "targetType": "Single",
-      "spellType": "Detrimental",
-      "classes": "* Shaman - Level 32 * Magician - Level 44",
-      "msgCastOnYou": "You feel vulnerable.",
-      "msgCastOnOther": "Someone looks uncomfortable.",
-      "msgWearsOff": "Your vulnerability fades.",
-      "illusion": false,
-      "mana": 100,
-      "effects": [
-        "Decrease Cold Resist by 36 (L32) to 40 (L40)",
-        "Decrease Magic Resist by 37 (L34) to 40 (L40)",
-        "Decrease Poison Resist by 37 (L34) to 40 (L40)",
-        "Decrease Fire Resist by 37 (L34) to 40 (L40)"
-      ]
-    },
-    {
       "name": "Malo",
       "durationText": "13 minutes @L60",
       "durationMs": 780000,
@@ -19182,7 +19305,7 @@
       "recastMs": 6000,
       "targetType": "Single",
       "spellType": "Detrimental",
-      "classes": "* Shaman - Level 48 * Magician - Level 51 {{Kunark Era Inline",
+      "classes": "* Shaman - Level 48 * Magician - Level 51",
       "msgCastOnYou": "You feel very vulnerable.",
       "msgCastOnOther": "Someone looks very uncomfortable.",
       "msgWearsOff": "Your vulnerability fades.",
@@ -19311,6 +19434,7 @@
       "name": "Mana Preservation I",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -19326,6 +19450,7 @@
       "name": "Mana Preservation II",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -19461,7 +19586,7 @@
       ]
     },
     {
-      "name": "Manicial Strength",
+      "name": "Maniacal Strength",
       "durationText": "2 hours 24 minutes @L57",
       "durationMs": 7200000,
       "castTimeMs": 6000,
@@ -19754,7 +19879,7 @@
       "illusion": false,
       "mana": 600,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Imbued Black Pearl"
       ]
     },
     {
@@ -19769,7 +19894,7 @@
       "illusion": false,
       "mana": 600,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Imbued Black Sapphire"
       ]
     },
     {
@@ -19788,6 +19913,21 @@
       ]
     },
     {
+      "name": "Mass Imbue Emerald",
+      "durationText": "Instant",
+      "durationMs": null,
+      "castTimeMs": 10000,
+      "recastMs": 1500,
+      "targetType": "Self",
+      "spellType": "Beneficial",
+      "classes": "* Cleric - Level 29 * Druid - Level 29",
+      "illusion": false,
+      "mana": 600,
+      "effects": [
+        "Summon Item: Imbued Emerald"
+      ]
+    },
+    {
       "name": "Mass Imbue Fire Opal",
       "durationText": "Instant",
       "durationMs": null,
@@ -19799,7 +19939,7 @@
       "illusion": false,
       "mana": 600,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Imbued Fire Opal"
       ]
     },
     {
@@ -19844,7 +19984,7 @@
       "illusion": false,
       "mana": 600,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Imbued Opal"
       ]
     },
     {
@@ -19859,7 +19999,7 @@
       "illusion": false,
       "mana": 600,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Imbued Peridot"
       ]
     },
     {
@@ -19874,7 +20014,7 @@
       "illusion": false,
       "mana": 600,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Imbued Plains Pebble"
       ]
     },
     {
@@ -19889,7 +20029,7 @@
       "illusion": false,
       "mana": 600,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Imbued Rose Quartz"
       ]
     },
     {
@@ -19904,7 +20044,22 @@
       "illusion": false,
       "mana": 600,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Imbued Ruby"
+      ]
+    },
+    {
+      "name": "Mass Imbue Sapphire",
+      "durationText": "Instant",
+      "durationMs": null,
+      "castTimeMs": 10000,
+      "recastMs": 1500,
+      "targetType": "Self",
+      "spellType": "Beneficial",
+      "classes": "* Cleric - Level 29 * Shaman - Level 29 * Shaman - Level 29",
+      "illusion": false,
+      "mana": 600,
+      "effects": [
+        "Summon Item: Imbued Sapphire"
       ]
     },
     {
@@ -19919,7 +20074,7 @@
       "illusion": false,
       "mana": 600,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Imbued Topaz"
       ]
     },
     {
@@ -19953,24 +20108,6 @@
       ]
     },
     {
-      "name": "McMerin's Feast",
-      "durationText": "Instant",
-      "durationMs": null,
-      "castTimeMs": 1250,
-      "recastMs": 1500,
-      "targetType": "Self",
-      "spellType": "Beneficial",
-      "classes": "* Shaman - Level 38",
-      "msgCastOnYou": "Your body aches as your mind clears.",
-      "msgCastOnOther": "Someone winces.",
-      "illusion": false,
-      "mana": 0,
-      "effects": [
-        "Decrease Hitpoints by 67",
-        "Increase Mana by 30 (L39) to 36 (L60)"
-      ]
-    },
-    {
       "name": "McVaxius' Berserker Crescendo",
       "durationText": "3 ticks",
       "durationMs": 18000,
@@ -19984,7 +20121,7 @@
       "illusion": false,
       "mana": 0,
       "effects": [
-        "Increase Melee Haste by 8%",
+        "Increase Melee Haste by 18%",
         "Increase STR by 15 (L42) to 21 (L60)",
         "Increase AC by 6 (L42) to 9 (L60)"
       ],
@@ -20047,6 +20184,43 @@
       "effects": [
         "Mesmerize (2/55)",
         "Memblur(1%)"
+      ]
+    },
+    {
+      "name": "Melody of Ervaj",
+      "durationText": "3 ticks",
+      "durationMs": 18000,
+      "castTimeMs": 3000,
+      "recastMs": 0,
+      "targetType": "Group",
+      "spellType": "Beneficial",
+      "classes": "* Bard - Level 50",
+      "msgCastOnYou": "A song of inspiration fills your weapon arm with strength.",
+      "msgWearsOff": "The inspiration fades.",
+      "illusion": false,
+      "mana": 0,
+      "effects": [
+        "Increase Melee Haste by 5%",
+        "Increase AC by 5 (L50) to 6 (L65)"
+      ],
+      "instrumentEnhanced": "Required"
+    },
+    {
+      "name": "Melody of Ervaj",
+      "durationText": "3 ticks",
+      "durationMs": 18000,
+      "castTimeMs": 3000,
+      "recastMs": 0,
+      "targetType": "Party",
+      "spellType": "Beneficial",
+      "classes": "* Bard - Level 50",
+      "msgCastOnYou": "A song of inspiration fills your weapon arm with strength.",
+      "msgWearsOff": "The inspiration fades.",
+      "illusion": false,
+      "mana": 0,
+      "effects": [
+        "Increase Haste v2 by 5%",
+        "Increase AC by 5 (L50) to 6 (L65)"
       ]
     },
     {
@@ -20364,6 +20538,7 @@
       "name": "Minor Improved Damage I",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -20523,7 +20698,7 @@
       "illusion": false,
       "mana": 200,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Summoned: Modulating Rod"
       ]
     },
     {
@@ -20736,6 +20911,21 @@
       ]
     },
     {
+      "name": "Muzzle of Mardu",
+      "durationText": "Instant",
+      "durationMs": null,
+      "castTimeMs": 4000,
+      "recastMs": 2250,
+      "targetType": "Self",
+      "spellType": "Beneficial",
+      "classes": "* Magician - Level 56",
+      "illusion": false,
+      "mana": 100,
+      "effects": [
+        "Summon Item: Summoned: Muzzle of Mardu"
+      ]
+    },
+    {
       "name": "Mystic Precision",
       "durationText": "3 minutes @L1 to 1 hour 3 minutes @L21",
       "durationMs": 3600000,
@@ -20775,6 +20965,7 @@
       "name": "Naki's Charm of Pernicity",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -20791,6 +20982,7 @@
       "name": "Naki's Greater Pernicity",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -20807,6 +20999,7 @@
       "name": "Naki's Lesser Pernicity",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -20823,6 +21016,7 @@
       "name": "Naki's Superior Pernicity",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -21331,8 +21525,7 @@
       "mana": 0,
       "effects": [
         "Increase Magic Resist by 3 (L1) to 25 (L12)",
-        "Increase DEX by 3 (L1) to 25 (L12)",
-        "Decrease AGI by 3 (L1) to 15 (L12)"
+        "Increase DEX by 3 (L1) to 25 (L12)"
       ]
     },
     {
@@ -21386,25 +21579,6 @@
       "mana": 6,
       "effects": [
         "Decrease Hitpoints by 14"
-      ]
-    },
-    {
-      "name": "O'Keils Radiation",
-      "durationText": "3 Min",
-      "durationMs": 180000,
-      "castTimeMs": 3000,
-      "recastMs": 6000,
-      "targetType": "Single Friendly (or Self)",
-      "spellType": "Beneficial",
-      "classes": "* Wizard - Level 2 (Autogranted)",
-      "msgCastOnYou": "You begin to radiate.",
-      "msgCastOnOther": "Someone begins to radiate.",
-      "msgWearsOff": "The radiation fades.",
-      "illusion": false,
-      "mana": 15,
-      "effects": [
-        "Increase Damage Shield by 2",
-        "Increase Fire Resist by 7 (L4) to 10 (L10)"
       ]
     },
     {
@@ -21487,6 +21661,25 @@
       ]
     },
     {
+      "name": "O`Keil's Radiation",
+      "durationText": "3 Min",
+      "durationMs": 180000,
+      "castTimeMs": 3000,
+      "recastMs": 6000,
+      "targetType": "Single Friendly (or Self)",
+      "spellType": "Beneficial",
+      "classes": "* Wizard - Level 2 (Autogranted)",
+      "msgCastOnYou": "You begin to radiate.",
+      "msgCastOnOther": "Someone begins to radiate.",
+      "msgWearsOff": "The radiation fades.",
+      "illusion": false,
+      "mana": 15,
+      "effects": [
+        "Increase Damage Shield by 2",
+        "Increase Fire Resist by 7 (L4) to 10 (L10)"
+      ]
+    },
+    {
       "name": "O`Keils Flickering Flame",
       "durationText": "5 minutes",
       "durationMs": 300000,
@@ -21509,6 +21702,7 @@
       "name": "Oathbreaker's Curse",
       "durationText": "Instant",
       "durationMs": null,
+      "castTimeMs": 0,
       "recastMs": 1000,
       "targetType": "PB AE",
       "spellType": "Detrimental",
@@ -21556,6 +21750,47 @@
       "effects": [
         "Decrease AC by 6",
         "Decrease HP when cast by 30"
+      ]
+    },
+    {
+      "name": "Occlusion of Sound",
+      "durationText": "3 ticks",
+      "durationMs": 18000,
+      "castTimeMs": 3000,
+      "recastMs": 0,
+      "targetType": "Single",
+      "spellType": "Detrimental",
+      "classes": "* Bard - Level 55",
+      "msgCastOnYou": "You reel in pain as every bone in your body vibrates.",
+      "msgCastOnOther": "Someone reels in pain and loses concentration.",
+      "illusion": false,
+      "mana": 0,
+      "effects": [
+        "Decrease Cold Resist by 10",
+        "Decrease Fire Resist by 10",
+        "Decrease Magic Resist by 10",
+        "Unresistable"
+      ],
+      "instrumentEnhanced": "Required"
+    },
+    {
+      "name": "Occlusion of Sound",
+      "durationText": "3 ticks",
+      "durationMs": 18000,
+      "castTimeMs": 3000,
+      "recastMs": 0,
+      "targetType": "Single",
+      "spellType": "Detrimental",
+      "classes": "* Bard - Level 55",
+      "msgCastOnYou": "You reel in pain as every bone in your body vibrates.",
+      "msgCastOnOther": "Someone reels in pain and loses concentration.",
+      "illusion": false,
+      "mana": 0,
+      "effects": [
+        "Decrease Cold Resist by 10",
+        "Decrease Fire Resist by 10",
+        "Decrease Magic Resist by 10",
+        "Unresistable"
       ]
     },
     {
@@ -21607,7 +21842,7 @@
       "illusion": false,
       "mana": 0,
       "effects": [
-        "Summon Item: {{:Black Gift Box"
+        "Summon Item: Black Gift Box"
       ]
     },
     {
@@ -21662,7 +21897,8 @@
       "illusion": false,
       "mana": 400,
       "effects": [
-        "Increase Hitpoints by 13 (L45) to 16 (L50) per tick"
+        "Increase Hitpoints by 13 (L45) to 16 (L50) per tick",
+        "Increase Endurance by 10 (L45) per tick"
       ]
     },
     {
@@ -21887,6 +22123,7 @@
       "name": "Percussion Resonance 11",
       "durationText": "1:57:00",
       "durationMs": 7020000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "classes": "BRD",
       "illusion": false,
@@ -21898,6 +22135,7 @@
       "name": "Percussion Resonance 14",
       "durationText": "2:12:00",
       "durationMs": 7920000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "classes": "BRD",
       "illusion": false,
@@ -21909,6 +22147,7 @@
       "name": "Percussion Resonance 16",
       "durationText": "2:12:00",
       "durationMs": 7920000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "classes": "BRD",
       "illusion": false,
@@ -22210,26 +22449,6 @@
       ]
     },
     {
-      "name": "Poison",
-      "durationText": "2 minutes",
-      "durationMs": 120000,
-      "castTimeMs": 0,
-      "recastMs": 0,
-      "targetType": "Single",
-      "spellType": "Detrimental",
-      "classes": "This spell is cast by NPCs only.",
-      "msgCastOnYou": "You have been poisoned. (?)",
-      "msgCastOnOther": "Someone has been poisoned. (?)",
-      "msgWearsOff": "The poison has run its course. (?)",
-      "illusion": false,
-      "mana": 0,
-      "effects": [
-        "Increase Poison Counter by 4",
-        "Decrease HP when cast by 30",
-        "Decrease Hitpoints by 14 per tick"
-      ]
-    },
-    {
       "name": "Poison Animal I",
       "durationText": "Instant",
       "durationMs": null,
@@ -22516,9 +22735,9 @@
       "mana": 60,
       "effects": [
         "Summon Item: Pouch of Quellious",
-        "Summon Item:",
-        "Summon Item:",
-        "Summon Item:"
+        "Summon Item: Summoned: Shuriken of Quellious",
+        "Summon Item: Summoned: Shuriken of Quellious",
+        "Summon Item: Summoned: Shuriken of Quellious"
       ]
     },
     {
@@ -22946,6 +23165,7 @@
       "name": "Puma Maw",
       "durationText": "Instant",
       "durationMs": null,
+      "castTimeMs": 0,
       "targetType": "Single",
       "spellType": "Direct Damage",
       "classes": "This is a proc from the Spirit of the Puma spell.",
@@ -23029,6 +23249,26 @@
       ]
     },
     {
+      "name": "Putrid Breath",
+      "durationText": "5 minutes 14 seconds",
+      "durationMs": 314000,
+      "castTimeMs": 0,
+      "recastMs": 0,
+      "targetType": "Single",
+      "spellType": "Detrimental",
+      "classes": "This spell is cast by a putrid skeleton.",
+      "msgCastOnYou": "You have been diseased.",
+      "msgCastOnOther": "Someone has been diseased.",
+      "msgWearsOff": "You are no longer diseased.",
+      "illusion": false,
+      "mana": 0,
+      "effects": [
+        "Increase Disease Counter by 1",
+        "Decrease HP when cast by 5",
+        "Decrease Hitpoints by 1 per tick"
+      ]
+    },
+    {
       "name": "Pyrocruor",
       "durationText": "1.9 minutes",
       "durationMs": 114000,
@@ -23076,10 +23316,10 @@
       "illusion": false,
       "mana": 60,
       "effects": [
-        "Summon Item:",
-        "Summon Item:",
-        "Summon Item:",
-        "Summon Item:"
+        "Summon Item: Summoned: Quiver of Marr",
+        "Summon Item: Summoned: Arrow of Marr",
+        "Summon Item: Summoned: Arrow of Marr",
+        "Summon Item: Summoned: Arrow of Marr"
       ]
     },
     {
@@ -23110,26 +23350,6 @@
       "targetType": "Single",
       "spellType": "Detrimental",
       "classes": "This spell is cast by NPCs only.",
-      "msgCastOnYou": "You have been diseased.",
-      "msgCastOnOther": "Someone has been diseased.",
-      "msgWearsOff": "You are no longer diseased.",
-      "illusion": false,
-      "mana": 0,
-      "effects": [
-        "Increase Disease Counter by 1",
-        "Decrease HP when cast by 5",
-        "Decrease Hitpoints by 1 per tick"
-      ]
-    },
-    {
-      "name": "Rabies",
-      "durationText": "5 minutes 14 seconds",
-      "durationMs": 314000,
-      "castTimeMs": 0,
-      "recastMs": 0,
-      "targetType": "Single",
-      "spellType": "Detrimental",
-      "classes": "This spell is cast by a putrid skeleton.",
       "msgCastOnYou": "You have been diseased.",
       "msgCastOnOther": "Someone has been diseased.",
       "msgWearsOff": "You are no longer diseased.",
@@ -23356,23 +23576,6 @@
       ]
     },
     {
-      "name": "Rain of Molten LAva",
-      "durationText": "Instant",
-      "durationMs": null,
-      "castTimeMs": 0,
-      "recastMs": 12000,
-      "targetType": "Targeted AE",
-      "spellType": "Detrimental",
-      "classes": "This spell is cast by NPCs only.",
-      "msgCastOnYou": "A blast of heat sears your skin.",
-      "msgCastOnOther": "Someone 's skin sears.",
-      "illusion": false,
-      "mana": 0,
-      "effects": [
-        "Decrease Hitpoints by 200"
-      ]
-    },
-    {
       "name": "Rain of Spikes",
       "durationText": "Instant",
       "durationMs": null,
@@ -23444,14 +23647,14 @@
       ]
     },
     {
-      "name": "Rapacious Subvention",
+      "name": "Rapacious Subversion",
       "durationText": "Instant",
       "durationMs": null,
       "castTimeMs": 3000,
       "recastMs": 8000,
       "targetType": "Single",
       "spellType": "Beneficial",
-      "classes": "* Necromancer - Level 24 {{Kunark Short",
+      "classes": "* Necromancer - Level 24",
       "msgCastOnYou": "A foreign surge of mana refreshes your mind.",
       "msgCastOnOther": "Someone twitches.",
       "illusion": false,
@@ -23483,6 +23686,7 @@
       "name": "Reagent Conservation I",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -23498,6 +23702,7 @@
       "name": "Reagent Conservation II",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -23513,6 +23718,7 @@
       "name": "Reagent Conservation III",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -23543,6 +23749,7 @@
       "name": "Reanimation Efficiency I",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -23558,6 +23765,7 @@
       "name": "Reanimation Efficiency II",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -23570,9 +23778,26 @@
       ]
     },
     {
+      "name": "Reanimation Efficiency III",
+      "durationText": "2:06:00",
+      "durationMs": 7560000,
+      "castTimeMs": 0,
+      "targetType": "Self",
+      "spellType": "Beneficial",
+      "classes": "No eligible class",
+      "illusion": false,
+      "effects": [
+        "Decrease Spell Mana Cost by 1% to 25%",
+        "Limit Max Level: 60 (lose 5% per level after)",
+        "Limit Effect: Summon Skeleton Pet",
+        "Limit Type: Exclude Combat Skills"
+      ]
+    },
+    {
       "name": "Reanimation Haste I",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -23588,6 +23813,7 @@
       "name": "Reanimation Haste II",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -23603,6 +23829,7 @@
       "name": "Reanimation Haste III",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -23809,7 +24036,7 @@
       "mana": 0,
       "effects": [
         "Decrease INT by 2 (L1) to 61 (L60)",
-        "Decrease Attack Speed by 20% / (Decrease STR by 2 (L1) to 61 (L60)??)",
+        "Decrease Attack Speed by 20%",
         "Increase Hitpoints by 2 per tick (L1) to 61 per tick (L60)"
       ]
     },
@@ -24378,11 +24605,11 @@
       "mana": 40,
       "effects": [
         "Increase Damage Shield by 2",
-        "Increase Armor Class by 30"
+        "Increase Armor Class by 10"
       ]
     },
     {
-      "name": "Ring of Butcher",
+      "name": "Ring of Butcherblock",
       "durationText": "Instant",
       "durationMs": null,
       "castTimeMs": 7000,
@@ -24494,22 +24721,6 @@
       ]
     },
     {
-      "name": "Ring of Karana",
-      "durationText": "Instant",
-      "durationMs": null,
-      "castTimeMs": 7000,
-      "recastMs": 10000,
-      "targetType": "Self",
-      "spellType": "Beneficial",
-      "classes": "* Druid - Level 15",
-      "msgCastOnOther": "Someone fades away.",
-      "illusion": false,
-      "mana": 150,
-      "effects": [
-        "Teleport group to -2706,-1494,-4 in North Karana"
-      ]
-    },
-    {
       "name": "Ring of Lavastorm",
       "durationText": "Instant",
       "durationMs": null,
@@ -24558,6 +24769,22 @@
       ]
     },
     {
+      "name": "Ring of North Karana",
+      "durationText": "Instant",
+      "durationMs": null,
+      "castTimeMs": 7000,
+      "recastMs": 10000,
+      "targetType": "Self",
+      "spellType": "Beneficial",
+      "classes": "* Druid - Level 15",
+      "msgCastOnOther": "Someone fades away.",
+      "illusion": false,
+      "mana": 150,
+      "effects": [
+        "Teleport group to -2706,-1494,-4 in North Karana"
+      ]
+    },
+    {
       "name": "Ring of Ro",
       "durationText": "Instant",
       "durationMs": null,
@@ -24587,23 +24814,6 @@
       "mana": 150,
       "effects": [
         "Teleport group to -2034,317,-19 in South Ro"
-      ]
-    },
-    {
-      "name": "Ring of South Ro",
-      "durationText": "Instant",
-      "durationMs": null,
-      "castTimeMs": 16000,
-      "recastMs": 10000,
-      "targetType": "Group",
-      "spellType": "Beneficial",
-      "classes": "* Druid - Level 25",
-      "msgCastOnOther": "Player creates a mystic portal.",
-      "msgWearsOff": "The portal shimmers and fades.",
-      "illusion": false,
-      "mana": 300,
-      "effects": [
-        "Teleport group to -2135,1984,3 in Butcherblock Mountains"
       ]
     },
     {
@@ -25390,8 +25600,8 @@
       "mana": 199,
       "effects": [
         "Increase Disease Counter by 4",
-        "Decrease Hitpoints by 24 per tick",
-        "Decrease HP when cast by 40"
+        "Decrease Hitpoints by 98 per tick",
+        "Decrease HP when cast by 58"
       ]
     },
     {
@@ -25684,7 +25894,7 @@
       "instrumentEnhanced": "Yes"
     },
     {
-      "name": "Selo's Assonant Strain",
+      "name": "Selo's Assonant Strane",
       "durationText": "3 ticks",
       "durationMs": 18000,
       "castTimeMs": 3000,
@@ -26114,7 +26324,7 @@
       "classes": "* Druid - Level 45",
       "msgCastOnYou": "You are now a wolf.",
       "msgCastOnOther": "Player turns into a wolf.",
-      "msgWearsOff": "You are no longer a wolf. || where_to_obtain = }}",
+      "msgWearsOff": "You are no longer a wolf.",
       "illusion": true,
       "mana": 350,
       "effects": [
@@ -26299,26 +26509,6 @@
       "durationMs": 18000,
       "castTimeMs": 3000,
       "recastMs": 0,
-      "targetType": "Group",
-      "spellType": "Beneficial",
-      "classes": "* Bard - Level 49",
-      "msgCastOnYou": "You are surrounded by a shield of song.",
-      "msgCastOnOther": "Someone is surrounded by a shield of songs.",
-      "msgWearsOff": "The shield of songs fades.",
-      "illusion": false,
-      "mana": 0,
-      "effects": [
-        "Absorb 20 damage per hit (up to 45 total)",
-        "Increase Absorb Magic Damage by 20"
-      ],
-      "instrumentEnhanced": "Yes"
-    },
-    {
-      "name": "Shield of Song",
-      "durationText": "3 ticks",
-      "durationMs": 18000,
-      "castTimeMs": 3000,
-      "recastMs": 0,
       "targetType": "Party",
       "spellType": "Beneficial",
       "classes": "* Bard - Level 49",
@@ -26329,6 +26519,26 @@
       "mana": 0,
       "effects": [
         "Increase Absorb Damage by 20",
+        "Increase Absorb Magic Damage by 20"
+      ],
+      "instrumentEnhanced": "Yes"
+    },
+    {
+      "name": "Shield of Songs",
+      "durationText": "3 ticks",
+      "durationMs": 18000,
+      "castTimeMs": 3000,
+      "recastMs": 0,
+      "targetType": "Group",
+      "spellType": "Beneficial",
+      "classes": "* Bard - Level 49",
+      "msgCastOnYou": "You are surrounded by a shield of song.",
+      "msgCastOnOther": "Someone is surrounded by a shield of songs.",
+      "msgWearsOff": "The shield of songs fades.",
+      "illusion": false,
+      "mana": 0,
+      "effects": [
+        "Absorb 20 damage per hit (up to 45 total)",
         "Increase Absorb Magic Damage by 20"
       ],
       "instrumentEnhanced": "Yes"
@@ -26407,7 +26617,7 @@
       ]
     },
     {
-      "name": "Shield of Thorns (Spell)",
+      "name": "Shield of Thorns",
       "durationText": "4.9 minutes @L49 to 6.5 minutes @L65",
       "durationMs": 390000,
       "castTimeMs": 3000,
@@ -26425,7 +26635,7 @@
       ]
     },
     {
-      "name": "Shield of Thorns (Spell)",
+      "name": "Shield of Thorns",
       "durationText": "15 Min",
       "durationMs": 900000,
       "castTimeMs": 3000,
@@ -26620,23 +26830,6 @@
       "mana": 8,
       "effects": [
         "Decrease Hitpoints by 4 (L1) to 6 (L4)"
-      ]
-    },
-    {
-      "name": "Shock of Frost",
-      "durationText": "Instant",
-      "durationMs": null,
-      "castTimeMs": 1500,
-      "recastMs": 1500,
-      "targetType": "Single",
-      "spellType": "Detrimental",
-      "classes": "* Wizard - Level 1 (Autogranted)",
-      "msgCastOnYou": "Your skin goes numb.",
-      "msgCastOnOther": "Someone 's skin goes numb.",
-      "illusion": false,
-      "mana": 8,
-      "effects": [
-        "Decrease Hitpoints by 11 (L1) to 28 (L9)"
       ]
     },
     {
@@ -26865,6 +27058,24 @@
       ]
     },
     {
+      "name": "Shroud of Hate Recourse",
+      "durationText": "10 minutes",
+      "durationMs": 600000,
+      "castTimeMs": 1500,
+      "recastMs": 6000,
+      "targetType": "Self",
+      "spellType": "Beneficial",
+      "classes": "* Shadow Knight - Level 39",
+      "msgCastOnYou": "Hatred fuels your arms.",
+      "msgCastOnOther": "Someone has been strengthened by hatred.",
+      "msgWearsOff": "The hatred departs.",
+      "illusion": false,
+      "mana": 60,
+      "effects": [
+        "Increase ATK by 20"
+      ]
+    },
+    {
       "name": "Shroud of Pain",
       "durationText": "10 minutes",
       "durationMs": 600000,
@@ -27079,24 +27290,6 @@
       "mana": 5,
       "effects": [
         "Decrease STR by 5 (L1) to 10 (L10)"
-      ]
-    },
-    {
-      "name": "siphon strength recourse",
-      "durationText": "10 minutes",
-      "durationMs": 600000,
-      "castTimeMs": 1500,
-      "recastMs": 6000,
-      "targetType": "Self",
-      "spellType": "Beneficial",
-      "classes": "* Shadow Knight - Level 39",
-      "msgCastOnYou": "Hatred fuels your arms.",
-      "msgCastOnOther": "Someone has been strengthened by hatred.",
-      "msgWearsOff": "The hatred departs.",
-      "illusion": false,
-      "mana": 60,
-      "effects": [
-        "Increase ATK by 20"
       ]
     },
     {
@@ -27436,7 +27629,7 @@
       "illusion": false,
       "mana": 180,
       "effects": [
-        "Increase Current Hit Points by 160 per Tick",
+        "Increase Current Hit Points by 200 per Tick",
         "Decrease Movement Speed by 100%"
       ]
     },
@@ -27528,27 +27721,7 @@
       ]
     },
     {
-      "name": "Solon's Bravura",
-      "durationText": "18 seconds",
-      "durationMs": 18000,
-      "castTimeMs": 3000,
-      "recastMs": 0,
-      "targetType": "Single",
-      "spellType": "Detrimental",
-      "classes": "* Bard - Level 39",
-      "msgCastOnYou": "You are captivated by the bewitching tune.",
-      "msgCastOnOther": "Someone 's eyes glaze over.",
-      "msgWearsOff": "You are no longer captivated.",
-      "illusion": false,
-      "mana": 20,
-      "effects": [
-        "Charm up to level 51",
-        "Decrease Magic Resist by 5 (L39) to 8 (L60)",
-        "Requires: 20 Mana"
-      ]
-    },
-    {
-      "name": "Solon's Bravura",
+      "name": "Solon's Bewitching Bravura",
       "durationText": "1 Min",
       "durationMs": 60000,
       "castTimeMs": 3000,
@@ -27567,6 +27740,26 @@
         "Requires: 20 Mana"
       ],
       "instrumentEnhanced": "Yes (just resists debuff)"
+    },
+    {
+      "name": "Solon's Bravura",
+      "durationText": "18 seconds",
+      "durationMs": 18000,
+      "castTimeMs": 3000,
+      "recastMs": 0,
+      "targetType": "Single",
+      "spellType": "Detrimental",
+      "classes": "* Bard - Level 39",
+      "msgCastOnYou": "You are captivated by the bewitching tune.",
+      "msgCastOnOther": "Someone 's eyes glaze over.",
+      "msgWearsOff": "You are no longer captivated.",
+      "illusion": false,
+      "mana": 20,
+      "effects": [
+        "Charm up to level 51",
+        "Decrease Magic Resist by 5 (L39) to 8 (L60)",
+        "Requires: 20 Mana"
+      ]
     },
     {
       "name": "Solon's Charismatic Concord",
@@ -27723,119 +27916,6 @@
         "Level Cap: 54"
       ],
       "instrumentEnhanced": "No"
-    },
-    {
-      "name": "Song: Composition of Ervaj",
-      "durationText": "3 ticks",
-      "durationMs": 18000,
-      "castTimeMs": 3000,
-      "recastMs": 0,
-      "targetType": "Party",
-      "spellType": "Beneficial",
-      "classes": "* Bard - Level 60",
-      "msgCastOnYou": "A song of inspiration fills your weapon arm with strength.",
-      "illusion": false,
-      "mana": 0,
-      "effects": [
-        "Increase Haste v2 by 10%",
-        "Increase AC by 9 (L60) to 9 (L65)"
-      ],
-      "instrumentEnhanced": "Yes (except attack speed)"
-    },
-    {
-      "name": "Song: Composition of Ervaj",
-      "durationText": "3 ticks",
-      "durationMs": 18000,
-      "castTimeMs": 3000,
-      "recastMs": 0,
-      "targetType": "Party",
-      "spellType": "Beneficial",
-      "classes": "* Bard - Level 60",
-      "msgCastOnYou": "A song of inspiration fills your weapon arm with strength.",
-      "illusion": false,
-      "mana": 0,
-      "effects": [
-        "Increase Haste v2 by 10%",
-        "Increase AC by 9 (L60) to 9 (L65)"
-      ]
-    },
-    {
-      "name": "Song: Melody of Ervaj",
-      "durationText": "3 ticks",
-      "durationMs": 18000,
-      "castTimeMs": 3000,
-      "recastMs": 0,
-      "targetType": "Group",
-      "spellType": "Beneficial",
-      "classes": "* Bard - Level 50",
-      "msgCastOnYou": "A song of inspiration fills your weapon arm with strength.",
-      "msgWearsOff": "The inspiration fades.",
-      "illusion": false,
-      "mana": 0,
-      "effects": [
-        "Increase Melee Haste by 5%",
-        "Increase AC by 5 (L50) to 6 (L65)"
-      ],
-      "instrumentEnhanced": "Required"
-    },
-    {
-      "name": "Song: Melody of Ervaj",
-      "durationText": "3 ticks",
-      "durationMs": 18000,
-      "castTimeMs": 3000,
-      "recastMs": 0,
-      "targetType": "Party",
-      "spellType": "Beneficial",
-      "classes": "* Bard - Level 50",
-      "msgCastOnYou": "A song of inspiration fills your weapon arm with strength.",
-      "msgWearsOff": "The inspiration fades.",
-      "illusion": false,
-      "mana": 0,
-      "effects": [
-        "Increase Haste v2 by 5%",
-        "Increase AC by 5 (L50) to 6 (L65)"
-      ]
-    },
-    {
-      "name": "Song: Occlusion of Sound",
-      "durationText": "3 ticks",
-      "durationMs": 18000,
-      "castTimeMs": 3000,
-      "recastMs": 0,
-      "targetType": "Single",
-      "spellType": "Detrimental",
-      "classes": "* Bard - Level 55",
-      "msgCastOnYou": "You reel in pain as every bone in your body vibrates.",
-      "msgCastOnOther": "Someone reels in pain and loses concentration.",
-      "illusion": false,
-      "mana": 0,
-      "effects": [
-        "Decrease Cold Resist by 10",
-        "Decrease Fire Resist by 10",
-        "Decrease Magic Resist by 10",
-        "Unresistable"
-      ],
-      "instrumentEnhanced": "Required"
-    },
-    {
-      "name": "Song: Occlusion of Sound",
-      "durationText": "3 ticks",
-      "durationMs": 18000,
-      "castTimeMs": 3000,
-      "recastMs": 0,
-      "targetType": "Single",
-      "spellType": "Detrimental",
-      "classes": "* Bard - Level 55",
-      "msgCastOnYou": "You reel in pain as every bone in your body vibrates.",
-      "msgCastOnOther": "Someone reels in pain and loses concentration.",
-      "illusion": false,
-      "mana": 0,
-      "effects": [
-        "Decrease Cold Resist by 10",
-        "Decrease Fire Resist by 10",
-        "Decrease Magic Resist by 10",
-        "Unresistable"
-      ]
     },
     {
       "name": "Sonic Scream",
@@ -28028,7 +28108,7 @@
       "illusion": false,
       "mana": 60,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Summoned: Spear of Warding"
       ]
     },
     {
@@ -28090,6 +28170,7 @@
       "name": "Spell Haste I",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -28106,6 +28187,7 @@
       "name": "Spell Haste II",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -28130,7 +28212,7 @@
       "illusion": false,
       "mana": 10,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Summoned: Light Globe"
       ]
     },
     {
@@ -28246,6 +28328,7 @@
       "name": "Spirit of Blizzard Strike",
       "durationText": "Instant",
       "durationMs": null,
+      "castTimeMs": 0,
       "targetType": "Single",
       "spellType": "Detrimental",
       "classes": "This is a proc from the Spirit of the Blizzard spell.",
@@ -28332,6 +28415,7 @@
       "name": "Spirit of Inferno Strike",
       "durationText": "Instant",
       "durationMs": null,
+      "castTimeMs": 0,
       "targetType": "Single",
       "spellType": "Detrimental",
       "classes": "This is a proc from the Spirit of Inferno spell.",
@@ -28416,6 +28500,7 @@
       "name": "Spirit of Lightning Strike",
       "durationText": "Instant",
       "durationMs": null,
+      "castTimeMs": 0,
       "targetType": "Single",
       "spellType": "Detrimental",
       "classes": "This is a proc from the Spirit of Lightning spell.",
@@ -28508,6 +28593,7 @@
       "name": "Spirit of Scorpion Strike",
       "durationText": "Instant",
       "durationMs": null,
+      "castTimeMs": 0,
       "targetType": "Single",
       "spellType": "Detrimental",
       "classes": "This is a proc from the Spirit of the Scorpion spell.",
@@ -28664,6 +28750,7 @@
       "name": "Spirit of Vermin Strike",
       "durationText": "Instant",
       "durationMs": null,
+      "castTimeMs": 0,
       "targetType": "Single",
       "spellType": "Detrimental",
       "classes": "This is a proc from the Spirit of Vermin spell.",
@@ -28723,7 +28810,7 @@
       "illusion": false,
       "mana": 40,
       "effects": [
-        "Summon Item: {{:Summoned: Spirit Pouch"
+        "Summon Item: Summoned: Spirit Pouch"
       ]
     },
     {
@@ -28955,7 +29042,7 @@
       "illusion": false,
       "mana": 60,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Summoned: Staff of Runes"
       ]
     },
     {
@@ -28970,7 +29057,7 @@
       "illusion": false,
       "mana": 80,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Summoned: Staff of Symbols"
       ]
     },
     {
@@ -28985,7 +29072,7 @@
       "illusion": false,
       "mana": 20,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Summoned: Staff of Tracing"
       ]
     },
     {
@@ -29000,7 +29087,7 @@
       "illusion": false,
       "mana": 40,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Summoned: Staff of Warding"
       ]
     },
     {
@@ -29087,13 +29174,14 @@
       "illusion": false,
       "mana": 50,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Summoned: Globe of Stars"
       ]
     },
     {
       "name": "Static",
       "durationText": "Instant",
       "durationMs": null,
+      "castTimeMs": 0,
       "recastMs": 7000,
       "targetType": "Single",
       "spellType": "Detrimental",
@@ -29520,6 +29608,7 @@
       "name": "String Resonance 11",
       "durationText": "1:57:00",
       "durationMs": 7020000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "classes": "BRD",
       "illusion": false,
@@ -29531,22 +29620,12 @@
       "name": "String Resonance 14",
       "durationText": "2:30:00",
       "durationMs": 9000000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "classes": "BRD",
       "illusion": false,
       "effects": [
         "Increases the power of stringed instrument based bard songs by up to 140%"
-      ]
-    },
-    {
-      "name": "String Resonance 14",
-      "durationText": "2:30:00",
-      "durationMs": 9000000,
-      "targetType": "Self",
-      "classes": "BRD",
-      "illusion": false,
-      "effects": [
-        "Increases the power of wind instrument based bard songs by up to 140%"
       ]
     },
     {
@@ -29587,6 +29666,26 @@
         "Increase Disease Counter by 3",
         "Decrease HP when cast by 20",
         "Decrease Hitpoints by 3 per tick"
+      ]
+    },
+    {
+      "name": "Strong Poison",
+      "durationText": "2 minutes",
+      "durationMs": 120000,
+      "castTimeMs": 0,
+      "recastMs": 0,
+      "targetType": "Single",
+      "spellType": "Detrimental",
+      "classes": "This spell is cast by NPCs only.",
+      "msgCastOnYou": "You have been poisoned. (?)",
+      "msgCastOnOther": "Someone has been poisoned. (?)",
+      "msgWearsOff": "The poison has run its course. (?)",
+      "illusion": false,
+      "mana": 0,
+      "effects": [
+        "Increase Poison Counter by 4",
+        "Decrease HP when cast by 30",
+        "Decrease Hitpoints by 14 per tick"
       ]
     },
     {
@@ -29921,7 +30020,7 @@
       "illusion": false,
       "mana": 30,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Summoned: Arrow"
       ]
     },
     {
@@ -29936,7 +30035,7 @@
       "illusion": false,
       "mana": 15,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Summoned: Bandages"
       ]
     },
     {
@@ -29951,7 +30050,7 @@
       "illusion": false,
       "mana": 40,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Summoned: Jedah's Brass Choker"
       ]
     },
     {
@@ -29966,7 +30065,7 @@
       "illusion": false,
       "mana": 40,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Summoned: Coldstone"
       ]
     },
     {
@@ -30013,7 +30112,7 @@
       "illusion": false,
       "mana": 10,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Summoned: Dagger"
       ]
     },
     {
@@ -30044,7 +30143,18 @@
       "illusion": false,
       "mana": 10,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Summoned: Globe of Water"
+      ]
+    },
+    {
+      "name": "Summon Drogmor",
+      "durationMs": null,
+      "castTimeMs": 3000,
+      "targetType": "Self",
+      "spellType": "Beneficial",
+      "illusion": false,
+      "effects": [
+        "Summons a drogmor mount"
       ]
     },
     {
@@ -30059,7 +30169,7 @@
       "illusion": false,
       "mana": 220,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Summoned: Elemental Blanket"
       ]
     },
     {
@@ -30074,7 +30184,24 @@
       "illusion": false,
       "mana": 40,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Summoned: Elemental Defender"
+      ]
+    },
+    {
+      "name": "Summon Familiar: Murderbee",
+      "durationText": "6:00:00",
+      "durationMs": 21600000,
+      "castTimeMs": 14000,
+      "recastMs": 1000,
+      "targetType": "Self",
+      "spellType": "Beneficial",
+      "classes": "NPC Only Spell",
+      "msgCastOnYou": "You summon forth a small murderbee.",
+      "msgCastOnOther": "Soandso summons forth a small murderbee.",
+      "msgWearsOff": "Your small murderbee departs.",
+      "illusion": false,
+      "effects": [
+        "Summon Familiar: Murderbee"
       ]
     },
     {
@@ -30089,7 +30216,7 @@
       "illusion": false,
       "mana": 40,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Summoned: Snake Fang"
       ]
     },
     {
@@ -30104,7 +30231,7 @@
       "illusion": false,
       "mana": 10,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Summoned: Black Bread"
       ]
     },
     {
@@ -30119,7 +30246,7 @@
       "illusion": false,
       "mana": 160,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Summoned: Jedah's Golden Choker"
       ]
     },
     {
@@ -30149,7 +30276,7 @@
       "illusion": false,
       "mana": 40,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Summoned: Heatstone"
       ]
     },
     {
@@ -30168,6 +30295,17 @@
       ]
     },
     {
+      "name": "Summon Horse",
+      "durationMs": null,
+      "castTimeMs": 3000,
+      "targetType": "Self",
+      "spellType": "Beneficial",
+      "illusion": false,
+      "effects": [
+        "Summons a horse mount"
+      ]
+    },
+    {
       "name": "Summon Jade Bracelet",
       "durationText": "Instant",
       "durationMs": null,
@@ -30179,7 +30317,7 @@
       "illusion": false,
       "mana": 40,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Summoned: Gallenite's Jade Bracelet"
       ]
     },
     {
@@ -30209,7 +30347,7 @@
       "illusion": false,
       "mana": 80,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Summoned: Tavee's Leather Mantle"
       ]
     },
     {
@@ -30224,7 +30362,7 @@
       "illusion": false,
       "mana": 40,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Summoned: Tavee's Linen Mantle"
       ]
     },
     {
@@ -30239,7 +30377,7 @@
       "illusion": false,
       "mana": 80,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Summoned: Gallenite's Opal Bracelet"
       ]
     },
     {
@@ -30256,24 +30394,7 @@
       "illusion": false,
       "mana": 500,
       "effects": [
-        "Summon Item:"
-      ]
-    },
-    {
-      "name": "Summon Orb",
-      "durationText": "Instant",
-      "durationMs": null,
-      "castTimeMs": 5000,
-      "recastMs": 300000,
-      "targetType": "Self",
-      "spellType": "Beneficial",
-      "classes": "* Magician - Level 46",
-      "msgCastOnYou": "A swirling orb of elements forms in your hand.",
-      "msgCastOnOther": "Someone summons a swirling orb of elements.",
-      "illusion": false,
-      "mana": 500,
-      "effects": [
-        "Summon Item:"
+        "Summon Item: Orb of Mastery"
       ]
     },
     {
@@ -30289,15 +30410,15 @@
       "illusion": false,
       "mana": 200,
       "effects": [
-        "Summon Item:",
-        "Summon Into Bag:",
-        "Summon Into Bag:",
-        "Summon Into Bag:",
-        "Summon Into Bag:",
-        "Summon Into Bag:",
-        "Summon Into Bag:",
-        "Summon Into Bag:",
-        "Summon Into Bag:"
+        "Summon Item: Summoned: Phantom Satchel",
+        "Summon Into Bag: Summoned: Phantom Chain Coif",
+        "Summon Into Bag: Summoned: Phantom Chain Coat",
+        "Summon Into Bag: Summoned: Phantom Chain Sleeves",
+        "Summon Into Bag: Summoned: Phantom Chain Bracer",
+        "Summon Into Bag: Summoned: Phantom Chain Bracer",
+        "Summon Into Bag: Summoned: Phantom Chain Gloves",
+        "Summon Into Bag: Summoned: Phantom Chain Greaves",
+        "Summon Into Bag: Summoned: Phantom Chain Boots"
       ]
     },
     {
@@ -30313,15 +30434,15 @@
       "illusion": false,
       "mana": 100,
       "effects": [
-        "Summon Item:",
-        "Summon Into Bag:",
-        "Summon Into Bag:",
-        "Summon Into Bag:",
-        "Summon Into Bag:",
-        "Summon Into Bag:",
-        "Summon Into Bag:",
-        "Summon Into Bag:",
-        "Summon Into Bag:"
+        "Summon Item: Summoned: Phantom Satchel",
+        "Summon Into Bag: Summoned: Phantom Leather Skullcap",
+        "Summon Into Bag: Summoned: Phantom Leather Tunic",
+        "Summon Into Bag: Summoned: Phantom Leather Sleeves",
+        "Summon Into Bag: Summoned: Phantom Leather Bracer",
+        "Summon Into Bag: Summoned: Phantom Leather Bracer",
+        "Summon Into Bag: Summoned: Phantom Leather Gloves",
+        "Summon Into Bag: Summoned: Phantom Leather Leggings",
+        "Summon Into Bag: Summoned: Phantom Leather Boots"
       ]
     },
     {
@@ -30337,15 +30458,15 @@
       "illusion": false,
       "mana": 300,
       "effects": [
-        "Summon Item:",
-        "Summon Into Bag:",
-        "Summon Into Bag:",
-        "Summon Into Bag:",
-        "Summon Into Bag:",
-        "Summon Into Bag:",
-        "Summon Into Bag:",
-        "Summon Into Bag:",
-        "Summon Into Bag:"
+        "Summon Item: Summoned: Phantom Satchel",
+        "Summon Into Bag: Summoned: Phantom Plate Helm",
+        "Summon Into Bag: Summoned: Phantom Breastplate",
+        "Summon Into Bag: Summoned: Phantom Plate Vambraces",
+        "Summon Into Bag: Summoned: Phantom Plate Bracers",
+        "Summon Into Bag: Summoned: Phantom Plate Bracers",
+        "Summon Into Bag: Summoned: Phantom Plate Gauntlets",
+        "Summon Into Bag: Summoned: Phantom Plate Greaves",
+        "Summon Into Bag: Summoned: Phantom Plate Boots"
       ]
     },
     {
@@ -30360,7 +30481,7 @@
       "illusion": false,
       "mana": 100,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Summoned: Ring of Flight"
       ]
     },
     {
@@ -30375,7 +30496,7 @@
       "illusion": false,
       "mana": 50,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Summoned: Shard of the Core"
       ]
     },
     {
@@ -30390,7 +30511,7 @@
       "illusion": false,
       "mana": 80,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Summoned: Jolum's Shiny Bauble"
       ]
     },
     {
@@ -30405,7 +30526,7 @@
       "illusion": false,
       "mana": 80,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Summoned: Jedah's Silver Choker"
       ]
     },
     {
@@ -30420,7 +30541,7 @@
       "illusion": false,
       "mana": 80,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Summoned: Rallican's Stone Bracelet"
       ]
     },
     {
@@ -30435,7 +30556,7 @@
       "illusion": false,
       "mana": 40,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Summoned: Jolum's Tarnished Bauble"
       ]
     },
     {
@@ -30450,7 +30571,7 @@
       "illusion": false,
       "mana": 20,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Summoned: Throwing Dagger"
       ]
     },
     {
@@ -30480,7 +30601,7 @@
       "illusion": false,
       "mana": 40,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Summoned: Naki's Tiny Ring"
       ]
     },
     {
@@ -30495,7 +30616,7 @@
       "illusion": false,
       "mana": 80,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Summoned: Naki's Twisted Ring"
       ]
     },
     {
@@ -30510,7 +30631,7 @@
       "illusion": false,
       "mana": 40,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Summoned: Waterstone"
       ]
     },
     {
@@ -30527,7 +30648,7 @@
       "illusion": false,
       "mana": 30,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Summoned: Wisp Stone"
       ]
     },
     {
@@ -30542,22 +30663,7 @@
       "illusion": false,
       "mana": 40,
       "effects": [
-        "Summon Item:"
-      ]
-    },
-    {
-      "name": "Summon: Muzzle of Mardu",
-      "durationText": "Instant",
-      "durationMs": null,
-      "castTimeMs": 4000,
-      "recastMs": 2250,
-      "targetType": "Self",
-      "spellType": "Beneficial",
-      "classes": "* Magician - Level 56",
-      "illusion": false,
-      "mana": 100,
-      "effects": [
-        "Summon Item: Summoned: Muzzle of Mardu"
+        "Summon Item: Summoned: Rallican's Wooden Bracelet"
       ]
     },
     {
@@ -30572,7 +30678,7 @@
       "illusion": false,
       "mana": 50,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Summoned: Orb of Exploration"
       ]
     },
     {
@@ -30596,6 +30702,7 @@
       "name": "Summoning Efficiency I",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -30611,6 +30718,7 @@
       "name": "Summoning Efficiency II",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -30626,6 +30734,7 @@
       "name": "Summoning Haste I",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -30641,6 +30750,7 @@
       "name": "Summoning Haste II",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -30656,6 +30766,7 @@
       "name": "Summoning Haste III",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -30987,7 +31098,7 @@
       "illusion": false,
       "mana": 75,
       "effects": [
-        "Summon Item:"
+        "Summon Item: Summoned: Sword of Runes"
       ]
     },
     {
@@ -31642,6 +31753,7 @@
       "name": "Tavee's Charm of Diuturnity",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -31661,6 +31773,7 @@
       "name": "Tavee's Greater Diuturnity",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -31680,6 +31793,7 @@
       "name": "Tavee's Lesser Diuturnity",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -31699,6 +31813,7 @@
       "name": "Tavee's Superior Diuturnity",
       "durationText": "2:24:00 (3:36:00)",
       "durationMs": 8640000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "spellType": "Beneficial",
       "classes": "No eligible class",
@@ -32249,7 +32364,7 @@
       ]
     },
     {
-      "name": "Torbas Acid Blast",
+      "name": "Torbas' Acid Blast",
       "durationText": "Instant",
       "durationMs": null,
       "castTimeMs": 3500,
@@ -32266,7 +32381,7 @@
       ]
     },
     {
-      "name": "Torbas Poison Blast",
+      "name": "Torbas' Poison Blast",
       "durationText": "Instant",
       "durationMs": null,
       "castTimeMs": 4000,
@@ -32915,7 +33030,7 @@
       ]
     },
     {
-      "name": "Travelers Boots",
+      "name": "TravelerBoots",
       "durationText": "3 minutes @L1 to 18 minutes @L6",
       "durationMs": 1080000,
       "castTimeMs": 0,
@@ -34269,6 +34384,23 @@
       ]
     },
     {
+      "name": "Wave of Heat",
+      "durationText": "Instant",
+      "durationMs": null,
+      "castTimeMs": 0,
+      "recastMs": 12000,
+      "targetType": "Targeted AE",
+      "spellType": "Detrimental",
+      "classes": "This spell is cast by NPCs only.",
+      "msgCastOnYou": "A blast of heat sears your skin.",
+      "msgCastOnOther": "Someone 's skin sears.",
+      "illusion": false,
+      "mana": 0,
+      "effects": [
+        "Decrease Hitpoints by 200"
+      ]
+    },
+    {
       "name": "Wave of Life",
       "durationText": "Instant",
       "durationMs": null,
@@ -34718,25 +34850,6 @@
       ]
     },
     {
-      "name": "Wind of Tashani",
-      "durationText": "12 minutes @L55 to 13 minutes @L60",
-      "durationMs": 780000,
-      "castTimeMs": 1000,
-      "recastMs": 2250,
-      "targetType": "Targeted AE",
-      "spellType": "Detrimental",
-      "classes": "* Enchanter - Level 55",
-      "msgCastOnYou": "You hear the barking of the Tashani.",
-      "msgCastOnOther": "Someone glances nervously about.",
-      "msgWearsOff": "The barking fades.",
-      "illusion": false,
-      "mana": 45,
-      "effects": [
-        "Increase Poison Counter by 1",
-        "Decrease Magic Resist by 23"
-      ]
-    },
-    {
       "name": "Wind of the North",
       "durationText": "Instant",
       "durationMs": null,
@@ -34771,6 +34884,25 @@
       ]
     },
     {
+      "name": "Wind of Tishani",
+      "durationText": "12 minutes @L55 to 13 minutes @L60",
+      "durationMs": 780000,
+      "castTimeMs": 1000,
+      "recastMs": 2250,
+      "targetType": "Targeted AE",
+      "spellType": "Detrimental",
+      "classes": "* Enchanter - Level 55",
+      "msgCastOnYou": "You hear the barking of the Tashani.",
+      "msgCastOnOther": "Someone glances nervously about.",
+      "msgWearsOff": "The barking fades.",
+      "illusion": false,
+      "mana": 45,
+      "effects": [
+        "Increase Poison Counter by 1",
+        "Decrease Magic Resist by 23"
+      ]
+    },
+    {
       "name": "Wind of Tishanian",
       "durationText": "13 minutes @L60",
       "durationMs": 780000,
@@ -34793,11 +34925,46 @@
       "name": "Wind Resonance 10",
       "durationText": "1:54:00",
       "durationMs": 6840000,
+      "castTimeMs": 0,
       "targetType": "Self",
       "classes": "BRD",
       "illusion": false,
       "effects": [
         "Increases the power of wind instrument based bard songs by up to 100%"
+      ]
+    },
+    {
+      "name": "Wind Resonance 11",
+      "durationText": "1:54:00",
+      "durationMs": 6840000,
+      "castTimeMs": 0,
+      "targetType": "Self",
+      "classes": "BRD",
+      "illusion": false,
+      "effects": [
+        "Increases the power of wind instrument based bard songs by up to 110%"
+      ]
+    },
+    {
+      "name": "Wind Resonance 14",
+      "durationText": "2:30:00",
+      "durationMs": 9000000,
+      "castTimeMs": 0,
+      "targetType": "Self",
+      "classes": "BRD",
+      "illusion": false,
+      "effects": [
+        "Increases the power of wind instrument based bard songs by up to 140%"
+      ]
+    },
+    {
+      "name": "Wind Resonance 8",
+      "durationMs": null,
+      "spellType": "Beneficial",
+      "classes": "NPC Only Spell",
+      "illusion": false,
+      "effects": [
+        "Increases the power of wind instrument based bard songs by up to 80%"
       ]
     },
     {
@@ -35081,7 +35248,7 @@
       ]
     },
     {
-      "name": "Wrath of Ap'Sagor",
+      "name": "Wrath of Al'Kabor",
       "durationText": "Instant",
       "durationMs": null,
       "castTimeMs": 6300,

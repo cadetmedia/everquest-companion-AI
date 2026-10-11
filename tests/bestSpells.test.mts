@@ -417,7 +417,11 @@ test('JOS-448 over the real corpus: a necromancer at 35 has a DoT tab, and it is
     assert.equal(row.metrics.dot, undefined, row.name)
     assert.equal(dotNames.has(row.name), false, `${row.name} is in both damage tabs`)
   }
-  // The headline row is the era's signature necro DoT, and it is ranked by the same sustained dps.
-  assert.equal(dot[0].name, 'Venom of the Snake')
+  // The headline row is ranked by the same sustained dps. It was Venom of the Snake (9.1) until the
+  // 2026-10-10 delta run read the wiki's re-tuned necro DoTs: Scourge's page went from 40 + 24/tick
+  // to 58 + 98/tick (15.7) and Boil Blood's rose to 10.4, so both now outrank Venom, whose page did
+  // not change. Venom is still in the tab, below them.
+  assert.equal(dot[0].name, 'Scourge')
   assert.ok((dot[0].metrics.dps ?? 0) > 0)
+  assert.ok(dotNames.has('Venom of the Snake'), 'the former headline DoT is still on the tab')
 })

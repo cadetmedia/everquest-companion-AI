@@ -1,6 +1,6 @@
 {
  "source": "eqlwiki.com — |respawn_time on every page in the committed mob catalog",
- "scrapedAt": "2026-08-11",
+ "scrapedAt": "2026-09-29",
  "rows": [
   {
    "key": "a alchemist`s acolyte",
@@ -151,8 +151,8 @@
   {
    "key": "a ferocious hammerhead",
    "page": "A ferocious hammerhead",
-   "text": "22 min (with PH)",
-   "seconds": 1320
+   "text": "15 min",
+   "seconds": 900
   },
   {
    "key": "a frenzied ghoul",
@@ -177,6 +177,16 @@
    "page": "A ghoul ritualist",
    "text": "28 min 00 sec",
    "seconds": 1680
+  },
+  {
+   "key": "a giant wood spider",
+   "page": "A giant wood spider",
+   "text": "?"
+  },
+  {
+   "key": "a giant yellowjacket",
+   "page": "A giant yellowjacket",
+   "text": "?"
   },
   {
    "key": "a glacier bear",
@@ -209,8 +219,8 @@
   {
    "key": "a goblin scryer",
    "page": "A goblin scryer",
-   "text": "22 minutes",
-   "seconds": 1320
+   "text": "7 minutes",
+   "seconds": 420
   },
   {
    "key": "a goblin traitor",
@@ -230,10 +240,37 @@
    "seconds": 780
   },
   {
+   "key": "a halfling skeleton",
+   "page": "A halfling skeleton",
+   "text": "?"
+  },
+  {
+   "key": "a halfling zombie",
+   "page": "A halfling zombie",
+   "text": "?"
+  },
+  {
    "key": "a hermit",
    "page": "A Hermit",
    "text": "2 min",
    "seconds": 120
+  },
+  {
+   "key": "a kerran puma",
+   "page": "A kerran puma",
+   "text": "3 min",
+   "seconds": 180
+  },
+  {
+   "key": "a large fruit bat",
+   "page": "A large fruit bat",
+   "text": "?"
+  },
+  {
+   "key": "a large gorilla",
+   "page": "A large gorilla",
+   "text": "10 minutes",
+   "seconds": 600
   },
   {
    "key": "a lesser spirit",
@@ -270,6 +307,12 @@
    "seconds": 180
   },
   {
+   "key": "a reanimated hand",
+   "page": "A reanimated hand (Lower Guk)",
+   "text": "9.5 mins",
+   "seconds": 570
+  },
+  {
    "key": "a ry'gorr messenger",
    "page": "Ry'Gorr Messenger",
    "text": "1 hour (as of 1-Jun-2025 patch)",
@@ -297,9 +340,14 @@
    "seconds": 990
   },
   {
+   "key": "a sand scarab hatchling",
+   "page": "A sand scarab hatchling",
+   "text": "?"
+  },
+  {
    "key": "a seahorse matriarch",
    "page": "A seahorse matriarch",
-   "text": "15 minutes}}",
+   "text": "15 minutes",
    "seconds": 900
   },
   {
@@ -315,6 +363,12 @@
    "seconds": 86400
   },
   {
+   "key": "a silverflank guardian",
+   "page": "A Silverflank guardian",
+   "text": "10 minutes",
+   "seconds": 600
+  },
+  {
    "key": "a skeletal cook",
    "page": "A skeletal cook",
    "text": "18:20 min",
@@ -327,6 +381,12 @@
    "seconds": 600
   },
   {
+   "key": "a skulking brute",
+   "page": "A Skulking Brute",
+   "text": "6:40min",
+   "seconds": 400
+  },
+  {
    "key": "a sleeping ogre",
    "page": "A Sleeping Ogre",
    "text": "3 hours",
@@ -335,6 +395,11 @@
   {
    "key": "a soul tamer",
    "page": "A soul tamer",
+   "text": "Triggered"
+  },
+  {
+   "key": "a spectral shimmer",
+   "page": "A spectral shimmer",
    "text": "Triggered"
   },
   {
@@ -372,6 +437,12 @@
    "seconds": 870
   },
   {
+   "key": "a teir`dal priest",
+   "page": "A Teir`Dal priest",
+   "text": "4:27",
+   "seconds": 267
+  },
+  {
    "key": "a teir`dal priestess",
    "page": "A Teir`Dal priestess",
    "text": "4:27",
@@ -402,6 +473,11 @@
    "seconds": 400
   },
   {
+   "key": "a thorn drakeling",
+   "page": "A thorn drakeling",
+   "text": "?"
+  },
+  {
    "key": "a thought bleeder",
    "page": "A thought bleeder",
    "text": "Ultra Rare"
@@ -419,6 +495,18 @@
    "seconds": 21600
   },
   {
+   "key": "a tier'dal priest",
+   "page": "A Tier'Dal Priest",
+   "text": "10 minutes",
+   "seconds": 600
+  },
+  {
+   "key": "a tier'dal spellbinder",
+   "page": "A Tier'Dal Spellbinder",
+   "text": "10 minutes",
+   "seconds": 600
+  },
+  {
    "key": "a tortured revenant",
    "page": "A Tortured Revenant",
    "text": "Triggered"
@@ -432,6 +520,18 @@
    "key": "a treant",
    "page": "A Treant",
    "text": "4 min (South Karana) - 6 min 30 sec (West Karana)"
+  },
+  {
+   "key": "a troll greenblood",
+   "page": "A Troll Greenblood",
+   "text": "10 minutes",
+   "seconds": 600
+  },
+  {
+   "key": "a troll marauder",
+   "page": "A Troll Marauder",
+   "text": "10 minutes",
+   "seconds": 600
   },
   {
    "key": "a tundra yeti",
@@ -582,6 +682,11 @@
    "text": "?"
   },
   {
+   "key": "an orc lumberjack",
+   "page": "An orc lumberjack",
+   "text": "?"
+  },
+  {
    "key": "an undead bard",
    "page": "An Undead Bard",
    "text": "18 hours (+/- 3)",
@@ -686,8 +791,18 @@
    "text": "?"
   },
   {
+   "key": "bidils the quickhand",
+   "page": "Bidils the Quickhand",
+   "text": "?"
+  },
+  {
    "key": "bizazzzt",
    "page": "Bizazzzt",
+   "text": "Triggered"
+  },
+  {
+   "key": "bizzzzt",
+   "page": "Bizzzzt",
    "text": "Triggered"
   },
   {
@@ -774,8 +889,8 @@
   {
    "key": "cauldronbubble",
    "page": "Cauldronbubble",
-   "text": "6 hours",
-   "seconds": 21600
+   "text": "~14.5 min (Aug 18, 2026 - D1 zone)",
+   "seconds": 870
   },
   {
    "key": "ceel moonwhisper",
@@ -1140,8 +1255,7 @@
   {
    "key": "efreeti lord djarn",
    "page": "Efreeti Lord Djarn",
-   "text": "22 min",
-   "seconds": 1320
+   "text": "9 min respawn"
   },
   {
    "key": "eichvul",
@@ -1183,6 +1297,11 @@
    "page": "Enynti",
    "text": "22 minutes",
    "seconds": 1320
+  },
+  {
+   "key": "epicurean halfling",
+   "page": "Epicurean halfling",
+   "text": "?"
   },
   {
    "key": "equestrielle the corrupted",
@@ -1302,6 +1421,22 @@
    "page": "Garanel Rucksif",
    "text": "22 minutes (or A Festering Hag)",
    "seconds": 1320
+  },
+  {
+   "key": "garzicor's corpse",
+   "page": "Garzicor's Corpse",
+   "text": "[[Triggered]]"
+  },
+  {
+   "key": "garzicor's wraith",
+   "page": "Garzicor's Wraith",
+   "text": "[[Triggered]]"
+  },
+  {
+   "key": "gaz commander faltip",
+   "page": "Gaz Commander Faltip",
+   "text": "10 minutes",
+   "seconds": 600
   },
   {
    "key": "gharg oberbord",
@@ -1736,6 +1871,12 @@
    "seconds": 604800
   },
   {
+   "key": "ice goblin caster",
+   "page": "Ice goblin caster",
+   "text": "~1.5 minutes",
+   "seconds": 90
+  },
+  {
    "key": "ikatiar the venom",
    "page": "Ikatiar the Venom",
    "text": "7 days -/+ 8 hours",
@@ -1942,6 +2083,12 @@
    "seconds": 360
   },
   {
+   "key": "lasna cheroon",
+   "page": "Lasna Cheroon",
+   "text": "8:50",
+   "seconds": 530
+  },
+  {
    "key": "lava elemental",
    "page": "Lava elemental",
    "text": "~18 min",
@@ -1990,7 +2137,8 @@
   {
    "key": "lodizal",
    "page": "Lodizal",
-   "text": "18 hours([[variance"
+   "text": "18 hours([[variance|+/-1]])",
+   "seconds": 64800
   },
   {
    "key": "lord doljonijiarnimorinar",
@@ -2224,8 +2372,7 @@
   {
    "key": "phinigel autropos",
    "page": "Phinigel Autropos",
-   "text": "12 hours",
-   "seconds": 43200
+   "text": "Spawns once per raid instance"
   },
   {
    "key": "pietro drast",
@@ -2267,6 +2414,12 @@
    "seconds": 400
   },
   {
+   "key": "recfek shralok",
+   "page": "Recfek Shralok (Highpass Hold)",
+   "text": "6.5 minutes - 11.9 minutes",
+   "seconds": 390
+  },
+  {
    "key": "reckless efreeti",
    "page": "Reckless efreeti",
    "text": "70 min",
@@ -2277,6 +2430,12 @@
    "page": "Renell Bekea",
    "text": "6 Minutes",
    "seconds": 360
+  },
+  {
+   "key": "retseth tretse",
+   "page": "Retseth Tretse",
+   "text": "7m 50s",
+   "seconds": 470
   },
   {
    "key": "rlabok",
