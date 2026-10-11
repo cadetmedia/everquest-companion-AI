@@ -14,6 +14,7 @@
 import { ipcRenderer } from 'electron'
 import { IPC } from '../shared/ipc'
 import type { ItemKnowledge, MobKnowledge, SpellCatalog } from '../shared/types'
+import type { ItemMarks } from '../shared/itemKnowledge'
 import type { MobResistCell, MobResistProfile, ResistAxis } from '../shared/resistTypes'
 import type { ResistPrefs } from '../shared/resistPrefs'
 import type { LevelUnlockData } from '../shared/levelUnlocks'
@@ -47,8 +48,8 @@ export const knowledgeBridge = {
    * record that still carries local posky associations).
    */
   lookupItem: (name: string): Promise<ItemKnowledge> => ipcRenderer.invoke(IPC.itemsLookup, name),
-  /** Icon ids for many item names in one call, from the committed DB: `{ [name]: iconId }` for the ones that have one. */
-  itemIcons: (names: string[]): Promise<Record<string, number>> => ipcRenderer.invoke(IPC.itemsIcons, names),
+  /** The list-row marks for many item names in one call: `{ [name]: ItemMarks }` for the names the DB knows. */
+  itemMarks: (names: string[]): Promise<Record<string, ItemMarks>> => ipcRenderer.invoke(IPC.itemsMarks, names),
   /**
    * Mob knowledge (Task #63): "what does this thing drop" — your own loot history + the local
    * quest catalog first, then a cached, politely-throttled wiki lookup. Never rejects.
