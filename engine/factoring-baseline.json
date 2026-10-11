@@ -315,7 +315,7 @@
       "file": "crates/fold/src/lib.rs",
       "metric": "file-lines",
       "name": "",
-      "value": 1499
+      "value": 1496
     },
     {
       "file": "crates/fold/src/message_overlay.rs",
