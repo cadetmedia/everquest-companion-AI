@@ -86,11 +86,14 @@ const SLOT_TOKENS: [token: string, canonical: string | null][] = [
   ['Ear', 'EAR'],
   // punctuation the wiki leaves behind
   ['BACK,', 'BACK'],
-  ['/', null]
+  ['/', null],
+  // the 2026-10-10 delta: Soldier's Brooch of the Corrupt writes `Slot: SPECIAL RANGE`. (The three
+  // shields' `Slot: SECONDARY Type: Shield` is not a token: the type tail is cut before reading.)
+  ['SPECIAL', null]
 ]
 
 test('every measured slot token maps to a canonical slot or to silence', () => {
-  assert.equal(SLOT_TOKENS.length, 40, 'the measured inventory is 40 distinct tokens (2026-08-22 rescrape)')
+  assert.equal(SLOT_TOKENS.length, 41, 'the measured inventory is 41 distinct tokens (2026-08-22 rescrape + SPECIAL, 2026-10-10)')
   for (const [token, canonical] of SLOT_TOKENS) {
     const { slots, unknown } = normalizeSlotTokens(token)
     assert.deepEqual(unknown, [], `${token} should be known to the table`)
@@ -110,6 +113,8 @@ test('multi-slot strings split into every slot they name', () => {
   // Verbatim rows from the corpus.
   assert.deepEqual(normalizeSlotTokens('PRIMARY SECONDARY').slots, ['PRIMARY', 'SECONDARY'])
   assert.deepEqual(normalizeSlotTokens('RANGE PRIMARY SECONDARY').slots, ['RANGE', 'PRIMARY', 'SECONDARY'])
+  // Three shields since the 2026-10-10 delta: the item type after the slot is not a slot.
+  assert.deepEqual(normalizeSlotTokens('SECONDARY Type: Shield'), { slots: ['SECONDARY'], unknown: [] })
   assert.deepEqual(normalizeSlotTokens('SHOULDERS ARMS BACK CHEST LEGS').slots, [
     'SHOULDERS',
     'ARMS',
@@ -141,7 +146,8 @@ test('the slot table covers the whole committed corpus', () => {
     const slot = entry.stats?.slot
     if (slot == null) continue
     stated++
-    for (const raw of slot.split(/\s+/).filter(Boolean)) seen.add(raw)
+    // The item type some pages append since 2026-10 (`SECONDARY Type: Shield`) is cut as the table cuts it.
+    for (const raw of slot.replace(/\s*\bType:.*$/i, '').split(/\s+/).filter(Boolean)) seen.add(raw)
     for (const u of normalizeSlotTokens(slot).unknown) stray.push(`${entry.page}: ${u}`)
   }
   // Floor under the 2026-08-04 measurement (6,854 of 11,155 pages state an equip slot).
@@ -216,7 +222,8 @@ test('the class table covers the whole committed corpus', () => {
   // plus `War`, the one Title Case class code the 2026-08-22 rescrape added (the case fold
   // already normalizes it; it is listed so the inventory stays a census and not a guess).
   // Case is folded here as the table folds it, so `War` and `All` are the codes they spell.
-  const known = new Set<string>([...CLASS_ABBRS, 'ALL', 'NONE', 'EXCEPT', '(35)', '(48)'])
+  // `RND`: Bracers of Erollisi's typo for RNG (2026-10-10 delta), folded by CLASS_RENAMES.
+  const known = new Set<string>([...CLASS_ABBRS, 'ALL', 'NONE', 'EXCEPT', '(35)', '(48)', 'RND'])
   const stray = [...seen].filter((t) => !known.has(t.toUpperCase()))
   assert.deepEqual(stray, [], 'corpus class token outside the measured set')
 })

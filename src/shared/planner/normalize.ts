@@ -36,8 +36,13 @@ const SLOT_RENAMES: Record<string, EquipSlot> = {
   SECONDAY: 'SECONDARY'
 }
 
-/** Punctuation the wiki leaves between slot names. Dropped SILENTLY — it is not an unknown slot. */
-const SLOT_NOISE: ReadonlySet<string> = new Set(['/', '-', '&', 'OR', 'AND'])
+/** Punctuation the wiki leaves between slot names. Dropped SILENTLY — it is not an unknown slot.
+ *  `SPECIAL`: one page, Soldier's Brooch of the Corrupt, writes `Slot: SPECIAL RANGE` (2026-10-10). */
+const SLOT_NOISE: ReadonlySet<string> = new Set(['/', '-', '&', 'OR', 'AND', 'SPECIAL'])
+
+/** Since 2026-10 some pages append the item TYPE to the slot line (`Slot: SECONDARY Type: Shield`,
+ *  three shields); the type is not a slot and is cut before the tokens are read. */
+const TYPE_TAIL_RE = /\s*\bType:.*$/i
 
 /** Strip the trailing punctuation the wiki leaves on a token ("BACK," → "BACK") and fold case. */
 function cleanToken(raw: string): string {
@@ -54,7 +59,7 @@ function cleanToken(raw: string): string {
 export function normalizeSlotTokens(slot?: string): { slots: EquipSlot[]; unknown: string[] } {
   const slots: EquipSlot[] = []
   const unknown: string[] = []
-  for (const raw of (slot ?? '').split(/\s+/)) {
+  for (const raw of (slot ?? '').replace(TYPE_TAIL_RE, '').split(/\s+/)) {
     const token = cleanToken(raw)
     if (token === '' || SLOT_NOISE.has(token)) continue
     const mapped = SLOT_RENAMES[token] ?? (SLOT_SET.has(token) ? (token as EquipSlot) : undefined)
@@ -75,11 +80,14 @@ interface ClassTokens {
   excluded: ClassAbbr[]
 }
 
+/** Hand-verified class typos → the code (one page: Bracers of Erollisi, `RND` for RNG, 2026-10-10). */
+const CLASS_RENAMES: Record<string, ClassAbbr> = { RND: 'RNG' }
+
 /** One pass over the `Class:` tokens, sorting them into the four things the wiki can say. */
 function readClassTokens(raw: string[]): ClassTokens {
   const out: ClassTokens = { all: false, none: false, sawExcept: false, listed: [], excluded: [] }
   for (const token of raw) {
-    const t = cleanToken(token)
+    const t = CLASS_RENAMES[cleanToken(token)] ?? cleanToken(token)
     if (t === 'EXCEPT') out.sawExcept = true
     else if (t === 'ALL') out.all = true
     else if (t === 'NONE') out.none = true

@@ -148,7 +148,9 @@ const crown = byKey.get('crown of king tranix')
 test('Thelvorn and the Crown arrive as the numbers tests/itemUpgrade pins', () => {
   assert.ok(thelvorn && crown, 'both verification items must be in the corpus')
   // Thelvorn, Blade of Light — DMG 20, Atk Delay 26, WIS +15, WT 3.0 (itemUpgrade.test.mts).
-  assert.deepEqual(thelvorn.stats, { WIS: 15, DMG: 20, DELAY: 26, WEIGHT: 3 })
+  // DMG_BONUS 12 since the 2026-10-10 delta run: the page now states `DMG Bonus: 12 @ lvl 50`, the
+  // flat add gearIndex has read since Cherista's Fangs. The four screenshot numbers are unchanged.
+  assert.deepEqual(thelvorn.stats, { WIS: 15, DMG: 20, DELAY: 26, DMG_BONUS: 12, WEIGHT: 3 })
   assert.deepEqual(thelvorn.slots, ['PRIMARY'])
   assert.deepEqual(thelvorn.classes, ['PAL'])
   assert.equal(thelvorn.skill, '1H Slashing')
@@ -269,7 +271,7 @@ test('scaling all rows at one state is fast enough to move a slider', () => {
   assert.equal(scaled.length, rows.length)
   assert.ok(ms < 500, `scaling every row took ${ms.toFixed(1)} ms — the index is being rebuilt`)
   // A pure map: the base rows are untouched, so the next state starts from the same numbers.
-  assert.deepEqual(thelvorn?.stats, { WIS: 15, DMG: 20, DELAY: 26, WEIGHT: 3 })
+  assert.deepEqual(thelvorn?.stats, { WIS: 15, DMG: 20, DELAY: 26, DMG_BONUS: 12, WEIGHT: 3 })
 })
 
 // =================================================================================
