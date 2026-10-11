@@ -138,6 +138,20 @@ disagree, RULES.md wins; fix this file.
   fixtures and the committed caches, and a scraper's `--dry-run` that reads the wiki counts as
   a request. Scraper changes keep real runs light: revid checks so only changed pages are
   fetched, 50 pages per request, no retries on permanent errors.
+  TRAP (2026-10-10, ~46 requests sent): `git checkout <branch> -- <file>` into a scratch tree takes
+  the branch's COMMITTED file, not a worktree's uncommitted edit; a scraper copied that way had no
+  `--offline` flag and ran its revision check. Copy from the worktree path, and before running any
+  scraper check the flag is in the file you are about to run (`grep -c offline`).
+- **Scraping is wiki-only; the log is the truth** (owner, 2026-10-10). The game's own files may
+  be parsed once, at dev time, to find wiki errors; nothing shipped or scraped depends on them.
+  DATA_REFRESH.md, "The ETL".
+- **Scraper work lives on two branches** (owner, 2026-10-10): scraper and parser code on
+  `wiki-scraper-fixes`, the data it produces on `local-data-refresh`. A parser a feature branch
+  owns (`mobFaction.ts` on slayer-tab, `questPage.ts` on faction-tab) is fixed where it lives, so
+  no file is shared across branches; a data file likewise (`quests.json` faction-tab,
+  `mobFactions.json`/`mobRaces.json` slayer-tab, the rest local-data-refresh). Test pins follow
+  the test file's branch. `dataWeight.generated.json` is measured on the merged tree and
+  committed on the data branch that merges last.
 - **Diffs:** surgical. Smallest mergeable change; never reformat, rename or restructure beyond
   the feature. New code gets lean comments: a one-line note for a real constraint, not an essay,
   even where legacy files carry long headers.

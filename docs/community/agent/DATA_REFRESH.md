@@ -82,18 +82,43 @@ seeding served 5,406 pages from the August item cache and stamped them as new, s
 a new baseline passes `--refresh`.
 
 The parser fixes of `wiki-scraper-fixes`, `faction-tab` and `slayer-tab` reach the shipped data
-only when it is re-derived. Items, mobs, quests, `mobFactions.json`, `mobRaces.json` and
-`spellLines.json` re-derive from the caches with zero requests. Spells do not: the spell cache
-holds no page titles, which the spell name now comes from (`Healing Water`, not the page's stale
-`|spellname = Greater Healing`); its next real run records them. After a spell re-derive, the
-name corrections `Malisement`, `Invisibility vs. Undead` and `Solon's Bravura` in
-`spellCorrectionsList.ts` go stale and are updated in the same change.
+only when it is re-derived. Every wiki-derived file re-derives from the caches with zero requests:
+items, mobs, quests, `mobFactions.json`, `mobRaces.json`, `spellLines.json`, respawns, and since
+2026-10-10 spells (`npm run scrape:spells -- --offline`, which needs the page titles a real run
+records in `cache/spells/index.json`; the spell name is the page title, `Healing Water`, not the
+page's copy-pasted `|spellname = Greater Healing`). After a spell re-derive, the name corrections
+in `spellCorrectionsList.ts` and `engine/crates/eqlog/data/spell-overlay.json`
+(`npm run gen:engine-spell-overlay`) follow in the same change, on `catch_all`.
 
-Done 2026-10-10 for every file but spells and respawns. To re-derive `items.json`/`mobs.json`
-offline without undoing later top-ups, replace a record only where the pre-fix parser reproduces
-it exactly from the cached page; keep it otherwise (its page changed after the cache). A
-respawns re-derive is held: it would key `the ghoul lord (hoptor thaggelum)`, which no death line
-matches (`tests/respawnWiki.test.mts` guards it).
+## The ETL, as the owner wants it run (2026-10-10)
+
+1. **Extract**: a real run fetches changed pages into the committed caches. Owner's word, 1 req/s.
+2. **Transform**: the parsers, run offline over the caches. A parser fix means a re-parse, never a
+   hand edit of a data file.
+3. **Compare against what is known** before a data commit: `npx tsx scripts/data-diff.mts` (what
+   changed, record by record; cite it in the commit) and `npx tsx scripts/validate-data.mts`.
+   The wiki is the only source for scraping; the owner's log is the truth for what the game
+   prints; the game's own files (`spells_us.txt`) may be parsed ONCE, at dev time, to find wiki
+   errors (`validate-data --client-spells <path>`), and nothing in the app or a scraper reads them.
+   A wiki title the client has never heard of is fixed on the wiki, or named in
+   `spellCorrectionsList.ts` with evidence; the scraper does not guess.
+4. **Load**: the data commit on the file's branch, gated on the merged tree.
+
+A spell re-derive leaves its new or renamed names without an era verdict (`spellEra` tests go
+red). `npx tsx scripts/scrape-page-era-spells.mts` asks the era endpoint for only those names, one
+request per 450, and merges them into `pageEra.json`; `--dry-run` names them and sends nothing.
+A full `scrape:page-era` would re-ask every batch the new names shift (about twenty requests).
+
+Done 2026-10-10 for every file. To re-derive `items.json`/`mobs.json` offline without undoing
+later top-ups, replace a record only where the pre-fix parser reproduces it exactly from the
+cached page; keep it otherwise (its page changed after the cache). Rulings from that review:
+a faction bullet stating `(-0)` is a listed hit of unstated size and the mob stays in
+`mobFactions.json` (a faction the page lists is shown); a quest's minimum level comes only from a
+`Minimum Level` cell (a `Recommended Level` is not one); a page the wiki marks `{{Delete}}` is not
+a spell; a `Song:` title prefix is decoration. The client audit of the 2026-10-10 catalog: 85 of
+2,013 spell names are not game names, four of them title typos whose `|spellname` is the game's
+(Largo's Absonant Binding, Rapacious Subversion, Selo's Assonant Strane, Wind of Tishani), the
+rest alias pages and NPC spells; before the re-derive, 118.
 
 ## Wiki facts that matter to parsers (as of 2026-09-27)
 
