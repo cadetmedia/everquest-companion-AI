@@ -69,10 +69,20 @@ test('the real catalog answers the questions the tab was built for', () => {
   // THE SILENT HOME-ZONE QUESTS: the wiki attributes 2 of Kerra Island's quests; the regen
   // necklace the user actually quested (This Means Warrr → Talisman of Kejaar Kerrath) is on a
   // page with no receipt line, and the home-zone inference is what surfaces it.
+  //
+  // THE WIKI CAUGHT UP ON THAT ONE (read by the 2026-10-10 delta run): the This Means Warrr page now
+  // states `Kerra Isle +20`, so it rides the RAISE list with its amount and leaves the nearby list -
+  // the rule asserted just below. The home-zone inference still carries the island's other silent
+  // quests; Fang Tooth (the Fishbone Necklace) is the one pinned now.
   assert.equal(kerra.homeZone, 'Kerra Island')
-  const warrr = kerra.nearby.find((q) => q.name === 'This Means Warrr')
-  assert.ok(warrr, 'the silent Kerra Island quests ride the nearby list')
+  const warrr = kerra.raise.find((q) => q.name === 'This Means Warrr')
+  assert.ok(warrr, 'the regen necklace quest now states its Kerra Isle raise')
+  assert.equal(warrr.amount, 20)
   assert.deepEqual(warrr.rewards, ['Talisman of Kejaar Kerrath'])
+  assert.ok(!kerra.nearby.some((q) => q.name === 'This Means Warrr'), 'and so is no longer a nearby candidate')
+  const fang = kerra.nearby.find((q) => q.name === 'Fang Tooth (quest)')
+  assert.ok(fang, 'the silent Kerra Island quests ride the nearby list')
+  assert.deepEqual(fang.rewards, ['Fishbone Necklace'])
   // A quest with a stated faction effect is never ALSO a nearby candidate.
   assert.ok(!kerra.nearby.some((q) => q.name === 'Rat Teeth'))
 })
