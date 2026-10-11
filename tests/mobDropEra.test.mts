@@ -44,7 +44,9 @@ const REVAMP_TABLE = [
 function cazicThule(): MobKnowledge {
   const entry = localMobEntry('Cazic Thule')
   assert.ok(entry, 'the committed mob catalog must still hold Cazic Thule')
-  assert.equal(entry.page, 'Cazic Thule (God)')
+  // The wiki moved the page to `Cazic-Thule (God)` (the old title is now a redirect), read by the
+  // 2026-10-10 delta run. Same mob, same drop table.
+  assert.equal(entry.page, 'Cazic-Thule (God)')
   return knowledgeFromCatalog('Cazic Thule', entry)
 }
 
