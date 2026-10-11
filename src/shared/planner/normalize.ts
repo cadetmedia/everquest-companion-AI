@@ -87,7 +87,8 @@ const CLASS_RENAMES: Record<string, ClassAbbr> = { RND: 'RNG' }
 function readClassTokens(raw: string[]): ClassTokens {
   const out: ClassTokens = { all: false, none: false, sawExcept: false, listed: [], excluded: [] }
   for (const token of raw) {
-    const t = CLASS_RENAMES[cleanToken(token)] ?? cleanToken(token)
+    const raw = cleanToken(token)
+    const t: string = raw in CLASS_RENAMES ? CLASS_RENAMES[raw] : raw
     if (t === 'EXCEPT') out.sawExcept = true
     else if (t === 'ALL') out.all = true
     else if (t === 'NONE') out.none = true
