@@ -40,6 +40,7 @@ test('the page title names the spell unless it differs from |spellname only by a
   assert.deepEqual(spellName('Greenmist (Spell)', 'Greenmist'), { name: 'Greenmist', disagrees: false })
   assert.deepEqual(spellName('Spell:Tears of Prexus', 'Tears of Prexus'), { name: 'Tears of Prexus', disagrees: false })
   assert.deepEqual(spellName('Effect: Flamesong', 'Flamesong'), { name: 'Flamesong', disagrees: false })
+  assert.deepEqual(spellName('Song: Melody of Ervaj', 'Song: Melody of Ervaj'), { name: 'Melody of Ervaj', disagrees: false })
   assert.deepEqual(spellName('Burst of FlameTest', 'Burst of Flame'), { name: 'Burst of Flame', disagrees: false })
   assert.deepEqual(spellName("Tigir's Insects", 'Tigir`s Insects'), { name: 'Tigir`s Insects', disagrees: false })
   assert.deepEqual(spellName('Skin like Diamond', 'Skin Like Diamond'), { name: 'Skin Like Diamond', disagrees: false })
