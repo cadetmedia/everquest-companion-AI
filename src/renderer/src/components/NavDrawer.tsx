@@ -4,6 +4,7 @@ import SettingsIcon from '@mui/icons-material/Settings'
 import ShieldMoonIcon from '@mui/icons-material/ShieldMoon'
 import BarChartIcon from '@mui/icons-material/BarChart'
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong'
+import FindInPageIcon from '@mui/icons-material/FindInPage'
 import TrendingUpIcon from '@mui/icons-material/TrendingUp'
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents'
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive'
@@ -18,7 +19,7 @@ import FeedbackIcon from '@mui/icons-material/Feedback'
 // an icon whose only use sits inside a `false &&` branch is tree-shaken out with the branch.
 import RuleFolderIcon from '@mui/icons-material/RuleFolder'
 import UpdateChip from './UpdateChip'
-import { OWNER_TOOLS } from '../devFlags'
+import { OWNER_TOOLS, UNRELEASED } from '../devFlags'
 import type { PrefsRouting } from '../appRouting'
 import { GEAR_AREA_VIEWS, VIEW_LABELS, loadGearTab, type View } from '../appViews'
 
@@ -84,6 +85,8 @@ const ROWS: NavRow[] = [
   { view: 'combat', icon: <BarChartIcon /> },
   { view: 'mobs', icon: <PetsIcon /> },
   { view: 'loot', icon: <ReceiptLongIcon /> },
+  // GAPS (UNRELEASED) sits under Loot: what the log named that the app's data does not know.
+  ...(UNRELEASED ? [{ view: 'gaps' as View, icon: <FindInPageIcon /> }] : []),
   // THE GEAR AREA follows Loot for the same reason Loot follows Mobs: it is the far side of one
   // question — what drops it, what did I get, and then what should I wear, farm for and want. It
   // reads the same committed corpus and links back into the same Loot drill-down. The row keeps
