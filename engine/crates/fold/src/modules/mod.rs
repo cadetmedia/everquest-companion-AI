@@ -46,6 +46,7 @@ pub mod class_unlocks;
 pub mod combo;
 pub mod consider;
 pub mod event_feed;
+pub mod gaps;
 pub mod item_tiers;
 pub mod kills;
 pub mod leveling;

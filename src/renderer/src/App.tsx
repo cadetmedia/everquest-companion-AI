@@ -66,6 +66,8 @@ import CharacterView from './features/character/CharacterView'
 import UnreleasedFactionsView from './unreleasedFactions'
 // The BAZAAR tab, behind the review gate; its view check lives in the gate file.
 import UnreleasedBazaarView from './unreleasedBazaar'
+// The GAPS tab, behind the review gate; its view check lives in the gate file.
+import UnreleasedGapsView from './unreleasedGaps'
 import { SpellDrill } from './features/spells/SpellPage'
 // THE SPELLS AREA (docs/plans/spell-upgrades-and-loadout.md), behind the review gate. One import
 // and one branch for three views - `unreleasedSpells.tsx` holds the `UNRELEASED ? lazy(…) : null`
@@ -190,6 +192,7 @@ function PlainView({
       <UnreleasedSlayerView view={view} viewKey={viewKey} routing={routing} />
       <UnreleasedUnlocksView view={view} viewKey={viewKey} routing={routing} />
       <UnreleasedBazaarView view={view} viewKey={viewKey} onOpenLoot={routing.openLoot} />
+      <UnreleasedGapsView view={view} viewKey={viewKey} />
       {/* THE SPELL DRILLDOWN (JOS-508). Its view check and its payload check live in the feature
           file, not here: this switch is one branch per view and a branch needing both would have
           cost `PlainView` two points of the measured complexity ceiling. */}

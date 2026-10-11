@@ -18,6 +18,7 @@ import ShieldMoonIcon from '@mui/icons-material/ShieldMoon'
 import BarChartIcon from '@mui/icons-material/BarChart'
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong'
 import StorefrontIcon from '@mui/icons-material/Storefront'
+import FindInPageIcon from '@mui/icons-material/FindInPage'
 import TrendingUpIcon from '@mui/icons-material/TrendingUp'
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents'
 import MilitaryTechIcon from '@mui/icons-material/MilitaryTech'
@@ -145,6 +146,8 @@ const GROUPS: NavGroup[] = [
       { view: 'loot', icon: <ReceiptLongIcon /> },
       // BAZAAR (UNRELEASED) sits under Loot: what you got, then what it is worth to other players.
       ...(UNRELEASED ? [{ view: 'bazaar' as View, icon: <StorefrontIcon /> }] : []),
+      // GAPS (UNRELEASED) sits under Loot: what the log named that the app's data does not know.
+      ...(UNRELEASED ? [{ view: 'gaps' as View, icon: <FindInPageIcon /> }] : []),
       { view: 'buffs', icon: <AutoFixHighIcon /> },
       { view: 'leveling', icon: <TrendingUpIcon /> }
     ]
