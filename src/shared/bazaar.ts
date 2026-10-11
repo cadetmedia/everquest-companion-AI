@@ -230,7 +230,7 @@ function sideOf(rows: readonly BazaarRow[], keep: (p: number) => boolean): Bazaa
 }
 
 /** Keeps a price within OUTLIER times of the median of `all`, once there are three to judge by; every price when `on` is false. */
-function keeper(all: readonly number[], on: boolean): (p: number) => boolean {
+export function keeper(all: readonly number[], on: boolean): (p: number) => boolean {
   const m = median(all)
   if (!on || m === null || all.length < 3) return () => true
   return (p) => p >= m / OUTLIER && p <= m * OUTLIER
