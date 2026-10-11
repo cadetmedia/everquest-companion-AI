@@ -45,7 +45,7 @@ fn gaps_corpus() {
                 r["first"].as_str().unwrap_or(""),
                 r["last"].as_str().unwrap_or("")
             );
-            if i < 2 || r["details"].get("sales").is_some() {
+            if domain == "item" || i < 2 {
                 println!("       details: {}", r["details"]);
             }
         }
