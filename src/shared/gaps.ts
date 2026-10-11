@@ -102,6 +102,52 @@ export function tallyText(t: GapTally): string {
   return more > 0 ? `${shown} +${more} more` : shown
 }
 
+/** `4 platinum 2 gold 1 silver 4 copper` → copper; the engine's one spelling, so no commas or "and". */
+export function parseCoin(coin: string): number {
+  const per: Record<string, number> = { platinum: 1000, gold: 100, silver: 10, copper: 1 }
+  let copper = 0
+  for (const m of coin.matchAll(/(\d+) (platinum|gold|silver|copper)/g)) copper += Number(m[1]) * per[m[2]]
+  return copper
+}
+
+/** Copper → `1 platinum 1 gold 4 silver 3 copper`, zero parts left out; `0 copper` for nothing. */
+export function formatCoin(copper: number): string {
+  const parts: string[] = []
+  let rest = Math.max(0, Math.round(copper))
+  for (const [word, per] of [['platinum', 1000], ['gold', 100], ['silver', 10], ['copper', 1]] as const) {
+    const n = Math.floor(rest / per)
+    rest -= n * per
+    if (n > 0) parts.push(`${n} ${word}`)
+  }
+  return parts.length > 0 ? parts.join(' ') : '0 copper'
+}
+
+/** What one instant sale on loot implies, in copper — see `derivedPrices`. */
+export interface DerivedPrices {
+  /** The instant sale, as the line printed it. */
+  sale: number
+  /** The item's base price: the sale is base ÷ 1.4. */
+  base: number
+  /** The loot window's Value line, what a vendor pays at best standing: base ÷ 1.05. */
+  vendorValue: number
+}
+
+/**
+ * The real prices behind an instant sale. Measured on the owner's whole log (9,129 sale lines,
+ * docs/community/agent/MEASURED.md): an instant sale on loot pays the item's base price ÷ 1.4,
+ * rounded to the nearest copper, the same at every tier, and the game's Value line is base ÷ 1.05.
+ * Both are derived from the rounded base rather than as one factor on the sale, which is what
+ * matches the screenshots to the copper (Gold Ring 857c → Value 1,143c, base 1,200c; Jade Earring
+ * 3,214c → 4,286c, 4,500c). The sale read is the row's most frequent sale amount; `null` when the
+ * row has no sale, or only free ones.
+ */
+export function derivedPrices(details: GapDetails): DerivedPrices | null {
+  const sale = parseCoin(details.sales?.entries[0]?.name ?? '')
+  if (sale <= 0) return null
+  const base = Math.round(sale * 1.4)
+  return { sale, base, vendorValue: Math.round(base / 1.05) }
+}
+
 /** The header the copy text starts with. */
 export const GAPS_TEXT_HEADER = 'Name\tSeen as\tTimes\tFirst\tLast'
 
@@ -113,7 +159,10 @@ export function gapDetailsText(row: GapRow): string {
   const lines = [[row.name, row.kinds.join(', '), String(row.count), row.first, row.last].join('\t')]
   for (const { key, label } of GAP_LISTS) {
     const t = row.details[key]
-    if (t !== undefined) lines.push(`\t${label}: ${tallyText(t)}`)
+    if (t === undefined) continue
+    lines.push(`\t${label}: ${tallyText(t)}`)
+    const prices = key === 'sales' ? derivedPrices(row.details) : null
+    if (prices !== null) lines.push(`\tvendor value: ${formatCoin(prices.vendorValue)} · base price: ${formatCoin(prices.base)}`)
   }
   for (const s of row.details.samples) lines.push(`\tsample: ${s}`)
   return lines.join('\n')

@@ -3,10 +3,19 @@
 
 import type { JSX } from 'react'
 import { Box, Chip, Stack, Typography } from '@mui/material'
-import { GAP_LISTS, type GapDetails, type GapTally } from '@shared/gaps'
+import { GAP_LISTS, derivedPrices, formatCoin, type GapDetails, type GapTally } from '@shared/gaps'
 
-/** Under the sale-on-loot chips: the amount is a floor, never the vendor price. */
-const SALES_CAVEAT = 'Instant sale on loot pays a discounted price; the real vendor price is higher.'
+/** Under the sale-on-loot chips: what the sale implies (shared/gaps.ts `derivedPrices`). */
+function SalesCaveat({ details }: { details: GapDetails }): JSX.Element | null {
+  const prices = derivedPrices(details)
+  if (prices === null) return null
+  return (
+    <Typography variant="caption" color="warning.main" sx={{ pl: 8 }} data-testid="gaps-sales-caveat">
+      Instant sale pays base ÷ 1.4. Vendor value (the game&apos;s Value line) ≈ {formatCoin(prices.vendorValue)}, base price ≈{' '}
+      {formatCoin(prices.base)}.
+    </Typography>
+  )
+}
 
 function TallyChips({ label, tally }: { label: string; tally: GapTally }): JSX.Element {
   const more = tally.distinct - tally.entries.length
@@ -36,11 +45,7 @@ export default function GapDetailsPanel({ details }: { details: GapDetails }): J
         return (
           <Stack key={key} spacing={0.25}>
             <TallyChips label={label} tally={tally} />
-            {key === 'sales' && (
-              <Typography variant="caption" color="warning.main" sx={{ pl: 8 }} data-testid="gaps-sales-caveat">
-                {SALES_CAVEAT}
-              </Typography>
-            )}
+            {key === 'sales' && <SalesCaveat details={details} />}
           </Stack>
         )
       })}
