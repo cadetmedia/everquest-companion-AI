@@ -9,7 +9,8 @@
 // MEDIANS, AND OUTLIERS LEFT OUT. Trade chat is noisy: a typo, a price for a stack read as a price
 // for one, a joke. So every number here is a median, and a price more than OUTLIER times away from
 // the median of all that item's prices in that direction is left out (counted in `outliers`), once
-// there are at least three to judge by.
+// there are at least three to judge by. The tab's "Ignore outliers" switch turns that off
+// (`BazaarQuery.ignoreOutliers`), and every price counts.
 
 import { averageNow, predictNow } from './bazaarForecast'
 import { asBaseTier, tierRate, type BaseTierRow } from './bazaarTiers'
@@ -183,6 +184,8 @@ export interface BazaarQuery {
   priceTier?: number
   /** Only offers from the last this-many days, counted back from the log's newest day. */
   sinceDays?: number
+  /** Leave out prices far from the item's median (the header); on unless false. */
+  ignoreOutliers?: boolean
 }
 
 export interface BazaarSummary {
@@ -226,10 +229,10 @@ function sideOf(rows: readonly BazaarRow[], keep: (p: number) => boolean): Bazaa
   }
 }
 
-/** Keeps a price within OUTLIER times of the median of `all`, once there are three to judge by. */
-function keeper(all: readonly number[]): (p: number) => boolean {
+/** Keeps a price within OUTLIER times of the median of `all`, once there are three to judge by; every price when `on` is false. */
+function keeper(all: readonly number[], on: boolean): (p: number) => boolean {
   const m = median(all)
-  if (m === null || all.length < 3) return () => true
+  if (!on || m === null || all.length < 3) return () => true
   return (p) => p >= m / OUTLIER && p <= m * OUTLIER
 }
 
@@ -258,18 +261,24 @@ function forecast(points: readonly BazaarPoint[], dir: 'sell' | 'buy', endDay: s
   return [averageNow(days, endDay), predictNow(days, endDay, recent)]
 }
 
-function itemOf(key: string, rows: readonly BazaarRow[], endDay: string): BazaarItem {
+/** What every entry's fold shares: the log's newest day, and whether far-off prices are left out. */
+interface Fold {
+  endDay: string
+  outliers: boolean
+}
+
+function itemOf(key: string, rows: readonly BazaarRow[], f: Fold): BazaarItem {
   const pricesIn = (d: BazaarDir): number[] => rows.filter((r) => r.dir === d).flatMap(pricesOf)
-  const keep = { sell: keeper(pricesIn('sell')), buy: keeper(pricesIn('buy')) }
+  const keep = { sell: keeper(pricesIn('sell'), f.outliers), buy: keeper(pricesIn('buy'), f.outliers) }
   const days = [...new Set(rows.map((r) => r.day))].sort()
   const points = days.map((day) => pointOf(day, rows, keep))
   const [asking, askedBefore] = recentAndBefore(points, 'sell')
   const [offered] = recentAndBefore(points, 'buy')
-  const [askingAvg, askingPredicted] = forecast(points, 'sell', endDay, asking)
-  const [offeredAvg, offeredPredicted] = forecast(points, 'buy', endDay, offered)
+  const [askingAvg, askingPredicted] = forecast(points, 'sell', f.endDay, asking)
+  const [offeredAvg, offeredPredicted] = forecast(points, 'buy', f.endDay, offered)
   const counted = (dir: 'sell' | 'buy'): number => points.reduce((s, p) => s + p[dir].n + p[dir].unpriced, 0)
   const kept = points.reduce((s, p) => s + p.sell.n + p.buy.n, 0)
-  const recent = endDay === '' ? [] : points.filter((p) => (Date.parse(endDay) - Date.parse(p.day)) / 86_400_000 < TREND_DAYS)
+  const recent = f.endDay === '' ? [] : points.filter((p) => (Date.parse(f.endDay) - Date.parse(p.day)) / 86_400_000 < TREND_DAYS)
   const recentOffers = recent.reduce((s, p) => s + p.sell.n + p.sell.unpriced + p.buy.n + p.buy.unpriced, 0)
   const ref = asking ?? offered
   return {
@@ -308,13 +317,13 @@ function quotesOf(rows: readonly BazaarRow[]): DayQuote[] {
  * Every tier of one item as one entry, its prices read at tier `at`, with each tier's own line beside
  * the estimate. Traded 30d stays in platinum as offered: each tier's own volume, added up.
  */
-function combinedOf(key: string, rows: readonly BazaarRow[], endDay: string, asked: number): BazaarItem {
+function combinedOf(key: string, rows: readonly BazaarRow[], f: Fold, asked: number): BazaarItem {
   // An item nobody offered above +0 (a quest item, a gem, a tradeskill part) is not upgraded:
   // read at its own price, never grown to the slider's tier by a rate it has no tiers to show.
   const at = rows.some((r) => r.tier > 0) ? asked : 0
   const rate = tierRate(rows)
-  const x = itemOf(key, asBaseTier(rows, rate, at), endDay)
-  const perTier = [...new Set(rows.map((r) => r.tier))].sort((a, b) => a - b).map((tier) => itemOf(`${key}|${tier}`, rows.filter((r) => r.tier === tier), endDay))
+  const x = itemOf(key, asBaseTier(rows, rate, at), f)
+  const perTier = [...new Set(rows.map((r) => r.tier))].sort((a, b) => a - b).map((tier) => itemOf(`${key}|${tier}`, rows.filter((r) => r.tier === tier), f))
   const tiers = perTier.map(
     (t): TierLine => ({
       tier: t.tier,
@@ -396,9 +405,10 @@ export function summarizeBazaar(snap: BazaarSnap | null, q: BazaarQuery): Bazaar
     else g.push(r)
   }
   const text = q.text.trim().toLowerCase()
+  const f: Fold = { endDay, outliers: q.ignoreOutliers !== false }
   const items = [...groups]
     .filter(([, g]) => matches(g, q, text))
-    .map(([key, g]) => (q.combineTiers === true ? combinedOf(key, g, endDay, q.priceTier ?? 0) : itemOf(key, g, endDay)))
+    .map(([key, g]) => (q.combineTiers === true ? combinedOf(key, g, f, q.priceTier ?? 0) : itemOf(key, g, f)))
     .filter((x) => pricedEnough(x, q.minPrice))
     .sort(compare(q.sort))
   return {

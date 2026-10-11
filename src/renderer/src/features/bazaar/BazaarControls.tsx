@@ -1,11 +1,12 @@
 // BazaarControls — the Bazaar tab's toolbar: search, direction, which items to show (all, the wish
-// list or the watchlist), Popular with its price floor, how far back prices
-// count, All tiers as one with its Price at slider, whether items the wiki marks No Drop or No
-// Trade show at all, and the offers list with its CSV export.
+// list or the watchlist), Popular with its price floor, the Tradeskill picker and the Quest search,
+// how far back prices count, All tiers as one with its Price at slider, Ignore outliers, whether
+// items the wiki marks No Drop or No Trade show at all, and the offers list with its CSV export.
 
 import { type JSX } from 'react'
-import { Box, Button, FormControlLabel, MenuItem, Slider, Stack, Switch, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material'
+import { Autocomplete, Box, Button, FormControlLabel, MenuItem, Slider, Stack, Switch, TextField, ToggleButton, ToggleButtonGroup, Tooltip, Typography } from '@mui/material'
 import type { BazaarDir } from '@shared/bazaar'
+import { TRADESKILLS } from '@shared/tradeskills'
 
 export type BazaarShow = 'all' | 'wish' | 'watched'
 
@@ -53,6 +54,12 @@ export interface BazaarControlState {
   priceTier: number
   /** Only the last this-many days; 0 is every day. */
   sinceDays: number
+  /** Only items an ingredient of, or made by, this tradeskill (shared/tradeskills.ts); '' is any. */
+  tradeskill: string
+  /** Only items a quest whose name contains this uses; '' is any. */
+  quest: string
+  /** Leave out a price more than four times above or below the item's usual price (shared/bazaar.ts). */
+  ignoreOutliers: boolean
 }
 
 interface Props {
@@ -60,8 +67,41 @@ interface Props {
   set: (patch: Partial<BazaarControlState>) => void
 }
 
-/** Which items: search, direction, the Show picker, Popular and its price floor. */
-function FilterControls({ state, set }: Props): JSX.Element {
+/** What the item is for: the Tradeskill picker and the Quest search, off the wiki's recipes and quests. */
+function PurposeControls({ state, set, quests }: Props & { quests: readonly string[] }): JSX.Element {
+  return (
+    <>
+      <TextField
+        select
+        size="small"
+        label="Tradeskill"
+        value={state.tradeskill}
+        onChange={(ev) => set({ tradeskill: ev.target.value })}
+        sx={{ minWidth: 150 }}
+        slotProps={{ htmlInput: { 'data-testid': 'bazaar-tradeskill' } }}
+      >
+        <MenuItem value="">Any</MenuItem>
+        {TRADESKILLS.map((t) => (
+          <MenuItem key={t} value={t}>
+            {t}
+          </MenuItem>
+        ))}
+      </TextField>
+      <Autocomplete
+        freeSolo
+        size="small"
+        options={quests}
+        inputValue={state.quest}
+        onInputChange={(_e, v) => set({ quest: v })}
+        sx={{ minWidth: 220 }}
+        renderInput={(params) => <TextField {...params} label="Quest" placeholder="Part of a quest name" slotProps={{ htmlInput: { ...params.inputProps, 'data-testid': 'bazaar-quest' } }} />}
+      />
+    </>
+  )
+}
+
+/** Which items: search, direction, the Show picker, Popular and its price floor, and what the item is for. */
+function FilterControls({ state, set, quests }: Props & { quests: readonly string[] }): JSX.Element {
   return (
     <>
       <TextField
@@ -117,11 +157,12 @@ function FilterControls({ state, set }: Props): JSX.Element {
           </MenuItem>
         ))}
       </TextField>
+      <PurposeControls state={state} set={set} quests={quests} />
     </>
   )
 }
 
-/** How far back, and how tiers are read: the days window, All tiers as one, and its Price at slider. */
+/** How far back, and how prices are read: the days window, All tiers as one with its Price at slider, and Ignore outliers. */
 function WindowControls({ state, set }: Props): JSX.Element {
   return (
     <>
@@ -163,6 +204,12 @@ function WindowControls({ state, set }: Props): JSX.Element {
           />
         </Box>
       )}
+      <Tooltip title="Leave out a price more than four times above or below this item's usual price: one seller or buyer cannot move the shown prices by posting a wild number.">
+        <FormControlLabel
+          control={<Switch size="small" checked={state.ignoreOutliers} onChange={(_e, on) => set({ ignoreOutliers: on })} data-testid="bazaar-ignore-outliers" />}
+          label="Ignore outliers"
+        />
+      </Tooltip>
     </>
   )
 }
@@ -186,10 +233,10 @@ function ListControls({ state, set, onExport }: Props & { onExport: () => void }
   )
 }
 
-export default function BazaarControls({ state, set, onExport }: Props & { onExport: () => void }): JSX.Element {
+export default function BazaarControls({ state, set, quests, onExport }: Props & { quests: readonly string[]; onExport: () => void }): JSX.Element {
   return (
     <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" useFlexGap>
-      <FilterControls state={state} set={set} />
+      <FilterControls state={state} set={set} quests={quests} />
       <WindowControls state={state} set={set} />
       <ListControls state={state} set={set} onExport={onExport} />
     </Stack>

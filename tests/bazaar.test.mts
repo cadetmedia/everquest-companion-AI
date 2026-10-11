@@ -61,6 +61,19 @@ test('one entry per item and tier, asking and offered side by side, outliers lef
   assert.equal(q.activeDays, 6)
 })
 
+test('with Ignore outliers off, the 100pp quiver counts like any price', () => {
+  const q = summarizeBazaar({ rows }, { ...all, ignoreOutliers: false }).items[0]
+  assert.equal(q.outliers, 0)
+  assert.equal(q.points.find((p) => p.day === '2026-09-22')?.sell.median, (21000 + 100) / 2)
+  assert.equal(q.asking, 24000, 'the newest three days had no outlier either way')
+  assert.deepEqual([q.sellOffers, q.buyOffers], [9, 3], 'the ninth selling offer is back')
+  // All tiers as one folds the same way: the 100pp price is in, so the day's low is 100.
+  const c = summarizeBazaar({ rows }, { ...all, ignoreOutliers: false, combineTiers: true }).items[0]
+  assert.equal(c.outliers, 0)
+  assert.equal(c.points.find((p) => p.day === '2026-09-22')?.sell.low, 100)
+  assert.equal(summarizeBazaar({ rows }, { ...all, ignoreOutliers: true }).items[0].outliers, 1)
+})
+
 test('search, direction and sort', () => {
   assert.deepEqual(summarizeBazaar({ rows }, { ...all, text: 'girdle' }).items.map((i) => i.tier), [3, 4])
   assert.deepEqual(summarizeBazaar({ rows }, { ...all, dir: 'buy' }).items.map((i) => i.item), ['Fleeting Quiver'])

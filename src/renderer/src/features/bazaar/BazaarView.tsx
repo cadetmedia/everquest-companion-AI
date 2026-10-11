@@ -4,13 +4,16 @@
 // a chart of both by day (hover a day for who said what), and who is offering. Below, every item
 // and tier with a 30-day trend, newest first or in the picked order; clicking one picks it. "All
 // tiers as one" makes it one row per item, every tier read as +0 (shared/bazaarTiers.ts). The
-// Offers list shows every offer as said, and Export CSV saves them for Excel. Every number is a median with outliers left out
-// (shared/bazaar.ts). What the parser reads is stated in engine/crates/fold/src/modules/bazaar_parse.rs.
+// Offers list shows every offer as said, and Export CSV saves them for Excel. Every number is a median, with far-off
+// prices left out while Ignore outliers is on (shared/bazaar.ts). The Tradeskill picker and the Quest search keep
+// items by what the wiki says they are for (shared/bazaarFacts.ts). What the parser reads is stated in
+// engine/crates/fold/src/modules/bazaar_parse.rs.
 
 import { type JSX, useMemo, useState } from 'react'
 import { Box, Chip, Paper, Stack, Table, TableBody, TableCell, TableHead, TableRow, TableSortLabel, Typography } from '@mui/material'
 import { itemTierKey } from '@shared/itemStats'
 import { findWatch, watchOnItem, type BazaarWatch, type BazaarWatchlist } from '@shared/bazaarWatch'
+import { factsAsked, factsPass, questNamesOf, type FactsFilter } from '@shared/bazaarFacts'
 import { offersCsv, offersOf } from '@shared/bazaarCsv'
 import {
   BAZAAR_MODULE_ID,
@@ -304,13 +307,21 @@ const START: BazaarControlState = {
   offers: false,
   combineTiers: false,
   priceTier: DEFAULT_PRICE_TIER,
-  sinceDays: 0
+  sinceDays: 0,
+  tradeskill: '',
+  quest: '',
+  ignoreOutliers: true
 }
 
-/** The Show picker's keep, and the No Drop switch's, as one. */
-function keepOf(show: ReturnType<typeof keeperOf>, hideNoTrade: boolean, factsOf: (name: string) => ItemFacts | undefined): ((item: string, tier: number) => boolean) | undefined {
-  if (!hideNoTrade) return show
-  return (item, tier) => factsOf(item)?.noTrade !== true && (show === undefined || show(item, tier))
+/** The Show picker's keep, and the facts filters' (Hide No Drop, Tradeskill, Quest), as one. */
+function keepOf(show: ReturnType<typeof keeperOf>, f: FactsFilter, factsOf: (name: string) => ItemFacts | undefined): ((item: string, tier: number) => boolean) | undefined {
+  if (!factsAsked(f)) return show
+  return (item, tier) => factsPass(factsOf(item), f) && (show === undefined || show(item, tier))
+}
+
+/** Whether any control narrows the list, so an empty one says "match" rather than "in your log yet". */
+function narrowed(ctl: BazaarControlState, facts: FactsFilter): boolean {
+  return ctl.text !== '' || ctl.dir !== 'all' || ctl.show !== 'all' || ctl.minPrice > 0 || factsAsked(facts)
 }
 
 async function exportCsv(items: readonly BazaarItem[], lastDay: string | null): Promise<void> {
@@ -328,7 +339,9 @@ export default function BazaarView({ onOpenLoot }: { onOpenLoot: (item: string) 
   const wished = useMemo(() => new Set(wishes.ready ? wishes.list.entries.map((e) => e.itemKey) : []), [wishes])
   const names = useMemo(() => [...new Set((snap?.rows ?? []).map((r) => r.item))], [snap])
   const factsOf = useItemFacts(names)
-  const keep = useMemo(() => keepOf(keeperOf(ctl.show, wished, watch), ctl.hideNoTrade, factsOf), [ctl.show, ctl.hideNoTrade, wished, watch, factsOf])
+  const quests = useMemo(() => questNamesOf(names, factsOf), [names, factsOf])
+  const facts = useMemo(() => ({ hideNoTrade: ctl.hideNoTrade, tradeskill: ctl.tradeskill, quest: ctl.quest }), [ctl.hideNoTrade, ctl.tradeskill, ctl.quest])
+  const keep = useMemo(() => keepOf(keeperOf(ctl.show, wished, watch), facts, factsOf), [ctl.show, facts, wished, watch, factsOf])
   const sum = useMemo(
     () =>
       summarizeBazaar(snap, {
@@ -339,9 +352,10 @@ export default function BazaarView({ onOpenLoot }: { onOpenLoot: (item: string) 
         minPrice: ctl.minPrice,
         combineTiers: ctl.combineTiers,
         priceTier: ctl.priceTier,
-        sinceDays: ctl.sinceDays
+        sinceDays: ctl.sinceDays,
+        ignoreOutliers: ctl.ignoreOutliers
       }),
-    [snap, ctl.text, ctl.dir, ctl.minPrice, ctl.combineTiers, ctl.priceTier, ctl.sinceDays, sort, keep]
+    [snap, ctl.text, ctl.dir, ctl.minPrice, ctl.combineTiers, ctl.priceTier, ctl.sinceDays, ctl.ignoreOutliers, sort, keep]
   )
   const picked = sum.items.find((i) => i.key === pick) ?? sum.items.at(0) ?? null
   const set = (patch: Partial<BazaarControlState>): void => {
@@ -357,7 +371,7 @@ export default function BazaarView({ onOpenLoot }: { onOpenLoot: (item: string) 
     setSort(next)
     if (ctl.popular && next.key !== 'volume') setCtl({ ...ctl, popular: false })
   }
-  const filtered = ctl.text !== '' || ctl.dir !== 'all' || ctl.show !== 'all' || ctl.minPrice > 0
+  const filtered = narrowed(ctl, facts)
 
   return (
     <Stack spacing={2} sx={{ p: 2 }} data-testid="bazaar-view">
@@ -366,7 +380,7 @@ export default function BazaarView({ onOpenLoot }: { onOpenLoot: (item: string) 
         {sum.days > 0 ? `: ${sum.offers} offers over ${sum.days} days` : ''}. Prices are daily medians; a
         seller repeating an offer in a day counts once.
       </Typography>
-      <BazaarControls state={ctl} set={set} onExport={() => void exportCsv(sum.items, sum.lastDay)} />
+      <BazaarControls state={ctl} set={set} quests={quests} onExport={() => void exportCsv(sum.items, sum.lastDay)} />
       <HeardAlerts />
       {ctl.offers && <BazaarQuotes quotes={offersOf(sum.items)} title="Every offer of the items below, newest first" withItem maxHeight={420} />}
       {snap === null ? (
