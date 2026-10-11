@@ -54,6 +54,11 @@ disagree, RULES.md wins; fix this file.
   with PowerShell `New-Item -ItemType Junction -Path <wt>\node_modules -Target <clone>\node_modules`
   (Git Bash `mklink` mangles paths). Without it, a gate grep can false-pass: npm's
   tool-not-found text contains no "error". Check real exit codes.
+- **Merge into the scratch tree first, every time.** A merge into the main clone that stops on a
+  conflict leaves conflict markers under `src/`, the dev app's `--watch` rebuilds them, and the
+  app crashes on the owner (2026-10-11: two conflicts in a branch merged straight into
+  `main_community`). Merge into the detached scratch copy, resolve there, gate, then merge the
+  same branches into `main_community`; `rerere` replays the recorded resolution.
 - **Merge from the main tree, never from inside a worktree.** `cd <worktree> && git commit && git
   merge X` merges in the worktree. Run merges into `main_community` as separate commands in the
   main clone, a few at a time; do not batch ~20 merges in one loop.
@@ -90,6 +95,9 @@ disagree, RULES.md wins; fix this file.
 - `npm run typecheck`, then restore tsbuildinfo; `rm -rf node_modules/.cache/eslint && npm run
   lint`; `npm test` (Node 24). On `main_community` use `bash scripts/community/known-reds.sh`
   (the unit suite where only names in `scripts/community/known-reds.txt` may fail).
+  The gate script runs the tests ONLY: a change that fails `tsc` can pass it (2026-10-11, a
+  class-rename fold typed as the rename's value). Typecheck and lint the scratch merge too,
+  every time, before merging into `main_community`.
 - Count node:test output with `grep -E "ℹ (tests|pass|fail)"`; failures are `^✖` lines. The pass
   count can wobble by one between runs with the same fail set (a skipping test).
 - Do not run `npm test` while `npm run dist` rebuilds `out/`: symbolicate's round-trip test scans
