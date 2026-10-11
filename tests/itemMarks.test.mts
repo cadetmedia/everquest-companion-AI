@@ -16,18 +16,22 @@ const record = (over: Partial<ItemKnowledge>): Omit<ItemKnowledge, 'cached'> => 
   ...over
 })
 
-test('marksOf keeps the icon and reduces the lists to counts', () => {
+test('marksOf keeps the icon, reduces the lists to counts, and names the quests and tradeskills once each', () => {
   const m = marksOf(
     record({
       iconId: 804,
       lore: true,
-      questUses: [{ quest: 'A', page: 'A', source: 'wiki' }],
-      recipes: [{ recipe: 'R' }, { recipe: 'S' }],
+      questUses: [
+        { quest: 'A', page: 'A', source: 'wiki' },
+        { quest: 'A', source: 'quests', role: 'required' }
+      ],
+      recipes: [{ recipe: 'R', tradeskill: 'Baking' }, { recipe: 'S', tradeskill: 'Baking' }, { recipe: 'T' }],
+      craftedBy: [{ tradeskill: 'Jewelry Making', ingredients: [] }],
       stats: { flags: ['Magic Item', 'No Drop'], stats: [], saves: [], effects: [], exaltationSlots: [], extras: [] }
     })
   )
-  assert.deepEqual(m, { iconId: 804, lore: true, quest: false, questUses: 1, recipes: 2, noTrade: true })
-  assert.deepEqual(marksOf(record({})), { lore: false, quest: false, questUses: 0, recipes: 0, noTrade: false })
+  assert.deepEqual(m, { iconId: 804, lore: true, quest: false, questUses: 2, quests: ['A'], recipes: 3, tradeskills: ['Baking', 'Jewelcrafting'], noTrade: true })
+  assert.deepEqual(marksOf(record({})), { lore: false, quest: false, questUses: 0, quests: [], recipes: 0, tradeskills: [], noTrade: false })
 })
 
 test('notability on marks is the same rule as on records', () => {

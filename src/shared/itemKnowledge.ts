@@ -6,6 +6,7 @@
 // counts as notable.
 
 import type { ItemKnowledge, ItemRecipeUse } from './types'
+import { tradeskillOf, type Tradeskill } from './tradeskills'
 
 /** Is a knowledge record "notable" (worth flagging / listing)? Lore, quest-flagged, or used
  *  by at least one known quest. Everything else is ordinary vendor trash.
@@ -27,8 +28,12 @@ export interface ItemMarks {
   quest: boolean
   /** How many known quests use it (the `quest` badge, and notability). */
   questUses: number
+  /** Those quests by name, once each (the Bazaar's Quest search). */
+  quests: string[]
   /** How many known recipes use it (the `tradeskill` badge). */
   recipes: number
+  /** The tradeskills it is an ingredient of or made by, one spelling each (the Bazaar's Tradeskill filter). */
+  tradeskills: Tradeskill[]
   /** The stats block says NO DROP / NO TRADE (the Bazaar's keep rule). */
   noTrade: boolean
 }
@@ -36,12 +41,15 @@ export interface ItemMarks {
 const NO_TRADE = new Set(['no drop', 'no trade', 'nodrop'])
 
 export function marksOf(k: Omit<ItemKnowledge, 'cached'>): ItemMarks {
+  const skills = [...(k.recipes ?? []), ...(k.craftedBy ?? [])].map((r) => tradeskillOf(r.tradeskill))
   return {
     ...(k.iconId === undefined ? {} : { iconId: k.iconId }),
     lore: k.lore,
     quest: k.quest,
     questUses: k.questUses.length,
+    quests: [...new Set(k.questUses.map((u) => u.quest))],
     recipes: k.recipes?.length ?? 0,
+    tradeskills: [...new Set(skills.filter((t): t is Tradeskill => t !== undefined))],
     noTrade: (k.stats?.flags ?? []).some((f) => NO_TRADE.has(f.toLowerCase()))
   }
 }
