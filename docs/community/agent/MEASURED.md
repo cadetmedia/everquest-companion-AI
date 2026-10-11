@@ -60,6 +60,16 @@ SK, others).
   request) against `src/shared/itemUpgrade.ts` first. The slider has moved since the creator's
   2026-08-12 port (Range, penalties). Keys the port calls "unchanged" (Attack, Dmg Bon, Backstab)
   are not re-checked.
+- **Instant sale on loot pays base price / 1.4**, rounded to the nearest copper (2026-10-11, the
+  owner's log: 9,129 `sold it for` lines, 806 priced item+tier; sale x 1.4 lands on a round gold
+  figure for 222 of 224 sales of 20g or more; the same price at every tier for all 225 items seen
+  at 2+ tiers). Real price = sale x 1.4. A vendor at the owner's usual standing pays base / 1.05
+  = sale x 4/3 (80 of 95 gear vendor-sale lines); the vendor side moves with CHA, faction and
+  merchant, the instant side never does. `for free` is base 0. The wiki's `merchant_value` is a
+  hand-typed vendor offer on 964 pages at varying CHA (median 0.745 of sale, some authors typed
+  the instant price itself): not a usable denominator. Two items can share a name at two prices
+  (Gold Ring: 6g from Gynok Moltor, 12g in the Karanas). The 1.05 / 1.4 pair is classic EQ's
+  best / worst vendor multiplier.
 - **Item DB:** `src/main/data/items.json`, ~11.5k items, keys lowercased names. Use it instead of
   wiki fetches.
 
