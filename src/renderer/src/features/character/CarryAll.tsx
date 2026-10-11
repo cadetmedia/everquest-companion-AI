@@ -59,6 +59,7 @@ import {
 } from '@mui/material'
 import type { CarryAll as CarryAllData, CarryRow } from '@shared/carryAll'
 import { EQ_ITEM_COLORS } from '../../lib/ItemWindow'
+import { KnownItemTooltip } from '../../lib/KnownItemTooltip'
 import { normalizeQuery } from '../../lib/search'
 import { useWindowedRows } from '../../lib/useWindowedRows'
 import { useRememberedSearch } from '../gear/useAreaMemory'
@@ -104,11 +105,12 @@ function CarryTableRow({ row }: { row: CarryRow }): JSX.Element {
   return (
     <TableRow hover data-testid="character-carry-row" data-lane={row.lane} sx={FIXED_ROW}>
       {/* The name VERBATIM, ` +N` and all — the whole point of the column (carryAll.ts header).
-          `title` rather than a popper: these are dense rows and the house rule for dense rows is a
-          native tooltip (JOS-143), which is also the only thing that can show a clipped name. */}
-      <TableCell sx={{ color: EQ_ITEM_COLORS.name }} title={row.name}>
-        {row.name}
-      </TableCell>
+          It was a native `title` (the JOS-143 dense-row rule); the item card is the click-through
+          one now (JOS-181; owner ask, 2026-10-03), which opens below the row, takes no pointer
+          events and states the full name a clipped cell cannot. */}
+      <KnownItemTooltip name={row.name} clickThrough>
+        <TableCell sx={{ color: EQ_ITEM_COLORS.name }}>{row.name}</TableCell>
+      </KnownItemTooltip>
       <TableCell sx={{ color: 'text.secondary', fontSize: 12 }} title={row.location}>
         {row.location}
       </TableCell>

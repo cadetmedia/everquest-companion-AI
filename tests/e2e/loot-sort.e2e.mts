@@ -63,13 +63,13 @@ import { stepOneClickSplitsBoth } from './sessionSplitSteps.mjs'
 const GRID = '[data-testid="overview-grid"]'
 const LOOT_LIST = '[data-testid="loot-list"]'
 const LOOT_ROW = '[data-testid="loot-row"]'
-/** The item NAME inside a row — the anchor the item card used to hang from. */
+/** The item NAME inside a row — the click-through item card hangs from it again. */
 const LOOT_NAME = '[data-testid="loot-item-name"]'
 const SORT = '[data-testid="loot-sort"]'
 /** The clickable half of a MUI `TextField select` — the div that opens the menu. */
 const SORT_BUTTON = `${SORT} [role="combobox"]`
 const SORT_OPTION = 'li[role="option"]'
-/** Any MUI tooltip popper, whoever mounted it. The ledger must mount none. */
+/** Any MUI tooltip popper, whoever mounted it. The ledger mounts only the click-through item card. */
 const POPPER = '.MuiTooltip-popper'
 /** A notable-pickups chip: the other anchor that used to open a card over the toolbar. */
 const PICKUP = '[data-testid="loot-list"] .MuiChip-clickable'
@@ -124,6 +124,23 @@ async function stepReady(page: Page): Promise<void> {
   check('…with the grouped table’s Sort control mounted', await appears(page, SORT))
 }
 
+/** The open card's top edge, the Sort control's bottom edge, and the card's computed pointer-events. */
+function cardFacts(page: Page): Promise<{ top: number; sortBottom: number; pointerEvents: string } | null> {
+  return page.evaluate(
+    (a) => {
+      const p = document.querySelector(a.popper)
+      const s = document.querySelector(a.sort)
+      if (!p || !s) return null
+      return {
+        top: p.getBoundingClientRect().top,
+        sortBottom: s.getBoundingClientRect().bottom,
+        pointerEvents: getComputedStyle(p).pointerEvents
+      }
+    },
+    { popper: POPPER, sort: SORT }
+  )
+}
+
 /**
  * HOVER THE ANCHORS THAT USED TO EAT THE CLICK, then look at what is over the control.
  *
@@ -140,8 +157,20 @@ async function stepNothingCoversSort(page: Page, sel: string, what: string): Pro
     note(`could not put the pointer on the ${what}`)
     return
   }
+  // The item card is BACK on these anchors (owner ask, 2026-10-03), in the click-through mode the
+  // Sky tab proved (sky-dropdowns.e2e.mts): so the tripwire is no longer "no popper" but the two
+  // properties that make one harmless — it sits below the Sort control and takes no pointer events.
   const poppers = await settleStable(() => countOf(page, POPPER), { timeoutMs: 4000 })
-  check(`hovering the ${what} opens no tooltip popper at all`, poppers === 0, `poppers=${String(poppers)}`)
+  check(`hovering the ${what} opens at most its one item card`, poppers <= 1, `poppers=${String(poppers)}`)
+  if (poppers === 1) {
+    const card = await cardFacts(page)
+    check(
+      `…which opens BELOW the Sort control (${what})`,
+      card !== null && card.top >= card.sortBottom,
+      card === null ? 'unmeasured' : `card top=${card.top.toFixed(0)} sort bottom=${card.sortBottom.toFixed(0)}`
+    )
+    check(`…and takes no pointer events (${what})`, card?.pointerEvents === 'none', String(card?.pointerEvents))
+  }
   const cover = await whatCoversSort(page)
   check(
     `…and the Sort control is still the topmost thing at its own centre (${what})`,

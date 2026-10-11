@@ -5,6 +5,7 @@ import AutoStoriesIcon from '@mui/icons-material/AutoStories'
 import type { ItemKnowledge, LootEvent } from '@shared/types'
 import { recipeUseLabel } from '@shared/itemKnowledge'
 import { itemCountKey } from '../../lib/itemName'
+import { KnownItemTooltip } from '../../lib/KnownItemTooltip'
 import { isTradeskillOnly } from '../../lib/itemKnowledgeView'
 import { useNotablePickups, type NotablePickup } from './useNotablePickups'
 
@@ -78,6 +79,9 @@ export function useNotableStrip(history: LootEvent[]): {
 // up. That is the text that was sitting on the Sort select and eating its clicks. The card is
 // gone rather than repositioned: the click already opens the drill-down, which shows the item
 // window and its quest/recipe knowledge at full width.
+//
+// IT HOVERS AGAIN, click-through (JOS-181; owner ask, 2026-10-03): the card opens below the chip,
+// takes no pointer events and closes on any pointerdown, so it can no longer sit on the Sort select.
 function PickupChip({
   n,
   onSelect,
@@ -98,17 +102,19 @@ function PickupChip({
         : n.item
   const key = itemCountKey(n.item)
   return (
-    <Chip
-      size="small"
-      variant="outlined"
-      color={n.knowledge.lore ? 'warning' : 'secondary'}
-      icon={n.knowledge.lore ? <AutoStoriesIcon /> : undefined}
-      label={label}
-      onClick={() => onSelect(n.item)}
-      onDelete={() => onDismiss(key)}
-      deleteIcon={<CloseIcon />}
-      sx={{ maxWidth: 320 }}
-    />
+    <KnownItemTooltip name={n.item} knowledge={n.knowledge} clickThrough>
+      <Chip
+        size="small"
+        variant="outlined"
+        color={n.knowledge.lore ? 'warning' : 'secondary'}
+        icon={n.knowledge.lore ? <AutoStoriesIcon /> : undefined}
+        label={label}
+        onClick={() => onSelect(n.item)}
+        onDelete={() => onDismiss(key)}
+        deleteIcon={<CloseIcon />}
+        sx={{ maxWidth: 320 }}
+      />
+    </KnownItemTooltip>
   )
 }
 

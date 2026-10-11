@@ -117,7 +117,7 @@ function Row({ row, classes, imported, onRemove, onOpenLoot }: WishRowProps): JS
     >
       <Box sx={{ minWidth: 0, flexShrink: 1, width: 260 }}>
         <Typography variant="body2" component="div" noWrap sx={{ minWidth: 0 }}>
-          <DonorName name={row.name} bold onOpen={onOpenLoot} />
+          <DonorName name={row.name} bold onOpen={onOpenLoot} card />
         </Typography>
         <WantedFor row={row} />
       </Box>
@@ -316,7 +316,7 @@ export function DoneStrip({ rows, onClear, onOpenLoot }: DoneStripProps): JSX.El
           sx={{ flexWrap: 'nowrap', py: 0.5, px: 1, borderBottom: 1, borderColor: 'divider' }}
         >
           <Typography variant="body2" component="div" noWrap sx={{ minWidth: 0, flexShrink: 1 }}>
-            <DonorName name={row.name} onOpen={onOpenLoot} />
+            <DonorName name={row.name} onOpen={onOpenLoot} card />
           </Typography>
           <Typography variant="caption" noWrap sx={{ color: 'text.secondary', minWidth: 0, flexShrink: 1 }}>
             {row.effect ?? 'gear'}

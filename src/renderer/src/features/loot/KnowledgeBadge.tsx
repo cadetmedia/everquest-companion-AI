@@ -1,54 +1,39 @@
+// KnowledgeBadge — the LORE / quest / tradeskill chips on a loot row, read off the row's MARKS
+// (`lib/itemMarks.ts`: one batched call per paint for every mounted row), not off a full
+// knowledge record: until 2026-10-10 the chips rode the notable-pickups probe, which looks up
+// only the 40 most recent pickups one at a time, so most rows never had one (owner report).
+//
+// A row with a Plane of Sky chip hides the quest chip (the PoSky chip says it). An item whose
+// only use is as a TRADESKILL component (Gnome Meat → Gnome Kabobs) gets a `tradeskill` chip
+// instead of `quest`, so the two kinds of "it is for something" stay apart.
+
 import type { JSX } from 'react'
 import { Chip, Stack } from '@mui/material'
-import type { ItemKnowledge, ItemRecipeUse } from '@shared/types'
+import type { ItemMarks } from '@shared/itemKnowledge'
+import { useItemMarks } from '../../lib/itemMarks'
 
 interface BadgeFlags {
-  recipes: ItemRecipeUse[]
-  hasQuests: boolean
   showQuest: boolean
   showTradeskill: boolean
 }
 
-// Task #61: an item whose stats block says QUEST ITEM but which no quest anywhere uses is a
-// TRADESKILL component (Gnome Meat → Gnome Kabobs). Those get a `tradeskill` chip naming
-// the recipes instead of a "quest" chip that leads nowhere. The PoSky chip already covers
-// Sky items, so suppress a redundant "quest" badge there.
-function badgeFlags(knowledge: ItemKnowledge, isPosky: boolean): BadgeFlags {
-  const recipes = knowledge.recipes ?? []
-  const hasQuests = knowledge.questUses.length > 0
-  const tradeskillOnly = recipes.length > 0 && !hasQuests
+function badgeFlags(m: ItemMarks, isPosky: boolean): BadgeFlags {
+  const hasQuests = m.questUses > 0
+  const tradeskillOnly = m.recipes > 0 && !hasQuests
   return {
-    recipes,
-    hasQuests,
-    showQuest: (knowledge.quest || hasQuests) && !isPosky && !tradeskillOnly,
+    showQuest: (m.quest || hasQuests) && !isPosky && !tradeskillOnly,
     showTradeskill: tradeskillOnly && !isPosky
   }
 }
 
-// A subtle indicator for an item the wiki knows is LORE or quest-relevant (Task #53),
-// EXTENDING the local PoSky flag to any wiki-known quest item. Shown only when the async
-// knowledge probe has resolved AND flags it; ordinary items render nothing (no noise).
-//
-// IT NO LONGER HOVERS (JOS-127). The badge used to wrap a tooltip naming the quests or recipes
-// behind the flag — a popper anchored INSIDE a table row, which opens over the neighbouring
-// row, and every row here is a control that takes the pane when clicked. The chip is already a
-// state word (the house chip convention), and the list it used to name is exactly what the
-// drill-down shows once you click through.
-export function KnowledgeBadge({
-  knowledge,
-  isPosky
-}: {
-  knowledge?: ItemKnowledge
-  isPosky: boolean
-}): JSX.Element | null {
-  if (!knowledge) return null
-  const flags = badgeFlags(knowledge, isPosky)
-  if (!knowledge.lore && !flags.showQuest && !flags.showTradeskill) return null
+export function KnowledgeBadge({ name, isPosky }: { name: string; isPosky: boolean }): JSX.Element | null {
+  const m = useItemMarks(name)
+  if (!m) return null
+  const flags = badgeFlags(m, isPosky)
+  if (!m.lore && !flags.showQuest && !flags.showTradeskill) return null
   return (
     <Stack direction="row" spacing={0.5} alignItems="center" component="span">
-      {knowledge.lore && (
-        <Chip size="small" color="warning" variant="outlined" label="LORE" sx={{ height: 18, fontSize: 10 }} />
-      )}
+      {m.lore && <Chip size="small" color="warning" variant="outlined" label="LORE" sx={{ height: 18, fontSize: 10 }} />}
       {flags.showQuest && (
         <Chip size="small" color="secondary" variant="outlined" label="quest" sx={{ height: 18, fontSize: 10 }} />
       )}

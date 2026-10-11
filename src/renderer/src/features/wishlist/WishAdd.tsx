@@ -30,6 +30,7 @@ import { Box, Button, Chip, Popover, Stack, TextField, Typography } from '@mui/m
 import AddIcon from '@mui/icons-material/Add'
 import type { GearRow } from '@shared/planner/gear'
 import { itemIconUrl } from '../../lib/ItemWindow'
+import { KnownItemTooltip } from '../../lib/KnownItemTooltip'
 import { EraChip } from '../planner/PlannerChips'
 import type { DonorRow } from '../planner/plannerData'
 import { MIN_WISH_QUERY, searchWishCorpus, type WishHit } from './wishSearch'
@@ -94,9 +95,12 @@ function HitRow({
         />
       )}
       <Box sx={{ minWidth: 0, flexShrink: 1 }}>
-        <Typography variant="body2" noWrap title={hit.name}>
-          {hit.name}
-        </Typography>
+        {/* The item card, click-through so a pick under the pointer still lands (JOS-181). */}
+        <KnownItemTooltip name={hit.name} clickThrough>
+          <Typography variant="body2" noWrap>
+            {hit.name}
+          </Typography>
+        </KnownItemTooltip>
         {hit.effect !== undefined && (
           <Typography variant="caption" noWrap sx={{ display: 'block', color: 'text.secondary' }}>
             {hit.effect}

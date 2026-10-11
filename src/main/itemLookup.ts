@@ -44,6 +44,7 @@ import { buildQuestItemIndex } from './questItemIndex'
 import { buildItemDbIndex, itemKey, knowledgeFromDb, type ItemDbEntry, type ItemDbFile } from './itemsDb'
 import { heldClickySpells as clickySpells } from './itemClickies'
 import type { HeldCounts, ItemKnowledge, ItemQuestUse, PoskyData, QuestData } from '../shared/types'
+import { marksOf, type ItemMarks } from '../shared/itemKnowledge'
 
 export { normalizeItemName, parseItemWikitext }
 // The COMMITTED wiki item database — the PRIMARY source (see the design note above).
@@ -160,6 +161,18 @@ export function heldClickySpells(counts: HeldCounts): ReadonlySet<string> {
 function dbKnowledge(key: string, display: string): Omit<ItemKnowledge, 'cached'> | null {
   const entry = itemDb().get(key)
   return entry ? { ...knowledgeFromDb(entry), name: display } : null
+}
+
+/** The list-row marks for many names in one call: the committed DB plus the local quest sources,
+ *  exactly what `lookupItem`'s DB path answers, minus the record. No cache read, no request. A
+ *  name the DB lacks is absent (the row shows nothing rather than asking the wiki). */
+export function itemMarks(names: readonly string[]): Record<string, ItemMarks> {
+  const out: Record<string, ItemMarks> = {}
+  for (const name of names) {
+    const fromDb = dbKnowledge(cacheKey(name), normalizeItemName(name))
+    if (fromDb) out[name] = marksOf(mergeLocal(fromDb, localKnowledge(name)))
+  }
+  return out
 }
 
 // ---- local (posky) cross-ref --------------------------------------------------

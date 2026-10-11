@@ -5,6 +5,8 @@ import type { ItemKnowledge, LootDisposition, LootEvent } from '@shared/types'
 // this file is allowed to know about one — see `EngineFlatRow` below.
 import type { Cells } from '@shared/dataServer/protocol.generated'
 import { formatDateTime } from '../../lib/formatDate'
+import { KnownItemTooltip } from '../../lib/KnownItemTooltip'
+import { ItemIcon } from '../../lib/ItemIcon'
 import type { InventoryRow } from '../inventory/reconcile'
 import { isQuestItem } from './lootItemData'
 import { KnowledgeBadge } from './KnowledgeBadge'
@@ -133,16 +135,19 @@ export const GroupedRow = memo(function GroupedRow({
     >
       <TableCell>
         <Stack direction="row" spacing={1} alignItems="center">
-          {/* The NAME is plain text (JOS-127). It used to anchor a `placement="top"`, interactive
+          {/* The NAME was plain text (JOS-127): it used to anchor a `placement="top"`, interactive
               item card, which on the rows nearest the top of the ledger opened straight across
-              the toolbar and held the pointer there. Click the row: the drill-down says all of
-              it, and is the surface that was always meant to. The testid is the handle
-              `loot-sort.e2e.mts` hovers to prove nothing opens there any more. */}
-          <Box component="span" data-testid="loot-item-name">
-            {g.item}
-          </Box>
+              the toolbar and held the pointer there. The card is back in the click-through mode
+              (JOS-181; owner ask, 2026-10-03): it opens below, takes no pointer events and closes
+              on any pointerdown, which is what `loot-sort.e2e.mts` hovers this testid to prove. */}
+          <ItemIcon name={g.item} />
+          <KnownItemTooltip name={g.item} knowledge={knowledge} clickThrough>
+            <Box component="span" data-testid="loot-item-name">
+              {g.item}
+            </Box>
+          </KnownItemTooltip>
           {posky && <Chip size="small" color="primary" variant="outlined" label="PoSky" />}
-          <KnowledgeBadge knowledge={knowledge} isPosky={posky} />
+          <KnowledgeBadge name={g.item} isPosky={posky} />
           <DispositionChip disposition={g.disposition} />
         </Stack>
       </TableCell>
@@ -260,16 +265,21 @@ export const EngineFlatRow = memo(function EngineFlatRow({
       <TableCell sx={{ color: 'text.secondary' }}>{text(cells, 'at') ?? ''}</TableCell>
       <TableCell>
         <Stack direction="row" spacing={1} alignItems="center">
-          <Box component="span" data-testid="loot-item-name">
-            {count !== null && count > 1 ? `${String(count)} × ${item}` : item}
-          </Box>
+          <ItemIcon name={item} />
+          <KnownItemTooltip name={item} knowledge={knowledge} clickThrough>
+            <Box component="span" data-testid="loot-item-name">
+              {count !== null && count > 1 ? `${String(count)} × ${item}` : item}
+            </Box>
+          </KnownItemTooltip>
           {posky && <Chip size="small" color="primary" variant="outlined" label="PoSky" />}
-          <KnowledgeBadge knowledge={knowledge} isPosky={posky} />
+          <KnowledgeBadge name={item} isPosky={posky} />
           <DispositionChip disposition={asDisposition(disposition)} />
           {disposition === 'combined' && created !== null && (
-            <Typography variant="caption" color="text.secondary">
-              → {created}
-            </Typography>
+            <KnownItemTooltip name={created} clickThrough>
+              <Typography variant="caption" color="text.secondary">
+                → {created}
+              </Typography>
+            </KnownItemTooltip>
           )}
         </Stack>
       </TableCell>
@@ -299,17 +309,22 @@ export const FlatRow = memo(function FlatRow({
       <TableCell sx={{ color: 'text.secondary' }}>{fmtTime(e.ts)}</TableCell>
       <TableCell>
         <Stack direction="row" spacing={1} alignItems="center">
-          {/* Plain text, same reason as GroupedRow above (JOS-127). */}
-          <Box component="span" data-testid="loot-item-name">
-            {e.count && e.count > 1 ? `${e.count} × ${e.item}` : e.item}
-          </Box>
+          {/* The click-through card, same reason as GroupedRow above. */}
+          <ItemIcon name={e.item} />
+          <KnownItemTooltip name={e.item} knowledge={knowledge} clickThrough>
+            <Box component="span" data-testid="loot-item-name">
+              {e.count && e.count > 1 ? `${e.count} × ${e.item}` : e.item}
+            </Box>
+          </KnownItemTooltip>
           {posky && <Chip size="small" color="primary" variant="outlined" label="PoSky" />}
-          <KnowledgeBadge knowledge={knowledge} isPosky={posky} />
+          <KnowledgeBadge name={e.item} isPosky={posky} />
           <DispositionChip disposition={e.disposition} />
           {e.disposition === 'combined' && e.created && (
-            <Typography variant="caption" color="text.secondary">
-              → {e.created}
-            </Typography>
+            <KnownItemTooltip name={e.created} clickThrough>
+              <Typography variant="caption" color="text.secondary">
+                → {e.created}
+              </Typography>
+            </KnownItemTooltip>
           )}
         </Stack>
       </TableCell>
