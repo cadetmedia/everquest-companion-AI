@@ -155,3 +155,7 @@ equipped slots before suspecting data; the remedy is equip + `/outputfile invent
 - `/who`: level and class detection, and group-mates' classes.
 - `/pet who leader` after each zone-in: group-pet crediting (binds drop on every zone line by
   design).
+
+## Audits
+
+Dated, offline measurements of the data against the owner's log and the caches live in `docs/community/audits/`. The 2026-10-11 one (`2026-10-11-data-gaps.md`) is the reference for what the log names that the data lacks, what the caches hold that the data lacks, and where a re-derive from THIS clone's item and mob caches would regress (they are older than the committed data; refresh them first). Its section 4 is the to-do list.
