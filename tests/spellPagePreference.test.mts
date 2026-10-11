@@ -84,7 +84,7 @@ test('THE SPELLBOOK draws one row per contested name: the unlock builder runs th
   try {
     const rows = buildLevelUnlocks(null).spells
     for (const n of CONTESTED) {
-      assert.equal(rows.filter((s) => s.name === n).length, 1, `${n}: one unlock row`)
+      assert.equal(rows.filter((s) => same(s.name, n)).length, 1, `${n}: one unlock row`)
     }
   } finally {
     resetLevelUnlocksCache()
