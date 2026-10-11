@@ -353,7 +353,7 @@ async function applyDelta(ctx: DeltaCtx): Promise<void> {
     ...itemFold.folded, ...mobFold.folded, ...(questFold?.folded ?? []), ...(spellRun?.fold.folded ?? [])
   ])
   for (const line of unfoldedReport(unfolded(censusPages(ctx), folded), refreshed)) console.log(line)
-  writeBackCaches(paths, reads, folded)
+  writeBackCaches(paths, reads, new Set([...itemFold.folded, ...mobFold.folded]))
 }
 
 /** spells.json and its cache; returns the listed pages that could not be read (they hold the stamp). */

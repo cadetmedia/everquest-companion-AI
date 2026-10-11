@@ -159,6 +159,16 @@ test('a run reads the feed once and refreshes items, spells and quests, each fro
   assert.equal(items['old item']?.iconId, 8, 'the pre-stamp edit was not applied to items.json')
 })
 
+test('spell and quest pages are not added to the item cache', async (t) => {
+  const { root } = stubbed(t)
+  const p = seed(root)
+  mkdirSync(p.itemCache, { recursive: true })
+  put(join(p.itemCache, 'batch-1-1.json'), '[]')
+  await run(p, parseArgs(['--spell-titles']))
+  const added = json<{ title: string }[]>(join(p.itemCache, 'batch-delta.json')).map((c) => c.title)
+  assert.deepEqual(added, ['Rusty Blade'])
+})
+
 test('without its own window a quest change before quests.json\'s stamp is not applied', async (t) => {
   const { root } = stubbed(t)
   const p = seed(root)

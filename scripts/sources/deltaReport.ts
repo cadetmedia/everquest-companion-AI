@@ -90,7 +90,8 @@ export function printStamp(unapplied: string[]): void {
     return
   }
   console.log(
-    `scrapedAt NOT moved: ${unapplied.length} changed pages came back without readable content ` +
-      `(a hidden revision?), so the next run covers this window again: ${unapplied.join(' | ')}`
+    `scrapedAt held back (every file for an unreadable page, spells or quests alone for their ` +
+      `own): ${unapplied.length} pages came back without readable content (a hidden revision?), ` +
+      `so the next run covers the window again: ${unapplied.join(' | ')}`
   )
 }
