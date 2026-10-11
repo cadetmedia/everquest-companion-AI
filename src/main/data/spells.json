@@ -1,8 +1,8 @@
 {
-  "scrapedAt": "2026-10-11T02:04:32.241Z",
+  "scrapedAt": "2026-10-11T04:19:33.641Z",
   "schema": 3,
-  "count": 2014,
-  "withEffects": 2011,
+  "count": 2013,
+  "withEffects": 2010,
   "spells": [
     {
       "name": "Aanya's Animation",
@@ -6323,6 +6323,23 @@
         "Increase AC by 9 (L60) to 9 (L65)"
       ],
       "instrumentEnhanced": "Yes (except attack speed)"
+    },
+    {
+      "name": "Composition of Ervaj",
+      "durationText": "3 ticks",
+      "durationMs": 18000,
+      "castTimeMs": 3000,
+      "recastMs": 0,
+      "targetType": "Party",
+      "spellType": "Beneficial",
+      "classes": "* Bard - Level 60",
+      "msgCastOnYou": "A song of inspiration fills your weapon arm with strength.",
+      "illusion": false,
+      "mana": 0,
+      "effects": [
+        "Increase Haste v2 by 10%",
+        "Increase AC by 9 (L60) to 9 (L65)"
+      ]
     },
     {
       "name": "Concussion",
@@ -17775,23 +17792,6 @@
       ]
     },
     {
-      "name": "Kurrat's Magician Epic Guide",
-      "durationText": "Instant",
-      "durationMs": null,
-      "castTimeMs": 5000,
-      "recastMs": 300000,
-      "targetType": "Self",
-      "spellType": "Beneficial",
-      "classes": "* Magician - Level 46",
-      "msgCastOnYou": "A swirling orb of elements forms in your hand.",
-      "msgCastOnOther": "Someone summons a swirling orb of elements.",
-      "illusion": false,
-      "mana": 500,
-      "effects": [
-        "Summon Item: Orb of Mastery"
-      ]
-    },
-    {
       "name": "Kylie's Venom",
       "durationText": "1 ticks @L1 to 1 minute @L20",
       "durationMs": 60000,
@@ -20206,6 +20206,24 @@
       "instrumentEnhanced": "Required"
     },
     {
+      "name": "Melody of Ervaj",
+      "durationText": "3 ticks",
+      "durationMs": 18000,
+      "castTimeMs": 3000,
+      "recastMs": 0,
+      "targetType": "Party",
+      "spellType": "Beneficial",
+      "classes": "* Bard - Level 50",
+      "msgCastOnYou": "A song of inspiration fills your weapon arm with strength.",
+      "msgWearsOff": "The inspiration fades.",
+      "illusion": false,
+      "mana": 0,
+      "effects": [
+        "Increase Haste v2 by 5%",
+        "Increase AC by 5 (L50) to 6 (L65)"
+      ]
+    },
+    {
       "name": "Memory Blur",
       "durationText": "Instant",
       "durationMs": null,
@@ -21754,6 +21772,26 @@
         "Unresistable"
       ],
       "instrumentEnhanced": "Required"
+    },
+    {
+      "name": "Occlusion of Sound",
+      "durationText": "3 ticks",
+      "durationMs": 18000,
+      "castTimeMs": 3000,
+      "recastMs": 0,
+      "targetType": "Single",
+      "spellType": "Detrimental",
+      "classes": "* Bard - Level 55",
+      "msgCastOnYou": "You reel in pain as every bone in your body vibrates.",
+      "msgCastOnOther": "Someone reels in pain and loses concentration.",
+      "illusion": false,
+      "mana": 0,
+      "effects": [
+        "Decrease Cold Resist by 10",
+        "Decrease Fire Resist by 10",
+        "Decrease Magic Resist by 10",
+        "Unresistable"
+      ]
     },
     {
       "name": "Odium",
@@ -27878,61 +27916,6 @@
         "Level Cap: 54"
       ],
       "instrumentEnhanced": "No"
-    },
-    {
-      "name": "Song: Composition of Ervaj",
-      "durationText": "3 ticks",
-      "durationMs": 18000,
-      "castTimeMs": 3000,
-      "recastMs": 0,
-      "targetType": "Party",
-      "spellType": "Beneficial",
-      "classes": "* Bard - Level 60",
-      "msgCastOnYou": "A song of inspiration fills your weapon arm with strength.",
-      "illusion": false,
-      "mana": 0,
-      "effects": [
-        "Increase Haste v2 by 10%",
-        "Increase AC by 9 (L60) to 9 (L65)"
-      ]
-    },
-    {
-      "name": "Song: Melody of Ervaj",
-      "durationText": "3 ticks",
-      "durationMs": 18000,
-      "castTimeMs": 3000,
-      "recastMs": 0,
-      "targetType": "Party",
-      "spellType": "Beneficial",
-      "classes": "* Bard - Level 50",
-      "msgCastOnYou": "A song of inspiration fills your weapon arm with strength.",
-      "msgWearsOff": "The inspiration fades.",
-      "illusion": false,
-      "mana": 0,
-      "effects": [
-        "Increase Haste v2 by 5%",
-        "Increase AC by 5 (L50) to 6 (L65)"
-      ]
-    },
-    {
-      "name": "Song: Occlusion of Sound",
-      "durationText": "3 ticks",
-      "durationMs": 18000,
-      "castTimeMs": 3000,
-      "recastMs": 0,
-      "targetType": "Single",
-      "spellType": "Detrimental",
-      "classes": "* Bard - Level 55",
-      "msgCastOnYou": "You reel in pain as every bone in your body vibrates.",
-      "msgCastOnOther": "Someone reels in pain and loses concentration.",
-      "illusion": false,
-      "mana": 0,
-      "effects": [
-        "Decrease Cold Resist by 10",
-        "Decrease Fire Resist by 10",
-        "Decrease Magic Resist by 10",
-        "Unresistable"
-      ]
     },
     {
       "name": "Sonic Scream",
