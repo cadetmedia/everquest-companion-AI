@@ -171,7 +171,10 @@ async function fetchWikitext(by: 'pageids' | 'titles', ids: string[], reads: Rea
     if (j.continue) {
       throw new Error(`revisions batch at ${i} came back continued; content would be missing`)
     }
-    readRevPages(j.query?.pages ?? [], reads.pages, reads.unapplied, reads.pageids)
+    readRevPages(j.query?.pages ?? [], reads.pages, reads.unapplied, {
+      pageids: reads.pageids,
+      revids: new Map()
+    })
     console.log(`  content by ${by} ${Math.min(i + BATCH, ids.length)}/${ids.length}`)
   }
 }
