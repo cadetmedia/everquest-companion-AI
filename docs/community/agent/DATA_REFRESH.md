@@ -104,6 +104,11 @@ in `spellCorrectionsList.ts` and `engine/crates/eqlog/data/spell-overlay.json`
    `spellCorrectionsList.ts` with evidence; the scraper does not guess.
 4. **Load**: the data commit on the file's branch, gated on the merged tree.
 
+A spell re-derive leaves its new or renamed names without an era verdict (`spellEra` tests go
+red). `npx tsx scripts/scrape-page-era-spells.mts` asks the era endpoint for only those names, one
+request per 450, and merges them into `pageEra.json`; `--dry-run` names them and sends nothing.
+A full `scrape:page-era` would re-ask every batch the new names shift (about twenty requests).
+
 Done 2026-10-10 for every file. To re-derive `items.json`/`mobs.json` offline without undoing
 later top-ups, replace a record only where the pre-fix parser reproduces it exactly from the
 cached page; keep it otherwise (its page changed after the cache). Rulings from that review:
