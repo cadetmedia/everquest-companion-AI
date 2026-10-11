@@ -44,7 +44,7 @@ test('a faction bullet is a hit by the sign of its number, and an unlinked bulle
   const page = (field: string): string => `{{Namedmobpage\n| factions = \n\n${field}\n}}`
   assert.deepEqual(factionHits(page("* [[Heretics]] <span class='oppfac'>(-10)</span>")), ['Heretics'])
   assert.deepEqual(factionHits(page("* [[The Dead]]    <span class='oppfac'>(-30)</span>")), ['The Dead'])
-  assert.deepEqual(factionHits(page("* [[Heretics]] <span class='oppfac'>(-0)</span>")), [])
+  assert.deepEqual(factionHits(page("* [[Heretics]] <span class='oppfac'>(-0)</span>")), ['Heretics'])
   assert.deepEqual(factionHits(page("* [[Heretics]] <span class='oppfac'>(?)</span>")), [])
   assert.deepEqual(
     factionHits(page("* Guards of Qeynos <span class='profac'>(-10)</span>\n* Najena (-5)\n* GemChoppers")),

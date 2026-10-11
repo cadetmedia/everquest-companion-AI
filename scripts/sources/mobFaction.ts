@@ -13,10 +13,11 @@ import { templateField } from '../../src/main/itemLookupParse'
 /** Bullets that are notes or headings, not a faction's name. */
 const NOT_A_FACTION = /^(?:none|unknown|need|information|kos\b|for\b|\?)/i
 
-/** Whether the bullet's faction is lowered: by its number's sign when it states one. */
+/** Whether the bullet's faction is lowered: by its number's sign when it states one. A `(-0)`
+ *  is a listed hit of unstated size (55 Velketor pages), not no hit (owner, 2026-10-10). */
 function lowers(line: string): boolean {
   const n = /\(\s*([+-]?\d+)\s*\)/.exec(line)
-  if (n !== null) return n[1].startsWith('-') && Number(n[1]) !== 0
+  if (n !== null) return n[1].startsWith('-')
   return !line.includes('oppfac') && !/\+\s*$/.test(line)
 }
 
