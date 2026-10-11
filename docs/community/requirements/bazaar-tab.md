@@ -32,3 +32,4 @@ record what was built but not always who asked; those say "owner" where the row 
 | 2026-10-08 | owner | WTS and WTB can both be on for the same item at the same time. | built |
 | 2026-10-08 | owner | Use the existing alert framework, so its sound, voice, banner, cooldown and history apply. | built |
 | 2026-10-08 | owner | Keep the price thresholds Malkil asked for (they were dropped by mistake in the simplification and restored the same evening). | built |
+| 2026-10-11 | owner | Efficiency pass: the Bazaar's item facts (icon, no-trade) load in one batched call for the whole list, not one lookup per item. | built (shares item-hover-cards' `items:marks` store) |
