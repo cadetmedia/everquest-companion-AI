@@ -20,6 +20,8 @@ import CleanupList, { NO_DUMP_LOCATIONS } from './CleanupList'
 import { cleanupRowsFor } from './cleanup'
 import type { MobTarget } from '../mobs/mobTarget'
 import Confetti from '../../lib/Confetti'
+import ChipMultiSelect from '../../components/ChipMultiSelect'
+import { filterReadyByClass, useReadyClasses } from './readyClasses'
 
 // The one-line status under the filters. It states which of three situations you are in —
 // there is no Sky data at all, there is data but you ignored every quest, or here are the
@@ -114,6 +116,47 @@ interface ReadyListProps extends QuestListProps {
   countSource: CountSource
   onCountSource: (s: CountSource) => void
   inventoryLoadedAt: number | null
+  /** Every class the data names, for the tab's own class pick (readyClasses.ts). */
+  classes: string[]
+}
+
+/** The Ready tab's class pick: "my class, or whatever class I chose" (owner, 2026-10-11). */
+function ReadyClassPicker({
+  classes,
+  picked,
+  onPick
+}: {
+  classes: string[]
+  picked: string[]
+  onPick: (v: string[]) => void
+}): JSX.Element {
+  return (
+    <ChipMultiSelect
+      options={classes}
+      value={picked}
+      onChange={onPick}
+      label="Filter by class"
+      placeholder="All classes"
+      testId="posky-ready-class-filter"
+    />
+  )
+}
+
+/** ` 3 more are ready for other classes.` when the pick hides some; nothing otherwise. */
+function hiddenByClassNote(hidden: number): string {
+  if (hidden === 0) return ''
+  return ` ${String(hidden)} more ${hidden === 1 ? 'is' : 'are'} ready for other classes.`
+}
+
+/** The rune caveat (JOS-409), only while an inventory-backed source is read (`countsFromInventory`). */
+function runeNoteFor(countSource: CountSource): string {
+  return countsFromInventory(countSource) ? ` ${DUMP_BLIND_READY_NOTE}` : ''
+}
+
+/** The count line's clause for a class pick: ` for Bard`, ` for Bard and Cleric`, or nothing. */
+function forClasses(picked: readonly string[]): string {
+  if (picked.length === 0) return ''
+  return ` for ${picked.length === 1 ? picked[0] : `${picked.slice(0, -1).join(', ')} and ${picked[picked.length - 1]}`}`
 }
 
 /**
@@ -144,13 +187,19 @@ interface ReadyListProps extends QuestListProps {
  * it hangs in the view's own `Stack spacing`, and here that gap has to be bought explicitly.
  */
 function ReadyList(props: ReadyListProps): JSX.Element {
-  const n = props.quests.length
+  // The tab's own class pick (owner, 2026-10-11), applied after the first-time toggle: the
+  // unfiltered count still names what the pick is hiding, so an empty pane says why.
+  const [picked, setPicked] = useReadyClasses()
+  const quests = useMemo(() => filterReadyByClass(props.quests, picked), [props.quests, picked])
+  const n = quests.length
+  const hiddenByClass = props.quests.length - n
   const { readyFirstTimeOnly, readyRefarmCount } = props.list
   // THE RUNE CAVEAT (JOS-409), on both states of the tab for JOS-155's reason: the thing it
   // explains is a quest that is ABSENT, so the empty pane is precisely where it is needed most.
   // Gated on the source actually reading the export — under `log` the dump answers nothing and its
   // blindness explains nothing (`countsFromInventory` is that gate, shared with the freshness line).
-  const runeNote = countsFromInventory(props.countSource) ? ` ${DUMP_BLIND_READY_NOTE}` : ''
+  const runeNote = runeNoteFor(props.countSource)
+  const classNote = hiddenByClassNote(hiddenByClass)
   return (
     <Box
       data-testid="posky-ready"
@@ -158,6 +207,7 @@ function ReadyList(props: ReadyListProps): JSX.Element {
     >
       <Stack direction="row" spacing={2} alignItems="center" useFlexGap sx={{ mb: 2.5 }}>
         <ReadyFirstTimeToggle list={props.list} />
+        <ReadyClassPicker classes={props.classes} picked={picked} onPick={setPicked} />
         <Box sx={{ flexGrow: 1 }} />
         <InventorySource
           countSource={props.countSource}
@@ -167,8 +217,9 @@ function ReadyList(props: ReadyListProps): JSX.Element {
       </Stack>
       {n === 0 ? (
         <Typography color="text.secondary" data-testid="posky-ready-empty">
-          Nothing is ready to turn in - a quest lands here the moment you are holding every item it
+          Nothing is ready to turn in{forClasses(picked)} - a quest lands here the moment you are holding every item it
           needs, and leaves when you hand them over.
+          {classNote}
           {readyFirstTimeOnly && readyRefarmCount > 0
             ? ` ${String(readyRefarmCount)} you have run before ${readyRefarmCount === 1 ? 'is' : 'are'} ready now - untick the box to see ${readyRefarmCount === 1 ? 'it' : 'them'}.`
             : ''}
@@ -177,8 +228,9 @@ function ReadyList(props: ReadyListProps): JSX.Element {
       ) : (
         <>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }} data-testid="posky-ready-count">
-            {n} quest{n === 1 ? '' : 's'} you are holding every item for
+            {n} quest{n === 1 ? '' : 's'}{forClasses(picked)} you are holding every item for
             {readyFirstTimeOnly ? ' and have never turned in' : ''}.
+            {classNote}
             {readyFirstTimeOnly && readyRefarmCount > 0
               ? ` ${String(readyRefarmCount)} more you have run before ${readyRefarmCount === 1 ? 'is' : 'are'} ready too.`
               : ''}
@@ -189,7 +241,7 @@ function ReadyList(props: ReadyListProps): JSX.Element {
             {' Holding something you no longer have? Expand the quest and correct the count beside the item.'}
             {runeNote}
           </Typography>
-          <QuestList {...props} />
+          <QuestList {...props} quests={quests} />
         </>
       )}
     </Box>
@@ -349,6 +401,7 @@ function PoskyBody(x: PoskyBodyProps): JSX.Element {
     return (
       <ReadyList
         quests={list.ready}
+        classes={x.classes}
         {...rows}
         countSource={countSource}
         onCountSource={onCountSource}
