@@ -18,14 +18,28 @@ const NOTE = /\(Autogranted\)/
 
 /** Same name, one page noted, SAME three sentences: one spell on two pages. */
 const CONTESTED = ['Anthem De Arms', 'Burst of Flame', "O'Keils Radiation"]
-/** Same name, one page noted, DIFFERENT sentences: two spells sharing a title - both stay. */
-const TWO_SPELLS = ['Greater Healing', 'Healing', 'Shock of Frost']
+/**
+ * DIFFERENT sentences: two spells that used to share a title. Until the 2026-10-10 delta run the
+ * scrape named a spell by its |spellname, and each of these pairs was one name, one page noted -
+ * the case the sentence guard exists for. The run names a spell by its PAGE TITLE, and each second
+ * page now carries its own: `Healing Water` (the druid's, which the guard kept alive), `Full Heal`
+ * and `Blast of Cold`. Both rows must still survive the load, under either shape.
+ */
+const TWO_SPELLS: readonly (readonly [string, string])[] = [
+  ['Greater Healing', 'Healing Water'],
+  ['Healing', 'Full Heal'],
+  ['Shock of Frost', 'Blast of Cold']
+]
 
 test('the committed corpus contests exactly these three names, each a classic page beside a Legends page', () => {
   const { report } = applyLegendsPagePreference(RAW)
   assert.deepEqual([...report.names].sort(), CONTESTED)
   assert.equal(report.dropped, 3, 'one classic row per name')
-  for (const n of [...CONTESTED, ...TWO_SPELLS]) {
+  for (const [n, twin] of TWO_SPELLS) {
+    assert.equal(RAW.filter((s) => s.name === n).length, 1, `${n}: its twin page now carries its own title`)
+    assert.equal(RAW.filter((s) => s.name === twin).length, 1, `${twin}: the twin, under its page title`)
+  }
+  for (const n of CONTESTED) {
     const rows = RAW.filter((s) => s.name === n)
     assert.equal(rows.length, 2, `${n}: two pages in the scrape`)
     assert.equal(rows.filter((s) => NOTE.test(s.classes ?? '')).length, 1, `${n}: one of them autogranted`)
@@ -45,12 +59,14 @@ test('the effective DB holds one row per contested name, and it is the autogrant
 
 test('HEALING WATER STAYS: a same-name pair with different sentences is two spells, and both survive', () => {
   // test.11's regression (levelUnlocks.ts couldBeSameSpell), which the first cut of this pass
-  // repeated one day later. The druid's Healing Water is the wiki's second `Greater Healing`.
+  // repeated one day later. The druid's Healing Water was the wiki's second `Greater Healing`; since
+  // the 2026-10-10 delta run it is read under its page title, `Healing Water`.
   const effective = loadSpellDb().spells
-  for (const n of TWO_SPELLS) {
-    assert.equal(effective.filter((s) => s.name === n).length, 2, `${n}: both pages stay`)
+  for (const [n, twin] of TWO_SPELLS) {
+    assert.equal(effective.filter((s) => s.name === n).length, 1, `${n}: its own page stays`)
+    assert.equal(effective.filter((s) => s.name === twin).length, 1, `${twin}: and so does the twin`)
   }
-  const water = effective.find((s) => s.name === 'Greater Healing' && s.msgCastOnYou === 'Healing water flows over you.')
+  const water = effective.find((s) => s.name === 'Healing Water' && s.msgCastOnYou === 'Healing water flows over you.')
   assert.ok(water, 'Healing water flows over you - the row a friend lost once already')
   assert.equal(water.mana, 150)
 })
