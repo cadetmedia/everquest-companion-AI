@@ -1,5 +1,5 @@
 {{Classic Era}}
-[[File:npc_linadian.png|frame|Linadian]]
+[[File:npc_linadian.png|thumb|Linadian]]
 {| class="questTopTable"
 ! ''' Start Zone: '''
 | [[Greater Faydark|Kelethin]], [[West Freeport]]
@@ -54,14 +54,10 @@ You say, 'What banded orc vests'
 : Linadian says. 'Grand doing business with you. Hold your nose. I can never get rid of the orc stench of the vests. That is why the other merchants do not pay me much for them.'
 
 <div class="facblock">
-* Your faction standing with [[Anti-Mage]] got better. (1) <<this quest doesn't give faction hit in EQL for Anti-Mage>>
-* Your faction standing with [[Kelethin Merchants]] got better. (5) <<+5 in EQL>>
-* Your faction standing with [[Faydarks Champions]] got better. (1) <<+5 in EQL>>
-* Your faction standing with [[Emerald Warriors]] got better. (1) <<+5 in EQL>>
-<<3.807% exp at lvl 10 in EQL>>
-
+* Your faction standing with [[Kelethin Merchants]] has been adjusted by 5.
+* Your faction standing with [[Faydarks Champions]] has been adjusted by 5.
+* Your faction standing with [[Emerald Warriors]] has been adjusted by 5.
 </div>
-
 {{YouGainExperience}}
 
 == Notes ==
