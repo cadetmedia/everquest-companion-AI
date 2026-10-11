@@ -49,6 +49,10 @@ function isLegendsPage(s: SpellEntry): boolean {
   return (s.classes ?? '').includes(AUTOGRANT_NOTE)
 }
 
+/** "The same name" ignores apostrophe style, apostrophe placement and case: the wiki carries
+ *  `O'Keils Radiation` beside `O\`Keil's Radiation` (owner, 2026-10-10: fold these, no hand entry). */
+const nameKey = (s: SpellEntry): string => s.name.replace(/[`'’]/g, '').toLowerCase()
+
 /** The three sentences a page prints, as one comparable string. */
 function sentences(s: SpellEntry): string {
   return JSON.stringify([s.msgCastOnYou ?? null, s.msgCastOnOther ?? null, s.msgWearsOff ?? null])
@@ -71,16 +75,16 @@ export function applyLegendsPagePreference(spells: readonly SpellEntry[]): {
   spells: SpellEntry[]
   report: PagePreferenceReport
 } {
-  // name -> the sentence sets its noted pages print
+  // folded name -> the sentence sets its noted pages print
   const legends = new Map<string, Set<string>>()
   for (const s of spells) {
     if (!isLegendsPage(s)) continue
-    const set = legends.get(s.name) ?? new Set<string>()
+    const set = legends.get(nameKey(s)) ?? new Set<string>()
     set.add(sentences(s))
-    legends.set(s.name, set)
+    legends.set(nameKey(s), set)
   }
   const dropped = (s: SpellEntry): boolean =>
-    !isLegendsPage(s) && (legends.get(s.name)?.has(sentences(s)) ?? false)
+    !isLegendsPage(s) && (legends.get(nameKey(s))?.has(sentences(s)) ?? false)
   const out = spells.filter((s) => !dropped(s))
   const names: string[] = []
   for (const s of spells) if (dropped(s) && !names.includes(s.name)) names.push(s.name)

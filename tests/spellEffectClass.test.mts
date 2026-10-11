@@ -85,7 +85,12 @@ const RESEARCH_CHARMS = [
   'Dictate', // Enchanter 60
   'Dominate Undead', // Necromancer 18
   'Enslave Death', // Necromancer 60
-  "Solon's Bravura", // Bard 39 — the JOS-200 reversal, and the wiki carries the page twice
+  // Bard 39 — the JOS-200 reversal, and the wiki carries the page twice. Since the 2026-10-10 delta
+  // run the scrape names a row by its PAGE TITLE, and the two pages now carry two names: the 18 s
+  // page `Solon's Bravura` and the April-2000 page `Solon's Bewitching Bravura` (the game's
+  // spelling, which the JOS-161 correction gives the other row too). Two names, ONE spell.
+  "Solon's Bewitching Bravura",
+  "Solon's Bravura",
   "Solon's Song of the Sirens", // Bard 27 — the JOS-250 contested item, ruled a CHARM by the owner
   'Thrall of Bones', // Necromancer 54
   'Tunare`s Request' // Druid 55 — a 2h45m hold whose break was silent; missed by every stem
@@ -96,7 +101,10 @@ const NPC_CHARMS = ['Alluring Whispers', 'Dragon Charm', 'Vampire Charm']
 
 test('JOS-251 R1: the derived charm roster IS the researched roster, name for name', () => {
   assert.deepEqual(names('charm'), RESEARCH_CHARMS)
-  assert.equal(RESEARCH_CHARMS.length, 20, 'twenty player-castable charms')
+  // Twenty-one NAMES, twenty SPELLS: the two Bravura titles are one song (see the roster above).
+  assert.equal(RESEARCH_CHARMS.length, 21, 'twenty-one raw names')
+  const spells = new Set(RESEARCH_CHARMS.map((n) => (n === "Solon's Bravura" ? "Solon's Bewitching Bravura" : n)))
+  assert.equal(spells.size, 20, 'twenty player-castable charms')
 })
 
 test('JOS-251 R1b: …and its class breakdown is the research`s, re-derived from the DB', () => {
@@ -106,7 +114,8 @@ test('JOS-251 R1b: …and its class breakdown is the research`s, re-derived from
   assert.equal(per('Druid').length, 7, 'three of these had no stem at all')
   assert.deepEqual(per('Shaman'), ['Befriend Animal', 'Charm Animals'], 'both shared with the druid list')
   assert.equal(per('Necromancer').length, 5)
-  assert.deepEqual(per('Bard'), ["Solon's Bravura", "Solon's Song of the Sirens"])
+  // Bard 2 in the research: Bravura (under both of its page titles since 2026-10-10) and Sirens.
+  assert.deepEqual(per('Bard'), ["Solon's Bewitching Bravura", "Solon's Bravura", "Solon's Song of the Sirens"])
 })
 
 test('JOS-251 R1c: the NPC charms are real charms, and are excluded by the CASTABLE gate', () => {
@@ -168,7 +177,11 @@ test('JOS-251 R3: the hold roster is mez ∪ root, and a movement debuff is in N
   const holds = holdRoster(RAW)
   // THE JOS-225 REPORT, restated as a derivation property: a mob under either Largo's keeps
   // swinging. The stems had to be TOLD that, twice, by two reporters; the effect line says it.
-  for (const n of ["Largo's Melodic Binding", "Largo's Assonant Binding"]) {
+  // The level-51 song's page is titled `Largo's Absonant Binding` (the scrape reads page titles since
+  // the 2026-10-10 delta run; its |spellname said `Assonant`). The owner's log never cast it under
+  // `Assonant` either (0 wear-offs, 0 resists: alertGroups.ts and the JOS-384 correction) - that
+  // character never reached 51 - so no measured log line rides on this name.
+  for (const n of ["Largo's Melodic Binding", "Largo's Absonant Binding"]) {
     const row = RAW.find((s) => s.name === n)
     assert.ok(row, `spells.json must still carry "${n}"`)
     assert.ok(!holds.has(spellCanonKey(n)), `"${n}" holds nothing — that is the JOS-225 report`)
@@ -180,7 +193,7 @@ test('JOS-251 R3: the hold roster is mez ∪ root, and a movement debuff is in N
   // the alert the ruling actually assigned, so nothing about it needs revisiting — but a future
   // reader reaching for "the snare songs" should be reaching for one of them.
   assert.ok(!spellHasEffect(RAW.find((s) => s.name === "Largo's Melodic Binding")!, 'snare'), 'AC and attack speed only')
-  assert.ok(spellHasEffect(RAW.find((s) => s.name === "Largo's Assonant Binding")!, 'snare'), '61% at L60')
+  assert.ok(spellHasEffect(RAW.find((s) => s.name === "Largo's Absonant Binding")!, 'snare'), '61% at L60')
   // …and the roster does contain the thing it is named for.
   assert.ok(holds.has('mesmerize'), 'the enchanter mez')
   assert.ok(holds.has('root'), 'and the root that gives the alert group its other half')
@@ -295,8 +308,12 @@ test('JOS-251 R4d: the per-class membership counts, pinned', () => {
     {
       // slow 34 -> 33 (2026-09-12): spellKey.ts drops apostrophes, and the wiki spells Turgur's Insects
       // two ways (an apostrophe and a `); one slow, one key now, as the client and the log had it.
-      charm: 23, summonPet: 102, mez: 16, root: 24, snare: 31, slow: 33, haste: 45, fear: 15,
-      stun: 92, blind: 12, pacify: 12, memblur: 17, invisibility: 20, feignDeath: 2,
+      // charm 23 -> 24 and invisibility 20 -> 19 (2026-10-10 delta run, names from PAGE TITLES): the
+      // second Bravura page is titled `Solon's Bewitching Bravura`, one song under a second raw key;
+      // and the invisibility twin 49735 is titled `Invisibility versus Undead`, which folds with
+      // 57190's `Versus` again - the 19 the JOS-440 paragraph above predicted for an upstream fix.
+      charm: 24, summonPet: 102, mez: 16, root: 24, snare: 31, slow: 33, haste: 45, fear: 15,
+      stun: 92, blind: 12, pacify: 12, memblur: 17, invisibility: 19, feignDeath: 2,
       // JOS-318, the class the alert catalog reads. 67 rows / 66 canonical names.
       healOverTime: 66
     }
@@ -491,13 +508,16 @@ test('JOS-251 R7: THE SEPARATION — the roster comes off the RAW scrape, and th
   assert.deepEqual([...charmRoster(RAW)].sort(), RESEARCH_CHARMS.map(spellCanonKey).sort())
 
   // Half two: the overlay is not load-bearing for the derivation either. The corrections rename and
-  // re-message rows (JOS-161 renames both Bravura rows), and the roster is IDENTICAL apart from the
-  // renamed key it is supposed to change — stated by name so a future correction that silently
-  // moved a charm out of the roster fails here.
+  // re-message rows (JOS-161 renames the `Solon's Bravura` row), and the roster is IDENTICAL apart
+  // from the renamed key it is supposed to change — stated by name so a future correction that
+  // silently moved a charm out of the roster fails here. Since the 2026-10-10 delta run the other
+  // Bravura page arrives under its title `Solon's Bewitching Bravura`, so the rename now lands on a
+  // key the raw roster already holds: one raw key folds away and no new key appears.
   const corrected = applySpellCorrections(RAW).spells
   const rawKeys = charmRoster(RAW)
   const corrKeys = charmRoster(corrected)
-  assert.deepEqual([...corrKeys].filter((k) => !rawKeys.has(k)), ['solons bewitching bravura'])
+  assert.deepEqual([...corrKeys].filter((k) => !rawKeys.has(k)), [])
   assert.deepEqual([...rawKeys].filter((k) => !corrKeys.has(k)), ['solons bravura'])
-  assert.equal(rawKeys.size, corrKeys.size, 'a rename, and nothing else')
+  assert.ok(corrKeys.has('solons bewitching bravura'), 'the rename lands on the title the other page carries')
+  assert.equal(rawKeys.size, corrKeys.size + 1, 'a rename onto an existing key, and nothing else')
 })
