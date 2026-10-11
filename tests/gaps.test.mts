@@ -3,6 +3,8 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
+  derivedPrices,
+  formatCoin,
   gapDetailsText,
   gapsAsText,
   gapsCaption,
@@ -104,9 +106,27 @@ test('the sale-on-loot and paid lists print with the discount caveat in the word
     [
       'Spider Legs\tlooted, bought\t3\t2026-10-06 18:12:26\t2026-10-10 17:48:36',
       '\tsold on loot (discounted): 7 copper (2)',
+      '\tvendor value: 1 silver · base price: 1 silver',
       '\tpaid: 5 platinum 2 gold (1)'
     ].join('\n')
   )
+})
+
+test('derivedPrices reads the real prices behind an instant sale, to the copper of the screenshots', () => {
+  const sold = (coin: string) => ({ samples: [], sales: { entries: [{ name: coin, n: 1 }], distinct: 1 } })
+  // Gold Ring: sells instantly for 857c, the loot window's Value shows 1,143c, base 1,200c.
+  assert.deepEqual(derivedPrices(sold('8 gold 5 silver 7 copper')), { sale: 857, base: 1200, vendorValue: 1143 })
+  // Jade Earring: 3,214c instantly, Value 4,286c, base 4,500c.
+  assert.deepEqual(derivedPrices(sold('3 platinum 2 gold 1 silver 4 copper')), { sale: 3214, base: 4500, vendorValue: 4286 })
+  assert.equal(derivedPrices({ samples: [] }), null, 'no sale, nothing derived')
+  assert.equal(derivedPrices(sold('free')), null, 'a free sale is no price')
+})
+
+test('formatCoin writes the denominations that are there, and 0 copper for nothing', () => {
+  assert.equal(formatCoin(1143), '1 platinum 1 gold 4 silver 3 copper')
+  assert.equal(formatCoin(4500), '4 platinum 5 gold')
+  assert.equal(formatCoin(7), '7 copper')
+  assert.equal(formatCoin(0), '0 copper')
 })
 
 test('gapsAsText is the header then every row with its details', () => {
