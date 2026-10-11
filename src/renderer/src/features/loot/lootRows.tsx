@@ -140,7 +140,7 @@ export const GroupedRow = memo(function GroupedRow({
               the toolbar and held the pointer there. The card is back in the click-through mode
               (JOS-181; owner ask, 2026-10-03): it opens below, takes no pointer events and closes
               on any pointerdown, which is what `loot-sort.e2e.mts` hovers this testid to prove. */}
-          <ItemIcon knowledge={knowledge} />
+          <ItemIcon name={g.item} />
           <KnownItemTooltip name={g.item} knowledge={knowledge} clickThrough>
             <Box component="span" data-testid="loot-item-name">
               {g.item}
@@ -265,7 +265,7 @@ export const EngineFlatRow = memo(function EngineFlatRow({
       <TableCell sx={{ color: 'text.secondary' }}>{text(cells, 'at') ?? ''}</TableCell>
       <TableCell>
         <Stack direction="row" spacing={1} alignItems="center">
-          <ItemIcon knowledge={knowledge} />
+          <ItemIcon name={item} />
           <KnownItemTooltip name={item} knowledge={knowledge} clickThrough>
             <Box component="span" data-testid="loot-item-name">
               {count !== null && count > 1 ? `${String(count)} × ${item}` : item}
@@ -310,7 +310,7 @@ export const FlatRow = memo(function FlatRow({
       <TableCell>
         <Stack direction="row" spacing={1} alignItems="center">
           {/* The click-through card, same reason as GroupedRow above. */}
-          <ItemIcon knowledge={knowledge} />
+          <ItemIcon name={e.item} />
           <KnownItemTooltip name={e.item} knowledge={knowledge} clickThrough>
             <Box component="span" data-testid="loot-item-name">
               {e.count && e.count > 1 ? `${e.count} × ${e.item}` : e.item}

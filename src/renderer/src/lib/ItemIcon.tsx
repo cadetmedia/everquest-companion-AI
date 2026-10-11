@@ -1,14 +1,15 @@
 // ItemIcon — an item's wiki icon the Gear tab's way, for list rows: a fixed 22 px box so rows
-// with and without one line up, hidden when the page names none or the image fails. Takes the
-// row's knowledge record itself, so a row stays one branch simpler (the loot rows sit at the
-// complexity ceiling).
+// with and without one line up, hidden when the page names none or the image fails. Asks for the
+// id by item NAME through `itemIcons.ts`, which batches every row of a paint into one call, so
+// only the rows a windowed table has mounted are ever looked up (owner, 2026-10-10).
 
 import { type JSX } from 'react'
 import { Box } from '@mui/material'
 import { itemIconUrl } from './ItemWindow'
+import { useItemIconId } from './itemIcons'
 
-export function ItemIcon({ knowledge }: { knowledge?: { iconId?: number } }): JSX.Element {
-  const iconId = knowledge?.iconId
+export function ItemIcon({ name }: { name: string }): JSX.Element {
+  const iconId = useItemIconId(name)
   if (iconId === undefined) return <Box sx={{ width: 22, flexShrink: 0 }} />
   return (
     <Box
