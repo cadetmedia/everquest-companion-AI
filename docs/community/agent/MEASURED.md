@@ -16,6 +16,14 @@ SK, others).
   constant-level window gave noisier reads (Plague 0%/rank), so treat DoT scaling as less certain
   than procs. To settle: cast rank I and rank IV of one DoT at one mob in one session.
   Write-up: `docs/plans/spell-upgrades-and-loadout.md` §0.9.
+- **The healing rank rule (3% a rank, `healAtRank`) is SUSPECT** (2026-10-11). On the owner's log
+  Superior Healing's full heal (the parenthesised number of `You healed X for N (M)`) read 612 at
+  rank I for weeks, then at rank IV alone climbed from 698 (8 Sep) to 870-943 (Oct) with no rank
+  change: gear, focus or level move the heal far more than rank, and the August fit (892/943/968
+  at II/IV/V) was taken during that climb. On a steady state, IV (Oct 6-8, median ~870, top 943)
+  to VII (Oct 11, 24 overheals, median 895, top 954) is ~3% in total, about 1% a rank or less.
+  Do not re-fit from history: cast two ranks of one heal in one session on one gear state, ten
+  overheals each, and read the two maxima. Until then the Upgrades tab overstates heal gains.
 - **Form of the Bear:** upgrading buys only mana and duration. Stats window: +1 HP regen, +5 WIS
   with Bear IV up. A base of 1 cannot move under any rate. Shipped as `MEASURED_STATIC_MAGNITUDE`
   in `src/shared/spellUpgrade.ts` plus the `magnitudeCanMove` guard. Open: whether Chloroplast and
