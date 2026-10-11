@@ -13,9 +13,9 @@ import { ChartTooltip, type TooltipRow } from '../../lib/ChartTooltip'
 
 export const ASK_COLOR = '#b8860b'
 export const OFFER_COLOR = '#2f86d6'
-const SURFACE = '#171a21'
-const GRID = '#2a2f3a'
-const AXIS_TEXT = 'rgba(255,255,255,0.6)'
+export const SURFACE = '#171a21'
+export const GRID = '#2a2f3a'
+export const AXIS_TEXT = 'rgba(255,255,255,0.6)'
 
 const H = 240
 const M = { left: 48, right: 16, top: 12, bottom: 26 }
@@ -26,7 +26,7 @@ const shortDay = (day: string): string =>
   new Date(timeOf(day)).toLocaleDateString(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' })
 
 /** A round top for the y axis: 1, 2, 2.5 or 5 times a power of ten. */
-function niceMax(v: number): number {
+export function niceMax(v: number): number {
   if (v <= 0) return 1
   const p = 10 ** Math.floor(Math.log10(v))
   return ([1, 2, 2.5, 5, 10].find((s) => s * p >= v) ?? 10) * p
@@ -148,7 +148,7 @@ function Legend(): JSX.Element {
 }
 
 /** The box's width, followed as it resizes. */
-function useWidth(box: React.RefObject<HTMLDivElement | null>): number {
+export function useWidth(box: React.RefObject<HTMLDivElement | null>): number {
   const [w, setW] = useState(600)
   useLayoutEffect(() => {
     const el = box.current

@@ -29,6 +29,7 @@ import {
 import { useModule } from '../../lib/useModule'
 import { useWishlist } from '../wishlist/useWishlist'
 import { ASK_COLOR, BazaarChart, BazaarSparkline, OFFER_COLOR } from './BazaarChart'
+import { BazaarHoursChart } from './BazaarHoursChart'
 import BazaarControls, { DEFAULT_PRICE_TIER, type BazaarControlState, type BazaarShow } from './BazaarControls'
 import BazaarQuotes from './BazaarQuotes'
 import { ItemIcon, ItemName, nameOf, priceOf } from './BazaarItemCells'
@@ -152,7 +153,16 @@ function PriceGrid({ item }: { item: BazaarItem }): JSX.Element {
   )
 }
 
-function Detail({ item, endDay, onOpenLoot, onHide }: { item: BazaarItem; endDay: string; onOpenLoot: (item: string) => void; onHide: () => void }): JSX.Element {
+interface DetailProps {
+  item: BazaarItem
+  endDay: string
+  /** The toolbar's switch, which the time-of-day chart honours too. */
+  ignoreOutliers: boolean
+  onOpenLoot: (item: string) => void
+  onHide: () => void
+}
+
+function Detail({ item, endDay, ignoreOutliers, onOpenLoot, onHide }: DetailProps): JSX.Element {
   const lows = item.points.map((p) => p.sell.low ?? Infinity)
   const highs = item.points.map((p) => p.sell.high ?? -Infinity)
   const low = Math.min(...lows)
@@ -183,7 +193,14 @@ function Detail({ item, endDay, onOpenLoot, onHide }: { item: BazaarItem; endDay
         </Stack>
         {item.combined !== undefined && <BazaarTierTable c={item.combined} />}
         <BazaarWatchPanel item={item} />
-        <BazaarChart item={item} endDay={endDay} />
+        <Stack direction="row" spacing={3} flexWrap="wrap" useFlexGap alignItems="flex-start">
+          <Box sx={{ flex: '2 1 480px', minWidth: 0 }}>
+            <BazaarChart item={item} endDay={endDay} />
+          </Box>
+          <Box sx={{ flex: '1 1 360px', minWidth: 360 }}>
+            <BazaarHoursChart item={item} ignoreOutliers={ignoreOutliers} />
+          </Box>
+        </Stack>
         <BazaarQuotes quotes={item.quotes} title="Who's offering (newest first)" />
         <Typography variant="caption" color="text.disabled">
           Predicted: a trend through the last ten priced days, newer and busier days counting more,
@@ -285,9 +302,9 @@ function HeardAlerts(): JSX.Element | null {
 }
 
 /** The picked item's panel, or the slim bar it folds to. */
-function PickedPanel(p: { item: BazaarItem; endDay: string; hidden: boolean; setHidden: (h: boolean) => void; onOpenLoot: (item: string) => void }): JSX.Element {
+function PickedPanel(p: Omit<DetailProps, 'onHide'> & { hidden: boolean; setHidden: (h: boolean) => void }): JSX.Element {
   if (p.hidden) return <HiddenDetail name={nameOf(p.item)} onShow={() => p.setHidden(false)} />
-  return <Detail item={p.item} endDay={p.endDay} onOpenLoot={p.onOpenLoot} onHide={() => p.setHidden(true)} />
+  return <Detail item={p.item} endDay={p.endDay} ignoreOutliers={p.ignoreOutliers} onOpenLoot={p.onOpenLoot} onHide={() => p.setHidden(true)} />
 }
 
 /** Which items the Show picker keeps; undefined keeps all. */
@@ -389,7 +406,7 @@ export default function BazaarView({ onOpenLoot }: { onOpenLoot: (item: string) 
         <Typography variant="body2">No trade offers {filtered ? 'match' : 'in your log yet'}.</Typography>
       ) : (
         <>
-          <PickedPanel item={picked} endDay={sum.lastDay} hidden={detailHidden} setHidden={setDetailHidden} onOpenLoot={onOpenLoot} />
+          <PickedPanel item={picked} endDay={sum.lastDay} ignoreOutliers={ctl.ignoreOutliers} hidden={detailHidden} setHidden={setDetailHidden} onOpenLoot={onOpenLoot} />
           <Box sx={{ overflowX: 'auto' }}>
             <Table size="small" stickyHeader>
               <SortHead sort={sort} onSort={onSort} />
