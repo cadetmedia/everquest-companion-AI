@@ -203,15 +203,20 @@ test('D11 the facts for a rank the DB has no row for are the LINE’s, and the c
 })
 
 test('D12 "replaces" is the highest rank BELOW this one that a source names, never "rank minus one"', () => {
-  // A source that names I and III and nothing between: asked about III, the honest answer is I.
-  const d = buildSpellDetail(db, 'Cannibalize IV')
-  assert.equal(d.lineage?.rank, 4)
-  const below = d.lineage?.members.filter((m) => m.rank < 4).map((m) => m.name) ?? []
-  assert.ok(below.length > 0, 'the DB carries Cannibalize rank siblings')
+  // A source that names III and V and nothing between: asked about V, the honest answer is III.
+  //
+  // MOVED 2026-10-10 from Cannibalize IV, whose gap closed: the whole-wiki delta run of that day
+  // names spells by PAGE TITLE, and the page titled `Cannibalize II` (shaman 38) used to arrive as
+  // `McMerin's Feast`, its |spellname. Flowing Thought is the committed DB's remaining real gap in a
+  // player line: I, II, III and V, no IV.
+  const d = buildSpellDetail(db, 'Flowing Thought V')
+  assert.equal(d.lineage?.rank, 5)
+  const below = d.lineage?.members.filter((m) => m.rank < 5).map((m) => m.name) ?? []
+  assert.ok(below.length > 0, 'the DB carries Flowing Thought rank siblings')
   assert.equal(d.lineage?.replaces, below[below.length - 1])
-  // Measured on the committed DB: the line is Cannibalize, Cannibalize III, Cannibalize IV -
-  // there is no rank II row, and the card must not invent one.
-  assert.ok(!below.includes('Cannibalize II'), below.join(' | '))
+  assert.equal(d.lineage?.replaces, 'Flowing Thought III', 'the highest rank a source names, not rank minus one')
+  // There is no rank IV row, and the card must not invent one.
+  assert.ok(!below.includes('Flowing Thought IV'), below.join(' | '))
 })
 
 test('D13 a single-rank line with an unsuffixed name has NO lineage block', () => {
