@@ -5,4 +5,4 @@ nothing listed here is removed or narrowed without the owner's word (RULES.md, r
 
 | Date | Asked by | The ask | Status |
 | --- | --- | --- | --- |
-| 2026-10-11 | owner | Mobs and items that show a related quest link that quest's name to its wiki page. | asked |
+| 2026-10-11 | owner | Mobs and items that show a related quest link that quest's name to its wiki page. | built (`questWikiUrl`; item hover card, mob hover card and Mobs page chips; the Loot drill-down chip on `gear-tab-improvements`) |
