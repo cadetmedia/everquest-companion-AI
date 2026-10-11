@@ -36,7 +36,7 @@ fn gaps_corpus() {
     for domain in ["item", "mob", "spell"] {
         println!("\n== {domain} ==");
         let rows = state["rows"].as_array().expect("rows");
-        for r in rows.iter().filter(|r| r["domain"] == domain).take(15) {
+        for (i, r) in rows.iter().filter(|r| r["domain"] == domain).take(15).enumerate() {
             println!(
                 "{:>5}  {:<40} {:<28} {}  {}",
                 r["count"],
@@ -45,6 +45,9 @@ fn gaps_corpus() {
                 r["first"].as_str().unwrap_or(""),
                 r["last"].as_str().unwrap_or("")
             );
+            if i < 2 {
+                println!("       details: {}", r["details"]);
+            }
         }
     }
     assert!(lookups.take_misses().is_empty(), "the gaps module noted a miss");

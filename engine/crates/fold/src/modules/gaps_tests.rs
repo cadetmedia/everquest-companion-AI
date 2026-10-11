@@ -31,7 +31,6 @@ impl Knowledge for Corpus {
     }
 }
 
-const RAW: &str = "[Tue Oct 06 18:12:26 2026] (the line)";
 
 fn module() -> GapsModule {
     let mut m = GapsModule::new();
@@ -42,7 +41,7 @@ fn module() -> GapsModule {
 fn feed(m: &mut GapsModule, seq: i64, mut ev: Value) {
     ev["seq"] = json!(seq);
     ev["ts"] = json!(1_791_339_146_000_i64 + seq);
-    ev["raw"] = json!(RAW);
+    ev["raw"] = json!(format!("[Tue Oct 06 18:12:26 2026] line {seq}"));
     m.on_event(&Event::from_value(ev), false);
 }
 
@@ -133,4 +132,58 @@ fn nothing_is_checked_before_the_knowledge_is_installed_and_an_epoch_clears() {
     feed(&mut m, 2, json!({ "kind": "epoch" }));
     assert!(rows(&m).is_empty());
     assert_eq!(m.snapshot()["state"]["seen"], json!({ "item": 0, "mob": 0, "spell": 0 }));
+}
+
+#[test]
+fn details_say_where_and_from_whom_and_keep_the_last_lines() {
+    let mut m = module();
+    feed(&mut m, 1, json!({ "kind": "zone", "zone": "Paineel" }));
+    feed(&mut m, 2, json!({ "kind": "loot", "item": "Glowing Widget", "source": "a nameless thing", "disposition": "depot" }));
+    feed(&mut m, 3, json!({ "kind": "zone", "zone": "The Hole" }));
+    feed(&mut m, 4, json!({ "kind": "loot", "item": "Glowing Widget", "source": "a nameless thing" }));
+    feed(&mut m, 5, json!({ "kind": "purchase", "item": "Glowing Widget", "npc": "Klok Koglin" }));
+    feed(&mut m, 6, json!({ "kind": "consider", "mob": "A nameless thing", "level": 12, "faction": "scowls" }));
+    feed(&mut m, 7, json!({ "kind": "death", "name": "a nameless thing", "bySelf": true }));
+    let rows = m.snapshot()["state"]["rows"].clone();
+    let item = &rows[0]["details"];
+    assert_eq!(
+        item["zones"],
+        json!({ "entries": [{ "name": "The Hole", "n": 2 }, { "name": "Paineel", "n": 1 }], "distinct": 2 })
+    );
+    assert_eq!(
+        item["sources"],
+        json!({ "entries": [{ "name": "a nameless thing", "n": 2 }, { "name": "Klok Koglin", "n": 1 }], "distinct": 2 })
+    );
+    assert_eq!(item["dispositions"]["entries"], json!([{ "name": "depot", "n": 1 }]));
+    assert_eq!(
+        item["samples"],
+        json!(["[Tue Oct 06 18:12:26 2026] line 2", "[Tue Oct 06 18:12:26 2026] line 4", "[Tue Oct 06 18:12:26 2026] line 5"])
+    );
+    assert!(item.get("drops").is_none(), "an item has no drops list");
+    let mob = &rows[1]["details"];
+    assert_eq!(mob["drops"]["entries"], json!([{ "name": "Glowing Widget", "n": 2 }]));
+    assert_eq!(mob["cons"]["entries"], json!([{ "name": "L12 scowls", "n": 1 }]));
+    assert_eq!(mob["killers"]["entries"], json!([{ "name": "you", "n": 1 }]));
+}
+
+#[test]
+fn a_capped_list_serves_the_most_frequent_and_still_counts_the_rest() {
+    let mut m = module();
+    let mut seq = 0;
+    for zone in 0..10 {
+        seq += 1;
+        feed(&mut m, seq, json!({ "kind": "zone", "zone": format!("Zone {zone:02}") }));
+        for _ in 0..(if zone == 9 { 3 } else { 1 }) {
+            seq += 1;
+            feed(&mut m, seq, json!({ "kind": "castBegin", "spell": "Totally Made Up" }));
+        }
+    }
+    let zones = m.snapshot()["state"]["rows"][0]["details"]["zones"].clone();
+    assert_eq!(zones["distinct"], json!(10));
+    let names: Vec<&str> = zones["entries"].as_array().expect("entries").iter().filter_map(|e| e["name"].as_str()).collect();
+    assert_eq!(names.len(), 8);
+    assert_eq!(names[0], "Zone 09", "the most frequent first");
+    assert_eq!(&names[1..], ["Zone 00", "Zone 01", "Zone 02", "Zone 03", "Zone 04", "Zone 05", "Zone 06"]);
+    assert_eq!(m.snapshot()["state"]["rows"][0]["count"], json!(12));
+    assert_eq!(m.snapshot()["state"]["rows"][0]["details"]["casters"]["entries"], json!([{ "name": "you", "n": 12 }]));
 }

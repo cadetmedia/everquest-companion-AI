@@ -21,6 +21,7 @@
 //!     group's characters and pets (the same name at a dozen rising levels), and a named mob that
 //!     is only ever conned is the gap this leaves.
 
+use super::gaps_details::Details;
 use crate::event::Event;
 use crate::jsfn::{item_base_name, item_tier_key};
 use crate::knowledge::Knowledge;
@@ -69,6 +70,8 @@ pub struct GapRow {
     /// The log's own stamp, `2026-09-23 17:54:48`.
     first: String,
     last: String,
+    /// Where, from whom, and the lines themselves — see [`super::gaps_details`].
+    details: Details,
 }
 
 #[derive(Default)]
@@ -81,6 +84,8 @@ pub struct GapsModule {
     seen: HashMap<Domain, HashSet<String>>,
     /// Mob keys the log showed dying to a mob: players and pets, never rows again.
     players: HashSet<String>,
+    /// The last `zone` event: the label a mention is filed under.
+    zone: Option<String>,
     seq: i64,
     announce: crate::announce::Announce,
 }
@@ -98,7 +103,11 @@ impl GapsModule {
 
     fn fold(&mut self, ev: &Event) -> bool {
         match ev.kind() {
-            "loot" => self.item(ev, "looted") | self.mob(ev.str("source"), "dropped-by", ev.raw()),
+            "zone" => {
+                self.zone = ev.str("zone").map(str::to_string);
+                false
+            }
+            "loot" => self.item(ev, "looted") | self.mob(ev.str("source"), "dropped-by", ev),
             "itemReceived" => {
                 let how = if ev.str("via") == Some("fashioned") {
                     "crafted"
@@ -111,7 +120,7 @@ impl GapsModule {
             "itemMerge" => self.item(ev, "crafted"),
             "death" => self.death(ev),
             "consider" => match ev.str("mob") {
-                Some(mob) if !is_player_shaped_name(mob) => self.mob(Some(mob), "considered", ev.raw()),
+                Some(mob) if !is_player_shaped_name(mob) => self.mob(Some(mob), "considered", ev),
                 _ => false,
             },
             "castBegin" | "otherCastBegin" => self.spell(ev),
@@ -125,10 +134,10 @@ impl GapsModule {
         };
         let key = item_tier_key(name);
         let known = self.items.contains(&key);
-        self.note(Domain::Item, key, &item_base_name(name), known, kind, ev.raw())
+        self.note(Domain::Item, key, &item_base_name(name), known, kind, ev)
     }
 
-    fn mob(&mut self, name: Option<&str>, kind: &'static str, raw: &str) -> bool {
+    fn mob(&mut self, name: Option<&str>, kind: &'static str, ev: &Event) -> bool {
         let Some(name) = name else {
             return false;
         };
@@ -137,7 +146,7 @@ impl GapsModule {
             return false;
         }
         let known = self.knowledge.as_ref().is_some_and(|k| k.known_mob(name));
-        self.note(Domain::Mob, key, name, known, kind, raw)
+        self.note(Domain::Mob, key, name, known, kind, ev)
     }
 
     /// The death rule from the module header: a player-shaped name that dies to a mob is a player
@@ -152,7 +161,7 @@ impl GapsModule {
             self.players.insert(key.clone());
             return self.rows.remove(&(Domain::Mob, key)).is_some();
         }
-        self.mob(Some(name), "killed", ev.raw())
+        self.mob(Some(name), "killed", ev)
     }
 
     fn spell(&mut self, ev: &Event) -> bool {
@@ -162,7 +171,7 @@ impl GapsModule {
         let key = spell_canon_key(name);
         let known = spell_keys().contains(&key);
         let display = strip_rank_tail(name);
-        self.note(Domain::Spell, key, display.trim(), known, "cast", ev.raw())
+        self.note(Domain::Spell, key, display.trim(), known, "cast", ev)
     }
 
     /// One mention. Counted as seen either way; a row only when nothing committed knows the name.
@@ -173,13 +182,13 @@ impl GapsModule {
         name: &str,
         known: bool,
         kind: &'static str,
-        raw: &str,
+        ev: &Event,
     ) -> bool {
         self.seen.entry(domain).or_default().insert(key.clone());
         if known {
             return false;
         }
-        let at = stamp_of(raw).unwrap_or_default();
+        let at = stamp_of(ev.raw()).unwrap_or_default();
         let row = self.rows.entry((domain, key)).or_insert_with(|| GapRow {
             domain: domain.as_str(),
             name: name.to_string(),
@@ -187,7 +196,9 @@ impl GapsModule {
             count: 0,
             first: at.clone(),
             last: String::new(),
+            details: Details::default(),
         });
+        row.details.record(domain.as_str(), ev, self.zone.as_deref());
         row.count += 1;
         row.last = at;
         if !row.kinds.contains(&kind) {
