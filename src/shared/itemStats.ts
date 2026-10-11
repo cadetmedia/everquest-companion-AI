@@ -140,6 +140,36 @@ export function repairElementalDamage(stored: ItemStatBlock, statsBlock: string 
   return { ...stored, ...(fresh.dmg === undefined ? {} : { dmg: fresh.dmg }), stats: [...kept, ...elemental] }
 }
 
+/**
+ * A KEY THE SCANNER LACKED is swallowed into its neighbour's value or left as a stray extra:
+ * `HP Regen: 2 Mana Regen: 2 End Regen: 2` was stored as REGEN, MANA REGEN "2 End", REGEN and an
+ * `HP` extra (Talisman of Kejaar Kerrath, owner report 2026-10-11), `HP: +125 ENDUR: +100` as one
+ * HP row. Five committed pages state one of these four keys; the parser fix lives with the scraper
+ * fixes, and this repairs the stored rows at load the way `repairElementalDamage` does: the line's
+ * rows as stored (the bare REGEN, every key the line states, swallowed value or not) are replaced
+ * in place by the pairs the line states, and the stray key word leaves the extras. By SHAPE, not by
+ * re-parsing: the stored rows stay stale until a re-derive, whichever parser is loaded.
+ */
+const WRAPPED_KEY_LINE = /\b(?:HP|End|Endurance) Regen\s*:|\bENDUR\s*:/i
+const WRAPPED_LINE_PAIRS =
+  /(?:^|\s)((?:HP|Mana|End|Endurance) Regen|ENDUR|STR|STA|AGI|DEX|WIS|INT|CHA|HP|MANA|END)\s*:\s*([+-]?\d+%?)/gi
+const STRAY_KEY_WORD = /^(?:HP|End|Endurance)$/i
+
+export function repairWrappedStatKeys(stored: ItemStatBlock, statsBlock: string | undefined): ItemStatBlock {
+  if (statsBlock === undefined || !WRAPPED_KEY_LINE.test(statsBlock)) return stored
+  const lines = stripWikiMarkup(statsBlock).split('\n').map((l) => l.replace(/[ \t]+/g, ' ').trim())
+  let out = stored
+  for (const line of lines.filter((l) => WRAPPED_KEY_LINE.test(l))) {
+    const fresh = [...line.matchAll(WRAPPED_LINE_PAIRS)].map((m) => ({ key: m[1].toUpperCase(), value: m[2] }))
+    const gone = (row: ItemStat): boolean => row.key === 'REGEN' || fresh.some((f) => f.key === row.key)
+    const at = out.stats.findIndex(gone)
+    const stats = out.stats.filter((row) => !gone(row))
+    stats.splice(at < 0 ? stats.length : at, 0, ...fresh)
+    out = { ...out, stats, extras: out.extras.filter((e) => !STRAY_KEY_WORD.test(e)) }
+  }
+  return out
+}
+
 /** Plain `KEY: value` stats that land in the attribute grid. */
 const STAT_KEYS = [
   'STR', 'STA', 'AGI', 'DEX', 'WIS', 'INT', 'CHA', 'HP', 'MANA', 'END', 'ENDURANCE', 'ENDUR',
