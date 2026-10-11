@@ -115,6 +115,9 @@ export function BazaarHoursChart({ item, ignoreOutliers }: { item: BazaarItem; i
   const rows = hp === undefined ? [] : [sideRow('Asking', hp.sell, ASK_COLOR), sideRow('Offered', hp.buy, OFFER_COLOR)].flatMap((r) => (r === null ? [] : [r]))
   return (
     <Stack spacing={1}>
+      <Typography variant="caption" color="text.secondary" data-testid="bazaar-hours-title">
+        Price by time of day (your clock)
+      </Typography>
       <Legend />
       <Box ref={box} sx={{ position: 'relative', width: '100%' }} data-testid="bazaar-hours-chart">
         {any ? (
