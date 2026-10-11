@@ -286,7 +286,7 @@
     },
     {
       "spells": [
-        "Torbas Poison Blast"
+        "Torbas' Poison Blast"
       ],
       "field": "msgCastOnYou",
       "from": "A blast of poison eats at your skin.",
@@ -368,18 +368,10 @@
     },
     {
       "spells": [
-        "Malisement"
+        "Invisibility versus Undead"
       ],
       "field": "name",
-      "from": "Malisement",
-      "to": "Malaisement"
-    },
-    {
-      "spells": [
-        "Invisibility vs. Undead"
-      ],
-      "field": "name",
-      "from": "Invisibility vs. Undead",
+      "from": "Invisibility versus Undead",
       "to": "Invisibility Versus Undead"
     },
     {
@@ -848,7 +840,7 @@
       "spells": [
         "Cazic Temple Portal",
         "Evacuate: Greater Faydark",
-        "Evacuate: Greater Nektulos",
+        "Evacuate: Nektulos",
         "Evacuate: North Karana",
         "Evacuate: South Ro",
         "Evacuate: West Karana",

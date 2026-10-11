@@ -358,7 +358,7 @@ export const SUBJECT_DRIFTS: readonly SubjectDrift[] = [
     spells: [
       'Cazic Temple Portal',
       'Evacuate: Greater Faydark',
-      'Evacuate: Greater Nektulos',
+      'Evacuate: Nektulos', // page title since the 2026-10-10 delta run (was `Evacuate: Greater Nektulos`)
       'Evacuate: North Karana',
       'Evacuate: South Ro',
       'Evacuate: West Karana',

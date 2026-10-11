@@ -530,7 +530,9 @@ const HAND_DERIVED_CORRECTIONS: readonly SpellCorrection[] = [
       'British spelling on the wiki, American in the game: 14 owner-log lines of `judgment`, 0 of `judgement`, and Reckoning is the only spell with the sentence.'
   },
   {
-    spells: ['Torbas Poison Blast'],
+    // Retargeted 2026-10-10: the delta run names spells by page title, `Torbas' Poison Blast`; the
+    // message it corrects is unchanged.
+    spells: ["Torbas' Poison Blast"],
     field: 'msgCastOnYou',
     from: 'A blast of poison eats at your skin.',
     to: 'A blast of Poison eats at your skin.',
@@ -663,21 +665,13 @@ const HAND_DERIVED_CORRECTIONS: readonly SpellCorrection[] = [
     to: "Solon's Bewitching Bravura",
     attribution: 'sole',
     evidence:
-      'The wiki page`s `spellname` is `Solon`s Bravura`; the game has never printed it. Owner log: 20 lines naming `Solon`s Bewitching Bravura` (5 own-guild casts by the bard Enzee, 14 sung AT the player by fire giants, 1 resist) and 0 naming `Solon`s Bravura`. Reporter slice 01KZAG2QAW885YJNRTDDND8BF2 adds `You begin singing Solon`s Bewitching Bravura IX.` x5 and `Your Solon`s Bewitching Bravura spell has worn off of a fire giant warrior.` x5; slice 01KZM7F36JD12WYF15DHCCWNEE ends on `You have finished memorizing Solon`s Bewitching Bravura.`. A dropped word, never a different spell: nothing else in the DB is named Bravura (src/main/log/rulesets.ts says so too), the level, class, cast time, duration and all three messages are untouched, and the entry`s own `You are captivated by the bewitching tune.` carries the missing word already. Both level-39 rows (18 s and the April-2000 1 Min) are renamed together.'
+      'The wiki page`s `spellname` is `Solon`s Bravura`; the game has never printed it. Owner log: 20 lines naming `Solon`s Bewitching Bravura` (5 own-guild casts by the bard Enzee, 14 sung AT the player by fire giants, 1 resist) and 0 naming `Solon`s Bravura`. Reporter slice 01KZAG2QAW885YJNRTDDND8BF2 adds `You begin singing Solon`s Bewitching Bravura IX.` x5 and `Your Solon`s Bewitching Bravura spell has worn off of a fire giant warrior.` x5; slice 01KZM7F36JD12WYF15DHCCWNEE ends on `You have finished memorizing Solon`s Bewitching Bravura.`. A dropped word, never a different spell: nothing else in the DB is named Bravura (src/main/log/rulesets.ts says so too), the level, class, cast time, duration and all three messages are untouched, and the entry`s own `You are captivated by the bewitching tune.` carries the missing word already. Both level-39 rows (18 s and the April-2000 1 Min) were renamed together until the 2026-10-10 delta run, which names every spell by its page title: the April-2000 page is titled `Solon`s Bewitching Bravura` and now arrives correct, so this entry renames the 18 s row alone.'
   },
-  // Found by the JOS-387 audit of what the resist fold recognises as a RESIST DEBUFF. The tash
-  // ladder, the malo ladder and the whole Scent line are recognised correctly off the catalog`s
-  // verbatim `Decrease <Axis> Resist` effect lines; this one name is the only member of any of them
-  // that the log and the wiki spell differently, so it was the only one whose windows never opened.
-  {
-    spells: ['Malisement'],
-    field: 'name',
-    to: 'Malaisement',
-    from: 'Malisement',
-    attribution: 'sole',
-    evidence:
-      'The shaman malo ladder`s level-32 rung. Owner log, whole file (2,026,223 lines): 229 lines naming `Malaisement` (123 `<mob> begins casting Malaisement.`, 5 `You begin casting Malaisement.`, the rest interrupts and fades) and 0 naming `Malisement`. One inserted vowel, never a different spell: nothing else in the DB is named Mal*sement, and the entry`s four `Decrease Cold/Magic/Poison/Fire Resist by 36-40` effect lines are exactly the rung between Malaise (15-20) and Malosi (59-60), which the log casts 136 and 63 times under names the catalog already matches. Until this correction `isResistDebuff` (main/resist/world.ts) answered false for all 229 lines, so the debuff was never recorded against a mob and every observation made under it was fitted at an offset 36 to 40 points too small.'
-  },
+  // `Malisement` -> `Malaisement` (JOS-387, the malo ladder`s level-32 rung) USED TO STAND HERE and
+  // is retired because the wiki caught up: since the 2026-10-10 delta run the scrape names every
+  // spell by its PAGE TITLE, the page is titled `Malaisement`, and that is the spelling the owner`s
+  // log prints (229 lines, 0 of `Malisement`, measured over 2,026,223 lines for JOS-387). The entry
+  // could only report `satisfied` from then on, which is the header`s signal to drop it.
   // --- the invisibility twins: the wiki retitled the page, the game did not (JOS-440) ------------
   //
   // The fifth drift class again, and this one arrived as a wiki EDIT rather than as a page that was
@@ -707,10 +701,17 @@ const HAND_DERIVED_CORRECTIONS: readonly SpellCorrection[] = [
   // the 28 own-casts in the owner`s log reached `spellClassIndex` at no key at all, the alerts
   // catalog offered the spell under a name no cast line can produce, and `spellLineLookup` — whose
   // ladder rows say `Invisibility versus Undead` — could not place it.
+  //
+  // RETARGETED 2026-10-10. The delta run of that day names every spell by its PAGE TITLE, and
+  // pageid 49735 is titled `Invisibility versus Undead` (lower-case `versus`), not the
+  // `Invisibility vs. Undead` its `spellname` said. That is still not what the game prints — the
+  // client and the log say `Versus` — so the entry keeps its job and now names the title. Case
+  // alone no longer splits the catalog (`spellCanonKey` folds it), but the removal's survivor is
+  // named exactly, and the card should show the client's spelling.
   {
-    spells: ['Invisibility vs. Undead'],
+    spells: ['Invisibility versus Undead'],
     field: 'name',
-    from: 'Invisibility vs. Undead',
+    from: 'Invisibility versus Undead',
     to: 'Invisibility Versus Undead',
     attribution: 'cast',
     evidence:
