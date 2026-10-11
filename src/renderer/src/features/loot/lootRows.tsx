@@ -147,7 +147,7 @@ export const GroupedRow = memo(function GroupedRow({
             </Box>
           </KnownItemTooltip>
           {posky && <Chip size="small" color="primary" variant="outlined" label="PoSky" />}
-          <KnowledgeBadge knowledge={knowledge} isPosky={posky} />
+          <KnowledgeBadge name={g.item} isPosky={posky} />
           <DispositionChip disposition={g.disposition} />
         </Stack>
       </TableCell>
@@ -272,7 +272,7 @@ export const EngineFlatRow = memo(function EngineFlatRow({
             </Box>
           </KnownItemTooltip>
           {posky && <Chip size="small" color="primary" variant="outlined" label="PoSky" />}
-          <KnowledgeBadge knowledge={knowledge} isPosky={posky} />
+          <KnowledgeBadge name={item} isPosky={posky} />
           <DispositionChip disposition={asDisposition(disposition)} />
           {disposition === 'combined' && created !== null && (
             <KnownItemTooltip name={created} clickThrough>
@@ -317,7 +317,7 @@ export const FlatRow = memo(function FlatRow({
             </Box>
           </KnownItemTooltip>
           {posky && <Chip size="small" color="primary" variant="outlined" label="PoSky" />}
-          <KnowledgeBadge knowledge={knowledge} isPosky={posky} />
+          <KnowledgeBadge name={e.item} isPosky={posky} />
           <DispositionChip disposition={e.disposition} />
           {e.disposition === 'combined' && e.created && (
             <KnownItemTooltip name={e.created} clickThrough>

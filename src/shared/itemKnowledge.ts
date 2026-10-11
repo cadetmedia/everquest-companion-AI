@@ -18,6 +18,39 @@ export function isNotableKnowledge(k: ItemKnowledge): boolean {
   return k.lore || k.quest || k.questUses.length > 0
 }
 
+/** What a LIST ROW needs to know about an item, and nothing more: the icon and the badge facts.
+ *  Asked for many names in one call (`items:marks`), answered off the committed DB, so a table of
+ *  2,000 rows costs one round trip per paint instead of one full record per row. */
+export interface ItemMarks {
+  iconId?: number
+  lore: boolean
+  quest: boolean
+  /** How many known quests use it (the `quest` badge, and notability). */
+  questUses: number
+  /** How many known recipes use it (the `tradeskill` badge). */
+  recipes: number
+  /** The stats block says NO DROP / NO TRADE (the Bazaar's keep rule). */
+  noTrade: boolean
+}
+
+const NO_TRADE = new Set(['no drop', 'no trade', 'nodrop'])
+
+export function marksOf(k: Omit<ItemKnowledge, 'cached'>): ItemMarks {
+  return {
+    ...(k.iconId === undefined ? {} : { iconId: k.iconId }),
+    lore: k.lore,
+    quest: k.quest,
+    questUses: k.questUses.length,
+    recipes: k.recipes?.length ?? 0,
+    noTrade: (k.stats?.flags ?? []).some((f) => NO_TRADE.has(f.toLowerCase()))
+  }
+}
+
+/** The same rule as `isNotableKnowledge`, read off the marks. */
+export function isNotableMarks(m: ItemMarks): boolean {
+  return m.lore || m.quest || m.questUses > 0
+}
+
 /** ONE spelling of a recipe use: `Gnome Kabobs (Baking 56)`. Degrades as the page does —
  *  no tradeskill / no trivial simply drops out, never a guess. */
 export function recipeUseLabel(r: ItemRecipeUse): string {
