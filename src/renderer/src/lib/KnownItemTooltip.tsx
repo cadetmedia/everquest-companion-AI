@@ -54,6 +54,7 @@
 import { type JSX, type ReactNode, useCallback, useEffect, useState, type ReactElement } from 'react'
 import { Box, CircularProgress, Stack, Typography } from '@mui/material'
 import type { ItemKnowledge } from '@shared/types'
+import { questWikiUrl } from '@shared/wiki'
 import { EQ_ITEM_COLORS } from './ItemWindow'
 import { ObservedItemWindow } from './ObservedItemWindow'
 import { questUseOutcomes, questUseWhere } from './itemKnowledgeView'
@@ -234,7 +235,18 @@ function WhatItsFor({ data, depth }: { data: ItemKnowledge; depth: number }): JS
             return (
               <Box key={`${u.source}:${u.page ?? ''}:${u.quest}:${u.role ?? ''}`} sx={{ mt: 0.25 }}>
                 <Typography component="div" sx={{ color: EQ_ITEM_COLORS.text, fontSize: 11, lineHeight: 1.4 }}>
-                  {u.quest}
+                  {/* The name opens the quest's wiki page; the click stays off any row the card hangs from. */}
+                  <Box
+                    component="a"
+                    href={questWikiUrl(u)}
+                    target="_blank"
+                    rel="noreferrer"
+                    title="open on eqlwiki.com"
+                    onClick={(e) => e.stopPropagation()}
+                    sx={{ color: 'inherit', textDecoration: 'underline dotted', textUnderlineOffset: 2 }}
+                  >
+                    {u.quest}
+                  </Box>
                   {u.role === 'reward' && (
                     <Box component="span" sx={{ color: EQ_ITEM_COLORS.label }}> · reward</Box>
                   )}

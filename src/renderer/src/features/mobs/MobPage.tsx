@@ -46,7 +46,7 @@ import type { KillMap, MobEntry, MobKnowledge, MobQuestUse } from '@shared/types
 import type { ZoneShort } from '@shared/maps'
 import { killsFor } from '@shared/kills'
 import { CONSIDER_FACTION_COLOR, CONSIDER_FACTION_LABEL, considerDifficultyShort } from '@shared/logEvents'
-import { wikiPageUrl } from '@shared/wiki'
+import { questWikiUrl, wikiPageUrl } from '@shared/wiki'
 import { formatDate, formatDateTime } from '../../lib/formatDate'
 import { tierStyle } from '../../lib/tierChip'
 import { CellLink } from '../../lib/CellLink'
@@ -322,6 +322,13 @@ function QuestsSection({ name, quests }: { name: string; quests: MobQuestUse[] }
               variant="outlined"
               color="success"
               label={q.zone ? `${q.quest} · ${q.zone}` : q.quest}
+              // The chip opens the quest's wiki page (owner ask, 2026-10-11).
+              component="a"
+              href={questWikiUrl(q)}
+              target="_blank"
+              rel="noreferrer"
+              title="open on eqlwiki.com"
+              clickable
               sx={{ height: 22 }}
             />
           ))}

@@ -33,3 +33,24 @@ export function skyQuestPage(className: string | undefined | null): string | und
   if (!c) return undefined
   return `${c} Plane of Sky Tests`
 }
+
+/**
+ * The wiki page for a quest an item or a mob is tied to (owner ask, 2026-10-11: quest names
+ * link to the wiki wherever an item or a mob shows one). A posky use's `page` is the dataset's
+ * "Plane of Sky" source line, not a quest page, so it goes to the class's Sky Tests page — the
+ * class read off a `Class::Name` key when the use carries one, else off its "Class · Name"
+ * label. Every other use links `page` (the catalog page, or a `[[Page|Label]]` target) and
+ * falls back to the quest name, which the catalog spells as the page title.
+ */
+export function questWikiUrl(use: {
+  quest: string
+  page?: string
+  source?: string
+  poskyKey?: string
+}): string | undefined {
+  if (use.source === 'posky') {
+    const cls = use.poskyKey?.split('::')[0] ?? use.quest.split(' · ')[0]
+    return wikiPageUrl(skyQuestPage(cls))
+  }
+  return wikiPageUrl(use.page ?? use.quest)
+}

@@ -21,6 +21,7 @@ import { type JSX, useEffect, useState } from 'react'
 import type { FeedConsider, MobKnowledge } from '@shared/types'
 import { CONSIDER_FACTION_COLOR, CONSIDER_FACTION_LABEL, considerDifficultyShort } from '@shared/logEvents'
 import { splitMobDrops } from '@shared/mobDrops'
+import { questWikiUrl } from '@shared/wiki'
 
 /** Card palette — the same semantics as EQ_ITEM_COLORS, respelled here so importing it
  *  (from ItemWindow.tsx, which pulls MUI at module scope) can't defeat the lazy import. */
@@ -184,13 +185,23 @@ function ExtraSeenDrops({ extraSeen }: { extraSeen: { item: string; count: numbe
 }
 
 /** Quests that name this mob. */
-function MobQuests({ quests }: { quests: { quest: string; zone?: string }[] }): JSX.Element | null {
+function MobQuests({ quests }: { quests: { quest: string; page?: string; zone?: string }[] }): JSX.Element | null {
   if (quests.length === 0) return null
   return (
     <CardSection label={`Named by ${quests.length === 1 ? 'quest' : 'quests'}:`}>
       {quests.slice(0, MAX_DROPS).map((q) => (
         <div key={q.quest} style={TEXT_STYLE}>
-          {q.quest}
+          {/* The name links its wiki page where the card takes the pointer (in-app); inert over the game. */}
+          <a
+            href={questWikiUrl(q)}
+            target="_blank"
+            rel="noreferrer"
+            title="open on eqlwiki.com"
+            onClick={(e) => e.stopPropagation()}
+            style={{ color: 'inherit', textDecoration: 'underline dotted', textUnderlineOffset: 2 }}
+          >
+            {q.quest}
+          </a>
           {q.zone !== undefined && <span style={{ color: CARD_LABEL }}> · {q.zone}</span>}
         </div>
       ))}
