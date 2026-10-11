@@ -16,7 +16,10 @@ SK, others).
   constant-level window gave noisier reads (Plague 0%/rank), so treat DoT scaling as less certain
   than procs. To settle: cast rank I and rank IV of one DoT at one mob in one session.
   Write-up: `docs/plans/spell-upgrades-and-loadout.md` §0.9.
-- **The healing rank rule (3% a rank, `healAtRank`) is SUSPECT** (2026-10-11). On the owner's log
+- **The healing rank rule (3% a rank, `healAtRank`) HOLDS on a same-day step** (2026-10-11): Superior
+  Healing VII to VIII, non-crit, same gear, 48 and 27 casts: median 888 to 917 (+3.3%), p90 940 to
+  970, max 961 to 985. A critical heal is exactly double (1,672 vs an 834 median) and the line ends
+  `(Critical)`. The cross-week reading below is what to distrust, not the rule. On the owner's log
   Superior Healing's full heal (the parenthesised number of `You healed X for N (M)`) read 612 at
   rank I for weeks, then at rank IV alone climbed from 698 (8 Sep) to 870-943 (Oct) with no rank
   change: gear, focus or level move the heal far more than rank, and the August fit (892/943/968
