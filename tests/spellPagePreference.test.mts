@@ -15,8 +15,13 @@ import spellsJson from '../src/main/data/spells.json' with { type: 'json' }
 
 const RAW = (spellsJson as SpellDbFile).spells
 const NOTE = /\(Autogranted\)/
+/** The rule's own notion of "the same name": apostrophes and case fold (`O'Keils` = `O\`Keil's`). */
+const same = (a: string, b: string): boolean =>
+  a.replace(/[`'’]/g, '').toLowerCase() === b.replace(/[`'’]/g, '').toLowerCase()
 
-/** Same name, one page noted, SAME three sentences: one spell on two pages. */
+/** Same name, one page noted, SAME three sentences: one spell on two pages. Since the 2026-10-10
+ *  delta run the O'Keils pair is read under two titles, `O'Keils Radiation` (classic, dropped) and
+ *  `O\`Keil's Radiation` (Legends, kept); the rule folds them. */
 const CONTESTED = ['Anthem De Arms', 'Burst of Flame', "O'Keils Radiation"]
 /**
  * DIFFERENT sentences: two spells that used to share a title. Until the 2026-10-10 delta run the
@@ -40,7 +45,7 @@ test('the committed corpus contests exactly these three names, each a classic pa
     assert.equal(RAW.filter((s) => s.name === twin).length, 1, `${twin}: the twin, under its page title`)
   }
   for (const n of CONTESTED) {
-    const rows = RAW.filter((s) => s.name === n)
+    const rows = RAW.filter((s) => same(s.name, n))
     assert.equal(rows.length, 2, `${n}: two pages in the scrape`)
     assert.equal(rows.filter((s) => NOTE.test(s.classes ?? '')).length, 1, `${n}: one of them autogranted`)
   }
@@ -49,7 +54,7 @@ test('the committed corpus contests exactly these three names, each a classic pa
 test('the effective DB holds one row per contested name, and it is the autogranted page', () => {
   const effective = loadSpellDb().spells
   for (const n of CONTESTED) {
-    const rows = effective.filter((s) => s.name === n)
+    const rows = effective.filter((s) => same(s.name, n))
     assert.equal(rows.length, 1, `${n}: one row after the load`)
     assert.ok(NOTE.test(rows[0].classes ?? ''), `${n}: the survivor carries the note`)
   }
