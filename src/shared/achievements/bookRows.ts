@@ -30,6 +30,7 @@ import {
   type BookComponent,
   type BookGroup
 } from '../outputs/achievementBook'
+import { CLASS_UNLOCK_CONFIRM_PREFIX, CLASS_UNLOCK_TOKEN_ROW } from '../outputs/achievements'
 import { SLAYER_PREFIX, achievementKey } from '../outputs/slayer'
 import { counterId } from '../slayer/slayerPlan'
 import { zoneShortName, zoneShortNameFromCatalog } from '../zones'
@@ -70,8 +71,15 @@ export function namedAchievement(
 /** How deep a chain of achievements naming achievements is followed. The game's deepest is four. */
 const MAX_DEPTH = 6
 
+/** The two class-unlock pseudo-rows ("will autocomplete if you confirm…", "can be bypassed with a
+ *  token") state how the achievement can be GRANTED; they are not requirements, and counting them
+ *  showed a Bard at `5 of 8` with six rewards to obtain (owner, 2026-10-11). */
+function isGrantRow(c: BookComponent): boolean {
+  return c.line.startsWith(CLASS_UNLOCK_CONFIRM_PREFIX) || c.line === CLASS_UNLOCK_TOKEN_ROW
+}
+
 function requiredLines(a: BookAchievement): BookComponent[] {
-  const required = a.components.filter((c) => !isOptional(c))
+  const required = a.components.filter((c) => !isOptional(c) && !isGrantRow(c))
   return required.length > 0 ? required : a.components
 }
 
