@@ -91,9 +91,11 @@ test('THE INVISIBILITY TWINS: two pages, one spell, and the client says which pa
   // THE COMMITTED SCRAPE STILL CARRIES BOTH, which is the point of the layer: the wiki dataset stays
   // pristine and only the EFFECTIVE list shrinks.
   const classic = RAW.filter((s) => s.name === 'Invisibility Versus Undead')
-  const modern = RAW.filter((s) => s.name === 'Invisibility vs. Undead')
+  // Since the 2026-10-10 delta run the scrape names a spell by its PAGE TITLE: 49735 is titled
+  // `Invisibility versus Undead` (its |spellname still says `vs.`). Neither is what the game prints.
+  const modern = RAW.filter((s) => s.name === 'Invisibility versus Undead')
   assert.equal(classic.length, 1, 'pageid 57190, the classic-EverQuest copy')
-  assert.equal(modern.length, 1, 'pageid 49735, retitled by the wiki on 2026-08-18')
+  assert.equal(modern.length, 1, 'pageid 49735, retitled by the wiki on 2026-08-18, read by title since 2026-10-10')
   assert.deepEqual(
     [classic[0].mana, classic[0].castTimeMs, classic[0].targetType],
     [30, 5000, 'Single'],
@@ -113,7 +115,7 @@ test('THE INVISIBILITY TWINS: two pages, one spell, and the client says which pa
   assert.ok(!modern[0].classes?.includes('<!--'))
 
   // THE EFFECTIVE DB HOLDS ONE ROW, under the spelling the game prints, with the client's numbers.
-  const rows = loadSpellDb().spells.filter((s) => /^Invisibility (Versus|vs\.) Undead$/.test(s.name))
+  const rows = loadSpellDb().spells.filter((s) => /^Invisibility ([Vv]ersus|vs\.) Undead$/.test(s.name))
   assert.equal(rows.length, 1, 'one spell, one row')
   assert.equal(rows[0].name, 'Invisibility Versus Undead', 'the 83 log lines spell it this way; 0 spell it `vs.`')
   assert.deepEqual(
@@ -131,7 +133,7 @@ test('THE UNLOCK PANEL draws ONE invisibility-vs-undead row at each of the five 
   // pairs and the panel's fold-by-name — which folds only WITHIN a level — had two different names
   // to fold and drew both.
   const data = buildLevelUnlocks()
-  const rows = data.spells.filter((s) => /^Invisibility (Versus|vs\.) Undead$/.test(s.name))
+  const rows = data.spells.filter((s) => /^Invisibility ([Vv]ersus|vs\.) Undead$/.test(s.name))
   assert.equal(rows.length, 1, 'one row in the dataset, not two')
   assert.deepEqual(
     rows[0].at.map((p) => `${p.cls} ${p.level}`).sort(),
