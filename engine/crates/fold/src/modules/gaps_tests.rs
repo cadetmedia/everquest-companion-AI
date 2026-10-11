@@ -215,3 +215,29 @@ fn the_coin_a_sale_on_loot_or_a_purchase_printed_is_read_off_the_line() {
     let d = only_free.snapshot()["state"]["rows"][0]["details"].clone();
     assert!(d.get("sales").is_none() && d.get("salesCopper").is_none(), "free is no price");
 }
+
+#[test]
+fn a_later_destroy_line_adds_its_disposition_and_line_but_no_zone_no_count_no_kind() {
+    let mut m = module();
+    feed(&mut m, 1, json!({ "kind": "zone", "zone": "The Stonebrunt Mountains" }));
+    feed(&mut m, 2, json!({ "kind": "loot", "item": "Glowing Widget +1", "source": "a highland kobold shaman" }));
+    feed(&mut m, 3, json!({ "kind": "zone", "zone": "New Sebilis Expedition" }));
+    feed(&mut m, 4, json!({ "kind": "loot", "item": "Glowing Widget +1", "disposition": "destroyed", "count": 1 }));
+    let row = m.snapshot()["state"]["rows"][0].clone();
+    assert_eq!(row["count"], json!(1));
+    assert_eq!(row["kinds"], json!(["looted"]));
+    let d = &row["details"];
+    assert_eq!(d["zones"], json!({ "entries": [{ "name": "The Stonebrunt Mountains", "n": 1 }], "distinct": 1 }));
+    assert_eq!(d["dispositions"]["entries"], json!([{ "name": "destroyed", "n": 1 }]));
+    assert_eq!(d["sources"]["entries"], json!([{ "name": "a highland kobold shaman", "n": 1 }]));
+    assert_eq!(d["samples"], json!(["[Tue Oct 06 18:12:26 2026] line 2", "[Tue Oct 06 18:12:26 2026] line 4"]));
+    // The mob row took the loot line's zone and nothing from the destroy line.
+    assert_eq!(m.snapshot()["state"]["rows"][1]["details"]["zones"]["distinct"], json!(1));
+    assert_eq!(m.snapshot()["state"]["seen"]["item"], json!(1), "a disposal is not a name checked");
+
+    // A name the log only ever destroyed is not filed.
+    let mut only = module();
+    feed(&mut only, 1, json!({ "kind": "loot", "item": "Glowing Widget", "disposition": "destroyed", "count": 1 }));
+    assert!(rows(&only).is_empty());
+    assert_eq!(only.published_seq(), Some(0));
+}

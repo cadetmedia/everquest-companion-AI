@@ -5,6 +5,12 @@
 //! most frequent, with the number of distinct values beside them so a capped list still says how
 //! much it left out. The samples are the last SAMPLES raw lines, as the bazaar keeps its quotes.
 //!
+//! A ZONE IS TALLIED ONLY BY AN EVENT THAT PLACES THE NAME: the loot line (its own disposition —
+//! sold, depot, hoard, combined, currency — happens on that line and is fine), a purchase or
+//! received line, a kill, a con, a cast. A later disposal (`You successfully destroyed …`, the one
+//! such shape the parser emits) says what became of an item, not where it came from, so it adds
+//! its disposition and its line and no zone — see [`Details::disposal`].
+//!
 //! What the events carry decides what is tallied. A loot line is always the player's own (there is
 //! no "Soandso has looted" line), so who looted is not a list. A cast-begin line names the caster
 //! and the spell and never a target.
@@ -124,6 +130,16 @@ impl Details {
             "spell" => self.spell(ev),
             _ => {}
         }
+        self.sample(ev);
+    }
+
+    /// A later disposal of the name — the disposition and the line, nothing placing it anywhere.
+    pub fn disposal(&mut self, ev: &Event) {
+        self.dispositions.add(ev.str("disposition").unwrap_or_default());
+        self.sample(ev);
+    }
+
+    fn sample(&mut self, ev: &Event) {
         if self.samples.len() == SAMPLES {
             self.samples.pop_front();
         }

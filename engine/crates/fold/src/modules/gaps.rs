@@ -107,17 +107,7 @@ impl GapsModule {
                 self.zone = ev.str("zone").map(str::to_string);
                 false
             }
-            "loot" => self.item(ev, "looted") | self.mob(ev.str("source"), "dropped-by", ev),
-            "itemReceived" => {
-                let how = if ev.str("via") == Some("fashioned") {
-                    "crafted"
-                } else {
-                    "received"
-                };
-                self.item(ev, how)
-            }
-            "purchase" => self.item(ev, "bought"),
-            "itemMerge" => self.item(ev, "crafted"),
+            "loot" | "itemReceived" | "purchase" | "itemMerge" => self.item_event(ev),
             "death" => self.death(ev),
             "consider" => match ev.str("mob") {
                 Some(mob) if !is_player_shaped_name(mob) => self.mob(Some(mob), "considered", ev),
@@ -128,6 +118,26 @@ impl GapsModule {
         }
     }
 
+    /// The four events that name an item; a loot line names its corpse too.
+    fn item_event(&mut self, ev: &Event) -> bool {
+        match ev.kind() {
+            // A destroy line is the parser's one loot shape that is a later disposal rather than
+            // the loot itself: it says what became of the item, not where it came from.
+            "loot" if ev.str("disposition") == Some("destroyed") => self.disposal(ev),
+            "loot" => self.item(ev, "looted") | self.mob(ev.str("source"), "dropped-by", ev),
+            "itemReceived" => {
+                let how = if ev.str("via") == Some("fashioned") {
+                    "crafted"
+                } else {
+                    "received"
+                };
+                self.item(ev, how)
+            }
+            "purchase" => self.item(ev, "bought"),
+            _ => self.item(ev, "crafted"),
+        }
+    }
+
     fn item(&mut self, ev: &Event, kind: &'static str) -> bool {
         let Some(name) = ev.str("item") else {
             return false;
@@ -135,6 +145,20 @@ impl GapsModule {
         let key = item_tier_key(name);
         let known = self.items.contains(&key);
         self.note(Domain::Item, key, &item_base_name(name), known, kind, ev)
+    }
+
+    /// A later disposal of an item already filed: its disposition and its line go on the row,
+    /// and nothing else — not the zone (the item is not from here), not the count, not a kind.
+    /// A name the log only ever destroyed has no row to carry it and is not filed.
+    fn disposal(&mut self, ev: &Event) -> bool {
+        let Some(name) = ev.str("item") else {
+            return false;
+        };
+        let Some(row) = self.rows.get_mut(&(Domain::Item, item_tier_key(name))) else {
+            return false;
+        };
+        row.details.disposal(ev);
+        true
     }
 
     fn mob(&mut self, name: Option<&str>, kind: &'static str, ev: &Event) -> bool {
