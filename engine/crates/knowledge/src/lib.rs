@@ -23,6 +23,7 @@
 pub mod items;
 pub mod mobs;
 pub mod names;
+mod overlay;
 
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex, OnceLock, RwLock};
@@ -37,6 +38,7 @@ use mobs::{
     MobQuestIndex,
 };
 use names::item_key;
+use overlay::{fetchable, key_for, overlay_found};
 
 /// The two corpora a `knowledge.define` may push into, and the two a miss may name.
 ///
@@ -327,30 +329,6 @@ fn rank_of(name: &str, needle: &str) -> Option<u8> {
     None
 }
 
-/// The domain as a `'static` name, or `None` for one this engine does not take pushes for.
-fn fetchable(domain: &str) -> Option<&'static str> {
-    FETCHABLE_DOMAINS
-        .iter()
-        .find(|known| **known == domain)
-        .copied()
-}
-
-/// The overlay key for one domain — each domain's own canonical fold, never a shared one.
-fn key_for(domain: &str, name: &str) -> String {
-    if domain == "mob" {
-        mob_key(name)
-    } else {
-        item_key(name)
-    }
-}
-
-/// Did a pushed record claim a real negative? A `notFound` push is the app saying "I looked and the
-/// wiki has no page" — an ANSWER, which stops the engine announcing that name again, but not a
-/// `found`.
-fn overlay_found(entry: &Value) -> bool {
-    !entry["notFound"].as_bool().unwrap_or(false)
-}
-
 impl Knowledge for Corpus {
     /// The committed DB, then the overlay, then a miss. Local sources are merged into whichever
     /// answers, because they say something about the item's USES that no item page states.
@@ -428,6 +406,10 @@ impl Knowledge for Corpus {
             .lock()
             .map(|mut pending| std::mem::take(&mut *pending))
             .unwrap_or_default()
+    }
+
+    fn item_names(&self) -> Vec<String> {
+        items::item_names(self.items())
     }
 }
 

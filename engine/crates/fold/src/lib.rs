@@ -29,6 +29,7 @@ pub mod knowledge;
 pub mod message_overlay;
 pub mod modules;
 pub mod overlay_file;
+mod registry_views;
 pub mod session;
 pub mod spell_facts;
 /// The client's spell table (`spells_us.txt`), parsed. Pure over a string; the file and the
@@ -37,7 +38,7 @@ pub mod spell_facts;
 pub mod spells_us;
 
 use event::Event;
-use serde_json::{json, Value};
+use serde_json::Value;
 use std::collections::HashSet;
 use std::sync::Arc;
 
@@ -286,6 +287,7 @@ pub const WIRING_ORDER: &[&str] = &[
     "buffTimers",
     "consider",
     "resist",
+    "gaps",
     "eventFeed",
 ];
 
@@ -550,29 +552,6 @@ impl Registry {
             out.append(&mut m.take_fires());
         }
         out
-    }
-
-    /// Every id `WIRING_ORDER` names that nothing registered — the harness's skipped list.
-    pub fn missing(&self) -> Vec<&'static str> {
-        let have: HashSet<&str> = self.ids().into_iter().collect();
-        WIRING_ORDER
-            .iter()
-            .copied()
-            .filter(|id| !have.contains(id))
-            .collect()
-    }
-
-    /// `{ "modules": [ { "id": …, "snapshot": { "seq": …, "state": … } }, … ] }` — the same shape
-    /// the golden's `modules` array carries, in delivery order, so the comparator joins on `id`
-    /// and compares `snapshot` whole.
-    pub fn snapshots(&self) -> Value {
-        json!({
-            "modules": self.mods.iter().map(|m| json!({
-                "id": m.id(),
-                "snapshot": m.snapshot(),
-            })).collect::<Vec<_>>(),
-            "skipped": self.missing(),
-        })
     }
 }
 
@@ -907,6 +886,7 @@ pub fn registered(deps: ClusterDeps) -> Registry {
     r.register(Box::new(modules::buff_timers::BuffTimersModule::new(core)));
     r.register(Box::new(modules::consider::ConsiderModule::new()));
     r.register(Box::new(modules::resist::ResistModule::new()));
+    r.register(Box::new(modules::gaps::GapsModule::new()));
     r.register(Box::new(modules::event_feed::EventFeedModule::new()));
     r
 }
@@ -914,6 +894,7 @@ pub fn registered(deps: ClusterDeps) -> Registry {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde_json::json;
 
     fn fold_lines(lines: &[&str]) -> Value {
         let mut fold = Fold::new(registered(ClusterDeps::default()), i64::MAX);

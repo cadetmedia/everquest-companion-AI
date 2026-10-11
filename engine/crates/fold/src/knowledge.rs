@@ -124,4 +124,10 @@ pub trait Knowledge: Send + Sync {
     /// loot burst probes one name many times and the app must not be asked to fetch it many times.
     /// A `knowledge.define` makes the next lookup a hit, so nothing has to un-remember anything.
     fn take_misses(&self) -> Vec<Miss>;
+
+    /// Every item name the committed database states, as its page spells it. The bazaar module
+    /// matches trade chat against these. Defaulted empty, so a test corpus need not list any.
+    fn item_names(&self) -> Vec<String> {
+        Vec::new()
+    }
 }
