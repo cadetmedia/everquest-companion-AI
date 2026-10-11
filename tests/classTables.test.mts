@@ -224,10 +224,21 @@ test('the per-class counts reproduce the design measurement, per spell entry', (
   // are taken over the PRISTINE scrape (`spellsJson` directly, no removals and no corrections),
   // which still carries both invisibility pages exactly as the wiki wrote them. The effective
   // index below is where that ticket lands.
+  //
+  // THE 2026-10-10 DELTA RUN MOVES SEVEN TOTALS AND NO EXCLUSIVE COUNT, by two pages:
+  //   * `Identify` (pageid 49731) lost its classes. The wiki edited the page to say "This spell
+  //     doesn't exist in EQL for classes to scribe." and emptied `classes`, so BRD, ENC, MAG, NEC
+  //     and WIZ each lose one shared row (91 -> 90, 239 -> 238, 202 -> 201, 193 -> 192,
+  //     235 -> 234). Shared by five, exclusive to none.
+  //   * `Mass Imbue Sapphire` is a new row, `* Cleric - Level 29 * Shaman - Level 29`, so CLR
+  //     206 -> 207 and SHM 209 -> 210, again exclusive to neither. (`Mass Imbue Emerald`, CLR/DRU,
+  //     is the second of the two former `Imbue Emerald` rows under its own title, so it moves
+  //     nothing.)
+  // The run's renames (names now come from page titles) re-label rows this table already counted.
   const expected: Record<string, [number, number]> = {
-    BRD: [91, 90], BST: [77, 27], CLR: [206, 82], DRU: [268, 152],
-    ENC: [239, 184], MAG: [202, 161], NEC: [193, 86], PAL: [91, 17],
-    RNG: [92, 20], SHD: [91, 23], SHM: [209, 102], WIZ: [235, 193]
+    BRD: [90, 90], BST: [77, 27], CLR: [207, 82], DRU: [268, 152],
+    ENC: [238, 184], MAG: [201, 161], NEC: [192, 86], PAL: [91, 17],
+    RNG: [92, 20], SHD: [91, 23], SHM: [210, 102], WIZ: [234, 193]
   }
   for (const [abbr, [total, excl]] of Object.entries(expected)) {
     assert.deepEqual([RAW.get(abbr)?.total, RAW.get(abbr)?.excl], [total, excl], `${abbr} drifted`)
