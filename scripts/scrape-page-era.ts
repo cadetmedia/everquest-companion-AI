@@ -338,7 +338,7 @@ interface MetaResponse {
 
 let eraRevision: number | undefined
 
-async function fetchMetadata(titles: readonly string[]): Promise<Map<string, boolean>> {
+export async function fetchMetadata(titles: readonly string[]): Promise<Map<string, boolean>> {
   const out = new Map<string, boolean>()
   for (let i = 0; i < titles.length; i += META_BATCH) {
     const slice = titles.slice(i, i + META_BATCH)
@@ -480,7 +480,7 @@ async function spellPageTitles(): Promise<string[]> {
 }
 
 /** The enumeration ∪ the catalog's own names, deduped by key and sorted. */
-function spellTargets(titles: readonly string[], catalog: SpellDbFile): string[] {
+export function spellTargets(titles: readonly string[], catalog: SpellDbFile): string[] {
   const byKey = new Map<string, string>()
   for (const raw of [...titles, ...catalog.spells.map((s) => s.name)]) {
     const key = pageEraKey(raw)
@@ -515,7 +515,7 @@ function entryFor(
  * for, and nothing at all for the ones it did not. Shared by both so the two cannot come to mean
  * different things about an absent row.
  */
-function answered(titles: readonly string[], verdicts: ReadonlyMap<string, boolean>): Record<string, boolean> {
+export function answered(titles: readonly string[], verdicts: ReadonlyMap<string, boolean>): Record<string, boolean> {
   const out: Record<string, boolean> = {}
   for (const title of titles) {
     const v = verdicts.get(pageEraKey(title))
