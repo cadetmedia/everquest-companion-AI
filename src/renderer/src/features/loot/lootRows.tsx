@@ -6,6 +6,7 @@ import type { ItemKnowledge, LootDisposition, LootEvent } from '@shared/types'
 import type { Cells } from '@shared/dataServer/protocol.generated'
 import { formatDateTime } from '../../lib/formatDate'
 import { KnownItemTooltip } from '../../lib/KnownItemTooltip'
+import { ItemIcon } from '../../lib/ItemIcon'
 import type { InventoryRow } from '../inventory/reconcile'
 import { isQuestItem } from './lootItemData'
 import { KnowledgeBadge } from './KnowledgeBadge'
@@ -139,6 +140,7 @@ export const GroupedRow = memo(function GroupedRow({
               the toolbar and held the pointer there. The card is back in the click-through mode
               (JOS-181; owner ask, 2026-10-03): it opens below, takes no pointer events and closes
               on any pointerdown, which is what `loot-sort.e2e.mts` hovers this testid to prove. */}
+          <ItemIcon knowledge={knowledge} />
           <KnownItemTooltip name={g.item} knowledge={knowledge} clickThrough>
             <Box component="span" data-testid="loot-item-name">
               {g.item}
@@ -263,6 +265,7 @@ export const EngineFlatRow = memo(function EngineFlatRow({
       <TableCell sx={{ color: 'text.secondary' }}>{text(cells, 'at') ?? ''}</TableCell>
       <TableCell>
         <Stack direction="row" spacing={1} alignItems="center">
+          <ItemIcon knowledge={knowledge} />
           <KnownItemTooltip name={item} knowledge={knowledge} clickThrough>
             <Box component="span" data-testid="loot-item-name">
               {count !== null && count > 1 ? `${String(count)} × ${item}` : item}
@@ -307,6 +310,7 @@ export const FlatRow = memo(function FlatRow({
       <TableCell>
         <Stack direction="row" spacing={1} alignItems="center">
           {/* The click-through card, same reason as GroupedRow above. */}
+          <ItemIcon knowledge={knowledge} />
           <KnownItemTooltip name={e.item} knowledge={knowledge} clickThrough>
             <Box component="span" data-testid="loot-item-name">
               {e.count && e.count > 1 ? `${e.count} × ${e.item}` : e.item}
