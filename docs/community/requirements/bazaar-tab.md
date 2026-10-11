@@ -33,3 +33,7 @@ record what was built but not always who asked; those say "owner" where the row 
 | 2026-10-08 | owner | Use the existing alert framework, so its sound, voice, banner, cooldown and history apply. | built |
 | 2026-10-08 | owner | Keep the price thresholds Malkil asked for (they were dropped by mistake in the simplification and restored the same evening). | built |
 | 2026-10-11 | owner | Efficiency pass: the Bazaar's item facts (icon, no-trade) load in one batched call for the whole list, not one lookup per item. | built (shares item-hover-cards' `items:marks` store) |
+| 2026-10-11 | owner | An "ignore outliers" rule: a price far above or below everyone else's (someone trying to fake the market price) is left out of the shown prices. | asked |
+| 2026-10-11 | owner | A toggle for ignoring outliers, with a tooltip explaining it. | asked |
+| 2026-10-11 | owner | A tradeskill filter: items for sale that belong to a tradeskill. | asked |
+| 2026-10-11 | owner | A search by quest, to see the price of quest items. | asked |
