@@ -168,6 +168,17 @@ function dbKnowledge(key: string, display: string): Omit<ItemKnowledge, 'cached'
   return entry ? { ...knowledgeFromDb(entry), name: display } : null
 }
 
+/** Icon ids for many names in one call, from the committed DB only: no record built, no cache
+ *  read, no request. Names the DB lacks or whose page names no icon are simply absent. */
+export function itemIconIds(names: readonly string[]): Record<string, number> {
+  const out: Record<string, number> = {}
+  for (const name of names) {
+    const id = itemDb().get(cacheKey(name))?.iconId
+    if (id !== undefined) out[name] = id
+  }
+  return out
+}
+
 // ---- local (posky) cross-ref --------------------------------------------------
 
 const posky = poskyJson as unknown as PoskyData

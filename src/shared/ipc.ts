@@ -561,6 +561,9 @@ export const IPC = {
   // renderer -> main: look up an item's lore/quest knowledge (local posky-first, then a
   // cached, politely-throttled wiki lookup). Returns ItemKnowledge.
   itemsLookup: 'items:lookup',
+  // renderer -> main: icon ids for many item names at once, from the committed DB only (the
+  // Loot rows, one call per paint). Returns Record<name, iconId> for the names that have one.
+  itemsIcons: 'items:icons',
 
   // ---- mob knowledge ("what does this thing drop", Task #63) ----
   // renderer -> main: look up a mob's drop knowledge (own loot history + local quest catalog

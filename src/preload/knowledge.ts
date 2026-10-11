@@ -58,6 +58,8 @@ export const knowledgeBridge = {
    * record that still carries local posky associations).
    */
   lookupItem: (name: string): Promise<ItemKnowledge> => ipcRenderer.invoke(IPC.itemsLookup, name),
+  /** Icon ids for many item names in one call, from the committed DB: `{ [name]: iconId }` for the ones that have one. */
+  itemIcons: (names: string[]): Promise<Record<string, number>> => ipcRenderer.invoke(IPC.itemsIcons, names),
   /**
    * Mob knowledge (Task #63): "what does this thing drop" — your own loot history + the local
    * quest catalog first, then a cached, politely-throttled wiki lookup. Never rejects.
