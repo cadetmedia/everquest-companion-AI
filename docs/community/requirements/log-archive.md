@@ -11,4 +11,4 @@ before 2026-10-10 were gathered that day from agent notes and the branch history
 | 2026-10-04 | owner | Show the switch in regular builds. | built |
 | 2026-10-05 | owner | Rename the switch: Summarize and archive log. | built |
 | 2026-10-06 | owner | Archiving is automatic; the switch is the only thing a player touches. | built |
-| 2026-10-11 | owner | The `gaps` module is captured on a Refresh and merged with the live log, so the Gaps tab counts the archived history (owner pressed Refresh and saw no change). | asked |
+| 2026-10-11 | owner | The `gaps` module is captured on a Refresh and merged with the live log, so the Gaps tab counts the archived history (owner pressed Refresh and saw no change). | built (`gaps` in CAPTURED_MODULES; `mergeGaps` joins rows by domain and case-folded name, sums counts, tallies and copper, widens kinds and first/last, keeps the last three samples, recounts totals, re-caps at 500 a domain; a kept history lacking the module is refolded at launch) |
