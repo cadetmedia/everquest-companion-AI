@@ -12,6 +12,7 @@ import { mergeBazaar } from './mergeBazaar'
 import { mergeBuffStats } from './mergeBuffStats'
 import { mergeCombo } from './mergeCombo'
 import { mergeConsider } from './mergeConsider'
+import { mergeGaps } from './mergeGaps'
 import { mergeItemTiers } from './mergeItemTiers'
 import { mergeKills } from './mergeKills'
 import { mergeLeveling } from './mergeLeveling'
@@ -36,6 +37,7 @@ export const MERGE_RULES: Readonly<Record<string, MergeRule>> = {
   respawn: mergeRespawn,
   progression: mergeProgression,
   bazaar: mergeBazaar,
+  gaps: mergeGaps,
   observedSpellRanks: mergeSpellRanks,
   buffs: mergeBuffStats,
   spellSets: mergeSpellSets,
