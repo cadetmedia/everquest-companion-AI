@@ -70,6 +70,11 @@ SK, others).
   the instant price itself): not a usable denominator. Two items can share a name at two prices
   (Gold Ring: 6g from Gynok Moltor, 12g in the Karanas). The 1.05 / 1.4 pair is classic EQ's
   best / worst vendor multiplier.
+- **A free sale is not a price** (owner, 2026-10-11). A worn item is bound and a vendor pays nothing
+  for it, so `for free` on a vendor-sale line says nothing about the item's value; an item that EVER
+  sold for coin has that price. A loot-line instant sale was never worn, so `for free` there is a
+  genuine zero-value item. Any price reading takes the most frequent priced sale and shows nothing,
+  never 0, for an item that only ever sold for free (`derivedPrices`, shared/gaps.ts on gaps-tab).
 - **Item DB:** `src/main/data/items.json`, ~11.5k items, keys lowercased names. Use it instead of
   wiki fetches.
 
