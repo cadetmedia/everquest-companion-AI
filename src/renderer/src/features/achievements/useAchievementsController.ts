@@ -7,7 +7,7 @@
 // list has the width to itself and draws no checkbox, because a pick with no plan beside it is a
 // box that does nothing.
 
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useDeferredValue, useMemo, useState } from 'react'
 import {
   EVERYTHING,
   bookIndex,
@@ -18,7 +18,6 @@ import {
   shownCount,
   visibleSections,
   type BookIndex,
-  type BookSection,
   type MobIndex,
   type RailFamily,
   type Scope,
@@ -26,6 +25,7 @@ import {
   type Tally,
   type ZoneHere
 } from '@shared/achievements/bookRows'
+import { listRows, type ListRow } from '@shared/achievements/listRows'
 import type { CharacterSnap } from '@shared/characterTypes'
 import type { ZoneShort } from '@shared/maps'
 import { countersIn, type PlanZone } from '@shared/slayer/slayerPlan'
@@ -75,7 +75,8 @@ export interface RailBundle {
 }
 
 export interface ListBundle {
-  sections: BookSection[]
+  /** the sections as one flat list: heading rows and achievement rows (listRows.ts) */
+  rows: ListRow[]
   shown: number
   query: string
   open: boolean
@@ -181,7 +182,10 @@ export function useAchievementsController(props: SlayerViewProps): AchievementsC
   const { book, readAt, ready } = useAchievementBook()
   const slayer = useSlayerController(props)
   const choices = useChoices()
-  const { query, open, complete, sort, zoneOnly } = choices
+  const { open, complete, sort, zoneOnly } = choices
+  // THE QUERY IS DEFERRED (owner ask, 2026-10-11: no lag): the box echoes the keystroke at once,
+  // and the list follows on the render React fits in after it.
+  const query = useDeferredValue(choices.query)
   const zoneName = useModule<CharacterSnap>('character')?.zone ?? null
 
   const index = useMemo(() => (book === null ? NO_INDEX : bookIndex(book)), [book])
@@ -200,32 +204,32 @@ export function useAchievementsController(props: SlayerViewProps): AchievementsC
       book === null ? [] : visibleSections(book, index, { scope, query, open, complete, sort, here }),
     [book, index, scope, query, open, complete, sort, here]
   )
+  const rows = useMemo(() => listRows(sections), [sections])
   const pickable = useMemo(
     () => book !== null && familyHasCounter(book, scope.family),
     [book, scope.family]
   )
   const hasComplete = total.done > 0
+  // ONE OBJECT FOR AS LONG AS NOTHING IN IT CHANGES: the rows are memoized on it (AchievementRow).
+  const { onOpenMob } = props
+  const ctx = useMemo(
+    (): RowContext => ({
+      index,
+      mobs: catalogMobs(),
+      picks: slayer.picks,
+      pickable,
+      onOpenZone: slayer.plan.onOpenZone,
+      ...(onOpenMob === undefined ? {} : { onOpenMob })
+    }),
+    [index, slayer.picks, pickable, slayer.plan.onOpenZone, onOpenMob]
+  )
 
   return {
     ready,
     hasDump: book !== null,
     readAt,
     rail: { families, total, scope, hasComplete, onScope: choices.onScope },
-    list: {
-      ...choices,
-      sections,
-      shown: shownCount(sections),
-      zoneName,
-      hasComplete,
-      ctx: {
-        index,
-        mobs: catalogMobs(),
-        picks: slayer.picks,
-        pickable,
-        onOpenZone: slayer.plan.onOpenZone,
-        ...(props.onOpenMob === undefined ? {} : { onOpenMob: props.onOpenMob })
-      }
-    },
+    list: { ...choices, rows, shown: shownCount(sections), zoneName, hasComplete, ctx },
     plan: pickable ? { picks: slayer.picks, zones: slayer.plan } : null
   }
 }
