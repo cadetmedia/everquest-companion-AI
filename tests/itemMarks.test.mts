@@ -3,8 +3,9 @@
 // its marks, the notability rule on marks, and that the shipped DB answers a known item.
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { isNotableKnowledge, isNotableMarks, marksOf } from '../src/shared/itemKnowledge.ts'
-import { buildItemDbIndex, knowledgeFromDb } from '../src/main/itemsDb.ts'
+import { isNotableKnowledge, isNotableMarks, marksOf, type ItemMarks } from '../src/shared/itemKnowledge.ts'
+import { buildItemDbIndex, itemKey, knowledgeFromDb } from '../src/main/itemsDb.ts'
+import { fetchItemMarks, itemMarksOf } from '../src/renderer/src/lib/itemMarks.ts'
 import type { ItemDbFile, ItemKnowledge } from '../src/shared/types.ts'
 import itemsJson from '../src/main/data/items.json' with { type: 'json' }
 
@@ -44,4 +45,35 @@ test('the shipped DB answers a known item with its icon', () => {
   const m = marksOf(knowledgeFromDb(entry))
   assert.equal(m.iconId, 804)
   assert.equal(m.noTrade, false)
+})
+
+test('a non-notable item the probe asked for reads back with its icon, synchronously', async () => {
+  // The notable-pickups probe asks `fetchItemMarks` for every recent item and fetches a record
+  // only for the notable ones; the Overview's rows take the icon off the store by name, so an
+  // ordinary drop (a potion: no lore, no quest) must be readable there with its id once the
+  // batch lands (owner, 2026-10-12: the Recent drops card showed Arrow without one).
+  const index = buildItemDbIndex(itemsJson as unknown as ItemDbFile)
+  const asked: string[][] = []
+  const eq = {
+    itemMarks(names: readonly string[]): Promise<Record<string, ItemMarks>> {
+      asked.push([...names])
+      const out: Record<string, ItemMarks> = {}
+      for (const n of names) {
+        const entry = index.get(itemKey(n))
+        if (entry) out[n] = marksOf(knowledgeFromDb(entry))
+      }
+      return Promise.resolve(out)
+    }
+  }
+  ;(globalThis as unknown as { window: unknown }).window = { eq }
+  const name = '10 Dose Adrenaline Tap'
+  assert.equal(itemMarksOf(name), undefined, 'nothing is known before the batch')
+  const got = await fetchItemMarks([name, 'Not An Item'])
+  assert.equal(isNotableMarks(got[name]), false, 'ordinary: the probe fetches no record for it')
+  assert.equal(itemMarksOf(name)?.iconId, 697)
+  assert.equal(itemMarksOf('Not An Item'), undefined)
+  assert.deepEqual(asked, [[name, 'Not An Item']], 'one batch, asked once')
+  // A second ask of the same names is answered off the store, not main.
+  await fetchItemMarks([name])
+  assert.equal(asked.length, 1)
 })

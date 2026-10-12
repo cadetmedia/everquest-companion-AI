@@ -14,6 +14,7 @@
 
 import { useMemo } from 'react'
 import type { LootSnap } from '@shared/types'
+import { useItemMarksReader } from '../../lib/itemMarks'
 import { useModule } from '../../lib/useModule'
 import { questItemNames } from '../loot/lootItemData'
 import { useNotablePickups } from '../loot/useNotablePickups'
@@ -31,5 +32,13 @@ export function useRecentDrops(): DropRow[] {
   // Nothing is dismissable on this surface (the dismiss affordance belongs to the Loot tab's
   // strip), so the dismissed set is permanently empty — we only want `byKey`.
   const { byKey } = useNotablePickups(history, NOT_DISMISSED)
-  return useMemo(() => buildDropRows(history, questItemNames, byKey), [history, byKey])
+  // The ICON reads off the marks store by name, exactly as the Loot rows' `ItemIcon` does: the
+  // probe has already asked that batch for every recent item, so an ordinary drop has its icon
+  // without a knowledge record (owner, 2026-10-12: Arrow sat iconless here). The reader is a new
+  // identity per landed batch, which is what re-keys the memo.
+  const marksOf = useItemMarksReader()
+  return useMemo(
+    () => buildDropRows(history, questItemNames, byKey, (item) => marksOf(item)?.iconId),
+    [history, byKey, marksOf]
+  )
 }
