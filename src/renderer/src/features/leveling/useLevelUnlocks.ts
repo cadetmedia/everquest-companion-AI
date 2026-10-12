@@ -16,16 +16,30 @@ import { EMPTY_UNLOCK_DATA, comboClassesOf, type ComboClasses, type LevelUnlockD
 import { useComboSnap } from '../profiles/ClassComboData'
 
 let pending: Promise<LevelUnlockData> | null = null
+/**
+ * The dataset once it has landed, so a re-mount STARTS with it (the lag sweep, 2026-10-11). Every
+ * mount used to render once empty and once more when the already-settled promise re-delivered the
+ * same object — for the Spellbook, a toolbar drawn twice on every open of the tab.
+ */
+let landed: LevelUnlockData | null = null
 
 /** The shared pull. Exported for the detector, which needs the data outside React's render. */
 export function levelUnlocks(): Promise<LevelUnlockData> {
-  pending ??= window.eq.getLevelUnlocks().catch(() => EMPTY_UNLOCK_DATA)
+  pending ??= window.eq
+    .getLevelUnlocks()
+    .catch(() => EMPTY_UNLOCK_DATA)
+    .then((d) => {
+      landed = d
+      return d
+    })
   return pending
 }
 
 /** The dataset, or the empty one until it lands. Never null — an unloaded panel shows empty lists. */
 export function useLevelUnlocks(): LevelUnlockData {
-  const [data, setData] = useState<LevelUnlockData>(EMPTY_UNLOCK_DATA)
+  // A mount after the pull has landed takes the same object the effect below would set, so the
+  // set is React's own no-op and the view renders once.
+  const [data, setData] = useState<LevelUnlockData>(() => landed ?? EMPTY_UNLOCK_DATA)
   useEffect(() => {
     let live = true
     void levelUnlocks().then((d) => {
