@@ -12,7 +12,7 @@
 // what decide whether ~30 memoized rows re-render on a keystroke. That is a property of this whole
 // block at once, and it is easier to review on one screen than scattered through the JSX.
 
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useDeferredValue, useMemo, useState } from 'react'
 import {
   TAB_ORDER,
   bestSpellsAt,
@@ -79,7 +79,15 @@ export function useReadout(viewed: ViewedLevel): Readout {
   // THE SEARCH (JOS-450). An empty box is the ranked readout, byte for byte — this state is the only
   // thing that switches the body, and nothing about the tables reads it.
   const [query, setQuery] = useState('')
-  const searching = query.trim() !== ''
+  // THE FOLD READS A DEFERRED COPY OF THE BOX (2026-10-11 lag sweep). The box is controlled by
+  // `query`, so a keystroke re-renders the panel; with the fold in the same render the character
+  // waited behind the search and fifty result rows (measured: 105 ms to echo, in one 52 ms task).
+  // `useDeferredValue` splits it the way the Sky tab, the Gear tab and the Loot ledger split theirs:
+  // the urgent render echoes the key with the body as it was, and the fold and the rows follow in
+  // a transition React can slice. `searching` follows the deferred copy too, so the body switch,
+  // the results and the `data-searching` marker still change together.
+  const deferredQuery = useDeferredValue(query)
+  const searching = deferredQuery.trim() !== ''
   // THE TYPE FILTER (JOS-507). `ALL_TYPES` is the default and the disengaged state: while it holds,
   // nothing below asks the engine anything and the two bodies above are byte for byte what they were
   // before this control existed — which is also what keeps the readout's existing e2e family, whose
@@ -111,7 +119,7 @@ export function useReadout(viewed: ViewedLevel): Readout {
   const results = useMemo(
     () =>
       searching
-        ? searchBestSpells(data, tokenizeSpellQuery(query), {
+        ? searchBestSpells(data, tokenizeSpellQuery(deferredQuery), {
             classes: best.classes,
             level,
             tab,
@@ -123,7 +131,7 @@ export function useReadout(viewed: ViewedLevel): Readout {
             focus
           })
         : EMPTY_BEST_SPELL_SEARCH,
-    [searching, data, query, best.classes, level, tab, sorts, ranks, simulate, focus]
+    [searching, data, deferredQuery, best.classes, level, tab, sorts, ranks, simulate, focus]
   )
   // The loadout set the result chips are filled against: a class you could be running, at a glance.
   const loadout = useMemo(() => new Set<string>(best.classes), [best.classes])
