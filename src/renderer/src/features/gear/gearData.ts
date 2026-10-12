@@ -27,6 +27,7 @@ import { NO_OWNERSHIP, type OwnershipPayload } from '@shared/planner/ownership'
 import { isKept } from '@shared/lootDisposition'
 import { useLootHistory } from '../loot/useLootHistory'
 import { useComboSnap } from '../profiles/ClassComboData'
+import { type Kept, kept } from '../../lib/kept'
 import { useModule } from '../../lib/useModule'
 import type { CharacterSnap } from '@shared/characterTypes'
 // JOS-338: the caller `features/planner/plannerInventory.ts` has been asking for since JOS-326 —
@@ -169,9 +170,13 @@ export function useGearIndex(): GearIndexState {
   return state
 }
 
-/** The era verdict as the pure filter model wants it — a stable identity, so the memo can key on it. */
+/** The era verdict as the pure filter model wants it — a stable identity, so the memo can key on it.
+ *  ONE for the window since the lag sweep (2026-10-11), not one per mount: the Gear tab's kept
+ *  filter answer (`lib/kept.ts`) keys on this identity, and a per-mount closure would miss on
+ *  every re-open. */
+const ERA_HIDDEN = { eraHidden: (row: GearRow): boolean => eraHides(row, true) }
 export function useEraHidden(): { eraHidden: (row: GearRow) => boolean } {
-  return useMemo(() => ({ eraHidden: (row: GearRow) => eraHides(row, true) }), [])
+  return ERA_HIDDEN
 }
 
 // ---- the ownership join (JOS-285, phase 4) --------------------------------------------
@@ -296,11 +301,14 @@ export interface GearCompareData {
   state: ItemUpgradeState
 }
 
+const BY_KEY: Kept<Map<string, GearRow>> = { last: null }
+
 export function useGearCompare(rows: readonly GearRow[], state: ItemUpgradeState): GearCompareData {
   const { inventory, ready } = usePlannerInventory()
   // Keyed on the ARRAY identity, which `useGearIndex` holds stable for the life of the window (the
-  // fetch is cached), so this 6,766-entry map is built once per window and never per hover.
-  const byKey = useMemo(() => new Map(rows.map((row) => [row.key, row])), [rows])
+  // fetch is cached), so this 6,766-entry map is built once per window and never per hover — nor
+  // per re-open of the tab, since the lag sweep (2026-10-11): the slot outlives the mount.
+  const byKey = kept(BY_KEY, [rows], () => new Map(rows.map((row) => [row.key, row])))
   const equipped = useMemo(() => equippedIndex(inventory?.hosts ?? []), [inventory])
   // ONE OBJECT, MEMOIZED, because `GearLine` is `memo`'d and this is one of its props: a fresh
   // literal per render would defeat the memo on every keystroke of the search box, across a whole
