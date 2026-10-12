@@ -9,7 +9,7 @@
 // items by what the wiki says they are for (shared/bazaarFacts.ts). What the parser reads is stated in
 // engine/crates/fold/src/modules/bazaar_parse.rs.
 
-import { type JSX, useMemo, useState } from 'react'
+import { type JSX, useDeferredValue, useMemo, useState } from 'react'
 import { Box, Chip, Paper, Stack, Table, TableBody, TableCell, TableHead, TableRow, TableSortLabel, Typography } from '@mui/material'
 import { itemTierKey } from '@shared/itemStats'
 import { findWatch, watchOnItem, type BazaarWatch, type BazaarWatchlist } from '@shared/bazaarWatch'
@@ -20,7 +20,6 @@ import {
   formatMove,
   formatPlat,
   sparkline,
-  summarizeBazaar,
   type BazaarItem,
   type BazaarSnap,
   type BazaarSort,
@@ -37,6 +36,7 @@ import { HiddenDetail, HideDetailButton, useDetailHidden } from './BazaarDetailT
 import BazaarTierTable from './BazaarTierTable'
 import BazaarWatchPanel from './BazaarWatchPanel'
 import { useHeardAlerts } from './BazaarWatcher'
+import { useBazaarSummary } from './useBazaarSummary'
 import { useBazaarWatch } from './useBazaarWatch'
 import { useItemFacts, type ItemFacts } from './useItemFacts'
 
@@ -357,23 +357,11 @@ export default function BazaarView({ onOpenLoot }: { onOpenLoot: (item: string) 
   const names = useMemo(() => [...new Set((snap?.rows ?? []).map((r) => r.item))], [snap])
   const factsOf = useItemFacts(names)
   const quests = useMemo(() => questNamesOf(names, factsOf), [names, factsOf])
-  const facts = useMemo(() => ({ hideNoTrade: ctl.hideNoTrade, tradeskill: ctl.tradeskill, quest: ctl.quest }), [ctl.hideNoTrade, ctl.tradeskill, ctl.quest])
+  // The Quest box's text is deferred like the search's (useBazaarSummary), so typing never waits on the list.
+  const quest = useDeferredValue(ctl.quest)
+  const facts = useMemo(() => ({ hideNoTrade: ctl.hideNoTrade, tradeskill: ctl.tradeskill, quest }), [ctl.hideNoTrade, ctl.tradeskill, quest])
   const keep = useMemo(() => keepOf(keeperOf(ctl.show, wished, watch), facts, factsOf), [ctl.show, facts, wished, watch, factsOf])
-  const sum = useMemo(
-    () =>
-      summarizeBazaar(snap, {
-        text: ctl.text,
-        dir: ctl.dir,
-        sort,
-        keep,
-        minPrice: ctl.minPrice,
-        combineTiers: ctl.combineTiers,
-        priceTier: ctl.priceTier,
-        sinceDays: ctl.sinceDays,
-        ignoreOutliers: ctl.ignoreOutliers
-      }),
-    [snap, ctl.text, ctl.dir, ctl.minPrice, ctl.combineTiers, ctl.priceTier, ctl.sinceDays, ctl.ignoreOutliers, sort, keep]
-  )
+  const sum = useBazaarSummary(snap, ctl, sort, keep)
   const picked = sum.items.find((i) => i.key === pick) ?? sum.items.at(0) ?? null
   const set = (patch: Partial<BazaarControlState>): void => {
     const next = { ...ctl, ...patch }

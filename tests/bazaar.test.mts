@@ -6,8 +6,10 @@ import {
   formatMove,
   formatPlat,
   median,
+  selectBazaarItems,
   sparkline,
   summarizeBazaar,
+  summarizeBazaarItems,
   type BazaarItem,
   type BazaarRow,
   type BazaarSortKey
@@ -86,6 +88,24 @@ test('search, direction and sort', () => {
   for (const desc of [true, false]) assert.equal(by('offered', desc).at(0)?.item, 'Fleeting Quiver')
   assert.equal(by('offered', false).at(-1)?.offered, null)
   assert.deepEqual(summarizeBazaar(null, all).items, [])
+})
+
+test('the entries are computed once, and a keystroke only picks and orders the same objects', () => {
+  const every = summarizeBazaarItems({ rows }, {})
+  assert.equal(every.items.length, 3)
+  const queries = [{}, { text: 'girdle' }, { text: 'QUIVER', dir: 'buy' as const }, { dir: 'trade' as const }, { minPrice: 4000 }, { sort: { key: 'asking' as const, desc: false } }]
+  for (const q of queries) {
+    const query = { ...all, ...q }
+    const picked = selectBazaarItems(every, query)
+    assert.deepEqual(picked, summarizeBazaar({ rows }, query), JSON.stringify(q))
+    for (const x of picked.items) assert.ok(every.items.includes(x), 'the same entry object, not a recomputation')
+  }
+  // A keep over tiers reads a combined entry's folded tiers, as it read the rows before.
+  const combined = summarizeBazaarItems({ rows }, { combineTiers: true })
+  assert.deepEqual(
+    selectBazaarItems(combined, { ...all, keep: (_item, tier) => tier === 4 }).items.map((i) => i.item),
+    ['Bone-Clasped Girdle']
+  )
 })
 
 test('an older row without its price list stands for its average', () => {
