@@ -118,6 +118,15 @@ SK, others).
 
 ## Progression and world
 
+- **A respawn estimate is death-to-death, so it carries the fight** (2026-10-11, owner: timers 1 to
+  1.5 min long). `respawn.rs record_death` takes the MINIMUM gap between two counted deaths of a name
+  in one zone stay (not a median), raised to the wiki floor under the exact lowercased name. Lower
+  Guk 4 (Refined): Hoptor Thaggelum respawns in exactly 570 s (death to first sighting, 569-571 s
+  over seven cycles; the wiki says 9 min, and its floor sits under `the ghoul lord`, a key his name
+  never matches), yet the estimate read 634 s because the group's fights ran 60-90 s; a reanimated
+  hand and the ghoul arch magus read the same way. The archive refold and merge changed none of
+  it (the respawn code is byte-identical to test.20). Fix to make: measure death to first sighting.
+
 - **Death:** no XP loss. `Slain by <groupmate/pet>` means you were charmed
   (`You lose control of yourself!`).
 - **Multiclass XP:** every active class gets the full amount; displayed level = lowest active
