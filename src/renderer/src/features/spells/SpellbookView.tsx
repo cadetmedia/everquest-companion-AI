@@ -46,7 +46,7 @@
 //     point of this surface, it is one popper rather than one per cell, and it opens on a 250ms
 //     hover intent rather than on mount.
 
-import { type JSX, useDeferredValue, useMemo, useRef, useState } from 'react'
+import { type JSX, memo, startTransition, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Box,
   Stack,
@@ -57,12 +57,14 @@ import {
   TableHead,
   TableRow,
   TableSortLabel,
-  Typography
+  Typography,
+  tableCellClasses
 } from '@mui/material'
 import { UPGRADE_CATEGORY_LABEL } from '@shared/spellUpgrade'
 import {
   PAYOFF_MARKS,
-  spellbookRows,
+  spellbookCorpus,
+  spellbookRowsOf,
   type SpellbookQuery,
   type SpellbookRow,
   type SpellbookSort
@@ -95,7 +97,13 @@ import {
  */
 const ROW_HEIGHT = SPELL_ROW_HEIGHT
 
-/** The fixed-height contract, as one style. See the header. */
+/**
+ * The fixed-height contract, as one style. See the header.
+ *
+ * THE FIGURE COLUMNS' DIGITS ARE STATED HERE TOO, once per row rather than as an `sx` on each of
+ * the four cells (the lag sweep, 2026-10-11): every `sx` is a style the theme resolves on every
+ * render of every row, and a screenful of them was most of what a keystroke paid.
+ */
 const FIXED_ROW = {
   height: ROW_HEIGHT,
   maxHeight: ROW_HEIGHT,
@@ -105,8 +113,16 @@ const FIXED_ROW = {
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis'
-  }
+  },
+  [`& .${tableCellClasses.alignRight}`]: { fontVariantNumeric: 'tabular-nums' }
 } as const
+
+/** The two faces of a payoff glyph (`PayoffCell`) - one object each, never a literal per glyph. */
+const MARK_ON = { fontFamily: 'monospace', fontWeight: 700, color: 'primary.main' } as const
+const MARK_OFF = { fontFamily: 'monospace', fontWeight: 400, color: 'text.disabled' } as const
+
+/** The rows the first paint draws: none - see `settled` in the view. */
+const NO_ROWS: SpellbookRow[] = []
 
 /** How many columns a spacer has to span. */
 const COLUMN_COUNT = 10
@@ -154,11 +170,7 @@ function PayoffCell({ row }: { row: SpellbookRow }): JSX.Element {
             data-testid="spellbook-payoff-mark"
             data-mark={m.key}
             data-on={on ? 'yes' : 'no'}
-            sx={{
-              fontFamily: 'monospace',
-              fontWeight: on ? 700 : 400,
-              color: on ? 'primary.main' : 'text.disabled'
-            }}
+            sx={on ? MARK_ON : MARK_OFF}
           >
             {m.glyph}
           </Typography>
@@ -168,8 +180,14 @@ function PayoffCell({ row }: { row: SpellbookRow }): JSX.Element {
   )
 }
 
-/** One spell. The name keeps the app's spell card; everything else explains itself with `title`. */
-function SpellRow({ row }: { row: SpellbookRow }): JSX.Element {
+/**
+ * One spell. The name keeps the app's spell card; everything else explains itself with `title`.
+ *
+ * `memo` on the row object (the lag sweep, 2026-10-11): the rows come from a corpus the view keeps
+ * across keystrokes (`spellbookCorpus`), so a spell still on screen after one is the same object
+ * and its row is not drawn again - only the rows the keystroke scrolled into view are.
+ */
+const SpellRow = memo(function SpellRow({ row }: { row: SpellbookRow }): JSX.Element {
   const figure = headlineFigure(row)
   const era = row.outOfEra === true
   return (
@@ -238,21 +256,21 @@ replaces ${row.replaces.join(', ')}`
           {grantsText(row.grants)}
         </Typography>
       </TableCell>
-      <TableCell align="right" sx={{ fontVariantNumeric: 'tabular-nums' }}>
+      <TableCell align="right">
         <Typography variant="body2" data-testid="spellbook-figure" data-kind={figure.label}>
           {figure.value}
         </Typography>
       </TableCell>
-      <TableCell align="right" sx={{ fontVariantNumeric: 'tabular-nums' }}>
+      <TableCell align="right">
         <Typography variant="body2" data-testid="spellbook-mana">
           {whole(row.mana)}
         </Typography>
       </TableCell>
-      <TableCell align="right" sx={{ fontVariantNumeric: 'tabular-nums' }}>
+      <TableCell align="right">
         <Typography variant="body2">{seconds(row.castSeconds)}</Typography>
       </TableCell>
       {/* DURATION AT THE TIER - one of the few columns the slider genuinely moves on a buff. */}
-      <TableCell align="right" sx={{ fontVariantNumeric: 'tabular-nums' }}>
+      <TableCell align="right">
         <Typography variant="body2" data-testid="spellbook-duration">
           {ticksText(row.durationTicks)}
         </Typography>
@@ -262,7 +280,7 @@ replaces ${row.replaces.join(', ')}`
       </TableCell>
     </TableRow>
   )
-}
+})
 
 /**
  * A COLUMN YOU CAN SORT BY, which is the Gear tab's idiom brought over (Malkil, 2026-09-10:
@@ -331,12 +349,25 @@ export default function SpellbookView(): JSX.Element {
   )
   const deferredQuery = useDeferredValue(asked)
   const deferredTier = useDeferredValue(tier)
-  const rows = useMemo(
-    () => spellbookRows(data.spells, deferredQuery, deferredTier),
-    [data.spells, deferredQuery, deferredTier]
+  // THE CORPUS IS READ ONCE per (catalogue, tier, class picks) and a keystroke only filters and
+  // orders it - `spellbookCorpus` states the split, and why the rows it hands out are shared.
+  const corpus = useMemo(
+    () => spellbookCorpus(data.spells, deferredTier, deferredQuery.classes),
+    [data.spells, deferredTier, deferredQuery.classes]
   )
+  const rows = useMemo(() => spellbookRowsOf(corpus, deferredQuery), [corpus, deferredQuery])
+  // THE SCREENFUL MOUNTS AFTER THE SHELL HAS PAINTED (the lag sweep, 2026-10-11). The open was one
+  // 62-93 ms task, nearly all of it the first screenful's styling; in a transition React slices the
+  // row render between tasks and the commit is the rows alone. Mount-only - afterwards a
+  // keystroke's rows pass straight through, deferred once already by the query. The no-hits line
+  // waits for the settled frame so the first paint cannot flash it.
+  const [settled, setSettled] = useState(false)
+  useEffect(() => {
+    startTransition(() => setSettled(true))
+  }, [])
+  const shown = settled ? rows : NO_ROWS
   const scrollRef = useRef<HTMLDivElement>(null)
-  const win = useWindowedRows({ count: rows.length, rowHeight: ROW_HEIGHT, scrollRef })
+  const win = useWindowedRows({ count: shown.length, rowHeight: ROW_HEIGHT, scrollRef })
   return (
     <Stack sx={{ height: '100%', minHeight: 0 }} data-testid="spellbook-view">
       <SpellbookToolbar
@@ -379,13 +410,13 @@ export default function SpellbookView(): JSX.Element {
             </TableHead>
             <TableBody>
               <PadRow height={win.topPad} />
-              {rows.slice(win.start, win.end).map((r) => (
+              {shown.slice(win.start, win.end).map((r) => (
                 <SpellRow key={r.key} row={r} />
               ))}
               <PadRow height={win.bottomPad} />
             </TableBody>
           </Table>
-          {rows.length === 0 && (
+          {settled && rows.length === 0 && (
             <Box sx={{ p: 2 }}>
               <Typography variant="body2" color="text.secondary" data-testid="spellbook-no-hits">
                 no spell matches those filters

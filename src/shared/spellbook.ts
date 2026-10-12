@@ -355,16 +355,19 @@ export function spellbookRow(s: UnlockSpell, tier: number): SpellbookRow {
  * and deleting one would be worse than showing both. So the list can carry repeats, and the draw
  * needs to tell them apart: the second occurrence becomes `name#2`, the third `name#3`.
  *
- * In place, after the filter rather than during it, because the discriminator has to count the rows
- * that SURVIVED - a key that depended on the whole corpus would change as you typed.
+ * After the filter rather than during it, because the discriminator has to count the rows that
+ * SURVIVED - a key that depended on the whole corpus would change as you typed. THE FIRST
+ * OCCURRENCE KEEPS ITS CORPUS OBJECT and only a repeat is copied under its own key: the rows come
+ * from a corpus shared across keystrokes (`spellbookCorpus`), and the view's row memo keys on
+ * their identity, so writing on one would be writing on every query's answer at once.
  */
-function makeKeysUnique(rows: SpellbookRow[]): void {
+function uniqueKeys(rows: readonly SpellbookRow[]): SpellbookRow[] {
   const seen = new Map<string, number>()
-  for (const row of rows) {
+  return rows.map((row) => {
     const n = (seen.get(row.name) ?? 0) + 1
     seen.set(row.name, n)
-    if (n > 1) row.key = `${row.name}#${String(n)}`
-  }
+    return n > 1 ? { ...row, key: `${row.name}#${String(n)}` } : row
+  })
 }
 
 /**
@@ -462,8 +465,46 @@ function sortValue(row: SpellbookRow, by: SpellbookSort): number | string | null
   return SORT_VALUE[by](row)
 }
 
+/** `shownAt` = the classes the reader asked about. See `SpellbookRow.shownAt`. */
+function narrowClasses(row: SpellbookRow, picked: ReadonlySet<ClassAbbr> | null): void {
+  if (picked === null) return
+  row.shownAt = row.at.filter((p) => picked.has(p.cls))
+}
+
+/** A spell beside its reading at one tier - the corpus `spellbookRowsOf` filters and orders. */
+export interface SpellAtTier {
+  spell: UnlockSpell
+  row: SpellbookRow
+}
+
 /**
- * THE WHOLE LIST, filtered, read at a tier, and ordered.
+ * EVERY SPELL READ AT A TIER, for the classes on screen - the half of the fold a keystroke never
+ * repeats (the lag sweep, owner ask 2026-10-11: no lag anywhere).
+ *
+ * `spellbookRow` is the cost of this list - the ladder, the magnitudes, the grants order, per
+ * spell - and until the sweep the whole of it was paid again on every keystroke, for a corpus that
+ * had not changed. The view keeps this answer while the catalogue, the tier and the class picks
+ * hold, and a keystroke is `spellbookRowsOf` over rows already read. THE ROWS ARE SHARED across
+ * those keystrokes on purpose: a row still on screen after one is the same object, which is what
+ * lets the view's row memo leave it alone. Nothing downstream writes on a corpus row (`uniqueKeys`
+ * copies the one case that used to).
+ */
+export function spellbookCorpus(
+  spells: readonly UnlockSpell[],
+  tier: number,
+  classes?: readonly ClassAbbr[]
+): SpellAtTier[] {
+  const picked = classes !== undefined && classes.length > 0 ? new Set(classes) : null
+  return spells.map((spell) => {
+    const row = spellbookRow(spell, tier)
+    narrowClasses(row, picked)
+    return { spell, row }
+  })
+}
+
+/**
+ * THE WHOLE LIST, filtered, read at a tier, and ordered - the two halves composed, for a caller
+ * with no keystroke to amortise over (the tests).
  *
  * ONE PASS OVER ~1,900 ROWS. The gear tab measured its own 6,766-row scale at ~18 ms, which is what
  * let it ship a LIVE slider; this corpus is a third of that and does strictly less per row, so the
@@ -475,34 +516,31 @@ function sortValue(row: SpellbookRow, by: SpellbookSort): number | string | null
  * `heal`, which is not the claim `heal: 0`; it sorts LAST on that column in both directions rather
  * than being read as the worst answer.
  */
-/** `shownAt` = the classes the reader asked about. See `SpellbookRow.shownAt`. */
-function narrowClasses(row: SpellbookRow, picked: ReadonlySet<ClassAbbr> | null): void {
-  if (picked === null) return
-  row.shownAt = row.at.filter((p) => picked.has(p.cls))
-}
-
 export function spellbookRows(
   spells: readonly UnlockSpell[],
   q: SpellbookQuery,
   tier: number
 ): SpellbookRow[] {
+  return spellbookRowsOf(spellbookCorpus(spells, tier, q.classes), q)
+}
+
+/** The filter and the order over a corpus already read at its tier - what a keystroke pays. */
+export function spellbookRowsOf(corpus: readonly SpellAtTier[], q: SpellbookQuery): SpellbookRow[] {
   const text = (q.text ?? '').trim().toLowerCase()
   // TWO PASSES WHEN THE CHIP IS ON: everything that survives the ordinary filters, then the rungs
   // a SURVIVOR replaces. See `supersededNames` for why the replacement has to survive too.
-  const admitted = spells.filter((s) => admits(s, q, text))
-  const superseded = q.newestOnly === true ? supersededNames(admitted, q.classes) : null
-  const picked = q.classes !== undefined && q.classes.length > 0 ? new Set(q.classes) : null
-  const out: SpellbookRow[] = []
-  for (const s of admitted) {
-    if (superseded?.has(s.name) === true) continue
-    const row = spellbookRow(s, tier)
+  const admitted = corpus.filter((e) => admits(e.spell, q, text))
+  const superseded =
+    q.newestOnly === true ? supersededNames(admitted.map((e) => e.spell), q.classes) : null
+  const kept: SpellbookRow[] = []
+  for (const { spell, row } of admitted) {
+    if (superseded?.has(spell.name) === true) continue
     if (q.payoffMagnitudeOnly !== undefined && row.payoff.magnitude !== q.payoffMagnitudeOnly) {
       continue
     }
-    narrowClasses(row, picked)
-    out.push(row)
+    kept.push(row)
   }
-  makeKeysUnique(out)
+  const out = uniqueKeys(kept)
   const by = q.sort ?? 'level'
   const dir = q.desc === true ? -1 : 1
   out.sort((a, b) => {
