@@ -39,6 +39,8 @@ impl Knowledge for Corpus {
             ("copper ring (ring of opolla)", "Copper Ring (Ring of Opolla)"),
             ("10 dose ant's potion", "10 Dose Ant's Potion"),
             ("torn, frost covered book", "Torn, Frost Covered Book"),
+            ("tier'dal arcane insignia", "Tier'Dal Arcane Insignia"),
+            ("bone chops", "Bone Chops"),
         ]
         .iter()
         .map(|(k, p)| (k.to_string(), p.to_string()))
@@ -336,4 +338,45 @@ fn the_loose_fold_matches_a_dropped_apostrophe_a_dash_a_comma_and_vs_and_nothing
     feed(&mut m, 9, json!({ "kind": "loot", "item": "Glowing Widget" }));
     feed(&mut m, 10, json!({ "kind": "loot", "item": "Spell: Totally Made Up" }));
     assert_eq!(rows(&m), ["item Glowing Widget x1 [looted]", "item Spell: Totally Made Up x1 [looted]"]);
+}
+
+fn suggest_of(m: &GapsModule, name: &str) -> Value {
+    m.snapshot()["state"]["rows"]
+        .as_array()
+        .expect("rows")
+        .iter()
+        .find(|r| r["name"] == name)
+        .map(|r| r["suggest"].clone())
+        .expect("the row")
+}
+
+#[test]
+fn a_name_one_character_from_one_known_name_suggests_that_page_and_nothing_else_does() {
+    let mut m = module();
+    feed(&mut m, 1, json!({ "kind": "loot", "item": "Teir`Dal Arcane Insignia" }));
+    feed(&mut m, 2, json!({ "kind": "loot", "item": "Glowing Widget" }));
+    feed(&mut m, 3, json!({ "kind": "castBegin", "spell": "Elnericks Entombment of Ise" }));
+    assert_eq!(
+        suggest_of(&m, "Teir`Dal Arcane Insignia"),
+        json!({ "name": "Tier'Dal Arcane Insignia", "page": "Tier'Dal Arcane Insignia", "distance": 1 })
+    );
+    assert_eq!(suggest_of(&m, "Glowing Widget"), Value::Null, "far from everything");
+    assert_eq!(
+        suggest_of(&m, "Elnericks Entombment of Ise"),
+        json!({ "name": "Elnerick's Entombment of Ice", "page": "Elnerick's Entombment of Ice", "distance": 1 })
+    );
+}
+
+#[test]
+fn a_doubtful_suggestion_is_silence() {
+    let mut m = module();
+    // One off from both Bone Chips and Bone Chops: not unique.
+    feed(&mut m, 1, json!({ "kind": "loot", "item": "Bone Chaps" }));
+    // Two off from Bone Chips, and ten characters is too short for two.
+    feed(&mut m, 2, json!({ "kind": "loot", "item": "Bane Chaps" }));
+    // One off from Bone Chips but a word more: not the same shape.
+    feed(&mut m, 3, json!({ "kind": "loot", "item": "Bone Chip s" }));
+    assert_eq!(suggest_of(&m, "Bone Chaps"), Value::Null);
+    assert_eq!(suggest_of(&m, "Bane Chaps"), Value::Null);
+    assert_eq!(suggest_of(&m, "Bone Chip s"), Value::Null);
 }

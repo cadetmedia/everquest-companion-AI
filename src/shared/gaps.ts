@@ -52,6 +52,14 @@ export interface GapDetails {
   samples: string[]
 }
 
+/** One known name within a character or two of the row's — see engine gaps_suggest.rs. */
+export interface GapSuggest {
+  name: string
+  /** The wiki page title to link. */
+  page: string
+  distance: number
+}
+
 /** One unknown name, as the engine serves it. */
 export interface GapRow {
   domain: GapDomain
@@ -64,6 +72,8 @@ export interface GapRow {
   first: string
   last: string
   details: GapDetails
+  /** Absent when no known name is close enough to name with confidence. */
+  suggest?: GapSuggest
 }
 
 export interface GapsSnap {
@@ -155,8 +165,14 @@ export const GAPS_TEXT_HEADER = 'Name\tSeen as\tTimes\tFirst\tLast'
  * One row as lines: its tab-separated fields, then each list it has and its sample lines, each
  * indented by a tab so a paste into an issue keeps the row and its details together.
  */
+/** `1 character off`, `2 characters off`. */
+export function charactersOff(distance: number): string {
+  return `${distance} character${distance === 1 ? '' : 's'} off`
+}
+
 export function gapDetailsText(row: GapRow): string {
   const lines = [[row.name, row.kinds.join(', '), String(row.count), row.first, row.last].join('\t')]
+  if (row.suggest !== undefined) lines.push(`\tprobably: ${row.suggest.name} (${charactersOff(row.suggest.distance)})`)
   for (const { key, label } of GAP_LISTS) {
     const t = row.details[key]
     if (t === undefined) continue

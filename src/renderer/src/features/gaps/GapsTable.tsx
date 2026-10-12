@@ -2,9 +2,30 @@
 // first). A click opens the row's details beneath it (GapDetailsPanel); a second click closes it.
 
 import { type JSX, useState } from 'react'
-import { Chip, Collapse, Stack, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material'
-import type { GapRow } from '@shared/gaps'
+import { Box, Chip, Collapse, Stack, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material'
+import { charactersOff, type GapRow, type GapSuggest } from '@shared/gaps'
+import { wikiPageUrl } from '@shared/wiki'
 import GapDetailsPanel from './GapDetailsPanel'
+
+/** Under the name: the one known name within reach, linked to its page so the owner can fix it. */
+function SuggestCaption({ s }: { s: GapSuggest }): JSX.Element {
+  return (
+    <Typography variant="caption" color="text.secondary" component="div" data-testid="gaps-suggest">
+      Probably{' '}
+      <Box
+        component="a"
+        href={wikiPageUrl(s.page)}
+        target="_blank"
+        rel="noreferrer"
+        onClick={(e) => e.stopPropagation()}
+        sx={{ color: 'inherit', textDecoration: 'underline dotted' }}
+      >
+        {s.name}
+      </Box>{' '}
+      ({charactersOff(s.distance)}). The wiki page may be misspelled.
+    </Typography>
+  )
+}
 
 const COLUMNS = 5
 
@@ -12,7 +33,10 @@ function GapTableRow({ row, open, onToggle }: { row: GapRow; open: boolean; onTo
   return (
     <>
       <TableRow hover selected={open} onClick={onToggle} sx={{ cursor: 'pointer' }} data-testid="gaps-row">
-        <TableCell sx={{ fontWeight: 600 }}>{row.name}</TableCell>
+        <TableCell sx={{ fontWeight: 600 }}>
+          {row.name}
+          {row.suggest !== undefined && <SuggestCaption s={row.suggest} />}
+        </TableCell>
         <TableCell>
           <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
             {row.kinds.map((k) => (

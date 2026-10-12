@@ -23,6 +23,7 @@
 
 use super::gaps_details::Details;
 use super::gaps_keys::{item_gap_key, loose_key, scroll_known, spell_gap_key, spell_known};
+use super::gaps_suggest::{item_candidates, spell_candidates, suggest, Candidate, Suggest};
 use crate::event::Event;
 use crate::jsfn::item_base_name;
 use crate::knowledge::Knowledge;
@@ -33,7 +34,7 @@ use eqlog::names::strip_rank_tail;
 use serde::Serialize;
 use serde_json::{json, Value};
 use std::collections::{HashMap, HashSet};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 /// Rows served per domain; the rest are counted in `totals` and nowhere else.
 const CAP_PER_DOMAIN: usize = 500;
@@ -82,6 +83,10 @@ pub struct GapsModule {
     /// and the same under [`loose_key`], tried only when the exact key misses.
     items: HashSet<String>,
     items_loose: HashSet<String>,
+    /// The same keys with their pages, for a near-miss suggestion — see [`super::gaps_suggest`].
+    item_candidates: Vec<Candidate>,
+    /// Suggestions already made, per (domain, key): a snapshot re-serve costs nothing.
+    suggests: Mutex<HashMap<(Domain, String), Option<Suggest>>>,
     rows: HashMap<(Domain, String), GapRow>,
     /// Every distinct key checked per domain, known or not: the denominator the tab prints.
     seen: HashMap<Domain, HashSet<String>>,
@@ -102,6 +107,9 @@ impl GapsModule {
         self.rows.clear();
         self.seen.clear();
         self.players.clear();
+        if let Ok(mut cache) = self.suggests.lock() {
+            cache.clear();
+        }
     }
 
     fn fold(&mut self, ev: &Event) -> bool {
@@ -251,17 +259,41 @@ impl GapsModule {
         true
     }
 
-    /// The domain's rows, most mentioned first, then by name; the first CAP_PER_DOMAIN of them.
-    fn served(&self, domain: Domain) -> Vec<&GapRow> {
-        let mut rows: Vec<&GapRow> = self
+    /// The domain's rows with their keys, most mentioned first, then by name; the first
+    /// CAP_PER_DOMAIN of them.
+    fn served(&self, domain: Domain) -> Vec<(&String, &GapRow)> {
+        let mut rows: Vec<(&String, &GapRow)> = self
             .rows
             .iter()
             .filter(|((d, _), _)| *d == domain)
-            .map(|(_, r)| r)
+            .map(|((_, k), r)| (k, r))
             .collect();
-        rows.sort_by(|a, b| b.count.cmp(&a.count).then_with(|| a.name.cmp(&b.name)));
+        rows.sort_by(|a, b| b.1.count.cmp(&a.1.count).then_with(|| a.1.name.cmp(&b.1.name)));
         rows.truncate(CAP_PER_DOMAIN);
         rows
+    }
+
+    /// The row as served: its fields, and `suggest` when one known name is within reach.
+    fn serve_row(&self, domain: Domain, key: &str, row: &GapRow) -> Value {
+        let mut v = serde_json::to_value(row).unwrap_or(Value::Null);
+        if let Some(s) = self.suggestion(domain, key) {
+            v["suggest"] = json!(s);
+        }
+        v
+    }
+
+    /// Computed once per (domain, key) and cached; mobs have no list to compare against.
+    fn suggestion(&self, domain: Domain, key: &str) -> Option<Suggest> {
+        let candidates: &[Candidate] = match domain {
+            Domain::Item => &self.item_candidates,
+            Domain::Spell => spell_candidates(),
+            Domain::Mob => return None,
+        };
+        let mut cache = self.suggests.lock().ok()?;
+        cache
+            .entry((domain, key.to_string()))
+            .or_insert_with(|| suggest(&loose_key(key), candidates))
+            .clone()
     }
 }
 
@@ -310,11 +342,11 @@ impl EqModule for GapsModule {
     }
 
     fn snapshot(&self) -> Value {
-        let mut rows: Vec<&GapRow> = Vec::new();
+        let mut rows: Vec<Value> = Vec::new();
         let mut totals = serde_json::Map::new();
         let mut seen = serde_json::Map::new();
         for d in Domain::ALL {
-            rows.extend(self.served(d));
+            rows.extend(self.served(d).into_iter().map(|(k, r)| self.serve_row(d, k, r)));
             let gaps = self.rows.keys().filter(|(k, _)| *k == d).count();
             totals.insert(d.as_str().to_string(), json!(gaps));
             let checked = self.seen.get(&d).map_or(0, HashSet::len);
@@ -324,8 +356,10 @@ impl EqModule for GapsModule {
     }
 
     fn install_knowledge(&mut self, k: &Arc<dyn Knowledge>) {
-        self.items = k.item_pages().iter().map(|(key, _)| item_gap_key(key)).collect();
+        let pages = k.item_pages();
+        self.items = pages.iter().map(|(key, _)| item_gap_key(key)).collect();
         self.items_loose = self.items.iter().map(|k| loose_key(k)).collect();
+        self.item_candidates = item_candidates(&pages);
         self.knowledge = Some(Arc::clone(k));
     }
 }

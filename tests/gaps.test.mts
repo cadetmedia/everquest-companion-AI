@@ -3,6 +3,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
+  charactersOff,
   derivedPrices,
   formatCoin,
   gapDetailsText,
@@ -110,6 +111,22 @@ test('the sale-on-loot and paid lists print with the discount caveat in the word
       '\tpaid: 5 platinum 2 gold (1)'
     ].join('\n')
   )
+})
+
+test('a near-miss suggestion is the second line of the copy text, after the row line', () => {
+  const r = row(['item', 'Teir`Dal Arcane Insignia', ['looted'], 107], {
+    sources: { entries: [{ name: 'a Teir`Dal rogue', n: 107 }], distinct: 1 }
+  })
+  r.suggest = { name: "Tier'Dal Arcane Insignia", page: "Tier'Dal Arcane Insignia", distance: 1 }
+  assert.equal(
+    gapDetailsText(r),
+    [
+      'Teir`Dal Arcane Insignia\tlooted\t107\t2026-10-06 18:12:26\t2026-10-10 17:48:36',
+      "\tprobably: Tier'Dal Arcane Insignia (1 character off)",
+      '\tfrom: a Teir`Dal rogue (107)'
+    ].join('\n')
+  )
+  assert.equal(charactersOff(2), '2 characters off')
 })
 
 test('derivedPrices reads the real prices behind an instant sale, to the copper of the screenshots', () => {
