@@ -268,3 +268,34 @@ fn a_backtick_and_an_apostrophe_are_one_name_and_the_row_keeps_the_log_spelling(
     feed(&mut m, 4, json!({ "kind": "loot", "item": "Teir'Dal Arcane Insignia" }));
     assert_eq!(rows(&m), ["item Teir`Dal Arcane Insignia x2 [looted]"]);
 }
+
+#[test]
+fn a_scroll_is_known_by_its_spell_and_an_unknown_scroll_is_filed_whole() {
+    let mut m = module();
+    feed(&mut m, 1, json!({ "kind": "loot", "item": "Spell: Odium IX", "source": "a nameless thing" }));
+    feed(&mut m, 2, json!({ "kind": "purchase", "item": "Song: Jaxan`s Jig o` Vigor V", "npc": "Klok Koglin" }));
+    assert_eq!(
+        rows(&m),
+        ["mob a nameless thing x1 [dropped-by]"],
+        "the scrolls' spells are in the catalog, so the scrolls are known"
+    );
+    assert_eq!(m.snapshot()["state"]["seen"]["item"], json!(2), "a known scroll is a name checked");
+    feed(&mut m, 3, json!({ "kind": "itemReceived", "item": "Spell: Totally Made Up Spell", "via": "inventory" }));
+    assert_eq!(
+        rows(&m),
+        ["item Spell: Totally Made Up Spell x1 [received]", "mob a nameless thing x1 [dropped-by]"]
+    );
+}
+
+#[test]
+fn a_reward_chest_tail_and_an_exaltation_tail_are_keyed_away() {
+    let mut m = module();
+    feed(&mut m, 1, json!({ "kind": "loot", "item": "Bone Chips from Reward Chest", "count": 3 }));
+    feed(&mut m, 2, json!({ "kind": "loot", "item": "Bone Chips (Exaltation)" }));
+    feed(&mut m, 3, json!({ "kind": "loot", "item": "Bone Chips +2 (Exaltation)" }));
+    assert!(rows(&m).is_empty(), "the base is a known item");
+    assert_eq!(m.snapshot()["state"]["seen"]["item"], json!(1), "one name, three spellings");
+    // An unknown base keeps the whole spelling, so the row says where it came from.
+    feed(&mut m, 4, json!({ "kind": "loot", "item": "Glowing Widget from Reward Chest" }));
+    assert_eq!(rows(&m), ["item Glowing Widget from Reward Chest x1 [looted]"]);
+}
