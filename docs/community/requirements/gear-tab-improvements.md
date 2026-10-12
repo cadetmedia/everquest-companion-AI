@@ -11,3 +11,4 @@ before 2026-10-10 were gathered that day from agent notes and the branch history
 | 2026-09-14 | owner | A Sky quest chip opens Plane of Sky > Quests with filters cleared; the reward item is linked beside it. | built |
 | 2026-09-26 | owner | A zone filter on the Gear search page. | built (Zones picker) |
 | 2026-10-11 | owner | Wherever an item shows a related quest (the drill-down's quest chip), the quest name links to its wiki page. | built (an eqlwiki.com link for a non-Sky use; a Sky use keeps opening the Sky tab) |
+| 2026-10-11 | owner | No lag (app-wide sweep): the Gear tab's warm open blocks 116 ms (scale, filter and sort of 6,899 items on first paint). Cache the first derivation or defer the first paint. | built (derivation kept across tab switches in `lib/kept.ts`; the screenful mounts in a transition; warm open stall 103-116 ms to none) |

@@ -13,3 +13,4 @@ before 2026-10-10 were gathered that day from agent notes and the branch history
 | 2026-09-26 | Garrett (via owner) | Buff stacking for the whole group, not only your own classes. | built (group buff set) |
 | 2026-09-26 | owner | A colour per group member, settable; Keep up grouped by caster; /who suggestions. | built |
 | 2026-09-26 | owner | Show no stacking where the game says it does not stack (Wolf form vs Bih`Li movement). | built (triggered spells contest) |
+| 2026-10-11 | owner | No lag (app-wide sweep): the Spellbook settles 110 to 117 ms on every keystroke with a 91 ms open stall; rows are not memoized. Memoize rows, trim the per-key work. | built (corpus read once, rows filtered per keystroke, SpellRow memoized, screenful in a transition; open stall to none, settle 62-80 ms) |
