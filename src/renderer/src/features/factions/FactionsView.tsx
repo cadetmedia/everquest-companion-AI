@@ -34,9 +34,10 @@ import RaceUnlocksPanel from './RaceUnlocksPanel'
 import { NO_DERIVED } from './factionDerive'
 import { useFactionsController, type FactionsViewProps } from './useFactionsController'
 
-/** The whole list as a window: what the table draws while any row is expanded (the header). */
-function wholeList(count: number): WindowedRows {
-  return { start: 0, end: count, topPad: 0, bottomPad: 0, totalHeight: count * ROW_HEIGHT }
+/** The whole list as a window: what the table draws while any row is expanded (the header). Built
+ *  over the hook's own slice, so whatever else the slice carries (a scroll position) rides along. */
+function wholeList(win: WindowedRows, count: number): WindowedRows {
+  return { ...win, start: 0, end: count, topPad: 0, bottomPad: 0, totalHeight: count * ROW_HEIGHT }
 }
 
 /** The never-run state. It names what the tab is FOR; the line above it names the command. */
@@ -57,7 +58,7 @@ export default function FactionsView(props: FactionsViewProps): JSX.Element {
   const c = useFactionsController(props)
   const scrollRef = useRef<HTMLDivElement>(null)
   const win = useWindowedRows({ count: c.rows.length, rowHeight: ROW_HEIGHT, scrollRef })
-  const slice = c.expanded.size === 0 ? win : wholeList(c.rows.length)
+  const slice = c.expanded.size === 0 ? win : wholeList(win, c.rows.length)
   return (
     <Box
       data-testid="factions-view"
