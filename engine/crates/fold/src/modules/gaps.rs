@@ -22,7 +22,7 @@
 //!     is only ever conned is the gap this leaves.
 
 use super::gaps_details::Details;
-use super::gaps_keys::{item_gap_key, spell_gap_key, spell_keys};
+use super::gaps_keys::{item_gap_key, scroll_known, spell_gap_key, spell_keys};
 use crate::event::Event;
 use crate::jsfn::item_base_name;
 use crate::knowledge::Knowledge;
@@ -154,7 +154,8 @@ impl GapsModule {
             return false;
         };
         let key = item_gap_key(name);
-        let known = self.items.contains(&key);
+        // A known scroll is an item the log named and we could place: checked, never a row.
+        let known = self.items.contains(&key) || scroll_known(name);
         self.note(Domain::Item, key, &item_base_name(name), known, kind, ev)
     }
 
