@@ -122,12 +122,13 @@
 // the thresholds exactly as everything else does — the only thing this file had to learn is that a
 // third filter can now be the reason the table is empty (`emptyText`, and the pass that counts it).
 
-import { type JSX, useCallback, useDeferredValue, useMemo, useRef } from 'react'
+import { type JSX, startTransition, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { Box, Chip, Stack, Typography } from '@mui/material'
 import { ITEM_UPGRADE_BASE, type ItemUpgradeState } from '@shared/itemUpgrade'
 import type { MobTarget } from '../mobs/mobTarget'
 import type { ZoneShort } from '@shared/maps'
 import OutputKindLine from '../../components/OutputKindLine'
+import { type Kept, kept } from '../../lib/kept'
 import { useWindowedRows } from '../../lib/useWindowedRows'
 import GearFilterBar from './GearFilterBar'
 import GearPicker from './GearPickers'
@@ -209,11 +210,35 @@ interface TableState {
   hiddenByOwned: number
   /** …and for the class picks, which since JOS-302 REMOVE rows instead of chipping them */
   hiddenByClasses: number
+  /** how many rows the pipeline answered — `rows.length` once `settled`, the count line's number before */
+  count: number
+  /**
+   * False for the mount's first paint only (the lag sweep, 2026-10-11): the shell — toolbar, count
+   * line, header — commits first with no rows, and the screenful mounts in a transition one frame
+   * later, so the open is two short tasks rather than one long one. The empty text waits for it.
+   */
+  settled: boolean
 }
 
+/** The rows the first paint draws: none (`TableState.settled`). */
+const NO_ROWS: GearViewRow[] = []
+
 /**
- * The three stages, as three memos (see the header). Split out of the component so the view stays
- * inside the function-length ceiling and so the ORDER is readable in one place.
+ * THE THREE ANSWERS OUTLIVE THE TAB (the lag sweep, owner ask 2026-10-11: no lag anywhere). A tab
+ * switch unmounts this view and every `useMemo` with it, so each re-open ran all three stages
+ * again for the rows it had just drawn — 116 ms on the main thread on the warm open, measured
+ * against 6,899 rows. These slots keep the last answer per stage for the window (`lib/kept.ts`),
+ * and the keys below say what each stage READS, which is also why a re-open with the same form,
+ * the same slider and the same sort paints from the kept rows without deriving a thing.
+ */
+const SCALED: Kept<GearViewRow[]> = { last: null }
+const FILTERED: Kept<GearViewRow[]> = { last: null }
+const SORTED: Kept<GearViewRow[]> = { last: null }
+
+/**
+ * The three stages, as three kept answers (see the header, and the slots above). Split out of the
+ * component so the view stays inside the function-length ceiling and so the ORDER is readable in
+ * one place.
  *
  * THE COLUMNS ARE RESOLVED BEFORE THE SORT IS, and never the other way round: the derived seed
  * reads the REQUESTED sort key (asking for a ranking is asking to see the number), and the sort is
@@ -226,17 +251,25 @@ function useTableRows(
   opts: { sort: GearSort; deps: GearFilterDeps; chosen: GearSortKey[] | null; showDrops: boolean }
 ): TableState {
   const { sort, deps, chosen, showDrops } = opts
-  const scaled = useMemo(() => scaleAll(rows, state), [rows, state])
-  const filtered = useMemo(() => filterGearRows(scaled, filters, deps), [scaled, filters, deps])
+  // The index is one array per window, the plus-state is two numbers, and the two together are the
+  // whole of what a scaled row is.
+  const scaled = kept(SCALED, [rows, state.full, state.fraction], () => scaleAll(rows, state))
+  // The form is a fresh object per mount (read back from storage), so it keys by CONTENT; the two
+  // injected verdicts key by identity, and only while the toggle that consults each one is on —
+  // the owned join arrives after the first paint, and a filter that never asked it must not re-run.
+  const filtered = kept(
+    FILTERED,
+    [scaled, JSON.stringify(filters), filters.eraOnly ? deps.eraHidden : null, filters.ownedOnly ? deps.ownedOrLooted : null],
+    () => filterGearRows(scaled, filters, deps)
+  )
   const columns = useMemo(() => columnsFor(chosen, sort), [chosen, sort])
   const inForce = useMemo(() => sortWithin(sort, columns, showDrops), [sort, columns, showDrops])
-  // `derivedOpts` returns one cached object per (haste knob, worn haste, class picks), so this memo
-  // moves only when one of the three actually changes. The worn haste rides in `deps` beside the
-  // two injected verdicts - the same seam, for the same reason: it comes off the dump.
-  const sorted = useMemo(
-    () => sortGearRows(filtered, inForce, derivedOpts(filters, deps.ownedHaste)),
-    [filtered, inForce, filters, deps]
-  )
+  // The worn haste rides in `deps` beside the two injected verdicts - the same seam, for the same
+  // reason: it comes off the dump. The knobs are in the key only for a column that READS them
+  // (`readsDerivedOpts`): an AC sort is the same order whatever the dump says about haste.
+  const derived = derivedOpts(filters, deps.ownedHaste)
+  const knobs = readsDerivedOpts(inForce.key) ? [derived.ignoreHaste, derived.ownedHaste, derived.classes?.join(' ')] : []
+  const sorted = kept(SORTED, [filtered, inForce.key, inForce.dir, ...knobs], () => sortGearRows(filtered, inForce, derived))
   // WHY THE LIST IS EMPTY, when it is (the JOS-67 law: a filter that can hide everything must be
   // able to admit it). THREE filters can do it without the user having chosen them in the moment:
   // the era one, which is on by DEFAULT rather than by choice; the Owned one, which is one click
@@ -254,7 +287,14 @@ function useTableRows(
       hiddenByClasses: filters.classes.length > 0 ? count({ classes: [] }) : 0
     }
   }, [sorted.length, scaled, filters, deps])
-  return { rows: sorted, columns, sort: inForce, ...hidden }
+  // The screenful mounts after the shell has painted (`TableState.settled`): a transition, so React
+  // slices the row render between tasks and the commit is the rows alone. Mount-only — after it,
+  // a keystroke's rows pass straight through, deferred once already by the text.
+  const [settled, setSettled] = useState(false)
+  useEffect(() => {
+    startTransition(() => setSettled(true))
+  }, [])
+  return { rows: settled ? sorted : NO_ROWS, columns, sort: inForce, count: sorted.length, settled, ...hidden }
 }
 
 /**
@@ -612,7 +652,7 @@ export default function GearView({ onOpenLoot, onOpenMob, onOpenMapZone }: GearV
       />
 
       <CountLine
-        counts={{ shown: table.rows.length, total: rows.length }}
+        counts={{ shown: table.count, total: rows.length }}
         scrapedAt={scrapedAt}
         ownership={ownership}
         prefs={prefs}
@@ -672,7 +712,7 @@ export default function GearView({ onOpenLoot, onOpenMob, onOpenMapZone }: GearV
           // `GearCompareData.ready` is what keeps it from claiming anything before the first read.
           compare={compare}
         />
-        {table.rows.length === 0 && (
+        {table.settled && table.rows.length === 0 && (
           <Typography variant="body2" color="text.secondary" data-testid="gear-empty" sx={{ p: 2 }}>
             {emptyText(ready, refused, table)}
           </Typography>
