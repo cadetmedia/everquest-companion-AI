@@ -429,7 +429,7 @@
       "file": "crates/fold/src/modules/respawn.rs",
       "metric": "file-lines",
       "name": "",
-      "value": 663
+      "value": 547
     },
     {
       "file": "crates/fold/src/modules/roster.rs",

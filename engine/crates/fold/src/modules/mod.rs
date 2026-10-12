@@ -60,6 +60,9 @@ pub mod progression;
 pub mod progression_ledger;
 pub mod resist;
 pub mod respawn;
+pub mod respawn_seen;
+#[cfg(test)]
+mod respawn_tests;
 pub mod roster;
 pub mod roster_who;
 pub mod spell_sets;

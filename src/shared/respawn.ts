@@ -322,13 +322,14 @@ export type RespawnSource = 'custom' | 'observed' | 'wiki' | 'none'
  * look at something, a combat line is somebody swinging at it, and the user is entitled to know
  * which of those the app is going on.
  */
-export type RespawnSeenVia = 'combat' | 'consider' | 'hold' | 'spell'
+export type RespawnSeenVia = 'combat' | 'consider' | 'hold' | 'spell' | 'say'
 
 export const RESPAWN_SEEN_VIA_LABEL: Record<RespawnSeenVia, string> = {
   combat: 'a combat line',
   consider: 'a consider',
   hold: 'a mez/root/charm line',
-  spell: 'a spell line'
+  spell: 'a spell line',
+  say: 'a hail or a say line'
 }
 
 /** What the clock's `baseTs` IS — a death the log printed, or a sighting the user confirmed. */

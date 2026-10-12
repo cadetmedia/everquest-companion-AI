@@ -4,9 +4,12 @@
 //!
 //! The fold owns three things the pure code cannot:
 //!
-//!   1. The ZONE STAY. A death→death gap is a respawn sample only if you never left the zone
-//!      between the two deaths. `zone_since` is the timestamp of the `You have entered` line that
-//!      started the current stay, and a gap qualifies when the EARLIER death also falls inside it.
+//!   1. The ZONE STAY. A respawn sample runs from a death to the FIRST SIGN OF LIFE after it — the
+//!      first line naming the mob alive (`respawn_seen.rs`), or the next death when nothing named
+//!      it between (owner ruling 2026-10-11: a death→death gap also counts the fight, 60–90 s on
+//!      the owner's Lower Guk nameds). It is a sample only if you never left the zone between the
+//!      two deaths. `zone_since` is the timestamp of the `You have entered` line that started the
+//!      current stay, and a gap qualifies when the EARLIER death also falls inside it.
 //!      A zone line ends the stay even when it names the same zone — you left and came back. That
 //!      same zone scopes the display, deliberately one piece of state serving both jobs, so no
 //!      second tracker can disagree with the one deciding whether a gap counts.
@@ -21,6 +24,7 @@
 //! a duration for, the shortest is 78 s and the median is 22 minutes. Two deaths of one name inside
 //! a minute are two mobs dying in one pull, and the sample is refused outright rather than recorded
 //! and left for a wiki floor to lift — most mobs in the dungeons this targets have no wiki floor.
+//! A mention inside that minute is the same pull, so it is not the first sign of life either.
 //!
 //! No wall clock is read here, ever: one is handed in by `on_tick`, the live tail's heartbeat,
 //! which a historical fold never calls. `construction_now_ms` is seeded at construction and again
@@ -30,6 +34,7 @@
 
 use crate::event::Event;
 use crate::jsmap::JsMap;
+use crate::modules::respawn_seen::seen_names_of;
 use crate::EqModule;
 use eqlog::names::id_key;
 use serde::{Deserialize, Serialize};
@@ -37,7 +42,7 @@ use serde_json::{json, Value};
 
 /// `shared/respawn.ts RESPAWN_SHAPE_VERSION`.
 const RESPAWN_SHAPE_VERSION: i64 = 4;
-/// The shortest death→death gap this module will read as a spawn cycle (header).
+/// The shortest gap this module will read as a spawn cycle, and the earliest sign of life (header).
 const MIN_GAP_MS: i64 = 60_000;
 /// Distinct (zone, mob) pairs the history keeps before evicting the least recently killed.
 const MAX_HISTORY: usize = 800;
@@ -254,6 +259,8 @@ struct MobHistory {
     last_ts: i64,
     /// The smallest qualifying gap seen — an upper bound on the respawn, never the respawn.
     min_gap_ms: Option<i64>,
+    /// The first sign of life after `last_ts`, where the next sample ends. Cleared by the death.
+    first_seen_ts: Option<i64>,
     /// How many qualifying gaps back `min_gap_ms`.
     samples: i64,
     /// The gaps themselves, oldest first, capped at `RESPAWN_MAX_GAPS`. Kept beside `samples` and
@@ -310,27 +317,6 @@ fn resolve_respawn(
         }
     }
     (None, "none")
-}
-
-/// The names a typed event states, and which family stated them. The groups ARE the four
-/// `RespawnSeenVia` values, so the factoring and the vocabulary agree.
-fn seen_names_of<'e>(ev: &'e Event<'_>) -> Option<(Vec<Option<&'e str>>, &'static str)> {
-    // Somebody swung at it, or it swung at somebody. `attacker` is null on caster-less DoT lines.
-    match ev.kind() {
-        "damage" | "miss" => {
-            return Some((vec![ev.str("attacker"), ev.str("target")], "combat"));
-        }
-        "heal" => return Some((vec![ev.str("healer"), ev.str("target")], "combat")),
-        "consider" => return Some((vec![ev.str("mob")], "consider")),
-        // A mez / root / charm landed on it, broke on it, or wore off it.
-        "cc" | "ccWake" | "charm" | "uncharm" => return Some((vec![ev.str("mob")], "hold")),
-        // A spell named it — as a resister, as a caster, or as the thing something landed on.
-        "resist" => return Some((vec![ev.str("caster"), ev.str("target")], "spell")),
-        "otherCastBegin" => return Some((vec![ev.str("caster")], "spell")),
-        "buffApply" | "poisonProc" => return Some((vec![ev.str("target")], "spell")),
-        _ => {}
-    }
-    None
 }
 
 /// `main/log/reducers.ts isCountedKill` — self-slain always counts; slain-by counts only when the
@@ -425,6 +411,9 @@ impl RespawnModule {
         if h.seen_ts.is_some_and(|s| ts < s) {
             return;
         }
+        if h.first_seen_ts.is_none() && ts - h.last_ts >= MIN_GAP_MS {
+            h.first_seen_ts = Some(ts);
+        }
         h.seen_ts = Some(ts);
         h.seen_via = Some(via);
         if was_seen && ts - h.seen_pub_ts.unwrap_or(0) < SEEN_REFRESH_MS {
@@ -471,7 +460,7 @@ impl RespawnModule {
                 let mut h = prior.clone();
                 // Re-insert so the map's iteration order is LRU order (oldest first).
                 self.history.remove(&id);
-                let gap = ts - h.last_ts;
+                let gap = h.first_seen_ts.unwrap_or(ts) - h.last_ts;
                 if self.zone_since > 0 && h.last_ts >= self.zone_since && gap >= MIN_GAP_MS {
                     h.min_gap_ms = Some(match h.min_gap_ms {
                         Some(m) => m.min(gap),
@@ -485,6 +474,7 @@ impl RespawnModule {
                         h.gaps.remove(0);
                     }
                 }
+                h.first_seen_ts = None;
                 h
             }
             None => MobHistory {
@@ -493,6 +483,7 @@ impl RespawnModule {
                 zone: self.zone.clone(),
                 last_ts: 0,
                 min_gap_ms: None,
+                first_seen_ts: None,
                 samples: 0,
                 gaps: Vec::new(),
                 kills: 0,
@@ -730,23 +721,20 @@ impl EqModule for RespawnModule {
                 // this both surfaces keep drawing the old zone's clocks while the log stays quiet.
                 self.rev += 1;
             }
-            "death" => {
-                if is_counted_kill(ev) {
-                    let name = ev.str("name").unwrap_or_default();
-                    self.record_death(&id_key(name), name, ev.ts());
-                }
+            "death" if is_counted_kill(ev) => {
+                let name = ev.str("name").unwrap_or_default();
+                self.record_death(&id_key(name), name, ev.ts());
             }
-            _ => {
-                // Everything else is possible evidence that a watched mob is up. A death is checked
-                // first and returns, so a corpse can never mark its own row seen.
-                if let Some((names, via)) = seen_names_of(ev) {
-                    let ts = ev.ts();
-                    let owned: Vec<Option<String>> =
-                        names.into_iter().map(|n| n.map(str::to_string)).collect();
-                    for name in owned {
-                        self.mark_seen(name.as_deref(), via, ts);
-                    }
-                }
+            _ => {}
+        }
+        // Every line is possible evidence that a watched mob is up. A death names only its killer
+        // here (`respawn_seen.rs`), so a corpse can never mark its own row seen.
+        if let Some((names, via)) = seen_names_of(ev) {
+            let ts = ev.ts();
+            let owned: Vec<Option<String>> =
+                names.into_iter().map(|n| n.map(str::to_string)).collect();
+            for name in owned {
+                self.mark_seen(name.as_deref(), via, ts);
             }
         }
     }
@@ -806,148 +794,5 @@ impl crate::Defines for RespawnModule {
         self.prefs = prefs;
         self.reindex_watches();
         self.rev += 1;
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::{RespawnModule, RespawnPrefs, RespawnRow, RespawnWatchPref};
-    use crate::event::Event;
-    use crate::EqModule;
-
-    /// The zone line the stay begins with. Every timestamp below is derived from this one, so the
-    /// arithmetic in the assertions reads instead of being a set of magic epochs.
-    const T_ZONE: i64 = 1_787_181_000_000;
-    /// The kill that starts the clock — a minute into the stay.
-    const T_DEATH: i64 = T_ZONE + 60_000;
-    /// The line that names the mob again, two minutes after it died. It moves no clock on its own.
-    const T_SEEN: i64 = T_DEATH + 120_000;
-    /// Ten seconds later — where the ordering clock stands while the assertions read rows.
-    const NOW: i64 = T_SEEN + 10_000;
-
-    /// The user's own number, so the estimate ladder answers `custom` and the countdown is a round
-    /// minute.
-    const CUSTOM_SEC: i64 = 60;
-
-    fn watching_the_knight() -> RespawnPrefs {
-        RespawnPrefs {
-            watches: vec![RespawnWatchPref {
-                key: "a vis ghoul knight".to_owned(),
-                display: "a vis ghoul knight".to_owned(),
-                custom_sec: Some(CUSTOM_SEC),
-            }],
-        }
-    }
-
-    fn ev(json: &str) -> Event<'static> {
-        Event::from_json(json).expect("a JSON object")
-    }
-
-    fn zone(ts: i64) -> String {
-        format!(r#"{{"kind":"zone","seq":0,"ts":{ts},"raw":"z","zone":"The Ruins of Old Guk"}}"#)
-    }
-
-    fn death(seq: i64, ts: i64) -> String {
-        format!(
-            r#"{{"kind":"death","seq":{seq},"ts":{ts},"raw":"d","name":"a vis ghoul knight","bySelf":true}}"#
-        )
-    }
-
-    /// `<Mob> hits YOU for N points of damage.` — the shape the e2e plays.
-    fn hits_you(seq: i64, ts: i64) -> String {
-        format!(
-            r#"{{"kind":"damage","seq":{seq},"ts":{ts},"raw":"h","attacker":"a vis ghoul knight","target":"You","amount":106}}"#
-        )
-    }
-
-    /// A module standing in Old Guk, one kill deep, with the mob seen alive since.
-    fn seen_after_a_kill() -> RespawnModule {
-        let mut m = RespawnModule::new(NOW, watching_the_knight());
-        m.on_event(&ev(&zone(T_ZONE)), false);
-        m.on_event(&ev(&death(1, T_DEATH)), false);
-        m.on_event(&ev(&hits_you(2, T_SEEN)), true);
-        m
-    }
-
-    fn only_row(m: &RespawnModule) -> RespawnRow {
-        let mut rows = m.watch_rows(NOW);
-        assert_eq!(rows.len(), 1, "the watch list has exactly one mob in it");
-        rows.remove(0)
-    }
-
-    #[test]
-    fn confirming_a_sighting_re_bases_the_clock_and_says_that_is_what_happened() {
-        // The app never does this by itself: the fixture lit the row with a combat line naming a
-        // watched mob and the clock did not move, and this call is the person confirming it.
-        let mut m = seen_after_a_kill();
-
-        let before = only_row(&m);
-        assert_eq!(before.basis, "death", "evidence alone touches no clock");
-        assert_eq!(before.base_ts, T_DEATH);
-        assert_eq!(before.seen_ts, Some(T_SEEN));
-        let rev_before = m.revision();
-
-        assert!(m.confirm_sighting(&before.id));
-
-        let after = only_row(&m);
-        assert!(
-            m.revision() > rev_before,
-            "a confirmation must advance the module revision too — it advances no log seq"
-        );
-        assert_eq!(
-            after.base_ts, T_SEEN,
-            "the clock now counts from the sighting"
-        );
-        assert_eq!(after.basis, "sighting");
-        // The row leaves the seen state, because the evidence is now AT the base rather than after
-        // it. Fresh evidence will mark it again, which is correct: it is up.
-        assert_eq!(after.seen_ts, None);
-        assert_eq!(after.seen_via, None);
-        // A confirmation is not a death and never a gap sample, so the ladder learned nothing.
-        assert_eq!(after.samples, 0);
-        assert_eq!(after.kills, 1);
-        assert_eq!(after.estimate_ms, Some(CUSTOM_SEC * 1000));
-        assert_eq!(after.source, "custom");
-    }
-
-    #[test]
-    fn a_kill_of_the_seen_mob_resumes_the_normal_death_driven_clock() {
-        // The later of (death, confirmation) wins by arithmetic, so the next kill takes the base
-        // back with no code anywhere that undoes a confirmation.
-        let mut m = seen_after_a_kill();
-        let id = only_row(&m).id;
-        assert!(m.confirm_sighting(&id));
-        assert_eq!(only_row(&m).basis, "sighting");
-
-        let t_second_death = T_DEATH + 420_000;
-        m.on_event(&ev(&death(3, t_second_death)), true);
-
-        let row = only_row(&m);
-        assert_eq!(row.basis, "death");
-        assert_eq!(row.base_ts, t_second_death);
-        assert_eq!(row.kills, 2);
-        assert_eq!(row.seen_ts, None);
-        // The gap is measured between the two deaths, never from the confirmation.
-        assert_eq!(row.samples, 1);
-        assert_eq!(row.observed_ms, Some(420_000));
-    }
-
-    #[test]
-    fn a_confirmation_with_nothing_to_confirm_is_refused_rather_than_invented() {
-        // Neither refusal may move a clock, and neither may move the revision — a push carrying no
-        // change would make every dedupe downstream a lie.
-        let mut m = RespawnModule::new(NOW, watching_the_knight());
-        m.on_event(&ev(&zone(T_ZONE)), false);
-        m.on_event(&ev(&death(1, T_DEATH)), false);
-
-        let row = only_row(&m);
-        let rev = m.revision();
-        assert!(
-            !m.confirm_sighting(&row.id),
-            "the row is due, but nothing has been seen"
-        );
-        assert!(!m.confirm_sighting("no such row"));
-        assert_eq!(m.revision(), rev, "a refusal publishes nothing");
-        assert_eq!(only_row(&m).basis, "death");
     }
 }
