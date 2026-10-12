@@ -116,7 +116,7 @@ export function BazaarHoursChart({ item, ignoreOutliers }: { item: BazaarItem; i
   return (
     <Stack spacing={1}>
       <Typography variant="caption" color="text.secondary" data-testid="bazaar-hours-title">
-        Price by time of day (your clock)
+        Price by time of day
       </Typography>
       <Legend />
       <Box ref={box} sx={{ position: 'relative', width: '100%' }} data-testid="bazaar-hours-chart">
@@ -147,10 +147,10 @@ export function BazaarHoursChart({ item, ignoreOutliers }: { item: BazaarItem; i
             No quote with a price yet, so nothing to place by time of day.
           </Typography>
         )}
-        {hov !== null && hp !== undefined && rows.length > 0 && <ChartTooltip x={hov.x} y={hov.y} title={`${hp.bucket} (your clock)`} rows={rows} bounds={{ w, h: H }} />}
+        {hov !== null && hp !== undefined && rows.length > 0 && <ChartTooltip x={hov.x} y={hov.y} title={hp.bucket} rows={rows} bounds={{ w, h: H }} />}
       </Box>
       <Typography variant="caption" color="text.disabled">
-        Average asking and offered price by time of day (your clock), from the quotes kept, one per seller per day.
+        Average asking and offered price by time of day, from the quotes kept, one per seller per day.
       </Typography>
     </Stack>
   )

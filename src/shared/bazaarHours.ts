@@ -7,7 +7,8 @@
 
 import { keeper, median, type BazaarItem, type DayQuote } from './bazaar'
 
-export const HOUR_BUCKETS = ['00-04', '04-08', '08-12', '12-16', '16-20', '20-24'] as const
+/** The six periods in order from midnight, labelled as the owner reads a clock (owner ask, 2026-10-12: am/pm, not 24-hour). */
+export const HOUR_BUCKETS = ['12-4am', '4-8am', '8am-12pm', '12-4pm', '4-8pm', '8pm-12am'] as const
 export type HourBucket = (typeof HOUR_BUCKETS)[number]
 
 /** One direction in one period, outliers left out as the switch says. */
