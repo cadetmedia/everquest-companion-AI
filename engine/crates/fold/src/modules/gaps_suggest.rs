@@ -3,10 +3,13 @@
 //! page's spelling. The motivating case: the log's ``Teir`Dal Arcane Insignia`` against the wiki's
 //! `Tier'Dal Arcane Insignia` — one transposition after the quote fold.
 //!
-//! IT SPEAKS ONLY WHEN IT LOOKS RIGHT (owner refinement, same day): a doubtful suggestion confuses
-//! people, so the rule prefers silence. Distance 1 for any name; 2 only when the folded name is 16
-//! characters or longer; never 3. The candidate must be UNIQUE at that distance, have the same
-//! number of words, and not differ only by a trailing parenthetical or a leading article. Names are
+//! IT SPEAKS ONLY WHEN IT LOOKS RIGHT (owner refinement, same day, tightened 2026-10-12 after
+//! "Bat Meat — probably Rat Meat"): a doubtful suggestion confuses people, so the rule prefers
+//! silence. One substituted letter in a short name is a different word, so at distance 1 a
+//! SUBSTITUTION counts only for a folded name of 16 characters or more, while a transposition
+//! (Teir/Tier), an insertion or a deletion (Sac/Sack) counts from 8; distance 2 only from 16;
+//! never 3. The candidate must be UNIQUE at that distance, have the same number of words, and
+//! not differ only by a trailing parenthetical or a leading article. Names are
 //! compared after the same quote fold and loose fold the check uses, so a difference the check
 //! already forgives is a match, never a suggestion. Items are compared against the database's
 //! keys and name the page; spells against the catalog's names, which are the pages. Mobs are
@@ -20,8 +23,18 @@ use super::gaps_keys::{loose_key, spell_gap_key};
 use serde::Serialize;
 use std::sync::OnceLock;
 
-/// A folded name of 16 characters or more may be 2 off; a shorter one, 1.
+/// A folded name of 16 characters or more may be 2 off, or 1 by any edit; from 8 it may be 1 off
+/// by a transposition, an insertion or a deletion; shorter, nothing is suggested.
 const LONG_NAME: usize = 16;
+const SHORT_NAME: usize = 8;
+
+/// The one edit a distance-1 pair differs by.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Edit {
+    Substitution,
+    Transposition,
+    InsertDelete,
+}
 
 /// What a row carries when one known name is within reach.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -41,15 +54,17 @@ pub struct Candidate {
 
 /// The one candidate within reach of `key` (a row's loose key), or nothing — see the header.
 pub fn suggest(key: &str, candidates: &[Candidate]) -> Option<Suggest> {
-    let bound = if key.chars().count() >= LONG_NAME { 2 } else { 1 };
+    let len = key.chars().count();
+    let bound = match len {
+        n if n >= LONG_NAME => 2,
+        n if n >= SHORT_NAME => 1,
+        _ => return None,
+    };
     let words = key.split_whitespace().count();
     let mut best: Option<(usize, &Candidate)> = None;
     let mut tied = false;
     for c in candidates {
-        if c.key.split_whitespace().count() != words || trivially_apart(key, &c.key) {
-            continue;
-        }
-        let Some(d) = distance_within(key, &c.key, bound) else {
+        let Some(d) = within_reach(key, &c.key, (len, words, bound)) else {
             continue;
         };
         match best {
@@ -68,6 +83,39 @@ pub fn suggest(key: &str, candidates: &[Candidate]) -> Option<Suggest> {
         page: c.page.clone(),
         distance: u8::try_from(distance).unwrap_or(u8::MAX),
     })
+}
+
+/// A candidate's distance from the key when it passes every screen — the same number of words,
+/// not trivially apart, within the bound, and not a lone substitution in a name under 16 — or
+/// `None`. `shape` is the key's (length, words, bound), computed once.
+fn within_reach(key: &str, candidate: &str, shape: (usize, usize, usize)) -> Option<usize> {
+    let (len, words, bound) = shape;
+    if candidate.split_whitespace().count() != words || trivially_apart(key, candidate) {
+        return None;
+    }
+    let d = distance_within(key, candidate, bound)?;
+    if d == 1 && len < LONG_NAME && single_edit(key, candidate) == Edit::Substitution {
+        return None;
+    }
+    Some(d)
+}
+
+/// Which edit a distance-1 pair differs by: a length difference is an insertion or deletion, two
+/// adjacent characters swapped a transposition, anything else a substitution.
+fn single_edit(a: &str, b: &str) -> Edit {
+    let a: Vec<char> = a.chars().collect();
+    let b: Vec<char> = b.chars().collect();
+    if a.len() != b.len() {
+        return Edit::InsertDelete;
+    }
+    let Some(i) = (0..a.len()).find(|&i| a[i] != b[i]) else {
+        return Edit::Substitution;
+    };
+    if i + 1 < a.len() && a[i] == b[i + 1] && a[i + 1] == b[i] {
+        Edit::Transposition
+    } else {
+        Edit::Substitution
+    }
 }
 
 /// The same name but for a trailing parenthetical or a leading article: not a misspelling.
@@ -147,7 +195,16 @@ pub fn spell_candidates() -> &'static [Candidate] {
 
 #[cfg(test)]
 mod tests {
-    use super::distance_within;
+    use super::{distance_within, single_edit, Edit};
+
+    #[test]
+    fn the_one_edit_is_named() {
+        assert_eq!(single_edit("bat meat", "rat meat"), Edit::Substitution);
+        assert_eq!(single_edit("teir'dal", "tier'dal"), Edit::Transposition);
+        assert_eq!(single_edit("egg sac", "egg sack"), Edit::InsertDelete);
+        assert_eq!(single_edit("egg sack", "egg sac"), Edit::InsertDelete);
+        assert_eq!(single_edit("same", "same"), Edit::Substitution, "no edit reads as the strictest kind");
+    }
 
     #[test]
     fn a_transposition_counts_one_and_the_bound_cuts_the_work_short() {
