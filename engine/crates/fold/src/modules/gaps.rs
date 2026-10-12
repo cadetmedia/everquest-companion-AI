@@ -22,7 +22,7 @@
 //!     is only ever conned is the gap this leaves.
 
 use super::gaps_details::Details;
-use super::gaps_keys::{item_gap_key, scroll_known, spell_gap_key, spell_keys};
+use super::gaps_keys::{item_gap_key, loose_key, scroll_known, spell_gap_key, spell_known};
 use crate::event::Event;
 use crate::jsfn::item_base_name;
 use crate::knowledge::Knowledge;
@@ -78,8 +78,10 @@ pub struct GapRow {
 #[derive(Default)]
 pub struct GapsModule {
     knowledge: Option<Arc<dyn Knowledge>>,
-    /// Every committed item title under [`item_gap_key`] — `items.json`'s own key, quotes folded.
+    /// Every key the committed item database is keyed by, under [`item_gap_key`] (quotes folded),
+    /// and the same under [`loose_key`], tried only when the exact key misses.
     items: HashSet<String>,
+    items_loose: HashSet<String>,
     rows: HashMap<(Domain, String), GapRow>,
     /// Every distinct key checked per domain, known or not: the denominator the tab prints.
     seen: HashMap<Domain, HashSet<String>>,
@@ -143,9 +145,7 @@ impl GapsModule {
     /// spell, not an item, so a name the spell catalog knows is no gap and is not even a name
     /// checked. Only a merge that is neither a known item nor a known spell is filed.
     fn merge(&mut self, ev: &Event) -> bool {
-        let is_spell = ev
-            .str("item")
-            .is_some_and(|n| spell_keys().contains(&spell_gap_key(n)));
+        let is_spell = ev.str("item").is_some_and(spell_known);
         !is_spell && self.item(ev, "crafted")
     }
 
@@ -155,7 +155,9 @@ impl GapsModule {
         };
         let key = item_gap_key(name);
         // A known scroll is an item the log named and we could place: checked, never a row.
-        let known = self.items.contains(&key) || scroll_known(name);
+        let known = self.items.contains(&key)
+            || self.items_loose.contains(&loose_key(&key))
+            || scroll_known(name);
         self.note(Domain::Item, key, &item_base_name(name), known, kind, ev)
     }
 
@@ -205,7 +207,7 @@ impl GapsModule {
             return false;
         };
         let key = spell_gap_key(name);
-        let known = spell_keys().contains(&key);
+        let known = spell_known(name);
         let display = strip_rank_tail(name);
         self.note(Domain::Spell, key, display.trim(), known, "cast", ev)
     }
@@ -322,7 +324,8 @@ impl EqModule for GapsModule {
     }
 
     fn install_knowledge(&mut self, k: &Arc<dyn Knowledge>) {
-        self.items = k.item_names().iter().map(|n| item_gap_key(n)).collect();
+        self.items = k.item_pages().iter().map(|(key, _)| item_gap_key(key)).collect();
+        self.items_loose = self.items.iter().map(|k| loose_key(k)).collect();
         self.knowledge = Some(Arc::clone(k));
     }
 }
