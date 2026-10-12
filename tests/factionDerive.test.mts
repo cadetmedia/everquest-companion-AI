@@ -2,15 +2,23 @@
 // around the race-gate hunt: the hunt overrides the hide-toggles, the still-needed refinement
 // drops settled gates, and the race picker keeps only the picked races' gates — a faction that
 // gates Kerran AND Froglok answers a Kerran hunt, one that gates Froglok alone does not.
+//
+// And the derivation's two halves (the file's header): `deriveRows` once, `narrowDerived` per
+// keystroke — a name hit hands back the base entry BY IDENTITY (the memoized row's contract), a
+// quest hit narrows the panel to the quest that carried it, and an empty query is the base map.
 
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
   DEFAULT_SORT,
+  deriveRows,
   huntedGates,
+  narrowDerived,
   visibleRows,
+  type DeriveJoins,
   type RowFilters
 } from '../src/renderer/src/features/factions/factionDerive'
+import type { FactionQuestRef, FactionWork } from '../src/renderer/src/features/factions/factionQuests'
 import type { FactionRowVm, RaceGate } from '../src/renderer/src/features/factions/useFactionRows'
 
 /** A row with only what the visibility rules read; everything else is inert filler. */
@@ -116,4 +124,49 @@ test('huntedGates is the one list both refinements read', () => {
 
 test('the default sort is standing, biggest first', () => {
   assert.deepEqual(DEFAULT_SORT, { key: 'standing', dir: 'desc' })
+})
+
+// ── the two halves ───────────────────────────────────────────────────────────────────────────
+
+function quest(name: string, rewards: string[]): FactionQuestRef {
+  return { name, page: name, items: [], rewards }
+}
+
+const KERRA_WORK: FactionWork = {
+  raise: [quest('Talisman of Kejaar', ['Talisman of Kejaar Kerrath']), quest('Pestilence Scythe', ['Pestilence Scythe'])],
+  lower: [],
+  nearby: []
+}
+
+const JOINS: DeriveJoins = {
+  maps: { worthy: new Set(['pestilence scythe']), slots: new Map() },
+  wishKeys: new Set()
+}
+
+const WORK_ROWS: readonly FactionRowVm[] = [{ ...row(1, 'Kerra Isle', 0), work: KERRA_WORK, raiseCount: 2 }, row(4, 'Merchants of Qeynos', 300)]
+const NO_WORK_FILTERS = { classes: [], slot: 'ANY', coinOnly: false, query: '', rewardsOnly: false } as const
+
+test('narrowDerived: an empty query is the base map itself', () => {
+  const base = deriveRows(WORK_ROWS, NO_WORK_FILTERS, JOINS)
+  assert.equal(narrowDerived(WORK_ROWS, base, { query: '', rewardsOnly: false }, JOINS), base)
+  assert.equal(base.get(1)?.work?.raise.length, 2)
+})
+
+test('narrowDerived: a name hit hands back the base entry by identity; a quest hit narrows', () => {
+  const base = deriveRows(WORK_ROWS, NO_WORK_FILTERS, JOINS)
+  const byName = narrowDerived(WORK_ROWS, base, { query: 'kerra', rewardsOnly: false }, JOINS)
+  assert.equal(byName.get(1), base.get(1))
+  assert.equal(byName.get(4), base.get(4))
+  const byQuest = narrowDerived(WORK_ROWS, base, { query: 'Scythe', rewardsOnly: false }, JOINS)
+  assert.notEqual(byQuest.get(1), base.get(1))
+  assert.deepEqual(byQuest.get(1)?.work?.raise.map((q) => q.name), ['Pestilence Scythe'])
+  assert.deepEqual(byQuest.get(1)?.gear, ['Pestilence Scythe'])
+  // The base is untouched by the narrowing — the next keystroke starts from the whole faction.
+  assert.equal(base.get(1)?.work?.raise.length, 2)
+})
+
+test('narrowDerived: only the visible rows are derived', () => {
+  const base = deriveRows(WORK_ROWS, NO_WORK_FILTERS, JOINS)
+  const m = narrowDerived([WORK_ROWS[0]], base, { query: 'scythe', rewardsOnly: true }, JOINS)
+  assert.deepEqual([...m.keys()], [1])
 })
