@@ -2,7 +2,7 @@
 // 2026-10-07). The choice is remembered for this viewer in local storage, a convenience only: a
 // blocked or empty store just opens the panel. Picking a row opens it again.
 
-import { type JSX, useState } from 'react'
+import { type JSX, useCallback, useState } from 'react'
 import { Button, Paper, Stack, Typography } from '@mui/material'
 
 const KEY = 'eq.bazaar.detailHidden'
@@ -26,13 +26,12 @@ function store(hidden: boolean): void {
 /** Whether the panel is folded away, and a setter that remembers it. */
 export function useDetailHidden(): [boolean, (hidden: boolean) => void] {
   const [hidden, setHidden] = useState(stored)
-  return [
-    hidden,
-    (next) => {
-      store(next)
-      setHidden(next)
-    }
-  ]
+  // One setter for the component's life, so the memoized panel and rows that take it hold.
+  const set = useCallback((next: boolean) => {
+    store(next)
+    setHidden(next)
+  }, [])
+  return [hidden, set]
 }
 
 /** The header's button: fold the panel away. */
