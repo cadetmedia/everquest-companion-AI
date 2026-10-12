@@ -7,7 +7,7 @@
 // most mentioned first, 500 per domain at most. The domain toggle and the search box narrow those
 // rows in shared/gaps.ts; "Copy list" puts the visible rows on the clipboard as tab-separated text.
 
-import { type JSX, useMemo, useState } from 'react'
+import { type JSX, useDeferredValue, useMemo, useState } from 'react'
 import { Button, CircularProgress, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import { GAPS_MODULE_ID, GAP_DOMAINS, GAP_DOMAIN_LABELS, gapsAsText, gapsCaption, visibleGaps, type GapDomain, type GapsSnap } from '@shared/gaps'
@@ -51,7 +51,9 @@ export default function GapsView(): JSX.Element {
   const [query, setQuery] = useState('')
   const [copied, setCopied] = useState<number | null>(null)
   const rows = snap?.rows
-  const visible = useMemo(() => visibleGaps(rows ?? [], domain, query), [rows, domain, query])
+  // The list follows the query a beat behind the keystroke, so typing never waits on a filter.
+  const deferredQuery = useDeferredValue(query)
+  const visible = useMemo(() => visibleGaps(rows ?? [], domain, deferredQuery), [rows, domain, deferredQuery])
 
   if (!snap) return <CircularProgress size={20} />
 
