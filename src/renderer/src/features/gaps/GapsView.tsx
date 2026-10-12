@@ -15,10 +15,8 @@ import { useModule } from '../../lib/useModule'
 import { copyText } from '../../lib/clipboard'
 import GapsTable from './GapsTable'
 
-const EXPLANATION =
-  "Names your log mentions that the app's wiki data has no record of: the wiki may have no page, or our scrape may predate it. " +
-  'Items are checked as they are looted, received, bought or crafted; mobs as they are looted, killed or considered; spells as they are cast. ' +
-  'Players and pets are left out by their shape, so a single-word named mob that was only ever considered is not listed.'
+// One line (owner, 2026-10-11): the how is in the module header, not on the page.
+const EXPLANATION = 'Differences between what your log names and what the wiki data holds. Click a row for where it was seen.'
 
 function DomainToggle({ snap, domain, onPick }: { snap: GapsSnap; domain: GapDomain; onPick: (d: GapDomain) => void }): JSX.Element {
   return (
