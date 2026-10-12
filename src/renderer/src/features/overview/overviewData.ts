@@ -43,6 +43,9 @@ export interface DropRow {
   posky: boolean
   /** async item knowledge; absent until the probe lands. NEVER filled in to mean "checked". */
   knowledge?: ItemKnowledge
+  /** the icon id off the item's list-row marks (`lib/itemMarks.ts`, the Loot rows' source), so
+   *  an ORDINARY drop has one too — only a notable item ever gets a knowledge record. */
+  iconId?: number
   /** the ONE highlight predicate — see `isHighlighted` below. */
   highlighted: boolean
 }
@@ -55,6 +58,8 @@ export interface DropRow {
  * un-highlighted merely for lack of a lookup.
  */
 export const DROP_FEED_CAP = 25
+
+const NO_ICON = (): undefined => undefined
 
 /**
  * THE highlight rule, in one place.
@@ -96,7 +101,9 @@ export function isHighlighted(posky: boolean, k?: ItemKnowledge): boolean {
 export function buildDropRows(
   history: readonly LootEvent[],
   poskyKeys: ReadonlySet<string>,
-  knowledgeByKey: ReadonlyMap<string, ItemKnowledge>
+  knowledgeByKey: ReadonlyMap<string, ItemKnowledge>,
+  /** the marks store's read, by RAW name as the Loot rows ask it; absent = no icons. */
+  iconOf: (item: string) => number | undefined = NO_ICON
 ): DropRow[] {
   const first = Math.max(0, history.length - DROP_FEED_CAP)
   const rows: DropRow[] = []
@@ -112,6 +119,7 @@ export function buildDropRows(
     const key = itemCountKey(e.item)
     const posky = poskyKeys.has(key)
     const knowledge = knowledgeByKey.get(key)
+    const iconId = iconOf(e.item)
     rows.push({
       id: `${String(e.ts)}|${key}|${String(i)}`,
       ts: e.ts,
@@ -123,6 +131,7 @@ export function buildDropRows(
       disposition: e.disposition,
       posky,
       knowledge,
+      ...(iconId === undefined ? {} : { iconId }),
       highlighted: isHighlighted(posky, knowledge)
     })
   }

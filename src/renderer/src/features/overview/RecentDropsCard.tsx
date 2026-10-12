@@ -14,9 +14,11 @@
 // ICONS COME FROM THE PERMANENT CACHE. `itemIconUrl()` is the ONE renderer entry point and it
 // yields `eqimg://item/<id>`; `img-src` in index.html is exactly `'self' data: eqimg:` so a raw
 // https `<img>` would fail visibly instead of silently bypassing the cache. Negatives are never
-// cached, so the `onError` hides the icon and the next load retries. Items known only from the
-// local posky dataset have no `iconId` at all — the row renders without one rather than
-// fabricating a placeholder id.
+// cached, so the `onError` hides the icon and the next load retries. The id is the row's own
+// (`row.iconId`, off the list-row marks the Loot rows read too — a drop needs no knowledge
+// record to have one), with the record's id behind it. An item the DB does not know, or one
+// known only from the local posky dataset, has no `iconId` at all — the row renders without one
+// rather than fabricating a placeholder id.
 
 import { type JSX, useState } from 'react'
 import { Box, Stack, Typography } from '@mui/material'
@@ -97,7 +99,7 @@ function Row({ row, onOpenLoot }: { row: DropRow; onOpenLoot: (item?: string) =>
           '&:hover [data-testid="overview-drop-name"]': { color: 'primary.main' }
         }}
       >
-        <DropIcon iconId={row.knowledge?.iconId} />
+        <DropIcon iconId={row.iconId ?? row.knowledge?.iconId} />
         <Typography
           variant="caption"
           noWrap
