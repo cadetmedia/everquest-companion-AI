@@ -1,14 +1,19 @@
 // The Gaps tab's table: one row per unknown name, as the engine ordered them (most mentioned
-// first). A click opens the row's details in a pane under the table (GapDetailsPanel); a second
-// click closes it.
+// first). A click opens the row's details in a pane ABOVE the table (GapDetailsPanel), as the
+// Bazaar's picked panel sits above its list; a second click closes it.
 //
 // WINDOWED THE LOOT LEDGER'S WAY (owner ask, 2026-10-11: no lag anywhere). A domain can fill its
 // 500-row cap, and an unwindowed table of memo-less rows is the shape that read 293 ms a keystroke
-// at that size elsewhere. So the scroll box is bounded, `useWindowedRows` mounts a screenful plus
-// overscan between two pad rows, every row is a fixed height with its cells on one line, and the
-// row component is memoized on stable props: the row, whether it is the open one, and one
-// `onToggle(name)` callback. The details pane lives OUTSIDE the window, under the table, so an
-// open row never changes a row's height.
+// at that size elsewhere. So `useWindowedRows` mounts a screenful plus overscan between two pad
+// rows, every row is a fixed height with its cells on one line, and the row component is memoized
+// on stable props: the row, whether it is the open one, its verdict, and one `onToggle(name)`
+// callback. The details pane lives OUTSIDE the window, so an open row never changes a row's height.
+//
+// ONE SCROLLER (owner feedback, 2026-10-12: "no scroll bar inside scroll bar"). The scroll box is
+// the page's only scroller: it grows to the room the view's column leaves (`flexGrow: 1`) and may
+// shrink below its content (`minHeight: 0`), exactly as the Loot ledger bounds its box, instead of
+// a viewport-arithmetic cap that left the page scrolling beside it. The pane above it caps its own
+// height modestly so the list keeps room on a short screen.
 
 import { type JSX, memo, useCallback, useRef, useState } from 'react'
 import { Box, Chip, Paper, Stack, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material'
@@ -86,6 +91,16 @@ const GapTableRow = memo(function GapTableRow({
   )
 })
 
+/** The open row's details, above the list: capped so the list keeps room on a short screen. */
+function DetailsPane({ row }: { row: GapRow }): JSX.Element {
+  return (
+    <Paper variant="outlined" sx={{ px: 1.5, py: 0.5, flexShrink: 0, maxHeight: '40vh', overflow: 'auto' }} data-testid="gaps-details-pane">
+      <Typography variant="subtitle2">{row.name}</Typography>
+      <GapDetailsPanel details={row.details} />
+    </Paper>
+  )
+}
+
 export default function GapsTable({ rows, verdicts }: { rows: readonly GapRow[]; verdicts: GapVerdicts }): JSX.Element {
   const [open, setOpen] = useState<string | null>(null)
   const onToggle = useCallback((name: string) => setOpen((cur) => (cur === name ? null : name)), [])
@@ -100,8 +115,9 @@ export default function GapsTable({ rows, verdicts }: { rows: readonly GapRow[];
   }
   const opened = open === null ? undefined : rows.find((r) => r.name === open)
   return (
-    <Stack spacing={1.5}>
-      <Box ref={scrollRef} sx={{ overflow: 'auto', maxHeight: 'calc(100vh - 300px)', overscrollBehavior: 'contain' }} data-testid="gaps-scroll">
+    <Stack spacing={1.5} sx={{ flexGrow: 1, minHeight: 0 }}>
+      {opened !== undefined && <DetailsPane row={opened} />}
+      <Box ref={scrollRef} sx={{ flexGrow: 1, minHeight: 0, overflow: 'auto', overscrollBehavior: 'contain' }} data-testid="gaps-scroll">
         <Table size="small" stickyHeader data-testid="gaps-table">
           <TableHead>
             <TableRow>
@@ -122,12 +138,6 @@ export default function GapsTable({ rows, verdicts }: { rows: readonly GapRow[];
           </TableBody>
         </Table>
       </Box>
-      {opened !== undefined && (
-        <Paper variant="outlined" sx={{ px: 1.5, py: 0.5 }} data-testid="gaps-details-pane">
-          <Typography variant="subtitle2">{opened.name}</Typography>
-          <GapDetailsPanel details={opened.details} />
-        </Paper>
-      )}
     </Stack>
   )
 }

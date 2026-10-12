@@ -68,7 +68,8 @@ export default function GapsView(): JSX.Element {
   const served = visibleGaps(rows ?? [], domain, '').length
 
   return (
-    <Stack spacing={2} data-testid="gaps-view">
+    // A full-height column whose last child, the table box, is the page's only scroller (GapsTable).
+    <Stack spacing={2} data-testid="gaps-view" sx={{ height: '100%', minHeight: 0 }}>
       <Typography variant="body2" color="text.secondary">
         {EXPLANATION}
       </Typography>
