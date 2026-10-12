@@ -48,7 +48,7 @@ test('each period averages its priced quotes per direction, with the outlier lef
   const h = hoursOf(item, true)
   assert.deepEqual(
     h.map((p) => p.bucket),
-    ['00-04', '04-08', '08-12', '12-16', '16-20', '20-24']
+    ['12-4am', '4-8am', '8am-12pm', '12-4pm', '4-8pm', '8pm-12am']
   )
   assert.deepEqual(h[0].sell, { mean: 20000, median: 20000, n: 1 })
   assert.deepEqual(h[1].sell, { mean: 22000, median: 22000, n: 1 }, 'the 100pp typo is left out')
