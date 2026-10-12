@@ -27,7 +27,9 @@ impl Knowledge for Corpus {
         Vec::new()
     }
     fn item_names(&self) -> Vec<String> {
-        vec!["Bone Chips".to_string()]
+        // The second is a real page title: the wiki spells it with an apostrophe, the game with a
+        // backtick.
+        vec!["Bone Chips".to_string(), "10 Dose Ant's Potion".to_string()]
     }
 }
 
@@ -240,4 +242,29 @@ fn a_later_destroy_line_adds_its_disposition_and_line_but_no_zone_no_count_no_ki
     feed(&mut only, 1, json!({ "kind": "loot", "item": "Glowing Widget", "disposition": "destroyed", "count": 1 }));
     assert!(rows(&only).is_empty());
     assert_eq!(only.published_seq(), Some(0));
+}
+
+#[test]
+fn a_spell_rank_merged_is_no_item_and_an_unknown_merge_is_a_crafted_gap() {
+    let mut m = module();
+    // Real spells, as the merge line prints them: a rank, and a backtick where the catalog has an
+    // apostrophe.
+    feed(&mut m, 1, json!({ "kind": "itemMerge", "item": "Odium IX", "tier": null }));
+    feed(&mut m, 2, json!({ "kind": "itemMerge", "item": "Jaxan`s Jig o` Vigor V", "tier": null }));
+    assert!(rows(&m).is_empty());
+    assert_eq!(m.snapshot()["state"]["seen"]["item"], json!(0), "a spell merged is not a name checked");
+    feed(&mut m, 3, json!({ "kind": "itemMerge", "item": "Totally Made Up Thing +3", "tier": 3 }));
+    assert_eq!(rows(&m), ["item Totally Made Up Thing x1 [crafted]"]);
+}
+
+#[test]
+fn a_backtick_and_an_apostrophe_are_one_name_and_the_row_keeps_the_log_spelling() {
+    let mut m = module();
+    feed(&mut m, 1, json!({ "kind": "loot", "item": "10 Dose Ant`s Potion" }));
+    feed(&mut m, 2, json!({ "kind": "castBegin", "spell": "Jaxan`s Jig o` Vigor V" }));
+    assert!(rows(&m).is_empty(), "the corpus spells both with an apostrophe");
+    assert_eq!(m.snapshot()["state"]["seen"], json!({ "item": 1, "mob": 0, "spell": 1 }));
+    feed(&mut m, 3, json!({ "kind": "loot", "item": "Teir`Dal Arcane Insignia" }));
+    feed(&mut m, 4, json!({ "kind": "loot", "item": "Teir'Dal Arcane Insignia" }));
+    assert_eq!(rows(&m), ["item Teir`Dal Arcane Insignia x2 [looted]"]);
 }

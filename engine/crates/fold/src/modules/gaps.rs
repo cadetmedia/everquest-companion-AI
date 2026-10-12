@@ -22,17 +22,18 @@
 //!     is only ever conned is the gap this leaves.
 
 use super::gaps_details::Details;
+use super::gaps_keys::{item_gap_key, spell_gap_key, spell_keys};
 use crate::event::Event;
-use crate::jsfn::{item_base_name, item_tier_key};
+use crate::jsfn::item_base_name;
 use crate::knowledge::Knowledge;
 use crate::modules::consider::mob_key;
 use crate::modules::resist::world::is_player_shaped_name;
 use crate::EqModule;
-use eqlog::names::{spell_canon_key, strip_rank_tail};
+use eqlog::names::strip_rank_tail;
 use serde::Serialize;
 use serde_json::{json, Value};
 use std::collections::{HashMap, HashSet};
-use std::sync::{Arc, OnceLock};
+use std::sync::Arc;
 
 /// Rows served per domain; the rest are counted in `totals` and nowhere else.
 const CAP_PER_DOMAIN: usize = 500;
@@ -77,7 +78,7 @@ pub struct GapRow {
 #[derive(Default)]
 pub struct GapsModule {
     knowledge: Option<Arc<dyn Knowledge>>,
-    /// Every committed item title, as `item_tier_key` spells it — the same fold as `items.json`'s keys.
+    /// Every committed item title under [`item_gap_key`] — `items.json`'s own key, quotes folded.
     items: HashSet<String>,
     rows: HashMap<(Domain, String), GapRow>,
     /// Every distinct key checked per domain, known or not: the denominator the tab prints.
@@ -134,15 +135,25 @@ impl GapsModule {
                 self.item(ev, how)
             }
             "purchase" => self.item(ev, "bought"),
-            _ => self.item(ev, "crafted"),
+            _ => self.merge(ev),
         }
+    }
+
+    /// An item merge names what the merge made — and a spell-rank merge (`Odium IX`) makes a
+    /// spell, not an item, so a name the spell catalog knows is no gap and is not even a name
+    /// checked. Only a merge that is neither a known item nor a known spell is filed.
+    fn merge(&mut self, ev: &Event) -> bool {
+        let is_spell = ev
+            .str("item")
+            .is_some_and(|n| spell_keys().contains(&spell_gap_key(n)));
+        !is_spell && self.item(ev, "crafted")
     }
 
     fn item(&mut self, ev: &Event, kind: &'static str) -> bool {
         let Some(name) = ev.str("item") else {
             return false;
         };
-        let key = item_tier_key(name);
+        let key = item_gap_key(name);
         let known = self.items.contains(&key);
         self.note(Domain::Item, key, &item_base_name(name), known, kind, ev)
     }
@@ -154,7 +165,7 @@ impl GapsModule {
         let Some(name) = ev.str("item") else {
             return false;
         };
-        let Some(row) = self.rows.get_mut(&(Domain::Item, item_tier_key(name))) else {
+        let Some(row) = self.rows.get_mut(&(Domain::Item, item_gap_key(name))) else {
             return false;
         };
         row.details.disposal(ev);
@@ -192,7 +203,7 @@ impl GapsModule {
         let Some(name) = ev.str("spell") else {
             return false;
         };
-        let key = spell_canon_key(name);
+        let key = spell_gap_key(name);
         let known = spell_keys().contains(&key);
         let display = strip_rank_tail(name);
         self.note(Domain::Spell, key, display.trim(), known, "cast", ev)
@@ -249,19 +260,6 @@ impl GapsModule {
         rows.truncate(CAP_PER_DOMAIN);
         rows
     }
-}
-
-/// Every committed spell, keyed as the buffs module keys a cast: rank stripped, lowercased. Built
-/// once per process off the one effective catalog.
-fn spell_keys() -> &'static HashSet<String> {
-    static KEYS: OnceLock<HashSet<String>> = OnceLock::new();
-    KEYS.get_or_init(|| {
-        eqlog::spelldb::shared()
-            .spells
-            .iter()
-            .map(|s| spell_canon_key(&s.name))
-            .collect()
-    })
 }
 
 /// `[Wed Sep 23 17:54:48 2026] …` → `2026-09-23 17:54:48`: the log's own clock, as the bazaar
@@ -323,7 +321,7 @@ impl EqModule for GapsModule {
     }
 
     fn install_knowledge(&mut self, k: &Arc<dyn Knowledge>) {
-        self.items = k.item_names().iter().map(|n| item_tier_key(n)).collect();
+        self.items = k.item_names().iter().map(|n| item_gap_key(n)).collect();
         self.knowledge = Some(Arc::clone(k));
     }
 }
