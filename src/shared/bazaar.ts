@@ -379,11 +379,15 @@ function compare(sort: BazaarSort): (a: BazaarItem, b: BazaarItem) => number {
   }
 }
 
-function matches(rows: readonly BazaarRow[], q: BazaarQuery, text: string): boolean {
-  if (text !== '' && !rows[0].item.toLowerCase().includes(text)) return false
+/** Offers an entry has in a direction: a direction filter keeps entries with any. */
+const DIR_OFFERS: Record<BazaarDir, (x: BazaarItem) => number> = { sell: (x) => x.sellOffers, buy: (x) => x.buyOffers, trade: (x) => x.trades }
+
+function matches(x: BazaarItem, q: BazaarQuery, text: string): boolean {
+  if (text !== '' && !x.item.toLowerCase().includes(text)) return false
   const keep = q.keep
-  if (keep !== undefined && !rows.some((r) => keep(r.item, r.tier))) return false
-  return q.dir === 'all' || rows.some((r) => r.dir === q.dir)
+  const tiers = x.combined === undefined ? [x.tier] : x.combined.tiers.map((t) => t.tier)
+  if (keep !== undefined && !tiers.some((tier) => keep(x.item, tier))) return false
+  return q.dir === 'all' || DIR_OFFERS[q.dir](x) > 0
 }
 
 function pricedEnough(x: BazaarItem, min: number | undefined): boolean {
@@ -392,31 +396,47 @@ function pricedEnough(x: BazaarItem, min: number | undefined): boolean {
   return ref !== null && ref >= min
 }
 
-/** The tab: one entry per item and tier that matches, in the asked order, with the log's totals. */
-export function summarizeBazaar(snap: BazaarSnap | null, q: BazaarQuery): BazaarSummary {
+/** The query fields that change an entry's numbers; the rest only pick and order entries. */
+export type BazaarShape = Pick<BazaarQuery, 'combineTiers' | 'priceTier' | 'sinceDays' | 'ignoreOutliers'>
+
+/** Every entry the shape gives, in no order, with the log's totals: computed once, then picked from. */
+export interface BazaarItems extends Omit<BazaarSummary, 'items'> {
+  items: BazaarItem[]
+}
+
+/**
+ * The expensive half: every entry's points, forecasts and quotes. The tab keeps the result while
+ * the snapshot and shape stand, so a keystroke in the search does not rebuild two thousand entries.
+ */
+export function summarizeBazaarItems(snap: BazaarSnap | null, s: BazaarShape): BazaarItems {
   const rows = snap?.rows ?? []
   const days = [...new Set(rows.map((r) => r.day))].sort()
   const endDay = days.length > 0 ? days[days.length - 1] : ''
   const groups = new Map<string, BazaarRow[]>()
-  for (const r of within(rows, endDay, q.sinceDays)) {
-    const key = q.combineTiers === true ? r.item : `${r.item}|${r.tier}`
+  for (const r of within(rows, endDay, s.sinceDays)) {
+    const key = s.combineTiers === true ? r.item : `${r.item}|${r.tier}`
     const g = groups.get(key)
     if (g === undefined) groups.set(key, [r])
     else g.push(r)
   }
-  const text = q.text.trim().toLowerCase()
-  const f: Fold = { endDay, outliers: q.ignoreOutliers !== false }
-  const items = [...groups]
-    .filter(([, g]) => matches(g, q, text))
-    .map(([key, g]) => (q.combineTiers === true ? combinedOf(key, g, f, q.priceTier ?? 0) : itemOf(key, g, f)))
-    .filter((x) => pricedEnough(x, q.minPrice))
-    .sort(compare(q.sort))
+  const f: Fold = { endDay, outliers: s.ignoreOutliers !== false }
   return {
-    items,
+    items: [...groups].map(([key, g]) => (s.combineTiers === true ? combinedOf(key, g, f, s.priceTier ?? 0) : itemOf(key, g, f))),
     days: days.length,
     offers: rows.reduce((s, r) => s + r.n + r.unpriced, 0),
     lastDay: days.length > 0 ? days[days.length - 1] : null
   }
+}
+
+/** The cheap half: the entries that match the text, direction, keep and price floor, in the asked order. The entries are the same objects. */
+export function selectBazaarItems(all: BazaarItems, q: BazaarQuery): BazaarSummary {
+  const text = q.text.trim().toLowerCase()
+  return { ...all, items: all.items.filter((x) => matches(x, q, text) && pricedEnough(x, q.minPrice)).sort(compare(q.sort)) }
+}
+
+/** The tab: one entry per item and tier that matches, in the asked order, with the log's totals. Both halves at once. */
+export function summarizeBazaar(snap: BazaarSnap | null, q: BazaarQuery): BazaarSummary {
+  return selectBazaarItems(summarizeBazaarItems(snap, q), q)
 }
 
 export interface Spark {
