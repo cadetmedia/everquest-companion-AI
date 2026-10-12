@@ -182,8 +182,10 @@ export function useSlayerController(props: SlayerViewProps): SlayerController {
     [onSelectView]
   )
 
-  return {
-    picks: {
+  // One bundle for as long as the picks and the counters stand: the achievement rows are memoized
+  // on the context that carries it (features/achievements/AchievementRow.tsx).
+  const pickBundle = useMemo(
+    (): PickBundle => ({
       rows,
       picks,
       picked: picked.length,
@@ -196,7 +198,12 @@ export function useSlayerController(props: SlayerViewProps): SlayerController {
       onClear: () => {
         setPicks(new Set())
       }
-    },
+    }),
+    [rows, picks, picked.length, all.rows, setPicks]
+  )
+
+  return {
+    picks: pickBundle,
     plan: {
       zones,
       names,
