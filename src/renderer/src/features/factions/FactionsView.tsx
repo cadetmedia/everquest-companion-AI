@@ -16,17 +16,29 @@
 // previous shapes kept hitting stay unhit because there is nothing here to grow.
 //
 // THE LIST IS ITS OWN SCROLLER (AGENTS.md UI conventions): the view fills its height and the
-// table scrolls in a bounded box rather than growing the page.
+// table scrolls in a bounded box rather than growing the page — and it is WINDOWED the Loot
+// ledger's way (lib/useWindowedRows; owner ask, 2026-10-11: no lag): only the screenful of rows
+// in view is mounted, two pad rows reserve the rest, so a dump of hundreds of factions mounts the
+// same thirty-odd rows as one of seventy. While any row is EXPANDED the whole list is drawn
+// instead: a work panel is as tall as its quests, which a fixed-row-height window cannot place,
+// and the memoized rows (FactionRow.tsx) keep that path cheap on a keystroke.
 
-import { type JSX } from 'react'
+import { type JSX, useRef } from 'react'
 import { Box, Stack, Table, TableBody, Typography } from '@mui/material'
 import HandshakeIcon from '@mui/icons-material/Handshake'
 import OutputKindLine from '../../components/OutputKindLine'
+import { useWindowedRows, type WindowedRows } from '../../lib/useWindowedRows'
 import { FactionTableHead, FilterBar, WorkFilterControls } from './FactionControls'
-import FactionRow from './FactionRow'
+import FactionRow, { FactionPadRow, ROW_HEIGHT } from './FactionRow'
 import RaceUnlocksPanel from './RaceUnlocksPanel'
 import { NO_DERIVED } from './factionDerive'
 import { useFactionsController, type FactionsViewProps } from './useFactionsController'
+
+/** The whole list as a window: what the table draws while any row is expanded (the header). Built
+ *  over the hook's own slice, so whatever else the slice carries (a scroll position) rides along. */
+function wholeList(win: WindowedRows, count: number): WindowedRows {
+  return { ...win, start: 0, end: count, topPad: 0, bottomPad: 0, totalHeight: count * ROW_HEIGHT }
+}
 
 /** The never-run state. It names what the tab is FOR; the line above it names the command. */
 function NoDump(): JSX.Element {
@@ -44,6 +56,9 @@ function NoDump(): JSX.Element {
 
 export default function FactionsView(props: FactionsViewProps): JSX.Element {
   const c = useFactionsController(props)
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const win = useWindowedRows({ count: c.rows.length, rowHeight: ROW_HEIGHT, scrollRef })
+  const slice = c.expanded.size === 0 ? win : wholeList(win, c.rows.length)
   return (
     <Box
       data-testid="factions-view"
@@ -68,22 +83,26 @@ export default function FactionsView(props: FactionsViewProps): JSX.Element {
           <RaceUnlocksPanel races={c.raceUnlocks} rows={c.all} onFind={c.reveal} />
           <WorkFilterControls {...c.work} />
           <FilterBar {...c.bar} />
-          <Box sx={{ flexGrow: 1, minHeight: 0, overflow: 'auto' }}>
+          <Box
+            ref={scrollRef}
+            data-testid="factions-scroll"
+            sx={{ flexGrow: 1, minHeight: 0, overflow: 'auto', overscrollBehavior: 'contain' }}
+          >
             <Table size="small" stickyHeader data-testid="factions-table">
               <FactionTableHead sort={c.head.sort} onSort={c.head.onSort} />
               <TableBody>
-                {c.rows.map((row) => (
+                <FactionPadRow height={slice.topPad} />
+                {c.rows.slice(slice.start, slice.end).map((row) => (
                   <FactionRow
                     key={row.id}
                     row={row}
                     derived={c.derivedById.get(row.id) ?? NO_DERIVED}
                     expanded={c.expanded.has(row.id)}
-                    onToggle={() => {
-                      c.toggleRow(row.id)
-                    }}
+                    onToggle={c.toggleRow}
                     links={c.links}
                   />
                 ))}
+                <FactionPadRow height={slice.bottomPad} />
               </TableBody>
             </Table>
             {c.rows.length === 0 && (

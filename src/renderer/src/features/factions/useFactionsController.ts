@@ -5,7 +5,7 @@
 // as a CONTROLLER rather than five hooks because these pieces move together: a filter change
 // re-derives the rows, a derive feeds the counts, the counts feed the bar.
 
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useDeferredValue, useMemo, useState } from 'react'
 import type { ClassAbbr } from '@shared/classCombo'
 import type { ZoneShort } from '@shared/maps'
 import type { View } from '../../appViews'
@@ -24,7 +24,9 @@ import {
   DEFAULT_SORT,
   deriveRows,
   gearMaps,
+  narrowDerived,
   visibleRows,
+  type DeriveJoins,
   type RowDerived,
   type RowFilters,
   type RowSort,
@@ -48,14 +50,20 @@ function nextSort(s: RowSort, key: SortKey): RowSort {
   return { key, dir: key === 'name' ? 'asc' : 'desc' }
 }
 
-/** The row-filter STATE — the search, the toggles, and the race-chip reveal. */
+/** The row-filter STATE — the search, the toggles, and the race-chip reveal. `query` is the box's
+ *  own value; `rowFilters.query` is the DEFERRED one the rows read (owner ask, 2026-10-11: no
+ *  lag) — the keystroke echoes in its own render and the table follows in one React may
+ *  interrupt for the next key. Both bundles are memoized on their primitives so a render that
+ *  changed nothing hands the derivation the same objects. */
 function useRowFilterState(): {
+  query: string
   rowFilters: RowFilters
   onQuery: (q: string) => void
   toggles: Parameters<typeof FilterBar>[0]['toggles']
   reveal: (name: string) => void
 } {
   const [query, setQuery] = useState('')
+  const deferredQuery = useDeferredValue(query)
   const [hideUntouched, setHideUntouched] = useState(true)
   const [hideMaxed, setHideMaxed] = useState(true)
   const [unlocksOnly, setUnlocksOnly] = useState(false)
@@ -70,10 +78,12 @@ function useRowFilterState(): {
     setHideUntouched(false)
     setHideMaxed(false)
   }, [])
-  return {
-    rowFilters: { query, hideUntouched, hideMaxed, unlocksOnly, unlocksPending, races, rewardsOnly },
-    onQuery: setQuery,
-    toggles: {
+  const rowFilters = useMemo<RowFilters>(
+    () => ({ query: deferredQuery, hideUntouched, hideMaxed, unlocksOnly, unlocksPending, races, rewardsOnly }),
+    [deferredQuery, hideUntouched, hideMaxed, unlocksOnly, unlocksPending, races, rewardsOnly]
+  )
+  const toggles = useMemo(
+    () => ({
       hideUntouched,
       onHideUntouched: setHideUntouched,
       hideMaxed,
@@ -86,9 +96,54 @@ function useRowFilterState(): {
       onRaces: setRaces,
       rewardsOnly,
       onRewardsOnly: setRewardsOnly
-    },
-    reveal
-  }
+    }),
+    [hideUntouched, hideMaxed, unlocksOnly, unlocksPending, races, rewardsOnly]
+  )
+  return { query, rowFilters, onQuery: setQuery, toggles, reveal }
+}
+
+/**
+ * The table's rows and their derived work, in the two halves factionDerive.ts's header names:
+ * `deriveRows` once per dump, filter click and join change; `visibleRows` (a substring test over
+ * each row's prepared haystack) and `narrowDerived` (the visible rows alone) per keystroke.
+ */
+function useTableRows(
+  all: FactionRowVm[] | null,
+  f: { rows: RowFilters; sort: RowSort; work: WorkFilters },
+  joins: DeriveJoins
+): { rows: FactionRowVm[]; derivedById: ReadonlyMap<number, RowDerived> } {
+  const { rows: rowFilters, sort, work: workFilters } = f
+  const base = useMemo(() => deriveRows(all, workFilters, joins), [all, workFilters, joins])
+  const visible = useMemo(
+    () => (all === null ? [] : visibleRows(all, rowFilters, sort)),
+    [all, rowFilters, sort]
+  )
+  const derivedById = useMemo(
+    () => narrowDerived(visible, base, { query: rowFilters.query, rewardsOnly: rowFilters.rewardsOnly }, joins),
+    [visible, base, rowFilters.query, rowFilters.rewardsOnly, joins]
+  )
+  const rows = useMemo(() => {
+    // A narrowing filter is a reward hunt: a faction with no matching quest — attributed OR
+    // home-zone — is not an answer to it, however interesting its standing is.
+    if (!filtersActive(workFilters)) return visible
+    return visible.filter((r) => {
+      const w = derivedById.get(r.id)?.work
+      return (w?.raise.length ?? 0) > 0 || (w?.nearby.length ?? 0) > 0
+    })
+  }, [visible, workFilters, derivedById])
+  return { rows, derivedById }
+}
+
+/** The bar's tallies of the WHOLE dump — they move with the dump, never with a keystroke. */
+function useTallies(all: FactionRowVm[] | null): { untouched: number; maxed: number; unlockers: number } {
+  return useMemo(
+    () => ({
+      untouched: (all ?? []).filter((r) => r.standing === 0).length,
+      maxed: (all ?? []).filter((r) => r.toMax <= 0).length,
+      unlockers: (all ?? []).filter((r) => r.unlocks.length > 0).length
+    }),
+    [all]
+  )
 }
 
 /** What the app hands the tab: the three drill-down openers the links reach. */
@@ -118,7 +173,7 @@ export interface FactionsController {
 export function useFactionsController(props: FactionsViewProps): FactionsController {
   const { onOpenLoot, onOpenMob, onSelectView } = props
   const { rows: all, readAt, held, raceUnlocks } = useFactionData()
-  const { rowFilters, onQuery, toggles, reveal } = useRowFilterState()
+  const { query, rowFilters, onQuery, toggles, reveal } = useRowFilterState()
   const [classSel, setClassSel] = useState<ClassAbbr[]>([])
   const [slot, setSlot] = useState<SlotFilter>('ANY')
   const [coinOnly, setCoinOnly] = useState(false)
@@ -152,26 +207,15 @@ export function useFactionsController(props: FactionsViewProps): FactionsControl
     () => ({ onOpenLoot, onOpenMob, onOpenZone, held, wished: wishKeys }),
     [onOpenLoot, onOpenMob, onOpenZone, held, wishKeys]
   )
-  const maps = useMemo(() => gearMaps(gearIndex.rows), [gearIndex.rows])
+  const joins = useMemo<DeriveJoins>(() => ({ maps: gearMaps(gearIndex.rows), wishKeys }), [gearIndex.rows, wishKeys])
+  // The work filters WITHOUT the search: the query narrows per keystroke in `useTableRows`, on
+  // top of this base, never inside the whole-dump derivation (factionDerive.ts's header).
   const workFilters = useMemo<WorkFilters>(
-    () => ({ classes: classSel, slot, coinOnly, query: rowFilters.query, rewardsOnly: rowFilters.rewardsOnly }),
-    [classSel, slot, coinOnly, rowFilters.query, rowFilters.rewardsOnly]
+    () => ({ classes: classSel, slot, coinOnly, query: '', rewardsOnly: false }),
+    [classSel, slot, coinOnly]
   )
-  const derivedById = useMemo(
-    () => deriveRows(all, workFilters, maps, wishKeys),
-    [all, workFilters, maps, wishKeys]
-  )
-  const rows = useMemo(() => {
-    if (all === null) return []
-    const base = visibleRows(all, rowFilters, sort)
-    // A narrowing filter is a reward hunt: a faction with no matching quest — attributed OR
-    // home-zone — is not an answer to it, however interesting its standing is.
-    if (!filtersActive(workFilters)) return base
-    return base.filter((r) => {
-      const w = derivedById.get(r.id)?.work
-      return (w?.raise.length ?? 0) > 0 || (w?.nearby.length ?? 0) > 0
-    })
-  }, [all, rowFilters, sort, workFilters, derivedById])
+  const tableFilters = useMemo(() => ({ rows: rowFilters, sort, work: workFilters }), [rowFilters, sort, workFilters])
+  const { rows, derivedById } = useTableRows(all, tableFilters, joins)
   // The race picker's closed list is the rulebook's race list, in the game's order — the same
   // names the row chips wear, so a pick and a chip agree by plain equality. The dump used to be
   // the only source; it still adds a race the rulebook lacks.
@@ -180,15 +224,11 @@ export function useFactionsController(props: FactionsViewProps): FactionsControl
     for (const c of raceUnlocks ?? []) if (!names.includes(c.race)) names.push(c.race)
     return names
   }, [raceUnlocks])
+  const tallies = useTallies(all)
+  const total = all?.length ?? 0
   const counts = useMemo(
-    () => ({
-      untouched: (all ?? []).filter((r) => r.standing === 0).length,
-      maxed: (all ?? []).filter((r) => r.toMax <= 0).length,
-      unlockers: (all ?? []).filter((r) => r.unlocks.length > 0).length,
-      shown: rows.length,
-      total: all?.length ?? 0
-    }),
-    [all, rows]
+    () => ({ ...tallies, shown: rows.length, total }),
+    [tallies, rows.length, total]
   )
   return {
     all,
@@ -197,7 +237,7 @@ export function useFactionsController(props: FactionsViewProps): FactionsControl
     reveal,
     work: { classes: classSel, onClasses: setClassSel, slot, onSlot: setSlot, coinOnly, onCoinOnly: setCoinOnly },
     bar: {
-      query: rowFilters.query,
+      query,
       onQuery,
       toggles,
       counts,

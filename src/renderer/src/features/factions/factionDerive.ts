@@ -1,6 +1,16 @@
 // factions/factionDerive.ts — everything the table derives per faction once the filters have
 // spoken, plus the row-level visibility rules. PURE (no React), node-testable; split out of
 // FactionsView.tsx at the measured 400-code-line file ceiling (split, never ratchet).
+//
+// TWO HALVES, BY COST (owner ask, 2026-10-11: no lag). `deriveRows` walks EVERY faction's quests,
+// folding each reward name to its corpus key twice (the gear verdict, the wishlist join) — the
+// expensive half, and it ran on every keystroke because the query was one of its filters
+// (measured: 65-71 ms on the main thread per key at 185 factions). The query only ever NARROWS a
+// faction's work, and every filter is a per-quest AND, so narrowing the already-narrowed work
+// gives the same answer: `deriveRows` now runs once per dump, filter click and wishlist change,
+// and `narrowDerived` applies the query per keystroke to the VISIBLE rows alone — reusing the
+// base row object outright where the query matched the faction name, so a memoized row sees the
+// same props and skips its render.
 
 import type { GearRow } from '@shared/planner/gear'
 import type { EquipSlot } from '@shared/planner/types'
@@ -69,12 +79,35 @@ export interface RowDerived {
 
 export const NO_DERIVED: RowDerived = { work: null, gear: [], wished: [] }
 
-/** Per faction id → its filtered work, gear rewards and wishlist hits, in one walk. */
+/** What every derivation joins against: the gear corpus's verdicts and the wishlist's keys. */
+export interface DeriveJoins {
+  maps: GearMaps
+  wishKeys: ReadonlySet<string>
+}
+
+/** One faction's work narrowed by `f`, and everything the row states about the result. */
+function deriveWork(work: FactionWork, f: WorkFilters, joins: DeriveJoins): RowDerived {
+  const narrowed = filterWork(work, f, joins.maps.slots)
+  return {
+    work: narrowed,
+    gear: factionGearRewards(narrowed, joins.maps.worthy),
+    wished: wishedRewards(narrowed, joins.wishKeys)
+  }
+}
+
+/** THE USER'S OWN RULE: a search that matched the FACTION NAME shows the whole faction; any other
+ *  match narrows the panel to the quests that carried it (turn-in, reward, quest name, giver,
+ *  zone) — so "Pestilence Scythe" expands to exactly the scythe's quest. `q` is lowercased. */
+function effectiveQuery(row: FactionRowVm, q: string): string {
+  return q !== '' && row.name.toLowerCase().includes(q) ? '' : q
+}
+
+/** Per faction id → its filtered work, gear rewards and wishlist hits, in one walk over EVERY
+ *  faction — the expensive half (the header). The controller runs it with an empty query. */
 export function deriveRows(
   all: readonly FactionRowVm[] | null,
   f: WorkFilters,
-  maps: GearMaps,
-  wishKeys: ReadonlySet<string>
+  joins: DeriveJoins
 ): Map<number, RowDerived> {
   const m = new Map<number, RowDerived>()
   const q = f.query.trim().toLowerCase()
@@ -83,16 +116,33 @@ export function deriveRows(
       m.set(row.id, NO_DERIVED)
       continue
     }
-    // THE USER'S OWN RULE: a search that matched the FACTION NAME shows the whole faction; any
-    // other match narrows the panel to the quests that carried it (turn-in, reward, quest name,
-    // giver, zone) — so "Pestilence Scythe" expands to exactly the scythe's quest.
-    const effective = q !== '' && row.name.toLowerCase().includes(q) ? '' : q
-    const work = filterWork(row.work, { ...f, query: effective }, maps.slots)
-    m.set(row.id, {
-      work,
-      gear: factionGearRewards(work, maps.worthy),
-      wished: wishedRewards(work, wishKeys)
-    })
+    m.set(row.id, deriveWork(row.work, { ...f, query: effectiveQuery(row, q) }, joins))
+  }
+  return m
+}
+
+/** The search's own narrowing, as the panel reads it: the query and its rewards-only scope. */
+export type WorkSearch = Pick<WorkFilters, 'query' | 'rewardsOnly'>
+
+/**
+ * The per-keystroke half (the header): the base derivation narrowed by the search, for the
+ * VISIBLE rows only. An empty query hands the base map back untouched; a name hit hands the
+ * row's base entry back by identity; only a quest hit (reward, turn-in, giver, zone, name) pays
+ * for a narrowing — and the rows a search shows are exactly the few that hold its match.
+ */
+export function narrowDerived(
+  visible: readonly FactionRowVm[],
+  base: ReadonlyMap<number, RowDerived>,
+  search: WorkSearch,
+  joins: DeriveJoins
+): ReadonlyMap<number, RowDerived> {
+  const q = search.query.trim().toLowerCase()
+  if (q === '') return base
+  const onlyQuery: WorkFilters = { classes: [], slot: 'ANY', coinOnly: false, query: q, rewardsOnly: search.rewardsOnly }
+  const m = new Map<number, RowDerived>()
+  for (const row of visible) {
+    const b = base.get(row.id) ?? NO_DERIVED
+    m.set(row.id, b.work === null || effectiveQuery(row, q) === '' ? b : deriveWork(b.work, onlyQuery, joins))
   }
   return m
 }

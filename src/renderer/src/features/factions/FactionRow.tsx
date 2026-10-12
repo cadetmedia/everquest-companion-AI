@@ -1,8 +1,20 @@
 // factions/FactionRow.tsx — one faction on the table: the standing row (name + signals, rung
 // chip, live number with drift, the bar) and — expanded — the work panel beneath it. Split out
 // of FactionsView.tsx at the measured file ceiling (split, never ratchet).
+//
+// MEMOIZED, ON STABLE PROPS (owner ask, 2026-10-11: no lag). Measured in the real renderer on the
+// committed 185-faction dump: a keystroke re-rendered every row, and the first one blocked the
+// main thread for 65-71 ms. The row object is the snapshot's own (useFactionRows.ts memoizes the
+// fold), the derived entry is the base derivation's own for every row the query did not narrow
+// (factionDerive.ts), the toggle is ONE callback that takes the id, and the links bundle is
+// memoized in the controller — so a row that stays on the table costs nothing on a keystroke.
+//
+// ONE FIXED HEIGHT, so the table can be windowed (lib/useWindowedRows, the Loot ledger's way):
+// the standing row is `ROW_HEIGHT` tall and never wraps — a long run of signals is clipped with
+// an ellipsis rather than growing the row (measured before the fix: 67 rows at 30.5 px, 4 at
+// 51.4 px because their chips wrapped). The collapsed work row is empty and 0 px tall.
 
-import { type JSX } from 'react'
+import { type JSX, memo } from 'react'
 import { Box, Chip, Collapse, LinearProgress, TableCell, TableRow, Typography } from '@mui/material'
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown'
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
@@ -15,6 +27,32 @@ import type { FactionRowVm, RaceGate } from './useFactionRows'
 export interface WorkLinks extends WorkPanelLinks {
   held: HeldCounts
 }
+
+/** Every standing row is this tall (set on the row, measured in the real renderer), which is
+ *  what lets the list be windowed. */
+export const ROW_HEIGHT = 31
+const COLUMNS = 4
+
+/** The spacer rows that reserve the full scroll height, so only a screenful of rows is mounted
+ *  (lib/useWindowedRows). */
+export function FactionPadRow({ height }: { height: number }): JSX.Element | null {
+  if (height <= 0) return null
+  return (
+    <TableRow style={{ height }}>
+      <TableCell colSpan={COLUMNS} sx={{ p: 0, border: 0 }} />
+    </TableRow>
+  )
+}
+
+/** The name cell's clip: the leftover width, one line, an ellipsis — never a second line. */
+const NAME_CELL = {
+  py: 0.5,
+  width: '100%',
+  maxWidth: 0,
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis'
+} as const
 
 /** The hover behind a drifted number: both halves of the correction, and how sure it is. */
 function driftTitle(row: FactionRowVm): string {
@@ -107,7 +145,7 @@ function NameSignals({ derived, unlocks }: { derived: RowDerived; unlocks: reado
  * (a faction with nothing on record answers with that fact rather than refusing the click); the
  * collapsed row's signals say where the work and the value are before anyone clicks.
  */
-export default function FactionRow({
+function FactionRow({
   row,
   derived,
   expanded,
@@ -118,7 +156,8 @@ export default function FactionRow({
   /** the filtered work plus everything the row states about it (factionDerive.ts) */
   derived: RowDerived
   expanded: boolean
-  onToggle: () => void
+  /** toggles the row by its id; one callback for every row, so the memo holds */
+  onToggle: (id: number) => void
   links: WorkLinks
 }): JSX.Element {
   return (
@@ -126,10 +165,12 @@ export default function FactionRow({
       <TableRow
         hover
         data-testid={`factions-row-${String(row.id)}`}
-        onClick={onToggle}
-        sx={{ cursor: 'pointer', '& > td': { borderBottom: expanded ? 'none' : undefined } }}
+        onClick={() => {
+          onToggle(row.id)
+        }}
+        sx={{ cursor: 'pointer', height: ROW_HEIGHT, '& > td': { borderBottom: expanded ? 'none' : undefined } }}
       >
-        <TableCell sx={{ py: 0.5 }}>
+        <TableCell sx={NAME_CELL}>
           {expanded ? (
             <KeyboardArrowUpIcon sx={{ fontSize: 16, verticalAlign: 'text-bottom', mr: 0.5 }} />
           ) : (
@@ -140,7 +181,7 @@ export default function FactionRow({
           {row.name}
           <NameSignals derived={derived} unlocks={row.unlocks} />
         </TableCell>
-        <TableCell sx={{ py: 0.5, width: 130 }}>
+        <TableCell sx={{ py: 0.5, width: 130, whiteSpace: 'nowrap' }}>
           <Chip
             size="small"
             label={row.label}
@@ -148,7 +189,7 @@ export default function FactionRow({
             variant="outlined"
           />
         </TableCell>
-        <TableCell align="right" sx={{ py: 0.5, width: 130, fontVariantNumeric: 'tabular-nums' }}>
+        <TableCell align="right" sx={{ py: 0.5, width: 130, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
           {/* The LIVE number; a row the log moved wears its drift, dump value on the hover. */}
           {row.drift !== 0 && (
             <Typography
@@ -191,3 +232,5 @@ export default function FactionRow({
     </>
   )
 }
+
+export default memo(FactionRow)
