@@ -12,14 +12,15 @@
 
 import { type JSX, memo, useCallback, useRef, useState } from 'react'
 import { Box, Chip, Paper, Stack, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material'
-import { charactersOff, type GapRow, type GapSuggest } from '@shared/gaps'
+import { charactersOff, type GapRow, type GapSuggest, type GapVerdict, type GapVerdicts } from '@shared/gaps'
 import { wikiPageUrl } from '@shared/wiki'
 import { useWindowedRows } from '../../lib/useWindowedRows'
+import GapActionChips from './GapActionChips'
 import GapDetailsPanel from './GapDetailsPanel'
 
 /** One line of small cells with a small chip: 6px padding above and below a 24px chip, plus the border. */
 const ROW_HEIGHT = 37
-const COLUMNS = 5
+const COLUMNS = 6
 
 /** Beside the name: the one known name within reach, linked to its page so the owner can fix it. */
 function SuggestCaption({ s }: { s: GapSuggest }): JSX.Element {
@@ -51,7 +52,17 @@ function PadRow({ height }: { height: number }): JSX.Element | null {
   )
 }
 
-const GapTableRow = memo(function GapTableRow({ row, open, onToggle }: { row: GapRow; open: boolean; onToggle: (name: string) => void }): JSX.Element {
+const GapTableRow = memo(function GapTableRow({
+  row,
+  open,
+  verdict,
+  onToggle
+}: {
+  row: GapRow
+  open: boolean
+  verdict: GapVerdict
+  onToggle: (name: string) => void
+}): JSX.Element {
   return (
     <TableRow hover selected={open} onClick={() => onToggle(row.name)} sx={{ cursor: 'pointer', height: ROW_HEIGHT }} data-testid="gaps-row">
       <TableCell sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}>
@@ -68,11 +79,14 @@ const GapTableRow = memo(function GapTableRow({ row, open, onToggle }: { row: Ga
       <TableCell align="right">{row.count.toLocaleString()}</TableCell>
       <TableCell sx={{ whiteSpace: 'nowrap', color: 'text.secondary' }}>{row.first}</TableCell>
       <TableCell sx={{ whiteSpace: 'nowrap', color: 'text.secondary' }}>{row.last}</TableCell>
+      <TableCell>
+        <GapActionChips row={row} verdict={verdict} />
+      </TableCell>
     </TableRow>
   )
 })
 
-export default function GapsTable({ rows }: { rows: readonly GapRow[] }): JSX.Element {
+export default function GapsTable({ rows, verdicts }: { rows: readonly GapRow[]; verdicts: GapVerdicts }): JSX.Element {
   const [open, setOpen] = useState<string | null>(null)
   const onToggle = useCallback((name: string) => setOpen((cur) => (cur === name ? null : name)), [])
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -96,12 +110,13 @@ export default function GapsTable({ rows }: { rows: readonly GapRow[] }): JSX.El
               <TableCell align="right">Times</TableCell>
               <TableCell>First</TableCell>
               <TableCell>Last</TableCell>
+              <TableCell>To do</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             <PadRow height={win.topPad} />
             {rows.slice(win.start, win.end).map((r) => (
-              <GapTableRow key={r.name} row={r} open={open === r.name} onToggle={onToggle} />
+              <GapTableRow key={r.name} row={r} open={open === r.name} verdict={verdicts[r.name] ?? 'unchecked'} onToggle={onToggle} />
             ))}
             <PadRow height={win.bottomPad} />
           </TableBody>

@@ -5,6 +5,9 @@ import assert from 'node:assert/strict'
 import {
   charactersOff,
   derivedPrices,
+  gapActions,
+  parserShape,
+  wikiSearchUrl,
   formatCoin,
   gapDetailsText,
   gapsAsText,
@@ -78,6 +81,7 @@ test('gapDetailsText is the row line, then only the lists it has, then its sampl
     gapDetailsText(ROWS[0]),
     [
       'Wooden Heart\tlooted\t11\t2026-10-06 18:12:26\t2026-10-10 17:48:36',
+      '\taction: Check wiki',
       '\tzones: The Southern Plains of Karana (11)',
       '\tfrom: a treant (11)',
       '\tdisposed: sold (9)',
@@ -85,14 +89,41 @@ test('gapDetailsText is the row line, then only the lists it has, then its sampl
     ].join('\n')
   )
   assert.equal(
-    gapDetailsText(ROWS[2]),
+    gapDetailsText(ROWS[2], 'hasPage'),
     [
       'a fire giant warrior\tkilled, dropped-by\t93\t2026-10-06 18:12:26\t2026-10-10 17:48:36',
+      '\taction: Re-scrape',
       '\tdropped: Throwing Boulder +4 (16), Fire Giant Toes (9) +11 more',
       '\tkilled by: you (9)'
     ].join('\n')
   )
-  assert.equal(gapDetailsText(ROWS[1]), 'Envenomed Bolt\tcrafted\t2\t2026-10-06 18:12:26\t2026-10-10 17:48:36')
+  assert.equal(
+    gapDetailsText(ROWS[1]),
+    ['Envenomed Bolt\tcrafted\t2\t2026-10-06 18:12:26\t2026-10-10 17:48:36', '\taction: Check wiki'].join('\n')
+  )
+})
+
+test('gapActions says what to do: one chip for the verdict or the suggestion, plus Fix parser for a leftover shape', () => {
+  const plain = row(['item', 'Wooden Heart', ['looted'], 11])
+  assert.deepEqual(
+    gapActions(plain, 'unchecked').map((a) => [a.kind, a.label, a.href]),
+    [['checkWiki', 'Check wiki', 'https://eqlwiki.com/index.php?search=Wooden%20Heart']]
+  )
+  assert.deepEqual(gapActions(plain, 'noPage').map((a) => [a.kind, a.href]), [['addToWiki', undefined]])
+  assert.deepEqual(gapActions(plain, 'hasPage').map((a) => [a.kind, a.href]), [['rescrape', undefined]])
+  const suggested = row(['item', 'Teir`Dal Arcane Insignia', ['looted'], 107])
+  suggested.suggest = { name: "Tier'Dal Arcane Insignia", page: "Tier'Dal Arcane Insignia", distance: 1 }
+  const fix = gapActions(suggested, 'noPage')
+  assert.deepEqual(fix.map((a) => a.kind), ['fixTitle'], 'the suggestion outranks the verdict')
+  assert.equal(fix[0].href, "https://eqlwiki.com/Tier'Dal_Arcane_Insignia")
+  assert.match(fix[0].why, /Tier'Dal Arcane Insignia/)
+  for (const name of ['Efreeti Belt from Reward Chest', 'Spell: Invisibility vs. Undead', 'Shiny Thing*']) {
+    const acts = gapActions(row(['item', name, ['looted'], 1]), 'unchecked')
+    assert.deepEqual(acts.map((a) => a.kind), ['checkWiki', 'fixParser'], name)
+    assert.ok(acts[1].why.includes(parserShape(name) ?? '!'), name)
+  }
+  assert.equal(parserShape('Wooden Heart'), null)
+  assert.equal(wikiSearchUrl(" Lyssa's Horn "), "https://eqlwiki.com/index.php?search=Lyssa's%20Horn")
 })
 
 test('the sale-on-loot and paid lists print with the discount caveat in the word', () => {
@@ -106,6 +137,7 @@ test('the sale-on-loot and paid lists print with the discount caveat in the word
     gapDetailsText(sold),
     [
       'Spider Legs\tlooted, bought\t3\t2026-10-06 18:12:26\t2026-10-10 17:48:36',
+      '\taction: Check wiki',
       '\tsold on loot (discounted): 7 copper (2)',
       '\tvendor value: 1 silver · base price: 1 silver',
       '\tpaid: 5 platinum 2 gold (1)'
@@ -123,6 +155,7 @@ test('a near-miss suggestion is the second line of the copy text, after the row 
     [
       'Teir`Dal Arcane Insignia\tlooted\t107\t2026-10-06 18:12:26\t2026-10-10 17:48:36',
       "\tprobably: Tier'Dal Arcane Insignia (1 character off)",
+      '\taction: Fix wiki title',
       '\tfrom: a Teir`Dal rogue (107)'
     ].join('\n')
   )
@@ -149,7 +182,7 @@ test('formatCoin writes the denominations that are there, and 0 copper for nothi
 test('gapsAsText is the header then every row with its details', () => {
   assert.equal(
     gapsAsText(visibleGaps(ROWS, 'spell', '')),
-    ['Name\tSeen as\tTimes\tFirst\tLast', 'Heroic Leap\tcast\t958\t2026-10-06 18:12:26\t2026-10-10 17:48:36', '\tcast by: you (958)'].join('\n')
+    ['Name\tSeen as\tTimes\tFirst\tLast', 'Heroic Leap\tcast\t958\t2026-10-06 18:12:26\t2026-10-10 17:48:36', '\taction: Check wiki', '\tcast by: you (958)'].join('\n')
   )
   assert.equal(gapsAsText([]), 'Name\tSeen as\tTimes\tFirst\tLast')
 })

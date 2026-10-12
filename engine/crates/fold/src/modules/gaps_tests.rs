@@ -41,6 +41,9 @@ impl Knowledge for Corpus {
             ("torn, frost covered book", "Torn, Frost Covered Book"),
             ("tier'dal arcane insignia", "Tier'Dal Arcane Insignia"),
             ("bone chops", "Bone Chops"),
+            ("rat meat", "Rat Meat"),
+            ("giant scarab egg sack", "Giant Scarab Egg Sack"),
+            ("desecrated kejaar totem", "Desecrated Kejaar Totem"),
         ]
         .iter()
         .map(|(k, p)| (k.to_string(), p.to_string()))
@@ -379,4 +382,22 @@ fn a_doubtful_suggestion_is_silence() {
     assert_eq!(suggest_of(&m, "Bone Chaps"), Value::Null);
     assert_eq!(suggest_of(&m, "Bane Chaps"), Value::Null);
     assert_eq!(suggest_of(&m, "Bone Chip s"), Value::Null);
+}
+
+#[test]
+fn one_substituted_letter_in_a_short_name_is_a_different_word_but_a_dropped_letter_is_not() {
+    let mut m = module();
+    feed(&mut m, 1, json!({ "kind": "loot", "item": "Bat Meat" }));
+    feed(&mut m, 2, json!({ "kind": "loot", "item": "Giant Scarab Egg Sac" }));
+    feed(&mut m, 3, json!({ "kind": "loot", "item": "Desecrated Kejaar Tatem" }));
+    assert_eq!(suggest_of(&m, "Bat Meat"), Value::Null, "a real item, one letter from Rat Meat");
+    assert_eq!(
+        suggest_of(&m, "Giant Scarab Egg Sac"),
+        json!({ "name": "Giant Scarab Egg Sack", "page": "Giant Scarab Egg Sack", "distance": 1 })
+    );
+    assert_eq!(
+        suggest_of(&m, "Desecrated Kejaar Tatem"),
+        json!({ "name": "Desecrated Kejaar Totem", "page": "Desecrated Kejaar Totem", "distance": 1 }),
+        "a substitution counts in a long name"
+    );
 }

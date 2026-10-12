@@ -13,6 +13,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import { GAPS_MODULE_ID, GAP_DOMAINS, GAP_DOMAIN_LABELS, gapsAsText, gapsCaption, visibleGaps, type GapDomain, type GapsSnap } from '@shared/gaps'
 import { useModule } from '../../lib/useModule'
 import { copyText } from '../../lib/clipboard'
+import { useGapVerdicts } from '../../lib/gapVerdicts'
 import GapsTable from './GapsTable'
 
 // One line (owner, 2026-10-11): the how is in the module header, not on the page.
@@ -54,11 +55,13 @@ export default function GapsView(): JSX.Element {
   // The list follows the query a beat behind the keystroke, so typing never waits on a filter.
   const deferredQuery = useDeferredValue(query)
   const visible = useMemo(() => visibleGaps(rows ?? [], domain, deferredQuery), [rows, domain, deferredQuery])
+  // What the caches already say about the rows on screen: `unchecked` until the answer lands.
+  const verdicts = useGapVerdicts(domain, visible)
 
   if (!snap) return <CircularProgress size={20} />
 
   const copy = async (): Promise<void> => {
-    const ok = await copyText(gapsAsText(visible))
+    const ok = await copyText(gapsAsText(visible, verdicts))
     setCopied(ok ? visible.length : null)
   }
   const held = snap.totals[domain] ?? 0
@@ -95,7 +98,7 @@ export default function GapsView(): JSX.Element {
         {visible.length} of {held} unknown {GAP_DOMAIN_LABELS[domain].toLowerCase()} shown
         {held > served ? ` (the engine serves the ${served} most mentioned)` : ''}.
       </Typography>
-      <GapsTable rows={visible} />
+      <GapsTable rows={visible} verdicts={verdicts} />
     </Stack>
   )
 }

@@ -7,6 +7,8 @@
 // and search box narrow those rows here rather than in the renderer, which never filters served
 // rows (owner ruling 4); the Copy list text is rendered here for the same reason.
 
+import { wikiPageUrl } from './wiki'
+
 export const GAPS_MODULE_ID = 'gaps'
 
 export type GapDomain = 'item' | 'mob' | 'spell'
@@ -170,9 +172,10 @@ export function charactersOff(distance: number): string {
   return `${distance} character${distance === 1 ? '' : 's'} off`
 }
 
-export function gapDetailsText(row: GapRow): string {
+export function gapDetailsText(row: GapRow, verdict: GapVerdict = 'unchecked'): string {
   const lines = [[row.name, row.kinds.join(', '), String(row.count), row.first, row.last].join('\t')]
   if (row.suggest !== undefined) lines.push(`\tprobably: ${row.suggest.name} (${charactersOff(row.suggest.distance)})`)
+  lines.push(`\taction: ${gapActions(row, verdict).map((a) => a.label).join(' · ')}`)
   for (const { key, label } of GAP_LISTS) {
     const t = row.details[key]
     if (t === undefined) continue
@@ -185,8 +188,70 @@ export function gapDetailsText(row: GapRow): string {
 }
 
 /** The visible rows as text with a header, each row followed by its details, for pasting into an issue. */
-export function gapsAsText(rows: readonly GapRow[]): string {
-  return [GAPS_TEXT_HEADER, ...rows.map(gapDetailsText)].join('\n')
+export function gapsAsText(rows: readonly GapRow[], verdicts: GapVerdicts = {}): string {
+  return [GAPS_TEXT_HEADER, ...rows.map((r) => gapDetailsText(r, verdicts[r.name] ?? 'unchecked'))].join('\n')
+}
+
+// ---- what to do about a row (owner ask, 2026-10-12) --------------------------------------------
+
+/**
+ * What the app's own runtime caches say about a name: the wiki was asked and had no page
+ * (`noPage`), had one (`hasPage`), or was never asked (`unchecked`). Read, never fetched: the
+ * main process answers off `<userData>/item-knowledge-cache.json` / `mob-knowledge-cache.json`
+ * (src/main/gapVerdicts.ts); spells have no cache and are always `unchecked`.
+ */
+export type GapVerdict = 'noPage' | 'hasPage' | 'unchecked'
+/** Verdicts by row name, as the renderer's store hands them to the table. */
+export type GapVerdicts = Record<string, GapVerdict>
+
+export type GapActionKind = 'fixTitle' | 'addToWiki' | 'rescrape' | 'checkWiki' | 'fixParser'
+
+/** One chip: what to do, why (the tooltip), and where it goes when it is a link. */
+export interface GapAction {
+  kind: GapActionKind
+  label: string
+  why: string
+  href?: string
+}
+
+/** The wiki's own search for a name — a link the person clicks, never an app fetch. */
+export function wikiSearchUrl(name: string): string {
+  return `https://eqlwiki.com/index.php?search=${encodeURIComponent(name.trim())}`
+}
+
+/** A shape the app's own parsers leave in a name, or null: the words the Fix parser tooltip uses. */
+export function parserShape(name: string): string | null {
+  if (name.endsWith(' from Reward Chest')) return 'a " from Reward Chest" tail the loot parser left in the item name'
+  if (/^(Spell|Song): /.test(name)) return 'a scroll prefix whose spell the catalog does not know'
+  if (name.endsWith('*')) return 'a trailing "*"'
+  return null
+}
+
+/**
+ * What someone must do to close the gap, one or two chips: the page exists under another
+ * spelling (fix its title), the wiki was asked and had nothing (add the page), the wiki has it
+ * and our data predates it (re-scrape), or nobody has looked (check the wiki) — plus "fix parser"
+ * when the name itself carries a parser's leftover.
+ */
+export function gapActions(row: GapRow, verdict: GapVerdict): GapAction[] {
+  const actions: GapAction[] = []
+  if (row.suggest !== undefined) {
+    actions.push({
+      kind: 'fixTitle',
+      label: 'Fix wiki title',
+      why: `The wiki has this page under another spelling: ${row.suggest.name}.`,
+      href: wikiPageUrl(row.suggest.page)
+    })
+  } else if (verdict === 'noPage') {
+    actions.push({ kind: 'addToWiki', label: 'Add to wiki', why: 'The app asked the wiki for this name and it had no page.' })
+  } else if (verdict === 'hasPage') {
+    actions.push({ kind: 'rescrape', label: 'Re-scrape', why: 'The wiki has this page; the next data scrape picks it up.' })
+  } else {
+    actions.push({ kind: 'checkWiki', label: 'Check wiki', why: 'Nobody has looked this name up yet: search the wiki for it.', href: wikiSearchUrl(row.name) })
+  }
+  const shape = parserShape(row.name)
+  if (shape !== null) actions.push({ kind: 'fixParser', label: 'Fix parser', why: `The name carries ${shape}.` })
+  return actions
 }
 
 /** `76 of 468 names` — the toggle's caption for one domain. */

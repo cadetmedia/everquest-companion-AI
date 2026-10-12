@@ -21,6 +21,7 @@ import type { LevelUnlockData } from '../shared/levelUnlocks'
 // The rich spell card's record (JOS-293) — one definition for main's join, this bridge and the card.
 import type { SpellDetail } from '../shared/spellDetail'
 import type { StackSource } from '../shared/spellStack'
+import type { GapVerdicts } from '../shared/gaps'
 
 export const knowledgeBridge = {
   /** Suggested-alerts wizard (Task #38): the searchable spell catalog + live usage. */
@@ -88,5 +89,12 @@ export const knowledgeBridge = {
   getResistPrefs: (): Promise<ResistPrefs> => ipcRenderer.invoke(IPC.resistPrefsGet),
   /** Merge-patch it. Returns what was actually stored, after the shared normalizer had its say. */
   setResistPrefs: (patch: Partial<ResistPrefs>): Promise<ResistPrefs> =>
-    ipcRenderer.invoke(IPC.resistPrefsSet, patch)
+    ipcRenderer.invoke(IPC.resistPrefsSet, patch),
+  /**
+   * The Gaps tab's one read: what the item and mob knowledge CACHES already say about a set of
+   * names - `{ [name]: 'noPage' | 'hasPage' | 'unchecked' }` - read by main off the cache files,
+   * never fetched (src/main/ipc/gapVerdicts.ts).
+   */
+  gapVerdicts: (domain: 'item' | 'mob', names: readonly string[]): Promise<GapVerdicts> =>
+    ipcRenderer.invoke(IPC.gapVerdicts, domain, [...names])
 }
