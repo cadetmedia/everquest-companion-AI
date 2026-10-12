@@ -260,7 +260,7 @@ test('pages folded nowhere are counted by kind; the report names every skipped f
     other: ['Some Zone']
   })
   const report = unfoldedReport(groups).join('\n')
-  assert.ok(report.startsWith('6 read pages folded into neither DB:'))
+  assert.ok(report.startsWith('6 read pages folded into no DB:'))
   const skipped = ['spells', 'classes', 'quests', 'respawns', 'bosses', 'pageEra', 'posky']
   for (const f of [...skipped, 'mobRaces', 'mobFactions']) {
     assert.ok(report.includes(`/${f}.json`), f)

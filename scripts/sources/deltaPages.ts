@@ -19,6 +19,8 @@ export interface RcRow {
   logtype?: string
   logaction?: string
   logparams?: { target_title?: string }
+  /** ISO time of the change */
+  timestamp?: string
 }
 
 /** What the feed says to re-read: edited pages by id, titles named by log rows by title. */
@@ -28,14 +30,27 @@ export interface FeedChanges {
   logs: PageLogEvent[]
   /** every row's title as the feed gave it (the dry run's census) */
   named: Set<string>
+  /** the newest change time per pageid and per title a row names */
+  pageTime: Map<number, string>
+  titleTime: Map<string, string>
+  /** an edited page's title as its newest row gave it */
+  pageTitle: Map<number, string>
 }
 
 export const emptyFeed = (): FeedChanges => ({
   pageids: new Set(),
   titles: new Set(),
   logs: [],
-  named: new Set()
+  named: new Set(),
+  pageTime: new Map(),
+  titleTime: new Map(),
+  pageTitle: new Map()
 })
+
+function stamp<K>(times: Map<K, string>, key: K, at: string | undefined): void {
+  const prev = times.get(key)
+  if (at && (!prev || at > prev)) times.set(key, at)
+}
 
 /**
  * An edit or creation is re-read by pageid, so a page moved since comes back under its current
@@ -45,13 +60,25 @@ export const emptyFeed = (): FeedChanges => ({
 export function foldRcRow(rc: RcRow, feed: FeedChanges): void {
   feed.named.add(rc.title)
   if (rc.type !== 'log') {
-    if (rc.pageid) feed.pageids.add(rc.pageid)
-    else feed.titles.add(rc.title)
+    if (rc.pageid) {
+      feed.pageids.add(rc.pageid)
+      if (!feed.pageTime.has(rc.pageid) || (rc.timestamp ?? '') > (feed.pageTime.get(rc.pageid) ?? '')) {
+        feed.pageTitle.set(rc.pageid, rc.title)
+      }
+      stamp(feed.pageTime, rc.pageid, rc.timestamp)
+    } else {
+      feed.titles.add(rc.title)
+      stamp(feed.titleTime, rc.title, rc.timestamp)
+    }
     return
   }
   feed.titles.add(rc.title)
+  stamp(feed.titleTime, rc.title, rc.timestamp)
   const target = rc.logparams?.target_title
-  if (target) feed.titles.add(target)
+  if (target) {
+    feed.titles.add(target)
+    stamp(feed.titleTime, target, rc.timestamp)
+  }
   if (rc.logtype !== 'move' && rc.logtype !== 'delete') return
   feed.logs.push({ logtype: rc.logtype, logaction: rc.logaction ?? '', title: rc.title, target })
 }
@@ -63,13 +90,19 @@ export interface RevPage {
   ns?: number
   missing?: boolean
   invalid?: boolean
-  revisions?: { slots?: { main?: { content?: string } } }[]
+  revisions?: { revid?: number; slots?: { main?: { content?: string } } }[]
 }
 
 const contentOf = (p: RevPage): string | undefined => p.revisions?.[0]?.slots?.main?.content
 
 /** Read pages: wikitext, or null for a page that no longer exists. */
 export type PageTexts = Map<string, string | null>
+
+/** Each read title's pageid and current revid, for the caches that key by them. */
+export interface PageIds {
+  pageids: Map<string, number>
+  revids: Map<string, number>
+}
 
 /**
  * One revisions response into `out`. A page that exists but came back without content (a hidden
@@ -80,11 +113,11 @@ export function readRevPages(
   pages: RevPage[],
   out: PageTexts,
   unapplied: string[],
-  pageids?: Map<string, number>
+  ids?: PageIds
 ): void {
   for (const p of pages) {
     if (p.title === undefined || (p.ns ?? 0) !== 0) continue
-    if (p.pageid) pageids?.set(p.title, p.pageid)
+    if (ids) recordIds(p, p.title, ids)
     const wt = contentOf(p)
     if (p.missing && !p.invalid) out.set(p.title, null)
     else if (wt == null) unapplied.push(p.title)
@@ -92,7 +125,14 @@ export function readRevPages(
   }
 }
 
+function recordIds(p: RevPage, title: string, ids: PageIds): void {
+  if (p.pageid) ids.pageids.set(title, p.pageid)
+  const revid = p.revisions?.[0]?.revid
+  if (revid != null) ids.revids.set(title, revid)
+}
+
 /** scrapedAt moves to now only when every change in the window was applied. */
+
 export function nextScrapedAt(prev: string, unapplied: string[], now: string): string {
   return unapplied.length > 0 ? prev : now
 }
@@ -165,18 +205,36 @@ const NOT_REFRESHED: [string, string][] = [
   ['src/renderer/src/data/eqlegends/mobFactions.json', 'npx tsx scripts/gen-mob-factions.mts']
 ]
 
-/** The closing report: what was read and folded nowhere, then what the delta never refreshes. */
-export function unfoldedReport(groups: Map<UnfoldedKind, string[]>): string[] {
+export const SPELLS_FILE = NOT_REFRESHED[0][0]
+export const QUESTS_FILE = NOT_REFRESHED[2][0]
+
+/**
+ * The closing report: what was read and folded nowhere, then the wiki-derived files this run did
+ * not refresh (`refreshed` names the ones it did).
+ */
+export function unfoldedReport(
+  groups: Map<UnfoldedKind, string[]>,
+  refreshed: ReadonlySet<string> = new Set()
+): string[] {
   const total = [...groups.values()].reduce((n, t) => n + t.length, 0)
-  const lines = total > 0 ? [`${total} read pages folded into neither DB:`] : []
+  const lines = total > 0 ? [`${total} read pages folded into no DB:`] : []
   const sorted = [...groups].sort((a, b) => b[1].length - a[1].length)
   for (const [kind, titles] of sorted) {
     const sortedTitles = [...titles].sort((a, b) => a.localeCompare(b))
     lines.push(`  ${kind} (${titles.length}): ${sortedTitles.join(' | ')}`)
   }
   lines.push('Not refreshed by the delta (committed, wiki-derived; where the build carries them):')
-  for (const [file, how] of NOT_REFRESHED) lines.push(`  ${file}  (${how})`)
-  if (groups.has('spell')) {
+  for (const [file, how] of NOT_REFRESHED) {
+    if (!refreshed.has(file)) lines.push(`  ${file}  (${how})`)
+  }
+  if (groups.has('quest') && refreshed.has(QUESTS_FILE)) {
+    lines.push(
+      'Quest-category pages outside the cached quest-page list: deleting ' +
+        'scripts/sources/cache/quests/quest-pages.json and running `npm run scrape:quests` ' +
+        're-lists the categories.'
+    )
+  }
+  if (groups.has('spell') && !refreshed.has(SPELLS_FILE)) {
     lines.push(
       'Spell pages changed: `npm run scrape:spells` asks the wiki for current revids (50 per ' +
         'request) and re-fetches content only for pages whose revid moved.'
