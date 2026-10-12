@@ -27,9 +27,24 @@ impl Knowledge for Corpus {
         Vec::new()
     }
     fn item_names(&self) -> Vec<String> {
-        // The second is a real page title: the wiki spells it with an apostrophe, the game with a
-        // backtick.
-        vec!["Bone Chips".to_string(), "10 Dose Ant's Potion".to_string()]
+        // Page TITLES, as the bazaar matches them — not what the gaps module checks against.
+        vec!["Bone Chips".to_string(), "Copper Ring (Ring of Opolla)".to_string()]
+    }
+    /// The DB's KEYS: a disambiguated page is keyed by its name too; the wiki spells the potion
+    /// with an apostrophe where the game prints a backtick.
+    fn item_pages(&self) -> Vec<(String, String)> {
+        [
+            ("bone chips", "Bone Chips"),
+            ("copper ring", "Copper Ring (Ring of Opolla)"),
+            ("copper ring (ring of opolla)", "Copper Ring (Ring of Opolla)"),
+            ("10 dose ant's potion", "10 Dose Ant's Potion"),
+            ("torn, frost covered book", "Torn, Frost Covered Book"),
+            ("tier'dal arcane insignia", "Tier'Dal Arcane Insignia"),
+            ("bone chops", "Bone Chops"),
+        ]
+        .iter()
+        .map(|(k, p)| (k.to_string(), p.to_string()))
+        .collect()
     }
 }
 
@@ -298,4 +313,70 @@ fn a_reward_chest_tail_and_an_exaltation_tail_are_keyed_away() {
     // An unknown base keeps the whole spelling, so the row says where it came from.
     feed(&mut m, 4, json!({ "kind": "loot", "item": "Glowing Widget from Reward Chest" }));
     assert_eq!(rows(&m), ["item Glowing Widget from Reward Chest x1 [looted]"]);
+}
+
+#[test]
+fn a_known_item_is_known_by_the_db_key_not_the_page_title() {
+    let mut m = module();
+    feed(&mut m, 1, json!({ "kind": "loot", "item": "Copper Ring", "source": "a nameless thing" }));
+    assert_eq!(rows(&m), ["mob a nameless thing x1 [dropped-by]"], "the page is `Copper Ring (Ring of Opolla)`");
+}
+
+#[test]
+fn the_loose_fold_matches_a_dropped_apostrophe_a_dash_a_comma_and_vs_and_nothing_more() {
+    let mut m = module();
+    feed(&mut m, 1, json!({ "kind": "loot", "item": "Torn, Frost-Covered Book" }));
+    feed(&mut m, 2, json!({ "kind": "loot", "item": "Song: Angstlichs Appalling Screech" }));
+    feed(&mut m, 3, json!({ "kind": "loot", "item": "Spell: Elnericks Entombment of Ice" }));
+    feed(&mut m, 4, json!({ "kind": "purchase", "item": "Spell: Garrisons Mighty Mana Shock", "npc": "Klok Koglin" }));
+    feed(&mut m, 5, json!({ "kind": "loot", "item": "Spell: Illusion: Half-Elf" }));
+    feed(&mut m, 6, json!({ "kind": "loot", "item": "Spell: Invisibility versus Undead" }));
+    feed(&mut m, 7, json!({ "kind": "castBegin", "spell": "Elnericks Entombment of Ice" }));
+    feed(&mut m, 8, json!({ "kind": "itemMerge", "item": "Garrisons Mighty Mana Shock II" }));
+    assert!(rows(&m).is_empty(), "every one is a loose match: {:?}", rows(&m));
+    assert_eq!(m.snapshot()["state"]["seen"]["item"], json!(6));
+    feed(&mut m, 9, json!({ "kind": "loot", "item": "Glowing Widget" }));
+    feed(&mut m, 10, json!({ "kind": "loot", "item": "Spell: Totally Made Up" }));
+    assert_eq!(rows(&m), ["item Glowing Widget x1 [looted]", "item Spell: Totally Made Up x1 [looted]"]);
+}
+
+fn suggest_of(m: &GapsModule, name: &str) -> Value {
+    m.snapshot()["state"]["rows"]
+        .as_array()
+        .expect("rows")
+        .iter()
+        .find(|r| r["name"] == name)
+        .map(|r| r["suggest"].clone())
+        .expect("the row")
+}
+
+#[test]
+fn a_name_one_character_from_one_known_name_suggests_that_page_and_nothing_else_does() {
+    let mut m = module();
+    feed(&mut m, 1, json!({ "kind": "loot", "item": "Teir`Dal Arcane Insignia" }));
+    feed(&mut m, 2, json!({ "kind": "loot", "item": "Glowing Widget" }));
+    feed(&mut m, 3, json!({ "kind": "castBegin", "spell": "Elnericks Entombment of Ise" }));
+    assert_eq!(
+        suggest_of(&m, "Teir`Dal Arcane Insignia"),
+        json!({ "name": "Tier'Dal Arcane Insignia", "page": "Tier'Dal Arcane Insignia", "distance": 1 })
+    );
+    assert_eq!(suggest_of(&m, "Glowing Widget"), Value::Null, "far from everything");
+    assert_eq!(
+        suggest_of(&m, "Elnericks Entombment of Ise"),
+        json!({ "name": "Elnerick's Entombment of Ice", "page": "Elnerick's Entombment of Ice", "distance": 1 })
+    );
+}
+
+#[test]
+fn a_doubtful_suggestion_is_silence() {
+    let mut m = module();
+    // One off from both Bone Chips and Bone Chops: not unique.
+    feed(&mut m, 1, json!({ "kind": "loot", "item": "Bone Chaps" }));
+    // Two off from Bone Chips, and ten characters is too short for two.
+    feed(&mut m, 2, json!({ "kind": "loot", "item": "Bane Chaps" }));
+    // One off from Bone Chips but a word more: not the same shape.
+    feed(&mut m, 3, json!({ "kind": "loot", "item": "Bone Chip s" }));
+    assert_eq!(suggest_of(&m, "Bone Chaps"), Value::Null);
+    assert_eq!(suggest_of(&m, "Bane Chaps"), Value::Null);
+    assert_eq!(suggest_of(&m, "Bone Chip s"), Value::Null);
 }

@@ -16,6 +16,12 @@
 //!     corpse. The honest fix is in that parser (creator code); this strip is the gaps module's
 //!     own guard, keyed by the base and displayed whole only when the base is unknown.
 //!   * ` (Exaltation)`: the socket suffix, keyed away like ` +N` is.
+//!
+//! AND A LOOSE FOLD, tried only when the exact key misses (owner ask, 2026-10-11): apostrophes
+//! dropped, `-` `,` `.` read as spaces, spaces collapsed, ` vs ` / ` vs. ` read as ` versus `.
+//! Measured on the owner's tab: `Torn, Frost-Covered Book` → `torn, frost covered book`,
+//! `Angstlichs Appalling Screech` → `Angstlich's …`, `Illusion: Half Elf` → `Illusion: Half-Elf`,
+//! `Invisibility vs. Undead` → `Invisibility versus Undead`. The row keeps the log's spelling.
 
 use crate::jsfn::item_tier_key;
 use eqlog::jsstr::js_trim;
@@ -54,12 +60,34 @@ pub fn scroll_spell(name: &str) -> Option<&str> {
 
 /// A scroll whose spell the catalog knows: the spell's page stands for the item's.
 pub fn scroll_known(name: &str) -> bool {
-    scroll_spell(name).is_some_and(|s| spell_keys().contains(&spell_gap_key(s)))
+    scroll_spell(name).is_some_and(spell_known)
+}
+
+/// [`spell_keys`] under [`loose_key`], the fallback index.
+pub fn spell_keys_loose() -> &'static HashSet<String> {
+    static KEYS: OnceLock<HashSet<String>> = OnceLock::new();
+    KEYS.get_or_init(|| spell_keys().iter().map(|k| loose_key(k)).collect())
 }
 
 /// A spell: rank stripped, lowercased (as the buffs module keys a cast), quotes folded.
 pub fn spell_gap_key(name: &str) -> String {
     fold_quotes(&spell_canon_key(name))
+}
+
+/// The loose fold of an exact key — see the module header. Applied on both sides.
+pub fn loose_key(key: &str) -> String {
+    let spaced = key.replace('\'', "").replace(['-', ',', '.'], " ");
+    let collapsed = spaced.split_whitespace().collect::<Vec<_>>().join(" ");
+    format!(" {collapsed} ")
+        .replace(" vs ", " versus ")
+        .trim()
+        .to_string()
+}
+
+/// Is the name's spell in the catalog, exactly or loosely?
+pub fn spell_known(name: &str) -> bool {
+    let key = spell_gap_key(name);
+    spell_keys().contains(&key) || spell_keys_loose().contains(&loose_key(&key))
 }
 
 /// Every committed spell under [`spell_gap_key`]. Built once per process off the one effective

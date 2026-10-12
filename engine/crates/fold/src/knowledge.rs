@@ -99,6 +99,16 @@ pub trait Knowledge: Send + Sync {
     /// be made. An unaliased name answers with its single key.
     fn identity_keys(&self, mob: &str) -> Vec<String>;
 
+    /// Every key the committed item database is keyed by, with the page title it answers with:
+    /// `item_key`'s fold of each page's name and of its aliases, the keys [`Knowledge::item`]
+    /// answers from. A page TITLE ([`Knowledge::item_names`]) is not a key when the page is
+    /// disambiguated — `Copper Ring (Ring of Opolla)` is keyed `copper ring` too — so the gaps
+    /// module checks loot against these, and names the page when it suggests one. Defaulted
+    /// empty, so a test corpus need not list any.
+    fn item_pages(&self) -> Vec<(String, String)> {
+        Vec::new()
+    }
+
     /// "What does this thing drop", joined with what you have looted off it. Never fails.
     fn mob(&self, name: &str, loot: &dyn OwnLoot) -> Answer;
 

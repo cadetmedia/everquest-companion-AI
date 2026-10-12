@@ -57,6 +57,9 @@ pub const SEARCH_DEFAULT_LIMIT: usize = 20;
 /// See [`SEARCH_DEFAULT_LIMIT`].
 pub const SEARCH_MAX_LIMIT: usize = 100;
 
+/// `Corpus::spell`, apart so this file stays under its recorded size.
+mod spell_lookup;
+
 /// The process's one corpus: one instance shared by the ingest thread (the fold's own probes) and by
 /// every connection thread (the `knowledge.*` ops). One overlay, one miss ledger, and the loot index
 /// read through a seam rather than shared.
@@ -173,55 +176,6 @@ impl Corpus {
                 domain: domain.to_owned(),
                 name: name.to_owned(),
             });
-        }
-    }
-
-    /// One spell, from the effective catalog — `knowledge.spell`.
-    ///
-    /// Every field is copied across ONLY IF THE DB STATES IT (law 1), so an absent wiki field stays
-    /// absent and the card never has to decide what a missing duration looks like.
-    ///
-    /// EXACT NAME MATCH ONLY, a stated limit rather than a bug: answering `Rune III` with `Rune`'s
-    /// numbers needs the lineage block that would say out loud they are the line's, which is the
-    /// named gap in the crate header. Without it, `found: false` is the honest answer.
-    #[must_use]
-    pub fn spell(&self, name: &str) -> Answer {
-        let queried = name.trim();
-        let db = eqlog::spelldb::shared();
-        let wanted = queried.to_lowercase();
-        let Some(entry) = db
-            .spells
-            .iter()
-            .find(|s| s.name.trim().to_lowercase() == wanted)
-        else {
-            return Answer {
-                record: json!({ "queried": queried, "found": false, "illusion": false }),
-                found: false,
-            };
-        };
-        let mut record = json!({
-            "queried": queried,
-            "name": entry.name,
-            "found": true,
-            "illusion": entry.illusion,
-        });
-        let mut state = |key: &str, value: Value| {
-            if !value.is_null() {
-                record[key] = value;
-            }
-        };
-        state("durationText", json!(entry.duration_text));
-        state("durationMs", json!(entry.duration_ms));
-        state("targetType", json!(entry.target_type));
-        state("spellType", json!(entry.spell_type));
-        state("classes", json!(entry.classes));
-        state("msgCastOnYou", json!(entry.msg_cast_on_you));
-        state("msgCastOnOther", json!(entry.msg_cast_on_other));
-        state("msgWearsOff", json!(entry.msg_wears_off));
-        state("effects", json!(entry.effects));
-        Answer {
-            record,
-            found: true,
         }
     }
 
@@ -364,6 +318,11 @@ impl Knowledge for Corpus {
 
     fn identity_keys(&self, mob: &str) -> Vec<String> {
         self.mob_index().identity(mob.trim()).keys
+    }
+
+    fn item_pages(&self) -> Vec<(String, String)> {
+        let page = |k: &String, e: &Value| e["page"].as_str().unwrap_or(k).to_string();
+        self.items().iter().map(|(k, e)| (k.clone(), page(k, e))).collect()
     }
 
     /// The catalog, then the overlay, then a miss; the local half merged on top of whichever

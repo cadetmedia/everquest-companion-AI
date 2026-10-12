@@ -453,7 +453,7 @@
       "file": "crates/knowledge/src/lib.rs",
       "metric": "file-lines",
       "name": "",
-      "value": 498
+      "value": 463
     },
     {
       "file": "crates/parity/src/main.rs",

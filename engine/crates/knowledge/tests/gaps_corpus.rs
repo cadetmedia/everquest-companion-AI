@@ -23,7 +23,12 @@ fn gaps_corpus() {
     let mut folder = fold::Fold::new(registry, i64::MAX);
     folder.fold_bytes(&parser, &bytes);
 
+    let started = std::time::Instant::now();
     let all = folder.registry.snapshots();
+    let cold_ms = started.elapsed().as_millis();
+    let started = std::time::Instant::now();
+    let _again = folder.registry.snapshots();
+    println!("snapshot: {cold_ms} ms cold, {} ms cached", started.elapsed().as_millis());
     let gaps = all["modules"]
         .as_array()
         .expect("modules")
@@ -45,6 +50,9 @@ fn gaps_corpus() {
                 r["first"].as_str().unwrap_or(""),
                 r["last"].as_str().unwrap_or("")
             );
+            if r.get("suggest").is_some() {
+                println!("       suggest: {}", r["suggest"]);
+            }
             if domain == "item" || i < 2 {
                 println!("       details: {}", r["details"]);
             }
