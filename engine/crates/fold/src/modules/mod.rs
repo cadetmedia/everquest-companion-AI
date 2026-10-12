@@ -42,6 +42,7 @@ pub mod consider;
 pub mod event_feed;
 pub mod gaps;
 pub mod gaps_details;
+pub mod gaps_keys;
 pub mod item_tiers;
 pub mod kills;
 pub mod leveling;
