@@ -9,29 +9,30 @@
 // items by what the wiki says they are for (shared/bazaarFacts.ts). What the parser reads is stated in
 // engine/crates/fold/src/modules/bazaar_parse.rs.
 
-import { type JSX, useDeferredValue, useMemo, useState } from 'react'
-import { Box, Chip, Paper, Stack, Table, TableBody, TableCell, TableHead, TableRow, TableSortLabel, Typography } from '@mui/material'
+import { type JSX, memo, useCallback, useDeferredValue, useMemo, useRef, useState } from 'react'
+import { Box, Paper, Stack, Table, TableBody, TableCell, TableHead, TableRow, TableSortLabel, Typography } from '@mui/material'
 import { itemTierKey } from '@shared/itemStats'
-import { findWatch, watchOnItem, type BazaarWatch, type BazaarWatchlist } from '@shared/bazaarWatch'
+import { findWatch, watchOnItem, type BazaarWatchlist } from '@shared/bazaarWatch'
 import { factsAsked, factsPass, questNamesOf, type FactsFilter } from '@shared/bazaarFacts'
 import { offersCsv, offersOf } from '@shared/bazaarCsv'
 import {
   BAZAAR_MODULE_ID,
-  formatMove,
   formatPlat,
-  sparkline,
   type BazaarItem,
   type BazaarSnap,
   type BazaarSort,
   type BazaarSortKey
 } from '@shared/bazaar'
 import { useModule } from '../../lib/useModule'
+import { useWindowedRows } from '../../lib/useWindowedRows'
 import { useWishlist } from '../wishlist/useWishlist'
-import { ASK_COLOR, BazaarChart, BazaarSparkline, OFFER_COLOR } from './BazaarChart'
+import { ASK_COLOR, BazaarChart, OFFER_COLOR } from './BazaarChart'
 import { BazaarHoursChart } from './BazaarHoursChart'
 import BazaarControls, { DEFAULT_PRICE_TIER, type BazaarControlState, type BazaarShow } from './BazaarControls'
+import { BazaarItemRow, BazaarPadRow, ROW_HEIGHT, SPARK_DAYS } from './BazaarItemRow'
+import { Move } from './BazaarMove'
 import BazaarQuotes from './BazaarQuotes'
-import { ItemIcon, ItemName, nameOf, priceOf } from './BazaarItemCells'
+import { ItemName, nameOf } from './BazaarItemCells'
 import { HiddenDetail, HideDetailButton, useDetailHidden } from './BazaarDetailToggle'
 import BazaarTierTable from './BazaarTierTable'
 import BazaarWatchPanel from './BazaarWatchPanel'
@@ -40,7 +41,6 @@ import { useBazaarSummary } from './useBazaarSummary'
 import { useBazaarWatch } from './useBazaarWatch'
 import { useItemFacts, type ItemFacts } from './useItemFacts'
 
-const SPARK_DAYS = 30
 /** The list's columns, each sortable; numbers sort biggest first on the first click. */
 const COLUMNS: { key: BazaarSortKey; label: string; right: boolean }[] = [
   { key: 'item', label: 'Item', right: false },
@@ -79,17 +79,6 @@ function SortHead({ sort, onSort }: { sort: BazaarSort; onSort: (s: BazaarSort) 
   )
 }
 
-
-/** A move up or down, in the status words rather than color alone. */
-function Move({ f }: { f: number | null }): JSX.Element | null {
-  if (f === null || Math.round(f * 100) === 0) return null
-  const up = f > 0
-  return (
-    <Typography component="span" variant="body2" sx={{ color: up ? 'success.main' : 'warning.main' }}>
-      {up ? '▲' : '▼'} {formatMove(f)}
-    </Typography>
-  )
-}
 
 function Tile({ label, value, color, children }: { label: string; value: string; color?: string; children?: JSX.Element | null }): JSX.Element {
   return (
@@ -216,70 +205,6 @@ function Detail({ item, endDay, ignoreOutliers, onOpenLoot, onHide }: DetailProp
   )
 }
 
-/** The row's watch chip: what alerts on it, or only that it is watched. */
-function watchChipLabel(w: BazaarWatch): string {
-  const wts = w.wtsMax !== null ? `WTS ≤ ${formatPlat(w.wtsMax)}` : w.wtsShare !== null ? `WTS ≤ ${Math.round(w.wtsShare * 100)}% median` : 'WTS'
-  const on = [w.wts ? wts : '', w.wtb ? (w.wtbMin !== null ? `WTB ≥ ${formatPlat(w.wtbMin)}` : 'WTB') : ''].filter((s) => s !== '')
-  return on.length === 0 ? 'Watch' : `Watch: ${on.join(' + ')}`
-}
-
-interface RowMarks {
-  iconId: number | undefined
-  /** Tiers folded into this row, with All tiers as one. */
-  tiers: number
-  wished: boolean
-  watch: BazaarWatch | null
-}
-
-function ItemRow({
-  item,
-  endDay,
-  picked,
-  onPick,
-  marks,
-  onOpenLoot
-}: {
-  item: BazaarItem
-  endDay: string
-  picked: boolean
-  onPick: () => void
-  marks: RowMarks
-  onOpenLoot: (item: string) => void
-}): JSX.Element {
-  const spark = sparkline(item.points, endDay, SPARK_DAYS)
-  const chip = marks.watch === null ? null : watchChipLabel(marks.watch)
-  return (
-    <TableRow hover selected={picked} onClick={onPick} sx={{ cursor: 'pointer' }} data-testid={`bazaar-row-${item.key}`}>
-      <TableCell sx={{ fontWeight: picked ? 700 : 400 }}>
-        <Stack direction="row" spacing={0.75} alignItems="center" sx={{ flexWrap: 'nowrap' }}>
-          <ItemIcon iconId={marks.iconId} />
-          <ItemName item={item} onOpenLoot={onOpenLoot} />
-          {item.combined !== undefined && (
-            <Chip size="small" variant="outlined" label={item.combined.tiers.every((t) => t.tier === 0) ? 'not seen upgraded' : `${marks.tiers} tiers at +${item.combined.at}`} sx={{ height: 18, fontSize: 10 }} />
-          )}
-          {marks.wished && <Chip size="small" variant="outlined" color="secondary" label="♥ wish" sx={{ height: 18, fontSize: 10 }} data-testid="bazaar-wish-chip" />}
-          {chip !== null && <Chip size="small" color="info" label={chip} sx={{ height: 18, fontSize: 10 }} data-testid="bazaar-watch-chip" />}
-        </Stack>
-      </TableCell>
-      <TableCell>
-        <BazaarSparkline sell={spark.sell} buy={spark.buy} />
-      </TableCell>
-      <TableCell align="right">{priceOf(item, item.asking)}</TableCell>
-      <TableCell align="right">{priceOf(item, item.askingAvg)}</TableCell>
-      <TableCell align="right">{priceOf(item, item.askingPredicted)}</TableCell>
-      <TableCell align="right">
-        <Move f={item.askingMove} />
-      </TableCell>
-      <TableCell align="right">{priceOf(item, item.offered)}</TableCell>
-      <TableCell align="right">{item.sellOffers + item.buyOffers + item.trades}</TableCell>
-      <TableCell align="right">{formatPlat(item.volume)}</TableCell>
-      <TableCell align="right" sx={{ color: 'text.secondary' }}>
-        {item.lastDay}
-      </TableCell>
-    </TableRow>
-  )
-}
-
 /** The watch alerts raised this session, so one missed with the banner closed is still here. */
 function HeardAlerts(): JSX.Element | null {
   const heard = useHeardAlerts()
@@ -301,11 +226,11 @@ function HeardAlerts(): JSX.Element | null {
   )
 }
 
-/** The picked item's panel, or the slim bar it folds to. */
-function PickedPanel(p: Omit<DetailProps, 'onHide'> & { hidden: boolean; setHidden: (h: boolean) => void }): JSX.Element {
+/** The picked item's panel, or the slim bar it folds to. Memoized: a keystroke in the search must not redraw two charts and the quotes. */
+const PickedPanel = memo(function PickedPanel(p: Omit<DetailProps, 'onHide'> & { hidden: boolean; setHidden: (h: boolean) => void }): JSX.Element {
   if (p.hidden) return <HiddenDetail name={nameOf(p.item)} onShow={() => p.setHidden(false)} />
   return <Detail item={p.item} endDay={p.endDay} ignoreOutliers={p.ignoreOutliers} onOpenLoot={p.onOpenLoot} onHide={() => p.setHidden(true)} />
-}
+})
 
 /** Which items the Show picker keeps; undefined keeps all. */
 function keeperOf(show: BazaarShow, wished: ReadonlySet<string>, watch: BazaarWatchlist): ((item: string, tier: number) => boolean) | undefined {
@@ -362,7 +287,17 @@ export default function BazaarView({ onOpenLoot }: { onOpenLoot: (item: string) 
   const facts = useMemo(() => ({ hideNoTrade: ctl.hideNoTrade, tradeskill: ctl.tradeskill, quest }), [ctl.hideNoTrade, ctl.tradeskill, quest])
   const keep = useMemo(() => keepOf(keeperOf(ctl.show, wished, watch), facts, factsOf), [ctl.show, facts, wished, watch, factsOf])
   const sum = useBazaarSummary(snap, ctl, sort, keep)
+  // The list is windowed the Loot ledger's way: a scroll box, and only the rows in view mounted.
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const win = useWindowedRows({ count: sum.items.length, rowHeight: ROW_HEIGHT, scrollRef })
   const picked = sum.items.find((i) => i.key === pick) ?? sum.items.at(0) ?? null
+  const onPick = useCallback(
+    (key: string) => {
+      setPick(key)
+      setDetailHidden(false)
+    },
+    [setDetailHidden]
+  )
   const set = (patch: Partial<BazaarControlState>): void => {
     const next = { ...ctl, ...patch }
     // Popular ranks by platinum traded, and leaves out what sells for under a platinum.
@@ -395,29 +330,25 @@ export default function BazaarView({ onOpenLoot }: { onOpenLoot: (item: string) 
       ) : (
         <>
           <PickedPanel item={picked} endDay={sum.lastDay} ignoreOutliers={ctl.ignoreOutliers} hidden={detailHidden} setHidden={setDetailHidden} onOpenLoot={onOpenLoot} />
-          <Box sx={{ overflowX: 'auto' }}>
+          <Box ref={scrollRef} sx={{ overflow: 'auto', maxHeight: 'calc(100vh - 140px)', overscrollBehavior: 'contain' }} data-testid="bazaar-scroll">
             <Table size="small" stickyHeader>
               <SortHead sort={sort} onSort={onSort} />
               <TableBody>
-                {sum.items.map((i) => (
-                  <ItemRow
+                <BazaarPadRow height={win.topPad} />
+                {sum.items.slice(win.start, win.end).map((i) => (
+                  <BazaarItemRow
                     key={i.key}
                     item={i}
                     endDay={sum.lastDay ?? i.lastDay}
                     picked={i.key === picked.key}
-                    onPick={() => {
-                      setPick(i.key)
-                      setDetailHidden(false)
-                    }}
+                    iconId={factsOf(i.item)?.iconId}
+                    wished={wished.has(itemTierKey(i.item))}
+                    watch={i.combined !== undefined ? watchOnItem(watch, i.item) : findWatch(watch, i.item, i.tier)}
+                    onPick={onPick}
                     onOpenLoot={onOpenLoot}
-                    marks={{
-                      iconId: factsOf(i.item)?.iconId,
-                      tiers: i.combined?.tiers.length ?? 1,
-                      wished: wished.has(itemTierKey(i.item)),
-                      watch: i.combined !== undefined ? watchOnItem(watch, i.item) : findWatch(watch, i.item, i.tier)
-                    }}
                   />
                 ))}
+                <BazaarPadRow height={win.bottomPad} />
               </TableBody>
             </Table>
           </Box>
