@@ -5,7 +5,7 @@
 // row-drawing tabs mount, with the same identity-stable props argument (JOS-206) and the same
 // paging footer, moved verbatim so the container can stay a container.
 
-import { type JSX, useCallback } from 'react'
+import { type JSX, startTransition, useCallback, useEffect, useState } from 'react'
 import { Box, Button, Stack } from '@mui/material'
 import { QuestAccordion } from './QuestAccordion'
 import type { SetItemCount } from './ItemOverrides'
@@ -92,6 +92,48 @@ function ListFooter({ total, list }: { total: number; list: QuestListState }): J
 const NO_SHARED_ITEMS: SharedItem[] = []
 
 /**
+ * How many rows the render that MOUNTS this list draws. About one screen of collapsed accordions
+ * at the default window height, so the first paint is the list the user sees and nothing below the
+ * fold.
+ */
+const FIRST_SCREEN = 10
+
+/**
+ * THE PAGE ARRIVES IN TWO RENDERS: the first screenful on the render that mounts the list, and the
+ * rest of the page in a transition straight after (2026-10-11 lag sweep).
+ *
+ * MEASURED, in a production renderer on the synthetic log: opening the tab mounted its 40-row page
+ * in ONE task of 83 to 137 ms, and a profile put all of it in the mount itself, at about 2.5 ms per
+ * collapsed row of MUI and emotion work (an Accordion, its summary button, three Chips, two icon
+ * buttons, a progress bar, and a Tooltip with its Popper on every item chip). The filter, the facet
+ * table and the page cap were nowhere in it: they are memoized on the quest set already. So the
+ * cost cannot be moved, but it can be split. Ten rows and the toolbar fit well inside a 50 ms task,
+ * and the other thirty mount in a transition React time-slices behind the paint, which keeps the
+ * click that opened the tab, and any click after it, off a blocked main thread.
+ *
+ * ONCE, ON THE FIRST PAGE LONGER THAN A SCREEN, deliberately. The list mounts EMPTY (useProgress
+ * answers `[]` until main's `getProgress` lands), so a flag that flipped on mount would be set
+ * before a single row existed and the whole page would still arrive in one render. It flips in the
+ * effect after the first commit that drew a capped page, and from then on `visibleCount` is the
+ * only cap, as it always was: a keystroke already arrives through `useDeferredValue` in
+ * `useQuestList`, so the rows it adds mount in a transition of their own, and rows it keeps are
+ * never unmounted. Restarting from a screenful on every new array would unmount rows the user is
+ * looking at only to mount them again.
+ */
+function useFirstScreen(total: number, visibleCount: number): number {
+  const [wholePage, setWholePage] = useState(false)
+  const capped = !wholePage && Math.min(total, visibleCount) > FIRST_SCREEN
+  useEffect(() => {
+    if (capped) {
+      startTransition(() => {
+        setWholePage(true)
+      })
+    }
+  }, [capped])
+  return capped ? FIRST_SCREEN : visibleCount
+}
+
+/**
  * The scrolling body: one accordion per quest up to the page cap, then the list footer.
  *
  * EVERY PROP THIS PASSES DOWN IS IDENTITY-STABLE ACROSS A KEYSTROKE (JOS-206), because
@@ -132,9 +174,10 @@ export function QuestList({
     },
     [setItemCount]
   )
+  const cap = useFirstScreen(quests.length, list.visibleCount)
   return (
     <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
-      {quests.slice(0, list.visibleCount).map((q) => (
+      {quests.slice(0, cap).map((q) => (
         <QuestAccordion
           // The NONCE rides the key for the anchored quest alone: the accordion is uncontrolled
           // (each one opens and closes independently, and lifting that into one "which is open"
