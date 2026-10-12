@@ -1039,6 +1039,11 @@ export const IPC = {
   // re-fire, no stacking and no re-show, so the renderer needs no rate limiting of its own.
   onLogSwitchNudge: 'log:switchNudge',
 
+  // ---- the Gaps tab's action chips (renderer -> main, src/main/ipc/gapVerdicts.ts) ----
+  // Names in, `{ [name]: 'noPage' | 'hasPage' | 'unchecked' }` out, read off the two knowledge
+  // cache files and never fetched. Payload: (domain: 'item' | 'mob', names: string[]).
+  gapVerdicts: 'gaps:verdicts',
+
   // ---- error harness (renderer -> main, fire-and-forget) ----
   // window.onerror / onunhandledrejection / React ErrorBoundary report here so
   // renderer crashes land in errors.log + dev stdout and never leave a blank window.
