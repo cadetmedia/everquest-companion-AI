@@ -31,11 +31,11 @@ import {
   type HistorySort,
   type ZoneHistoryRow
 } from '@shared/zoneHistory'
-import { useModule } from '../../lib/useModule'
-import { EMPTY_PROGRESSION } from '../leveling/progressionDelta'
 import { fmtDuration } from '../leveling/levelChartGeometry'
 import { useStatedLevel } from '../leveling/useStatedLevel'
+import { useCreditedProgression } from '../leveling/useCreditedProgression'
 import { useLootHistory } from '../loot/useLootHistory'
+import { useComboIntervals } from '../profiles/ClassComboData'
 
 const GOALS: readonly { goal: HistoryGoal; label: string }[] = [
   { goal: 'levels', label: 'Leveling' },
@@ -154,18 +154,20 @@ function useLevelField(snap: ProgressionSnap): [string, (v: string) => void] {
 }
 
 export default function MapZoneHistory({ onPick }: { onPick?: (zone: string) => void }): JSX.Element {
-  const live = useModule<ProgressionSnap>('progression') ?? EMPTY_PROGRESSION
+  // Merchant sales credited to where their items dropped (shared/coinAttribution.ts).
+  const live = useCreditedProgression()
   // The fold walks every stretch of the log; it follows the live snapshot a render behind.
   const snap = useDeferredValue(live)
   const loot = useDeferredValue(useLootHistory())
+  const loadouts = useDeferredValue(useComboIntervals())
   const [levelText, setLevelText] = useLevelField(live)
   const [sort, setSort] = useState<HistorySort>('levels')
   const [search, setSearch] = useState('')
   const [best, setBest] = useState(false)
   const level = Number.parseInt(levelText, 10)
   const all = useMemo(
-    () => (Number.isFinite(level) && level > 0 ? zoneHistory({ snap, loot, level }) : []),
-    [snap, loot, level]
+    () => (Number.isFinite(level) && level > 0 ? zoneHistory({ snap, loot, level, loadouts }) : []),
+    [snap, loot, level, loadouts]
   )
   const rows = useMemo(() => rankHistory(all, sort, search, best), [all, sort, search, best])
   return (

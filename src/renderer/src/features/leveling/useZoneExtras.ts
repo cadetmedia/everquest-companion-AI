@@ -3,14 +3,13 @@
 
 import { useMemo } from 'react'
 import type { RangeStats } from '@shared/progressionStats'
-import type { ProgressionSnap } from '@shared/types'
 import { zoneExtras, type ZoneExtra } from '@shared/zoneHistory'
-import { useModule } from '../../lib/useModule'
 import { useLootHistory } from '../loot/useLootHistory'
-import { EMPTY_PROGRESSION } from './progressionDelta'
+import { useCreditedProgression } from './useCreditedProgression'
 
 export function useZoneExtras(stats: RangeStats): ReadonlyMap<string, ZoneExtra> {
-  const snap = useModule<ProgressionSnap>('progression') ?? EMPTY_PROGRESSION
+  // The same credited snapshot the panel's own stats come from (useCreditedProgression.ts).
+  const snap = useCreditedProgression()
   const loot = useLootHistory()
   const { t0, t1 } = stats
   return useMemo(() => zoneExtras(snap, loot, { t0, t1 }), [snap, loot, t0, t1])
