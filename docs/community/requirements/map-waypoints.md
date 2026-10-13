@@ -14,9 +14,9 @@ nothing listed here is removed or narrowed without the owner's word (RULES.md, r
 | 2026-10-13 | owner | Mobs (and other points) can be added to the track list from the normal Maps tab. | built (row bookmark button, right-click on a pin; Tracked section in the sidebar) |
 | 2026-10-13 | owner | The Maps tab and the overlay offer similar functions; the overlay is kept as short and simple as possible. | built (overlay: header, corners, pins, nothing else) |
 | 2026-10-13 | owner | Every mob watched on the Timers tab is part of the map tracking automatically (Maps rings and Tracked list, Map pins overlay). | built (derived from the watch list, placed like the red timer pins; alarm icon in Tracked; unwatching removes it) |
-| 2026-10-13 | owner | The Map pins overlay draws the map the user uses (the same pack as the Maps tab). Replaces the earlier "no map in the overlay" row by the owner's word, now behind a toggle. | open |
-| 2026-10-13 | owner | The overlay shows the points of interest too (mobs, map labels), not only the tracked ones. | open |
-| 2026-10-13 | owner | Toggle chips in the overlay's header area for: the map's lines (walls), points of interest, timers, tracked mobs. | open |
-| 2026-10-13 | owner | A pin's label never runs off the right edge of the overlay; near the edge it ends at the pin instead. | open |
+| 2026-10-13 | owner | The Map pins overlay draws the map the user uses (the same pack as the Maps tab). Replaces the earlier "no map in the overlay" row by the owner's word, now behind a toggle. | built (Map chip) |
+| 2026-10-13 | owner | The overlay shows the points of interest too (mobs, map labels), not only the tracked ones. | built (Points chip: map labels and named mobs) |
+| 2026-10-13 | owner | Toggle chips in the overlay's header area for: the map's lines (walls), points of interest, timers, tracked mobs. | built (Map, Points, Timers, Tracked; shown while unlocked; remembered per machine) |
+| 2026-10-13 | owner | A pin's label never runs off the right edge of the overlay; near the edge it ends at the pin instead. | built |
 | 2026-10-13 | owner | Size the overlay to the game map's parchment and the pins match the game's whole-zone view (one scale, centred). | built (fitExtent) |
-| 2026-10-13 | owner | Zoom and pan never redraw the Maps sidebar; make the map as fast as it can be. | open |
+| 2026-10-13 | owner | Zoom and pan never redraw the Maps sidebar; make the map as fast as it can be. | built (Rathe Mountains, prod build: drag 6.4 s -> 0.24 s, 16 zoom steps 1.9 s -> 0.13 s of main-thread work) |

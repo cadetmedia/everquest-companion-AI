@@ -75,6 +75,13 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   (`onCenter`, `jump`) reads it through a ref, never as a dependency. Twice a dependency on
   `view.scale`/`zoomedIn` broke the memo and cost ~180 ms per wheel step on a 290-row zone.
   Check: a CPU profile of 16 wheel steps shows no MUI (ButtonBase, Tooltip, emotion) frames.
+- Overlay bundle trap: anything the overlay imports that reaches `features/mobs/mobSearch`
+  (`MOB_CATALOG`, 3 MB) lands the catalog in the `conCard` chunk EVERY overlay window loads (even a
+  dynamic import did). The Map pins overlay gets a slim copy over `maps:mobPlaces` instead, and
+  `useZoneTrack.ts` (catalog) is kept out of `useMapTrack.ts` (overlay). Check after a build:
+  `grep -c 'Sandgiant Husam' out*/renderer/assets/conCard-*.js` must be 0.
+- The Map tab's viewport state lives in `MapTab`, below `MapsTabs`: MUI Tabs re-measures its
+  indicator (`getBoundingClientRect`) on every render, so the tab bar must not render per frame.
 - Locked overlays are click-through except the header strip, so the pin overlay's clicks work
   only unlocked. Open: per-pin capture while locked.
 
