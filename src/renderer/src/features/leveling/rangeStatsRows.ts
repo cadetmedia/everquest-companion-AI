@@ -46,6 +46,8 @@ import {
   type BasisRead,
   type RateBasis
 } from '../../../../shared/rateBasis'
+import type { ZoneExtra } from '@shared/zoneHistory'
+import { zoneIdKey } from '../../../../shared/zoneScope'
 import { formatAaRate, formatKillRate, formatLevelRate, formatPlatRate, formatPointRate } from '../../lib/formatRate'
 import { fmtDuration } from './levelChartGeometry'
 import { zoneColor } from './zoneBands'
@@ -54,7 +56,18 @@ import { zoneColor } from './zoneBands'
 export const NONE = '-'
 
 /** Which column the per-zone table is ordered by. */
-export type ZoneSort = 'levels' | 'time'
+export type ZoneSort =
+  | 'levels'
+  | 'time'
+  | 'zone'
+  | 'levelsTotal'
+  | 'kills'
+  | 'killsPerHour'
+  | 'coin'
+  | 'coinPerHour'
+  | 'aa'
+  | 'motes'
+  | 'deaths'
 
 export interface ZoneStatRow {
   /** React key + stable identity: the row's raw zone name, which `rangeStats` already made
@@ -94,6 +107,10 @@ export interface ZoneStatRow {
   /** coin received here, in platinum: '1.25pp'. */
   coin: string
   deaths: number
+  /** AA points, coin and motes per hour on the row's own hour, or the em-dash (owner, 2026-10-13). */
+  aaPerHour: string
+  coinPerHour: string
+  motesPerHour: string
 }
 
 /** One hero card's text. The icon and accent stay in the component; these are the words. */
@@ -145,12 +162,48 @@ function zoneDetail(z: ZoneRangeRow): string | null {
   return z.offlineMs > 0 ? `${active} · ${fmtDuration(z.offlineMs)} offline` : active
 }
 
+/** An amount per active ms, for ordering only; a row with no active time sorts last. */
+function perActive(amount: number, z: ZoneRangeRow): number {
+  return z.activeMs > 0 ? amount / z.activeMs : -1
+}
+
+/** The number a column sorts on, most first (owner ask, 2026-10-13: sort by coin and the rest). */
+const SORT_VALUE: Partial<Record<ZoneSort, (z: ZoneRangeRow, extra: ZoneExtra | undefined) => number>> = {
+  levelsTotal: (z) => z.levelEquiv,
+  kills: (z) => z.kills,
+  killsPerHour: (z) => z.killsPerHourActive ?? -1,
+  coin: (z) => z.coinCopper,
+  coinPerHour: (z) => perActive(z.coinCopper, z),
+  aa: (z, e) => perActive(e?.aaPoints ?? 0, z),
+  motes: (z, e) => perActive(e?.motes ?? 0, z),
+  deaths: (z) => z.deaths
+}
+
+function sortValue(z: ZoneRangeRow, sort: ZoneSort, extras: ReadonlyMap<string, ZoneExtra>): number {
+  return SORT_VALUE[sort]?.(z, extras.get(zoneIdKey(z.zone))) ?? 0
+}
+
+function comparator(
+  sort: ZoneSort,
+  extras: ReadonlyMap<string, ZoneExtra>
+): (a: ZoneRangeRow, b: ZoneRangeRow) => number {
+  if (sort === 'time') return byTime
+  if (sort === 'levels') return byLevels
+  if (sort === 'zone') return (a, b) => a.zone.localeCompare(b.zone)
+  return (a, b) => sortValue(b, sort, extras) - sortValue(a, sort, extras) || byLevels(a, b)
+}
+
 /** A zone row's own spans, in the shape `basisRead` takes: its wall clock is its `spanMs`. */
 function zoneRead(z: ZoneRangeRow, basis: RateBasis): BasisRead {
   return basisRead(basis, { durationMs: z.spanMs, activeMs: z.activeMs, offlineMs: z.offlineMs })
 }
 
-function shapeZone(z: ZoneRangeRow, basis: RateBasis): ZoneStatRow {
+/** `amount` per hour of the row's hour in force, as text; the em-dash when it cannot carry one. */
+function perRowHour(amount: number, read: BasisRead, fmt: (v: number) => string): string {
+  return read.measurable && read.ms > 0 ? fmt(amount / (read.ms / 3_600_000)) : NONE
+}
+
+function shapeZone(z: ZoneRangeRow, basis: RateBasis, extras: ReadonlyMap<string, ZoneExtra>): ZoneStatRow {
   // EVERY RATE ON THE ROW OVER ONE HOUR (JOS-288), and the gate is the row's own: a camp you passed
   // through for ninety seconds states its time and its counts and refuses its rates, while the camp
   // above it that you farmed all evening keeps both of its numbers.
@@ -175,7 +228,20 @@ function shapeZone(z: ZoneRangeRow, basis: RateBasis): ZoneStatRow {
     killsPerHour: rate(pickRate(read, z.killsPerHourActive, z.killsPerHourWall), formatKillRate),
     unstated: z.expUnstated,
     coin: platText(z.coinCopper),
-    deaths: z.deaths
+    deaths: z.deaths,
+    ...extraRates(z, read, extras.get(zoneIdKey(z.zone)))
+  }
+}
+
+function extraRates(
+  z: ZoneRangeRow,
+  read: BasisRead,
+  extra: ZoneExtra | undefined
+): Pick<ZoneStatRow, 'aaPerHour' | 'coinPerHour' | 'motesPerHour'> {
+  return {
+    aaPerHour: perRowHour(extra?.aaPoints ?? 0, read, (v) => v.toFixed(2)),
+    coinPerHour: perRowHour(z.coinCopper / 1000, read, (v) => v.toFixed(1)),
+    motesPerHour: perRowHour(extra?.motes ?? 0, read, (v) => v.toFixed(2))
   }
 }
 
@@ -190,10 +256,11 @@ function shapeZone(z: ZoneRangeRow, basis: RateBasis): ZoneStatRow {
 export function zoneStatRows(
   zones: readonly ZoneRangeRow[],
   sort: ZoneSort = 'levels',
-  basis: RateBasis = RATE_BASIS_DEFAULT
+  basis: RateBasis = RATE_BASIS_DEFAULT,
+  extras: ReadonlyMap<string, ZoneExtra> = new Map()
 ): ZoneStatRow[] {
   // eslint-disable-next-line eqc/no-domain-munging -- JOS-459 cutover ledger item 3: no served view source answers this yet, so the renderer still derives ZoneRangeRow. Becomes a view descriptor when the source lands.
-  return [...zones].sort(sort === 'time' ? byTime : byLevels).map((z) => shapeZone(z, basis))
+  return [...zones].sort(comparator(sort, extras)).map((z) => shapeZone(z, basis, extras))
 }
 
 /** The kills card's caption. The pet half is INFERRED — pet binding is learned from the

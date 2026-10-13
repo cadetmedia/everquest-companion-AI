@@ -18,8 +18,9 @@
 import { useState, type JSX, type ReactNode } from 'react'
 import { Tab, Tabs } from '@mui/material'
 import MapZoneAdvice from './MapZoneAdvice'
+import MapZoneHistory from './MapZoneHistory'
 
-type MapsTab = 'map' | 'advice'
+type MapsTab = 'map' | 'advice' | 'history'
 
 export default function MapsTabs({
   onPick,
@@ -42,8 +43,16 @@ export default function MapsTabs({
       >
         <Tab value="map" label="Map" data-testid="maps-tab-map" />
         <Tab value="advice" label="Where to level" data-testid="maps-tab-advice" />
+        <Tab value="history" label="Your best zones" data-testid="maps-tab-history" />
       </Tabs>
-      {tab === 'advice' ? (
+      {tab === 'history' ? (
+        <MapZoneHistory
+          onPick={(zone) => {
+            onPick(zone)
+            setTab('map')
+          }}
+        />
+      ) : tab === 'advice' ? (
         <MapZoneAdvice
           onPick={(zone) => {
             onPick(zone)
