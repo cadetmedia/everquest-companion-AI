@@ -161,3 +161,20 @@ test('a camp with too few kills per window claims no best stretch', () => {
   assert.equal(f?.peak.coin, 0)
   assert.equal(f?.peak.kills, 0)
 })
+
+test('a swap back to a higher loadout states its level, which the last ding alone would miss', () => {
+  const s = snap()
+  // Dings say 20, 21, 30; a loadout opening at the third hour states 50 (its /who bracket).
+  const spans = levelSpans(s, [{ startTs: T0 + 2 * HOUR + 30 * MIN, levelLo: 50 }, { startTs: T0, levelLo: null }])
+  assert.deepEqual(spans.map((x) => x.level), [20, 21, 30, 50])
+  const at50 = zoneHistory({ snap: s, loot: LOOT, level: 50, loadouts: [{ startTs: T0 + 2 * HOUR + 30 * MIN, levelLo: 50 }] })
+  assert.deepEqual(at50.map((r) => r.zone), ['The Feerrott'], 'the last half hour is at 50')
+  assert.equal(zoneHistory({ snap: s, loot: LOOT, level: 50 }).length, 0, 'dings alone never reach 50')
+})
+
+test('a loadout whose level went backwards opens at its highest level, not its lowest', () => {
+  const s = snap()
+  const swap = { startTs: T0 + 2 * HOUR + 30 * MIN, levelLo: 12, levelHi: 50, levelRegressed: true }
+  assert.equal(levelSpans(s, [swap]).at(-1)?.level, 50)
+  assert.equal(levelSpans(s, [{ ...swap, levelRegressed: undefined }]).at(-1)?.level, 12)
+})

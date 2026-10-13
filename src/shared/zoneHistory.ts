@@ -39,14 +39,41 @@ export interface LevelSpan {
   level: number
 }
 
-/** The log cut at every stated level. The last stretch runs to the snapshot's end. */
-export function levelSpans(snap: ProgressionSnap): LevelSpan[] {
+/** A class loadout's span as the combo module states it: its start and the lowest level seen in
+ *  it (`/who` rows as well as dings; the shown level is the minimum over the loadout). */
+export interface LoadoutLevel {
+  startTs: number
+  levelLo: number | null
+  levelHi?: number | null
+  /** a lower level came AFTER a higher one inside it (a race swap no detector cut) */
+  levelRegressed?: boolean
+}
+
+/** The level a loadout opened at. Inside one loadout the shown level only rises, so it is the
+ *  lowest seen; when it went backwards (owner, 2026-10-13: a race not yet at 50 delevels you),
+ *  the low came later and the highest is the opening one. */
+function openingLevel(l: LoadoutLevel): number | null {
+  return l.levelRegressed === true ? (l.levelHi ?? l.levelLo) : l.levelLo
+}
+
+/**
+ * The log cut at every stated level: each ding, and each loadout's opening level. DINGS ALONE ARE
+ * NOT ENOUGH (owner report, 2026-10-13): a swap back to a level-50 loadout after levelling another
+ * class to 40 states 50 only in the `/who` bracket, and the last ding would hold the log at 40.
+ * The latest statement wins; the last stretch runs to the snapshot's end.
+ */
+export function levelSpans(snap: ProgressionSnap, loadouts: readonly LoadoutLevel[] = []): LevelSpan[] {
+  const said = snap.levelTs.map((ts, i) => ({ ts, level: snap.levelValue[i] }))
+  for (const l of loadouts) {
+    const level = openingLevel(l)
+    if (level !== null) said.push({ ts: l.startTs, level })
+  }
+  said.sort((a, b) => a.ts - b.ts)
   const out: LevelSpan[] = []
-  const n = snap.levelTs.length
-  for (let i = 0; i < n; i++) {
-    const t0 = snap.levelTs[i]
-    const t1 = i + 1 < n ? snap.levelTs[i + 1] : snap.lastTs
-    if (t1 > t0) out.push({ t0, t1, level: snap.levelValue[i] })
+  for (let i = 0; i < said.length; i++) {
+    const t0 = said[i].ts
+    const t1 = i + 1 < said.length ? said[i + 1].ts : snap.lastTs
+    if (t1 > t0) out.push({ t0, t1, level: said[i].level })
   }
   return out
 }
@@ -326,13 +353,15 @@ export interface ZoneHistoryArgs {
   loot: readonly LootEvent[]
   level: number
   spread?: number
+  /** the class loadouts, whose levels the dings alone miss (see `levelSpans`) */
+  loadouts?: readonly LoadoutLevel[]
 }
 
 /** Every zone you spent active time in within `spread` levels of `level`, unranked. */
 export function zoneHistory(args: ZoneHistoryArgs): ZoneHistoryRow[] {
   const spread = args.spread ?? LEVEL_SPREAD
   const map = new Map<string, Totals>()
-  for (const span of levelSpans(args.snap)) {
+  for (const span of levelSpans(args.snap, args.loadouts)) {
     if (Math.abs(span.level - args.level) > spread) continue
     addSpan(map, args.snap, args.loot, span)
   }
