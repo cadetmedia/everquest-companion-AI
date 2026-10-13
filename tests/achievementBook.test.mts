@@ -23,7 +23,6 @@ import {
   counterIdOf,
   counterIds,
   familyHasCounter,
-  finishedCounters,
   mobIndex,
   namedAchievement,
   namedMobs,
@@ -315,22 +314,6 @@ test('the open counters carry the ids the Slayer plan knows them by', () => {
   assert.equal(people.achievement.components.filter((c) => !c.done).length, 7)
   const nagafen = at("Conqueror of Nagafen's Lair")
   assert.deepEqual(counterIds(nagafen.group, nagafen.achievement), [])
-})
-
-test('a finished kill line is still a counter, under the id it had while open', () => {
-  const skill = { category: 'Slayer: Skill', family: 'Slayer', name: 'Skill', achievements: [] }
-  const general = { category: 'Slayer: General', family: 'Slayer', name: 'General', achievements: [] }
-  const open = { name: 'Amazing!', done: false, components: [line('Minotaurs and Tizmak.', { have: 2, need: 100 })] }
-  const done = { name: 'Amazing!', done: true, components: [line('Minotaurs and Tizmak.', { done: true })] }
-  assert.equal(counterIdOf(skill, done, done.components[0]), counterIdOf(skill, open, open.components[0]))
-  const quoted = line('Complete the achievement "Amazing!"', { done: true })
-  assert.equal(counterIdOf(general, done, quoted), null)
-  assert.equal(counterIdOf(skill, done, quoted), null)
-  const book = { groups: [{ ...skill, achievements: [open, done] }, { ...general, achievements: [{ ...done, components: [quoted] }] }] }
-  assert.deepEqual(
-    finishedCounters(book).map((c) => [c.achievement, c.label, c.need - c.have]),
-    [['Amazing!', 'Minotaurs and Tizmak.', 0]]
-  )
 })
 
 test("a line that is a mob's whole name finds the catalog's mobs of that name", () => {

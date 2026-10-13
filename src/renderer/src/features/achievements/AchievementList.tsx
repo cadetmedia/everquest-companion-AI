@@ -101,6 +101,14 @@ function Controls(props: ListBundle): JSX.Element {
             />
           </span>
         </Tooltip>
+        {props.ctx.pickable && (
+          <Show
+            label={`Checked (${String(props.picked)})`}
+            checked={props.pickedOnly}
+            onChange={props.onPickedOnly}
+            testId="achievements-show-checked"
+          />
+        )}
       </Stack>
       <ToggleButtonGroup
         size="small"

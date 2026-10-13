@@ -85,6 +85,10 @@ export interface ListBundle {
   sort: SortOrder
   /** the "Zone I'm in" switch */
   zoneOnly: boolean
+  /** the "Checked" switch: only rows with a checked counter, so they can be found and unchecked */
+  pickedOnly: boolean
+  /** how many checked counters the dump still lists */
+  picked: number
   /** the zone the log last put the character in, by name; null before it names one */
   zoneName: string | null
   hasComplete: boolean
@@ -93,6 +97,7 @@ export interface ListBundle {
   onComplete: (on: boolean) => void
   onSort: (sort: SortOrder) => void
   onZoneOnly: (on: boolean) => void
+  onPickedOnly: (on: boolean) => void
   ctx: RowContext
 }
 
@@ -185,6 +190,8 @@ export function useAchievementsController(props: SlayerViewProps): AchievementsC
   const slayer = useSlayerController(props, finished)
   const choices = useChoices()
   const { open, complete, sort, zoneOnly } = choices
+  // Not stored: a list that opens on "only what is checked" would read as empty next session.
+  const [pickedOnly, setPickedOnly] = useState(false)
   // THE QUERY IS DEFERRED (owner ask, 2026-10-11: no lag): the box echoes the keystroke at once,
   // and the list follows on the render React fits in after it.
   const query = useDeferredValue(choices.query)
@@ -201,16 +208,19 @@ export function useAchievementsController(props: SlayerViewProps): AchievementsC
     const zone = zoneShortName(zoneName)
     return zone === null ? NOWHERE : zoneHere(zone, slayer.everyZone)
   }, [zoneOnly, zoneName, slayer.everyZone])
-  const sections = useMemo(
-    () =>
-      book === null ? [] : visibleSections(book, index, { scope, query, open, complete, sort, here }),
-    [book, index, scope, query, open, complete, sort, here]
-  )
-  const rows = useMemo(() => listRows(sections), [sections])
   const pickable = useMemo(
     () => book !== null && familyHasCounter(book, scope.family),
     [book, scope.family]
   )
+  const picked = pickable && pickedOnly ? slayer.picks.picks : null
+  const sections = useMemo(
+    () =>
+      book === null
+        ? []
+        : visibleSections(book, index, { scope, query, open, complete, sort, here, picked }),
+    [book, index, scope, query, open, complete, sort, here, picked]
+  )
+  const rows = useMemo(() => listRows(sections), [sections])
   const hasComplete = total.done > 0
   // ONE OBJECT FOR AS LONG AS NOTHING IN IT CHANGES: the rows are memoized on it (AchievementRow).
   const { onOpenMob } = props
@@ -231,7 +241,17 @@ export function useAchievementsController(props: SlayerViewProps): AchievementsC
     hasDump: book !== null,
     readAt,
     rail: { families, total, scope, hasComplete, onScope: choices.onScope },
-    list: { ...choices, rows, shown: shownCount(sections), zoneName, hasComplete, ctx },
+    list: {
+      ...choices,
+      rows,
+      shown: shownCount(sections),
+      zoneName,
+      hasComplete,
+      pickedOnly,
+      picked: slayer.picks.picked,
+      onPickedOnly: setPickedOnly,
+      ctx
+    },
     plan: pickable ? { picks: slayer.picks, zones: slayer.plan } : null
   }
 }

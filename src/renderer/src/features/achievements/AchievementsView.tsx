@@ -63,7 +63,7 @@ function Plan({ picks, zones }: { picks: PickBundle; zones: ZoneListBundle }): J
           disabled={picks.picks.size === 0}
           data-testid="slayer-pick-clear"
         >
-          Clear picks
+          Clear checked ({picks.picked})
         </Button>
       </Stack>
       <Box sx={{ flexGrow: 1, minHeight: 0 }}>
