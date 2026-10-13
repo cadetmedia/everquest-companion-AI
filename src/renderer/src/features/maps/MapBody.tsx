@@ -21,7 +21,7 @@
 // the whole wiki bestiary (crossZone.ts), so "which zone is Ambassador D`Vinn in?" is answerable
 // from the state where nothing is open — which is exactly the state that question gets asked in.
 
-import { useCallback, useEffect, useMemo, useState, type JSX, type ReactNode, type RefObject } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type JSX, type ReactNode, type RefObject } from 'react'
 import { Box, IconButton, Stack } from '@mui/material'
 import ViewSidebarIcon from '@mui/icons-material/ViewSidebar'
 import type { MapData, ZoneShort } from '@shared/maps'
@@ -89,14 +89,19 @@ export function useSearchJump(args: {
   const [marker, setMarker] = useState<Marker | null>(null)
   const [pending, setPending] = useState<JumpTarget | null>(null)
 
+  // The view through a ref: a `jump` rebuilt per zoom step made `onJump` new on every step, and
+  // the memoized sidebar (which takes it) redrew all its rows each time (owner, 2026-10-13).
+  const viewNow = useRef({ zoomedIn, scale: view.scale })
+  viewNow.current = { zoomedIn, scale: view.scale }
   const jump = useCallback(
     (x: number, y: number) => {
       // Fitted ⇒ a POI is a couple of pixels wide, so the jump also zooms in; already zoomed ⇒
       // keep the scale the user chose and only re-centre.
-      centerOn(x, y, zoomedIn ? undefined : view.scale * JUMP_ZOOM)
+      const v = viewNow.current
+      centerOn(x, y, v.zoomedIn ? undefined : v.scale * JUMP_ZOOM)
       setMarker({ x, y, at: Date.now() })
     },
-    [centerOn, zoomedIn, view.scale]
+    [centerOn]
   )
 
   const onJump = useCallback(
