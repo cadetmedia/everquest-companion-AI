@@ -21,6 +21,7 @@ import { EMPTY_RESPAWN_SNAP, type RespawnSnap } from '@shared/respawn'
 import { zoneShortName } from '@shared/zones'
 import { OverlayHeader } from './OverlayHeader'
 import { useOverlayChrome } from './useOverlayChrome'
+import { FOOTER_ROW } from './overlayScale'
 import { useOverlayModule } from './useOverlayModule'
 import { TRACK_COLOR, trackedIn, viewFit, type ExtentFit, type TrackedPin, type TrackedPoint, type ZoneExtent } from '../features/maps/mapTrack'
 import { useMapTrack } from '../features/maps/useMapTrack'
@@ -160,22 +161,40 @@ function Corners({ fit }: { fit: ExtentFit }): JSX.Element {
   )
 }
 
-/** The header, and the layer chips under it while unlocked. Shown unlocked, or while hovered. */
-function PinsChrome({
-  heading,
-  count,
+/** The footer bar, unlocked only: the layer chips, Fit and the background slider, at the bottom
+ *  like the XP window's controls, so the header stays one slim line over the map (owner,
+ *  2026-10-13). */
+function PinsFooter({
   layers,
   onToggle,
   zoom,
   bg,
-  chrome
+  noDrag
 }: {
-  heading: string
-  count: number
   layers: PinLayers
   onToggle: (k: keyof PinLayers) => void
   zoom: OverlayViewControls
   bg: [number, (v: number) => void]
+  noDrag: React.CSSProperties
+}): JSX.Element {
+  return (
+    <div
+      data-testid="map-pins-footer"
+      style={{ ...FOOTER_ROW, position: 'absolute', left: 0, right: 0, bottom: 0, padding: 0, background: 'rgba(14,17,21,0.78)' }}
+    >
+      <LayerChips layers={layers} onToggle={onToggle} onFit={zoom.reset} zoomed={zoom.view != null} bg={bg[0]} onBg={bg[1]} noDrag={noDrag} />
+    </div>
+  )
+}
+
+/** The header. Shown unlocked, or while hovered. */
+function PinsChrome({
+  heading,
+  count,
+  chrome
+}: {
+  heading: string
+  count: number
   chrome: ReturnType<typeof useOverlayChrome>
 }): JSX.Element | null {
   const { locked, hovering, toggleLock, capture, dragRegion, noDrag } = chrome
@@ -190,7 +209,6 @@ function PinsChrome({
         tailTitle="Tracked points in this zone. Size the window to the game map's parchment."
         chrome={{ locked, hovering, dragRegion, noDrag, toggleLock, capture }}
       />
-      {!locked && <LayerChips layers={layers} onToggle={onToggle} onFit={zoom.reset} zoomed={zoom.view != null} bg={bg[0]} onBg={bg[1]} noDrag={noDrag} />}
     </div>
   )
 }
@@ -236,9 +254,10 @@ export default function MapPinsOverlay(): JSX.Element {
           <MapPinsField ext={ext} fit={fit} w={w} h={h} data={data} layers={layers} mobs={mobs} timers={timers} tracked={tracked} nowMs={nowMs} onCopy={onCopy} />
         </>
       )}
-      <PinsChrome heading={who.zone ?? 'Map pins'} count={tracked.length} layers={layers} onToggle={toggleLayer} zoom={zoom} bg={bg} chrome={chrome} />
+      <PinsChrome heading={who.zone ?? 'Map pins'} count={tracked.length} chrome={chrome} />
       {!locked && note != null && <Note text={note} />}
-      {copied != null && <Note text={copied} bottom={CORNER_PX + 2} />}
+      {!locked && <PinsFooter layers={layers} onToggle={toggleLayer} zoom={zoom} bg={bg} noDrag={chrome.noDrag} />}
+      {copied != null && <Note text={copied} bottom={locked ? CORNER_PX + 2 : 34} />}
     </div>
   )
 }
