@@ -29,6 +29,7 @@ import HandshakeIcon from '@mui/icons-material/Handshake'
 import OutputKindLine from '../../components/OutputKindLine'
 import { useWindowedRows, type WindowedRows } from '../../lib/useWindowedRows'
 import { FactionTableHead, FilterBar, WorkFilterControls } from './FactionControls'
+import { LadderLegend } from './FactionLadder'
 import FactionRow, { FactionPadRow, ROW_HEIGHT } from './FactionRow'
 import RaceUnlocksPanel from './RaceUnlocksPanel'
 import { NO_DERIVED } from './factionDerive'
@@ -83,6 +84,7 @@ export default function FactionsView(props: FactionsViewProps): JSX.Element {
           <RaceUnlocksPanel races={c.raceUnlocks} rows={c.all} onFind={c.reveal} />
           <WorkFilterControls {...c.work} />
           <FilterBar {...c.bar} />
+          <LadderLegend />
           <Box
             ref={scrollRef}
             data-testid="factions-scroll"

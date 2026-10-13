@@ -24,7 +24,7 @@ import ChipMultiSelect from '../../components/ChipMultiSelect'
 import type { RowSort, SortKey } from './factionDerive'
 import type { SlotFilter } from './factionFilters'
 
-/** The table's header: three sortable columns (Faction, Regard, Standing) and the bar's. */
+/** The table's header: three sortable columns (Faction, Regard, Standing) and the ladder's. */
 export function FactionTableHead({
   sort,
   onSort
@@ -52,7 +52,7 @@ export function FactionTableHead({
         {cell('name', 'Faction')}
         {cell('regard', 'Regard')}
         {cell('standing', 'Standing', 'right')}
-        <TableCell>Toward max</TableCell>
+        <TableCell>On the ladder</TableCell>
       </TableRow>
     </TableHead>
   )
