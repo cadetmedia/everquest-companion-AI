@@ -13,6 +13,7 @@ import {
   bookIndex,
   bookTally,
   familyHasCounter,
+  finishedCounters,
   mobIndex,
   railFamilies,
   shownCount,
@@ -180,7 +181,8 @@ function shownIn(book: AchievementBook | null, scope: Scope): Scope {
 
 export function useAchievementsController(props: SlayerViewProps): AchievementsController {
   const { book, readAt, ready } = useAchievementBook()
-  const slayer = useSlayerController(props)
+  const finished = useMemo(() => (book === null ? [] : finishedCounters(book)), [book])
+  const slayer = useSlayerController(props, finished)
   const choices = useChoices()
   const { open, complete, sort, zoneOnly } = choices
   // THE QUERY IS DEFERRED (owner ask, 2026-10-11: no lag): the box echoes the keystroke at once,

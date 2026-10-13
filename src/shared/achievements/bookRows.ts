@@ -31,7 +31,12 @@ import {
   type BookGroup
 } from '../outputs/achievementBook'
 import { CLASS_UNLOCK_CONFIRM_PREFIX, CLASS_UNLOCK_TOKEN_ROW } from '../outputs/achievements'
-import { SLAYER_PREFIX, achievementKey } from '../outputs/slayer'
+import {
+  SLAYER_GENERAL,
+  SLAYER_PREFIX,
+  achievementKey,
+  type SlayerCounter
+} from '../outputs/slayer'
 import { counterId } from '../slayer/slayerPlan'
 import { zoneShortName, zoneShortNameFromCatalog } from '../zones'
 
@@ -147,18 +152,38 @@ export function progressText(a: BookAchievement): string {
 
 // ---- the Slayer counters -------------------------------------------------------------------------
 
-/** The id the Slayer plan knows an open counter by, or null for a line that is not one. */
-export function counterIdOf(group: BookGroup, a: BookAchievement, c: BookComponent): string | null {
-  if (!group.category.startsWith(SLAYER_PREFIX)) return null
-  if (c.done || c.have === undefined || c.need === undefined) return null
-  const counter = {
-    group: group.name,
-    achievement: a.name,
-    label: c.line,
-    have: c.have,
-    need: c.need
+/**
+ * The kill counter a line is, open or finished, or null for a line that is not one. A FINISHED
+ * line prints no figures (`C		Minotaurs and Tizmak.`) and is stated as one of one, under the id
+ * it had while open, so it can still be picked to see where its mobs are (owner ask, 2026-10-12).
+ */
+export function slayerCounterOf(
+  group: BookGroup,
+  a: BookAchievement,
+  c: BookComponent
+): SlayerCounter | null {
+  if (!group.category.startsWith(SLAYER_PREFIX) || group.name === SLAYER_GENERAL) return null
+  const counter = { group: group.name, achievement: a.name, label: c.line }
+  if (c.have !== undefined && c.need !== undefined && !c.done) {
+    return { ...counter, have: c.have, need: c.need }
   }
-  return counterId(counter)
+  const quoted = componentSubject(c) !== componentText(c)
+  return c.done && !quoted ? { ...counter, have: 1, need: 1 } : null
+}
+
+/** The id the Slayer plan knows a counter by, or null for a line that is not one. */
+export function counterIdOf(group: BookGroup, a: BookAchievement, c: BookComponent): string | null {
+  const counter = slayerCounterOf(group, a, c)
+  return counter === null ? null : counterId(counter)
+}
+
+/** Every finished kill counter of the book, which the dump's own record leaves out. */
+export function finishedCounters(book: AchievementBook): SlayerCounter[] {
+  return book.groups.flatMap((g) =>
+    g.achievements.flatMap((a) =>
+      a.components.flatMap((c) => (c.done ? (slayerCounterOf(g, a, c) ?? []) : []))
+    )
+  )
 }
 
 export function counterIds(group: BookGroup, a: BookAchievement): string[] {
