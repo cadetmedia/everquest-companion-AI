@@ -33,6 +33,7 @@ import { windowItemRows } from './lootRates'
  *             measurements).
  *   'eta'   — what is next: time to the level, or (at cap) the inferred wait for the next AA.
  *   'motes' — motes per hour, one line per mote type seen in the slice.
+ *   'coin'  — platinum per hour received in the slice, and the total (owner ask, 2026-10-13).
  *
  * SO A CHECKLIST ENTRY IS NOT A ROW COUNT. `XpRowId` is what a user switches off; how many lines
  * that draws is the window's business (`overlay/xpRows.ts`), and it changes with what the log has
@@ -43,7 +44,7 @@ import { windowItemRows } from './lootRates'
  * A CLOSED UNION, because it is persisted: a stored id this build does not know is dropped rather
  * than rendered, and a future row cannot be turned on by a hand-edited store.
  */
-export const XP_ROW_IDS = ['xp', 'eta', 'motes'] as const
+export const XP_ROW_IDS = ['xp', 'eta', 'motes', 'coin'] as const
 export type XpRowId = (typeof XP_ROW_IDS)[number]
 
 /**
