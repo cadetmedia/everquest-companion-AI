@@ -181,6 +181,18 @@ function Row({
   )
 }
 
+/** A row's buttons: copy, track, and (a mob) its Timers toggle. */
+function rowActions(acts: Pick<MapMobPaneProps, 'track' | 'onCopy'>, r: MapPaneRow): RowActions {
+  const { track, onCopy } = acts
+  return {
+    tracked: track.ids.has(r.id),
+    auto: track.autoIds.has(r.id),
+    onToggleTrack: track.toggle,
+    onCopy,
+    ...(r.kind === 'mob' ? { timed: track.isTimed(r.name), onToggleTimer: track.toggleTimer } : {})
+  }
+}
+
 /** The heading that names an AUTHORITY. Every list in this pane sits under exactly one. */
 function SectionHead({ title, note }: { title: string; note: string }): JSX.Element {
   return (
@@ -231,7 +243,7 @@ function Section({
               row={r}
               selected={r.id === selectedId}
               wished={wishes?.get(r.id)}
-              actions={{ tracked: acts.track.ids.has(r.id), auto: acts.track.autoIds.has(r.id), onToggleTrack: acts.track.toggle, onCopy: acts.onCopy }}
+              actions={rowActions(acts, r)}
               onSelect={onSelect}
               onOpenMob={onOpenMob}
               onOpenLoot={onOpenLoot}

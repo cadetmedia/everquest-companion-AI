@@ -13,6 +13,8 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import BookmarkIcon from '@mui/icons-material/Bookmark'
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder'
+import AlarmIcon from '@mui/icons-material/Alarm'
+import AlarmAddIcon from '@mui/icons-material/AlarmAdd'
 import { rowTarget, type MapPaneRow } from './mobPins'
 import { TRACK_COLOR } from './mapTrack'
 // The app's one item-name link span (dotted underline, hand only when routed) — the same node the
@@ -92,12 +94,26 @@ export interface RowActions {
   tracked: boolean
   /** Tracked because the Timers tab watches it; the bookmark cannot untrack it. */
   auto?: boolean
+  /** On the Timers tab, and the button that adds or removes it (mob rows only). */
+  timed?: boolean
+  onToggleTimer?: (row: MapPaneRow) => void
   onToggleTrack: (row: MapPaneRow) => void
   onCopy: (p: { x: number; y: number; z?: number }, what?: string) => void
 }
 
+/** Add the mob to Timers (and track it), or take it off Timers. */
+function TimerButton({ timed, onClick }: { timed: boolean; onClick: () => void }): JSX.Element {
+  return (
+    <Tooltip title={timed ? 'On the Timers tab - click to remove the timer' : 'Add a respawn timer (also tracks it on the map)'}>
+      <IconButton size="small" data-testid="maps-pane-timer" aria-pressed={timed} onClick={onClick}>
+        {timed ? <AlarmIcon sx={{ fontSize: 15, color: TRACK_COLOR }} /> : <AlarmAddIcon sx={{ fontSize: 15 }} />}
+      </IconButton>
+    </Tooltip>
+  )
+}
+
 function trackTip(a: RowActions): string {
-  if (a.auto === true) return 'Tracked because it is watched on the Timers tab; unwatch it there to untrack'
+  if (a.auto === true) return 'Tracked because it is on the Timers tab; remove the timer to untrack'
   return a.tracked ? 'Stop tracking' : 'Track: ring it on the map and show it on the Map pins overlay'
 }
 
@@ -147,6 +163,9 @@ export function WithRowActions({
                 {actions.tracked ? <BookmarkIcon sx={{ fontSize: 15, color: TRACK_COLOR }} /> : <BookmarkBorderIcon sx={{ fontSize: 15 }} />}
               </IconButton>
             </Tooltip>
+          )}
+          {row.kind === 'mob' && actions.onToggleTimer != null && (
+            <TimerButton timed={actions.timed === true} onClick={() => { actions.onToggleTimer?.(row) }} />
           )}
           {onOpen != null && (
             <Tooltip title="Open this mob's page">
