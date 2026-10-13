@@ -67,11 +67,13 @@ function openingLevel(l: LoadoutLevel): number | null {
 export function levelSpans(snap: ProgressionSnap, loadouts: readonly LoadoutLevel[] = []): LevelSpan[] {
   const said = snap.levelTs.map((ts, i) => ({ ts, level: snap.levelValue[i] }))
   for (const l of loadouts) {
-    const level = openingLevel(l)
+    // A loadout whose level the log never stated is at NO known level (owner, 2026-10-13: 50,
+    // swap to 10, ding 11, swap to 40...): its time is left out rather than given the last one.
+    const level = openingLevel(l) ?? Number.NaN
     // From the LATEST the swap can have happened (owner report, 2026-10-13: Plane of Hate listed
     // at level 10). The best-estimate start can fall back into the old loadout's time, and a
     // fresh class's low level would then be laid over hours played at 50.
-    if (level !== null) said.push({ ts: Math.max(l.startTs, l.startHi ?? l.startTs), level })
+    said.push({ ts: Math.max(l.startTs, l.startHi ?? l.startTs), level })
   }
   said.sort((a, b) => a.ts - b.ts)
   const out: LevelSpan[] = []
@@ -367,7 +369,7 @@ export function zoneHistory(args: ZoneHistoryArgs): ZoneHistoryRow[] {
   const spread = args.spread ?? LEVEL_SPREAD
   const map = new Map<string, Totals>()
   for (const span of levelSpans(args.snap, args.loadouts)) {
-    if (Math.abs(span.level - args.level) > spread) continue
+    if (!Number.isFinite(span.level) || Math.abs(span.level - args.level) > spread) continue
     addSpan(map, args.snap, args.loot, span)
   }
   map.delete(zoneIdKey(UNKNOWN))

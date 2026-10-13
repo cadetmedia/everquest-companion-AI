@@ -165,7 +165,7 @@ test('a camp with too few kills per window claims no best stretch', () => {
 test('a swap back to a higher loadout states its level, which the last ding alone would miss', () => {
   const s = snap()
   // Dings say 20, 21, 30; a loadout opening at the third hour states 50 (its /who bracket).
-  const spans = levelSpans(s, [{ startTs: T0 + 2 * HOUR + 30 * MIN, levelLo: 50 }, { startTs: T0, levelLo: null }])
+  const spans = levelSpans(s, [{ startTs: T0 + 2 * HOUR + 30 * MIN, levelLo: 50 }])
   assert.deepEqual(spans.map((x) => x.level), [20, 21, 30, 50])
   const at50 = zoneHistory({ snap: s, loot: LOOT, level: 50, loadouts: [{ startTs: T0 + 2 * HOUR + 30 * MIN, levelLo: 50 }] })
   assert.deepEqual(at50.map((r) => r.zone), ['The Feerrott'], 'the last half hour is at 50')
@@ -185,4 +185,12 @@ test("a loadout's level applies from the latest its swap can have happened, not 
   const fresh = { startTs: T0 + 2 * HOUR, startHi: T0 + 2 * HOUR + 45 * MIN, levelLo: 12 }
   const spans = levelSpans(s, [fresh])
   assert.deepEqual(spans.slice(-2).map((x) => [x.level, (x.t1 - x.t0) / MIN]), [[30, 45], [12, 15]])
+})
+
+test('a swap to a loadout whose level the log never stated is at no known level, and left out', () => {
+  const s = snap()
+  const unstated = { startTs: T0 + 2 * HOUR + 30 * MIN, levelLo: null }
+  assert.ok(Number.isNaN(levelSpans(s, [unstated]).at(-1)?.level))
+  const at30 = zoneHistory({ snap: s, loot: LOOT, level: 30, spread: 0, loadouts: [unstated] })
+  assert.equal(at30[0].activeMs, 30 * MIN, 'only the half hour before the swap counts at 30')
 })
