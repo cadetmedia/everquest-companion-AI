@@ -32,7 +32,6 @@ import { TAIL_MS, sliceDurationMs, type SliceId, type SliceRange, type Timeslice
 // narrowed by a drag when there is one. Nothing here re-derives a rate.
 import { scopedStats, type ScopedStats } from './windowScope'
 import { useChartSelection } from './useChartSelection'
-import { EMPTY_PROGRESSION } from './progressionDelta'
 import { RangeStatsPanel } from './RangeStatsPanel'
 import { comboSource } from './comboAdapter'
 import { useComboIntervals } from '../profiles/ClassComboData'
@@ -58,6 +57,7 @@ import { LedgerColumn, type FeedItem } from './LedgerColumn'
 // window; since JOS-75 it reads the tab's own SCOPE, like every other number here, and states
 // which one it got. The Overview card keeps its hour — that surface has no timescale to follow.
 import { AaPacePanel } from './AaPacePanel'
+import { useCreditedProgression } from './useCreditedProgression'
 
 /**
  * Cumulative AA gained. Deliberately NOT the earned headline: this is Σ of the gain
@@ -476,7 +476,8 @@ export default function LevelingView({
   // The SECOND module this view reads: the capped, range-queryable analytics series behind
   // the zone bands and the range panel. Deliberately separate from `leveling`, whose
   // contract is "everything, forever" (see src/main/modules/progression.ts).
-  const prog = useModule<ProgressionSnap>('progression') ?? EMPTY_PROGRESSION
+  // Merchant sales credited to where their items dropped (useCreditedProgression.ts).
+  const prog = useCreditedProgression()
   // The THIRD module, through its own hook: `character`, for the stated level fact (JOS-192). It
   // is the only one carrying your own `/who` row's number, which is what corrects the level after
   // a loadout swap the log never announced.
