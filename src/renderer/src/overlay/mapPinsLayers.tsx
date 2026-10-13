@@ -38,6 +38,35 @@ function load(): PinLayers {
   }
 }
 
+const BG_KEY = 'eq.maps.overlayBg'
+/** The overlay's own backdrop, 0 (clear) to 0.9. Its own, not the shared overlay transparency:
+ *  that one starts at 0.72 and stops at 0.1, which would hide the game map it sits on. */
+export const BG_MAX = 0.9
+const BG_DEFAULT = 0.2
+
+function loadBg(): number {
+  try {
+    const v = Number(localStorage.getItem(BG_KEY))
+    return localStorage.getItem(BG_KEY) != null && Number.isFinite(v) ? Math.min(BG_MAX, Math.max(0, v)) : BG_DEFAULT
+  } catch {
+    return BG_DEFAULT
+  }
+}
+
+export function usePinsBg(): [number, (v: number) => void] {
+  const [bg, setBg] = useState<number>(loadBg)
+  const set = useCallback((v: number) => {
+    const next = Math.min(BG_MAX, Math.max(0, v))
+    setBg(next)
+    try {
+      localStorage.setItem(BG_KEY, String(next))
+    } catch {
+      // A blocked store keeps the value for this session only.
+    }
+  }, [])
+  return [bg, set]
+}
+
 export function usePinLayers(): [PinLayers, (k: keyof PinLayers) => void] {
   const [layers, setLayers] = useState<PinLayers>(load)
   const toggle = useCallback((k: keyof PinLayers) => {
@@ -71,6 +100,8 @@ export function LayerChips({
   onToggle,
   onFit,
   zoomed,
+  bg,
+  onBg,
   noDrag
 }: {
   layers: PinLayers
@@ -78,10 +109,12 @@ export function LayerChips({
   /** Back to the whole-zone fit after a manual zoom; shown only while zoomed. */
   onFit: () => void
   zoomed: boolean
+  bg: number
+  onBg: (v: number) => void
   noDrag: CSSProperties
 }): JSX.Element {
   return (
-    <div style={{ display: 'flex', gap: 4, padding: '2px 6px', flexWrap: 'wrap', ...noDrag }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '2px 6px', flexWrap: 'wrap', ...noDrag }}>
       {CHIPS.map(([k, label]) => (
         <button
           key={k}
@@ -101,6 +134,22 @@ export function LayerChips({
           Fit
         </button>
       )}
+      <span style={{ display: 'flex', alignItems: 'center', gap: 4, font: '600 10px Inter, "Segoe UI", system-ui, sans-serif', color: 'rgba(255,255,255,0.7)' }}>
+        bg
+        <input
+          type="range"
+          aria-label={`Background (${String(Math.round(bg * 100))}%)`}
+          data-testid="map-pins-bg"
+          min={0}
+          max={BG_MAX}
+          step={0.02}
+          value={bg}
+          onChange={(e) => {
+            onBg(Number(e.target.value))
+          }}
+          style={{ width: 64, accentColor: TRACK_COLOR, height: 4 }}
+        />
+      </span>
     </div>
   )
 }
