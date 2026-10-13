@@ -151,5 +151,10 @@ export function useZoneTravel(stem: string | null, zoneName: string | null, data
 
   const rides = useMemo(() => travelSeams(exits, eraOnly), [exits, eraOnly])
 
-  return { band, exits, rides, landings: landed, ready: ports !== null, eraOnly, setEraOnly: saveTravelEra }
+  // One object per change, not per render: the memoized travel card would redraw every map frame.
+  const ready = ports !== null
+  return useMemo(
+    () => ({ band, exits, rides, landings: landed, ready, eraOnly, setEraOnly: saveTravelEra }),
+    [band, exits, rides, landed, ready, eraOnly]
+  )
 }

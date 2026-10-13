@@ -17,7 +17,7 @@
 // restored from a previous session is NOT a question anyone just asked — snapping the viewport on
 // mount would fight the zone's own fit and move a map the user never touched.
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ZoneShort } from '@shared/maps'
 import { JUMP_ZOOM } from './MapBody'
 import { mapFromLoc, type EqLoc } from './mapGeometry'
@@ -54,12 +54,17 @@ export function useLocMarker(zone: ZoneShort | null, vp: MapViewport): LocMarker
 
   // Fitted ⇒ a marker is a few pixels from everything else, so the jump also zooms in; already
   // zoomed ⇒ keep the scale the user chose. Identical to the search jump, on purpose.
+  // The view through a ref, so these callbacks keep one identity while the map pans and zooms and
+  // the memoized toolbar that takes them does not redraw every frame.
+  const viewNow = useRef({ zoomedIn, scale: view.scale })
+  viewNow.current = { zoomedIn, scale: view.scale }
   const goTo = useCallback(
     (loc: EqLoc) => {
       const p = mapFromLoc(loc)
-      centerOn(p.x, p.y, zoomedIn ? undefined : view.scale * JUMP_ZOOM)
+      const v = viewNow.current
+      centerOn(p.x, p.y, v.zoomedIn ? undefined : v.scale * JUMP_ZOOM)
     },
-    [centerOn, zoomedIn, view.scale]
+    [centerOn]
   )
 
   const place = useCallback(

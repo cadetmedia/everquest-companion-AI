@@ -28,7 +28,7 @@
 // devicePixelRatio is handled (backing store scaled, CSS size in px, ctx pre-scaled). Skipping
 // it is the difference between a crisp map and a blurry one on every modern display.
 
-import { useEffect, useRef } from 'react'
+import { useLayoutEffect, useRef } from 'react'
 import type { MapLines } from '@shared/maps'
 import { cullSegments, type LayerMask, type MapView, type ViewRect, type ViewportSize } from './mapGeometry'
 import type { MapViewport } from './useMapViewport'
@@ -167,7 +167,10 @@ export function MapCanvas({ lines, vp, layers, zBand = null, ink = DEFAULT_INK }
   const idxRef = useRef<Uint32Array>(new Uint32Array(0))
 
   const { view, size, rect } = vp
-  useEffect(() => {
+  // A LAYOUT effect, so the lines are painted in the same frame as the labels and pins that the
+  // same view change moved. A plain effect ran after the browser had painted, and on a drag the
+  // labels visibly led the lines by a frame (owner, 2026-10-13).
+  useLayoutEffect(() => {
     const cv = ref.current
     if (!cv || size.w <= 0 || size.h <= 0) return
     if (idxRef.current.length < lines.count) idxRef.current = new Uint32Array(lines.count)
