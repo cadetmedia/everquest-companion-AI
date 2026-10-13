@@ -5,7 +5,7 @@
 // A label near the right edge is drawn on the pin's LEFT, ending at the pin, so it never runs off
 // the window (owner, 2026-10-13).
 
-import { useMemo, type JSX } from 'react'
+import { useMemo, useState, type CSSProperties, type JSX } from 'react'
 import type { MapData, MapPoint } from '@shared/maps'
 import { MapCanvas } from '../features/maps/MapCanvas'
 import { DEFAULT_LAYERS, viewRect } from '../features/maps/mapGeometry'
@@ -34,14 +34,39 @@ interface MarkProps {
   testId: string
 }
 
-/** One mark and its label. The label flips to the left of the mark when it would cross the right edge. */
+function dotStyle(size: number, shape: MarkProps['shape'], color: string, flip: boolean): CSSProperties {
+  return {
+    width: size,
+    height: size,
+    ...(flip ? { marginRight: -size / 2 } : { marginLeft: -size / 2 }),
+    borderRadius: shape === 'dot' ? '50%' : 1,
+    transform: shape === 'diamond' ? 'rotate(45deg)' : undefined,
+    background: color,
+    boxShadow: '0 0 0 1px rgba(0,0,0,0.85)',
+    flexShrink: 0
+  }
+}
+
+/**
+ * One mark and its label. A FAINT mark (a point of interest) shows its name only while hovered:
+ * every name at once buried the zone (owner, 2026-10-13); timers and tracked marks always carry
+ * theirs. The label flips to the left of the mark when it would cross the right edge.
+ */
 function Mark({ at, w, text, color, size, shape, faint = false, onClick, testId }: MarkProps): JSX.Element {
+  const [hot, setHot] = useState(false)
+  const showText = !faint || hot
   const font = faint ? 9 : 10
   const flip = at.px + size + text.length * font * 0.56 + 6 > w
   return (
     <div
       data-testid={testId}
       onClick={onClick}
+      onMouseEnter={() => {
+        setHot(true)
+      }}
+      onMouseLeave={() => {
+        setHot(false)
+      }}
       style={{
         position: 'absolute',
         top: at.py,
@@ -52,22 +77,19 @@ function Mark({ at, w, text, color, size, shape, faint = false, onClick, testId 
         alignItems: 'center',
         gap: 3,
         cursor: 'pointer',
-        opacity: faint ? 0.75 : 1
+        opacity: faint && !hot ? 0.75 : 1,
+        zIndex: hot ? 5 : undefined
       }}
     >
-      <span
-        style={{
-          width: size,
-          height: size,
-          ...(flip ? { marginRight: -size / 2 } : { marginLeft: -size / 2 }),
-          borderRadius: shape === 'dot' ? '50%' : 1,
-          transform: shape === 'diamond' ? 'rotate(45deg)' : undefined,
-          background: color,
-          boxShadow: '0 0 0 1px rgba(0,0,0,0.85)',
-          flexShrink: 0
-        }}
-      />
-      <span style={{ fontSize: font, color: TEXT, textShadow: SHADOW, whiteSpace: 'nowrap', pointerEvents: 'none' }}>{text}</span>
+      <span style={dotStyle(size, shape, color, flip)} />
+      {showText && (
+        <span
+          data-testid="map-pins-text"
+          style={{ fontSize: font, color: TEXT, textShadow: SHADOW, whiteSpace: 'nowrap', pointerEvents: 'none' }}
+        >
+          {text}
+        </span>
+      )}
     </div>
   )
 }
