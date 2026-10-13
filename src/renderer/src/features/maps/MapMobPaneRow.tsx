@@ -90,8 +90,15 @@ export function rowCaption(
 /** What a row's action buttons act on: copy its /waypoint, put it on the track list. */
 export interface RowActions {
   tracked: boolean
+  /** Tracked because the Timers tab watches it; the bookmark cannot untrack it. */
+  auto?: boolean
   onToggleTrack: (row: MapPaneRow) => void
   onCopy: (p: { x: number; y: number; z?: number }, what?: string) => void
+}
+
+function trackTip(a: RowActions): string {
+  if (a.auto === true) return 'Tracked because it is watched on the Timers tab; unwatch it there to untrack'
+  return a.tracked ? 'Stop tracking' : 'Track: ring it on the map and show it on the Map pins overlay'
 }
 
 /** Where a row's copy goes: a label's own point with its elevation, a mob's first spawn point. */
@@ -130,7 +137,7 @@ export function WithRowActions({
             </Tooltip>
           )}
           {target != null && (
-            <Tooltip title={actions.tracked ? 'Stop tracking' : 'Track: ring it on the map and show it on the Map pins overlay'}>
+            <Tooltip title={trackTip(actions)}>
               <IconButton
                 size="small"
                 data-testid="maps-pane-track"

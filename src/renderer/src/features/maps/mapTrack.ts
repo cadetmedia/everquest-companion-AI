@@ -42,6 +42,8 @@ export interface TrackedPoint {
   kind: 'mob' | 'label'
   name: string
   pins: TrackedPin[]
+  /** Tracked because it is watched on the Timers tab (watchTrack.ts). Derived, never stored. */
+  auto?: boolean
 }
 
 /** The map's extent: the four corners the overlay draws. */
