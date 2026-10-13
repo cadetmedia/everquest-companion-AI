@@ -90,3 +90,36 @@ test('the overlay stretches each axis on its own, corners to corners', () => {
   assert.deepEqual(placeInExtent(ext, 400, 200, { x: 200, y: 300 }), { px: 400, py: 200 })
   assert.deepEqual(placeInExtent(ext, 400, 200, { x: 0, y: 100 }), { px: 200, py: 100 })
 })
+
+// ---- Timers watches are tracked on the map (owner, 2026-10-13) ----
+import { watchedPoints, withWatched } from '../src/renderer/src/features/maps/watchTrack'
+import type { MobEntry } from '../src/shared/types'
+
+const CATALOG = [
+  { page: 'Bear Lord', name: 'Bear Lord', zones: ['The Rathe Mountains'], loc: [{ ns: 100, ew: -200 }] },
+  { page: 'Wanderer', name: 'Wanderer', zones: ['The Rathe Mountains', 'Lake Rathetear'], loc: [{ ns: 1, ew: 1 }] },
+  { page: 'Nowhere', name: 'Nowhere', zones: ['The Rathe Mountains'] }
+] as unknown as MobEntry[]
+
+test('a watched mob in this zone is tracked where the catalog places it', () => {
+  const pts = watchedPoints('rathemtn', [{ key: 'bear lord', display: 'Bear Lord' }], CATALOG)
+  assert.equal(pts.length, 1)
+  assert.deepEqual(pts[0], { zone: 'rathemtn', id: 'Bear Lord', kind: 'mob', name: 'Bear Lord', pins: [{ x: 200, y: -100 }], auto: true })
+})
+
+test('a watch with no single-zone position, or in another zone, is not tracked', () => {
+  const w = [
+    { key: 'wanderer', display: 'Wanderer' },
+    { key: 'nowhere', display: 'Nowhere' }
+  ]
+  assert.deepEqual(watchedPoints('rathemtn', w, CATALOG), [])
+  assert.deepEqual(watchedPoints('qeynos', [{ key: 'bear lord', display: 'Bear Lord' }], CATALOG), [])
+  assert.deepEqual(watchedPoints(null, [{ key: 'bear lord', display: 'Bear Lord' }], CATALOG), [])
+})
+
+test('a mob both tracked by hand and watched is listed once, as the hand-tracked entry', () => {
+  const hand: TrackedPoint = { zone: 'rathemtn', id: 'Bear Lord', kind: 'mob', name: 'Bear Lord', pins: [{ x: 200, y: -100 }] }
+  const auto = watchedPoints('rathemtn', [{ key: 'bear lord', display: 'Bear Lord' }], CATALOG)
+  assert.deepEqual(withWatched([hand], auto), [hand])
+  assert.deepEqual(withWatched([], auto), auto)
+})

@@ -13,14 +13,16 @@
 // The zone is the one the log last named, and the list is the Maps tab's: both come out of
 // localStorage, which this window shares with the main window (useMapTrack.ts).
 
-import { useEffect, useRef, useState, type JSX } from 'react'
+import { useEffect, useMemo, useRef, useState, type JSX } from 'react'
 import type { CharacterSnap } from '@shared/types'
+import { EMPTY_RESPAWN_SNAP, type RespawnSnap } from '@shared/respawn'
 import { zoneShortName } from '@shared/zones'
 import { OverlayHeader } from './OverlayHeader'
 import { useOverlayChrome } from './useOverlayChrome'
 import { useOverlayModule } from './useOverlayModule'
 import { TRACK_COLOR, placeInExtent, trackedIn, type TrackedPin, type TrackedPoint, type ZoneExtent } from '../features/maps/mapTrack'
 import { useMapTrack } from '../features/maps/useMapTrack'
+import { withWatched } from '../features/maps/watchTrack'
 import { waypointCommand } from '../features/maps/waypoint'
 
 const NO_CHARACTER: CharacterSnap = { character: null }
@@ -115,10 +117,36 @@ function Pin({
   )
 }
 
+type WatchedFn = typeof import('../features/maps/watchTrackCatalog').watchedPointsHere
+
+/**
+ * The zone's tracked points: the stored list plus every mob watched on the Timers tab. The mob
+ * catalog that places a watch is imported only here, on demand, so other overlay windows never
+ * load it.
+ */
+function useOverlayTracked(zone: string | null): TrackedPoint[] {
+  const { state } = useMapTrack()
+  const watches = useOverlayModule<RespawnSnap>('respawn', EMPTY_RESPAWN_SNAP).prefs.watches
+  const [fn, setFn] = useState<WatchedFn | null>(null)
+  useEffect(() => {
+    let live = true
+    void import('../features/maps/watchTrackCatalog').then((m) => {
+      if (live) setFn(() => m.watchedPointsHere)
+    })
+    return () => {
+      live = false
+    }
+  }, [])
+  return useMemo(
+    () => withWatched(trackedIn(state, zone), fn == null ? [] : fn(zone, watches)),
+    [state, zone, fn, watches]
+  )
+}
+
 function emptyNote(zone: string | null, ext: ZoneExtent | undefined, count: number): string | null {
   if (zone == null) return 'Waiting for the log to name your zone.'
   if (ext == null) return 'Open this zone on the Maps tab once to place its corners.'
-  if (count === 0) return 'Nothing tracked here - track mobs or labels on the Maps tab.'
+  if (count === 0) return 'Nothing tracked here - track mobs or labels on the Maps tab, or watch one on Timers.'
   return null
 }
 
@@ -157,7 +185,7 @@ export default function MapPinsOverlay(): JSX.Element {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const zone = zoneShortName(who.zone)
-  const points = trackedIn(state, zone)
+  const points = useOverlayTracked(zone)
   const ext = zone == null ? undefined : state.extents[zone]
   const note = emptyNote(zone, ext, points.length)
 

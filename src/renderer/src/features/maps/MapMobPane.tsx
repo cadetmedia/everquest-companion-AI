@@ -231,7 +231,7 @@ function Section({
               row={r}
               selected={r.id === selectedId}
               wished={wishes?.get(r.id)}
-              actions={{ tracked: acts.track.ids.has(r.id), onToggleTrack: acts.track.toggle, onCopy: acts.onCopy }}
+              actions={{ tracked: acts.track.ids.has(r.id), auto: acts.track.autoIds.has(r.id), onToggleTrack: acts.track.toggle, onCopy: acts.onCopy }}
               onSelect={onSelect}
               onOpenMob={onOpenMob}
               onOpenLoot={onOpenLoot}

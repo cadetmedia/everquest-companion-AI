@@ -5,6 +5,7 @@
 
 import type { JSX } from 'react'
 import { IconButton, List, ListItem, ListItemButton, ListItemText, Stack, Typography } from '@mui/material'
+import AlarmIcon from '@mui/icons-material/Alarm'
 import BookmarkIcon from '@mui/icons-material/Bookmark'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import { TRACK_COLOR, type TrackedPoint } from './mapTrack'
@@ -65,11 +66,19 @@ function TrackedRow({
               <ContentCopyIcon sx={{ fontSize: 14 }} />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Stop tracking">
-            <IconButton size="small" edge="end" data-testid="maps-tracked-remove" onClick={() => { track.untrack(point.id) }}>
-              <BookmarkIcon sx={{ fontSize: 15, color: TRACK_COLOR }} />
-            </IconButton>
-          </Tooltip>
+          {point.auto === true ? (
+            <Tooltip title="Watched on the Timers tab; unwatch it there to take it off the map">
+              <IconButton size="small" edge="end" data-testid="maps-tracked-timer" disableRipple sx={{ cursor: 'default' }}>
+                <AlarmIcon sx={{ fontSize: 15, color: TRACK_COLOR }} />
+              </IconButton>
+            </Tooltip>
+          ) : (
+            <Tooltip title="Stop tracking">
+              <IconButton size="small" edge="end" data-testid="maps-tracked-remove" onClick={() => { track.untrack(point.id) }}>
+                <BookmarkIcon sx={{ fontSize: 15, color: TRACK_COLOR }} />
+              </IconButton>
+            </Tooltip>
+          )}
         </Stack>
       }
     >

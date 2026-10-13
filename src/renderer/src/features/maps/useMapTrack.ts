@@ -7,6 +7,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { MapData } from '@shared/maps'
 import type { MapPaneRow } from './mobPins'
+import { MOB_CATALOG } from '../mobs/mobSearch'
+import { useRespawnSnap } from '../timers/useRespawn'
+import { watchedPoints, withWatched } from './watchTrack'
 import {
   TRACK_KEY,
   loadTrack,
@@ -70,6 +73,8 @@ export interface ZoneTrack {
   /** The tracked entries of the zone on screen, in the order tracked. */
   points: TrackedPoint[]
   ids: ReadonlySet<string>
+  /** Ids tracked only because the Timers tab watches them. */
+  autoIds: ReadonlySet<string>
   toggle: (row: MapPaneRow) => void
   untrack: (id: string) => void
 }
@@ -85,13 +90,17 @@ export function useZoneTrack(data: MapData | null): ZoneTrack {
   useEffect(() => {
     if (zone != null && bounds != null) update((s) => withExtent(s, zone, bounds))
   }, [zone, bounds, update])
-  const points = useMemo(() => trackedIn(state, zone), [state, zone])
+  const watches = useRespawnSnap().prefs.watches
+  const watched = useMemo(() => watchedPoints(zone, watches, MOB_CATALOG), [zone, watches])
+  const points = useMemo(() => withWatched(trackedIn(state, zone), watched), [state, zone, watched])
   const ids = useMemo(() => new Set(points.map((p) => p.id)), [points])
+  const autoIds = useMemo(() => new Set(points.filter((p) => p.auto === true).map((p) => p.id)), [points])
   const toggle = useCallback(
     (row: MapPaneRow) => {
-      if (zone != null) update((s) => toggleTracked(s, pointFromRow(zone, row)))
+      // A Timers watch is tracked by the watch; the bookmark cannot take it off the map.
+      if (zone != null) update((s) => (watched.some((w) => w.id === row.id) && !s.points.some((p) => p.zone === zone && p.id === row.id) ? s : toggleTracked(s, pointFromRow(zone, row))))
     },
-    [zone, update]
+    [zone, update, watched]
   )
   const untrack = useCallback(
     (id: string) => {
@@ -99,5 +108,5 @@ export function useZoneTrack(data: MapData | null): ZoneTrack {
     },
     [zone, update]
   )
-  return useMemo(() => ({ points, ids, toggle, untrack }), [points, ids, toggle, untrack])
+  return useMemo(() => ({ points, ids, autoIds, toggle, untrack }), [points, ids, autoIds, toggle, untrack])
 }
