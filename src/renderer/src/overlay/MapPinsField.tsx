@@ -60,6 +60,7 @@ function Mark({ at, w, text, color, size, shape, faint = false, onClick, testId 
   return (
     <div
       data-testid={testId}
+      data-mark
       onClick={onClick}
       onMouseEnter={() => {
         setHot(true)
@@ -115,10 +116,11 @@ export interface MapPinsFieldProps {
 /** The zone's lines, drawn by the Maps tab's own canvas through a fixed whole-zone view. */
 function Lines({ data, ext, fit, w, h }: { data: MapData; ext: ZoneExtent; fit: ExtentFit; w: number; h: number }): JSX.Element {
   const vp = useMemo(() => {
-    const view = { cx: (ext.minX + ext.maxX) / 2, cy: (ext.minY + ext.maxY) / 2, scale: fit.scale }
+    // The map point at the window's centre under this fit, so the lines follow the user's zoom.
+    const view = { cx: ext.minX + (w / 2 - fit.left) / fit.scale, cy: ext.minY + (h / 2 - fit.top) / fit.scale, scale: fit.scale }
     const size = { w, h }
     return { view, size, rect: viewRect(view, size) }
-  }, [ext, fit.scale, w, h])
+  }, [ext, fit.left, fit.top, fit.scale, w, h])
   return <MapCanvas lines={data.lines} vp={vp} layers={DEFAULT_LAYERS} ink={`${TRACK_COLOR}cc`} />
 }
 
@@ -187,11 +189,14 @@ function TimerMarks({ ext, fit, w, timers, nowMs, onCopy }: MapPinsFieldProps): 
   )
 }
 
-function TrackedMarks({ ext, fit, w, tracked, onCopy }: MapPinsFieldProps): JSX.Element {
+function TrackedMarks({ ext, fit, w, tracked, timers, layers, onCopy }: MapPinsFieldProps): JSX.Element {
+  // A tracked mob with a running clock is drawn ONCE, as its timer mark (owner, 2026-10-13: the
+  // name showed twice, once plain and once with "due"). Timers off, the tracked mark is back.
+  const clocked = new Set(layers.timers ? timers.flatMap((t) => t.pins.map((p) => `${String(p.x)},${String(p.y)}`)) : [])
   return (
     <>
       {tracked.flatMap((p) =>
-        p.pins.map((pin, i) => (
+        p.pins.filter((pin) => !clocked.has(`${String(pin.x)},${String(pin.y)}`)).map((pin, i) => (
           <Mark
             key={`${p.id}#${String(i)}`}
             testId="map-pins-pin"

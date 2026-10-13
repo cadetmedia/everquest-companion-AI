@@ -187,3 +187,52 @@ export function fitExtent(ext: ZoneExtent, w: number, h: number): ExtentFit {
 export function placeInExtent(ext: ZoneExtent, fit: ExtentFit, p: { x: number; y: number }): { px: number; py: number } {
   return { px: fit.left + (p.x - ext.minX) * fit.scale, py: fit.top + (p.y - ext.minY) * fit.scale }
 }
+
+/**
+ * The user's own zoom on the overlay, for matching a zoomed in-game map (owner, 2026-10-13):
+ * how many times the whole-zone fit (`k`), and which map point sits at the window's centre.
+ * Kept in MAP units, so it survives the window being resized.
+ */
+export interface OverlayView {
+  k: number
+  cx: number
+  cy: number
+}
+
+/** The fit for a view: the whole-zone fit when `view` is null, else zoomed and re-centred. */
+export function viewFit(ext: ZoneExtent, w: number, h: number, view: OverlayView | null): ExtentFit {
+  const base = fitExtent(ext, w, h)
+  if (view == null) return base
+  const scale = base.scale * view.k
+  const left = w / 2 - (view.cx - ext.minX) * scale
+  const top = h / 2 - (view.cy - ext.minY) * scale
+  return { left, top, width: (ext.maxX - ext.minX) * scale, height: (ext.maxY - ext.minY) * scale, scale }
+}
+
+/** The zone and the window an overlay view is applied to. */
+export interface ViewFrame {
+  ext: ZoneExtent
+  w: number
+  h: number
+}
+
+function viewOf({ ext, w, h }: ViewFrame, fit: ExtentFit, k: number): OverlayView {
+  return { k, cx: ext.minX + (w / 2 - fit.left) / fit.scale, cy: ext.minY + (h / 2 - fit.top) / fit.scale }
+}
+
+/** Zoom by `factor` keeping the map point under `at` (window pixels) where it is. */
+export function zoomView(frame: ViewFrame, view: OverlayView | null, at: { x: number; y: number }, factor: number): OverlayView {
+  const fit = viewFit(frame.ext, frame.w, frame.h, view)
+  const k = Math.min(64, Math.max(0.1, (view?.k ?? 1) * factor))
+  const applied = k / (view?.k ?? 1)
+  const scale = fit.scale * applied
+  const left = at.x - (at.x - fit.left) * applied
+  const top = at.y - (at.y - fit.top) * applied
+  return viewOf(frame, { ...fit, left, top, scale }, k)
+}
+
+/** Move the map by (dx, dy) pixels. */
+export function panView(frame: ViewFrame, view: OverlayView | null, dx: number, dy: number): OverlayView {
+  const fit = viewFit(frame.ext, frame.w, frame.h, view)
+  return viewOf(frame, { ...fit, left: fit.left + dx, top: fit.top + dy }, view?.k ?? 1)
+}

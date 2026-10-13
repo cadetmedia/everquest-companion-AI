@@ -127,3 +127,25 @@ test('a mob both tracked by hand and watched is listed once, as the hand-tracked
   assert.deepEqual(withWatched([hand], auto), [hand])
   assert.deepEqual(withWatched([], auto), auto)
 })
+
+// ---- the overlay's own zoom (owner, 2026-10-13) ----
+import { panView, viewFit, zoomView } from '../src/renderer/src/features/maps/mapTrack'
+
+test('no view is the whole-zone fit; zoom keeps the point under the cursor; pan moves by pixels', () => {
+  const ext = { minX: 0, maxX: 100, minY: 0, maxY: 100 }
+  assert.deepEqual(viewFit(ext, 200, 200, null), fitExtent(ext, 200, 200))
+  const z = zoomView({ ext, w: 200, h: 200 }, null, { x: 50, y: 50 }, 2)
+  const f = viewFit(ext, 200, 200, z)
+  assert.equal(f.scale, 4)
+  // map (25, 25) was at pixel (50, 50) before the zoom and stays there.
+  assert.deepEqual(placeInExtent(ext, f, { x: 25, y: 25 }), { px: 50, py: 50 })
+  const p = viewFit(ext, 200, 200, panView({ ext, w: 200, h: 200 }, z, 10, -20))
+  assert.deepEqual(placeInExtent(ext, p, { x: 25, y: 25 }), { px: 60, py: 30 })
+})
+
+test('the view survives a resize: the same map point stays at the window centre', () => {
+  const ext = { minX: 0, maxX: 100, minY: 0, maxY: 100 }
+  const z = zoomView({ ext, w: 200, h: 200 }, null, { x: 50, y: 50 }, 2)
+  const big = viewFit(ext, 400, 400, z)
+  assert.deepEqual(placeInExtent(ext, big, { x: z.cx, y: z.cy }), { px: 200, py: 200 })
+})
