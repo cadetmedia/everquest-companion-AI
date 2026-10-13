@@ -159,17 +159,31 @@ export function withExtent(state: TrackState, zone: string, b: ZoneExtent): Trac
   return { ...state, extents: { ...state.extents, [zone]: ext } }
 }
 
+/** Where the zone lands in a w x h window: its top-left pixel, its size, and the scale. */
+export interface ExtentFit {
+  left: number
+  top: number
+  width: number
+  height: number
+  scale: number
+}
+
 /**
- * A map position → a pixel in the overlay, whose edges ARE the map's extent.
- *
- * Each axis is stretched on its own. The user lines the overlay's top-left corner up with the
- * game map's top-left and its bottom-right with the bottom-right; two pairs of corners fix two
- * independent linear maps, so a window sized to a slightly different shape still puts every pin
- * where the game's map has it.
+ * The zone fitted the way the game's map shows a whole zone: ONE scale, the larger that fits both
+ * ways, centred (owner's screenshots, 2026-10-13: a tall zone fills the height and leaves parchment
+ * either side). Sized to the map window's parchment, the overlay then matches the game's
+ * whole-zone view; the old per-axis stretch put the pins off to the side.
  */
-export function placeInExtent(ext: ZoneExtent, w: number, h: number, p: { x: number; y: number }): { px: number; py: number } {
-  return {
-    px: ((p.x - ext.minX) / (ext.maxX - ext.minX)) * w,
-    py: ((p.y - ext.minY) / (ext.maxY - ext.minY)) * h
-  }
+export function fitExtent(ext: ZoneExtent, w: number, h: number): ExtentFit {
+  const ew = ext.maxX - ext.minX
+  const eh = ext.maxY - ext.minY
+  const scale = Math.min(w / ew, h / eh)
+  const width = ew * scale
+  const height = eh * scale
+  return { left: (w - width) / 2, top: (h - height) / 2, width, height, scale }
+}
+
+/** A map position → a pixel in the overlay, through the fit. */
+export function placeInExtent(ext: ZoneExtent, fit: ExtentFit, p: { x: number; y: number }): { px: number; py: number } {
+  return { px: fit.left + (p.x - ext.minX) * fit.scale, py: fit.top + (p.y - ext.minY) * fit.scale }
 }

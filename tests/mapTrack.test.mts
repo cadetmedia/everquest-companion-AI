@@ -11,6 +11,7 @@ import {
   isTracked,
   loadTrack,
   parseTrack,
+  fitExtent,
   placeInExtent,
   saveTrack,
   toggleTracked,
@@ -84,11 +85,14 @@ test('the list survives a round trip and drops bad entries one by one', () => {
   assert.deepEqual(parseTrack(null), EMPTY_TRACK)
 })
 
-test('the overlay stretches each axis on its own, corners to corners', () => {
+test('the overlay fits the zone at one scale, centred, as the game shows a whole zone', () => {
+  // A zone as tall as it is wide in a wide window: it fills the height and is centred across.
   const ext = { minX: -200, maxX: 200, minY: -100, maxY: 300 }
-  assert.deepEqual(placeInExtent(ext, 400, 200, { x: -200, y: -100 }), { px: 0, py: 0 })
-  assert.deepEqual(placeInExtent(ext, 400, 200, { x: 200, y: 300 }), { px: 400, py: 200 })
-  assert.deepEqual(placeInExtent(ext, 400, 200, { x: 0, y: 100 }), { px: 200, py: 100 })
+  const fit = fitExtent(ext, 600, 200)
+  assert.deepEqual(fit, { left: 200, top: 0, width: 200, height: 200, scale: 0.5 })
+  assert.deepEqual(placeInExtent(ext, fit, { x: -200, y: -100 }), { px: 200, py: 0 })
+  assert.deepEqual(placeInExtent(ext, fit, { x: 200, y: 300 }), { px: 400, py: 200 })
+  assert.deepEqual(placeInExtent(ext, fit, { x: 0, y: 100 }), { px: 300, py: 100 })
 })
 
 // ---- Timers watches are tracked on the map (owner, 2026-10-13) ----
