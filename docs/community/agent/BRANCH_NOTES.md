@@ -52,6 +52,27 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
 - MUI Tooltip must wrap a DOM element (Box/Link), not a plain function component.
 - Open: no e2e for Closest port / era chip / advice table; Hate and Sky lock levels unruled.
 
+## map-waypoints (bases on map-improvements)
+
+- `/waypoint` is the game's command (`eqstr_us.txt` 8326: "Usage: /waypoint x, y, z"). Written in
+  /loc order (N/S first); which number the game calls x is UNVERIFIED in game. One switch,
+  `NS_FIRST` in `features/maps/waypoint.ts`, flips it.
+- The owner's EQ Legends log DOES carry `Your Location is` lines (upstream comments in
+  `locMarker.ts`/`mapGeometry.ts` say zero; true of the creator's logs, not this one). A live
+  position source is possible later; nothing reads it yet.
+- Overlay windows share localStorage with the main window (same origin, no partition): the track
+  list (`eq.maps.track`) reaches the overlay through `storage` events, no IPC.
+- A new overlay kind touches: `OverlayKind`/`OVERLAY_KINDS` (insert before the strips so
+  `conCard` stays last and no meter's dock slot moves), `OVERLAY_KIND_LABEL`/`OVERLAY_LABEL_ORDER`,
+  `DEFAULT_OVERLAY_CONFIG`, `OVERLAY_MENU_ROWS` (description only, never the label),
+  `OVERLAY_TITLE`, `overlay/main.tsx`, `MODULE_READING_OVERLAYS` when it reads a module, tests
+  `overlayHotZone` + `overlaysAppearanceSteps` ALL_KINDS. Telemetry: list it in
+  `UNREPORTED_OVERLAY_KINDS` (`shared/telemetryOverlays.ts`) rather than widen the closed enum the
+  creator's Lambda validates.
+- Overlays may not carry native `title` tooltips (`overlayTooltipPolicy.test.mts`).
+- Locked overlays are click-through except the header strip, so the pin overlay's clicks work
+  only unlocked. Open: per-pin capture while locked.
+
 ## exaltation-clarity (bases on character-slot-sockets)
 
 - Socket rules and the per-weapon proc exception: MEASURED.md, Exaltations.
