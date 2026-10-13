@@ -27,7 +27,7 @@ import { useMapTrack } from '../features/maps/useMapTrack'
 import { withWatched } from '../features/maps/watchTrack'
 import { waypointCommand } from '../features/maps/waypoint'
 import { MapPinsField } from './MapPinsField'
-import { LayerChips, usePinLayers, type PinLayers } from './mapPinsLayers'
+import { LayerChips, usePinLayers, usePinsBg, type PinLayers } from './mapPinsLayers'
 import { useMobPlaces, useOverlayMapData } from './useMapPinsData'
 import { useOverlayView, type OverlayViewControls } from './useOverlayView'
 import { zoneMobPins, zoneTimerPins, zoneWatched } from '../features/maps/overlayPoints'
@@ -167,6 +167,7 @@ function PinsChrome({
   layers,
   onToggle,
   zoom,
+  bg,
   chrome
 }: {
   heading: string
@@ -174,6 +175,7 @@ function PinsChrome({
   layers: PinLayers
   onToggle: (k: keyof PinLayers) => void
   zoom: OverlayViewControls
+  bg: [number, (v: number) => void]
   chrome: ReturnType<typeof useOverlayChrome>
 }): JSX.Element | null {
   const { locked, hovering, toggleLock, capture, dragRegion, noDrag } = chrome
@@ -188,7 +190,7 @@ function PinsChrome({
         tailTitle="Tracked points in this zone. Size the window to the game map's parchment."
         chrome={{ locked, hovering, dragRegion, noDrag, toggleLock, capture }}
       />
-      {!locked && <LayerChips layers={layers} onToggle={onToggle} onFit={zoom.reset} zoomed={zoom.view != null} noDrag={noDrag} />}
+      {!locked && <LayerChips layers={layers} onToggle={onToggle} onFit={zoom.reset} zoomed={zoom.view != null} bg={bg[0]} onBg={bg[1]} noDrag={noDrag} />}
     </div>
   )
 }
@@ -198,6 +200,7 @@ export default function MapPinsOverlay(): JSX.Element {
   const chrome = useOverlayChrome()
   const { locked } = chrome
   const [layers, toggleLayer] = usePinLayers()
+  const bg = usePinsBg()
   const { w, h } = useWindowSize()
   const zone = zoneShortName(who.zone)
   const { data, tracked, mobs, timers, ext } = useZoneMarks(zone, layers)
@@ -221,7 +224,7 @@ export default function MapPinsOverlay(): JSX.Element {
         width: '100%',
         height: '100%',
         fontFamily: 'Inter, "Segoe UI", Roboto, system-ui, sans-serif',
-        background: locked ? 'transparent' : 'rgba(14,17,21,0.25)',
+        background: `rgba(14,17,21,${String(bg[0])})`,
         outline: locked ? undefined : `1px dashed ${TRACK_COLOR}66`,
         outlineOffset: -1,
         overflow: 'hidden'
@@ -233,7 +236,7 @@ export default function MapPinsOverlay(): JSX.Element {
           <MapPinsField ext={ext} fit={fit} w={w} h={h} data={data} layers={layers} mobs={mobs} timers={timers} tracked={tracked} nowMs={nowMs} onCopy={onCopy} />
         </>
       )}
-      <PinsChrome heading={who.zone ?? 'Map pins'} count={tracked.length} layers={layers} onToggle={toggleLayer} zoom={zoom} chrome={chrome} />
+      <PinsChrome heading={who.zone ?? 'Map pins'} count={tracked.length} layers={layers} onToggle={toggleLayer} zoom={zoom} bg={bg} chrome={chrome} />
       {!locked && note != null && <Note text={note} />}
       {copied != null && <Note text={copied} bottom={CORNER_PX + 2} />}
     </div>
