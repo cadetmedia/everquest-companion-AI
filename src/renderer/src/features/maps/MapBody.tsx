@@ -35,6 +35,9 @@ import { MapMobPins } from './MapMobPins'
 import { MapTimerPins, useTimerPins } from './MapTimerPins'
 import type { TimerPin } from './respawnPins'
 import { MapLocMarker } from './MapLocMarker'
+import { MapTrackedLayer } from './MapTrackedLayer'
+import { WaypointNotice, useWaypointCopy, type WaypointCopy } from './MapWaypointCopy'
+import type { TrackedPoint } from './mapTrack'
 import MapMobPane from './MapMobPane'
 import type { MobTarget } from '../mobs/mobTarget'
 import { paneOverlay, type PaneOverlay, type ZonePaneState } from './useMapPane'
@@ -175,7 +178,8 @@ function MapSurface({
   timers,
   zones,
   onJump,
-  onOpenMob
+  tracked,
+  copy
 }: {
   data: MapData
   vp: MapViewport
@@ -195,8 +199,9 @@ function MapSurface({
   zones: readonly ZoneShort[]
   /** The search jump — a clicked connection label opens its zone with no position to centre on. */
   onJump: (to: JumpTarget) => void
-  /** A double-clicked mob pin's door to its page (MapMobPins). */
-  onOpenMob?: (target: MobTarget) => void
+  /** The track list's entries in this zone, ringed whether or not the pane is open. */
+  tracked: readonly TrackedPoint[]
+  copy: WaypointCopy['copy']
 }): JSX.Element {
   // A `to_…` label the zone table resolves to an INSTALLED map becomes a link (zoneLinks.ts).
   const linkFor = useMemo(() => {
@@ -221,6 +226,11 @@ function MapSurface({
       onPointerUp={vp.onPointerUp}
       onPointerCancel={vp.onPointerCancel}
       onLostPointerCapture={vp.onPointerCancel}
+      // A double-click anywhere the pins and labels do not take it copies that spot's /waypoint.
+      onDoubleClick={(e) => {
+        const box = e.currentTarget.getBoundingClientRect()
+        copy(vp.toMap(e.clientX - box.left, e.clientY - box.top), 'this spot')
+      }}
       sx={{
         position: 'relative',
         flexGrow: 1,
@@ -251,9 +261,14 @@ function MapSurface({
           selectedId={pane.selectedId}
           wishes={pane.wishes}
           onMark={pane.mark}
-          onOpenMob={onOpenMob}
+          onCopy={(pin, name) => {
+            copy(pin, name)
+          }}
+          tracked={pane.tracked}
+          onToggleTrack={pane.toggleTrack}
         />
       )}
+      {tracked.length > 0 && <MapTrackedLayer points={tracked} vp={vp} />}
       {timers.length > 0 && <MapTimerPins timers={timers} vp={vp} />}
       {ringAt != null && <MarkerRing at={ringAt} size={26} testId="maps-pane-marker" />}
       {at != null && <MarkerRing at={at} size={22} testId="maps-marker" />}
@@ -325,6 +340,7 @@ export default function MapBody(props: MapBodyProps): JSX.Element {
   // zone's catalog for the length of a fetch. Subscribed here rather than in MapsView so the
   // view above stays ignorant of the respawn module.
   const timers = useTimerPins(data?.zone ?? null)
+  const waypoint = useWaypointCopy()
   return (
     <Stack direction="row" spacing={1.5} sx={{ position: 'relative', flexGrow: 1, minHeight: 0 }}>
       {data != null ? (
@@ -341,7 +357,8 @@ export default function MapBody(props: MapBodyProps): JSX.Element {
           timers={timers}
           zones={zones}
           onJump={onJump}
-          onOpenMob={onOpenMob}
+          tracked={pane.track.points}
+          copy={waypoint.copy}
         />
       ) : (
         empty
@@ -363,6 +380,9 @@ export default function MapBody(props: MapBodyProps): JSX.Element {
           onOpenMob={onOpenMob}
           onOpenLoot={onOpenLoot}
           pinsCapped={pane.pinsCapped}
+          track={pane.track}
+          onCopy={waypoint.copy}
+          onCenter={pane.center}
           onClose={() => {
             pane.setOpen(false)
           }}
@@ -374,6 +394,7 @@ export default function MapBody(props: MapBodyProps): JSX.Element {
           }}
         />
       )}
+      <WaypointNotice notice={waypoint.notice} onClose={waypoint.dismiss} />
     </Stack>
   )
 }

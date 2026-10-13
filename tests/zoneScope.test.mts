@@ -221,7 +221,8 @@ test('the XP overlay reads and writes the app-wide selection, not a config key o
 })
 
 test('the store no longer keeps EITHER retired knob, whatever an older build wrote', () => {
-  const store = code('../src/main/store.ts')
+  // The xp knobs moved to storeXpKnobs.ts when store.ts hit its line ceiling; read both as one.
+  const store = code('../src/main/store.ts') + code('../src/main/storeXpKnobs.ts')
   // Both are deleted unconditionally — an existing store carries them and nothing reads them, so
   // preserving them would leave a dead choice on disk that silently disagrees with the live one.
   assert.match(store, /delete retired\.xpBasis/)

@@ -43,6 +43,7 @@ import {
   tzOffsetBucket,
   type TelemetryEvent
 } from '../src/shared/telemetry'
+import { UNREPORTED_OVERLAY_KINDS } from '../src/shared/telemetryOverlays'
 import {
   validateEnvelope,
   validateTelemetryBatch,
@@ -244,7 +245,9 @@ test('the overlay-kind list is the SAME set the app uses (the duplication cannot
   // telemetry.ts may import nothing at all, so it re-declares the kinds. This is the tripwire
   // that keeps the copy honest: adding a sixth overlay to the app fails here until the schema
   // (and therefore TELEMETRY.md) learns about it.
-  assert.deepEqual([...TELEMETRY_OVERLAY_KINDS].sort(), [...OVERLAY_KINDS].sort())
+  // ...less the kinds deliberately left unreported until the ingest learns them.
+  const reported = OVERLAY_KINDS.filter((k) => !(UNREPORTED_OVERLAY_KINDS as readonly string[]).includes(k))
+  assert.deepEqual([...TELEMETRY_OVERLAY_KINDS].sort(), [...reported].sort())
 })
 
 /**

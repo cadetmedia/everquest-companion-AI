@@ -14,6 +14,7 @@ import { OVERLAY_KINDS } from '@shared/types'
 // where a user meets the window in the first place.
 import { OVERLAY_KIND_LABEL } from '@shared/overlayLabels'
 import { track } from '../lib/telemetry'
+import { isTelemetryOverlayKind } from '@shared/telemetryOverlays'
 import PerfChip from './PerfChip'
 import { isDragSurfaceDoubleClick } from './titleBarDrag'
 
@@ -130,6 +131,7 @@ const OVERLAY_MENU_ROWS: readonly (readonly [OverlayKind, string])[] = [
   ['debuffs', 'Debuffs and mez you are holding, per target'],
   ['xp', 'XP per hour, next level, motes per hour'],
   ['respawn', 'Countdowns started by your own kills'],
+  ['mapPins', 'Tracked map points over the game map'],
   // JOS-383, and the first row here for a kind that ships ON. It is in this menu on the owner's
   // instruction (2026-08-16, the JOS-139 mirroring precedent): a window that appears by itself
   // needs its off switch within reach of the place you are already looking when you want it gone.
@@ -183,7 +185,7 @@ function OverlayMenu({ overlayState }: { overlayState: Record<OverlayKind, boole
    */
   const toggle = (kind: OverlayKind): void => {
     void window.eq.toggleOverlay(kind).then((open) => {
-      track({ t: 'overlayToggle', kind, open })
+      if (isTelemetryOverlayKind(kind)) track({ t: 'overlayToggle', kind, open })
     })
   }
 

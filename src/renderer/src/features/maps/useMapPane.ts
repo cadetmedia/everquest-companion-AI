@@ -23,6 +23,7 @@ import { useWishlist } from '../wishlist/useWishlist'
 import { CROSS_ZONE_LIMIT, crossZoneRows, type CrossZoneRow } from './crossZone'
 import { loadPaneOpen, savePaneOpen } from './useMapData'
 import type { MapViewport } from './useMapViewport'
+import { useZoneTrack, type ZoneTrack } from './useMapTrack'
 import {
   filterPaneRows,
   labelRows,
@@ -225,6 +226,10 @@ export interface ZonePaneState extends MapPaneState {
   setOpen: (open: boolean) => void
   /** Matches in every OTHER zone - map labels and wiki mobs alike. Empty until the box has text. */
   hits: CrossZoneRow[]
+  /** The track list for this map (map-waypoints). */
+  track: ZoneTrack
+  /** Centre the map on a position, zooming in from a fitted view (a tracked row's click). */
+  center: (x: number, y: number) => void
 }
 
 /**
@@ -279,7 +284,8 @@ export function useZonePane(args: {
     here: data?.zone ?? null,
     zones
   })
-  return { ...pane, open, setOpen, hits }
+  const track = useZoneTrack(data)
+  return { ...pane, open, setOpen, hits, track, center: onCenter }
 }
 
 /** What the surface needs from the pane: the pins, the selection, the wish-list join, and the
@@ -291,6 +297,9 @@ export interface PaneOverlay {
   selectedAt: { x: number; y: number } | null
   wishes: ReadonlyMap<string, readonly string[]>
   mark: (row: MapPaneRow, at?: { x: number; y: number }) => void
+  /** Row ids on the track list, and the right-click that adds or removes one. */
+  tracked: ReadonlySet<string>
+  toggleTrack: (row: MapPaneRow) => void
 }
 
 export function paneOverlay(pane: ZonePaneState): PaneOverlay | null {
@@ -300,6 +309,8 @@ export function paneOverlay(pane: ZonePaneState): PaneOverlay | null {
     selectedId: pane.selectedId,
     selectedAt: pane.selectedAt,
     wishes: pane.wishes,
-    mark: pane.mark
+    mark: pane.mark,
+    tracked: pane.track.ids,
+    toggleTrack: pane.track.toggle
   }
 }
