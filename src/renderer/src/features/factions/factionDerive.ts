@@ -79,6 +79,9 @@ export interface RowDerived {
 
 export const NO_DERIVED: RowDerived = { work: null, gear: [], wished: [] }
 
+/** The empty don't-care set, one identity — what a narrowing that does not read the marks holds. */
+const NO_MARKS: ReadonlySet<string> = new Set()
+
 /** What every derivation joins against: the gear corpus's verdicts and the wishlist's keys. */
 export interface DeriveJoins {
   maps: GearMaps
@@ -138,7 +141,15 @@ export function narrowDerived(
 ): ReadonlyMap<number, RowDerived> {
   const q = search.query.trim().toLowerCase()
   if (q === '') return base
-  const onlyQuery: WorkFilters = { classes: [], slot: 'ANY', coinOnly: false, query: q, rewardsOnly: search.rewardsOnly }
+  const onlyQuery: WorkFilters = {
+    classes: [],
+    slot: 'ANY',
+    coinOnly: false,
+    query: q,
+    rewardsOnly: search.rewardsOnly,
+    cleanOnly: false,
+    dontCare: NO_MARKS
+  }
   const m = new Map<number, RowDerived>()
   for (const row of visible) {
     const b = base.get(row.id) ?? NO_DERIVED

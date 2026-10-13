@@ -65,7 +65,7 @@ const WORK: FactionWork = {
 
 const NO_SLOTS = new Map<string, never[]>()
 const f = (query: string, coinOnly = false, rewardsOnly = false): WorkFilters =>
-  ({ classes: [], slot: 'ANY', coinOnly, rewardsOnly, query })
+  ({ classes: [], slot: 'ANY', coinOnly, rewardsOnly, query, cleanOnly: false, dontCare: new Set() })
 
 test('a search that is not the faction name narrows EVERY list to the quests that carried it', () => {
   const scythe = filterWork(WORK, f('pestilence scythe'), NO_SLOTS)

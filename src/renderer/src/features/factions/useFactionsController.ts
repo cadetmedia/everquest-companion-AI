@@ -33,6 +33,8 @@ import {
   type SortKey
 } from './factionDerive'
 import { filtersActive, type SlotFilter, type WorkFilters } from './factionFilters'
+import { raisedFactionKeys } from './factionQuests'
+import { useDontCareFactions } from './useDontCareFactions'
 import { useFactionData, type FactionRowVm } from './useFactionRows'
 
 /** The set with one member toggled — a fresh Set, because React compares by identity. */
@@ -176,6 +178,8 @@ export function useFactionsController(props: FactionsViewProps): FactionsControl
   const [classSel, setClassSel] = useState<ClassAbbr[]>([])
   const [slot, setSlot] = useState<SlotFilter>('ANY')
   const [coinOnly, setCoinOnly] = useState(false)
+  const [cleanOnly, setCleanOnly] = useState(false)
+  const dontCare = useDontCareFactions()
   const [sort, setSort] = useState<RowSort>(DEFAULT_SORT)
   // A SET, not a single id: comparing two factions' work side by side is the ordinary reading
   // posture, and an accordion that closes one panel to open another forbids it.
@@ -203,15 +207,24 @@ export function useFactionsController(props: FactionsViewProps): FactionsControl
     [wishlist.list.entries]
   )
   const links: WorkLinks = useMemo(
-    () => ({ onOpenLoot, onOpenMob, onOpenZone, held, wished: wishKeys }),
-    [onOpenLoot, onOpenMob, onOpenZone, held, wishKeys]
+    () => ({
+      onOpenLoot,
+      onOpenMob,
+      onOpenZone,
+      held,
+      wished: wishKeys,
+      dontCare: dontCare.keys,
+      onToggleDontCare: dontCare.toggle,
+      raisable: raisedFactionKeys()
+    }),
+    [onOpenLoot, onOpenMob, onOpenZone, held, wishKeys, dontCare.keys, dontCare.toggle]
   )
   const joins = useMemo<DeriveJoins>(() => ({ maps: gearMaps(gearIndex.rows), wishKeys }), [gearIndex.rows, wishKeys])
   // The work filters WITHOUT the search: the query narrows per keystroke in `useTableRows`, on
   // top of this base, never inside the whole-dump derivation (factionDerive.ts's header).
   const workFilters = useMemo<WorkFilters>(
-    () => ({ classes: classSel, slot, coinOnly, query: '', rewardsOnly: false }),
-    [classSel, slot, coinOnly]
+    () => ({ classes: classSel, slot, coinOnly, query: '', rewardsOnly: false, cleanOnly, dontCare: dontCare.keys }),
+    [classSel, slot, coinOnly, cleanOnly, dontCare.keys]
   )
   const tableFilters = useMemo(() => ({ rows: rowFilters, sort, work: workFilters }), [rowFilters, sort, workFilters])
   const { rows, derivedById } = useTableRows(all, tableFilters, joins)
@@ -229,7 +242,17 @@ export function useFactionsController(props: FactionsViewProps): FactionsControl
     readAt,
     raceUnlocks,
     reveal,
-    work: { classes: classSel, onClasses: setClassSel, slot, onSlot: setSlot, coinOnly, onCoinOnly: setCoinOnly },
+    work: {
+      classes: classSel,
+      onClasses: setClassSel,
+      slot,
+      onSlot: setSlot,
+      coinOnly,
+      onCoinOnly: setCoinOnly,
+      cleanOnly,
+      onCleanOnly: setCleanOnly,
+      dontCareCount: dontCare.keys.size
+    },
     bar: {
       query,
       onQuery,

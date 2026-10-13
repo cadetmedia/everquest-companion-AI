@@ -144,7 +144,15 @@ const JOINS: DeriveJoins = {
 }
 
 const WORK_ROWS: readonly FactionRowVm[] = [{ ...row(1, 'Kerra Isle', 0), work: KERRA_WORK, raiseCount: 2 }, row(4, 'Merchants of Qeynos', 300)]
-const NO_WORK_FILTERS = { classes: [], slot: 'ANY', coinOnly: false, query: '', rewardsOnly: false } as const
+const NO_WORK_FILTERS = {
+  classes: [],
+  slot: 'ANY',
+  coinOnly: false,
+  query: '',
+  rewardsOnly: false,
+  cleanOnly: false,
+  dontCare: new Set<string>()
+} as const
 
 test('narrowDerived: an empty query is the base map itself', () => {
   const base = deriveRows(WORK_ROWS, NO_WORK_FILTERS, JOINS)

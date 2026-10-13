@@ -27,9 +27,10 @@ import { mainMobLookup } from '../timers/mobLookup'
 // The reward-name fold (`*` off, corpus key) — the same one the filters and the wishlist use.
 import { rewardKey as rewardKeyOf } from './factionFilters'
 import type { FactionQuestRef, FactionWork } from './factionQuests'
+import FactionReceipt, { type ReceiptLinks } from './FactionReceipt'
 
 /** The links a quest line can offer — threaded once rather than as four props per level. */
-export interface WorkPanelLinks {
+export interface WorkPanelLinks extends ReceiptLinks {
   onOpenLoot?: (item?: string) => void
   onOpenMob?: (t: { mob: string }) => void
   /** open the Maps tab pinned at a zone (the stem is resolved HERE; unresolvable stays text) */
@@ -225,11 +226,14 @@ function QuestLine({
   quest,
   tone,
   held,
+  selfKey,
   links
 }: {
   quest: FactionQuestRef
   tone: QuestTone
   held?: HeldCounts
+  /** the expanded faction's join key — its hit on the receipt is drawn bold */
+  selfKey?: string
   links: WorkPanelLinks
 }): JSX.Element {
   return (
@@ -276,6 +280,7 @@ function QuestLine({
         </Typography>
       </Typography>
       <Box sx={{ pl: 3 }}>
+        <FactionReceipt quest={quest} selfKey={selfKey} links={links} />
         <ItemLinks
           label="turn in:"
           names={quest.items}
@@ -305,10 +310,13 @@ function QuestLine({
 export default function FactionWorkPanel({
   work,
   held,
+  selfKey,
   links
 }: {
   work: FactionWork | null
   held?: HeldCounts
+  /** the expanded faction's `factionNameKey` */
+  selfKey?: string
   links: WorkPanelLinks
 }): JSX.Element {
   if (work === null) {
@@ -322,7 +330,7 @@ export default function FactionWorkPanel({
   return (
     <Stack spacing={0.5} sx={{ py: 1 }} data-testid="factions-work">
       {work.raise.map((q) => (
-        <QuestLine key={q.name} quest={q} tone="up" held={held} links={links} />
+        <QuestLine key={q.name} quest={q} tone="up" held={held} selfKey={selfKey} links={links} />
       ))}
       {/* THE SILENT HOME-ZONE QUESTS — candidates, said as exactly that. The wiki attributes a
           fraction of a zone's quests (Kerra Island: 2 of 16), and the ones it misses include the
@@ -334,7 +342,7 @@ export default function FactionWorkPanel({
             Also in {work.homeZone} (faction effect unstated on the wiki):
           </Typography>
           {work.nearby.map((q) => (
-            <QuestLine key={q.name} quest={q} tone="plain" held={held} links={links} />
+            <QuestLine key={q.name} quest={q} tone="plain" held={held} selfKey={selfKey} links={links} />
           ))}
         </Box>
       )}
@@ -344,7 +352,7 @@ export default function FactionWorkPanel({
             Costs this faction:
           </Typography>
           {work.lower.map((q) => (
-            <QuestLine key={q.name} quest={q} tone="down" held={held} links={links} />
+            <QuestLine key={q.name} quest={q} tone="down" held={held} selfKey={selfKey} links={links} />
           ))}
         </Box>
       )}

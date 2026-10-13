@@ -134,6 +134,38 @@ function NameSignals({ derived, unlocks }: { derived: RowDerived; unlocks: reado
   )
 }
 
+/** The expanded faction's own mark, said in words: the receipts' names toggle it too, but a
+ *  faction no quest loses (Riptide Goblins) has no receipt to click. */
+function DontCareToggle({
+  name,
+  factionKey,
+  marked,
+  links
+}: {
+  name: string
+  factionKey: string
+  marked: boolean
+  links: WorkLinks
+}): JSX.Element | null {
+  const toggle = links.onToggleDontCare
+  if (toggle === undefined) return null
+  return (
+    <Typography variant="caption" color="text.secondary" component="div" sx={{ pt: 1 }}>
+      <Box
+        component="span"
+        data-testid="factions-dont-care-toggle"
+        onClick={() => {
+          toggle(factionKey)
+        }}
+        sx={{ cursor: 'pointer', textDecoration: 'underline dotted', textUnderlineOffset: 2 }}
+      >
+        {marked ? `I care about ${name} again` : `Mark ${name} as don't care`}
+      </Box>
+      {" - a quest whose only losses are on don't-care factions wears ✓ and passes “No loss I care about”."}
+    </Typography>
+  )
+}
+
 /**
  * One faction: the standing row, and — expanded — the work panel beneath it. EVERY row expands
  * (a faction with nothing on record answers with that fact rather than refusing the click); the
@@ -154,6 +186,7 @@ function FactionRow({
   onToggle: (id: number) => void
   links: WorkLinks
 }): JSX.Element {
+  const dontCare = links.dontCare?.has(row.key) === true
   return (
     <>
       <TableRow
@@ -172,7 +205,14 @@ function FactionRow({
               sx={{ fontSize: 16, verticalAlign: 'text-bottom', mr: 0.5, opacity: 0.5 }}
             />
           )}
-          {row.name}
+          <Box
+            component="span"
+            sx={dontCare ? { color: 'text.disabled' } : undefined}
+            title={dontCare ? "marked don't care: losses here never count against a quest" : undefined}
+          >
+            {row.name}
+            {dontCare && " (don't care)"}
+          </Box>
           <NameSignals derived={derived} unlocks={row.unlocks} />
         </TableCell>
         <TableCell sx={{ py: 0.5, width: 130, whiteSpace: 'nowrap' }}>
@@ -218,7 +258,8 @@ function FactionRow({
         <TableCell colSpan={4} sx={{ py: 0, borderBottom: expanded ? undefined : 'none' }}>
           <Collapse in={expanded} unmountOnExit>
             <Box sx={{ pl: 3 }}>
-              <FactionWorkPanel work={derived.work} held={links.held} links={links} />
+              <DontCareToggle name={row.name} factionKey={row.key} marked={dontCare} links={links} />
+              <FactionWorkPanel work={derived.work} held={links.held} selfKey={row.key} links={links} />
             </Box>
           </Collapse>
         </TableCell>
