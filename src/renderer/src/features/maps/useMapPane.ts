@@ -15,7 +15,7 @@
 // row you clicked while you keep typing) and they are cleared when the map changes, because a
 // mob id means nothing in another zone.
 
-import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react'
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import type { MapData, MapPackPrefs, MapPoint, MapSearchHit, ZoneShort } from '@shared/maps'
 import type { MobEntry } from '@shared/types'
 import { MOB_CATALOG } from '../mobs/mobSearch'
@@ -259,13 +259,18 @@ export function useZonePane(args: {
   }, [])
 
   const { centerOn, zoomedIn, view } = vp
+  // The view read through a ref, so `onCenter` (and the pane's `select` built on it) keeps one
+  // identity while the map pans and zooms, and the memoized sidebar does not redraw every frame.
+  const viewNow = useRef({ zoomedIn, scale: view.scale })
+  viewNow.current = { zoomedIn, scale: view.scale }
   const onCenter = useCallback(
     (x: number, y: number) => {
       // The same rule the label search's jump uses: centring from a fitted view also zooms in;
       // an already-zoomed view keeps the scale the user chose.
-      centerOn(x, y, zoomedIn ? undefined : view.scale * JUMP_ZOOM)
+      const v = viewNow.current
+      centerOn(x, y, v.zoomedIn ? undefined : v.scale * JUMP_ZOOM)
     },
-    [centerOn, zoomedIn, view.scale]
+    [centerOn]
   )
 
   const pane = useMapPane({

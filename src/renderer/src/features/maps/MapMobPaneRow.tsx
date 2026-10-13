@@ -115,14 +115,13 @@ export function WithRowActions({
   children: ReactNode
 }): JSX.Element {
   const target = copyTarget(row)
-  const buttons = (target == null ? 0 : 2) + (onOpen == null ? 0 : 1)
-  if (buttons === 0) return <>{children}</>
+  if (target == null && onOpen == null) return <>{children}</>
+  // The buttons sit IN the row's flex line, after the row button, never floated over it: floated,
+  // they covered the level column (owner, 2026-10-13). Dimmed until the row is hovered or focused.
   return (
-    <ListItem
-      disablePadding
-      sx={{ '& > .MuiListItemButton-root': { pr: `${String(buttons * 24 + 8)}px` } }}
-      secondaryAction={
-        <Stack direction="row">
+    <ListItem disablePadding sx={{ '&:hover .row-acts, & .row-acts:focus-within': { opacity: 1 } }}>
+      <Box sx={{ flexGrow: 1, minWidth: 0, display: 'flex' }}>{children}</Box>
+      <Stack direction="row" alignItems="center" className="row-acts" sx={{ flexShrink: 0, opacity: 0.45, pr: 0.5 }}>
           {target != null && (
             <Tooltip title="Copy the /waypoint command for this spot">
               <IconButton size="small" data-testid="maps-pane-copy" onClick={() => { actions.onCopy(target, row.name) }}>
@@ -144,15 +143,12 @@ export function WithRowActions({
           )}
           {onOpen != null && (
             <Tooltip title="Open this mob's page">
-              <IconButton size="small" edge="end" data-testid="maps-pane-open-mob" onClick={onOpen}>
+              <IconButton size="small" data-testid="maps-pane-open-mob" onClick={onOpen}>
                 <OpenInNewIcon sx={{ fontSize: 15 }} />
               </IconButton>
             </Tooltip>
           )}
-        </Stack>
-      }
-    >
-      {children}
+      </Stack>
     </ListItem>
   )
 }

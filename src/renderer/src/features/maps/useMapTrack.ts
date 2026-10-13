@@ -99,5 +99,5 @@ export function useZoneTrack(data: MapData | null): ZoneTrack {
     },
     [zone, update]
   )
-  return { points, ids, toggle, untrack }
+  return useMemo(() => ({ points, ids, toggle, untrack }), [points, ids, toggle, untrack])
 }

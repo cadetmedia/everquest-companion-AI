@@ -41,7 +41,7 @@
 // MapBody floats over the map, because a control that hides a panel has to live somewhere the
 // panel is not.
 
-import type { JSX } from 'react'
+import { memo, type JSX } from 'react'
 import {
   Box,
   Chip,
@@ -348,7 +348,9 @@ function HitSection({
   )
 }
 
-export default function MapMobPane(props: MapMobPaneProps): JSX.Element {
+// Memoized: the map's pan and zoom re-render everything above it every frame, and a zone's few
+// hundred rows of buttons must not redraw with them (owner, 2026-10-13: dragging was unusable).
+export default memo(function MapMobPane(props: MapMobPaneProps): JSX.Element {
   const { zoneName, hasMap, mobs, labels, hits, counts, query, onQuery } = props
   const { selectedId, onSelect, onHit, wishes, onOpenMob, onOpenLoot, pinsCapped, onClose } = props
   return (
@@ -447,4 +449,4 @@ export default function MapMobPane(props: MapMobPaneProps): JSX.Element {
       </Box>
     </Paper>
   )
-}
+})

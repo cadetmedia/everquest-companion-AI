@@ -341,6 +341,10 @@ export default function MapBody(props: MapBodyProps): JSX.Element {
   // view above stays ignorant of the respawn module.
   const timers = useTimerPins(data?.zone ?? null)
   const waypoint = useWaypointCopy()
+  const { setOpen } = pane
+  const closePane = useCallback(() => {
+    setOpen(false)
+  }, [setOpen])
   return (
     <Stack direction="row" spacing={1.5} sx={{ position: 'relative', flexGrow: 1, minHeight: 0 }}>
       {data != null ? (
@@ -383,9 +387,7 @@ export default function MapBody(props: MapBodyProps): JSX.Element {
           track={pane.track}
           onCopy={waypoint.copy}
           onCenter={pane.center}
-          onClose={() => {
-            pane.setOpen(false)
-          }}
+          onClose={closePane}
         />
       ) : (
         <PaneReopen
