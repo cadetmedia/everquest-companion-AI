@@ -21,5 +21,6 @@ nothing listed here is removed or narrowed without the owner's word (RULES.md, r
 | 2026-10-13 | owner | Size the overlay to the game map's parchment and the pins match the game's whole-zone view (one scale, centred). | built (fitExtent) |
 | 2026-10-13 | owner | Zoom and pan never redraw the Maps sidebar; make the map as fast as it can be. | built (Rathe Mountains, prod build: drag 6.4 s -> 0.24 s, 16 zoom steps 1.9 s -> 0.13 s of main-thread work) |
 | 2026-10-13 | owner | The overlay is too busy with every name shown: only timer and tracked marks carry their labels; a point of interest shows its name while hovered. | built |
-| 2026-10-13 | owner | The Map pins overlay can be made larger than the other overlays' 720x820 cap. | open |
-| 2026-10-13 | owner | Zoom and pan the overlay by hand to match a zoomed in-game map, with a reset button back to the whole zone. | open |
+| 2026-10-13 | owner | The Map pins overlay can be made larger than the other overlays' 720x820 cap. | built |
+| 2026-10-13 | owner | Zoom and pan the overlay by hand to match a zoomed in-game map, with a reset button back to the whole zone. | built (unlocked: scroll zooms at the cursor, drag pans, Fit chip resets; kept per zone) |
+| 2026-10-13 | owner | A mob shown twice on the overlay (plain and with "due") is drawn once. | built (a tracked mark under a running clock is drawn as the timer mark only) |
