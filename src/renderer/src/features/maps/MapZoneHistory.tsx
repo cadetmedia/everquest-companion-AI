@@ -31,10 +31,9 @@ import {
   type HistorySort,
   type ZoneHistoryRow
 } from '@shared/zoneHistory'
-import { useModule } from '../../lib/useModule'
-import { EMPTY_PROGRESSION } from '../leveling/progressionDelta'
 import { fmtDuration } from '../leveling/levelChartGeometry'
 import { useStatedLevel } from '../leveling/useStatedLevel'
+import { useCreditedProgression } from '../leveling/useCreditedProgression'
 import { useLootHistory } from '../loot/useLootHistory'
 import { useComboIntervals } from '../profiles/ClassComboData'
 
@@ -155,7 +154,8 @@ function useLevelField(snap: ProgressionSnap): [string, (v: string) => void] {
 }
 
 export default function MapZoneHistory({ onPick }: { onPick?: (zone: string) => void }): JSX.Element {
-  const live = useModule<ProgressionSnap>('progression') ?? EMPTY_PROGRESSION
+  // Merchant sales credited to where their items dropped (shared/coinAttribution.ts).
+  const live = useCreditedProgression()
   // The fold walks every stretch of the log; it follows the live snapshot a render behind.
   const snap = useDeferredValue(live)
   const loot = useDeferredValue(useLootHistory())
