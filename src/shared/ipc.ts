@@ -650,6 +650,9 @@ export const IPC = {
   /** The mob catalog cut to what places a mob (page, name, level, zones, loc), for the Map pins
    *  overlay, which must not bundle the 3 MB catalog every overlay window would then load. */
   mapsMobPlaces: 'maps:mobPlaces',
+  /** A pinned overlay's clickable marks, in its window's CSS px: main adds them to the window's
+   *  hover zones so a click-through Map pins overlay still takes a click on a point. */
+  overlaySetMarkZones: 'overlay:setMarkZones',
 
   // ---- settings / alert sharing ("profiles" — src/shared/profiles.ts) ----
   // Every call carries the renderer's whitelisted localStorage prefs (UI_PREF_SPECS): main
