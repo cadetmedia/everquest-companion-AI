@@ -86,7 +86,7 @@ export function useOverlayView(args: {
   const onPointerDown = useCallback(
     (e: ReactPointerEvent<HTMLElement>) => {
       // A press on a mark or a chip is that control's click, not a pan.
-      if (!enabled || e.button !== 0 || (e.target as HTMLElement).closest('[data-mark], button') != null) return
+      if (!enabled || e.button !== 0 || (e.target as HTMLElement).closest('[data-mark], button, input, [data-testid="map-pins-footer"]') != null) return
       drag.current = { x: e.clientX, y: e.clientY, from: view, moved: false }
     },
     [enabled, view]
