@@ -55,33 +55,12 @@ function TrackedRow({
 }): JSX.Element {
   const first = point.pins[0]
   const spots = point.pins.length > 1 ? `${String(point.pins.length)} spawn points` : null
+  // The buttons sit in the row's flex line after the name, as on the rows below (never floated over
+  // it). The alarm removes the Timers watch; the bookmark removes a hand-made track; a mob that is
+  // both shows both, and one tracked only through its timer shows the alarm alone.
+  const timed = point.kind === 'mob' && track.isTimed(point.name)
   return (
-    <ListItem
-      disablePadding
-      sx={{ '& > .MuiListItemButton-root': { pr: '56px' } }}
-      secondaryAction={
-        <Stack direction="row">
-          <Tooltip title="Copy the /waypoint command for this spot">
-            <IconButton size="small" data-testid="maps-tracked-copy" onClick={() => { onCopy(first, point.name) }}>
-              <ContentCopyIcon sx={{ fontSize: 14 }} />
-            </IconButton>
-          </Tooltip>
-          {point.auto === true ? (
-            <Tooltip title="Watched on the Timers tab; unwatch it there to take it off the map">
-              <IconButton size="small" edge="end" data-testid="maps-tracked-timer" disableRipple sx={{ cursor: 'default' }}>
-                <AlarmIcon sx={{ fontSize: 15, color: TRACK_COLOR }} />
-              </IconButton>
-            </Tooltip>
-          ) : (
-            <Tooltip title="Stop tracking">
-              <IconButton size="small" edge="end" data-testid="maps-tracked-remove" onClick={() => { track.untrack(point.id) }}>
-                <BookmarkIcon sx={{ fontSize: 15, color: TRACK_COLOR }} />
-              </IconButton>
-            </Tooltip>
-          )}
-        </Stack>
-      }
-    >
+    <ListItem disablePadding>
       <ListItemButton dense data-testid="maps-tracked-row" onClick={() => { onCenter(first.x, first.y) }}>
         <ListItemText
           primary={point.name}
@@ -89,6 +68,27 @@ function TrackedRow({
           slotProps={{ primary: { variant: 'body2', noWrap: true }, secondary: { variant: 'caption' } }}
         />
       </ListItemButton>
+      <Stack direction="row" alignItems="center" sx={{ flexShrink: 0, pr: 0.5 }}>
+        <Tooltip title="Copy the /waypoint command for this spot">
+          <IconButton size="small" data-testid="maps-tracked-copy" onClick={() => { onCopy(first, point.name) }}>
+            <ContentCopyIcon sx={{ fontSize: 14 }} />
+          </IconButton>
+        </Tooltip>
+        {timed && (
+          <Tooltip title="Remove the respawn timer">
+            <IconButton size="small" data-testid="maps-tracked-timer" onClick={() => { track.unwatch(point.name) }}>
+              <AlarmIcon sx={{ fontSize: 15, color: TRACK_COLOR }} />
+            </IconButton>
+          </Tooltip>
+        )}
+        {point.auto !== true && (
+          <Tooltip title="Stop tracking">
+            <IconButton size="small" data-testid="maps-tracked-remove" onClick={() => { track.untrack(point.id) }}>
+              <BookmarkIcon sx={{ fontSize: 15, color: TRACK_COLOR }} />
+            </IconButton>
+          </Tooltip>
+        )}
+      </Stack>
     </ListItem>
   )
 }

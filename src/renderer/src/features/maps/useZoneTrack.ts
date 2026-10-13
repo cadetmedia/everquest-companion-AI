@@ -6,9 +6,10 @@ import { useCallback, useEffect, useMemo } from 'react'
 import type { MapData } from '@shared/maps'
 import type { MapPaneRow } from './mobPins'
 import { MOB_CATALOG } from '../mobs/mobSearch'
-import { useRespawnSnap } from '../timers/useRespawn'
+import { useRespawnSnap, useSetRespawnPrefs, useUnwatch } from '../timers/useRespawn'
+import { mobKey } from '../../../../shared/mobKey'
 import { watchedPoints, withWatched } from './watchTrack'
-import { toggleTracked, trackedIn, withExtent, type TrackedPoint } from './mapTrack'
+import { isTracked, toggleTracked, trackedIn, withExtent, type TrackedPoint } from './mapTrack'
 import { useMapTrack } from './useMapTrack'
 
 /** A pane row as a track entry: its name and every position it has, in map coordinates. */
@@ -26,6 +27,39 @@ export interface ZoneTrack {
   autoIds: ReadonlySet<string>
   toggle: (row: MapPaneRow) => void
   untrack: (id: string) => void
+  /** Is this mob on the Timers tab? Keyed by name, the way a watch is (`mobKey`). */
+  isTimed: (name: string) => boolean
+  /** Not on Timers: add it, and track it if it is not tracked yet. On Timers: remove the timer
+   *  only, the tracking stays (owner, 2026-10-13). */
+  toggleTimer: (row: MapPaneRow) => void
+  /** Take a mob off the Timers tab (the Tracked list's alarm). */
+  unwatch: (name: string) => void
+}
+
+/** The Timers tab's watch list, read and written from the Maps tab. */
+function useMapTimers(zone: string | null, update: ReturnType<typeof useMapTrack>['update']) {
+  const prefs = useRespawnSnap().prefs
+  const setPrefs = useSetRespawnPrefs()
+  const unwatchKey = useUnwatch()
+  const keys = useMemo(() => new Set(prefs.watches.map((w) => w.key)), [prefs.watches])
+  const isTimed = useCallback((name: string) => keys.has(mobKey(name)), [keys])
+  const unwatch = useCallback((name: string) => {
+    unwatchKey(mobKey(name))
+  }, [unwatchKey])
+  const toggleTimer = useCallback(
+    (row: MapPaneRow) => {
+      if (row.kind !== 'mob' || zone == null) return
+      const key = mobKey(row.name)
+      if (keys.has(key)) {
+        unwatchKey(key)
+        return
+      }
+      setPrefs({ ...prefs, watches: [...prefs.watches.filter((w) => w.key !== key), { key, display: row.name }] })
+      update((s) => (isTracked(s, zone, row.id) ? s : toggleTracked(s, pointFromRow(zone, row))))
+    },
+    [zone, keys, prefs, setPrefs, unwatchKey, update]
+  )
+  return { watches: prefs.watches, isTimed, toggleTimer, unwatch }
 }
 
 /**
@@ -39,7 +73,7 @@ export function useZoneTrack(data: MapData | null): ZoneTrack {
   useEffect(() => {
     if (zone != null && bounds != null) update((s) => withExtent(s, zone, bounds))
   }, [zone, bounds, update])
-  const watches = useRespawnSnap().prefs.watches
+  const { watches, isTimed, toggleTimer, unwatch } = useMapTimers(zone, update)
   const watched = useMemo(() => watchedPoints(zone, watches, MOB_CATALOG), [zone, watches])
   const points = useMemo(() => withWatched(trackedIn(state, zone), watched), [state, zone, watched])
   const ids = useMemo(() => new Set(points.map((p) => p.id)), [points])
@@ -57,5 +91,8 @@ export function useZoneTrack(data: MapData | null): ZoneTrack {
     },
     [zone, update]
   )
-  return useMemo(() => ({ points, ids, autoIds, toggle, untrack }), [points, ids, autoIds, toggle, untrack])
+  return useMemo(
+    () => ({ points, ids, autoIds, toggle, untrack, isTimed, toggleTimer, unwatch }),
+    [points, ids, autoIds, toggle, untrack, isTimed, toggleTimer, unwatch]
+  )
 }
