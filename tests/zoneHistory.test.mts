@@ -178,3 +178,11 @@ test('a loadout whose level went backwards opens at its highest level, not its l
   assert.equal(levelSpans(s, [swap]).at(-1)?.level, 50)
   assert.equal(levelSpans(s, [{ ...swap, levelRegressed: undefined }]).at(-1)?.level, 12)
 })
+
+test("a loadout's level applies from the latest its swap can have happened, not the guess", () => {
+  const s = snap()
+  // A fresh class at 12, guessed to start at 2h but certain only from 2h45m.
+  const fresh = { startTs: T0 + 2 * HOUR, startHi: T0 + 2 * HOUR + 45 * MIN, levelLo: 12 }
+  const spans = levelSpans(s, [fresh])
+  assert.deepEqual(spans.slice(-2).map((x) => [x.level, (x.t1 - x.t0) / MIN]), [[30, 45], [12, 15]])
+})

@@ -43,6 +43,8 @@ export interface LevelSpan {
  *  it (`/who` rows as well as dings; the shown level is the minimum over the loadout). */
 export interface LoadoutLevel {
   startTs: number
+  /** the latest the swap can have happened; the level is certain only from here */
+  startHi?: number
   levelLo: number | null
   levelHi?: number | null
   /** a lower level came AFTER a higher one inside it (a race swap no detector cut) */
@@ -66,7 +68,10 @@ export function levelSpans(snap: ProgressionSnap, loadouts: readonly LoadoutLeve
   const said = snap.levelTs.map((ts, i) => ({ ts, level: snap.levelValue[i] }))
   for (const l of loadouts) {
     const level = openingLevel(l)
-    if (level !== null) said.push({ ts: l.startTs, level })
+    // From the LATEST the swap can have happened (owner report, 2026-10-13: Plane of Hate listed
+    // at level 10). The best-estimate start can fall back into the old loadout's time, and a
+    // fresh class's low level would then be laid over hours played at 50.
+    if (level !== null) said.push({ ts: Math.max(l.startTs, l.startHi ?? l.startTs), level })
   }
   said.sort((a, b) => a.ts - b.ts)
   const out: LevelSpan[] = []
