@@ -315,6 +315,8 @@ export interface BookFilters {
   sort: SortOrder
   /** keep only what can be worked on in this zone; null keeps every zone */
   here: ZoneHere | null
+  /** keep only achievements with a checked counter, open or complete; null keeps every one */
+  picked?: ReadonlySet<string> | null
 }
 
 /** One group's achievements that the filters keep. */
@@ -328,7 +330,10 @@ function haystack(group: BookGroup, a: BookAchievement): string {
 }
 
 function keeps(group: BookGroup, a: BookAchievement, f: BookFilters, words: readonly string[]): boolean {
-  if (a.done ? !f.complete : !f.open) return false
+  const picked = f.picked ?? null
+  if (picked !== null) {
+    if (!counterIds(group, a).some((id) => picked.has(id))) return false
+  } else if (a.done ? !f.complete : !f.open) return false
   if (f.here !== null && !worksHere(group, a, f.here)) return false
   if (words.length === 0) return true
   const hay = haystack(group, a)
