@@ -65,6 +65,7 @@ export type ZoneSort =
   | 'killsPerHour'
   | 'coin'
   | 'coinPerHour'
+  | 'coinPeak'
   | 'aa'
   | 'motes'
   | 'deaths'
@@ -111,6 +112,8 @@ export interface ZoneStatRow {
   aaPerHour: string
   coinPerHour: string
   motesPerHour: string
+  /** the best fifteen minutes' coin here, as pp/hr (shared/zoneHistory.ts `PEAK_WINDOW_MS`) */
+  coinPeak: string
 }
 
 /** One hero card's text. The icon and accent stay in the component; these are the words. */
@@ -174,6 +177,7 @@ const SORT_VALUE: Partial<Record<ZoneSort, (z: ZoneRangeRow, extra: ZoneExtra | 
   killsPerHour: (z) => z.killsPerHourActive ?? -1,
   coin: (z) => z.coinCopper,
   coinPerHour: (z) => perActive(z.coinCopper, z),
+  coinPeak: (z, e) => e?.peak.coin ?? 0,
   aa: (z, e) => perActive(e?.aaPoints ?? 0, z),
   motes: (z, e) => perActive(e?.motes ?? 0, z),
   deaths: (z) => z.deaths
@@ -237,11 +241,12 @@ function extraRates(
   z: ZoneRangeRow,
   read: BasisRead,
   extra: ZoneExtra | undefined
-): Pick<ZoneStatRow, 'aaPerHour' | 'coinPerHour' | 'motesPerHour'> {
+): Pick<ZoneStatRow, 'aaPerHour' | 'coinPerHour' | 'motesPerHour' | 'coinPeak'> {
   return {
     aaPerHour: perRowHour(extra?.aaPoints ?? 0, read, (v) => v.toFixed(2)),
     coinPerHour: perRowHour(z.coinCopper / 1000, read, (v) => v.toFixed(1)),
-    motesPerHour: perRowHour(extra?.motes ?? 0, read, (v) => v.toFixed(2))
+    motesPerHour: perRowHour(extra?.motes ?? 0, read, (v) => v.toFixed(2)),
+    coinPeak: extra === undefined || extra.peak.coin <= 0 ? NONE : (extra.peak.coin / 1000).toFixed(1)
   }
 }
 

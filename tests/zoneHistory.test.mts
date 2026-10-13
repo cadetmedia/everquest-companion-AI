@@ -121,3 +121,43 @@ test('the plain columns sort too: zone by name, time and deaths most first', () 
   assert.deepEqual(rankHistory(rows, 'time').map((r) => r.zone), ['Befallen', 'The Feerrott'])
   assert.deepEqual(rankHistory(rows, 'deaths').map((r) => r.zone), ['The Feerrott', 'Befallen'])
 })
+
+test('the best stretch: fifteen minutes of hill giants outrank an evening of bandits', async () => {
+  const { peakPerHour, PEAK_WINDOW_MS } = await import('../src/shared/zoneHistory')
+  // Two hours of 10 pp every ten minutes, then 650 pp inside fifteen minutes.
+  const ts: number[] = []
+  const v: number[] = []
+  for (let t = 0; t < 2 * HOUR; t += 10 * MIN) { ts.push(t); v.push(10_000) }
+  for (let k = 0; k < 5; k++) { ts.push(2 * HOUR + k * 3 * MIN); v.push(130_000) }
+  // A kill a minute throughout, so every window is a real stretch.
+  const kills: number[] = []
+  for (let t = 0; t < 2 * HOUR + 15 * MIN; t += MIN) kills.push(t)
+  assert.equal(PEAK_WINDOW_MS, 15 * MIN)
+  assert.equal(peakPerHour(ts, v, kills) / 1000, 2600, '650 pp in 15 minutes is 2,600 pp/hr')
+  assert.equal(peakPerHour([], [], []), 0)
+})
+
+test('a stretch needs ten kills and ten minutes; a five-minute gap ends one', async () => {
+  const { peakPerHour, MIN_STRETCH_KILLS } = await import('../src/shared/zoneHistory')
+  const sale = [HOUR]
+  const big = [500_000]
+  // Kills every 75 s ending at the sale: ten of them span 11.25 minutes.
+  const run = (n: number): number[] => Array.from({ length: n }, (_, k) => HOUR - (n - 1 - k) * 75_000)
+  assert.equal(peakPerHour(sale, big, run(MIN_STRETCH_KILLS - 1)), 0, 'nine kills is not a stretch')
+  const rate = peakPerHour(sale, big, run(MIN_STRETCH_KILLS))
+  assert.ok(Math.abs(rate - 500_000 / (11.25 / 60)) < 1e-6, 'a short stretch is measured over its own length')
+  const burst = Array.from({ length: 20 }, (_, k) => HOUR - k * 15_000)
+  assert.equal(peakPerHour(sale, big, burst), 0, 'twenty kills in five minutes is a burst, not a camp')
+  // Two runs of ten with a six-minute gap: the sale sits in the gap, so neither run holds it.
+  const before = Array.from({ length: 10 }, (_, k) => HOUR - 6 * MIN - 1 - (9 - k) * 75_000)
+  const after = Array.from({ length: 10 }, (_, k) => HOUR + 6 * MIN + 1 + k * 75_000)
+  assert.equal(peakPerHour([HOUR + 3 * MIN], big, [...before, ...after]), 0)
+})
+
+test('a camp with too few kills per window claims no best stretch', () => {
+  const rows = zoneHistory({ snap: snap(), loot: LOOT, level: 25, spread: 10 })
+  const f = rows.find((r) => r.zone === 'The Feerrott')
+  // A kill every two minutes is eight in any window: short of a stretch, so no best is claimed.
+  assert.equal(f?.peak.coin, 0)
+  assert.equal(f?.peak.kills, 0)
+})

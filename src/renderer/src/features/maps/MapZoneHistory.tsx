@@ -23,6 +23,8 @@ import type { ProgressionSnap } from '@shared/types'
 import {
   LEVEL_SPREAD,
   MIN_ACTIVE_MS,
+  MIN_STRETCH_KILLS,
+  PEAK_WINDOW_MS,
   rankHistory,
   zoneHistory,
   type HistoryGoal,
@@ -45,14 +47,19 @@ const GOALS: readonly { goal: HistoryGoal; label: string }[] = [
 
 const fixed = (n: number | null, digits: number): string => (n === null ? '-' : n.toFixed(digits))
 
-/** The columns after the zone, each with the order a click on its head puts the table in. */
-const COLUMNS: readonly { sort: HistorySort; head: string; cell: (r: ZoneHistoryRow) => string }[] = [
+const PEAK_MIN = PEAK_WINDOW_MS / 60_000
+
+type Cell = (r: ZoneHistoryRow, best: boolean) => string
+
+/** The columns after the zone, each with the order a click on its head puts the table in. A rate
+ *  column prints the zone's average, or its best stretch when the switch says so. */
+const COLUMNS: readonly { sort: HistorySort; head: string; cell: Cell }[] = [
   { sort: 'time', head: 'Active time', cell: (r) => fmtDuration(r.activeMs) },
-  { sort: 'levels', head: 'Levels/hr', cell: (r) => fixed(r.levelsPerHour, 2) },
-  { sort: 'aa', head: 'AA/hr', cell: (r) => fixed(r.aaPerHour, 2) },
-  { sort: 'coin', head: 'pp/hr', cell: (r) => fixed(r.coinPerHour / 1000, 1) },
-  { sort: 'motes', head: 'Motes/hr', cell: (r) => fixed(r.motesPerHour, 2) },
-  { sort: 'kills', head: 'Kills/hr', cell: (r) => fixed(r.killsPerHour, 0) },
+  { sort: 'levels', head: 'Levels/hr', cell: (r, best) => fixed(best ? r.peak.levels : r.levelsPerHour, 2) },
+  { sort: 'aa', head: 'AA/hr', cell: (r, best) => fixed(best ? r.peak.aa : r.aaPerHour, 2) },
+  { sort: 'coin', head: 'pp/hr', cell: (r, best) => fixed((best ? r.peak.coin : r.coinPerHour) / 1000, 1) },
+  { sort: 'motes', head: 'Motes/hr', cell: (r, best) => fixed(best ? r.peak.motes : r.motesPerHour, 2) },
+  { sort: 'kills', head: 'Kills/hr', cell: (r, best) => fixed(best ? r.peak.kills : r.killsPerHour, 0) },
   { sort: 'deaths', head: 'Deaths', cell: (r) => String(r.deaths) }
 ]
 
@@ -77,11 +84,13 @@ function ZoneName({ row, onPick }: { row: ZoneHistoryRow; onPick?: (zone: string
 function HistoryTable({
   rows,
   sort,
+  best,
   onSort,
   onPick
 }: {
   rows: readonly ZoneHistoryRow[]
   sort: HistorySort
+  best: boolean
   onSort: (next: HistorySort) => void
   onPick?: (zone: string) => void
 }): JSX.Element {
@@ -126,7 +135,7 @@ function HistoryTable({
                   align="right"
                   sx={{ fontVariantNumeric: 'tabular-nums', fontWeight: c.sort === sort ? 700 : undefined }}
                 >
-                  {c.cell(r)}
+                  {c.cell(r, best)}
                 </TableCell>
               ))}
             </TableRow>
@@ -152,12 +161,13 @@ export default function MapZoneHistory({ onPick }: { onPick?: (zone: string) => 
   const [levelText, setLevelText] = useLevelField(live)
   const [sort, setSort] = useState<HistorySort>('levels')
   const [search, setSearch] = useState('')
+  const [best, setBest] = useState(false)
   const level = Number.parseInt(levelText, 10)
   const all = useMemo(
     () => (Number.isFinite(level) && level > 0 ? zoneHistory({ snap, loot, level }) : []),
     [snap, loot, level]
   )
-  const rows = useMemo(() => rankHistory(all, sort, search), [all, sort, search])
+  const rows = useMemo(() => rankHistory(all, sort, search, best), [all, sort, search, best])
   return (
     <Paper
       variant="outlined"
@@ -189,6 +199,21 @@ export default function MapZoneHistory({ onPick }: { onPick?: (zone: string) => 
             </ToggleButton>
           ))}
         </ToggleButtonGroup>
+        <ToggleButtonGroup
+          size="small"
+          exclusive
+          value={best ? 'best' : 'average'}
+          onChange={(_e, next: string | null) => {
+            if (next !== null) setBest(next === 'best')
+          }}
+        >
+          <ToggleButton value="average" sx={{ py: 0.25 }}>
+            Average
+          </ToggleButton>
+          <ToggleButton value="best" sx={{ py: 0.25 }} data-testid="zone-history-best">
+            Best {PEAK_MIN} min
+          </ToggleButton>
+        </ToggleButtonGroup>
         <TextField
           size="small"
           placeholder="Search zones"
@@ -200,9 +225,11 @@ export default function MapZoneHistory({ onPick }: { onPick?: (zone: string) => 
         />
       </Stack>
       <Typography variant="caption" color="text.secondary" sx={{ pb: 0.5 }}>
-        From your own log: time you spent in each zone within {LEVEL_SPREAD} levels of this level, per
-        active hour (not idle, not logged out). Zones with under {MIN_ACTIVE_MS / 60_000} minutes there
-        are dimmed and listed last.
+        From your own log: time you spent in each zone within {LEVEL_SPREAD} levels of this level.{' '}
+        {best
+          ? `Best ${String(PEAK_MIN)} min: your best stretch there (kills with no gap over 5 minutes, at least ${String(MIN_STRETCH_KILLS)} kills and 10 minutes), its best ${String(PEAK_MIN)} minutes as an hourly rate - what the zone pays when you farm the right thing.`
+          : 'Average: per active hour (not idle, not logged out), everything you did there.'}{' '}
+        Zones with under {MIN_ACTIVE_MS / 60_000} minutes there are dimmed and listed last.
       </Typography>
       {rows.length === 0 ? (
         <Typography variant="body2" color="text.disabled" data-testid="zone-history-empty" sx={{ p: 2 }}>
@@ -213,7 +240,7 @@ export default function MapZoneHistory({ onPick }: { onPick?: (zone: string) => 
             : 'Type a level.'}
         </Typography>
       ) : (
-        <HistoryTable rows={rows} sort={sort} onSort={setSort} onPick={onPick} />
+        <HistoryTable rows={rows} sort={sort} best={best} onSort={setSort} onPick={onPick} />
       )}
     </Paper>
   )

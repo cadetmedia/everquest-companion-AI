@@ -271,6 +271,9 @@ function ZoneRow({ row }: { row: ZoneStatRow }): JSX.Element {
         {row.coinPerHour}
       </TableCell>
       <TableCell align="right" sx={CELL_SX}>
+        {row.coinPeak}
+      </TableCell>
+      <TableCell align="right" sx={CELL_SX}>
         {row.aaPerHour}
       </TableCell>
       <TableCell align="right" sx={CELL_SX}>
@@ -339,6 +342,13 @@ function ZoneTable({ stats, basis }: { stats: RangeStats; basis: RateBasis }): J
             </TableCell>
             <TableCell align="right" sx={HEAD_SX} title={`Platinum per hour of ${basis} time here.`}>
               {head('coinPerHour', 'pp/hr')}
+            </TableCell>
+            <TableCell
+              align="right"
+              sx={HEAD_SX}
+              title="Your best stretch here (kills with no gap over 5 minutes, at least 10 kills and 10 minutes), its best 15 minutes of coin as pp/hr: what the camp pays when you farm the right thing."
+            >
+              {head('coinPeak', 'Best pp/hr')}
             </TableCell>
             <TableCell align="right" sx={HEAD_SX} title={`AA points per hour of ${basis} time here.`}>
               {head('aa', 'AA/hr')}
