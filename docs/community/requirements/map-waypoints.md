@@ -20,4 +20,4 @@ nothing listed here is removed or narrowed without the owner's word (RULES.md, r
 | 2026-10-13 | owner | A pin's label never runs off the right edge of the overlay; near the edge it ends at the pin instead. | built |
 | 2026-10-13 | owner | Size the overlay to the game map's parchment and the pins match the game's whole-zone view (one scale, centred). | built (fitExtent) |
 | 2026-10-13 | owner | Zoom and pan never redraw the Maps sidebar; make the map as fast as it can be. | built (Rathe Mountains, prod build: drag 6.4 s -> 0.24 s, 16 zoom steps 1.9 s -> 0.13 s of main-thread work) |
-| 2026-10-13 | owner | The overlay is too busy with every name shown: only timer and tracked marks carry their labels; a point of interest shows its name while hovered. | open |
+| 2026-10-13 | owner | The overlay is too busy with every name shown: only timer and tracked marks carry their labels; a point of interest shows its name while hovered. | built |
