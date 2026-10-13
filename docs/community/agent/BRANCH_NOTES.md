@@ -70,6 +70,11 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   `UNREPORTED_OVERLAY_KINDS` (`shared/telemetryOverlays.ts`) rather than widen the closed enum the
   creator's Lambda validates.
 - Overlays may not carry native `title` tooltips (`overlayTooltipPolicy.test.mts`).
+- Owner rule (2026-10-13): zoom and pan NEVER redraw the Maps sidebar. `MapMobPane` is `memo`;
+  every prop it takes must keep its identity across view changes. A callback that needs the view
+  (`onCenter`, `jump`) reads it through a ref, never as a dependency. Twice a dependency on
+  `view.scale`/`zoomedIn` broke the memo and cost ~180 ms per wheel step on a 290-row zone.
+  Check: a CPU profile of 16 wheel steps shows no MUI (ButtonBase, Tooltip, emotion) frames.
 - Locked overlays are click-through except the header strip, so the pin overlay's clicks work
   only unlocked. Open: per-pin capture while locked.
 
