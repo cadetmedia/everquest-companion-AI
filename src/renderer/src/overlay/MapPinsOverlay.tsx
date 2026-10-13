@@ -3,7 +3,8 @@
 // WHAT IT DRAWS is the user's choice, one chip each (owner, 2026-10-13): the zone's lines from the
 // same map pack as the Maps tab, the points of interest (named mobs and map labels), the timer
 // pins, and the tracked points. The zone is fitted into the window the way the game's map shows a
-// whole zone (mapTrack.ts `fitExtent`), so the user sizes the window to the map window's
+// whole zone (mapTrack.ts `fitExtent`; unlocked, scroll and drag zoom it by hand, the Fit chip
+// undoes that), so the user sizes the window to the map window's
 // parchment, checks the lines against the game's, and every pin is where the game draws that spot.
 //
 // UNLOCKED it is a faint frame with the chips under its header: drag it by the header, resize it
@@ -21,13 +22,14 @@ import { zoneShortName } from '@shared/zones'
 import { OverlayHeader } from './OverlayHeader'
 import { useOverlayChrome } from './useOverlayChrome'
 import { useOverlayModule } from './useOverlayModule'
-import { TRACK_COLOR, fitExtent, trackedIn, type ExtentFit, type TrackedPin, type TrackedPoint, type ZoneExtent } from '../features/maps/mapTrack'
+import { TRACK_COLOR, trackedIn, viewFit, type ExtentFit, type TrackedPin, type TrackedPoint, type ZoneExtent } from '../features/maps/mapTrack'
 import { useMapTrack } from '../features/maps/useMapTrack'
 import { withWatched } from '../features/maps/watchTrack'
 import { waypointCommand } from '../features/maps/waypoint'
 import { MapPinsField } from './MapPinsField'
 import { LayerChips, usePinLayers, type PinLayers } from './mapPinsLayers'
 import { useMobPlaces, useOverlayMapData } from './useMapPinsData'
+import { useOverlayView, type OverlayViewControls } from './useOverlayView'
 import { zoneMobPins, zoneTimerPins, zoneWatched } from '../features/maps/overlayPoints'
 
 const NO_CHARACTER: CharacterSnap = { character: null }
@@ -164,12 +166,14 @@ function PinsChrome({
   count,
   layers,
   onToggle,
+  zoom,
   chrome
 }: {
   heading: string
   count: number
   layers: PinLayers
   onToggle: (k: keyof PinLayers) => void
+  zoom: OverlayViewControls
   chrome: ReturnType<typeof useOverlayChrome>
 }): JSX.Element | null {
   const { locked, hovering, toggleLock, capture, dragRegion, noDrag } = chrome
@@ -184,7 +188,7 @@ function PinsChrome({
         tailTitle="Tracked points in this zone. Size the window to the game map's parchment."
         chrome={{ locked, hovering, dragRegion, noDrag, toggleLock, capture }}
       />
-      {!locked && <LayerChips layers={layers} onToggle={onToggle} noDrag={noDrag} />}
+      {!locked && <LayerChips layers={layers} onToggle={onToggle} onFit={zoom.reset} zoomed={zoom.view != null} noDrag={noDrag} />}
     </div>
   )
 }
@@ -199,12 +203,19 @@ export default function MapPinsOverlay(): JSX.Element {
   const { data, tracked, mobs, timers, ext } = useZoneMarks(zone, layers)
   const nowMs = useClock(layers.timers && timers.length > 0)
   const { copied, onCopy } = useCopy()
-  const fit = ext == null ? null : fitExtent(ext, w, h)
+  const hostRef = useRef<HTMLDivElement>(null)
+  const zoom = useOverlayView({ zone, ext, size: { w, h }, enabled: !locked, hostRef })
+  const fit = ext == null ? null : viewFit(ext, w, h, zoom.view)
   const note = emptyNote(zone, ext)
 
   return (
     <div
+      ref={hostRef}
       data-testid="map-pins-overlay"
+      onPointerDown={zoom.onPointerDown}
+      onPointerMove={zoom.onPointerMove}
+      onPointerUp={zoom.onPointerUp}
+      onPointerCancel={zoom.onPointerUp}
       style={{
         position: 'relative',
         width: '100%',
@@ -222,7 +233,7 @@ export default function MapPinsOverlay(): JSX.Element {
           <MapPinsField ext={ext} fit={fit} w={w} h={h} data={data} layers={layers} mobs={mobs} timers={timers} tracked={tracked} nowMs={nowMs} onCopy={onCopy} />
         </>
       )}
-      <PinsChrome heading={who.zone ?? 'Map pins'} count={tracked.length} layers={layers} onToggle={toggleLayer} chrome={chrome} />
+      <PinsChrome heading={who.zone ?? 'Map pins'} count={tracked.length} layers={layers} onToggle={toggleLayer} zoom={zoom} chrome={chrome} />
       {!locked && note != null && <Note text={note} />}
       {copied != null && <Note text={copied} bottom={CORNER_PX + 2} />}
     </div>

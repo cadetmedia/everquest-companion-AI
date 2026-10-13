@@ -782,8 +782,9 @@ export function createOverlayWindow(kind: OverlayKind): void {
     // text scale, and the con card's 530 at 2.0 is 1060: the cap would silently refuse the second
     // half of a text size the app itself offers. The work-area clamp in `scaledStripBounds` is the
     // real ceiling for these three, and it is the honest one — it knows how wide the screen is.
-    maxWidth: isStripKind(kind) ? undefined : 720,
-    maxHeight: isStripKind(kind) ? undefined : 820,
+    // The map pin overlay is uncapped too: it is sized to the game's map window (map-waypoints).
+    maxWidth: isStripKind(kind) || kind === 'mapPins' ? undefined : 720,
+    maxHeight: isStripKind(kind) || kind === 'mapPins' ? undefined : 820,
     // The toast strip is a fixed-width card LANE, not a resizable panel: the card sizes itself
     // and everything around it is transparent, so resizing that window would only change how
     // much invisible nothing surrounds the card. It still MOVES, and its bounds still persist —

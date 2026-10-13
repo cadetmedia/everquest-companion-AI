@@ -54,13 +54,30 @@ export function usePinLayers(): [PinLayers, (k: keyof PinLayers) => void] {
   return [layers, toggle]
 }
 
+function chipStyle(on: boolean): CSSProperties {
+  return {
+    font: '600 10px Inter, "Segoe UI", system-ui, sans-serif',
+    padding: '1px 7px',
+    borderRadius: 9,
+    cursor: 'pointer',
+    border: `1px solid ${on ? TRACK_COLOR : 'rgba(255,255,255,0.3)'}`,
+    background: on ? `${TRACK_COLOR}33` : 'rgba(14,17,21,0.6)',
+    color: on ? '#f2f2f2' : 'rgba(255,255,255,0.55)'
+  }
+}
+
 export function LayerChips({
   layers,
   onToggle,
+  onFit,
+  zoomed,
   noDrag
 }: {
   layers: PinLayers
   onToggle: (k: keyof PinLayers) => void
+  /** Back to the whole-zone fit after a manual zoom; shown only while zoomed. */
+  onFit: () => void
+  zoomed: boolean
   noDrag: CSSProperties
 }): JSX.Element {
   return (
@@ -74,19 +91,16 @@ export function LayerChips({
           onClick={() => {
             onToggle(k)
           }}
-          style={{
-            font: '600 10px Inter, "Segoe UI", system-ui, sans-serif',
-            padding: '1px 7px',
-            borderRadius: 9,
-            cursor: 'pointer',
-            border: `1px solid ${layers[k] ? TRACK_COLOR : 'rgba(255,255,255,0.3)'}`,
-            background: layers[k] ? `${TRACK_COLOR}33` : 'rgba(14,17,21,0.6)',
-            color: layers[k] ? '#f2f2f2' : 'rgba(255,255,255,0.55)'
-          }}
+          style={chipStyle(layers[k])}
         >
           {label}
         </button>
       ))}
+      {zoomed && (
+        <button type="button" data-testid="map-pins-fit" onClick={onFit} style={{ ...chipStyle(true), borderStyle: 'dashed' }}>
+          Fit
+        </button>
+      )}
     </div>
   )
 }
