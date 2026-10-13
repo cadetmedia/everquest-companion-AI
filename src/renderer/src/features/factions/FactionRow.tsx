@@ -15,10 +15,11 @@
 // 51.4 px because their chips wrapped). The collapsed work row is empty and 0 px tall.
 
 import { type JSX, memo } from 'react'
-import { Box, Chip, Collapse, LinearProgress, TableCell, TableRow, Typography } from '@mui/material'
+import { Box, Chip, Collapse, TableCell, TableRow, Typography } from '@mui/material'
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown'
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
 import type { HeldCounts } from '@shared/types'
+import { LadderBar, ladderTitle } from './FactionLadder'
 import FactionWorkPanel, { type WorkPanelLinks } from './FactionWorkPanel'
 import type { RowDerived } from './factionDerive'
 import type { FactionRowVm, RaceGate } from './useFactionRows'
@@ -247,17 +248,7 @@ function FactionRow({
           {row.standing}
         </TableCell>
         <TableCell sx={{ py: 0.5, width: 180 }}>
-          <LinearProgress
-            variant="determinate"
-            value={row.pct}
-            title={`${String(row.standing)} of ${String(row.cap)} (${String(row.toMax)} to max)`}
-            sx={{
-              height: 6,
-              borderRadius: 3,
-              bgcolor: 'action.hover',
-              '& .MuiLinearProgress-bar': { bgcolor: row.color }
-            }}
-          />
+          <LadderBar standing={row.standing} title={ladderTitle(row.standing, row.toMax)} />
         </TableCell>
       </TableRow>
       <TableRow>

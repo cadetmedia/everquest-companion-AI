@@ -50,3 +50,39 @@ export function factionTier(standing: number): ConsiderFaction {
   }
   return 'scowls'
 }
+
+// ---- the ladder as a strip (owner ask, 2026-10-12: show where a standing sits among the rungs) --
+
+/** The scale's top: the rungs' last ceiling. A faction's own cap can sit below it. */
+const SCALE_TOP = 2000
+
+/** One rung as the strip draws it: its range, hostile first. */
+export interface TierBand {
+  faction: ConsiderFaction
+  floor: number
+  ceiling: number
+}
+
+/** The rungs hostile → friendly, each with the last standing it covers. */
+export const TIER_BANDS: readonly TierBand[] = FACTION_TIER_FLOORS.map((t, i) => ({
+  faction: t.faction,
+  floor: t.floor,
+  ceiling: i === 0 ? SCALE_TOP : FACTION_TIER_FLOORS[i - 1].floor - 1
+})).reverse()
+
+/**
+ * Where a standing sits on a strip of EQUAL-WIDTH bands, 0 to 1. Equal widths because the rungs
+ * are not: drawn to scale, scowls would take 31% of the strip and indifferent 2.5%.
+ */
+export function ladderPosition(standing: number): number {
+  const s = Math.max(TIER_BANDS[0].floor, Math.min(SCALE_TOP, standing))
+  const i = TIER_BANDS.findIndex((b) => s <= b.ceiling)
+  const band = TIER_BANDS[i]
+  const within = (s - band.floor) / (band.ceiling + 1 - band.floor)
+  return (i + within) / TIER_BANDS.length
+}
+
+/** The next rung up and its floor, or null at ally. */
+export function nextTier(standing: number): TierBand | null {
+  return TIER_BANDS.find((b) => b.floor > standing) ?? null
+}
