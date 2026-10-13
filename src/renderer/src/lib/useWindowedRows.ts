@@ -143,7 +143,11 @@ export function useWindowedRows({
   // write whose value is `Object.is`-equal, so a steady container costs one ref read per commit.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useLayoutEffect(() => {
-    setEl((prev) => (prev === scrollRef.current ? prev : scrollRef.current))
+    // Dispatch ONLY on a real change: an updater queued on every commit is not free when the
+    // fiber already has work pending, and under a burst of nested commits (a variable-height list
+    // re-measuring a row) it re-queued a render per commit until React's update-depth limit threw.
+    const node = scrollRef.current
+    if (node !== el) setEl(node)
   })
 
   const measure = useCallback(() => {
