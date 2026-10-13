@@ -41,7 +41,7 @@
 // All levels. Out-of-band geometry DIMS rather than disappearing — a floor with its surroundings
 // deleted is a diagram you cannot place.
 
-import { useCallback, useEffect, useMemo, useState, useRef, type JSX } from 'react'
+import { memo, useCallback, useEffect, useMemo, useState, useRef, type JSX } from 'react'
 import { Box, Chip, Paper, Stack, Typography } from '@mui/material'
 import MapIcon from '@mui/icons-material/Map'
 import type { CharacterSnap } from '@shared/types'
@@ -359,19 +359,36 @@ function useMapOpenTracking(data: MapData | null): void {
   }, [loaded])
 }
 
-export default function MapsView({
+// The parts of the Map tab that do not move with the map, memoized so a pan or zoom frame does
+// not redraw them (owner, 2026-10-13). Their props are kept stable across view changes.
+const HeaderMemo = memo(MapsHeader)
+const ToolbarMemo = memo(MapToolbar)
+const TravelMemo = memo(MapTravelCard)
+const CreditsMemo = memo(MapCredits)
+
+/**
+ * The Map sub-tab's whole body. Its own component so the viewport state (which changes on every
+ * pan and zoom frame) lives BELOW `MapsTabs`: a drag re-renders this, never the MUI tab bar, whose
+ * indicator measured the page layout on every render (owner, 2026-10-13: the map was laggy).
+ */
+function MapTab({
+  raw,
+  sel,
   onOpenMob,
   onOpenLoot
 }: {
+  raw: string | undefined
+  sel: ReturnType<typeof useZoneSelection>
   onOpenMob: (t: MobTarget) => void
   onOpenLoot: (name: string) => void
 }): JSX.Element {
-  // WHERE YOU ARE. The character module owns the raw display zone off the `zone` log event; it
-  // is undefined until the log prints one, and that absence is a state this view renders.
-  const raw = useModule<CharacterSnap>('character')?.zone
-  const { zone, auto, mode, pick, followCurrent } = useZoneSelection(raw)
+  const { zone, auto, mode, pick, followCurrent } = sel
   const [prefs, setPrefs] = useState<MapPackPrefs>(loadPackPrefs)
   const [layers, setLayers] = useState<LayerMask>(DEFAULT_LAYERS)
+  const onPrefs = useCallback((p: MapPackPrefs) => {
+    setPrefs(p)
+    savePackPrefs(p)
+  }, [])
 
   const { packs, zones, ready } = useMapPacks()
   const { data, error, loading } = useMapData(zone, prefs)
@@ -409,16 +426,11 @@ export default function MapsView({
   const travel = useZoneTravel(zone, zoneName, data)
 
   return (
-    <Stack spacing={1.5} sx={{ height: '100%' }}>
-      {/* THE MAP TAB HOLDS EVERYTHING BELOW, the header included (owner, 2026-09-12: *"shouldn't
-          the top section be inside the map subtab and not above the tab names?"* - it names the
-          zone on the map, so it is the map's). The advice list is the other tab. `MapsTabs` owns
-          the tab so this view stays under its complexity ceiling. */}
-      <MapsTabs onPick={pick}>
-        <MapsHeader title={headerTitle(zone, raw)} zone={zone} data={data} />
+    <>
+        <HeaderMemo title={headerTitle(zone, raw)} zone={zone} data={data} />
         {/* ALWAYS RENDERED, because the Zone selector inside it is how you leave the map you are
             on. Everything else in the bar is gated on `hasMap`. */}
-        <MapToolbar
+        <ToolbarMemo
           zones={zones}
           zone={zone}
           onPick={pick}
@@ -435,10 +447,7 @@ export default function MapsView({
           onFloor={setFloor}
           packs={packs}
           prefs={prefs}
-          onPrefs={(p) => {
-            setPrefs(p)
-            savePackPrefs(p)
-          }}
+          onPrefs={onPrefs}
           locMarker={loc.marker}
           onPlaceLoc={loc.place}
           onShowLoc={loc.show}
@@ -450,7 +459,7 @@ export default function MapsView({
         {/* HOW YOU GET HERE, AND WHAT FOR (owner ask 2026-09-11). Under the toolbar rather than in
             the sidebar: it is about the zone itself, not about finding something in it, and the
             sidebar is the finder. Draws nothing at all when neither witness has anything to say. */}
-        <MapTravelCard travel={travel} onPick={pick} onOpenItem={onOpenLoot} />
+        <TravelMemo travel={travel} onPick={pick} onOpenItem={onOpenLoot} />
         <MapBody
           data={data}
           // Nothing is claimed before the pack listing and the first fetch have answered — a
@@ -473,7 +482,30 @@ export default function MapsView({
           onOpenLoot={onOpenLoot}
         />
         {/* Reserved for the same reason and on the same condition as the toolbar's row (JOS-205). */}
-        <MapCredits data={data} reserve={reserve} />
+        <CreditsMemo data={data} reserve={reserve} />
+    </>
+  )
+}
+
+export default function MapsView({
+  onOpenMob,
+  onOpenLoot
+}: {
+  onOpenMob: (t: MobTarget) => void
+  onOpenLoot: (name: string) => void
+}): JSX.Element {
+  // WHERE YOU ARE. The character module owns the raw display zone off the `zone` log event; it
+  // is undefined until the log prints one, and that absence is a state this view renders.
+  const raw = useModule<CharacterSnap>('character')?.zone
+  const sel = useZoneSelection(raw)
+  return (
+    <Stack spacing={1.5} sx={{ height: '100%' }}>
+      {/* THE MAP TAB HOLDS EVERYTHING BELOW, the header included (owner, 2026-09-12: *"shouldn't
+          the top section be inside the map subtab and not above the tab names?"* - it names the
+          zone on the map, so it is the map's). The advice list is the other tab. `MapsTabs` owns
+          the tab so this view stays under its complexity ceiling. */}
+      <MapsTabs onPick={sel.pick}>
+        <MapTab raw={raw} sel={sel} onOpenMob={onOpenMob} onOpenLoot={onOpenLoot} />
       </MapsTabs>
     </Stack>
   )
