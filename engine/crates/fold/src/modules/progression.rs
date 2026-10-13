@@ -1,7 +1,8 @@
 //! `src/main/modules/progression.ts` — the range-queryable time series behind the leveling
 //! analytics. Experience, CREDITED kills, WITNESSED kills, loot (an activity signal), the zone
-//! timeline, the offline intervals and a mirror of the level/AA series, folded into ONE columnar
-//! snapshot so `shared/progressionStats.rangeStats` has a single input.
+//! timeline, the offline intervals, coin and deaths (`progression_ledger`) and a mirror of the
+//! level/AA series, folded into ONE columnar snapshot so `shared/progressionStats.rangeStats`
+//! has a single input.
 //!
 //! Not part of `leveling` because the contracts differ: `LevelingSnap` is deliberately UNCAPPED,
 //! while this series grows at ~1.7k rows/day and must be capped — folding a drop-oldest ring into a
@@ -36,6 +37,7 @@
 //! reads it, so every published field comes off the live columns. `dropped` and `windowStart` are
 //! published and are kept in full.
 
+use super::progression_ledger::Ledger;
 use crate::event::Event;
 use crate::jsfn::starts_with_you_word;
 use crate::EqModule;
@@ -126,6 +128,8 @@ struct Snap {
     level_value: Vec<i64>,
     aa_gain_ts: Vec<i64>,
     aa_gain_amount: Vec<i64>,
+    #[serde(flatten)]
+    ledger: Ledger,
     last_ts: i64,
     window_start: i64,
     dropped: i64,
@@ -171,7 +175,7 @@ pub struct ProgressionModule {
 ///
 /// The length decision is made once here and each caller applies the same `drop` to its own
 /// columns, because the borrow checker will not hand out several `&mut` fields through one slice.
-fn cap_drop(cap: usize, len: usize) -> usize {
+pub(crate) fn cap_drop(cap: usize, len: usize) -> usize {
     if len < cap + TRIM_BATCH {
         0
     } else {
@@ -399,6 +403,7 @@ impl ProgressionModule {
             self.dropped_by.offline += n as i64;
             self.s.dropped += n as i64;
         }
+        self.s.dropped += self.s.ledger.trim();
         self.recompute_window();
     }
 
@@ -425,7 +430,7 @@ impl ProgressionModule {
                 }
             }
         }
-        self.s.window_start = w;
+        self.s.window_start = w.max(self.s.ledger.floor().unwrap_or(0));
     }
 
     fn clear(&mut self) {
@@ -438,6 +443,10 @@ impl ProgressionModule {
     }
 
     fn fold(&mut self, ev: &Event) {
+        if self.s.ledger.fold(ev) {
+            self.trim();
+            self.announce.changed(self.seq);
+        }
         match ev.kind() {
             "expGain" => self.push_exp(ev.ts(), ev.f64("pct"), ev.bool("party")),
             "death" => self.on_death(ev),

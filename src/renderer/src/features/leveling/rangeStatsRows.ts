@@ -46,7 +46,7 @@ import {
   type BasisRead,
   type RateBasis
 } from '../../../../shared/rateBasis'
-import { formatAaRate, formatKillRate, formatLevelRate, formatPointRate } from '../../lib/formatRate'
+import { formatAaRate, formatKillRate, formatLevelRate, formatPlatRate, formatPointRate } from '../../lib/formatRate'
 import { fmtDuration } from './levelChartGeometry'
 import { zoneColor } from './zoneBands'
 
@@ -91,6 +91,9 @@ export interface ZoneStatRow {
   killsPerHour: string
   /** how many experience lines in this zone stated no percentage (0 = none). */
   unstated: number
+  /** coin received here, in platinum: '1.25pp'. */
+  coin: string
+  deaths: number
 }
 
 /** One hero card's text. The icon and accent stay in the component; these are the words. */
@@ -170,7 +173,9 @@ function shapeZone(z: ZoneRangeRow, basis: RateBasis): ZoneStatRow {
     levels: levelsText(z.levelEquiv, z.expSamples, z.expUnstated),
     levelsPerHour: rate(pickRate(read, z.levelsPerHourActive, z.levelsPerHourWall), formatLevelRate),
     killsPerHour: rate(pickRate(read, z.killsPerHourActive, z.killsPerHourWall), formatKillRate),
-    unstated: z.expUnstated
+    unstated: z.expUnstated,
+    coin: platText(z.coinCopper),
+    deaths: z.deaths
   }
 }
 
@@ -531,4 +536,57 @@ export function unstatedCaption(stats: RangeStats): string | null {
   if (stats.expUnstated === 0) return null
   const n = stats.expUnstated
   return `* ${n} experience line${n === 1 ? '' : 's'} stated no percentage`
+}
+
+const COPPER_PER = [
+  ['pp', 1000],
+  ['gp', 100],
+  ['sp', 10],
+  ['cp', 1]
+] as const
+
+/** Copper as the game counts it: '12pp 3gp 4sp 1cp', zero denominations left out, '0cp' for none. */
+export function coinText(copper: number): string {
+  let left = copper
+  const parts: string[] = []
+  for (const [unit, per] of COPPER_PER) {
+    const n = Math.floor(left / per)
+    left -= n * per
+    if (n > 0) parts.push(`${n.toLocaleString()}${unit}`)
+  }
+  return parts.length ? parts.join(' ') : '0cp'
+}
+
+/** Copper as platinum with two decimals, '1.25pp' — the narrow form a table column takes. */
+export function platText(copper: number): string {
+  return `${(copper / 1000).toFixed(2)}pp`
+}
+
+/** The coin chip: '12pp 3gp coin · 1.25 pp/hr'. The rate drops out when the hour cannot carry one;
+ *  null when the range received no coin. */
+export function coinChipText(stats: RangeStats, basis: RateBasis = RATE_BASIS_DEFAULT): string | null {
+  if (stats.coinCopper <= 0) return null
+  const perHour = pickRate(basisRead(basis, stats), stats.coinPerHourActive, stats.coinPerHourWall)
+  const total = `${coinText(stats.coinCopper)} coin`
+  return perHour == null ? total : `${total} · ${formatPlatRate(perHour / 1000)}`
+}
+
+/** What the coin counts, and the hour its rate is per. */
+export function coinTitle(stats: RangeStats, basis: RateBasis = RATE_BASIS_DEFAULT): string {
+  const read = basisRead(basis, stats)
+  return withBasis(
+    `Coin received: corpse coin, coin from items and merchants, and auto-sold loot. Rate per hour of ${read.word} time.`,
+    read
+  )
+}
+
+/** '3 deaths'. Zero is said, not hidden: no deaths is a fact the log can state. */
+export function deathsText(stats: RangeStats): string {
+  return `${stats.deaths} death${stats.deaths === 1 ? '' : 's'}`
+}
+
+/** Who killed you, most first: 'Killed by a shiverback (3), Trooper Axyl (1)'. Null with no deaths. */
+export function deathsTitle(stats: RangeStats): string | null {
+  if (stats.deaths === 0) return null
+  return `Killed by ${stats.deathKillers.map((k) => `${k.killer} (${k.count})`).join(', ')}`
 }

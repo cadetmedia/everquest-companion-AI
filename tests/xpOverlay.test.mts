@@ -136,9 +136,9 @@ test('a stored row list is rebuilt: unknown ids dropped, duplicates collapsed, o
 
 test('toggling a row off then on returns exactly the full set, in order', () => {
   const off = toggleXpRow('eta', undefined)
-  assert.deepEqual(off, ['xp', 'motes'], 'toggling off an absent list starts from every row')
+  assert.deepEqual(off, ['xp', 'motes', 'coin'], 'toggling off an absent list starts from every row')
   assert.deepEqual(toggleXpRow('eta', off), [...XP_ROW_IDS])
-  assert.deepEqual(toggleXpRow('xp', toggleXpRow('motes', off)), [])
+  assert.deepEqual(toggleXpRow('coin', toggleXpRow('xp', toggleXpRow('motes', off))), [])
 })
 
 test('a hidden row is ABSENT from the window, never present and blank', () => {

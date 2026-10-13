@@ -101,7 +101,7 @@ const TICK_MS = 30_000
 
 /** The row checklist's button labels. The ids are `XpRowId`; these are what a user reads. 'xp' is
  *  the PACE entry — one button over however many pace lines the log can currently state. */
-const ROW_LABEL: Record<XpRowId, string> = { xp: 'xp', eta: 'next', motes: 'motes' }
+const ROW_LABEL: Record<XpRowId, string> = { xp: 'xp', eta: 'next', motes: 'motes', coin: 'coin' }
 
 /** A slow local clock, so a slice that ends at the live edge keeps re-reading while nothing
  *  arrives. It asks main for nothing — the fold is over state this window already holds. */

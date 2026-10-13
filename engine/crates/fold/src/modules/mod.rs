@@ -47,6 +47,7 @@ pub mod loot;
 pub mod observed_spell_ranks;
 pub mod output_files;
 pub mod progression;
+pub mod progression_ledger;
 pub mod resist;
 pub mod respawn;
 pub mod roster;

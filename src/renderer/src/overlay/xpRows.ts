@@ -80,9 +80,15 @@ import {
   type RateBasis
 } from '../../../shared/rateBasis'
 import { AA_EST, aaEtaValue } from '../features/leveling/aaPaceRows'
-import { NONE, basisSpanText } from '../features/leveling/rangeStatsRows'
+import { NONE, basisSpanText, coinText } from '../features/leveling/rangeStatsRows'
 import { fmtDuration } from '../features/leveling/levelChartGeometry'
-import { formatAaRate, formatDropRate, formatLevelRate, formatPointRate } from '../lib/formatRate'
+import {
+  formatAaRate,
+  formatDropRate,
+  formatLevelRate,
+  formatPlatRate,
+  formatPointRate
+} from '../lib/formatRate'
 
 /**
  * One printed row: a label, a number, its unit, and a dim trailing detail.
@@ -360,6 +366,21 @@ function moteRows(
   })
 }
 
+/** Platinum per hour received in the slice, with the total; a measured zero when none came in. */
+function coinRow(stats: RangeStats, read: BasisRead): XpOverlayRow {
+  const perHour = pickRate(read, stats.coinPerHourActive, stats.coinPerHourWall)
+  const r = split(rate(perHour == null ? null : perHour / 1000, formatPlatRate))
+  return {
+    id: 'coin',
+    row: 'coin',
+    label: 'Coin',
+    value: r.value,
+    unit: r.unit || 'pp/hr',
+    detail: coinText(stats.coinCopper),
+    inferred: false
+  }
+}
+
 export interface XpRowsArgs {
   snap: ProgressionSnap
   /** Every loot event this character has, oldest first (the `loot` module's snapshot). */
@@ -398,6 +419,7 @@ export function xpOverlayView(args: XpRowsArgs): XpOverlayView {
   if (xpRowVisible('xp', visible)) rows.push(...paceRows(stats, capped, basis))
   if (xpRowVisible('eta', visible)) rows.push(etaRow(snap, stats, level, basis))
   if (xpRowVisible('motes', visible)) rows.push(...moteRows(loot, slice, stats, basis))
+  if (xpRowVisible('coin', visible)) rows.push(coinRow(stats, basis))
   const read = currentLevelRead(level, snap)
   return {
     rows,

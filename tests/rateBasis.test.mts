@@ -454,7 +454,7 @@ test('a stretch shorter than the idle threshold refuses every rate, with its rea
  */
 test('the rows are drawn either way — only the number waits for evidence', () => {
   const short = view(justArrived(40_000), [])
-  assert.deepEqual(short.rows.map((r) => r.id), ['xp', 'aa', 'eta', 'motes-none'])
+  assert.deepEqual(short.rows.map((r) => r.id), ['xp', 'aa', 'eta', 'motes-none', 'coin'])
   const at = view(justArrived(RATE_MIN_MS), [])
   assert.equal(at.measurable, true)
   assert.equal(valueOf(at, 'aa'), '0.00', 'a measured zero over a real span still prints')

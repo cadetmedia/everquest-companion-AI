@@ -49,6 +49,7 @@ import type { RangeStats, RangeStatsArgs, ZoneRangeRow } from './progressionStat
 // asks; `zoneIdKey` is the row fold, which lives beside it now and is re-exported below so every
 // existing importer of `progressionStats.zoneIdKey` is untouched.
 import { zoneAdmits, zoneIdKey } from './zoneScope'
+import { foldLedger } from './rangeLedger'
 
 /**
  * No exp / credited-kill / loot event for LONGER than this ⇒ idle.
@@ -335,7 +336,9 @@ function newRow(zone: string): ZoneRangeRow {
     levelsPerHourActive: null,
     levelsPerHourWall: null,
     killsPerHourActive: null,
-    killsPerHourWall: null
+    killsPerHourWall: null,
+    coinCopper: 0,
+    deaths: 0
   }
 }
 
@@ -549,6 +552,7 @@ export function rangeStats(args: RangeStatsArgs): RangeStats {
   const ctx: FoldCtx = { segs, rows, of, t0, t1 }
   const kills = foldKills(snap, ctx)
   const exp = foldExp(snap, ctx)
+  const ledger = foldLedger(snap, { t0, t1, rowAt: (ts) => rowAt(ctx, ts) })
   finishRows(rows)
   const unknown = levelsUnknown(exp.expSamples, exp.expUnstated)
   let aaGained = 0
@@ -586,6 +590,9 @@ export function rangeStats(args: RangeStatsArgs): RangeStats {
     // show the pair the way the loot ledger shows its pair, and neither reading passes for the other.
     aaPerHourWall: perHour(aaEvents, wall),
     aaPointsPerHourWall: perHour(aaGained, wall),
+    ...ledger,
+    coinPerHourActive: perHour(ledger.coinCopper, activeMs),
+    coinPerHourWall: perHour(ledger.coinCopper, wall),
     zones: rows,
     combos: combo ? combo.intervalsIn(t0, t1) : [],
     clipped: snap.windowStart > 0 && t0 < snap.windowStart

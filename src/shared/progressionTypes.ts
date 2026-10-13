@@ -133,6 +133,15 @@ export interface ProgressionSnap {
   aaGainTs: number[]
   aaGainAmount: number[]
 
+  // --- coin received and your deaths, capped like the columns above. Optional so a snapshot
+  // built without them (a test literal, the delta reducer) reads as none. ---
+  coinTs?: number[]
+  /** the whole amount in copper (1 platinum = 10 gold = 100 silver = 1000 copper). */
+  coinCopper?: number[]
+  deathTs?: number[]
+  /** the killer the line named; '' for a bare `You died.` */
+  deathKiller?: string[]
+
   /** last event ts folded (clamps the open zone interval and an open selection). */
   lastTs: number
   /**

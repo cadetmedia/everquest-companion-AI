@@ -68,8 +68,12 @@ import {
   aaRateText,
   aaText,
   activeIdleText,
+  coinChipText,
+  coinTitle,
   comboInferred,
   comboText,
+  deathsText,
+  deathsTitle,
   idleGapsText,
   idleRuleCaption,
   membershipText,
@@ -167,6 +171,8 @@ function ChipRow({ stats, basis }: { stats: RangeStats; basis: RateBasis }): JSX
   // its caption exist only when the log said so.
   const offline = offlineText(stats)
   const logouts = offlineGapsText(stats)
+  const coin = coinChipText(stats, basis)
+  const killers = deathsTitle(stats)
   return (
     <Box>
       <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
@@ -195,6 +201,14 @@ function ChipRow({ stats, basis }: { stats: RangeStats; basis: RateBasis }): JSX
             <Chip size="small" variant="outlined" label={aaRate} sx={CHIP_SX} />
           </Tooltip>
         )}
+        {coin && (
+          <Tooltip title={coinTitle(stats, basis)}>
+            <Chip size="small" variant="outlined" label={coin} sx={CHIP_SX} data-testid="leveling-range-coin" />
+          </Tooltip>
+        )}
+        <Tooltip title={killers ?? ''}>
+          <Chip size="small" variant="outlined" label={deathsText(stats)} sx={CHIP_SX} data-testid="leveling-range-deaths" />
+        </Tooltip>
       </Stack>
       <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
         {idleRuleCaption(stats.idleThresholdMs)}
@@ -249,6 +263,12 @@ function ZoneRow({ row }: { row: ZoneStatRow }): JSX.Element {
       <TableCell align="right" sx={CELL_SX}>
         {row.killsPerHour}
       </TableCell>
+      <TableCell align="right" sx={CELL_SX}>
+        {row.coin}
+      </TableCell>
+      <TableCell align="right" sx={CELL_SX}>
+        {row.deaths}
+      </TableCell>
     </TableRow>
   )
 }
@@ -302,6 +322,12 @@ function ZoneTable({ zones, basis }: { zones: RangeStats['zones']; basis: RateBa
             </TableCell>
             <TableCell align="right" sx={HEAD_SX} title={ACTIVE_TIME_TITLE}>
               Kills/hr
+            </TableCell>
+            <TableCell align="right" sx={HEAD_SX} title="Coin received here, in platinum.">
+              Coin
+            </TableCell>
+            <TableCell align="right" sx={HEAD_SX}>
+              Deaths
             </TableCell>
           </TableRow>
         </TableHead>

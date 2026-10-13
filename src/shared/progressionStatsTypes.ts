@@ -46,6 +46,9 @@ export interface ZoneRangeRow {
    *  table row can state both of its rates over ONE hour — a levels column on the elapsed
    *  denominator beside a kills column on the active one is two readings wearing one row. */
   killsPerHourWall: number | null
+  /** coin received here, in copper (see `RangeStats.coinCopper`). */
+  coinCopper: number
+  deaths: number
 }
 
 export interface ComboInterval {
@@ -187,6 +190,14 @@ export interface RangeStats {
    * inside the numerator because the log printed it.
    */
   aaPointsPerHourWall: number | null
+
+  /** Coin received, in copper: every coin line plus the price auto-sold loot carried. */
+  coinCopper: number
+  coinPerHourActive: number | null
+  coinPerHourWall: number | null
+  /** Your deaths, and who did it, most kills first ('unknown' for a bare `You died.`). */
+  deaths: number
+  deathKillers: { killer: string; count: number }[]
 
   zones: ZoneRangeRow[]
   combos: ComboInterval[]

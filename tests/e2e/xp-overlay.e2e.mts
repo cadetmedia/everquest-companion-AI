@@ -168,12 +168,12 @@ async function stepOpenAndChrome(page: Page, app: ElectronApplication): Promise<
  * one real fold.
  */
 async function stepHydratesFromTheFold(overlay: Page): Promise<void> {
-  // FOUR rows exactly, and the count is an assertion in its own right: the query below selects rows
-  // and nothing else (see `rows`), so a fifth would mean something is being drawn twice.
-  const seen = await settle(() => rows(overlay), (r) => r.length >= 4, { timeoutMs: 30_000 })
+  // FIVE rows exactly, and the count is an assertion in its own right: the query below selects rows
+  // and nothing else (see `rows`), so a sixth would mean something is being drawn twice.
+  const seen = await settle(() => rows(overlay), (r) => r.length >= 5, { timeoutMs: 30_000 })
   check(
-    'the window draws both paces, the projection and the motes line',
-    JSON.stringify(seen.map((r) => r.id)) === '["xp","aa","eta","motes-none"]',
+    'the window draws both paces, the projection, the motes line and the coin line',
+    JSON.stringify(seen.map((r) => r.id)) === '["xp","aa","eta","motes-none","coin"]',
     JSON.stringify(seen)
   )
   const xp = seen.find((r) => r.id === 'xp')
@@ -239,7 +239,7 @@ async function stepRowChecklist(overlay: Page): Promise<void> {
   // 'motes' covers however many tiers dropped (shared/xpOverlay.ts states the rule). The
   // denominator toggle beside them is `xp-basis` and deliberately does NOT share this prefix — it
   // switches an hour, not a row, and a selector that swept it up would be counting two things.
-  check('the checklist offers one toggle per entry', (await countOf(overlay, '[data-testid^="xp-toggle-"]')) === 3)
+  check('the checklist offers one toggle per entry', (await countOf(overlay, '[data-testid^="xp-toggle-"]')) === 4)
   check('…and the denominator toggle sits beside them, outside the row prefix', (await countOf(overlay, '[data-testid="xp-basis"]')) === 1)
 
   await setConfig(overlay, { xpRows: ['xp', 'eta'] })
@@ -261,7 +261,7 @@ async function stepRowChecklist(overlay: Page): Promise<void> {
   })
   check('an unknown row id is dropped by main rather than stored', JSON.stringify(rejected.xpRows) === '["xp"]', JSON.stringify(rejected.xpRows))
 
-  await setConfig(overlay, { xpRows: ['xp', 'eta', 'motes'] })
+  await setConfig(overlay, { xpRows: ['xp', 'eta', 'motes', 'coin'] })
   const restored = await settle(() => rows(overlay), (r) => r.some((x) => x.row === 'motes'), { timeoutMs: 15_000 })
   check('…and switching it back on brings the row back', restored.some((r) => r.row === 'motes'), JSON.stringify(restored))
 }
@@ -414,7 +414,7 @@ async function stepZoneScope(overlay: Page): Promise<void> {
   )
   check(
     '…while the checklist prefix still selects rows only',
-    (await countOf(overlay, '[data-testid^="xp-toggle-"]')) === 3,
+    (await countOf(overlay, '[data-testid^="xp-toggle-"]')) === 4,
     'the tier toggle is `xp-tier`, deliberately outside the row prefix'
   )
 

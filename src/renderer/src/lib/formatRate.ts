@@ -103,6 +103,11 @@ export function formatPointRate(n: number): string {
   return `${formatSmall(n)} pts/hr`
 }
 
+/** PLATINUM per hour: '1.25 pp/hr'. */
+export function formatPlatRate(n: number): string {
+  return `${formatSmall(n)} pp/hr`
+}
+
 /**
  * A PROCS-PER-MINUTE rate (proc analytics): '4.12 ppm', '0.35 ppm', '210 ppm'. The word after
  * the number, exactly like `dps` and `hps`, and deliberately NOT '/min' — the Task #54 sweep
