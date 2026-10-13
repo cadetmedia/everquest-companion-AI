@@ -67,3 +67,14 @@ fn a_rebirth_clears_both_columns() {
     assert_eq!(s["coinTs"], json!([]));
     assert_eq!(s["deathTs"], json!([]));
 }
+
+#[test]
+fn a_merchant_sale_keeps_the_item_it_was_for_and_other_coin_keeps_none() {
+    let s = fold(&[
+        r#"{"kind":"coin","seq":0,"ts":1000,"raw":"[x] You receive 3 gold 8 silver 1 copper from Klok Nylsi for the Brownie Brain(s).","source":"vendor"}"#,
+        r#"{"kind":"coin","seq":1,"ts":2000,"raw":"[x] You receive 4 silver from the corpse.","source":"corpse"}"#,
+        r#"{"kind":"loot","seq":2,"ts":3000,"raw":"[x] You looted a Rat Eye from a pack rat's corpse and sold it for 1 gold.","item":"Rat Eye","disposition":"sold"}"#,
+    ]);
+    assert_eq!(s["coinSold"], json!(["Brownie Brain", "", ""]));
+    assert_eq!(s["coinCopper"], json!([381, 40, 100]));
+}

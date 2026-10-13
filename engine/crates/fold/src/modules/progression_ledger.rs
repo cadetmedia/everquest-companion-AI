@@ -4,6 +4,10 @@
 //! item's payout, a merchant sale), plus the price auto-sold loot carried. The parser keeps no field
 //! for that price, so it is read off the raw line. Deaths are counted as printed; a `slain by` a
 //! groupmate is a charm, and is counted all the same.
+//!
+//! A merchant sale also keeps the item it was for (`coinSold`, '' for every other coin), so the
+//! app can credit the sale to the zone the item was looted in (owner ask, 2026-10-13: loot carried
+//! out of a zone and sold elsewhere is still that zone's income).
 
 use super::progression::cap_drop;
 use crate::event::Event;
@@ -20,6 +24,8 @@ pub struct Ledger {
     coin_ts: Vec<i64>,
     /// The whole amount in copper (10 copper = 1 silver = 1/10 gold = 1/100 platinum).
     coin_copper: Vec<i64>,
+    /// The item a merchant paid for, as the line named it without its `(s)`; '' for other coin.
+    coin_sold: Vec<String>,
     death_ts: Vec<i64>,
     /// The killer as the line named it; '' for the bare `You died.` shape.
     death_killer: Vec<String>,
@@ -48,6 +54,17 @@ fn copper_in(text: &str) -> Option<i64> {
     total
 }
 
+/// The item a merchant sale was for: `... from Klok Nylsi for the Brownie Brain(s).` -> `Brownie Brain`.
+fn sold_item(ev: &Event) -> String {
+    if ev.str("source") != Some("vendor") {
+        return String::new();
+    }
+    ev.raw()
+        .rsplit_once(" for the ")
+        .map(|(_, item)| item.trim_end_matches('.').trim_end_matches("(s)").trim().to_string())
+        .unwrap_or_default()
+}
+
 /// The line's text without its `[timestamp] ` prefix.
 fn body(raw: &str) -> &str {
     raw.split_once("] ").map_or(raw, |(_, rest)| rest)
@@ -70,6 +87,7 @@ impl Ledger {
             Some(c) if c > 0 => {
                 self.coin_ts.push(ev.ts());
                 self.coin_copper.push(c);
+                self.coin_sold.push(if ev.kind() == "coin" { sold_item(ev) } else { String::new() });
                 true
             }
             _ => false,
@@ -91,6 +109,7 @@ impl Ledger {
         let c = cap_drop(COIN_CAP, self.coin_ts.len());
         self.coin_ts.drain(0..c);
         self.coin_copper.drain(0..c);
+        self.coin_sold.drain(0..c);
         let d = cap_drop(DEATH_CAP, self.death_ts.len());
         self.death_ts.drain(0..d);
         self.death_killer.drain(0..d);

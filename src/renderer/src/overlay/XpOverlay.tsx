@@ -66,6 +66,7 @@ import {
   type SliceId,
   type Timeslice
 } from '@shared/timeslice'
+import { attributeSales } from '@shared/coinAttribution'
 import { toggleXpRow, XP_ROW_IDS, xpRowVisible, type XpRowId } from '@shared/xpOverlay'
 import { toggleRateBasis, type RateBasis } from '@shared/rateBasis'
 import { ZONE_SCOPE_LABEL, toggleZoneScope, type ZoneScope } from '@shared/zoneScope'
@@ -473,7 +474,8 @@ export default function XpOverlay(): JSX.Element {
   const { id, slice } = useXpSlice(prog, bounds, config, zoneScope)
   const visible = config?.xpRows
   const view = useMemo(
-    () => xpOverlayView({ snap: prog, loot, slice, visible, level: who.level, basis }),
+    // Merchant sales credited to where their items dropped (shared/coinAttribution.ts).
+    () => xpOverlayView({ snap: attributeSales(prog, loot), loot, slice, visible, level: who.level, basis }),
     [prog, loot, slice, visible, who.level, basis]
   )
 
