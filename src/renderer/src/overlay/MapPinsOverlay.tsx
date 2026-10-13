@@ -160,13 +160,13 @@ function Corners({ fit }: { fit: ExtentFit }): JSX.Element {
 
 /** The header, and the layer chips under it while unlocked. Shown unlocked, or while hovered. */
 function PinsChrome({
-  title,
+  heading,
   count,
   layers,
   onToggle,
   chrome
 }: {
-  title: string
+  heading: string
   count: number
   layers: PinLayers
   onToggle: (k: keyof PinLayers) => void
@@ -178,7 +178,7 @@ function PinsChrome({
     <div style={{ position: 'absolute', top: 0, left: 0, right: 0 }}>
       <OverlayHeader
         tag="MAP"
-        title={title}
+        title={heading}
         titleColor={TRACK_COLOR}
         tail={count > 0 ? String(count) : undefined}
         tailTitle="Tracked points in this zone. Size the window to the game map's parchment."
@@ -222,7 +222,7 @@ export default function MapPinsOverlay(): JSX.Element {
           <MapPinsField ext={ext} fit={fit} w={w} h={h} data={data} layers={layers} mobs={mobs} timers={timers} tracked={tracked} nowMs={nowMs} onCopy={onCopy} />
         </>
       )}
-      <PinsChrome title={who.zone ?? 'Map pins'} count={tracked.length} layers={layers} onToggle={toggleLayer} chrome={chrome} />
+      <PinsChrome heading={who.zone ?? 'Map pins'} count={tracked.length} layers={layers} onToggle={toggleLayer} chrome={chrome} />
       {!locked && note != null && <Note text={note} />}
       {copied != null && <Note text={copied} bottom={CORNER_PX + 2} />}
     </div>
