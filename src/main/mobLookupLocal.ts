@@ -52,6 +52,15 @@ export function localMobEntry(name: string): MobEntry | null {
 /** How many mobs the committed catalog holds (diagnostic / startup log). */
 export const MOB_CATALOG_SIZE = mobData.mobs?.length ?? 0
 
+let places: MobEntry[] | null = null
+/** Every catalog mob that states a position, cut to the fields that place it (`maps:mobPlaces`). */
+export function mobPlaces(): MobEntry[] {
+  places ??= (mobData.mobs ?? [])
+    .filter((m) => (m.loc?.length ?? 0) > 0)
+    .map((m) => ({ page: m.page, name: m.name, ...(m.level === undefined ? {} : { level: m.level }), ...(m.zones === undefined ? {} : { zones: m.zones }), loc: m.loc }))
+  return places
+}
+
 /**
  * Turn a catalog entry into the WIKI half of a knowledge record. The catalog is compact by
  * design (names only — see MobEntry), so a per-drop `rarity` is simply ABSENT here; the live

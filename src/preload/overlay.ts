@@ -5,6 +5,7 @@ import type {
   AppFocus,
   CharacterRef,
   ItemKnowledge,
+  MobEntry,
   MobKnowledge,
   ModuleChanged,
   ModuleSnapshot,
@@ -13,6 +14,7 @@ import type {
   OverlayKind
 } from '../shared/types'
 import { OVERLAY_KINDS } from '../shared/types'
+import { mapsBridge } from './maps'
 import type { OverlayTextSizePrefs } from '../shared/overlayTextScale'
 import type { OverlayBgAlphaPrefs } from '../shared/overlayBgAlpha'
 import type { ScopeSelection } from '../shared/scopeSelection'
@@ -398,6 +400,10 @@ const overlayApi = {
   /** Put text on the clipboard through main (the web Clipboard API is denied here); true once it is
    *  there. The map pin overlay's click copies a `/waypoint` line. */
   writeClipboard: (text: string): Promise<boolean> => ipcRenderer.invoke(IPC.clipboardWrite, text),
+  /** The map pin overlay draws the zone's lines: the same call, and pack choice, as the Maps tab. */
+  getMapData: mapsBridge.getMapData,
+  /** Placed mobs only (`maps:mobPlaces`), fetched by the Map pins window alone. */
+  getMobPlaces: (): Promise<MobEntry[]> => ipcRenderer.invoke(IPC.mapsMobPlaces),
 
   /** Close this overlay from its own close button (interactive mode only). */
   close: (): void => ipcRenderer.send(IPC.overlayClose, KIND)

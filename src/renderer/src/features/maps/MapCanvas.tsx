@@ -58,7 +58,8 @@ const OFF_BAND_ALPHA = 0.14
 
 export interface MapCanvasProps {
   lines: MapLines
-  vp: MapViewport
+  /** Only the projection is read, so the map pin overlay can hand it a fixed whole-zone view. */
+  vp: Pick<MapViewport, 'view' | 'size' | 'rect'>
   /** Which layers to draw. Layer 2 (the legend) is off in `DEFAULT_LAYERS`. */
   layers: LayerMask
   /**

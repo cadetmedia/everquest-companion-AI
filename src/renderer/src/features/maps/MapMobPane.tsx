@@ -60,7 +60,7 @@ import { jumpTarget, type CrossZoneRow, type JumpTarget } from './crossZone'
 // A row's caption and its page door live next door (the file is at the line ceiling).
 import { WithPageDoor, WithRowActions, rowCaption, type RowActions } from './MapMobPaneRow'
 import { MapTrackedSection } from './MapTrackedSection'
-import type { ZoneTrack } from './useMapTrack'
+import type { ZoneTrack } from './useZoneTrack'
 import {
   MAX_PINS,
   isLocatable,

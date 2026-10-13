@@ -1,18 +1,18 @@
-// MapPinsOverlay.tsx — the tracked map points laid over the GAME'S OWN map (map-waypoints).
+// MapPinsOverlay.tsx — the zone laid over the GAME'S OWN map (map-waypoints).
 //
-// NO MAP IS DRAWN (owner, 2026-10-13): two near-identical maps on top of each other would only
-// get in the way. The window draws the corners of the zone's map and the tracked points, and
-// nothing else. The zone is fitted into the window the way the game's map shows a whole zone
-// (mapTrack.ts `fitExtent`), so the user sizes the window to the map window's parchment and every
-// pin is where the game draws that spot.
+// WHAT IT DRAWS is the user's choice, one chip each (owner, 2026-10-13): the zone's lines from the
+// same map pack as the Maps tab, the points of interest (named mobs and map labels), the timer
+// pins, and the tracked points. The zone is fitted into the window the way the game's map shows a
+// whole zone (mapTrack.ts `fitExtent`), so the user sizes the window to the map window's
+// parchment, checks the lines against the game's, and every pin is where the game draws that spot.
 //
-// UNLOCKED it is a faint frame: drag it by the header, resize it from the edges, click a pin to
-// copy its `/waypoint` line. LOCKED it is click-through and only the corners and pins show, so the
-// game's map under it takes every click; the header comes back while the pointer is over the top
-// strip, which is how it is unlocked again.
+// UNLOCKED it is a faint frame with the chips under its header: drag it by the header, resize it
+// from the edges, click any mark to copy its `/waypoint` line. LOCKED it is click-through and only
+// what the chips leave on shows, so the game's map under it takes every click; the header comes
+// back while the pointer is over the top strip, which is how it is unlocked again.
 //
-// The zone is the one the log last named, and the list is the Maps tab's: both come out of
-// localStorage, which this window shares with the main window (useMapTrack.ts).
+// The zone is the one the log last named. The track list and the pack choice are the Maps tab's,
+// read out of localStorage, which this window shares with the main window (useMapTrack.ts).
 
 import { useEffect, useMemo, useRef, useState, type JSX } from 'react'
 import type { CharacterSnap } from '@shared/types'
@@ -21,14 +21,17 @@ import { zoneShortName } from '@shared/zones'
 import { OverlayHeader } from './OverlayHeader'
 import { useOverlayChrome } from './useOverlayChrome'
 import { useOverlayModule } from './useOverlayModule'
-import { TRACK_COLOR, fitExtent, placeInExtent, trackedIn, type TrackedPin, type TrackedPoint, type ZoneExtent, type ExtentFit } from '../features/maps/mapTrack'
+import { TRACK_COLOR, fitExtent, trackedIn, type ExtentFit, type TrackedPin, type TrackedPoint, type ZoneExtent } from '../features/maps/mapTrack'
 import { useMapTrack } from '../features/maps/useMapTrack'
 import { withWatched } from '../features/maps/watchTrack'
 import { waypointCommand } from '../features/maps/waypoint'
+import { MapPinsField } from './MapPinsField'
+import { LayerChips, usePinLayers, type PinLayers } from './mapPinsLayers'
+import { useMobPlaces, useOverlayMapData } from './useMapPinsData'
+import { zoneMobPins, zoneTimerPins, zoneWatched } from '../features/maps/overlayPoints'
 
 const NO_CHARACTER: CharacterSnap = { character: null }
 const CORNER_PX = 16
-const PIN_PX = 9
 const COPIED_MS = 1800
 const TEXT = 'rgba(255,255,255,0.85)'
 const SHADOW = '0 0 2px #000, 0 0 2px #000'
@@ -47,7 +50,21 @@ function useWindowSize(): { w: number; h: number } {
   return size
 }
 
-/** One L-shaped bracket. `h`/`v` say which edges of the window it hugs. */
+/** A 1 Hz clock for the timer labels, ticking only while timers are drawn. */
+function useClock(on: boolean): number {
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    if (!on) return
+    const t = setInterval(() => {
+      setNow(Date.now())
+    }, 1000)
+    return () => {
+      clearInterval(t)
+    }
+  }, [on])
+  return now
+}
+
 /** One L-shaped bracket on a corner of the fitted zone, `fit`'s rectangle in the window. */
 function Corner({ h, v, fit }: { h: 'left' | 'right'; v: 'top' | 'bottom'; fit: ExtentFit }): JSX.Element {
   const edge = `2px solid ${TRACK_COLOR}`
@@ -70,128 +87,31 @@ function Corner({ h, v, fit }: { h: 'left' | 'right'; v: 'top' | 'bottom'; fit: 
   )
 }
 
-function Pin({
-  name,
-  pin,
-  at,
-  onCopy
-}: {
-  name: string
-  pin: TrackedPin
-  at: { px: number; py: number }
-  onCopy: (name: string, pin: TrackedPin) => void
-}): JSX.Element {
-  return (
-    <div
-      data-testid="map-pins-pin"
-      onClick={() => {
-        onCopy(name, pin)
-      }}
-      style={{ position: 'absolute', left: at.px, top: at.py, cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-    >
-      <span
-        style={{
-          width: PIN_PX,
-          height: PIN_PX,
-          marginLeft: -PIN_PX / 2,
-          marginTop: 0,
-          transform: 'translateY(-50%)',
-          borderRadius: '50%',
-          background: TRACK_COLOR,
-          boxShadow: '0 0 0 1px rgba(0,0,0,0.85)',
-          flexShrink: 0
-        }}
-      />
-      <span
-        style={{
-          marginLeft: 3,
-          transform: 'translateY(-50%)',
-          fontSize: 10,
-          color: TEXT,
-          textShadow: SHADOW,
-          whiteSpace: 'nowrap',
-          pointerEvents: 'none'
-        }}
-      >
-        {name}
-      </span>
-    </div>
-  )
-}
-
-type WatchedFn = typeof import('../features/maps/watchTrackCatalog').watchedPointsHere
-
-/**
- * The zone's tracked points: the stored list plus every mob watched on the Timers tab. The mob
- * catalog that places a watch is imported only here, on demand, so other overlay windows never
- * load it.
- */
-function useOverlayTracked(zone: string | null): TrackedPoint[] {
+/** Everything placed in the zone, through the window's whole-zone fit. */
+function useZoneMarks(zone: string | null, layers: PinLayers) {
   const { state } = useMapTrack()
-  const watches = useOverlayModule<RespawnSnap>('respawn', EMPTY_RESPAWN_SNAP).prefs.watches
-  const [fn, setFn] = useState<WatchedFn | null>(null)
-  useEffect(() => {
-    let live = true
-    void import('../features/maps/watchTrackCatalog').then((m) => {
-      if (live) setFn(() => m.watchedPointsHere)
-    })
-    return () => {
-      live = false
-    }
-  }, [])
-  return useMemo(
-    () => withWatched(trackedIn(state, zone), fn == null ? [] : fn(zone, watches)),
-    [state, zone, fn, watches]
+  const data = useOverlayMapData(zone)
+  const catalog = useMobPlaces()
+  const respawn = useOverlayModule<RespawnSnap>('respawn', EMPTY_RESPAWN_SNAP)
+  const tracked = useMemo<TrackedPoint[]>(
+    () => withWatched(trackedIn(state, zone), zoneWatched(zone, respawn.prefs.watches, catalog)),
+    [state, zone, catalog, respawn.prefs.watches]
   )
+  const mobs = useMemo(() => (layers.poi ? zoneMobPins(zone, catalog) : []), [zone, catalog, layers.poi])
+  const timers = useMemo(() => zoneTimerPins(zone, respawn.rows, catalog), [zone, respawn.rows, catalog])
+  const ext: ZoneExtent | undefined = data?.bounds ?? (zone == null ? undefined : state.extents[zone])
+  return { data, tracked, mobs, timers, ext }
 }
 
-function emptyNote(zone: string | null, ext: ZoneExtent | undefined, count: number): string | null {
+function emptyNote(zone: string | null, ext: ZoneExtent | undefined): string | null {
   if (zone == null) return 'Waiting for the log to name your zone.'
-  if (ext == null) return 'Open this zone on the Maps tab once to place its corners.'
-  if (count === 0) return 'Nothing tracked here - track mobs or labels on the Maps tab, or watch one on Timers.'
+  if (ext == null) return 'No map for this zone - install a map pack, or open it on the Maps tab.'
   return null
 }
 
-/** The four corners and every tracked pin, placed in the window. Nothing at all without an extent. */
-function PinField({
-  ext,
-  points,
-  onCopy
-}: {
-  ext: ZoneExtent | undefined
-  points: readonly TrackedPoint[]
-  onCopy: (name: string, pin: TrackedPin) => void
-}): JSX.Element | null {
-  const { w, h } = useWindowSize()
-  if (ext == null) return null
-  const fit = fitExtent(ext, w, h)
-  return (
-    <>
-      <Corner h="left" v="top" fit={fit} />
-      <Corner h="right" v="top" fit={fit} />
-      <Corner h="left" v="bottom" fit={fit} />
-      <Corner h="right" v="bottom" fit={fit} />
-      {points.map((p) =>
-        p.pins.map((pin, i) => (
-          <Pin key={`${p.id}#${String(i)}`} name={p.name} pin={pin} at={placeInExtent(ext, fit, pin)} onCopy={onCopy} />
-        ))
-      )}
-    </>
-  )
-}
-
-export default function MapPinsOverlay(): JSX.Element {
-  const who = useOverlayModule<CharacterSnap>('character', NO_CHARACTER)
-  const { locked, hovering, toggleLock, capture, dragRegion, noDrag } = useOverlayChrome()
-  const { state } = useMapTrack()
+function useCopy(): { copied: string | null; onCopy: (name: string, pin: TrackedPin) => void } {
   const [copied, setCopied] = useState<string | null>(null)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  const zone = zoneShortName(who.zone)
-  const points = useOverlayTracked(zone)
-  const ext = zone == null ? undefined : state.extents[zone]
-  const note = emptyNote(zone, ext, points.length)
-
   const onCopy = (name: string, pin: TrackedPin): void => {
     const line = waypointCommand(pin)
     void window.eqOverlay.writeClipboard(line).then((ok) => {
@@ -202,6 +122,85 @@ export default function MapPinsOverlay(): JSX.Element {
       }, COPIED_MS)
     })
   }
+  return { copied, onCopy }
+}
+
+function Note({ text, bottom }: { text: string; bottom?: number }): JSX.Element {
+  return (
+    <div
+      data-testid={bottom == null ? undefined : 'map-pins-copied'}
+      style={{
+        position: 'absolute',
+        left: 8,
+        right: 8,
+        ...(bottom == null ? { top: '45%' } : { bottom }),
+        textAlign: 'center',
+        fontSize: 10.5,
+        color: TEXT,
+        textShadow: SHADOW,
+        pointerEvents: 'none'
+      }}
+    >
+      {text}
+    </div>
+  )
+}
+
+/** The four brackets on the fitted zone's corners. */
+function Corners({ fit }: { fit: ExtentFit }): JSX.Element {
+  return (
+    <>
+      <Corner h="left" v="top" fit={fit} />
+      <Corner h="right" v="top" fit={fit} />
+      <Corner h="left" v="bottom" fit={fit} />
+      <Corner h="right" v="bottom" fit={fit} />
+    </>
+  )
+}
+
+/** The header, and the layer chips under it while unlocked. Shown unlocked, or while hovered. */
+function PinsChrome({
+  title,
+  count,
+  layers,
+  onToggle,
+  chrome
+}: {
+  title: string
+  count: number
+  layers: PinLayers
+  onToggle: (k: keyof PinLayers) => void
+  chrome: ReturnType<typeof useOverlayChrome>
+}): JSX.Element | null {
+  const { locked, hovering, toggleLock, capture, dragRegion, noDrag } = chrome
+  if (locked && !hovering) return null
+  return (
+    <div style={{ position: 'absolute', top: 0, left: 0, right: 0 }}>
+      <OverlayHeader
+        tag="MAP"
+        title={title}
+        titleColor={TRACK_COLOR}
+        tail={count > 0 ? String(count) : undefined}
+        tailTitle="Tracked points in this zone. Size the window to the game map's parchment."
+        chrome={{ locked, hovering, dragRegion, noDrag, toggleLock, capture }}
+      />
+      {!locked && <LayerChips layers={layers} onToggle={onToggle} noDrag={noDrag} />}
+    </div>
+  )
+}
+
+export default function MapPinsOverlay(): JSX.Element {
+  const who = useOverlayModule<CharacterSnap>('character', NO_CHARACTER)
+  const chrome = useOverlayChrome()
+  const { locked } = chrome
+  const [layers, toggleLayer] = usePinLayers()
+  const { w, h } = useWindowSize()
+  const zone = zoneShortName(who.zone)
+  const { data, tracked, mobs, timers, ext } = useZoneMarks(zone, layers)
+  const nowMs = useClock(layers.timers && timers.length > 0)
+  const { copied, onCopy } = useCopy()
+  const fit = ext == null ? null : fitExtent(ext, w, h)
+  const note = emptyNote(zone, ext)
 
   return (
     <div
@@ -217,32 +216,15 @@ export default function MapPinsOverlay(): JSX.Element {
         overflow: 'hidden'
       }}
     >
-      <PinField ext={ext} points={points} onCopy={onCopy} />
-      {(!locked || hovering) && (
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0 }}>
-          <OverlayHeader
-            tag="MAP"
-            title={who.zone ?? 'Map pins'}
-            titleColor={TRACK_COLOR}
-            tail={points.length > 0 ? String(points.length) : undefined}
-            tailTitle="Tracked points in this zone. Line the four corners up with the game's map."
-            chrome={{ locked, hovering, dragRegion, noDrag, toggleLock, capture }}
-          />
-        </div>
+      {ext != null && fit != null && (
+        <>
+          <Corners fit={fit} />
+          <MapPinsField ext={ext} fit={fit} w={w} h={h} data={data} layers={layers} mobs={mobs} timers={timers} tracked={tracked} nowMs={nowMs} onCopy={onCopy} />
+        </>
       )}
-      {!locked && note != null && (
-        <div style={{ position: 'absolute', left: 8, right: 8, top: '45%', textAlign: 'center', fontSize: 10.5, color: TEXT, textShadow: SHADOW }}>
-          {note}
-        </div>
-      )}
-      {copied != null && (
-        <div
-          data-testid="map-pins-copied"
-          style={{ position: 'absolute', left: 8, right: 8, bottom: CORNER_PX + 2, textAlign: 'center', fontSize: 10.5, color: TEXT, textShadow: SHADOW }}
-        >
-          {copied}
-        </div>
-      )}
+      <PinsChrome title={who.zone ?? 'Map pins'} count={tracked.length} layers={layers} onToggle={toggleLayer} chrome={chrome} />
+      {!locked && note != null && <Note text={note} />}
+      {copied != null && <Note text={copied} bottom={CORNER_PX + 2} />}
     </div>
   )
 }

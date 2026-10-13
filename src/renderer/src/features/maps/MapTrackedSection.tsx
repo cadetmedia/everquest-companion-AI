@@ -9,7 +9,7 @@ import AlarmIcon from '@mui/icons-material/Alarm'
 import BookmarkIcon from '@mui/icons-material/Bookmark'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import { TRACK_COLOR, type TrackedPoint } from './mapTrack'
-import type { ZoneTrack } from './useMapTrack'
+import type { ZoneTrack } from './useZoneTrack'
 import type { RowActions } from './MapMobPaneRow'
 import { Tooltip } from '../../lib/Tooltip'
 

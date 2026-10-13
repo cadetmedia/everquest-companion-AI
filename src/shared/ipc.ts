@@ -647,6 +647,9 @@ export const IPC = {
   /** Every zone's stated exits, read once off every map in the default pack (owner ask
    *  2026-09-12: the closest port, not the closest within one hop). No argument. */
   mapsGraph: 'maps:graph',
+  /** The mob catalog cut to what places a mob (page, name, level, zones, loc), for the Map pins
+   *  overlay, which must not bundle the 3 MB catalog every overlay window would then load. */
+  mapsMobPlaces: 'maps:mobPlaces',
 
   // ---- settings / alert sharing ("profiles" — src/shared/profiles.ts) ----
   // Every call carries the renderer's whitelisted localStorage prefs (UI_PREF_SPECS): main

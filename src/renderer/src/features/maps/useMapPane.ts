@@ -23,7 +23,7 @@ import { useWishlist } from '../wishlist/useWishlist'
 import { CROSS_ZONE_LIMIT, crossZoneRows, type CrossZoneRow } from './crossZone'
 import { loadPaneOpen, savePaneOpen } from './useMapData'
 import type { MapViewport } from './useMapViewport'
-import { useZoneTrack, type ZoneTrack } from './useMapTrack'
+import { useZoneTrack, type ZoneTrack } from './useZoneTrack'
 import {
   filterPaneRows,
   labelRows,
