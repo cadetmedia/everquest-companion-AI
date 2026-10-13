@@ -13,3 +13,4 @@ nothing listed here is removed or narrowed without the owner's word (RULES.md, r
 | 2026-10-13 | owner | The waypoint command is also copyable from the Maps tab. | built |
 | 2026-10-13 | owner | Mobs (and other points) can be added to the track list from the normal Maps tab. | built (row bookmark button, right-click on a pin; Tracked section in the sidebar) |
 | 2026-10-13 | owner | The Maps tab and the overlay offer similar functions; the overlay is kept as short and simple as possible. | built (overlay: header, corners, pins, nothing else) |
+| 2026-10-13 | owner | Every mob watched on the Timers tab is part of the map tracking automatically (Maps rings and Tracked list, Map pins overlay). | open |
