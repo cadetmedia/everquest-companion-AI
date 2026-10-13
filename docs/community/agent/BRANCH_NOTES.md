@@ -170,3 +170,11 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   debuffs.
 - Group-inviter roster: after "You have joined the group", the inviter is not credited until a
   group-chat line (owner: leave for now).
+
+## zone-history
+
+- Built on map-improvements + coin-and-deaths (its first two commits merge them).
+- `zoneHistory.ts` rates are per ACTIVE hour; the Leveling table's new columns follow its rate
+  basis like its other rates, and every rate sort orders by the active-hour value.
+- `tests/e2e/maps.e2e.mts` "the map row never moves or resizes" fails on this branch with or
+  without its Maps change (measured 2026-10-13): a red of the base, not of the new tab.
