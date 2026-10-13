@@ -404,6 +404,9 @@ const overlayApi = {
   getMapData: mapsBridge.getMapData,
   /** Placed mobs only (`maps:mobPlaces`), fetched by the Map pins window alone. */
   getMobPlaces: (): Promise<MobEntry[]> => ipcRenderer.invoke(IPC.mapsMobPlaces),
+  /** Pinned, the rectangles (window CSS px) that still take the mouse: the map overlay's points. */
+  setMarkZones: (rects: { x: number; y: number; width: number; height: number }[]): void =>
+    ipcRenderer.send(IPC.overlaySetMarkZones, KIND, rects),
 
   /** Close this overlay from its own close button (interactive mode only). */
   close: (): void => ipcRenderer.send(IPC.overlayClose, KIND)

@@ -22,6 +22,8 @@ import { zoneShortName } from '@shared/zones'
 import { OverlayHeader } from './OverlayHeader'
 import { useOverlayChrome } from './useOverlayChrome'
 import { FOOTER_ROW } from './overlayScale'
+import { markZones, type MarkZoneInput } from './markZones'
+import { labelRows } from '../features/maps/mobPins'
 import { useOverlayModule } from './useOverlayModule'
 import { TRACK_COLOR, trackedIn, viewFit, type ExtentFit, type TrackedPin, type TrackedPoint, type ZoneExtent } from '../features/maps/mapTrack'
 import { useMapTrack } from '../features/maps/useMapTrack'
@@ -213,6 +215,28 @@ function PinsChrome({
   )
 }
 
+/**
+ * Pinned, tell main where the clickable marks are, so the pointer over one takes the mouse and the
+ * rest of the window stays click-through. Sent only when the set changes; nothing while unlocked
+ * (the window owns the mouse then) and nothing once the window is gone.
+ */
+function usePinnedMarkZones(input: MarkZoneInput | null, locked: boolean): void {
+  const sent = useRef('')
+  const zones = useMemo(() => (locked && input != null ? markZones(input) : []), [locked, input])
+  useEffect(() => {
+    const key = JSON.stringify(zones)
+    if (key === sent.current) return
+    sent.current = key
+    window.eqOverlay.setMarkZones(zones)
+  }, [zones])
+  useEffect(
+    () => () => {
+      window.eqOverlay.setMarkZones([])
+    },
+    []
+  )
+}
+
 export default function MapPinsOverlay(): JSX.Element {
   const who = useOverlayModule<CharacterSnap>('character', NO_CHARACTER)
   const chrome = useOverlayChrome()
@@ -226,8 +250,14 @@ export default function MapPinsOverlay(): JSX.Element {
   const { copied, onCopy } = useCopy()
   const hostRef = useRef<HTMLDivElement>(null)
   const zoom = useOverlayView({ zone, ext, size: { w, h }, enabled: !locked, hostRef })
-  const fit = ext == null ? null : viewFit(ext, w, h, zoom.view)
+  const fit = useMemo(() => (ext == null ? null : viewFit(ext, w, h, zoom.view)), [ext, w, h, zoom.view])
   const note = emptyNote(zone, ext)
+  const labels = useMemo(() => labelRows(data?.points ?? []).map((r) => r.point), [data])
+  const zoneInput = useMemo(
+    () => (ext == null || fit == null ? null : { ext, fit, w, h, layers, labels, mobs, timers, tracked }),
+    [ext, fit, w, h, layers, labels, mobs, timers, tracked]
+  )
+  usePinnedMarkZones(zoneInput, locked)
 
   return (
     <div

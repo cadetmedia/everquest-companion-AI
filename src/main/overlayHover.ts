@@ -87,6 +87,35 @@ interface HoverProbe {
 const HOVER_KINDS = OVERLAY_KINDS.filter((kind) => hotZoneStyle(kind) !== 'none')
 
 const publishedZones: Record<string, ZoneRect[]> = {}
+
+/** The most marks one window may claim: a zone's whole point set fits, a runaway list does not. */
+const MAX_MARK_ZONES = 600
+/** Clickable marks a pinned window reported, in its own CSS px (map-waypoints: the Map pins
+ *  overlay's points stay clickable while the rest of it is click-through). */
+const markZones: Partial<Record<OverlayKind, ZoneRect[]>> = {}
+
+function finiteRect(r: unknown): r is ZoneRect {
+  if (typeof r !== 'object' || r === null) return false
+  const { x, y, width, height } = r as Record<string, unknown>
+  return [x, y, width, height].every((n) => typeof n === 'number' && Number.isFinite(n)) && (width as number) > 0 && (height as number) > 0
+}
+
+/** Replace a window's mark zones (validated, capped) and republish its hover zones. */
+export function setOverlayMarkZones(kind: OverlayKind, rects: unknown): void {
+  if (!(OVERLAY_KINDS as string[]).includes(kind)) return
+  markZones[kind] = Array.isArray(rects) ? rects.filter(finiteRect).slice(0, MAX_MARK_ZONES) : []
+  refreshOverlayHover()
+}
+
+/** The window's mark zones moved onto the screen, the way `overlayHotZones` places its strip. */
+function markZonesOn(kind: OverlayKind, bounds: ZoneRect, zoom: number): ZoneRect[] {
+  return (markZones[kind] ?? []).map((r) => ({
+    x: bounds.x + r.x * zoom,
+    y: bounds.y + r.y * zoom,
+    width: r.width * zoom,
+    height: r.height * zoom
+  }))
+}
 const pushedInside: Record<string, boolean> = {}
 
 let unsubscribe: (() => void) | null = null
@@ -127,7 +156,9 @@ function zonesFor(kind: OverlayKind, w: BrowserWindow | null): ZoneRect[] {
   })
   if (!want) return []
   // The page's own zoom, so a CSS-px strip is a DIP strip — overlayHotZone.ts's `zoom` note.
-  return overlayHotZones(kind, w.getBounds(), w.webContents.getZoomFactor()).map(toPhysical)
+  const bounds = w.getBounds()
+  const zoom = w.webContents.getZoomFactor()
+  return [...overlayHotZones(kind, bounds, zoom), ...markZonesOn(kind, bounds, zoom)].map(toPhysical)
 }
 
 /**
