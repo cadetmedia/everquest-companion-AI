@@ -27,10 +27,9 @@
 // on one surface must never share a colour and differ only by shape. The pane's rows read the
 // same `wishes` derivation, so list and map agree.
 //
-// DOUBLE-CLICK OPENS THE MOB'S PAGE (fork decision, kaltinril, 2026-08-18). Single click stays
-// the pane's selection — the ring and the row highlight — and the page door needed a second
-// gesture because the hover card is deliberately inert (JOS-143 bans interactive poppers on this
-// surface).
+// DOUBLE-CLICK COPIES THE PIN'S `/waypoint` (owner, 2026-10-13: "double-click the position to
+// get the way command"). It opened the mob's page from 2026-08-18; the page stays one click away
+// on the pane row's door. RIGHT-CLICK adds the mob to the track list or takes it off.
 
 import { useMemo, useState, type JSX } from 'react'
 import { useTheme } from '@mui/material'
@@ -39,7 +38,6 @@ import { getBossData } from '../../data'
 import { PinHoverCard, onActivateKey } from './mapPinChrome'
 import { mobPortraitUrl } from './mobArt'
 import type { MobPin, MobPaneRow, PlacedPin } from './mobPins'
-import type { MobTarget } from '../mobs/mobTarget'
 import type { MapViewport } from './useMapViewport'
 
 /** Pin body size in CSS pixels. Does not scale with zoom, for the same reason label text doesn't. */
@@ -67,11 +65,15 @@ export interface MapMobPinsProps {
   wishes: ReadonlyMap<string, readonly string[]>
   /** The pane's `mark`, with the clicked pin as the position to ring — never centred (header). */
   onMark: (row: MobPaneRow, at: { x: number; y: number }) => void
-  /** Double-click's door to the mob's page. Absent ⇒ the pin has one gesture, as before. */
-  onOpenMob?: (target: MobTarget) => void
+  /** Double-click: copy this spawn point's `/waypoint`. */
+  onCopy: (pin: MobPin, name: string) => void
+  /** Row ids on the track list, and right-click's toggle. */
+  tracked: ReadonlySet<string>
+  onToggleTrack: (row: MobPaneRow) => void
 }
 
-export function MapMobPins({ pins, vp, selectedId, wishes, onMark, onOpenMob }: MapMobPinsProps): JSX.Element {
+export function MapMobPins(props: MapMobPinsProps): JSX.Element {
+  const { pins, vp, selectedId, wishes, onMark, onCopy, tracked, onToggleTrack } = props
   const { toScreen } = vp
   // The hovered pin's key. Its text is drawn INSTANTLY as DOM beside the pin — the same deferred
   // -text gesture the label layer's dots use, and for the same reason the surface bans poppers
@@ -105,7 +107,7 @@ export function MapMobPins({ pins, vp, selectedId, wishes, onMark, onOpenMob }: 
             key={key}
             data-testid="maps-mob-pin"
             data-wished={wished == null ? undefined : 'true'}
-            title={pinText(row, pin, wished)}
+            title={`${pinText(row, pin, wished)}\nDouble-click: copy /waypoint. Right-click: ${tracked.has(row.id) ? 'untrack' : 'track'}.`}
             // Keyboard-reachable (mapPinChrome.tsx): a pin is a control, and a control a
             // keyboard cannot reach is a mouse-only feature on a surface the pane already
             // drives from the keyboard.
@@ -123,8 +125,13 @@ export function MapMobPins({ pins, vp, selectedId, wishes, onMark, onOpenMob }: 
             // takes pointer capture only once the pointer has MOVED (useMapViewport.ts), so a
             // still click — and a double-click — still lands here.
             onClick={mark}
-            onDoubleClick={onOpenMob == null ? undefined : () => {
-              onOpenMob({ mob: row.name, entry: row.entry })
+            onDoubleClick={(e) => {
+              e.stopPropagation()
+              onCopy(pin, row.name)
+            }}
+            onContextMenu={(e) => {
+              e.preventDefault()
+              onToggleTrack(row)
             }}
             style={{
               position: 'absolute',

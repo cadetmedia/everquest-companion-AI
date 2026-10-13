@@ -395,6 +395,10 @@ const overlayApi = {
    */
   fitHeight: (height: number): void => ipcRenderer.send(IPC.overlayFitHeight, KIND, height),
 
+  /** Put text on the clipboard through main (the web Clipboard API is denied here); true once it is
+   *  there. The map pin overlay's click copies a `/waypoint` line. */
+  writeClipboard: (text: string): Promise<boolean> => ipcRenderer.invoke(IPC.clipboardWrite, text),
+
   /** Close this overlay from its own close button (interactive mode only). */
   close: (): void => ipcRenderer.send(IPC.overlayClose, KIND)
 }

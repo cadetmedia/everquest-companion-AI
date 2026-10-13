@@ -242,7 +242,7 @@ export interface PaneSelection {
  * A PANE ROW is off the map by definition, so its click has to bring the row into view: ring it
  * AND centre on it (zooming in from a fitted view, the search jump's rule). A PIN is already under
  * the cursor, and centring on it MOVES it — synchronously, before the second click of a
- * double-click lands — so the double-click that opens the mob's page (MapMobPins.tsx) fell on
+ * double-click lands — so a pin's double-click (MapMobPins.tsx; it copies the /waypoint now) fell on
  * empty map or on a neighbour instead. The pin's click therefore rings and does nothing else.
  *
  * ONE selection, still: both write through the same `setSelected`, so the ring, the raised pin and

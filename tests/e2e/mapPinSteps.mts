@@ -12,7 +12,7 @@
  *
  *   THE PIN. Its click rings the pin WITHOUT moving the map — the pane row's click centres, the
  *   pin's does not (mobPins.ts `paneGestures`), because centring moved the pin out from under the
- *   second click of the double-click that opens the mob's page. "Did the projection move" is a
+ *   second click of the double-click that copies its /waypoint. "Did the projection move" is a
  *   transform question only a rendered viewport can answer, so the pin's screen position is read
  *   before and after, exactly as the spec's own pane-row step reads it to prove the OPPOSITE.
  *   And the click has to reach the pin at all: the surface now takes pointer capture on the first

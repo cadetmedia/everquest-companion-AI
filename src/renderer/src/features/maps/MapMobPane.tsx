@@ -58,7 +58,9 @@ import CloseIcon from '@mui/icons-material/Close'
 import PlaceIcon from '@mui/icons-material/Place'
 import { jumpTarget, type CrossZoneRow, type JumpTarget } from './crossZone'
 // A row's caption and its page door live next door (the file is at the line ceiling).
-import { WithPageDoor, rowCaption } from './MapMobPaneRow'
+import { WithPageDoor, WithRowActions, rowCaption, type RowActions } from './MapMobPaneRow'
+import { MapTrackedSection } from './MapTrackedSection'
+import type { ZoneTrack } from './useMapTrack'
 import {
   MAX_PINS,
   isLocatable,
@@ -101,6 +103,10 @@ export interface MapMobPaneProps {
   onOpenLoot?: (name: string) => void
   /** The drawn pin set hit its ceiling — said out loud rather than quietly trimmed. */
   pinsCapped: boolean
+  /** The track list for this map, the /waypoint copy, and the centring a tracked row's click does. */
+  track: ZoneTrack
+  onCopy: RowActions['onCopy']
+  onCenter: (x: number, y: number) => void
   onClose: () => void
 }
 
@@ -128,6 +134,7 @@ function Row({
   row,
   selected,
   wished,
+  actions,
   onSelect,
   onOpenMob,
   onOpenLoot
@@ -135,6 +142,7 @@ function Row({
   row: MapPaneRow
   selected: boolean
   wished?: readonly string[]
+  actions: RowActions
   onSelect: (row: MapPaneRow) => void
   onOpenMob?: ((target: MobTarget) => void) | undefined
   onOpenLoot?: ((name: string) => void) | undefined
@@ -165,9 +173,11 @@ function Row({
       )}
     </ListItemButton>
   )
-  if (row.kind !== 'mob' || onOpenMob == null) return button
+  const onOpen = row.kind === 'mob' && onOpenMob != null ? () => { onOpenMob({ mob: row.name, entry: row.entry }) } : undefined
   return (
-    <WithPageDoor onOpen={() => { onOpenMob({ mob: row.name, entry: row.entry }) }}>{button}</WithPageDoor>
+    <WithRowActions row={row} actions={actions} onOpen={onOpen}>
+      {button}
+    </WithRowActions>
   )
 }
 
@@ -195,12 +205,15 @@ function Section({
   wishes,
   onOpenMob,
   onOpenLoot,
+  acts,
   empty
 }: {
   title: string
   note: string
   rows: readonly MapPaneRow[]
   selectedId: string | null
+  /** The track list and the /waypoint copy every row's buttons act on. */
+  acts: Pick<MapMobPaneProps, 'track' | 'onCopy'>
   onSelect: (row: MapPaneRow) => void
   wishes?: ReadonlyMap<string, readonly string[]>
   onOpenMob?: ((target: MobTarget) => void) | undefined
@@ -218,6 +231,7 @@ function Section({
               row={r}
               selected={r.id === selectedId}
               wished={wishes?.get(r.id)}
+              actions={{ tracked: acts.track.ids.has(r.id), onToggleTrack: acts.track.toggle, onCopy: acts.onCopy }}
               onSelect={onSelect}
               onOpenMob={onOpenMob}
               onOpenLoot={onOpenLoot}
@@ -395,12 +409,14 @@ export default function MapMobPane(props: MapMobPaneProps): JSX.Element {
       </Box>
 
       <Box sx={{ flexGrow: 1, minHeight: 0, overflow: 'auto' }} data-testid="maps-pane-scroll">
+        <MapTrackedSection track={props.track} onCopy={props.onCopy} onCenter={props.onCenter} />
         <Section
           title="Named mobs"
           note="wiki"
           rows={mobs}
           selectedId={selectedId}
           onSelect={onSelect}
+          acts={props}
           wishes={wishes}
           onOpenMob={onOpenMob}
           onOpenLoot={onOpenLoot}
@@ -418,6 +434,7 @@ export default function MapMobPane(props: MapMobPaneProps): JSX.Element {
           rows={labels}
           selectedId={selectedId}
           onSelect={onSelect}
+          acts={props}
           empty={
             !hasMap
               ? 'No map is open.'
