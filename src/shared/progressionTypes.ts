@@ -138,6 +138,9 @@ export interface ProgressionSnap {
   coinTs?: number[]
   /** the whole amount in copper (1 platinum = 10 gold = 100 silver = 1000 copper). */
   coinCopper?: number[]
+  /** the item a merchant paid for ('' for other coin): credited back to its loot by
+   *  `coinAttribution.ts` (owner, 2026-10-13). */
+  coinSold?: string[]
   deathTs?: number[]
   /** the killer the line named; '' for a bare `You died.` */
   deathKiller?: string[]
