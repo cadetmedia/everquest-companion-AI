@@ -141,7 +141,8 @@ function Figures({ achievement, ids, ctx }: Shown): JSX.Element {
       </Typography>
       {row !== undefined && (
         <Typography variant="caption" color="text.secondary" noWrap sx={{ display: 'block' }}>
-          {row.left.toLocaleString('en-US')} left · {reachText(row.zones)}
+          {achievement.done ? '' : `${row.left.toLocaleString('en-US')} left · `}
+          {reachText(row.zones)}
         </Typography>
       )}
     </Box>

@@ -115,7 +115,7 @@ function LineText({
   )
 }
 
-/** The counter a line printed, with its checkbox and its reach when the plan is on screen. */
+/** The counter a line printed, and its reach when the plan is on screen (a finished one too). */
 function LineCounter({
   id,
   component,
@@ -125,13 +125,15 @@ function LineCounter({
   component: BookComponent
   ctx: RowContext
 }): JSX.Element | null {
-  if (component.have === undefined || component.need === undefined) return null
   const row = id === null ? undefined : ctx.picks.rows.get(id)
+  const { have, need } = component
   return (
     <>
-      <Typography variant="caption" color="text.secondary">
-        {count(component.have)} of {count(component.need)}
-      </Typography>
+      {have !== undefined && need !== undefined && (
+        <Typography variant="caption" color="text.secondary">
+          {count(have)} of {count(need)}
+        </Typography>
+      )}
       {ctx.pickable && row !== undefined && (
         <Typography variant="caption" color="text.secondary">
           {reachText(row.zones)}

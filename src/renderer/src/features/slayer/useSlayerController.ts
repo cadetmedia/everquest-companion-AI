@@ -7,11 +7,15 @@
 //   - over the PICKED counters, which is the ranking. With nothing picked the second plan is
 //     the first one, so the ranking opens on "where is the most to do".
 // Both read the same options, so a level cap that empties a counter's reach empties it in both.
+//
+// A FINISHED COUNTER can be picked too (owner ask, 2026-10-12: see where a completed one's mobs
+// are). It joins the picks and the picked ranking, never the every-open-counter one.
 
 import { useCallback, useMemo, useState } from 'react'
 import type { CharacterSnap } from '@shared/characterTypes'
 import { killIndex, type KillMap } from '@shared/kills'
 import type { KillsSnap } from '@shared/types'
+import type { SlayerCounter } from '@shared/outputs/slayer'
 import type { ZoneShort } from '@shared/maps'
 import {
   planZones,
@@ -53,7 +57,7 @@ export interface SlayerViewProps {
 }
 
 export interface PickBundle {
-  /** every open counter the dump states, by id */
+  /** every counter the dump states, open and finished, by id */
   rows: ReadonlyMap<string, CounterRow>
   picks: ReadonlySet<string>
   /** how many of the picks are counters the newest dump still lists */
@@ -150,13 +154,27 @@ function useAllCounters(opts: PlanOptions): { rows: CounterRow[]; zones: PlanZon
   }, [record, opts])
 }
 
-export function useSlayerController(props: SlayerViewProps): SlayerController {
+/** The finished counters with their reach. */
+function useFinished(finished: readonly SlayerCounter[], opts: PlanOptions): CounterRow[] {
+  return useMemo(() => {
+    const record = { counters: [...finished], goals: [] }
+    const targets = counterRows(record, new Map()).map((r) => r.target)
+    return counterRows(record, targetReach(planZones(slayerCatalog(), targets, opts)))
+  }, [finished, opts])
+}
+
+export function useSlayerController(
+  props: SlayerViewProps,
+  finished: readonly SlayerCounter[] = []
+): SlayerController {
   const { onOpenMob, onSelectView } = props
   const [picks, setPicks] = usePicks()
   const { opts, onMaxLevel, onOutOfEra, onNoFactionHits } = usePlanOptions()
   const all = useAllCounters(opts)
+  const done = useFinished(finished, opts)
+  const every = useMemo(() => [...all.rows, ...done], [all.rows, done])
 
-  const picked = useMemo(() => all.rows.filter((r) => picks.has(r.id)), [all.rows, picks])
+  const picked = useMemo(() => every.filter((r) => picks.has(r.id)), [every, picks])
   const [order, setOrder] = useState(() => loadZoneOrder())
   const zones = useMemo(() => {
     const plan =
@@ -169,11 +187,8 @@ export function useSlayerController(props: SlayerViewProps): SlayerController {
   }, [])
   const killSnap = useModule<KillsSnap>('kills')
   const kills = useMemo(() => killIndex(killSnap?.mobs ?? {}), [killSnap])
-  const names = useMemo(
-    () => new Map(all.rows.map((r) => [r.id, r.counter.achievement])),
-    [all.rows]
-  )
-  const rows = useMemo(() => new Map(all.rows.map((r) => [r.id, r])), [all.rows])
+  const names = useMemo(() => new Map(every.map((r) => [r.id, r.counter.achievement])), [every])
+  const rows = useMemo(() => new Map(every.map((r) => [r.id, r])), [every])
   const onOpenZone = useCallback(
     (zone: ZoneShort) => {
       saveZoneSelection(onPick(zone))
