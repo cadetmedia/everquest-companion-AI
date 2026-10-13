@@ -25,6 +25,7 @@ import { portsInClient, zonePorts } from '../zonePorts'
 import { spellTable } from '../resist/spellTable'
 import { logError } from '../errorLog'
 import { zoneGraph } from '../zoneGraph'
+import { mobPlaces } from '../mobLookupLocal'
 
 /** Narrow the renderer's `prefs` to validated pack ids. `false` = something unsafe was sent. */
 function safePrefs(raw: unknown): MapPackPrefs | false {
@@ -92,6 +93,7 @@ export function registerMapsIpc(): void {
   // Likewise no argument. The first call parses every map in the default pack once (`zoneGraph`
   // memoizes); a Map cannot cross IPC, so it goes as entries and the renderer rebuilds it.
   ipcMain.handle(IPC.mapsGraph, async () => [...(await zoneGraph())])
+  ipcMain.handle(IPC.mapsMobPlaces, () => mobPlaces())
 
   // `prefs` goes through the SAME `safePrefs` gate as `maps:get` — an in-zone search parses the
   // zone under the caller's preference, so both pack ids reach the same `join()` they do there.
