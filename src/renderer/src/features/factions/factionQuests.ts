@@ -43,6 +43,37 @@ export interface FactionQuestRef {
   rewards: string[]
   /** the signed per-turn-in delta for THIS faction, only when the page stated one */
   amount?: number
+  /**
+   * THE WHOLE RECEIPT: every faction the page says this turn-in moves, raises first, in the
+   * page's own order inside each half (owner ask, 2026-10-12: "see the total faction hit"). A
+   * Miners Guild 628 quest that also costs Butcherblock Bandits says so on its own line, and
+   * factionCare.ts reads the losses against the factions the player has marked don't-care.
+   * Empty for the silent home-zone quests, whose pages state nothing.
+   */
+  hits: ReceiptHit[]
+}
+
+/** One faction on a quest's receipt, with its join key folded once here. */
+export interface ReceiptHit {
+  name: string
+  /** `factionNameKey(name)` — the key the dump rows and the don't-care set use */
+  key: string
+  up: boolean
+  /** signed, only when the page stated a number */
+  amount?: number
+}
+
+/** The quest's receipt, raises then losses, each half in page order. */
+function receiptOf(q: QuestEntry): ReceiptHit[] {
+  const hits = (q.factions ?? []).map(
+    (h): ReceiptHit => ({
+      name: h.name,
+      key: factionNameKey(h.name),
+      up: h.up,
+      ...(h.amount === undefined ? {} : { amount: h.amount })
+    })
+  )
+  return [...hits.filter((h) => h.up), ...hits.filter((h) => !h.up)]
 }
 
 /** Everything on record for one faction: the quests that raise it, the ones that cost it, and
@@ -74,6 +105,7 @@ function toRef(q: QuestEntry, amount: number | undefined): FactionQuestRef {
     page: q.page,
     items: q.requiredItems ?? [],
     rewards: [],
+    hits: receiptOf(q),
     ...(q.giver === undefined ? {} : { giver: q.giver }),
     ...(q.startZone === undefined ? {} : { startZone: q.startZone }),
     ...(q.minLevel === undefined ? {} : { minLevel: q.minLevel }),
@@ -161,4 +193,23 @@ let cached: Map<string, FactionWork> | null = null
 export function factionWorkIndex(): Map<string, FactionWork> {
   cached ??= buildFactionWorkIndex((questsJson as QuestData).quests)
   return cached
+}
+
+/** The join keys of every faction at least one quest RAISES — `raisedFactionKeys` folds it. */
+export function raisedKeysOf(quests: readonly QuestEntry[]): Set<string> {
+  const out = new Set<string>()
+  for (const q of quests) for (const h of q.factions ?? []) if (h.up) out.add(factionNameKey(h.name))
+  return out
+}
+
+let raisedCached: Set<string> | null = null
+
+/**
+ * Factions some quest on record raises. A loss on a faction NOT in here is one no quest can win
+ * back (Butcherblock Bandits: lowered by seven quests, raised by none) — the receipt says so on
+ * its hover, the strongest hint the catalog has that a faction is safe to let fall.
+ */
+export function raisedFactionKeys(): ReadonlySet<string> {
+  raisedCached ??= raisedKeysOf((questsJson as QuestData).quests)
+  return raisedCached
 }

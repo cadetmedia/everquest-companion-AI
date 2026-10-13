@@ -22,6 +22,7 @@ import type { EquipSlot } from '@shared/planner/types'
 // RELATIVE value import — the node-testable-logic rule (gearOwnership.ts's header): the `@shared`
 // alias is vite's and only type imports (which erase) may use it in a module a node test drives.
 import { ownershipKey } from '../../../../shared/planner/ownership'
+import { isCleanQuest } from './factionCare'
 import type { FactionQuestRef, FactionWork } from './factionQuests'
 
 /** Every spelling of a class the catalog has been measured to use, folded to the model's abbr. */
@@ -116,13 +117,21 @@ export interface WorkFilters {
    * final step — instead of every quest that consumes one as a turn-in.
    */
   rewardsOnly: boolean
+  /**
+   * Only the quests whose stated losses all land on DON'T-CARE factions (factionCare.ts) — the
+   * find-an-easy-raise reading (owner ask, 2026-10-12). Narrows the raising list and drops the
+   * home-zone candidates, whose pages state no receipt to judge.
+   */
+  cleanOnly: boolean
+  /** the don't-care marks, as `factionNameKey`s — read only while `cleanOnly` */
+  dontCare: ReadonlySet<string>
 }
 
 /** Is any narrowing actually selected? The QUERY is deliberately not counted: it already decides
  *  row visibility through the search haystack, and a name-matched faction with no work must not
  *  vanish for having none. */
 export function filtersActive(f: WorkFilters): boolean {
-  return f.classes.length > 0 || f.slot !== 'ANY' || f.coinOnly
+  return f.classes.length > 0 || f.slot !== 'ANY' || f.coinOnly || f.cleanOnly
 }
 
 /** The gold-only reading: money changes hands and nothing has to be farmed first. */
@@ -182,7 +191,7 @@ export function filterWork(
     matchesSlot(q, f.slot, slotsByKey) &&
     matchesCoinOnly(q, f.coinOnly)
   return {
-    raise: work.raise.filter(hunts),
+    raise: work.raise.filter((q) => hunts(q) && (!f.cleanOnly || isCleanQuest(q, f.dontCare))),
     // The LOWER list takes the query, the class filter and the gold-only reading, never the
     // slot: a cost is a cost whatever slot its rewards fill — but a search for an item must
     // narrow it like the rest (the Pestilence Scythe report), and a donation hunt has no use
@@ -194,7 +203,8 @@ export function filterWork(
         matchesCoinOnly(q, f.coinOnly)
     ),
     ...(work.homeZone === undefined ? {} : { homeZone: work.homeZone }),
-    nearby: work.nearby.filter(hunts)
+    // Silence is not a receipt: the clean reading has nothing to judge a candidate by.
+    nearby: f.cleanOnly ? [] : work.nearby.filter(hunts)
   }
 }
 

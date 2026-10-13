@@ -68,7 +68,10 @@ export function WorkFilterControls({
   slot,
   onSlot,
   coinOnly,
-  onCoinOnly
+  onCoinOnly,
+  cleanOnly,
+  onCleanOnly,
+  dontCareCount
 }: {
   classes: ClassAbbr[]
   onClasses: (v: ClassAbbr[]) => void
@@ -76,6 +79,10 @@ export function WorkFilterControls({
   onSlot: (v: SlotFilter) => void
   coinOnly: boolean
   onCoinOnly: (on: boolean) => void
+  cleanOnly: boolean
+  onCleanOnly: (on: boolean) => void
+  /** how many factions carry the don't-care mark — the clean switch's label says it */
+  dontCareCount: number
 }): JSX.Element {
   return (
     <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 1 }}>
@@ -115,6 +122,17 @@ export function WorkFilterControls({
         onChange={onCoinOnly}
         testId="factions-coin-only"
       />
+      {/* THE EASY-RAISE HUNT (owner ask, 2026-10-12): only quests whose every stated loss lands
+          on a faction marked don't-care. Marks are made by clicking a faction on any quest's
+          receipt, or on an expanded faction's own line. */}
+      <Box title="Only quests whose stated faction losses all land on factions you marked don't care. Click a faction on a quest's receipt to mark it.">
+        <FilterSwitch
+          label={`No loss I care about (${String(dontCareCount)} don't care)`}
+          checked={cleanOnly}
+          onChange={onCleanOnly}
+          testId="factions-clean-only"
+        />
+      </Box>
     </Stack>
   )
 }

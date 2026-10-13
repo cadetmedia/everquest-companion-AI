@@ -28,6 +28,8 @@ const SCALE_FLOOR = -2000
 export interface FactionRowVm {
   id: number
   name: string
+  /** `factionNameKey(name)` — the key quest receipts and the don't-care marks use */
+  key: string
   /** the LIVE standing: the dump's number corrected by the log's receipts since the dump */
   standing: number
   /** what the file itself said — the hover's "dump said N" half */
@@ -141,17 +143,19 @@ function haystacksOf(name: string, w: FactionWork | null): { searchText: string;
 }
 
 function toRowVm(r: FactionStanding, joins: RowJoins): FactionRowVm {
-  const ev = joins.evidence.get(factionNameKey(r.name))
+  const key = factionNameKey(r.name)
+  const ev = joins.evidence.get(key)
   const cap = r.standing + r.toMax
   const live =
     ev === undefined
       ? { value: r.standing, drift: 0, exact: true }
       : applyEvidence(r.standing, cap, ev, joins.windowComplete)
   const tier = factionTier(live.value)
-  const w = joins.work.get(factionNameKey(r.name)) ?? null
+  const w = joins.work.get(key) ?? null
   return {
     id: r.id,
     name: r.name,
+    key,
     standing: live.value,
     dumpStanding: r.standing,
     drift: live.drift,
@@ -165,7 +169,7 @@ function toRowVm(r: FactionStanding, joins: RowJoins): FactionRowVm {
     ...haystacksOf(r.name, w),
     work: w,
     raiseCount: w?.raise.length ?? 0,
-    unlocks: joins.unlocksByName.get(factionNameKey(r.name)) ?? []
+    unlocks: joins.unlocksByName.get(key) ?? []
   }
 }
 
