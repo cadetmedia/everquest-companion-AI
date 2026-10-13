@@ -27,4 +27,4 @@ nothing listed here is removed or narrowed without the owner's word (RULES.md, r
 | 2026-10-13 | owner | A timer button beside track on the Maps sidebar: it adds the mob to Timers and tracks it if not already tracked; clicked again it removes the timer. Track adds to tracking only. The Tracked list's alarm icon removes the timer. | built |
 | 2026-10-13 | owner | A transparency slider on the Map pins overlay like the other overlays. | built (its own: 0 to 90%, default 20%, since the shared one starts at 72% and cannot go clear) |
 | 2026-10-13 | owner | The overlay's chips, Fit and slider sit at the bottom like the XP overlay's controls. | built (footer bar, unlocked only) |
-| 2026-10-13 | owner | Pinned (click-through), the overlay's points still take a click, so a /waypoint can be copied without unpinning. | open |
+| 2026-10-13 | owner | Pinned (click-through), the overlay's points still take a click, so a /waypoint can be copied without unpinning. | built (marks reported as hover zones while pinned; untested headless, the cursor watcher is off in e2e) |
