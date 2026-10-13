@@ -24,4 +24,4 @@ nothing listed here is removed or narrowed without the owner's word (RULES.md, r
 | 2026-10-13 | owner | The Map pins overlay can be made larger than the other overlays' 720x820 cap. | built |
 | 2026-10-13 | owner | Zoom and pan the overlay by hand to match a zoomed in-game map, with a reset button back to the whole zone. | built (unlocked: scroll zooms at the cursor, drag pans, Fit chip resets; kept per zone) |
 | 2026-10-13 | owner | A mob shown twice on the overlay (plain and with "due") is drawn once. | built (a tracked mark under a running clock is drawn as the timer mark only) |
-| 2026-10-13 | owner | A timer button beside track on the Maps sidebar: it adds the mob to Timers and tracks it if not already tracked; clicked again it removes the timer. Track adds to tracking only. The Tracked list's alarm icon removes the timer. | open |
+| 2026-10-13 | owner | A timer button beside track on the Maps sidebar: it adds the mob to Timers and tracks it if not already tracked; clicked again it removes the timer. Track adds to tracking only. The Tracked list's alarm icon removes the timer. | built |
