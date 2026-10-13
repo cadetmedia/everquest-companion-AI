@@ -58,6 +58,7 @@ import type { RateBasis } from '@shared/rateBasis'
 // WHICH HOUR the rates below are per (JOS-288) — read where it is used, exactly as the slice's own
 // consumers read `useTimeslice`: the store is app-wide and every consumer of it is a leaf.
 import { useRateBasis } from '../timeslice/useRateBasis'
+import { useZoneExtras } from './useZoneExtras'
 import { fmtDuration } from './levelChartGeometry'
 import {
   aaRateTitle,
@@ -267,6 +268,15 @@ function ZoneRow({ row }: { row: ZoneStatRow }): JSX.Element {
         {row.coin}
       </TableCell>
       <TableCell align="right" sx={CELL_SX}>
+        {row.coinPerHour}
+      </TableCell>
+      <TableCell align="right" sx={CELL_SX}>
+        {row.aaPerHour}
+      </TableCell>
+      <TableCell align="right" sx={CELL_SX}>
+        {row.motesPerHour}
+      </TableCell>
+      <TableCell align="right" sx={CELL_SX}>
         {row.deaths}
       </TableCell>
     </TableRow>
@@ -286,12 +296,13 @@ const HEAD_SX = { ...CELL_SX, fontWeight: 700, whiteSpace: 'nowrap' } as const
  * same law: seven columns of numbers is genuinely wide content, and wide content scrolls in its
  * OWN container — never by pushing the page sideways. Hence `overflowX` alone, never `overflow`.
  */
-function ZoneTable({ zones, basis }: { zones: RangeStats['zones']; basis: RateBasis }): JSX.Element | null {
+function ZoneTable({ stats, basis }: { stats: RangeStats; basis: RateBasis }): JSX.Element | null {
   const [sort, setSort] = useState<ZoneSort>('levels')
-  const rows = zoneStatRows(zones, sort, basis)
+  const extras = useZoneExtras(stats)
+  const rows = zoneStatRows(stats.zones, sort, basis, extras)
   if (rows.length === 0) return null
   const head = (key: ZoneSort, label: string): JSX.Element => (
-    <TableSortLabel active={sort === key} direction="desc" onClick={() => { setSort(key) }}>
+    <TableSortLabel active={sort === key} direction={key === 'zone' ? 'asc' : 'desc'} onClick={() => { setSort(key) }}>
       {label}
     </TableSortLabel>
   )
@@ -305,15 +316,15 @@ function ZoneTable({ zones, basis }: { zones: RangeStats['zones']; basis: RateBa
         <TableHead>
           <TableRow>
             <TableCell sx={{ ...HEAD_SX, width: 18, pr: 0 }} />
-            <TableCell sx={HEAD_SX}>Zone</TableCell>
+            <TableCell sx={HEAD_SX}>{head('zone', 'Zone')}</TableCell>
             <TableCell align="right" sx={HEAD_SX}>
               {head('time', 'Time')}
             </TableCell>
             <TableCell align="right" sx={HEAD_SX}>
-              Kills
+              {head('kills', 'Kills')}
             </TableCell>
             <TableCell align="right" sx={HEAD_SX}>
-              Levels
+              {head('levelsTotal', 'Levels')}
             </TableCell>
             {/* Both rates divide by the ROW's own active time, so both headers say what that is
                 (JOS-249) — a native title on the label, no popper. */}
@@ -321,13 +332,22 @@ function ZoneTable({ zones, basis }: { zones: RangeStats['zones']; basis: RateBa
               {head('levels', 'Levels/hr')}
             </TableCell>
             <TableCell align="right" sx={HEAD_SX} title={ACTIVE_TIME_TITLE}>
-              Kills/hr
+              {head('killsPerHour', 'Kills/hr')}
             </TableCell>
             <TableCell align="right" sx={HEAD_SX} title="Coin received here, in platinum.">
-              Coin
+              {head('coin', 'Coin')}
+            </TableCell>
+            <TableCell align="right" sx={HEAD_SX} title={`Platinum per hour of ${basis} time here.`}>
+              {head('coinPerHour', 'pp/hr')}
+            </TableCell>
+            <TableCell align="right" sx={HEAD_SX} title={`AA points per hour of ${basis} time here.`}>
+              {head('aa', 'AA/hr')}
+            </TableCell>
+            <TableCell align="right" sx={HEAD_SX} title={`Motes looted per hour of ${basis} time here.`}>
+              {head('motes', 'Motes/hr')}
             </TableCell>
             <TableCell align="right" sx={HEAD_SX}>
-              Deaths
+              {head('deaths', 'Deaths')}
             </TableCell>
           </TableRow>
         </TableHead>
@@ -418,7 +438,7 @@ export function RangeStatsPanel({ stats, scope, zoneCaption, onClear }: RangeSta
         ))}
       </Stack>
       <ChipRow stats={stats} basis={basis} />
-      <ZoneTable zones={stats.zones} basis={basis} />
+      <ZoneTable stats={stats} basis={basis} />
       {footnote && (
         <Typography variant="caption" color="text.secondary">
           {footnote}
