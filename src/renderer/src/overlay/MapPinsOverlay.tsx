@@ -1,9 +1,10 @@
 // MapPinsOverlay.tsx — the tracked map points laid over the GAME'S OWN map (map-waypoints).
 //
 // NO MAP IS DRAWN (owner, 2026-10-13): two near-identical maps on top of each other would only
-// get in the way. The window draws the four corners of the zone's map and the tracked points, and
-// nothing else. The user sizes the window until its corners sit on the corners of the game's map
-// window; every pin is then where the game draws that spot (mapTrack.ts `placeInExtent`).
+// get in the way. The window draws the corners of the zone's map and the tracked points, and
+// nothing else. The zone is fitted into the window the way the game's map shows a whole zone
+// (mapTrack.ts `fitExtent`), so the user sizes the window to the map window's parchment and every
+// pin is where the game draws that spot.
 //
 // UNLOCKED it is a faint frame: drag it by the header, resize it from the edges, click a pin to
 // copy its `/waypoint` line. LOCKED it is click-through and only the corners and pins show, so the
@@ -20,7 +21,7 @@ import { zoneShortName } from '@shared/zones'
 import { OverlayHeader } from './OverlayHeader'
 import { useOverlayChrome } from './useOverlayChrome'
 import { useOverlayModule } from './useOverlayModule'
-import { TRACK_COLOR, placeInExtent, trackedIn, type TrackedPin, type TrackedPoint, type ZoneExtent } from '../features/maps/mapTrack'
+import { TRACK_COLOR, fitExtent, placeInExtent, trackedIn, type TrackedPin, type TrackedPoint, type ZoneExtent, type ExtentFit } from '../features/maps/mapTrack'
 import { useMapTrack } from '../features/maps/useMapTrack'
 import { withWatched } from '../features/maps/watchTrack'
 import { waypointCommand } from '../features/maps/waypoint'
@@ -47,15 +48,16 @@ function useWindowSize(): { w: number; h: number } {
 }
 
 /** One L-shaped bracket. `h`/`v` say which edges of the window it hugs. */
-function Corner({ h, v }: { h: 'left' | 'right'; v: 'top' | 'bottom' }): JSX.Element {
+/** One L-shaped bracket on a corner of the fitted zone, `fit`'s rectangle in the window. */
+function Corner({ h, v, fit }: { h: 'left' | 'right'; v: 'top' | 'bottom'; fit: ExtentFit }): JSX.Element {
   const edge = `2px solid ${TRACK_COLOR}`
   return (
     <div
       data-testid="map-pins-corner"
       style={{
         position: 'absolute',
-        [h]: 0,
-        [v]: 0,
+        left: h === 'left' ? fit.left : fit.left + fit.width - CORNER_PX,
+        top: v === 'top' ? fit.top : fit.top + fit.height - CORNER_PX,
         width: CORNER_PX,
         height: CORNER_PX,
         borderLeft: h === 'left' ? edge : undefined,
@@ -162,15 +164,16 @@ function PinField({
 }): JSX.Element | null {
   const { w, h } = useWindowSize()
   if (ext == null) return null
+  const fit = fitExtent(ext, w, h)
   return (
     <>
-      <Corner h="left" v="top" />
-      <Corner h="right" v="top" />
-      <Corner h="left" v="bottom" />
-      <Corner h="right" v="bottom" />
+      <Corner h="left" v="top" fit={fit} />
+      <Corner h="right" v="top" fit={fit} />
+      <Corner h="left" v="bottom" fit={fit} />
+      <Corner h="right" v="bottom" fit={fit} />
       {points.map((p) =>
         p.pins.map((pin, i) => (
-          <Pin key={`${p.id}#${String(i)}`} name={p.name} pin={pin} at={placeInExtent(ext, w, h, pin)} onCopy={onCopy} />
+          <Pin key={`${p.id}#${String(i)}`} name={p.name} pin={pin} at={placeInExtent(ext, fit, pin)} onCopy={onCopy} />
         ))
       )}
     </>
