@@ -32,6 +32,11 @@ const PATIENCE: Duration = Duration::from_secs(120);
 /// The one module whose state the oracle cannot reproduce, and why. See the file header.
 const SEEDED_FROM_THE_CONSTRUCTION_CLOCK: &str = "respawn";
 
+/// The module that reads the engine's knowledge, which a direct fold never installs: `gaps` checks
+/// nothing until it has a catalog to check against (its header says so), so the engine's answer
+/// lists names and the oracle's is empty. Compared by shape, as the respawn module is.
+const NEEDS_THE_ENGINES_KNOWLEDGE: &str = "gaps";
+
 fn repo_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
         .ancestors()
@@ -245,7 +250,7 @@ fn every_module_answers_what_a_direct_fold_of_the_same_bytes_publishes() {
             .snapshot_of(module)
             .unwrap_or_else(|| panic!("the oracle registered {module}"));
 
-        if *module == SEEDED_FROM_THE_CONSTRUCTION_CLOCK {
+        if *module == SEEDED_FROM_THE_CONSTRUCTION_CLOCK || *module == NEEDS_THE_ENGINES_KNOWLEDGE {
             // Shape, not equality — see the file header. It still has to answer.
             assert!(got.state.is_object() || got.state.is_array());
             continue;
@@ -262,8 +267,8 @@ fn every_module_answers_what_a_direct_fold_of_the_same_bytes_publishes() {
     }
     assert_eq!(
         compared,
-        fold::WIRING_ORDER.len() - 1,
-        "every module but the one named exception was compared whole"
+        fold::WIRING_ORDER.len() - 2,
+        "every module but the two named exceptions was compared whole"
     );
 
     // …and the count is the scan's own. `loot` is a pure appender — its `seq` is the last event it
