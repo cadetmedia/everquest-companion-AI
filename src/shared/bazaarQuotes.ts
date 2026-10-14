@@ -53,3 +53,42 @@ export function quotesBy(quotes: readonly DayQuote[], who: string | null): DayQu
   const w = (who ?? '').trim().toLowerCase()
   return w === '' ? [...quotes] : quotes.filter((q) => q.who.toLowerCase() === w)
 }
+
+/** One side of a person's recent prices: the mean of their newest priced quotes, and how many. */
+export interface SideAverage {
+  avg: number
+  n: number
+}
+export interface SpeakerAverage {
+  sell?: SideAverage
+  buy?: SideAverage
+}
+
+/** How many of a person's newest priced quotes the Who list averages (owner ask, 2026-10-13). */
+export const SPEAKER_AVG_LAST = 10
+
+/**
+ * Each person's mean price over their newest `last` priced quotes, selling and buying apart. For
+ * ONE item's quotes only: across items a mean means nothing. A quote with no price (unpriced, or
+ * listed but not counted) is skipped. The engine keeps one quote per person per day, so "the last
+ * ten times" is their last ten days of posting.
+ */
+export function speakerAverages(quotes: readonly DayQuote[], last = SPEAKER_AVG_LAST): Map<string, SpeakerAverage> {
+  const newest = sortQuotes(quotes, DEFAULT_QUOTE_SORT)
+  const sums = new Map<string, Record<'sell' | 'buy', number[]>>()
+  for (const q of newest) {
+    if (q.price == null || (q.dir !== 'sell' && q.dir !== 'buy')) continue
+    const s = sums.get(q.who) ?? { sell: [], buy: [] }
+    sums.set(q.who, s)
+    if (s[q.dir].length < last) s[q.dir].push(q.price)
+  }
+  const side = (xs: number[]): SideAverage | undefined =>
+    xs.length === 0 ? undefined : { avg: xs.reduce((a, b) => a + b, 0) / xs.length, n: xs.length }
+  const out = new Map<string, SpeakerAverage>()
+  for (const [who, s] of sums) {
+    const sell = side(s.sell)
+    const buy = side(s.buy)
+    out.set(who, { ...(sell ? { sell } : {}), ...(buy ? { buy } : {}) })
+  }
+  return out
+}

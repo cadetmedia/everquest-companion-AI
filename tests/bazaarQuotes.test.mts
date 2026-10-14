@@ -2,7 +2,7 @@
 
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { DEFAULT_QUOTE_SORT, firstQuoteSortDir, quoteSpeakers, quotesBy, sortQuotes } from '../src/shared/bazaarQuotes'
+import { DEFAULT_QUOTE_SORT, firstQuoteSortDir, quoteSpeakers, quotesBy, sortQuotes, speakerAverages } from '../src/shared/bazaarQuotes'
 import type { DayQuote } from '../src/shared/bazaar'
 
 const q = (who: string, when: [day: string, at: string], price: number | null): DayQuote =>
@@ -36,4 +36,15 @@ test('the people list puts the busiest first', () => {
   assert.deepEqual(quoteSpeakers([A, B, C, { ...B, at: '22:00:00' }]), ['apple', 'Kazule', 'Zed'])
   assert.equal(firstQuoteSortDir('price'), 'desc')
   assert.equal(firstQuoteSortDir('who'), 'asc')
+})
+
+test("a person's average is their newest ten priced quotes, selling and buying apart", () => {
+  const sells = Array.from({ length: 12 }, (_, i) => q('Riskyb', [`2026-10-${String(i + 1).padStart(2, '0')}`, '12:00:00'], (i + 1) * 100))
+  const buy = { ...q('Riskyb', ['2026-10-13', '13:00:00'], 50), dir: 'buy' } as DayQuote
+  const unpriced = q('Riskyb', ['2026-10-14', '12:00:00'], null)
+  const a = speakerAverages([...sells, buy, unpriced]).get('Riskyb')
+  // Newest ten sells: days 3..12, prices 300..1200, mean 750.
+  assert.deepEqual(a?.sell, { avg: 750, n: 10 })
+  assert.deepEqual(a?.buy, { avg: 50, n: 1 })
+  assert.equal(speakerAverages([C]).get('Zed'), undefined)
 })
