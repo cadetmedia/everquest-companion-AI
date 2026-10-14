@@ -687,6 +687,10 @@ export const IPC = {
   /** A pinned overlay's clickable marks, in its window's CSS px: main adds them to the window's
    *  hover zones so a click-through Map pins overlay still takes a click on a point. */
   overlaySetMarkZones: 'overlay:setMarkZones',
+  /** Is the in-game map open (the game's UI file says)? Starts the watch; null until known. */
+  mapsGameMapShown: 'maps:gameMapShown',
+  /** main → the Map pins overlay: the in-game map opened or closed. Payload boolean | null. */
+  onGameMapShown: 'maps:onGameMapShown',
 
   // ---- settings / alert sharing ("profiles" — src/shared/profiles.ts) ----
   // Every call carries the renderer's whitelisted localStorage prefs (UI_PREF_SPECS): main

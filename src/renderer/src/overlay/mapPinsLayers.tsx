@@ -67,6 +67,30 @@ export function usePinsBg(): [number, (v: number) => void] {
   return [bg, set]
 }
 
+const FOLLOW_KEY = 'eq.maps.overlayFollow'
+
+/** Hide the overlay while the in-game map is closed? Off unless the user turns it on. */
+export function usePinsFollow(): [boolean, () => void] {
+  const [follow, setFollow] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(FOLLOW_KEY) === '1'
+    } catch {
+      return false
+    }
+  })
+  const toggle = useCallback(() => {
+    setFollow((prev) => {
+      try {
+        localStorage.setItem(FOLLOW_KEY, prev ? '0' : '1')
+      } catch {
+        // A blocked store keeps the choice for this session only.
+      }
+      return !prev
+    })
+  }, [])
+  return [follow, toggle]
+}
+
 export function usePinLayers(): [PinLayers, (k: keyof PinLayers) => void] {
   const [layers, setLayers] = useState<PinLayers>(load)
   const toggle = useCallback((k: keyof PinLayers) => {
@@ -100,6 +124,8 @@ export function LayerChips({
   onToggle,
   onFit,
   zoomed,
+  follow,
+  onFollow,
   bg,
   onBg,
   noDrag
@@ -109,6 +135,9 @@ export function LayerChips({
   /** Back to the whole-zone fit after a manual zoom; shown only while zoomed. */
   onFit: () => void
   zoomed: boolean
+  /** Hide with the game map: the chip that switches it. */
+  follow: boolean
+  onFollow: () => void
   bg: number
   onBg: (v: number) => void
   noDrag: CSSProperties
@@ -129,6 +158,15 @@ export function LayerChips({
           {label}
         </button>
       ))}
+      <button
+        type="button"
+        data-testid="map-pins-follow"
+        aria-pressed={follow}
+        onClick={onFollow}
+        style={chipStyle(follow)}
+      >
+        Follow map
+      </button>
       {zoomed && (
         <button type="button" data-testid="map-pins-fit" onClick={onFit} style={{ ...chipStyle(true), borderStyle: 'dashed' }}>
           Fit

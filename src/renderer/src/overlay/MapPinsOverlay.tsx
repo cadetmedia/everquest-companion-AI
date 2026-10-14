@@ -30,7 +30,8 @@ import { useMapTrack } from '../features/maps/useMapTrack'
 import { withWatched } from '../features/maps/watchTrack'
 import { waypointCommand } from '../features/maps/waypoint'
 import { MapPinsField } from './MapPinsField'
-import { LayerChips, usePinLayers, usePinsBg, type PinLayers } from './mapPinsLayers'
+import { LayerChips, usePinLayers, usePinsBg, usePinsFollow, type PinLayers } from './mapPinsLayers'
+import { useGameMapShown, useHiddenMouse } from './useGameMapFollow'
 import { useMobPlaces, useOverlayMapData } from './useMapPinsData'
 import { useOverlayView, type OverlayViewControls } from './useOverlayView'
 import { zoneMobPins, zoneTimerPins, zoneWatched } from '../features/maps/overlayPoints'
@@ -185,12 +186,14 @@ function PinsFooter({
   onToggle,
   zoom,
   bg,
+  follow,
   noDrag
 }: {
   layers: PinLayers
   onToggle: (k: keyof PinLayers) => void
   zoom: OverlayViewControls
   bg: [number, (v: number) => void]
+  follow: [boolean, () => void]
   noDrag: React.CSSProperties
 }): JSX.Element {
   return (
@@ -198,7 +201,7 @@ function PinsFooter({
       data-testid="map-pins-footer"
       style={{ ...FOOTER_ROW, ...BAR, bottom: 0, padding: 0, background: 'rgba(14,17,21,0.78)' }}
     >
-      <LayerChips layers={layers} onToggle={onToggle} onFit={zoom.reset} zoomed={zoom.view != null} bg={bg[0]} onBg={bg[1]} noDrag={noDrag} />
+      <LayerChips layers={layers} onToggle={onToggle} onFit={zoom.reset} zoomed={zoom.view != null} follow={follow[0]} onFollow={follow[1]} bg={bg[0]} onBg={bg[1]} noDrag={noDrag} />
     </div>
   )
 }
@@ -236,21 +239,30 @@ function PinsChrome({
  * rest of the window stays click-through. Sent only when the set changes; nothing while unlocked
  * (the window owns the mouse then) and nothing once the window is gone.
  */
-function usePinnedMarkZones(input: MarkZoneInput | null, locked: boolean): void {
+function usePinnedMarkZones(input: MarkZoneInput | null, locked: boolean, hidden: boolean): void {
   const sent = useRef('')
-  const zones = useMemo(() => (locked && input != null ? markZones(input) : []), [locked, input])
+  const zones = useMemo(() => (locked && !hidden && input != null ? markZones(input) : []), [locked, hidden, input])
   useEffect(() => {
-    const key = JSON.stringify(zones)
+    const key = `${String(hidden)}|${JSON.stringify(zones)}`
     if (key === sent.current) return
     sent.current = key
-    window.eqOverlay.setMarkZones(zones)
-  }, [zones])
+    // Hidden, the window claims no zone at all, its header strip included (main/overlayHover.ts).
+    window.eqOverlay.setMarkZones(zones, hidden)
+  }, [zones, hidden])
   useEffect(
     () => () => {
       window.eqOverlay.setMarkZones([])
     },
     []
   )
+}
+
+/** Following the game map and the game map is closed: the overlay hides (useGameMapFollow.ts). */
+function useFollowHidden(follow: boolean, locked: boolean): boolean {
+  const gameMap = useGameMapShown()
+  const hidden = follow && gameMap === false
+  useHiddenMouse(hidden, locked)
+  return hidden
 }
 
 export default function MapPinsOverlay(): JSX.Element {
@@ -273,8 +285,13 @@ export default function MapPinsOverlay(): JSX.Element {
     () => (ext == null || fit == null ? null : { ext, fit, w, h, layers, labels, mobs, timers, tracked }),
     [ext, fit, w, h, layers, labels, mobs, timers, tracked]
   )
-  usePinnedMarkZones(zoneInput, locked)
+  const [follow, toggleFollow] = usePinsFollow()
+  const hidden = useFollowHidden(follow, locked)
+  usePinnedMarkZones(zoneInput, locked, hidden)
   const clip = barClip(locked, chrome.hovering)
+
+  // Hidden with the game map: nothing drawn, no click taken (useHiddenMouse, the zones above).
+  if (hidden) return <div data-testid="map-pins-overlay" data-hidden="true" style={{ width: '100%', height: '100%' }} />
 
   return (
     <div
@@ -308,7 +325,7 @@ export default function MapPinsOverlay(): JSX.Element {
       )}
       <PinsChrome heading={who.zone ?? 'Map pins'} count={tracked.length} chrome={chrome} />
       {!locked && note != null && <Note text={note} />}
-      {!locked && <PinsFooter layers={layers} onToggle={toggleLayer} zoom={zoom} bg={bg} noDrag={chrome.noDrag} />}
+      {!locked && <PinsFooter layers={layers} onToggle={toggleLayer} zoom={zoom} bg={bg} follow={[follow, toggleFollow]} noDrag={chrome.noDrag} />}
       {copied != null && <Note text={copied} bottom={locked ? CORNER_PX + 2 : 34} />}
     </div>
   )
