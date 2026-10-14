@@ -27,6 +27,8 @@ const NAMES: &[&str] = &[
     "Slime Blood of Cazic Thule",
     "Bones",
     "Gears",
+    "Deepwater Ink",
+    "Bow of the Underfoot",
 ];
 
 fn short(o: &Offer) -> String {
@@ -163,4 +165,62 @@ fn numbers_that_count_rather_than_price() {
         read("Wts White Dragonscale Cloak asking 6k and 2 diamonds and 2 black saphires"),
         ["sell White Dragonscale Cloak 6000pp", "sell Diamond x2"]
     );
+}
+
+/// Owner report, 2026-10-13: a count and a price side by side before `each` are not one spaced number
+/// (`40 100 each` is forty at a hundred, not 40,100), and an `x` count right before a name counts
+/// that item, not the one priced before it.
+#[test]
+fn a_count_before_each_and_a_count_before_a_name() {
+    assert_eq!(
+        read("wts Deepwater Ink 40 100 each"),
+        ["sell Deepwater Ink x40 100pp"]
+    );
+    assert_eq!(
+        read("wts Bow of the Underfoot +4 6k 100x Deepwater Ink 6k"),
+        [
+            "sell Bow of the Underfoot +4 6000pp",
+            "sell Deepwater Ink x100 60pp"
+        ]
+    );
+    // A spaced thousands with its unit, or with no `each` after it, is still one number.
+    assert_eq!(
+        read("wts Deepwater Ink 10 000pp"),
+        ["sell Deepwater Ink 10000pp"]
+    );
+    assert_eq!(
+        read("wtb Bow of the Underfoot 10 000"),
+        ["buy Bow of the Underfoot 10000pp"]
+    );
+}
+
+/// Owner ruling, 2026-10-13: an offer read through a guess is listed but never counted.
+#[test]
+fn a_guess_is_listed_but_not_counted() {
+    let ix = ItemIndex::new(NAMES.iter().map(|s| s.to_string()));
+    let sure = |msg: &str| {
+        parse_trade(msg, &ix)
+            .iter()
+            .map(|o| o.sure)
+            .collect::<Vec<_>>()
+    };
+    // Clear: a price with a unit, `each` with a count, or no count.
+    assert_eq!(sure("wts Bow of the Underfoot +4 6k"), [true]);
+    assert_eq!(sure("WTB Deepwater ink. Paying 30p each."), [true]);
+    // A price with no unit: 40 pp or 40k?
+    assert_eq!(sure("wts Deepwater Ink 40 100 each"), [false]);
+    // A count and a price with no `each`: the lot, or each?
+    assert_eq!(
+        sure("wts Bow of the Underfoot +4 6k 100x Deepwater Ink 6k"),
+        [true, false]
+    );
+    // A stated total, or one item, is no guess.
+    assert_eq!(sure("WTS Bone Chips 1000 for 10k pst"), [true]);
+    // Alternatives: an `or` before another price or count; not "or best offer", not "A or B".
+    assert!(
+        sure("WTS or trade Fleeting Quiver for 20k plat or 2x Bones")
+            .iter()
+            .all(|s| !s)
+    );
+    assert_eq!(sure("WTB Stonemelders Band 10k or best offer"), [true]);
 }

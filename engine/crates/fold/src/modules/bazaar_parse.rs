@@ -30,7 +30,9 @@
 //!   quantity, as is a count before "for" (`Bone Chips 1000 for 10k`).
 //! * a trade (WTT) is a barter: its numbers count the other thing, so it never carries a price.
 
-use super::bazaar_words::{loose, price_at, re, tokens, unglued, Tok, AFTER_BARE_PRICE};
+use super::bazaar_words::{
+    bare_at, loose, mark_guesses, price_at, re, tokens, unglued, Tok, AFTER_BARE_PRICE,
+};
 use regex::Regex;
 use std::collections::HashMap;
 use std::sync::OnceLock;
@@ -71,6 +73,11 @@ pub struct Offer {
     /// As stated, in platinum: per unit when `each`, else for the whole `qty`.
     pub price_pp: Option<f64>,
     pub each: bool,
+    /// False when reading it took a guess: the line offers another price or count after `or`, the
+    /// price has no unit, or a count over one and a price come with neither `each` nor `for` (the
+    /// lot, or each?). Such an offer is listed but never counted (owner, 2026-10-13: a wrong count
+    /// is worse than a missing one).
+    pub sure: bool,
 }
 
 impl Offer {
@@ -214,6 +221,7 @@ impl<'a> Parser<'a> {
             qty: self.pending_qty.take(),
             price_pp: self.lead_price,
             each: self.lead_price.is_some(),
+            sure: true,
         });
         self.last = Some(self.out.len() - 1);
         Some(i + used)
@@ -274,8 +282,14 @@ impl<'a> Parser<'a> {
             return Some(i + 1);
         }
         if let Some(c) = re(&QTY, r"(?i)^(?:x(\d+)|(\d+)x)$").captures(raw) {
-            if let Some(last) = self.last {
-                self.out[last].qty = c.get(1).or(c.get(2))?.as_str().parse().ok();
+            let qty = c.get(1).or(c.get(2))?.as_str().parse().ok();
+            // `6k 100x Deepwater Ink`: a count right before a name, once the item before it is
+            // priced (or there is none), counts that next item. `Jacinthx16, Black Sapphire`
+            // keeps the count on the unpriced item it follows.
+            if self.item_at(i + 1).is_some() && (self.last.is_none() || self.priced_here) {
+                self.pending_qty = qty;
+            } else if let Some(last) = self.last {
+                self.out[last].qty = qty;
             }
             self.fresh = true;
             return Some(i + 1);
@@ -318,6 +332,10 @@ impl<'a> Parser<'a> {
         if self.unit_price_follows(i) {
             return Some(Some(i + 1));
         }
+        // "Deepwater Ink 40 100 each": the first number counts, the second prices each.
+        if self.count_before_each(i) {
+            return Some(Some(i + 1));
+        }
         self.fresh = true;
         self.try_count(i).then_some(Some(i + 1))
     }
@@ -334,6 +352,20 @@ impl<'a> Parser<'a> {
             .next()
             .is_some_and(|c| c.is_ascii_alphabetic());
         word && !AFTER_BARE_PRICE.contains(&next.n.as_str()) && self.item_at(i + 1).is_none()
+    }
+
+    fn count_before_each(&mut self, i: usize) -> bool {
+        let bare = |x: &Tok| !x.raw.is_empty() && x.raw.bytes().all(|b| b.is_ascii_digit());
+        let shape = self.t.get(i + 1).is_some_and(bare)
+            && self
+                .t
+                .get(i + 2)
+                .is_some_and(|x| matches!(x.n.as_str(), "each" | "ea" | "per"));
+        let Some(last) = self.last.filter(|_| shape) else {
+            return false;
+        };
+        self.out[last].qty = self.t[i].raw.parse().ok();
+        true
     }
 
     fn unit_price_follows(&self, i: usize) -> bool {
@@ -367,6 +399,7 @@ impl<'a> Parser<'a> {
     /// before it, for every unpriced item before it ("A +5/B +5 paying 4k").
     fn apply_price(&mut self, pp: f64, at: usize, dir: Dir) {
         let (_, used) = price_at(&self.t, at).unwrap_or((pp, 1));
+        let bare = bare_at(&self.t, at, used);
         let each = self
             .t
             .get(at + used)
@@ -397,6 +430,7 @@ impl<'a> Parser<'a> {
                 self.priced_here |= k == last;
                 o.price_pp = Some(pp);
                 o.each |= each;
+                o.sure &= !bare;
             }
         }
     }
@@ -453,6 +487,7 @@ fn parse_tokens(t: Vec<Tok>, ix: &ItemIndex) -> Vec<Offer> {
             None => break,
         }
     }
+    mark_guesses(&p.t, &mut p.out);
     p.out
 }
 

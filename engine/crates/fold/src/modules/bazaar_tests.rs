@@ -84,10 +84,10 @@ fn a_leading_each_price_covers_every_item_after_it() {
             "sell Lyssa`s Darkwood Piccolo +1 3000pp"
         ]
     );
-    // Without "each" a leading number prices nothing.
+    // Without "each" a leading number prices nothing; the `800x` before the name counts it.
     assert_eq!(
         read("WTS froglok unlock mats, 10k, 800x Phosphorous Powder"),
-        ["sell Phosphorous Powder"]
+        ["sell Phosphorous Powder x800"]
     );
 }
 
