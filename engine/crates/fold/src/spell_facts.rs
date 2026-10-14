@@ -440,11 +440,14 @@ mod tests {
                 .iter()
                 .map(|(k, v)| (k.as_str(), *v))
                 .collect::<Vec<_>>(),
+            // MEASURED ON THE MERGED TREE (main_community, 2026-10-13): this branch's corrections and
+            // local-data-refresh's spells.json each pass the old counts alone and move them together;
+            // pinned here because this branch merges after the data (the dataWeight precedent).
             vec![
-                ("Buff", 486),
+                ("Buff", 495),
                 ("CrowdControl", 90),
-                ("Debuff", 123),
-                ("DotHot", 193),
+                ("Debuff", 124),
+                ("DotHot", 196),
                 ("ProcBuff", 1),
                 ("Unstated", 3),
             ]
