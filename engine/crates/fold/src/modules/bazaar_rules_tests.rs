@@ -29,6 +29,7 @@ const NAMES: &[&str] = &[
     "Gears",
     "Deepwater Ink",
     "Bow of the Underfoot",
+    "Phosphorous Powder",
 ];
 
 fn short(o: &Offer) -> String {
@@ -183,7 +184,8 @@ fn a_count_before_each_and_a_count_before_a_name() {
             "sell Deepwater Ink x100 60pp"
         ]
     );
-    // A spaced thousands with its unit, or with no `each` after it, is still one number.
+    // A spaced thousands with its unit, or with no `each` after it, is still one number; without a
+    // unit it is listed but not counted (a_guess_is_listed_but_not_counted).
     assert_eq!(
         read("wts Deepwater Ink 10 000pp"),
         ["sell Deepwater Ink 10000pp"]
@@ -223,4 +225,16 @@ fn a_guess_is_listed_but_not_counted() {
             .all(|s| !s)
     );
     assert_eq!(sure("WTB Stonemelders Band 10k or best offer"), [true]);
+    // A spaced number with no unit is a price with no unit (review, 2026-10-13).
+    assert_eq!(sure("wtb Bow of the Underfoot 10 000"), [false]);
+    assert_eq!(sure("wts Deepwater Ink 10 000pp"), [true]);
+    // A `for` total is the offer's it follows, not every offer's on the line (review, 2026-10-13).
+    assert_eq!(
+        sure("WTS 800x Phosphorous Powder 6k, Bone Chips 1000 for 10k"),
+        [false, true]
+    );
+    assert_eq!(
+        sure("WTS Bone Chips 1000 for 10k, 800x Phosphorous Powder 6k"),
+        [true, false]
+    );
 }
