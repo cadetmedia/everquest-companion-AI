@@ -405,8 +405,15 @@ const overlayApi = {
   /** Placed mobs only (`maps:mobPlaces`), fetched by the Map pins window alone. */
   getMobPlaces: (): Promise<MobEntry[]> => ipcRenderer.invoke(IPC.mapsMobPlaces),
   /** Pinned, the rectangles (window CSS px) that still take the mouse: the map overlay's points. */
-  setMarkZones: (rects: { x: number; y: number; width: number; height: number }[]): void =>
-    ipcRenderer.send(IPC.overlaySetMarkZones, KIND, rects),
+  setMarkZones: (rects: { x: number; y: number; width: number; height: number }[], hidden = false): void =>
+    ipcRenderer.send(IPC.overlaySetMarkZones, KIND, rects, hidden),
+  /** Is the in-game map open? Starts main's watch of the game's UI file; null until it knows. */
+  getGameMapShown: (): Promise<boolean | null> => ipcRenderer.invoke(IPC.mapsGameMapShown),
+  onGameMapShown: (cb: (shown: boolean | null) => void): (() => void) => {
+    const listener = (_e: Electron.IpcRendererEvent, shown: boolean | null): void => cb(shown)
+    ipcRenderer.on(IPC.onGameMapShown, listener)
+    return () => ipcRenderer.removeListener(IPC.onGameMapShown, listener)
+  },
 
   /** Close this overlay from its own close button (interactive mode only). */
   close: (): void => ipcRenderer.send(IPC.overlayClose, KIND)

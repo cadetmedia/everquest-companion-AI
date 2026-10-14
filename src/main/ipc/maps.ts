@@ -27,6 +27,7 @@ import { logError } from '../errorLog'
 import { zoneGraph } from '../zoneGraph'
 import { mobPlaces } from '../mobLookupLocal'
 import { setOverlayMarkZones } from '../overlayHover'
+import { gameMapShown } from '../gameMapWatch'
 import type { OverlayKind } from '../../shared/types'
 
 /** Narrow the renderer's `prefs` to validated pack ids. `false` = something unsafe was sent. */
@@ -96,9 +97,10 @@ export function registerMapsIpc(): void {
   // memoizes); a Map cannot cross IPC, so it goes as entries and the renderer rebuilds it.
   ipcMain.handle(IPC.mapsGraph, async () => [...(await zoneGraph())])
   ipcMain.handle(IPC.mapsMobPlaces, () => mobPlaces())
-  ipcMain.on(IPC.overlaySetMarkZones, (_e, kind: OverlayKind, rects: unknown) => {
-    setOverlayMarkZones(kind, rects)
+  ipcMain.on(IPC.overlaySetMarkZones, (_e, kind: OverlayKind, rects: unknown, hidden: unknown) => {
+    setOverlayMarkZones(kind, rects, hidden === true)
   })
+  ipcMain.handle(IPC.mapsGameMapShown, () => gameMapShown())
 
   // `prefs` goes through the SAME `safePrefs` gate as `maps:get` — an in-zone search parses the
   // zone under the caller's preference, so both pack ids reach the same `join()` they do there.

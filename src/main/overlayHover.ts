@@ -93,6 +93,9 @@ const MAX_MARK_ZONES = 600
 /** Clickable marks a pinned window reported, in its own CSS px (map-waypoints: the Map pins
  *  overlay's points stay clickable while the rest of it is click-through). */
 const markZones: Partial<Record<OverlayKind, ZoneRect[]>> = {}
+/** Windows that drew nothing on purpose (the Map pins overlay hidden with the game map): they
+ *  claim no zone at all, their header strip included, so nothing invisible eats a click. */
+const hiddenKinds = new Set<OverlayKind>()
 
 function finiteRect(r: unknown): r is ZoneRect {
   if (typeof r !== 'object' || r === null) return false
@@ -101,8 +104,10 @@ function finiteRect(r: unknown): r is ZoneRect {
 }
 
 /** Replace a window's mark zones (validated, capped) and republish its hover zones. */
-export function setOverlayMarkZones(kind: OverlayKind, rects: unknown): void {
+export function setOverlayMarkZones(kind: OverlayKind, rects: unknown, hidden = false): void {
   if (!(OVERLAY_KINDS as string[]).includes(kind)) return
+  if (hidden) hiddenKinds.add(kind)
+  else hiddenKinds.delete(kind)
   markZones[kind] = Array.isArray(rects) ? rects.filter(finiteRect).slice(0, MAX_MARK_ZONES) : []
   refreshOverlayHover()
 }
@@ -154,7 +159,7 @@ function zonesFor(kind: OverlayKind, w: BrowserWindow | null): ZoneRect[] {
     // ruling. There is no `eqFocused` argument to pass any more, on purpose.
     parked: overlaysParked()
   })
-  if (!want) return []
+  if (!want || hiddenKinds.has(kind)) return []
   // The page's own zoom, so a CSS-px strip is a DIP strip — overlayHotZone.ts's `zoom` note.
   const bounds = w.getBounds()
   const zoom = w.webContents.getZoomFactor()
