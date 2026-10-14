@@ -38,7 +38,8 @@ pub struct BazaarRow {
     sum: f64,
     /// Every priced offer's platinum per unit, in log order, for medians and outliers.
     prices: Vec<f64>,
-    /// Who said it and what they said: one quote per person, their newest, the latest QUOTES_KEPT people.
+    /// Who said it and what they said: per person their newest priced quote and their newest
+    /// unpriced one, the latest QUOTES_KEPT quotes.
     quotes: Vec<Quote>,
 }
 
@@ -55,8 +56,8 @@ pub struct Quote {
     msg: String,
 }
 
-/// The latest QUOTES_KEPT people quoted per row (owner, 2026-10-07): one quote a person, their
-/// newest, so a seller posting all day never crowds out the others.
+/// The latest QUOTES_KEPT quotes per row (owner, 2026-10-07): a person's newest replaces their
+/// earlier one, so a seller posting all day never crowds out the others.
 const QUOTES_KEPT: usize = 20;
 const QUOTE_CHARS: usize = 200;
 
@@ -84,8 +85,9 @@ type Key = (String, Dir, String, u32);
 pub struct BazaarModule {
     index: Option<ItemIndex>,
     rows: BTreeMap<Key, BazaarRow>,
-    /// Today's (speaker, direction, item, tier, price in hundredths of a platinum) already counted.
-    seen: HashSet<(String, Dir, String, u32, i64)>,
+    /// Today's (speaker, direction, item, tier, price in hundredths of a platinum) already counted;
+    /// an offer read through a guess carries its message instead of a price.
+    seen: HashSet<(String, Dir, String, u32, String)>,
     seen_day: String,
     live: VecDeque<LiveOffer>,
     seq: i64,
@@ -124,7 +126,13 @@ impl BazaarModule {
             // An offer read through a guess is listed, unpriced, and never counted (Offer::sure).
             let unit = o.unit_pp().filter(|_| o.sure);
             let cents = unit.map_or(-1, |p| (p * 100.0).round() as i64);
-            let first = (speaker.to_lowercase(), o.dir, o.item.clone(), o.tier, cents);
+            // A guess is keyed by its line, so each different one is listed (review, 2026-10-13).
+            let said = if o.sure {
+                cents.to_string()
+            } else {
+                format!("? {msg}")
+            };
+            let first = (speaker.to_lowercase(), o.dir, o.item.clone(), o.tier, said);
             if !self.seen.insert(first) {
                 continue;
             }
@@ -174,9 +182,12 @@ impl BazaarModule {
     }
 }
 
-/// A person's newest quote replaces their earlier one; past QUOTES_KEPT people, the oldest goes.
+/// A person's newest quote replaces their earlier one of the same kind, priced or not: an unpriced
+/// line (a guess, or "WTB X pst") never hides the price they were counted at (review, 2026-10-13).
+/// Past QUOTES_KEPT quotes, the oldest goes.
 fn quote(quotes: &mut Vec<Quote>, q: Quote) {
-    quotes.retain(|x| !x.who.eq_ignore_ascii_case(&q.who));
+    quotes
+        .retain(|x| !x.who.eq_ignore_ascii_case(&q.who) || x.price.is_some() != q.price.is_some());
     quotes.push(q);
     if quotes.len() > QUOTES_KEPT {
         quotes.remove(0);
@@ -278,6 +289,10 @@ impl EqModule for BazaarModule {
 #[cfg(test)]
 #[path = "bazaar_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "bazaar_guess_tests.rs"]
+mod guess_tests;
 
 #[cfg(test)]
 #[path = "bazaar_corpus_tests.rs"]
