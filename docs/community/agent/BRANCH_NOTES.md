@@ -90,6 +90,16 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
 - Locked overlays are click-through except the header strip, so the pin overlay's clicks work
   only unlocked. Open: per-pin capture while locked.
 
+## bazaar-tab
+
+- Owner ruling (2026-10-13): a wrong count is worse than a missing one. An offer the reader has to
+  guess at is listed (line, speaker, time, direction) but never counted: `Offer::sure` false, no
+  price, no day count, no median, no alert. A new parse rule that guesses marks its offers unsure
+  rather than widening what is counted. The guess rules live in `bazaar_words.rs::mark_guesses`.
+- Measure a rule change on the owner's trade lines: `BAZAAR_CORPUS=<lines> BAZAAR_DUMP=1 cargo
+  test -p fold bazaar_corpus -- --ignored --nocapture` on the old and new trees, then diff the
+  DUMP lines; the summary line reports `priced` and `counted`.
+
 ## exaltation-clarity (bases on character-slot-sockets)
 
 - Socket rules and the per-weapon proc exception: MEASURED.md, Exaltations.
