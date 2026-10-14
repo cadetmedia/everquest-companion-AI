@@ -27,6 +27,7 @@ import { basename, dirname, join } from 'node:path'
 import { lineTs, readTail } from './feedback/slice'
 import {
   foldFactionEvidence,
+  foldRecentFactions,
   parseFactionLogLine,
   type FactionEvidenceReport,
   type FactionLogEvent
@@ -45,29 +46,33 @@ const TAIL_CAP_BYTES = 32 * 1024 * 1024
 /** The cheap pre-filter: every faction receipt line carries this phrase. */
 const MARKER = 'faction standing with'
 
+interface Collected {
+  events: FactionLogEvent[]
+  windowStartTs: number
+  /** every faction event at or after the recent window's start, with its time */
+  recent: { ts: number; ev: FactionLogEvent }[]
+}
+
 /**
- * Walk the tail's lines: collect the faction events newer than `sinceMs`, and note the first
- * parseable timestamp (the window's start — what decides completeness). Split out of the reader
- * below at the measured complexity ceiling; this is the loop, that is the fs.
+ * Walk the tail's lines: collect the faction events newer than `sinceMs`, the ones in the recent
+ * window (whatever the dump's age), and note the first parseable timestamp (the window's start —
+ * what decides completeness). Split out of the reader below at the measured complexity ceiling;
+ * this is the loop, that is the fs.
  */
-function collectEvents(
-  raw: readonly string[],
-  from: number,
-  sinceMs: number
-): { events: FactionLogEvent[]; windowStartTs: number } {
-  let windowStartTs = 0
-  const events: FactionLogEvent[] = []
+function collectEvents(raw: readonly string[], from: number, sinceMs: number, recentFromMs: number): Collected {
+  const out: Collected = { events: [], windowStartTs: 0, recent: [] }
   for (let i = from; i < raw.length; i++) {
     const line = raw[i]
-    if (windowStartTs === 0) {
-      const ts = lineTs(line)
-      if (ts > 0) windowStartTs = ts
-    }
-    if (!line.includes(MARKER) || lineTs(line) <= sinceMs) continue
+    if (out.windowStartTs === 0) out.windowStartTs = lineTs(line)
+    if (!line.includes(MARKER)) continue
+    const ts = lineTs(line)
+    if (ts <= sinceMs && ts < recentFromMs) continue
     const ev = parseFactionLogLine(line)
-    if (ev !== null) events.push(ev)
+    if (ev === null) continue
+    if (ts > sinceMs) out.events.push(ev)
+    if (ts >= recentFromMs) out.recent.push({ ts, ev })
   }
-  return { events, windowStartTs }
+  return out
 }
 
 /** Every ledger an archive left for this log. Read-only; an unreadable or foreign file is skipped. */
@@ -118,7 +123,8 @@ export function withLedgers(
  */
 export async function readFactionEvidence(
   logPath: string,
-  sinceMs: number
+  sinceMs: number,
+  recentFromMs?: number
 ): Promise<FactionEvidenceReport | null> {
   let tail: { text: string; truncated: boolean } | null
   try {
@@ -137,9 +143,13 @@ export async function readFactionEvidence(
   const raw = tail.text.split(/\r?\n/)
   // A truncated read starts mid-line; the fragment cannot be trusted to parse.
   const from = tail.truncated && raw.length > 0 ? 1 : 0
-  const { events, windowStartTs } = collectEvents(raw, from, sinceMs)
+  const { events, windowStartTs, recent } = collectEvents(raw, from, sinceMs, recentFromMs ?? Infinity)
   // Complete when the window reaches back to the dump: an untruncated read always does; a
   // truncated one does only if its first readable line is no newer than the dump.
   const liveComplete = !tail.truncated || (windowStartTs !== 0 && windowStartTs <= sinceMs)
-  return withLedgers(readLedgers(logPath), { events, windowStartTs, liveComplete }, sinceMs)
+  const report = withLedgers(readLedgers(logPath), { events, windowStartTs, liveComplete }, sinceMs)
+  // The recent tally reads the live tail only: an archive happens at launch, so the last hours of
+  // play are in the live log.
+  if (recentFromMs === undefined) return report
+  return { ...report, recent: foldRecentFactions(recent, recentFromMs), recentFromMs }
 }

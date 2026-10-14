@@ -15,7 +15,12 @@ import { useEffect, useMemo, useState } from 'react'
 import { factionNameKey, type FactionStanding } from '@shared/outputs/factions'
 import type { RaceUnlockClaim } from '@shared/outputs/achievements'
 import type { HeldCounts, ProgressState } from '@shared/types'
-import { applyEvidence, type FactionEvidence, type FactionEvidenceReport } from '@shared/factionLog'
+import {
+  applyEvidence,
+  type FactionEvidence,
+  type FactionEvidenceReport,
+  type FactionRecent
+} from '@shared/factionLog'
 import { CONSIDER_FACTION_COLOR, CONSIDER_FACTION_LABEL } from '@shared/considerFaction'
 import { rulesOf } from '@shared/unlocks/unlockGraph'
 import { FACTION_TIER_FLOORS, factionTier } from './factionTiers'
@@ -63,6 +68,8 @@ export interface FactionRowVm {
    * whatever your own achievements say. Empty without an achievements dump ("we don't know").
    */
   unlocks: RaceGate[]
+  /** the log's lines for this faction inside the recent window, null when it has none */
+  recent: FactionRecent | null
 }
 
 /** One race a faction gates, and whether YOUR side of it is already settled (the race is open,
@@ -120,6 +127,7 @@ function settled(claim: RaceUnlockClaim | undefined, faction: string, dumped: bo
 interface RowJoins {
   work: Map<string, FactionWork>
   evidence: Map<string, FactionEvidence>
+  recent: Map<string, FactionRecent>
   windowComplete: boolean
   unlocksByName: Map<string, RaceGate[]>
 }
@@ -169,7 +177,8 @@ function toRowVm(r: FactionStanding, joins: RowJoins): FactionRowVm {
     ...haystacksOf(r.name, w),
     work: w,
     raiseCount: w?.raise.length ?? 0,
-    unlocks: joins.unlocksByName.get(key) ?? []
+    unlocks: joins.unlocksByName.get(key) ?? [],
+    recent: joins.recent.get(key) ?? null
   }
 }
 
@@ -190,7 +199,7 @@ export interface FactionsData {
  * adjusted" line reaches the row without a tab revisit. The live asks are coalesced
  * (evidenceRefresh.ts) because each one reads the log tail.
  */
-function useFactionEvidence(progress: ProgressState | null): FactionEvidenceReport | null {
+function useFactionEvidence(progress: ProgressState | null, recentMinutes: number): FactionEvidenceReport | null {
   const [report, setReport] = useState<FactionEvidenceReport | null>(null)
   const [asks, setAsks] = useState(0)
   const loadedAt = progress?.factionsSource?.loadedAt
@@ -208,7 +217,7 @@ function useFactionEvidence(progress: ProgressState | null): FactionEvidenceRepo
   useEffect(() => {
     let alive = true
     window.eq
-      .factionsEvidence()
+      .factionsEvidence(recentMinutes)
       .then((r) => {
         if (alive) setReport(r)
       })
@@ -220,12 +229,13 @@ function useFactionEvidence(progress: ProgressState | null): FactionEvidenceRepo
     return () => {
       alive = false
     }
-  }, [loadedAt, asks])
+  }, [loadedAt, asks, recentMinutes])
   return report
 }
 
-/** Everything the tab draws, live on the same push every progress consumer rides. */
-export function useFactionData(): FactionsData {
+/** Everything the tab draws, live on the same push every progress consumer rides. `recentMinutes`
+ *  sizes each row's recent tally (the "moved recently" filter's window). */
+export function useFactionData(recentMinutes = 30): FactionsData {
   const [progress, setProgress] = useState<ProgressState | null>(null)
   useEffect(() => {
     let alive = true
@@ -249,16 +259,18 @@ export function useFactionData(): FactionsData {
       off()
     }
   }, [])
-  const evidence = useFactionEvidence(progress)
+  const evidence = useFactionEvidence(progress, recentMinutes)
   const standings = progress?.factionStandings
   const races = progress?.raceUnlocks
   const rows = useMemo(() => {
     if (standings === undefined) return null
     const byName = new Map<string, FactionEvidence>()
     for (const ev of evidence?.rows ?? []) byName.set(factionNameKey(ev.name), ev)
+    const recent = new Map((evidence?.recent ?? []).map((r) => [factionNameKey(r.name), r]))
     const joins: RowJoins = {
       work: factionWorkIndex(),
       evidence: byName,
+      recent,
       windowComplete: evidence?.complete ?? false,
       unlocksByName: unlockNeeds(races)
     }

@@ -264,6 +264,61 @@ function RaceGateSwitches({
   )
 }
 
+/** The windows the moved-recently filter offers, in minutes. */
+const RECENT_WINDOWS: readonly { min: number; label: string }[] = [
+  { min: 15, label: '15 min' },
+  { min: 30, label: '30 min' },
+  { min: 60, label: '1 hour' },
+  { min: 180, label: '3 hours' }
+]
+
+/** The "what am I working on" filter (owner ask, 2026-10-13): only the factions the log moved
+ *  inside the window, and the window's picker beside it while it is on. */
+function RecentSwitch({
+  toggles,
+  count
+}: {
+  toggles: {
+    recentOnly: boolean
+    onRecentOnly: (on: boolean) => void
+    recentMinutes: number
+    onRecentMinutes: (min: number) => void
+  }
+  count: number
+}): JSX.Element {
+  return (
+    <>
+      <Box title="Only the factions whose standing the log reported changing inside the window. Each moved row wears a chip with how many times and by how much.">
+        <FilterSwitch
+          label={`Moved recently (${String(count)})`}
+          checked={toggles.recentOnly}
+          onChange={toggles.onRecentOnly}
+          testId="factions-recent-only"
+        />
+      </Box>
+      {toggles.recentOnly && (
+        <TextField
+          select
+          size="small"
+          label="Within"
+          value={toggles.recentMinutes}
+          onChange={(e) => {
+            toggles.onRecentMinutes(Number(e.target.value))
+          }}
+          slotProps={{ htmlInput: { 'data-testid': 'factions-recent-window' } }}
+          sx={{ width: 120 }}
+        >
+          {RECENT_WINDOWS.map((w) => (
+            <MenuItem key={w.min} value={w.min}>
+              {w.label}
+            </MenuItem>
+          ))}
+        </TextField>
+      )}
+    </>
+  )
+}
+
 /** The row controls: search, the two hide-toggles, and the shown-of-total count on the far end. */
 export function FilterBar({
   query,
@@ -290,8 +345,12 @@ export function FilterBar({
     onRaces: (v: string[]) => void
     rewardsOnly: boolean
     onRewardsOnly: (on: boolean) => void
+    recentOnly: boolean
+    onRecentOnly: (on: boolean) => void
+    recentMinutes: number
+    onRecentMinutes: (min: number) => void
   }
-  counts: { untouched: number; maxed: number; unlockers: number; shown: number; total: number }
+  counts: { untouched: number; maxed: number; unlockers: number; recent: number; shown: number; total: number }
   /** the achievements dump's races, verbatim — the race picker's closed list (empty without one) */
   raceOptions: readonly string[]
   /** false until an achievements dump has been loaded — the race filter's whole data source */
@@ -320,6 +379,7 @@ export function FilterBar({
         onChange={toggles.onRewardsOnly}
         testId="factions-rewards-only"
       />
+      <RecentSwitch toggles={toggles} count={counts.recent} />
       <FilterSwitch
         label={`Hide untouched (${String(counts.untouched)})`}
         checked={toggles.hideUntouched}
