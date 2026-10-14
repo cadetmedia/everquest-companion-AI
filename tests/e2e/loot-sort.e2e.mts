@@ -140,7 +140,7 @@ async function stepNothingCoversSort(page: Page, sel: string, what: string): Pro
     return
   }
   const poppers = await settleStable(() => countOf(page, POPPER), { timeoutMs: 4000 })
-  check(`hovering the ${what} opens no tooltip popper at all`, poppers === 0, `poppers=${String(poppers)}`)
+  check(`hovering the ${what} opens no tooltip popper over the sort headers`, poppers === 0, `poppers=${String(poppers)}`)
   const cover = await whatCoversSort(page)
   check(
     `…and the sort headers are still the topmost thing at their own centre (${what})`,
