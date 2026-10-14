@@ -14,6 +14,9 @@ import {
   gapsCaption,
   tallyText,
   visibleGaps,
+  sortGaps,
+  firstGapSortDir,
+  DEFAULT_GAP_SORT,
   type GapDetails,
   type GapRow,
   type GapsSnap
@@ -196,4 +199,37 @@ test('gapsCaption reads the totals and the denominator, and an absent domain rea
   assert.equal(gapsCaption(snap, 'mob'), '76 of 468 names')
   const bare = { rows: [], totals: {}, seen: {} } as unknown as GapsSnap
   assert.equal(gapsCaption(bare, 'item'), '0 of 0 names')
+})
+
+// ---- every column sorts (owner, 2026-10-13) ----
+
+test('the default sort is the engine order, most mentioned first', () => {
+  const rows = [row(['item', 'B', ['looted'], 2]), row(['item', 'A', ['looted'], 9])]
+  assert.deepEqual(sortGaps(rows, DEFAULT_GAP_SORT).map((r) => r.name), ['A', 'B'])
+})
+
+test('name sorts A to Z ignoring case, and back', () => {
+  const rows = [row(['item', 'bat wing', ['looted'], 1]), row(['item', 'Apple', ['looted'], 1]), row(['item', 'Cog', ['looted'], 1])]
+  assert.deepEqual(sortGaps(rows, { key: 'name', dir: 'asc' }).map((r) => r.name), ['Apple', 'bat wing', 'Cog'])
+  assert.deepEqual(sortGaps(rows, { key: 'name', dir: 'desc' }).map((r) => r.name), ['Cog', 'bat wing', 'Apple'])
+})
+
+test('dates sort by time, and a tie keeps the engine order', () => {
+  const a = { ...row(['item', 'A', ['looted'], 1]), last: '2026-10-12 09:00:00' }
+  const b = { ...row(['item', 'B', ['looted'], 1]), last: '2026-10-13 01:00:00' }
+  const c = { ...row(['item', 'C', ['looted'], 1]), last: '2026-10-12 09:00:00' }
+  assert.deepEqual(sortGaps([a, b, c], { key: 'last', dir: 'desc' }).map((r) => r.name), ['B', 'A', 'C'])
+})
+
+test('To do sorts by the action a row needs', () => {
+  const add = row(['item', 'X', ['looted'], 1])
+  const check = row(['item', 'Y', ['looted'], 1])
+  const sorted = sortGaps([check, add], { key: 'todo', dir: 'asc' }, { X: 'noPage', Y: 'unchecked' })
+  assert.deepEqual(sorted.map((r) => r.name), ['X', 'Y'])
+})
+
+test('a first click puts counts and dates biggest first, text A to Z', () => {
+  assert.equal(firstGapSortDir('count'), 'desc')
+  assert.equal(firstGapSortDir('last'), 'desc')
+  assert.equal(firstGapSortDir('name'), 'asc')
 })

@@ -7,10 +7,24 @@
 // most mentioned first, 500 per domain at most. The domain toggle and the search box narrow those
 // rows in shared/gaps.ts; "Copy list" puts the visible rows on the clipboard as tab-separated text.
 
-import { type JSX, useDeferredValue, useMemo, useState } from 'react'
+import { type JSX, useCallback, useDeferredValue, useMemo, useState } from 'react'
 import { Button, CircularProgress, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
-import { GAPS_MODULE_ID, GAP_DOMAINS, GAP_DOMAIN_LABELS, gapsAsText, gapsCaption, visibleGaps, type GapDomain, type GapsSnap } from '@shared/gaps'
+import {
+  DEFAULT_GAP_SORT,
+  GAPS_MODULE_ID,
+  GAP_DOMAINS,
+  GAP_DOMAIN_LABELS,
+  firstGapSortDir,
+  gapsAsText,
+  gapsCaption,
+  sortGaps,
+  visibleGaps,
+  type GapDomain,
+  type GapSort,
+  type GapSortKey,
+  type GapsSnap
+} from '@shared/gaps'
 import { useModule } from '../../lib/useModule'
 import { copyText } from '../../lib/clipboard'
 import { useGapVerdicts } from '../../lib/gapVerdicts'
@@ -57,11 +71,17 @@ export default function GapsView(): JSX.Element {
   const visible = useMemo(() => visibleGaps(rows ?? [], domain, deferredQuery), [rows, domain, deferredQuery])
   // What the caches already say about the rows on screen: `unchecked` until the answer lands.
   const verdicts = useGapVerdicts(domain, visible)
+  const [sort, setSort] = useState<GapSort>(DEFAULT_GAP_SORT)
+  const onSort = useCallback((key: GapSortKey) => {
+    setSort((cur) => (cur.key === key ? { key, dir: cur.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: firstGapSortDir(key) }))
+  }, [])
+  // The table and Copy list read the same order, so a copied list matches what is on screen.
+  const sorted = useMemo(() => sortGaps(visible, sort, verdicts), [visible, sort, verdicts])
 
   if (!snap) return <CircularProgress size={20} />
 
   const copy = async (): Promise<void> => {
-    const ok = await copyText(gapsAsText(visible, verdicts))
+    const ok = await copyText(gapsAsText(sorted, verdicts))
     setCopied(ok ? visible.length : null)
   }
   const held = snap.totals[domain] ?? 0
@@ -99,7 +119,7 @@ export default function GapsView(): JSX.Element {
         {visible.length} of {held} unknown {GAP_DOMAIN_LABELS[domain].toLowerCase()} shown
         {held > served ? ` (the engine serves the ${served} most mentioned)` : ''}.
       </Typography>
-      <GapsTable rows={visible} verdicts={verdicts} />
+      <GapsTable rows={sorted} verdicts={verdicts} sort={sort} onSort={onSort} />
     </Stack>
   )
 }
