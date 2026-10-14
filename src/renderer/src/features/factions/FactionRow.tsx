@@ -15,7 +15,7 @@
 // 51.4 px because their chips wrapped). The collapsed work row is empty and 0 px tall.
 
 import { type JSX, memo } from 'react'
-import { Box, Chip, Collapse, TableCell, TableRow, Typography } from '@mui/material'
+import { Box, Checkbox, Chip, TableCell, TableRow, Typography } from '@mui/material'
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown'
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
 import type { HeldCounts } from '@shared/types'
@@ -32,7 +32,7 @@ export interface WorkLinks extends WorkPanelLinks {
 /** Every standing row is this tall (set on the row, measured in the real renderer), which is
  *  what lets the list be windowed. */
 export const ROW_HEIGHT = 31
-const COLUMNS = 4
+const COLUMNS = 5
 
 /** The spacer rows that reserve the full scroll height, so only a screenful of rows is mounted
  *  (lib/useWindowedRows). */
@@ -164,35 +164,29 @@ function NameSignals({ derived, unlocks }: { derived: RowDerived; unlocks: reado
   )
 }
 
-/** The expanded faction's own mark, said in words: the receipts' names toggle it too, but a
- *  faction no quest loses (Riptide Goblins) has no receipt to click. */
-function DontCareToggle({
-  name,
-  factionKey,
-  marked,
-  links
-}: {
-  name: string
-  factionKey: string
-  marked: boolean
-  links: WorkLinks
-}): JSX.Element | null {
+/** The don't-care mark as a checkbox on the row (owner ask, 2026-10-13): a faction no quest
+ *  loses (Riptide Goblins) has no receipt to click, so the row itself carries it. */
+function IgnoreBox({ factionKey, marked, links }: { factionKey: string; marked: boolean; links: WorkLinks }): JSX.Element {
   const toggle = links.onToggleDontCare
-  if (toggle === undefined) return null
   return (
-    <Typography variant="caption" color="text.secondary" component="div" sx={{ pt: 1 }}>
-      <Box
-        component="span"
-        data-testid="factions-dont-care-toggle"
-        onClick={() => {
-          toggle(factionKey)
-        }}
-        sx={{ cursor: 'pointer', textDecoration: 'underline dotted', textUnderlineOffset: 2 }}
-      >
-        {marked ? `I care about ${name} again` : `Mark ${name} as don't care`}
-      </Box>
-      {" - a quest whose only losses are on don't-care factions wears ✓ and passes “No loss I care about”."}
-    </Typography>
+    <TableCell padding="none" align="center" sx={{ width: 64 }}>
+      {toggle !== undefined && (
+        <Checkbox
+          size="small"
+          checked={marked}
+          onClick={(e) => {
+            e.stopPropagation()
+          }}
+          onChange={() => {
+            toggle(factionKey)
+          }}
+          title="Ignore: losses on this faction never count against a quest (No loss I care about)"
+          slotProps={{ input: { 'aria-label': 'ignore this faction' } }}
+          data-testid="factions-dont-care-toggle"
+          sx={{ p: 0.25 }}
+        />
+      )}
+    </TableCell>
   )
 }
 
@@ -238,14 +232,14 @@ function FactionRow({
           <Box
             component="span"
             sx={dontCare ? { color: 'text.disabled' } : undefined}
-            title={dontCare ? "marked don't care: losses here never count against a quest" : undefined}
+            title={dontCare ? "ignored: losses here never count against a quest" : undefined}
           >
             {row.name}
-            {dontCare && " (don't care)"}
           </Box>
           <RecentChip recent={row.recent} />
           <NameSignals derived={derived} unlocks={row.unlocks} />
         </TableCell>
+        <IgnoreBox factionKey={row.key} marked={dontCare} links={links} />
         <TableCell sx={{ py: 0.5, width: 130, whiteSpace: 'nowrap' }}>
           <Chip
             size="small"
@@ -275,16 +269,16 @@ function FactionRow({
           <LadderBar standing={row.standing} title={ladderTitle(row.standing, row.toMax)} />
         </TableCell>
       </TableRow>
-      <TableRow>
-        <TableCell colSpan={4} sx={{ py: 0, borderBottom: expanded ? undefined : 'none' }}>
-          <Collapse in={expanded} unmountOnExit>
-            <Box sx={{ pl: 3 }}>
-              <DontCareToggle name={row.name} factionKey={row.key} marked={dontCare} links={links} />
+      {/* Mounted only while open: a collapsed row leaves nothing behind (owner report, 2026-10-13). */}
+      {expanded && (
+        <TableRow>
+          <TableCell colSpan={COLUMNS} sx={{ py: 0 }}>
+            <Box sx={{ pl: 3, pt: 1 }}>
               <FactionWorkPanel work={derived.work} held={links.held} selfKey={row.key} links={links} />
             </Box>
-          </Collapse>
-        </TableCell>
-      </TableRow>
+          </TableCell>
+        </TableRow>
+      )}
     </>
   )
 }

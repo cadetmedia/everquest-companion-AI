@@ -52,6 +52,9 @@ export function FactionTableHead({
     <TableHead>
       <TableRow>
         {cell('name', 'Faction')}
+        <TableCell padding="none" align="center">
+          Ignore
+        </TableCell>
         {cell('regard', 'Regard')}
         {cell('standing', 'Standing', 'right')}
         <TableCell>On the ladder</TableCell>
