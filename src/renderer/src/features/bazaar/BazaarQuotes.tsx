@@ -1,10 +1,21 @@
 // BazaarQuotes — who is selling or asking, and what they said (owner ask, 2026-10-07): counted
 // offers one line each, newest first, as the engine quoted them. Under the picked item for its
-// tier, and on its own as the whole offers list the toolbar's Offers list button shows.
+// tier, and on its own as the whole offers list the toolbar's Offers list button shows. Every
+// column sorts and a Who box narrows it to one person (owner ask, 2026-10-13; the order and the
+// filter are shared/bazaarQuotes.ts).
 
-import { type JSX } from 'react'
-import { Box, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material'
+import { type JSX, useMemo, useState } from 'react'
+import { Autocomplete, Box, Stack, Table, TableBody, TableCell, TableHead, TableRow, TableSortLabel, TextField, Typography } from '@mui/material'
 import { formatPlat, type DayQuote } from '@shared/bazaar'
+import {
+  DEFAULT_QUOTE_SORT,
+  firstQuoteSortDir,
+  quoteSpeakers,
+  quotesBy,
+  sortQuotes,
+  type QuoteSort,
+  type QuoteSortKey
+} from '@shared/bazaarQuotes'
 import { ASK_COLOR, OFFER_COLOR } from './BazaarChart'
 
 const DIR_LABEL = { sell: 'Selling', buy: 'Buying', trade: 'Trading' } as const
@@ -33,27 +44,78 @@ function QuoteRow({ q, withItem }: { q: DayQuote; withItem: boolean }): JSX.Elem
   )
 }
 
+/** The columns: header, sort key, alignment; the Item column only on the whole offers list. */
+const COLUMNS: readonly (readonly [string, QuoteSortKey, 'left' | 'right'])[] = [
+  ['When', 'when', 'left'],
+  ['Who', 'who', 'left'],
+  ['', 'dir', 'left'],
+  ['Item', 'item', 'left'],
+  ['Price', 'price', 'right'],
+  ['What they said', 'msg', 'left']
+]
+
+function SortHead({ sort, onSort, withItem }: { sort: QuoteSort; onSort: (k: QuoteSortKey) => void; withItem: boolean }): JSX.Element {
+  return (
+    <TableHead>
+      <TableRow>
+        {COLUMNS.filter(([, k]) => withItem || k !== 'item').map(([label, key, align]) => (
+          <TableCell key={key} align={align} sortDirection={sort.key === key ? sort.dir : false}>
+            <TableSortLabel
+              active={sort.key === key}
+              direction={sort.key === key ? sort.dir : 'asc'}
+              onClick={() => {
+                onSort(key)
+              }}
+              data-testid={`bazaar-quotes-sort-${key}`}
+            >
+              {label === '' ? 'Side' : label}
+            </TableSortLabel>
+          </TableCell>
+        ))}
+      </TableRow>
+    </TableHead>
+  )
+}
+
+/** The Who box: everyone who posted in this list, busiest first; empty shows everyone. */
+function WhoFilter({ quotes, who, onWho }: { quotes: readonly DayQuote[]; who: string | null; onWho: (w: string | null) => void }): JSX.Element {
+  const people = useMemo(() => quoteSpeakers(quotes), [quotes])
+  return (
+    <Autocomplete
+      size="small"
+      options={people}
+      value={who}
+      onChange={(_e, v) => {
+        onWho(v)
+      }}
+      sx={{ width: 220 }}
+      renderInput={(params) => <TextField {...params} label="Who" placeholder="Everyone" />}
+      data-testid="bazaar-quotes-who"
+    />
+  )
+}
+
 export default function BazaarQuotes({ quotes, title, withItem = false, maxHeight = 260 }: { quotes: readonly DayQuote[]; title: string; withItem?: boolean; maxHeight?: number }): JSX.Element | null {
+  const [sort, setSort] = useState<QuoteSort>(DEFAULT_QUOTE_SORT)
+  const [who, setWho] = useState<string | null>(null)
+  const ordered = useMemo(() => sortQuotes(quotesBy(quotes, who), sort), [quotes, who, sort])
   if (quotes.length === 0) return null
-  const shown = quotes.slice(0, SHOWN)
+  const onSort = (key: QuoteSortKey): void => {
+    setSort((cur) => (cur.key === key ? { key, dir: cur.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: firstQuoteSortDir(key) }))
+  }
+  const shown = ordered.slice(0, SHOWN)
   return (
     <Box data-testid={withItem ? 'bazaar-offers' : 'bazaar-quotes'}>
-      <Typography variant="caption" color="text.secondary">
-        {title}
-        {quotes.length > shown.length ? ` (newest ${shown.length} of ${quotes.length}; Export CSV has them all)` : ''}
-      </Typography>
+      <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 0.5 }}>
+        <Typography variant="caption" color="text.secondary">
+          {title}
+          {ordered.length > shown.length ? ` (first ${shown.length} of ${ordered.length}; Export CSV has them all)` : ''}
+        </Typography>
+        <WhoFilter quotes={quotes} who={who} onWho={setWho} />
+      </Stack>
       <Box sx={{ maxHeight, overflowY: 'auto' }}>
         <Table size="small" stickyHeader>
-          <TableHead>
-            <TableRow>
-              <TableCell>When</TableCell>
-              <TableCell>Who</TableCell>
-              <TableCell />
-              {withItem && <TableCell>Item</TableCell>}
-              <TableCell align="right">Price</TableCell>
-              <TableCell>What they said</TableCell>
-            </TableRow>
-          </TableHead>
+          <SortHead sort={sort} onSort={onSort} withItem={withItem} />
           <TableBody>
             {shown.map((q, i) => (
               <QuoteRow key={`${q.day} ${q.at} ${q.who} ${q.item} ${q.tier} ${i}`} q={q} withItem={withItem} />

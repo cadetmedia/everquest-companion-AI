@@ -190,7 +190,7 @@ function Detail({ item, endDay, ignoreOutliers, onOpenLoot, onHide }: DetailProp
             <BazaarHoursChart item={item} ignoreOutliers={ignoreOutliers} />
           </Box>
         </Stack>
-        <BazaarQuotes quotes={item.quotes} title="Who's offering (newest first)" />
+        <BazaarQuotes quotes={item.quotes} title="Who's offering" />
         <Typography variant="caption" color="text.disabled">
           Predicted: a trend through the last ten priced days, newer and busier days counting more,
           read on the log&apos;s newest day ({endDay}) and kept within half to double the recent median.
@@ -322,7 +322,7 @@ export default function BazaarView({ onOpenLoot }: { onOpenLoot: (item: string) 
       </Typography>
       <BazaarControls state={ctl} set={set} quests={quests} onExport={() => void exportCsv(sum.items, sum.lastDay)} />
       <HeardAlerts />
-      {ctl.offers && <BazaarQuotes quotes={offersOf(sum.items)} title="Every offer of the items below, newest first" withItem maxHeight={420} />}
+      {ctl.offers && <BazaarQuotes quotes={offersOf(sum.items)} title="Every offer of the items below" withItem maxHeight={420} />}
       {snap === null ? (
         <Typography variant="body2">Reading your log…</Typography>
       ) : picked === null || sum.lastDay === null ? (
