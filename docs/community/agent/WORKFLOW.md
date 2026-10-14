@@ -118,6 +118,8 @@ disagree, RULES.md wins; fix this file.
   such logic lives in `src/shared/`.
 - **Test imports:** tests import renderer code by relative path for values (`@shared` resolves for
   types only under tsx). A plain `C:/` path fails under ESM in an ad-hoc script; use `file:///`.
+- **Known unit flake:** `presenceWorker.test.mts` "THE WATCHER LOOKS AT THE WORLD ON ITS FIRST TICK"
+  can fail under the full suite's load (2026-10-13) and passes alone; re-run before treating it as red.
 - **Known e2e reds/flakes:** `respawn-timers.e2e.mts` fails one step ("never claims the mob is
   standing there") on plain upstream main since 2026-08-17. `maps.e2e`, `engine-boots`,
   `engine-absent`, `sky-achievements`, `sky-reward-inference` can flake under parallel load; run
