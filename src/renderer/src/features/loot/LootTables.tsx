@@ -1,5 +1,5 @@
 import type { JSX } from 'react'
-import { Table, TableBody, TableCell, TableHead, TableRow } from '@mui/material'
+import { Table, TableBody, TableCell, TableHead, TableRow, TableSortLabel } from '@mui/material'
 import type { ItemKnowledge } from '@shared/types'
 // The engine's served rows (JOS-484) — `{key, cells}`, identity outside the data.
 import type { Row } from '@shared/dataServer/protocol.generated'
@@ -7,6 +7,7 @@ import type { WindowedRows } from '../../lib/useWindowedRows'
 import type { InventoryRow } from '../inventory/reconcile'
 import type { GroupRow, KeyedLoot } from './lootGrouping'
 import { EngineFlatRow, FlatRow, GroupedRow } from './lootRows'
+import type { LootSort, LootSortKey } from './lootSort'
 
 /**
  * `tableLayout: fixed` — the other half of the fixed-height contract (JOS-260, lootRows.tsx).
@@ -43,6 +44,9 @@ export interface LootTableContext {
   knowledgeByKey: Map<string, ItemKnowledge>
   invByKey: Map<string, InventoryRow>
   onSelect: (item: string) => void
+  /** the grouped table's order, set by clicking its column headers */
+  sort: LootSort
+  onSort: (key: LootSortKey) => void
 }
 
 /**
@@ -68,6 +72,8 @@ export function LootTable({
         knowledgeByKey={ctx.knowledgeByKey}
         invByKey={ctx.invByKey}
         onSelect={ctx.onSelect}
+        sort={ctx.sort}
+        onSort={ctx.onSort}
       />
     )
   }
@@ -81,34 +87,66 @@ export function LootTable({
   )
 }
 
+/** The grouped table's columns, each a sort key; no width on Item, which takes what is left.
+ *  The inventory header carries its caveat as ONE WORD (JOS-127 + the house tooltip diet): a
+ *  popper on a sticky header hangs over the first rows, and every row is a control. */
+const GROUPED_COLUMNS: readonly { key: LootSortKey; label: string; width?: string; right?: boolean }[] = [
+  { key: 'item', label: 'Item' },
+  { key: 'count', label: 'Times looted', width: '11%', right: true },
+  { key: 'inventory', label: 'In inventory (est.)', width: '13%', right: true },
+  { key: 'source', label: 'Top source', width: '20%' },
+  { key: 'zones', label: 'Zones', width: '8%', right: true },
+  { key: 'recent', label: 'Last looted', width: '15%' }
+]
+
+/** The grouped header: every column sorts on a click, a second click flips it. The row's testid
+ *  is the old Sort select's, so a spec that asks "is the grouped order control here" still can. */
+function GroupedHead({ sort, onSort }: { sort: LootSort; onSort: (key: LootSortKey) => void }): JSX.Element {
+  return (
+    <TableHead>
+      <TableRow data-testid="loot-sort">
+        {GROUPED_COLUMNS.map((c) => (
+          <TableCell
+            key={c.key}
+            align={c.right === true ? 'right' : undefined}
+            sx={c.width === undefined ? undefined : { width: c.width }}
+            sortDirection={sort.key === c.key ? sort.dir : false}
+          >
+            <TableSortLabel
+              active={sort.key === c.key}
+              direction={sort.key === c.key ? sort.dir : 'asc'}
+              onClick={() => onSort(c.key)}
+              data-testid={`loot-sort-${c.key}`}
+            >
+              {c.label}
+            </TableSortLabel>
+          </TableCell>
+        ))}
+      </TableRow>
+    </TableHead>
+  )
+}
+
 export function GroupedLootTable({
   rows,
   win,
   knowledgeByKey,
   invByKey,
-  onSelect
+  onSelect,
+  sort,
+  onSort
 }: {
   rows: GroupRow[]
   win: WindowedRows
   knowledgeByKey: Map<string, ItemKnowledge>
   invByKey: Map<string, InventoryRow>
   onSelect: (item: string) => void
+  sort: LootSort
+  onSort: (key: LootSortKey) => void
 }): JSX.Element {
   return (
     <Table size="small" stickyHeader sx={FIXED_TABLE}>
-      <TableHead>
-        <TableRow>
-          {/* No width: the item NAME takes whatever the stated columns leave. */}
-          <TableCell>Item</TableCell>
-          <TableCell align="right" sx={{ width: '11%' }}>Times looted</TableCell>
-          {/* The header carries the caveat as ONE WORD (JOS-127 + the house tooltip diet): a
-              popper on a sticky header hangs over the first rows, and every row is a control. */}
-          <TableCell align="right" sx={{ width: '13%' }}>In inventory (est.)</TableCell>
-          <TableCell sx={{ width: '20%' }}>Top source</TableCell>
-          <TableCell align="right" sx={{ width: '8%' }}>Zones</TableCell>
-          <TableCell sx={{ width: '15%' }}>Last looted</TableCell>
-        </TableRow>
-      </TableHead>
+      <GroupedHead sort={sort} onSort={onSort} />
       <TableBody>
         <PadRow height={win.topPad} colSpan={6} />
         {rows.slice(win.start, win.end).map((g) => (

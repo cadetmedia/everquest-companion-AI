@@ -33,11 +33,19 @@ import {
   compareLootRows,
   sortLootRows,
   isLootSortKey,
+  naturalDir,
+  nextLootSort,
   DEFAULT_LOOT_SORT,
-  LOOT_SORT_OPTIONS,
+  type LootSort,
   type LootSortKey,
   type SortableLootRow
 } from '../src/renderer/src/features/loot/lootSort'
+
+/** Every column the grouped table sorts on (the header's own list). */
+const KEYS: readonly LootSortKey[] = ['item', 'count', 'inventory', 'source', 'zones', 'recent']
+
+/** A column in its first-click direction, or the one given. */
+const by = (key: LootSortKey, dir = naturalDir(key)): LootSort => ({ key, dir })
 
 /** A grouped row, as `groupLootRows` builds them — only the three fields the sort reads. */
 function row(item: string, count: number, last: number): SortableLootRow {
@@ -48,8 +56,8 @@ const names = (list: SortableLootRow[]): string[] => list.map((r) => r.item)
 
 test('times looted is still the default order', () => {
   assert.equal(DEFAULT_LOOT_SORT, 'count')
-  assert.equal(LOOT_SORT_OPTIONS[0]?.value, 'count')
-  assert.equal(LOOT_SORT_OPTIONS[1]?.value, 'recent')
+  assert.equal(naturalDir('count'), 'desc')
+  // The two keys a tester may already have stored still read.
   assert.equal(isLootSortKey('count'), true)
   assert.equal(isLootSortKey('recent'), true)
   // A retired (or hand-edited) stored key must not sort by nothing — the loader falls back.
@@ -60,7 +68,7 @@ test('times looted is still the default order', () => {
 
 test('count: most-looted first, exactly as the table always was', () => {
   const list = [row('Bone Chips', 3, 100), row('Rune Word', 12, 50), row('Sphinx Claw', 7, 900)]
-  assert.deepEqual(names(sortLootRows(list, 'count')), ['Rune Word', 'Sphinx Claw', 'Bone Chips'])
+  assert.deepEqual(names(sortLootRows(list, by('count'))), ['Rune Word', 'Sphinx Claw', 'Bone Chips'])
 })
 
 test('count: equal counts break on the newer group, then on name', () => {
@@ -69,7 +77,7 @@ test('count: equal counts break on the newer group, then on name', () => {
     row('Newer five', 5, 900),
     row('Another five', 5, 900) // same count AND same ts as 'Newer five' — name decides
   ]
-  assert.deepEqual(names(sortLootRows(list, 'count')), ['Another five', 'Newer five', 'Older five'])
+  assert.deepEqual(names(sortLootRows(list, by('count'))), ['Another five', 'Newer five', 'Older five'])
 })
 
 test('recent: newest group first — the question the window could not answer', () => {
@@ -78,7 +86,7 @@ test('recent: newest group first — the question the window could not answer', 
     row('Looted just now', 1, 9_000),
     row('Looted yesterday', 40, 10)
   ]
-  assert.deepEqual(names(sortLootRows(list, 'recent')), [
+  assert.deepEqual(names(sortLootRows(list, by('recent'))), [
     'Looted just now',
     'Looted an hour ago',
     'Looted yesterday'
@@ -89,8 +97,8 @@ test('the two orders genuinely disagree — that is why both are offered', () =>
   // One pickup, thirty seconds ago, against a grind of fifty from last week.
   const fresh = row('Mote of Major Potential', 1, 9_000)
   const grind = row('Bone Chips', 50, 10)
-  assert.deepEqual(names(sortLootRows([grind, fresh], 'recent')), [fresh.item, grind.item])
-  assert.deepEqual(names(sortLootRows([fresh, grind], 'count')), [grind.item, fresh.item])
+  assert.deepEqual(names(sortLootRows([grind, fresh], by('recent'))), [fresh.item, grind.item])
+  assert.deepEqual(names(sortLootRows([fresh, grind], by('count'))), [grind.item, fresh.item])
 })
 
 test('SECOND-RESOLUTION TIES: one corpse, three items, one timestamp', () => {
@@ -99,7 +107,7 @@ test('SECOND-RESOLUTION TIES: one corpse, three items, one timestamp', () => {
   // left to whatever order the tally Map happened to be built in.
   const ts = 1_700_000_000_000
   const list = [row('Zebra Hide', 2, ts), row('Alpha Rune', 2, ts), row('Mid Stone', 9, ts)]
-  assert.deepEqual(names(sortLootRows(list, 'recent')), ['Mid Stone', 'Alpha Rune', 'Zebra Hide'])
+  assert.deepEqual(names(sortLootRows(list, by('recent'))), ['Mid Stone', 'Alpha Rune', 'Zebra Hide'])
 })
 
 test('every order is TOTAL — no order depends on the input order', () => {
@@ -108,10 +116,10 @@ test('every order is TOTAL — no order depends on the input order', () => {
     row('Beta', 5, 500),
     row('Gamma', 5, 500)
   ]
-  for (const opt of LOOT_SORT_OPTIONS) {
-    const forward = names(sortLootRows(build(), opt.value))
-    const reversed = names(sortLootRows([...build()].reverse(), opt.value))
-    assert.deepEqual(reversed, forward, `${opt.value} is order-dependent`)
+  for (const key of KEYS) {
+    const forward = names(sortLootRows(build(), by(key)))
+    const reversed = names(sortLootRows([...build()].reverse(), by(key)))
+    assert.deepEqual(reversed, forward, `${key} is order-dependent`)
     // …and a fully tied set lands in name order rather than in arrival order.
     assert.deepEqual(forward, ['Alpha', 'Beta', 'Gamma'])
   }
@@ -120,7 +128,7 @@ test('every order is TOTAL — no order depends on the input order', () => {
 test('sortLootRows does not mutate its input', () => {
   const list = [row('Second', 1, 1), row('First', 9, 9)]
   const before = names(list)
-  const sorted = sortLootRows(list, 'count')
+  const sorted = sortLootRows(list, by('count'))
   assert.deepEqual(names(list), before)
   assert.notEqual(sorted, list)
   assert.deepEqual(names(sorted), ['First', 'Second'])
@@ -129,10 +137,10 @@ test('sortLootRows does not mutate its input', () => {
 test('compareLootRows agrees with sortLootRows on the pairwise calls', () => {
   const older = row('Older', 1, 1)
   const newer = row('Newer', 1, 2)
-  assert.ok(compareLootRows('recent')(newer, older) < 0)
-  assert.ok(compareLootRows('recent')(older, newer) > 0)
+  assert.ok(compareLootRows(by('recent'))(newer, older) < 0)
+  assert.ok(compareLootRows(by('recent'))(older, newer) > 0)
   // A row compared with itself is a tie under every key, or the sort is not a valid ordering.
-  for (const opt of LOOT_SORT_OPTIONS) assert.equal(compareLootRows(opt.value)(older, older), 0)
+  for (const key of KEYS) assert.equal(compareLootRows(by(key))(older, older), 0)
 })
 
 test('the chosen order is the WHOLE order — nothing re-blocks the list behind it (JOS-345)', () => {
@@ -147,17 +155,37 @@ test('the chosen order is the WHOLE order — nothing re-blocks the list behind 
     row('Silk Swatch', 1, 800)
   ]
 
-  assert.deepEqual(names(sortLootRows(list, 'recent')), ['Sphinx Claw', 'Silk Swatch', 'Bone Chips', 'Rune Word'])
-  assert.deepEqual(names(sortLootRows(list, 'count')), ['Rune Word', 'Sphinx Claw', 'Bone Chips', 'Silk Swatch'])
+  assert.deepEqual(names(sortLootRows(list, by('recent'))), ['Sphinx Claw', 'Silk Swatch', 'Bone Chips', 'Rune Word'])
+  assert.deepEqual(names(sortLootRows(list, by('count'))), ['Rune Word', 'Sphinx Claw', 'Bone Chips', 'Silk Swatch'])
 })
 
-test('the key union is closed — a new option cannot ship without a comparator', () => {
-  // The switch in compareLootRows is exhaustive over LootSortKey; this proves every ADVERTISED
-  // option actually has one, which is the half the type cannot check.
-  for (const opt of LOOT_SORT_OPTIONS) {
-    const cmp = compareLootRows(opt.value satisfies LootSortKey)
-    assert.equal(typeof cmp, 'function', `${opt.value} has no comparator`)
-    assert.equal(typeof cmp(row('a', 1, 1), row('b', 2, 2)), 'number')
-    assert.ok(opt.label.length > 0, `${opt.value} has no label`)
+test('the key union is closed — every header column has a comparator', () => {
+  for (const key of KEYS) {
+    const cmp = compareLootRows(by(key))
+    assert.equal(typeof cmp(row('a', 1, 1), row('b', 2, 2)), 'number', `${key} has no comparator`)
   }
+})
+
+test('a header click starts a column at its natural reading, and a second click flips it', () => {
+  assert.deepEqual(nextLootSort(by('count'), 'item'), { key: 'item', dir: 'asc' })
+  assert.deepEqual(nextLootSort(by('count'), 'zones'), { key: 'zones', dir: 'desc' })
+  assert.deepEqual(nextLootSort(by('count'), 'count'), { key: 'count', dir: 'asc' })
+  assert.deepEqual(nextLootSort(by('count', 'asc'), 'count'), { key: 'count', dir: 'desc' })
+})
+
+test('every column sorts both ways, and the item name still breaks ties A to Z', () => {
+  const a = { item: 'Alpha', count: 1, last: 1, topSource: 'a lion', zoneCount: 4 }
+  const b = { item: 'Beta', count: 9, last: 9, topSource: 'a bat', zoneCount: 1 }
+  const c = { item: 'Gamma', count: 9, last: 9, topSource: 'a bat', zoneCount: 1 }
+  const inv = new Map([['Alpha', 50], ['Beta', 2], ['Gamma', 2]])
+  const invOf = (r: SortableLootRow): number => inv.get(r.item) ?? 0
+  const sorted = (s: LootSort): string[] => names(sortLootRows([c, a, b], s, invOf))
+  assert.deepEqual(sorted(by('item')), ['Alpha', 'Beta', 'Gamma'])
+  assert.deepEqual(sorted(by('item', 'desc')), ['Gamma', 'Beta', 'Alpha'])
+  assert.deepEqual(sorted(by('source')), ['Beta', 'Gamma', 'Alpha'])
+  assert.deepEqual(sorted(by('zones')), ['Alpha', 'Beta', 'Gamma'])
+  assert.deepEqual(sorted(by('zones', 'asc')), ['Beta', 'Gamma', 'Alpha'])
+  assert.deepEqual(sorted(by('inventory')), ['Alpha', 'Beta', 'Gamma'])
+  assert.deepEqual(sorted(by('count', 'asc')), ['Alpha', 'Beta', 'Gamma'])
+  assert.deepEqual(sorted(by('recent', 'asc')), ['Alpha', 'Beta', 'Gamma'])
 })

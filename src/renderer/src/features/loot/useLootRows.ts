@@ -5,7 +5,7 @@ import { normalizeQuery } from '../../lib/search'
 import type { InventoryRow } from '../inventory/reconcile'
 import { buildInvOnlyRows, filterLootEvents, groupLootRows, type GroupRow, type KeyedLoot } from './lootGrouping'
 import { selectInvOnly, showsInvOnly } from './ownedItems'
-import type { LootSortKey } from './lootSort'
+import type { LootSort, SortableLootRow } from './lootSort'
 
 export interface LootRowsInput {
   history: LootEvent[]
@@ -16,7 +16,7 @@ export interface LootRowsInput {
   showInventoryOnly: boolean
   /** Which order the GROUPED table is in (lootSort.ts). The flat ledger is a chronological
    *  ledger and stays newest-first whatever this says — see the toolbar's gate. */
-  sort: LootSortKey
+  sort: LootSort
 }
 
 export interface LootRows {
@@ -80,7 +80,11 @@ export function useLootRows({
   const events = useMemo(() => filterLootEvents({ keyed, questOnly, q }), [keyed, q, questOnly])
   // Re-sorting is the ONLY thing a sort change costs: the filter above it is memoized on the
   // query, so switching to "last looted" never re-runs the per-keystroke work.
-  const grouped = useMemo(() => groupLootRows(events, sort), [events, sort])
+  // The In-inventory column sorts on the same `net` its cell draws, joined by counting key.
+  const grouped = useMemo(() => {
+    const invOf = (r: SortableLootRow): number => invByKey.get((r as GroupRow).countKey)?.net ?? 0
+    return groupLootRows(events, sort, invOf)
+  }, [events, sort, invByKey])
 
   // The inventory-only tail is kept OUT of the default BROWSE so the Loot table stays a loot
   // table (the toolbar chip says how many are hiding) — but a SEARCH always reaches it, because a
