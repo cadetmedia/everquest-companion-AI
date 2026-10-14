@@ -23,7 +23,8 @@ export const outputsApi = {
    * (shared/factionLog.ts) — what lets a stale dump's numbers be corrected on screen. Null when
    * there is no dump or no log to fold from; in a packaged build the UNRELEASED-gated handler is
    * absent and the invoke rejects, which the (equally absent) Factions tab never gets to see.
+   * `recentMinutes` sizes the report's recent tally (the factions the log moved lately).
    */
-  factionsEvidence: (): Promise<FactionEvidenceReport | null> =>
-    ipcRenderer.invoke(IPC.factionsEvidence)
+  factionsEvidence: (recentMinutes?: number): Promise<FactionEvidenceReport | null> =>
+    ipcRenderer.invoke(IPC.factionsEvidence, recentMinutes)
 }

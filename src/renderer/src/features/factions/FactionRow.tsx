@@ -55,6 +55,29 @@ const NAME_CELL = {
   textOverflow: 'ellipsis'
 } as const
 
+/** The recent-window chip: how often the log moved this faction lately, and by how much. */
+function RecentChip({ recent }: { recent: FactionRowVm['recent'] }): JSX.Element | null {
+  if (recent === null) return null
+  const when = new Date(recent.lastTs).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+  const net = recent.net === 0 ? '' : ` ${recent.net > 0 ? '+' : ''}${String(recent.net)}`
+  return (
+    <Chip
+      size="small"
+      variant="outlined"
+      label={`${String(recent.hits)}x${net}`}
+      title={`moved ${String(recent.hits)} times recently, net ${String(recent.net)}; last at ${when}`}
+      data-testid="factions-recent"
+      sx={{
+        ml: 1,
+        height: 18,
+        fontSize: 11,
+        color: recent.net < 0 ? 'error.main' : 'success.main',
+        borderColor: 'currentColor'
+      }}
+    />
+  )
+}
+
 /** The hover behind a drifted number: both halves of the correction, and how sure it is. */
 function driftTitle(row: FactionRowVm): string {
   const base = `dump said ${String(row.dumpStanding)}; the log moved it ${row.drift > 0 ? '+' : ''}${String(row.drift)} since`
@@ -214,6 +237,7 @@ function FactionRow({
             {row.name}
             {dontCare && " (don't care)"}
           </Box>
+          <RecentChip recent={row.recent} />
           <NameSignals derived={derived} unlocks={row.unlocks} />
         </TableCell>
         <TableCell sx={{ py: 0.5, width: 130, whiteSpace: 'nowrap' }}>

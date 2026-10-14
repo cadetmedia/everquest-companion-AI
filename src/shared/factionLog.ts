@@ -68,6 +68,40 @@ export interface FactionEvidenceReport {
   /** the boundary the evidence was folded from — the dump's own mtime */
   sinceMs: number
   rows: FactionEvidence[]
+  /** the factions the log moved since `recentFromMs`, whatever the dump's age (owner ask,
+   *  2026-10-13: "show me the ones I'm working on"); absent from a reader that did not tally */
+  recent?: FactionRecent[]
+  recentFromMs?: number
+}
+
+/** One faction's lines inside the recent window: how often, how far, and when last. */
+export interface FactionRecent {
+  name: string
+  hits: number
+  /** the summed adjustments; a cap line counts a hit and adds nothing */
+  net: number
+  lastTs: number
+}
+
+/** Tally timestamped events (log order) at or after `fromMs`, per faction, by the dump join's key. */
+export function foldRecentFactions(
+  events: Iterable<{ ts: number; ev: FactionLogEvent }>,
+  fromMs: number
+): FactionRecent[] {
+  const byName = new Map<string, FactionRecent>()
+  for (const { ts, ev } of events) {
+    if (ts < fromMs) continue
+    const key = factionNameKey(ev.name)
+    let row = byName.get(key)
+    if (row === undefined) {
+      row = { name: ev.name, hits: 0, net: 0, lastTs: ts }
+      byName.set(key, row)
+    }
+    row.hits++
+    row.lastTs = ts
+    if (ev.kind === 'adjust') row.net += ev.amount
+  }
+  return [...byName.values()]
 }
 
 /**

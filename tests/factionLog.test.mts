@@ -8,6 +8,7 @@ import assert from 'node:assert/strict'
 import {
   applyEvidence,
   foldFactionEvidence,
+  foldRecentFactions,
   parseFactionLogLine,
   type FactionLogEvent
 } from '../src/shared/factionLog'
@@ -90,4 +91,24 @@ test('applyEvidence corrects a stale dump: sums ride the number, caps override i
   // The clamp: no sum may carry the value past the faction's own scale.
   assert.equal(applyEvidence(1990, 2000, { name: 'x', cap: null, sum: 500, hits: 1 }, true).value, 2000)
   assert.equal(applyEvidence(-1990, 2000, { name: 'x', cap: null, sum: -500, hits: 1 }, true).value, -2000)
+})
+
+test('the recent tally counts each faction inside the window, nets its adjustments, and keeps its last time', () => {
+  const ev = (name: string, amount: number | 'cap'): FactionLogEvent =>
+    amount === 'cap' ? { name, kind: 'cap', cap: 'high' } : { name, kind: 'adjust', amount }
+  const recent = foldRecentFactions(
+    [
+      { ts: 100, ev: ev('Heretics', -5) },
+      { ts: 200, ev: ev('Heretics', -5) },
+      { ts: 210, ev: ev('Miners Guild 249', 7) },
+      { ts: 300, ev: ev('heretics', -5) },
+      { ts: 310, ev: ev('Ring of Scale', 'cap') }
+    ],
+    150
+  )
+  assert.deepEqual(recent, [
+    { name: 'Heretics', hits: 2, net: -10, lastTs: 300 },
+    { name: 'Miners Guild 249', hits: 1, net: 7, lastTs: 210 },
+    { name: 'Ring of Scale', hits: 1, net: 0, lastTs: 310 }
+  ])
 })

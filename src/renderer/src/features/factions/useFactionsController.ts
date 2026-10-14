@@ -62,6 +62,7 @@ function useRowFilterState(): {
   onQuery: (q: string) => void
   toggles: Parameters<typeof FilterBar>[0]['toggles']
   reveal: (name: string) => void
+  recentMinutes: number
 } {
   const [query, setQuery] = useState('')
   const deferredQuery = useDeferredValue(query)
@@ -71,6 +72,8 @@ function useRowFilterState(): {
   const [unlocksPending, setUnlocksPending] = useState(false)
   const [races, setRaces] = useState<string[]>([])
   const [rewardsOnly, setRewardsOnly] = useState(false)
+  const [recentOnly, setRecentOnly] = useState(false)
+  const [recentMinutes, setRecentMinutes] = useState(30)
   // A race chip's click REVEALS its faction row: the search finds it, and both hide-toggles come
   // off — a race's missing faction is usually untouched, which is exactly what the default view
   // hides, and a reveal that landed on an empty table would read as a broken link.
@@ -80,8 +83,8 @@ function useRowFilterState(): {
     setHideMaxed(false)
   }, [])
   const rowFilters = useMemo<RowFilters>(
-    () => ({ query: deferredQuery, hideUntouched, hideMaxed, unlocksOnly, unlocksPending, races, rewardsOnly }),
-    [deferredQuery, hideUntouched, hideMaxed, unlocksOnly, unlocksPending, races, rewardsOnly]
+    () => ({ query: deferredQuery, hideUntouched, hideMaxed, unlocksOnly, unlocksPending, races, rewardsOnly, recentOnly }),
+    [deferredQuery, hideUntouched, hideMaxed, unlocksOnly, unlocksPending, races, rewardsOnly, recentOnly]
   )
   const toggles = useMemo(
     () => ({
@@ -96,11 +99,15 @@ function useRowFilterState(): {
       races,
       onRaces: setRaces,
       rewardsOnly,
-      onRewardsOnly: setRewardsOnly
+      onRewardsOnly: setRewardsOnly,
+      recentOnly,
+      onRecentOnly: setRecentOnly,
+      recentMinutes,
+      onRecentMinutes: setRecentMinutes
     }),
-    [hideUntouched, hideMaxed, unlocksOnly, unlocksPending, races, rewardsOnly]
+    [hideUntouched, hideMaxed, unlocksOnly, unlocksPending, races, rewardsOnly, recentOnly, recentMinutes]
   )
-  return { query, rowFilters, onQuery: setQuery, toggles, reveal }
+  return { query, rowFilters, onQuery: setQuery, toggles, reveal, recentMinutes }
 }
 
 /**
@@ -136,9 +143,15 @@ function useTableRows(
 }
 
 /** The bar's tallies of the WHOLE dump — they move with the dump, never with a keystroke. */
-function useTallies(all: FactionRowVm[] | null): { untouched: number; maxed: number; unlockers: number } {
+function useTallies(all: FactionRowVm[] | null): {
+  untouched: number
+  maxed: number
+  unlockers: number
+  recent: number
+} {
   return useMemo(
     () => ({
+      recent: (all ?? []).filter((r) => r.recent !== null).length,
       untouched: (all ?? []).filter((r) => r.standing === 0).length,
       maxed: (all ?? []).filter((r) => r.toMax <= 0).length,
       unlockers: (all ?? []).filter((r) => r.unlocks.length > 0).length
@@ -173,8 +186,8 @@ export interface FactionsController {
 
 export function useFactionsController(props: FactionsViewProps): FactionsController {
   const { onOpenLoot, onOpenMob, onSelectView } = props
-  const { rows: all, readAt, held, raceUnlocks } = useFactionData()
-  const { query, rowFilters, onQuery, toggles, reveal } = useRowFilterState()
+  const { query, rowFilters, onQuery, toggles, reveal, recentMinutes } = useRowFilterState()
+  const { rows: all, readAt, held, raceUnlocks } = useFactionData(recentMinutes)
   const [classSel, setClassSel] = useState<ClassAbbr[]>([])
   const [slot, setSlot] = useState<SlotFilter>('ANY')
   const [coinOnly, setCoinOnly] = useState(false)

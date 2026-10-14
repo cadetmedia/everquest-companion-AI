@@ -112,3 +112,20 @@ test('with neither a live log nor a ledger there is nothing to report', async ()
   const logPath = install([], [])
   assert.equal(await readFactionEvidence(logPath, at('09:00:00')), null)
 })
+
+test('the recent tally reads the live log from its own start, whatever the dump age, and only when asked', async () => {
+  const logPath = install(
+    [line('11:00:00', adj('Heretics', -2)), line('11:20:00', adj('Heretics', -3)), line('11:21:00', best('Ring of Scale'))],
+    []
+  )
+  // The dump was written after every line: nothing corrects it, yet the last half hour still moved.
+  const r = await readFactionEvidence(logPath, at('12:00:00'), at('11:10:00'))
+  assert.ok(r)
+  assert.deepEqual(r.rows, [])
+  assert.equal(r.recentFromMs, at('11:10:00'))
+  assert.deepEqual(r.recent, [
+    { name: 'Heretics', hits: 1, net: -3, lastTs: at('11:20:00') },
+    { name: 'Ring of Scale', hits: 1, net: 0, lastTs: at('11:21:00') }
+  ])
+  assert.equal((await readFactionEvidence(logPath, at('12:00:00')))?.recent, undefined)
+})

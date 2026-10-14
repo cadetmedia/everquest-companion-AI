@@ -174,6 +174,11 @@ export interface RowFilters {
   races: readonly string[]
   /** the search reads REWARDS only — the find-the-chain's-final-quest scope */
   rewardsOnly: boolean
+  /** only factions the log moved inside the recent window (`FactionRowVm.recent`) — the
+   *  "what am I working on" reading (owner ask, 2026-10-13). Narrows every other reading and
+   *  overrides hide-untouched (a moved faction is touched); hide-maxed still drops the cap spam
+   *  a maxed faction prints on every kill. */
+  recentOnly: boolean
 }
 
 /** The three sortable columns. Regard sorts the ladder's RANKS, so ties inside one rung stay
@@ -207,6 +212,7 @@ export function visibleRows(rows: readonly FactionRowVm[], f: RowFilters, sort: 
   const q = f.query.trim().toLowerCase()
   const sign = sort.dir === 'asc' ? 1 : -1
   return rows
+    .filter((r) => !f.recentOnly || r.recent !== null)
     .filter((r) => {
       // The query searches EVERYTHING the row's work would draw — faction, quest names, givers,
       // zones, turn-in items, rewards (`FactionRowVm.searchText`) — so "Talisman of Kejaar"
@@ -221,7 +227,7 @@ export function visibleRows(rows: readonly FactionRowVm[], f: RowFilters, sort: 
       // The unlocks hunt OVERRIDES the hide-toggles too: a race-gating faction is usually
       // untouched, which is exactly what the default view hides — the race-chip reveal's trap.
       if (f.unlocksOnly) return gates.length > 0
-      return !(f.hideUntouched && r.standing === 0) && !(f.hideMaxed && r.toMax <= 0)
+      return !(f.hideUntouched && !f.recentOnly && r.standing === 0) && !(f.hideMaxed && r.toMax <= 0)
     })
     .sort((a, b) => sign * compareBy(a, b, sort.key))
 }

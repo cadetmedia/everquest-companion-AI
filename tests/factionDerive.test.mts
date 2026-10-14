@@ -40,7 +40,8 @@ function row(id: number, name: string, standing: number, unlocks: RaceGate[] = [
     rewardText: name.toLowerCase(),
     work: null,
     raiseCount: 0,
-    unlocks
+    unlocks,
+    recent: null
   }
 }
 
@@ -51,7 +52,8 @@ const OFF: RowFilters = {
   unlocksOnly: false,
   unlocksPending: false,
   races: [],
-  rewardsOnly: false
+  rewardsOnly: false,
+  recentOnly: false
 }
 
 const ROWS: readonly FactionRowVm[] = [
@@ -112,6 +114,15 @@ test('a search under a race pick still has to carry a matching gate', () => {
   const f: RowFilters = { ...OFF, unlocksOnly: true, races: ['Kerran'], query: 'vale' }
   assert.deepEqual(names(f), [])
   assert.deepEqual(names({ ...f, query: 'kerra' }), ['Kerra Isle'])
+})
+
+test('moved recently keeps only the factions the log moved, untouched or not, and still hides maxed', () => {
+  const moved = (r: FactionRowVm): FactionRowVm => ({ ...r, recent: { name: r.name, hits: 3, net: 6, lastTs: 1 } })
+  const rows = [moved(ROWS[0]!), ROWS[1]!, moved(ROWS[2]!), ROWS[3]!]
+  const shown = (f: RowFilters): string[] => visibleRows(rows, f, { key: 'name', dir: 'asc' }).map((r) => r.name)
+  assert.deepEqual(shown({ ...OFF, recentOnly: true }), ['Kerra Isle'])
+  assert.deepEqual(shown({ ...OFF, recentOnly: true, hideMaxed: false }), ['Kejek Village', 'Kerra Isle'])
+  assert.deepEqual(shown({ ...OFF, recentOnly: true, query: 'qeynos' }), [])
 })
 
 test('huntedGates is the one list both refinements read', () => {
