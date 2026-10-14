@@ -7,11 +7,3 @@ the sign hook is wired, and it is the one every shipped executable goes through
 nothing in the config narrows the signable set out from under the engine
 # The engine factoring register is a pending hand-edit on the fork (docs/community/BRANCHES.md):
 the committed register describes the engine as it stands today
-# TEMPORARY (owner, 2026-10-13): the 2026-10-13 game patch inserted a column into spells_us.txt
-# between fields 52 and 75, so every field the readers take from 75 on is one off (icon 75->76,
-# resist adjustment 78->79, effect slots 172->173), in src/main/resist/spellsUsParse.ts and the
-# engine's Rust twins. These three read the live client file and fail on it. Remove them in the
-# change that teaches both readers the new layout; the release check stops if they pass first.
-Lord Nagafen reads the magic resistance the plan predicted
-THE ZOL GHOUL KNIGHT LOST ITS COLD CLAIM, and that is the fix working (JOS-385)
-every block the GAME issued is a conflict the engine sees
