@@ -160,23 +160,31 @@ pub const AFTER_BARE_PRICE: &[&str] = &[
     "total", "wts", "wtb", "wtt", "selling", "buying", "trading", "paying", "offering",
 ];
 
-/// A one-token number with no `k`, `pp` or coin: `40`, `100`.
+/// A price with no `k`, `pp` or coin, over all the tokens it spans: `40`, `100`, and `10 000` too,
+/// which is 10,000 or ten for a thousand (review, 2026-10-13).
 pub fn bare_at(t: &[Tok], i: usize, used: usize) -> bool {
-    used == 1 && t[i].raw.bytes().all(|b| b.is_ascii_digit())
+    !t[i..i + used]
+        .iter()
+        .any(|x| x.raw.bytes().any(|b| b.is_ascii_alphabetic()))
 }
 
 /// Mark the offers read through a guess `sure = false`: listed, never counted (owner, 2026-10-13).
 /// An `or` before another price or count ("400p each or 700p for both", "20k or 2x Lion Skins")
 /// makes the line a choice, where "or best offer" and "A or B 15pp each" do not; and a count over
 /// one with a price but neither `each` nor a `for` total ("800x Powder 6k") is the lot or each.
-pub fn mark_guesses(t: &[Tok], out: &mut [super::bazaar_parse::Offer]) {
-    let number_after = |k: &str| {
-        t.windows(2)
+/// `starts[k]` is the token where `out[k]` began: a `for` total is the offer's it follows, up to
+/// where the next offer starts, so "800x Powder 6k, Bone Chips 1000 for 10k" leaves the powder a
+/// guess (review, 2026-10-13).
+pub fn mark_guesses(t: &[Tok], out: &mut [super::bazaar_parse::Offer], starts: &[usize]) {
+    let number_after = |k: &str, span: &[Tok]| {
+        span.windows(2)
             .any(|w| w[0].n == k && w[1].raw.bytes().next().is_some_and(|b| b.is_ascii_digit()))
     };
-    let alternatives = number_after("or");
-    let stated_total = number_after("for");
-    for o in out {
+    let alternatives = number_after("or", t);
+    for (k, o) in out.iter_mut().enumerate() {
+        let from = if k == 0 { 0 } else { starts[k] };
+        let to = starts.get(k + 1).copied().unwrap_or(t.len());
+        let stated_total = number_after("for", &t[from..to]);
         let lot_or_each =
             o.qty.is_some_and(|q| q > 1) && o.price_pp.is_some() && !o.each && !stated_total;
         if alternatives || lot_or_each {

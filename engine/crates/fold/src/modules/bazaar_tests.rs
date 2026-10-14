@@ -207,7 +207,7 @@ fn only_a_message_that_opens_with_a_direction_is_an_offer() {
     assert_eq!(parse_trade("selling Fruit 5pp", &ix())[0].dir, Dir::Sell);
 }
 
-struct Names;
+pub(super) struct Names;
 
 impl Knowledge for Names {
     fn item(&self, _name: &str) -> Answer {
@@ -233,7 +233,7 @@ impl Knowledge for Names {
     }
 }
 
-fn line(seq: i64, raw: &str) -> Event<'static> {
+pub(super) fn line(seq: i64, raw: &str) -> Event<'static> {
     Event::from_json(&json!({ "kind": "unknown", "seq": seq, "ts": 0, "raw": raw }).to_string())
         .expect("an event")
 }

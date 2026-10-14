@@ -147,6 +147,8 @@ struct Parser<'a> {
     t: Vec<Tok>,
     ix: &'a ItemIndex,
     out: Vec<Offer>,
+    /// The token each offer in `out` began at, for [`mark_guesses`].
+    starts: Vec<usize>,
     dir: Option<Dir>,
     lead_price: Option<f64>,
     pending_qty: Option<u32>,
@@ -223,6 +225,7 @@ impl<'a> Parser<'a> {
             each: self.lead_price.is_some(),
             sure: true,
         });
+        self.starts.push(i);
         self.last = Some(self.out.len() - 1);
         Some(i + used)
     }
@@ -273,6 +276,7 @@ impl<'a> Parser<'a> {
                     ..self.out[last].clone()
                 };
                 self.out.push(next);
+                self.starts.push(i);
                 last = self.out.len() - 1;
                 self.last = Some(last);
                 self.priced_here = false;
@@ -473,6 +477,7 @@ fn parse_tokens(t: Vec<Tok>, ix: &ItemIndex) -> Vec<Offer> {
         t,
         ix,
         out: Vec::new(),
+        starts: Vec::new(),
         dir: None,
         lead_price: None,
         pending_qty: None,
@@ -487,7 +492,7 @@ fn parse_tokens(t: Vec<Tok>, ix: &ItemIndex) -> Vec<Offer> {
             None => break,
         }
     }
-    mark_guesses(&p.t, &mut p.out);
+    mark_guesses(&p.t, &mut p.out, &p.starts);
     p.out
 }
 
