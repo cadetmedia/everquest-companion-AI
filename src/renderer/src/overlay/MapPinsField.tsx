@@ -11,9 +11,10 @@ import { MapCanvas } from '../features/maps/MapCanvas'
 import { DEFAULT_LAYERS, viewRect } from '../features/maps/mapGeometry'
 import { TRACK_COLOR, placeInExtent, type ExtentFit, type TrackedPin, type TrackedPoint, type ZoneExtent } from '../features/maps/mapTrack'
 import { labelRows } from '../features/maps/mobPins'
-import { justDue, timerPinLabels, type TimerPin } from '../features/maps/respawnPins'
+import { justDue, type TimerPin } from '../features/maps/respawnPins'
 import type { CatalogPin } from '../features/maps/overlayPoints'
 import type { PinLayers } from './mapPinsLayers'
+import { TIMER_SIZE, TRACKED_SIZE, labelFlips, timerLabel } from './markZones'
 
 const TEXT = 'rgba(255,255,255,0.88)'
 const SHADOW = '0 0 2px #000, 0 0 2px #000'
@@ -66,7 +67,7 @@ function Mark({ at, w, text, color, size, shape, faint = false, pulse = false, o
   const [hot, setHot] = useState(false)
   const showText = !faint || hot
   const font = faint ? 9 : 10
-  const flip = at.px + size + text.length * font * 0.56 + 6 > w
+  const flip = labelFlips(at.px, w, { size, text, font })
   return (
     <div
       data-testid={testId}
@@ -185,9 +186,9 @@ function TimerMarks({ ext, fit, w, timers, nowMs, onCopy }: MapPinsFieldProps): 
             testId="map-pins-timer"
             at={placeInExtent(ext, fit, pin)}
             w={w}
-            text={`${t.display} ${timerPinLabels(t, nowMs).clock}`}
+            text={timerLabel(t, nowMs)}
             color={TIMER_COLOR}
-            size={8}
+            size={TIMER_SIZE}
             shape="diamond"
             pulse={justDue(t, nowMs)}
             onClick={() => {
@@ -215,7 +216,7 @@ function TrackedMarks({ ext, fit, w, tracked, timers, layers, onCopy }: MapPinsF
             w={w}
             text={p.name}
             color={TRACK_COLOR}
-            size={9}
+            size={TRACKED_SIZE}
             shape="dot"
             onClick={() => {
               onCopy(p.name, pin)

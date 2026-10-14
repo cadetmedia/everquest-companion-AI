@@ -96,7 +96,7 @@ test('the overlay fits the zone at one scale, centred, as the game shows a whole
 })
 
 // ---- Timers watches are tracked on the map (owner, 2026-10-13) ----
-import { watchedPoints, withWatched } from '../src/renderer/src/features/maps/watchTrack'
+import { watchedPoints, withPendingWatches, withWatched } from '../src/renderer/src/features/maps/watchTrack'
 import type { MobEntry } from '../src/shared/types'
 
 const CATALOG = [
@@ -148,4 +148,11 @@ test('the view survives a resize: the same map point stays at the window centre'
   const z = zoomView({ ext, w: 200, h: 200 }, null, { x: 50, y: 50 }, 2)
   const big = viewFit(ext, 400, 400, z)
   assert.deepEqual(placeInExtent(ext, big, { x: z.cx, y: z.cy }), { px: 200, py: 200 })
+})
+
+test('a Timer click before main echoes the last one keeps both watches', () => {
+  const snap = [{ key: 'a', display: 'A' }]
+  const pending = new Map([['a', 'A'], ['b', 'B']])
+  assert.deepEqual(withPendingWatches(snap, pending), [{ key: 'a', display: 'A' }, { key: 'b', display: 'B' }])
+  assert.deepEqual(withPendingWatches(snap, new Map()), snap)
 })

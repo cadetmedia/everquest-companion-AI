@@ -2,13 +2,13 @@
 // Timers tab's watched mobs. Its own file because it reads the mob catalog, and useMapTrack.ts is
 // also imported by the Map pins overlay, which must never pull the 3 MB catalog into its bundle.
 
-import { useCallback, useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import type { MapData } from '@shared/maps'
 import type { MapPaneRow } from './mobPins'
 import { MOB_CATALOG } from '../mobs/mobSearch'
 import { useRespawnSnap, useSetRespawnPrefs, useUnwatch } from '../timers/useRespawn'
 import { mobKey } from '../../../../shared/mobKey'
-import { watchedPoints, withWatched } from './watchTrack'
+import { watchedPoints, withPendingWatches, withWatched } from './watchTrack'
 import { isTracked, toggleTracked, trackedIn, withExtent, type TrackedPoint } from './mapTrack'
 import { useMapTrack } from './useMapTrack'
 
@@ -46,15 +46,20 @@ function useMapTimers(zone: string | null, update: ReturnType<typeof useMapTrack
   const unwatch = useCallback((name: string) => {
     unwatchKey(mobKey(name))
   }, [unwatchKey])
+  // Watches written but not yet echoed back: the snapshot lags a click by an IPC round trip.
+  const pending = useRef(new Map<string, string>())
   const toggleTimer = useCallback(
     (row: MapPaneRow) => {
       if (row.kind !== 'mob' || zone == null) return
       const key = mobKey(row.name)
-      if (keys.has(key)) {
+      for (const k of keys) pending.current.delete(k)
+      if (keys.has(key) || pending.current.has(key)) {
+        pending.current.delete(key)
         unwatchKey(key)
         return
       }
-      setPrefs({ ...prefs, watches: [...prefs.watches.filter((w) => w.key !== key), { key, display: row.name }] })
+      pending.current.set(key, row.name)
+      setPrefs({ ...prefs, watches: withPendingWatches(prefs.watches, pending.current) })
       update((s) => (isTracked(s, zone, row.id) ? s : toggleTracked(s, pointFromRow(zone, row))))
     },
     [zone, keys, prefs, setPrefs, unwatchKey, update]

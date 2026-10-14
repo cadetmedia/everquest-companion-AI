@@ -3,7 +3,8 @@
 
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { markZones, type MarkZoneInput } from '../src/renderer/src/overlay/markZones'
+import { markZones, timerLabel, type MarkZoneInput } from '../src/renderer/src/overlay/markZones'
+import type { TimerPin } from '../src/renderer/src/features/maps/respawnPins'
 import { fitExtent } from '../src/renderer/src/features/maps/mapTrack'
 
 const ext = { minX: 0, maxX: 100, minY: 0, maxY: 100 }
@@ -16,7 +17,8 @@ const base: MarkZoneInput = {
   labels: [],
   mobs: [{ key: 'a#0', name: 'A', x: 50, y: 50 }],
   timers: [],
-  tracked: [{ zone: 'z', id: 'T', kind: 'mob', name: 'Tracked One', pins: [{ x: 10, y: 10 }] }]
+  tracked: [{ zone: 'z', id: 'T', kind: 'mob', name: 'Tracked One', pins: [{ x: 10, y: 10 }] }],
+  nowMs: 0
 }
 
 test('a point is a 16 px square on its dot; a tracked mark also covers its label', () => {
@@ -39,4 +41,15 @@ test('a label near the right edge is covered on the left, where it is drawn', ()
 test('a mark scrolled out of the window claims nothing', () => {
   const z = markZones({ ...base, tracked: [], mobs: [{ key: 'b#0', name: 'B', x: 500, y: 500 }] })
   assert.equal(z.length, 0)
+})
+
+test('a timer label is covered as drawn: name and clock, flipped by that whole width', () => {
+  const row = { id: 'r', key: 'mob', display: 'Mob', zone: 'z', baseTs: 0, basis: 'death', estimateMs: 3_600_000, source: 'observed', samples: 1 } as unknown as TimerPin['row']
+  const timer: TimerPin = { id: 'r', display: 'Mob', row, pins: [{ x: 80, y: 10 }] as TimerPin['pins'] }
+  const text = timerLabel(timer, 0)
+  assert.ok(text.length > 'Mob'.length + 1, 'the clock is part of the label')
+  const [z] = markZones({ ...base, mobs: [], tracked: [], timers: [timer] })
+  // At px 160 the name alone fits on the right; with its clock it does not, so the mark flips.
+  assert.equal(z.x + z.width, 168, 'flipped: the zone ends at the dot')
+  assert.equal(z.width, Math.round(text.length * 5.6 + 6 + 16))
 })

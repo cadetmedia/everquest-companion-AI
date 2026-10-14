@@ -14,6 +14,8 @@ import { getOverlayWindow } from './windows'
 
 const POLL_MS = 500
 const REFIND_MS = 15_000
+/** No file yet (no character, or not logged in): look again sooner than a switch is checked. */
+const MISS_MS = 2_000
 
 let timer: ReturnType<typeof setInterval> | null = null
 let path: string | null = null
@@ -35,13 +37,18 @@ function findIni(): string | null {
 
 function read(): void {
   const now = Date.now()
-  if (path == null || now - foundAt > REFIND_MS) {
+  if (foundAt === 0 || now - foundAt > (path == null ? MISS_MS : REFIND_MS)) {
+    // Stamped first, so a find that throws is not retried on every tick.
+    foundAt = now
     const next = findIni()
     if (next !== path) mtime = 0
     path = next
-    foundAt = now
   }
-  if (path == null) return
+  if (path == null) {
+    // No file to read: the answer is "cannot be found", never the last file's.
+    shown = null
+    return
+  }
   const m = statSync(path).mtimeMs
   if (m === mtime) return
   mtime = m
@@ -80,6 +87,7 @@ export function stopGameMapWatch(): void {
   if (timer != null) clearInterval(timer)
   timer = null
   path = null
+  foundAt = 0
   mtime = 0
   shown = null
 }
