@@ -89,11 +89,6 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   indicator (`getBoundingClientRect`) on every render, so the tab bar must not render per frame.
 - Locked overlays are click-through except the header strip, so the pin overlay's clicks work
   only unlocked. Open: per-pin capture while locked.
-- Open (review 2026-10-13, unverified): pinned, pin rects share the header's hover zone, so hovering
-  any pin shows the header and clips the map's top 36 px (`MapPinsOverlay.tsx`, `overlayHover.ts`);
-  `useMapTimers.toggleTimer` writes whole prefs from a stale snapshot (two quick clicks drop one);
-  `gameMapWatch.ts` keeps an old `shown` when the re-find returns null, and re-scans every 500 ms
-  when `findIni` throws; a timer label's click zone ignores the clock text near the right edge.
 
 ## bazaar-tab
 
@@ -104,10 +99,6 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
 - Measure a rule change on the owner's trade lines: `BAZAAR_CORPUS=<lines> BAZAAR_DUMP=1 cargo
   test -p fold bazaar_corpus -- --ignored --nocapture` on the old and new trees, then diff the
   DUMP lines; the summary line reports `priced` and `counted`.
-- Open (review 2026-10-13, unverified): `bazaar_words.rs mark_guesses` reads one `for <price>` per
-  LINE, so an unsure offer sharing a line with a `for` price is counted; a later unsure line from a
-  person replaces their counted quote for the row (`bazaar.rs` ~142); `bare_at` misses multi-token
-  unit-less prices (`10 000`); unsure lines share `cents = -1` in the same-day dedup key.
 
 ## exaltation-clarity (bases on character-slot-sockets)
 
@@ -235,8 +226,3 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   basis like its other rates, and every rate sort orders by the active-hour value.
 - `tests/e2e/maps.e2e.mts` "the map row never moves or resizes" fails on this branch with or
   without its Maps change (measured 2026-10-13): a red of the base, not of the new tab.
-- Open (review 2026-10-13, owner decision needed): `coinAttribution.ts credit` spreads ONE sale over
-  every pending copy of the item and clears them, so selling three swords one at a time credits the
-  loot zone a third; the loadout entry at `max(startTs, startHi)` with `levelLo` can file time at
-  the wrong level (`zoneHistory.ts:79`); `rangeStatsRows.ts` sorts per-hour columns on active time
-  under the wall basis; `stretchPeak` divides by `end - start` while summing up to 60 s past it.
