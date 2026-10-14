@@ -40,6 +40,9 @@ const CORNER_PX = 16
 const COPIED_MS = 1800
 const TEXT = 'rgba(255,255,255,0.85)'
 const SHADOW = '0 0 2px #000, 0 0 2px #000'
+/** The header and footer: solid and above the map, so a zoomed-in map stops at their edges
+ *  instead of showing through them (owner, 2026-10-13). */
+const BAR: React.CSSProperties = { position: 'absolute', left: 0, right: 0, zIndex: 10, background: 'rgb(14,17,21)' }
 
 function useWindowSize(): { w: number; h: number } {
   const [size, setSize] = useState({ w: window.innerWidth, h: window.innerHeight })
@@ -182,7 +185,7 @@ function PinsFooter({
   return (
     <div
       data-testid="map-pins-footer"
-      style={{ ...FOOTER_ROW, position: 'absolute', left: 0, right: 0, bottom: 0, padding: 0, background: 'rgba(14,17,21,0.78)' }}
+      style={{ ...FOOTER_ROW, ...BAR, bottom: 0, padding: 0 }}
     >
       <LayerChips layers={layers} onToggle={onToggle} onFit={zoom.reset} zoomed={zoom.view != null} bg={bg[0]} onBg={bg[1]} noDrag={noDrag} />
     </div>
@@ -202,7 +205,7 @@ function PinsChrome({
   const { locked, hovering, toggleLock, capture, dragRegion, noDrag } = chrome
   if (locked && !hovering) return null
   return (
-    <div style={{ position: 'absolute', top: 0, left: 0, right: 0 }}>
+    <div style={{ ...BAR, top: 0 }}>
       <OverlayHeader
         tag="MAP"
         title={heading}
