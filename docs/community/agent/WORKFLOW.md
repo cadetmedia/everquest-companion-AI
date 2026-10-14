@@ -103,7 +103,7 @@ disagree, RULES.md wins; fix this file.
   build). 2026-10-13 it found two reds the npm gate had passed for days: the module snapshot test
   (gaps-tab) and the pinned spell-category counts (catch_all x local-data-refresh).
 - **A shared `engine/target` remembers another checkout's paths.** Protocol tests built by a session
-  whose checkout was later removed fail with `<that scratchpad>\protocolixtures: cannot find the
+  whose checkout was later removed fail with `<that scratchpad>/protocol/fixtures: cannot find the
   path`. `cargo clean -p protocol -p protocol-codegen`, then re-run (2026-10-13).
 - Count node:test output with `grep -E "ℹ (tests|pass|fail)"`; failures are `^✖` lines. The pass
   count can wobble by one between runs with the same fail set (a skipping test).
