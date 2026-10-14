@@ -13,7 +13,9 @@ import {
   quoteSpeakers,
   quotesBy,
   sortQuotes,
+  speakerAverages,
   type QuoteSort,
+  type SpeakerAverage,
   type QuoteSortKey
 } from '@shared/bazaarQuotes'
 import { ASK_COLOR, OFFER_COLOR } from './BazaarChart'
@@ -77,9 +79,34 @@ function SortHead({ sort, onSort, withItem }: { sort: QuoteSort; onSort: (k: Quo
   )
 }
 
-/** The Who box: everyone who posted in this list, busiest first; empty shows everyone. */
-function WhoFilter({ quotes, who, onWho }: { quotes: readonly DayQuote[]; who: string | null; onWho: (w: string | null) => void }): JSX.Element {
+/** `sells avg 3.2k (4 offers) · buys avg 143p (2 offers)`: a person's last (up to
+ *  SPEAKER_AVG_LAST) priced offers for this item, each side apart. */
+function averageText(a: SpeakerAverage | undefined): string {
+  const parts: string[] = []
+  const offers = (n: number): string => `${String(n)} offer${n === 1 ? '' : 's'}`
+  if (a?.sell) parts.push(`sells avg ${formatPlat(a.sell.avg)} (${offers(a.sell.n)})`)
+  if (a?.buy) parts.push(`buys avg ${formatPlat(a.buy.avg)} (${offers(a.buy.n)})`)
+  return parts.join(' · ')
+}
+
+/**
+ * The Who box: everyone who posted in this list, busiest first; empty shows everyone. On one
+ * item's list each name carries its average over the person's last ten priced offers (owner ask,
+ * 2026-10-13); the whole offers list mixes items, where a mean means nothing, so names stand alone.
+ */
+function WhoFilter({
+  quotes,
+  who,
+  onWho,
+  withAverages
+}: {
+  quotes: readonly DayQuote[]
+  who: string | null
+  onWho: (w: string | null) => void
+  withAverages: boolean
+}): JSX.Element {
   const people = useMemo(() => quoteSpeakers(quotes), [quotes])
+  const averages = useMemo(() => (withAverages ? speakerAverages(quotes) : null), [quotes, withAverages])
   return (
     <Autocomplete
       size="small"
@@ -89,6 +116,22 @@ function WhoFilter({ quotes, who, onWho }: { quotes: readonly DayQuote[]; who: s
         onWho(v)
       }}
       sx={{ width: 220 }}
+      slotProps={{ popper: { sx: { minWidth: 300 } } }}
+      renderOption={(props, name) => {
+        const text = averageText(averages?.get(name))
+        return (
+          <li {...props} key={name}>
+            <Stack sx={{ minWidth: 0 }}>
+              <span>{name}</span>
+              {text !== '' && (
+                <Typography variant="caption" color="text.secondary">
+                  {text}
+                </Typography>
+              )}
+            </Stack>
+          </li>
+        )
+      }}
       renderInput={(params) => <TextField {...params} label="Who" placeholder="Everyone" />}
       data-testid="bazaar-quotes-who"
     />
@@ -111,7 +154,7 @@ export default function BazaarQuotes({ quotes, title, withItem = false, maxHeigh
           {title}
           {ordered.length > shown.length ? ` (first ${shown.length} of ${ordered.length}; Export CSV has them all)` : ''}
         </Typography>
-        <WhoFilter quotes={quotes} who={who} onWho={setWho} />
+        <WhoFilter quotes={quotes} who={who} onWho={setWho} withAverages={!withItem} />
       </Stack>
       <Box sx={{ maxHeight, overflowY: 'auto' }}>
         <Table size="small" stickyHeader>
