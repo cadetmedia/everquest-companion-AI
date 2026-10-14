@@ -37,7 +37,12 @@ interface MarkProps {
 }
 
 /** The pulse, as a keyframe rule the overlay bundle carries itself (it loads no CSS framework). */
-const PULSE_CSS = `@keyframes eqmp-pulse { from { transform: scale(1) rotate(45deg); box-shadow: 0 0 0 1px rgba(0,0,0,0.85); } to { transform: scale(2.2) rotate(45deg); box-shadow: 0 0 10px 3px ${'#ef5350'}; } }`
+const PULSE_CSS = `@keyframes eqmp-pulse { from { transform: scale(1) rotate(45deg); box-shadow: 0 0 0 1px rgba(0,0,0,0.85); } to { transform: scale(2.2) rotate(45deg); box-shadow: 0 0 10px 3px #ef5350; } }`
+
+/** The dot, animated while its timer has just come due. */
+function pulseStyle(base: CSSProperties, pulse: boolean): CSSProperties {
+  return pulse ? { ...base, animation: 'eqmp-pulse 0.6s ease-in-out infinite alternate' } : base
+}
 
 function dotStyle(size: number, shape: MarkProps['shape'], color: string, flip: boolean): CSSProperties {
   return {
@@ -87,10 +92,7 @@ function Mark({ at, w, text, color, size, shape, faint = false, pulse = false, o
         zIndex: hot ? 5 : undefined
       }}
     >
-      <span
-        data-pulse={pulse ? 'true' : undefined}
-        style={{ ...dotStyle(size, shape, color, flip), ...(pulse ? { animation: 'eqmp-pulse 0.6s ease-in-out infinite alternate' } : {}) }}
-      />
+      <span data-pulse={pulse ? 'true' : undefined} style={pulseStyle(dotStyle(size, shape, color, flip), pulse)} />
       {showText && (
         <span
           data-testid="map-pins-text"
