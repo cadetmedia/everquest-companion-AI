@@ -133,3 +133,12 @@ export function timerPinLabels(t: TimerPin, nowMs: number): TimerPinLabels {
 export function placeableTimerPins(timers: readonly TimerPin[]): TimerPin[] {
   return timers.filter((t) => t.pins.length > 0)
 }
+
+/** How long a timer that has just come due keeps pulsing on the Map pins overlay. */
+export const JUST_DUE_MS = 15_000
+
+/** Has this clock come due within the last `JUST_DUE_MS`? The overlay pulses it (owner, 2026-10-13). */
+export function justDue(t: TimerPin, nowMs: number): boolean {
+  const r = respawnReading(t.row, nowMs)
+  return r.due && r.overdueMs <= JUST_DUE_MS
+}
