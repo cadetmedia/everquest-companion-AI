@@ -258,3 +258,39 @@ export function gapActions(row: GapRow, verdict: GapVerdict): GapAction[] {
 export function gapsCaption(snap: GapsSnap, domain: GapDomain): string {
   return `${snap.totals[domain] ?? 0} of ${snap.seen[domain] ?? 0} names`
 }
+
+// ---- sorting the table (owner ask, 2026-10-13: every column sorts) ----
+
+export type GapSortKey = 'name' | 'kinds' | 'count' | 'first' | 'last' | 'todo'
+export interface GapSort {
+  key: GapSortKey
+  dir: 'asc' | 'desc'
+}
+/** The engine's own order: most mentioned first. */
+export const DEFAULT_GAP_SORT: GapSort = { key: 'count', dir: 'desc' }
+
+/** A column's first click: counts and dates biggest or newest first, text A to Z. */
+export function firstGapSortDir(key: GapSortKey): GapSort['dir'] {
+  return key === 'count' || key === 'first' || key === 'last' ? 'desc' : 'asc'
+}
+
+function gapSortValue(r: GapRow, key: GapSortKey, verdicts: GapVerdicts): string | number {
+  if (key === 'count') return r.count
+  if (key === 'name') return r.name.toLowerCase()
+  if (key === 'kinds') return r.kinds.join(', ')
+  if (key === 'todo') return gapActions(r, verdicts[r.name] ?? 'unchecked').map((a) => a.label).join(', ')
+  // The timestamps are `YYYY-MM-DD HH:MM:SS`, which sort as text.
+  return key === 'first' ? r.first : r.last
+}
+
+/** The rows in the table's order. A tie keeps the engine's order, so equal rows never shuffle. */
+export function sortGaps(rows: readonly GapRow[], sort: GapSort, verdicts: GapVerdicts = {}): GapRow[] {
+  const sign = sort.dir === 'asc' ? 1 : -1
+  return rows
+    .map((r, i) => ({ r, i, v: gapSortValue(r, sort.key, verdicts) }))
+    .sort((a, b) => {
+      const c = typeof a.v === 'number' && typeof b.v === 'number' ? a.v - b.v : String(a.v).localeCompare(String(b.v))
+      return c !== 0 ? c * sign : a.i - b.i
+    })
+    .map((x) => x.r)
+}

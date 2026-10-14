@@ -1,5 +1,5 @@
-// The Gaps tab's table: one row per unknown name, as the engine ordered them (most mentioned
-// first). A click opens the row's details in a pane ABOVE the table (GapDetailsPanel), as the
+// The Gaps tab's table: one row per unknown name, most mentioned first until a header is clicked
+// (every column sorts; the order itself is `sortGaps`, shared/gaps.ts). A click opens the row's details in a pane ABOVE the table (GapDetailsPanel), as the
 // Bazaar's picked panel sits above its list; a second click closes it.
 //
 // WINDOWED THE LOOT LEDGER'S WAY (owner ask, 2026-10-11: no lag anywhere). A domain can fill its
@@ -16,8 +16,8 @@
 // height modestly so the list keeps room on a short screen.
 
 import { type JSX, memo, useCallback, useRef, useState } from 'react'
-import { Box, Chip, Paper, Stack, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material'
-import { charactersOff, type GapRow, type GapSuggest, type GapVerdict, type GapVerdicts } from '@shared/gaps'
+import { Box, Chip, Paper, Stack, Table, TableBody, TableCell, TableHead, TableRow, TableSortLabel, Typography } from '@mui/material'
+import { charactersOff, type GapRow, type GapSort, type GapSortKey, type GapSuggest, type GapVerdict, type GapVerdicts } from '@shared/gaps'
 import { wikiPageUrl } from '@shared/wiki'
 import { useWindowedRows } from '../../lib/useWindowedRows'
 import GapActionChips from './GapActionChips'
@@ -101,7 +101,51 @@ function DetailsPane({ row }: { row: GapRow }): JSX.Element {
   )
 }
 
-export default function GapsTable({ rows, verdicts }: { rows: readonly GapRow[]; verdicts: GapVerdicts }): JSX.Element {
+/** The table's columns: header text, the sort key, and which side the cell aligns to. */
+const HEADERS: readonly (readonly [string, GapSortKey, 'left' | 'right'])[] = [
+  ['Name', 'name', 'left'],
+  ['Seen as', 'kinds', 'left'],
+  ['Times', 'count', 'right'],
+  ['First', 'first', 'left'],
+  ['Last', 'last', 'left'],
+  ['To do', 'todo', 'left']
+]
+
+/** Every header sorts (owner ask, 2026-10-13): a click picks the column, a second flips it. */
+function SortHeader({ sort, onSort }: { sort: GapSort; onSort: (key: GapSortKey) => void }): JSX.Element {
+  return (
+    <TableHead>
+      <TableRow>
+        {HEADERS.map(([label, key, align]) => (
+          <TableCell key={key} align={align} sortDirection={sort.key === key ? sort.dir : false}>
+            <TableSortLabel
+              active={sort.key === key}
+              direction={sort.key === key ? sort.dir : 'asc'}
+              onClick={() => {
+                onSort(key)
+              }}
+              data-testid={`gaps-sort-${key}`}
+            >
+              {label}
+            </TableSortLabel>
+          </TableCell>
+        ))}
+      </TableRow>
+    </TableHead>
+  )
+}
+
+export default function GapsTable({
+  rows,
+  verdicts,
+  sort,
+  onSort
+}: {
+  rows: readonly GapRow[]
+  verdicts: GapVerdicts
+  sort: GapSort
+  onSort: (key: GapSortKey) => void
+}): JSX.Element {
   const [open, setOpen] = useState<string | null>(null)
   const onToggle = useCallback((name: string) => setOpen((cur) => (cur === name ? null : name)), [])
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -119,16 +163,7 @@ export default function GapsTable({ rows, verdicts }: { rows: readonly GapRow[];
       {opened !== undefined && <DetailsPane row={opened} />}
       <Box ref={scrollRef} sx={{ flexGrow: 1, minHeight: 0, overflow: 'auto', overscrollBehavior: 'contain' }} data-testid="gaps-scroll">
         <Table size="small" stickyHeader data-testid="gaps-table">
-          <TableHead>
-            <TableRow>
-              <TableCell>Name</TableCell>
-              <TableCell>Seen as</TableCell>
-              <TableCell align="right">Times</TableCell>
-              <TableCell>First</TableCell>
-              <TableCell>Last</TableCell>
-              <TableCell>To do</TableCell>
-            </TableRow>
-          </TableHead>
+          <SortHeader sort={sort} onSort={onSort} />
           <TableBody>
             <PadRow height={win.topPad} />
             {rows.slice(win.start, win.end).map((r) => (
