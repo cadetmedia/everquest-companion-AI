@@ -28,3 +28,4 @@ nothing listed here is removed or narrowed without the owner's word (RULES.md, r
 | 2026-10-13 | owner | A transparency slider on the Map pins overlay like the other overlays. | built (its own: 0 to 90%, default 20%, since the shared one starts at 72% and cannot go clear) |
 | 2026-10-13 | owner | The overlay's chips, Fit and slider sit at the bottom like the XP overlay's controls. | built (footer bar, unlocked only) |
 | 2026-10-13 | owner | Pinned (click-through), the overlay's points still take a click, so a /waypoint can be copied without unpinning. | built (marks reported as hover zones while pinned; untested headless, the cursor watcher is off in e2e) |
+| 2026-10-13 | owner | A zoomed map does not run into the overlay's header and footer. | built (the map is clipped between the bars, which stay see-through so the game UI under them shows) |
