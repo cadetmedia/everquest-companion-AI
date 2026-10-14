@@ -2,7 +2,7 @@ import type { LootDisposition, LootEvent } from '@shared/types'
 import { isAcquisition } from '@shared/lootDisposition'
 import type { InventoryRow } from '../inventory/reconcile'
 import { questItemNames } from './lootItemData'
-import { DEFAULT_LOOT_SORT, sortLootRows, type LootSortKey } from './lootSort'
+import { DEFAULT_LOOT_SORT, naturalDir, sortLootRows, type InvOf, type LootSort } from './lootSort'
 import { buildOwnedRows } from './ownedItems'
 
 // A loot event with two precomputed keys — computed ONCE per history change so the
@@ -110,7 +110,8 @@ function tallyGroups(events: KeyedLoot[]): Map<string, Group> {
  */
 export function groupLootRows(
   events: KeyedLoot[],
-  sort: LootSortKey = DEFAULT_LOOT_SORT
+  sort: LootSort = { key: DEFAULT_LOOT_SORT, dir: naturalDir(DEFAULT_LOOT_SORT) },
+  invOf?: InvOf
 ): GroupRow[] {
   const list: GroupRow[] = [...tallyGroups(events).entries()].map(([key, g]) => {
     const topSource = [...g.sources.entries()].sort((a, b) => b[1] - a[1])[0]?.[0]
@@ -128,7 +129,7 @@ export function groupLootRows(
       disposition
     }
   })
-  return sortLootRows(list, sort)
+  return sortLootRows(list, sort, invOf)
 }
 
 /**

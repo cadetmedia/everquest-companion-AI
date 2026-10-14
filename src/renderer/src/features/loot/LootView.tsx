@@ -318,7 +318,7 @@ export default function LootView(props: LootViewProps = {}): JSX.Element {
   const [query, setQuery] = useState('')
   const [groupByItem, setGroupByItem] = useState(true)
   const [questOnly, setQuestOnly] = useState(false)
-  const [sort, setSort] = useLootSort()
+  const [sort, onSort] = useLootSort()
   const [showInventoryOnly, setShowInventoryOnly] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   // WHICH WORLD THIS LEDGER READS (JOS-484) — component state, because it is a comparison somebody
@@ -387,8 +387,6 @@ export default function LootView(props: LootViewProps = {}): JSX.Element {
         setGroupByItem={setGroupByItem}
         questOnly={questOnly}
         setQuestOnly={setQuestOnly}
-        sort={sort}
-        setSort={setSort}
         invOnlyCount={invOnlySource.length}
         showInventoryOnly={showInventoryOnly}
         onToggleInventoryOnly={() => setShowInventoryOnly((v) => !v)}
@@ -424,7 +422,7 @@ export default function LootView(props: LootViewProps = {}): JSX.Element {
         groupByItem={groupByItem}
         groupRows={groupRows}
         events={events}
-        ctx={{ knowledgeByKey, invByKey, onSelect: detail.open }}
+        ctx={{ knowledgeByKey, invByKey, onSelect: detail.open, sort, onSort }}
       />
 
       <Snackbar

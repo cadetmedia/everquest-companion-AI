@@ -31,9 +31,20 @@ export interface SortableLootRow {
   count: number
   /** Epoch ms of the newest loot in the group. */
   last: number
+  topSource?: string
+  zoneCount?: number
 }
 
-export type LootSortKey = 'count' | 'recent'
+/** One key per sortable column of the grouped table; `count` and `recent` keep the names the
+ *  stored choice has always had, so a tester's saved order survives the move to the headers. */
+export type LootSortKey = 'item' | 'count' | 'inventory' | 'source' | 'zones' | 'recent'
+
+export type SortDir = 'asc' | 'desc'
+
+export interface LootSort {
+  key: LootSortKey
+  dir: SortDir
+}
 
 /**
  * Times looted stays the default: the grouped table's headline question is "what do I keep
@@ -41,13 +52,20 @@ export type LootSortKey = 'count' | 'recent'
  */
 export const DEFAULT_LOOT_SORT: LootSortKey = 'count'
 
-export const LOOT_SORT_OPTIONS: readonly { value: LootSortKey; label: string }[] = [
-  { value: 'count', label: 'Times looted' },
-  { value: 'recent', label: 'Last looted' }
-]
+const KEYS: readonly LootSortKey[] = ['item', 'count', 'inventory', 'source', 'zones', 'recent']
 
 export function isLootSortKey(v: unknown): v is LootSortKey {
-  return LOOT_SORT_OPTIONS.some((o) => o.value === v)
+  return KEYS.some((k) => k === v)
+}
+
+/** A column's first click: names read A to Z, every number biggest (or newest) first. */
+export function naturalDir(key: LootSortKey): SortDir {
+  return key === 'item' || key === 'source' ? 'asc' : 'desc'
+}
+
+/** A header click: the same column flips, a new column starts at its natural reading. */
+export function nextLootSort(cur: LootSort, key: LootSortKey): LootSort {
+  return cur.key === key ? { key, dir: cur.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: naturalDir(key) }
 }
 
 /** The universal last resort. Item names are the group identity, so this is total. */
@@ -55,19 +73,41 @@ function byItem(a: SortableLootRow, b: SortableLootRow): number {
   return a.item.localeCompare(b.item)
 }
 
-export function compareLootRows(sort: LootSortKey): (a: SortableLootRow, b: SortableLootRow) => number {
-  switch (sort) {
-    // The order this table always had, now with a name tiebreak underneath it.
+/** The held estimate per row, which the grouped row does not carry (the view joins it). */
+export type InvOf = (r: SortableLootRow) => number
+
+/** One column's ASCENDING reading, before the direction and the name tiebreak. */
+function primary(key: LootSortKey, invOf: InvOf): (a: SortableLootRow, b: SortableLootRow) => number {
+  switch (key) {
+    case 'item':
+      return () => 0
+    // Equal counts break on the newer group — the order this table always had.
     case 'count':
-      return (a, b) => b.count - a.count || b.last - a.last || byItem(a, b)
-    // "What did I just pick up" — newest group first. Count breaks the second-resolution ties
-    // before the name does, so a corpse's three simultaneous drops read most-looted first.
+      return (a, b) => a.count - b.count || a.last - b.last
+    case 'inventory':
+      return (a, b) => invOf(a) - invOf(b)
+    case 'source':
+      return (a, b) => (a.topSource ?? '').localeCompare(b.topSource ?? '')
+    case 'zones':
+      return (a, b) => (a.zoneCount ?? 0) - (b.zoneCount ?? 0)
+    // EQ timestamps are second-resolution, so a corpse's three drops tie: count breaks them.
     case 'recent':
-      return (a, b) => b.last - a.last || b.count - a.count || byItem(a, b)
+      return (a, b) => a.last - b.last || a.count - b.count
   }
 }
 
+/** Every order is TOTAL: the chosen column in the chosen direction, then the item name A to Z. */
+export function compareLootRows(
+  sort: LootSort,
+  invOf: InvOf = () => 0
+): (a: SortableLootRow, b: SortableLootRow) => number {
+  const cmp = primary(sort.key, invOf)
+  const sign = sort.dir === 'asc' ? 1 : -1
+  if (sort.key === 'item') return (a, b) => sign * byItem(a, b)
+  return (a, b) => sign * cmp(a, b) || byItem(a, b)
+}
+
 /** Non-mutating sort — the caller's array is tally output it may still be holding. */
-export function sortLootRows<T extends SortableLootRow>(rows: readonly T[], sort: LootSortKey): T[] {
-  return [...rows].sort(compareLootRows(sort))
+export function sortLootRows<T extends SortableLootRow>(rows: readonly T[], sort: LootSort, invOf?: InvOf): T[] {
+  return [...rows].sort(compareLootRows(sort, invOf))
 }

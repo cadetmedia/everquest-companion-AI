@@ -46,7 +46,6 @@ import {
   hoverAt,
   note,
   reportRun,
-  settleCount,
   settleStable,
   waitHydrated
 } from './appHarness.mjs'
@@ -65,10 +64,10 @@ const LOOT_LIST = '[data-testid="loot-list"]'
 const LOOT_ROW = '[data-testid="loot-row"]'
 /** The item NAME inside a row — the anchor the item card used to hang from. */
 const LOOT_NAME = '[data-testid="loot-item-name"]'
+/** The grouped table's header row: every column is a sort control now (the Sort select's heir). */
 const SORT = '[data-testid="loot-sort"]'
-/** The clickable half of a MUI `TextField select` — the div that opens the menu. */
-const SORT_BUTTON = `${SORT} [role="combobox"]`
-const SORT_OPTION = 'li[role="option"]'
+/** The column the order is on — MUI marks it `aria-sort` on its header cell. */
+const SORTED_TH = `${SORT} th[aria-sort]`
 /** Any MUI tooltip popper, whoever mounted it. The ledger must mount none. */
 const POPPER = '.MuiTooltip-popper'
 /** A notable-pickups chip: the other anchor that used to open a card over the toolbar. */
@@ -100,12 +99,12 @@ function whatCoversSort(page: Page): Promise<{ tag: string; inside: boolean }> {
   }, SORT)
 }
 
-/** The order the select is showing, as the user reads it. */
+/** The order the header is showing, as the user reads it: the sorted column and its direction. */
 function sortValue(page: Page): Promise<string> {
-  return page.evaluate(
-    (sel) => (document.querySelector(sel) as HTMLElement | null)?.innerText.trim() ?? '',
-    SORT_BUTTON
-  )
+  return page.evaluate((sel) => {
+    const th = document.querySelector(sel) as HTMLElement | null
+    return th === null ? '' : `${th.innerText.trim()} ${th.getAttribute('aria-sort') ?? ''}`
+  }, SORTED_TH)
 }
 
 /** Land, let the startup replay finish, and open the Loot tab on its ledger. */
@@ -158,24 +157,22 @@ async function stepNothingCoversSort(page: Page, sel: string, what: string): Pro
  */
 async function stepSortChanges(page: Page): Promise<void> {
   const before = await sortValue(page)
-  if (!check('the Sort control states an order to begin with', before.length > 0, before)) return
-  await page.click(SORT_BUTTON, { timeout: 15_000 })
-  const options = await settleCount(page, SORT_OPTION, 2, { timeoutMs: 10_000 })
-  if (!check('clicking it opens the order menu', options >= 2, `options=${String(options)}`)) return
+  if (!check('the header states an order to begin with', before.length > 0, before)) return
 
-  const labels = await page.evaluate(
-    (sel) => [...document.querySelectorAll(sel)].map((o) => (o as HTMLElement).innerText.trim()),
-    SORT_OPTION
-  )
-  const other = labels.find((l) => l !== before)
-  if (!check('…offering an order other than the one already chosen', other != null, labels.join(' | '))) return
+  await page.click('[data-testid="loot-sort-recent"]', { timeout: 15_000 })
+  const recent = await settleStable(() => sortValue(page), { timeoutMs: 6000 })
+  check('clicking the Last looted header sorts by it, newest first', recent === 'Last looted descending', recent)
 
-  await page.click(`${SORT_OPTION} >> text="${other ?? ''}"`, { timeout: 15_000 })
-  const after = await settleStable(() => sortValue(page), { timeoutMs: 6000 })
-  check('…and picking it actually changes the order', after === other, `${before} -> ${after}`)
+  await page.click('[data-testid="loot-sort-recent"]', { timeout: 15_000 })
+  const flipped = await settleStable(() => sortValue(page), { timeoutMs: 6000 })
+  check('…and a second click flips the direction', flipped === 'Last looted ascending', flipped)
+
+  await page.click('[data-testid="loot-sort-count"]', { timeout: 15_000 })
+  const count = await settleStable(() => sortValue(page), { timeoutMs: 6000 })
+  check('…and Times looted sorts by count again, most first', count === 'Times looted descending', count)
 
   const stored = await page.evaluate(() => localStorage.getItem('eq.lootSort'))
-  check('…and the choice is remembered for the next launch', stored != null, String(stored))
+  check('…and the choice is remembered for the next launch', stored === 'count', String(stored))
 }
 
 /** The rows are still the drill-down's way in — removing the hover must not have cost the click. */
