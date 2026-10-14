@@ -51,6 +51,8 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
 - Drag ends on `buttons===0`, pointercancel and lostpointercapture.
 - MUI Tooltip must wrap a DOM element (Box/Link), not a plain function component.
 - Open: no e2e for Closest port / era chip / advice table; Hate and Sky lock levels unruled.
+- Open (seen 2026-10-13, present on the morning build too): `maps.e2e` "the map row never moves" fails,
+  the pane drops 91 px (371 to 462) when the map arrives, most likely the travel card appearing late.
 
 ## map-waypoints (bases on map-improvements)
 
