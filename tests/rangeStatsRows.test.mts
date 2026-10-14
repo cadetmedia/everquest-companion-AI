@@ -467,3 +467,23 @@ test('the levels-per-hour hero card is the only one that hovers the definition',
   }
 })
 
+
+test('a per-hour column sorts on the hour it shows, elapsed or active (review, 2026-10-13)', () => {
+  // A: 10 pp over an hour, all of it active. B: 12 pp over four hours, one of them active.
+  const zones = [
+    zone({ zone: 'A', coinCopper: 10_000, killsPerHourActive: 10, killsPerHourWall: 10 }),
+    zone({ zone: 'B', spanMs: 4 * HOUR, idleMs: 3 * HOUR, coinCopper: 12_000, killsPerHourActive: 12, killsPerHourWall: 3 })
+  ]
+  for (const sort of ['coinPerHour', 'killsPerHour'] as const) {
+    assert.deepEqual(zoneStatRows(zones, sort, 'elapsed').map((r) => r.zone), ['A', 'B'], `${sort} elapsed`)
+    assert.deepEqual(zoneStatRows(zones, sort, 'active').map((r) => r.zone), ['B', 'A'], `${sort} active`)
+  }
+  const extras = new Map([
+    ['a', { zone: 'A', aaPoints: 10, motes: 10, peak: { levels: 0, aa: 0, coin: 0, motes: 0, kills: 0 } }],
+    ['b', { zone: 'B', aaPoints: 12, motes: 12, peak: { levels: 0, aa: 0, coin: 0, motes: 0, kills: 0 } }]
+  ])
+  for (const sort of ['aa', 'motes'] as const) {
+    assert.deepEqual(zoneStatRows(zones, sort, 'elapsed', extras).map((r) => r.zone), ['A', 'B'], `${sort} elapsed`)
+    assert.deepEqual(zoneStatRows(zones, sort, 'active', extras).map((r) => r.zone), ['B', 'A'], `${sort} active`)
+  }
+})
