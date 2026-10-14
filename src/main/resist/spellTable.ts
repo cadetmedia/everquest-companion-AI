@@ -72,7 +72,7 @@ import type { ResistTableWorkerReply } from '../resistTableWorker'
  *      opposite reason to the bumps above - the data is complete, the index is stale - and a
  *      re-key on read would be a second copy of the key rule to keep byte-identical.
  */
-export const SPELL_RESIST_CACHE_VERSION = 8
+export const SPELL_RESIST_CACHE_VERSION = 9
 
 interface CacheFile {
   version: number
