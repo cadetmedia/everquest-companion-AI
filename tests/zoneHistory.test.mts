@@ -145,7 +145,10 @@ test('a stretch needs ten kills and ten minutes; a five-minute gap ends one', as
   const run = (n: number): number[] => Array.from({ length: n }, (_, k) => HOUR - (n - 1 - k) * 75_000)
   assert.equal(peakPerHour(sale, big, run(MIN_STRETCH_KILLS - 1)), 0, 'nine kills is not a stretch')
   const rate = peakPerHour(sale, big, run(MIN_STRETCH_KILLS))
-  assert.ok(Math.abs(rate - 500_000 / (11.25 / 60)) < 1e-6, 'a short stretch is measured over its own length')
+  assert.ok(Math.abs(rate - 500_000 / (12.25 / 60)) < 1e-6, 'a short stretch is measured over its own length and loot minute')
+  // A sale in the loot minute after the last kill: the minute it counts in is in the divisor too.
+  const late = peakPerHour([HOUR + 30_000], big, run(MIN_STRETCH_KILLS))
+  assert.ok(Math.abs(late - rate) < 1e-6, 'the grace minute is in both the sum and the span')
   const burst = Array.from({ length: 20 }, (_, k) => HOUR - k * 15_000)
   assert.equal(peakPerHour(sale, big, burst), 0, 'twenty kills in five minutes is a burst, not a camp')
   // Two runs of ten with a six-minute gap: the sale sits in the gap, so neither run holds it.
@@ -184,7 +187,25 @@ test("a loadout's level applies from the latest its swap can have happened, not 
   // A fresh class at 12, guessed to start at 2h but certain only from 2h45m.
   const fresh = { startTs: T0 + 2 * HOUR, startHi: T0 + 2 * HOUR + 45 * MIN, levelLo: 12 }
   const spans = levelSpans(s, [fresh])
-  assert.deepEqual(spans.slice(-2).map((x) => [x.level, (x.t1 - x.t0) / MIN]), [[30, 45], [12, 15]])
+  // The window itself is at no known level (the old 30 is not held over it), then 12. The ding to
+  // 30 at 2h is the old class's: outside the levels the fresh loadout saw.
+  const tail = spans.slice(-2)
+  assert.ok(Number.isNaN(tail[0].level))
+  assert.equal((tail[0].t1 - tail[0].t0) / MIN, 45)
+  assert.deepEqual([tail[1].level, (tail[1].t1 - tail[1].t0) / MIN], [12, 15])
+  const at30 = zoneHistory({ snap: s, loot: LOOT, level: 30, spread: 0, loadouts: [fresh] })
+  assert.equal(at30.length, 0, 'no swap-window time is filed at the old level')
+})
+
+test("a ding inside the swap window is the loadout's latest statement, not undone by its lowest level", () => {
+  const s = snap()
+  // Swap somewhere in [2h, 2h45m]; the loadout saw 41 and 42; a ding to 42 at 2h20m.
+  s.levelTs = [...s.levelTs, T0 + 2 * HOUR + 20 * MIN]
+  s.levelValue = [...s.levelValue, 42]
+  const swap = { startTs: T0 + 2 * HOUR, startHi: T0 + 2 * HOUR + 45 * MIN, levelLo: 41, levelHi: 42 }
+  const tail = levelSpans(s, [swap]).slice(-2)
+  assert.ok(Number.isNaN(tail[0].level), 'the window is at no known level')
+  assert.deepEqual([tail[1].level, (tail[1].t1 - tail[1].t0) / MIN], [42, 15])
 })
 
 test('a swap to a loadout whose level the log never stated is at no known level, and left out', () => {

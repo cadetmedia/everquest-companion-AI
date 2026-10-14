@@ -58,23 +58,54 @@ function openingLevel(l: LoadoutLevel): number | null {
   return l.levelRegressed === true ? (l.levelHi ?? l.levelLo) : l.levelLo
 }
 
+/** One stated level: a ding, a loadout's opening, or NaN for "unknown from here". */
+interface Said {
+  ts: number
+  level: number
+}
+
+/** The latest a loadout's swap can have happened. */
+const swapWindowEnd = (l: LoadoutLevel): number => Math.max(l.startTs, l.startHi ?? l.startTs)
+
+/** A ding the loadout itself can have made: inside the levels the combo module saw in it. One
+ *  outside them (the old class's last ding, just before the swap) is not this loadout's. */
+function dingFits(l: LoadoutLevel, level: number): boolean {
+  return l.levelLo !== null && level >= l.levelLo && level <= (l.levelHi ?? l.levelLo)
+}
+
+/**
+ * A loadout's statements. Its swap happened somewhere in [startTs, startHi]: in that window the
+ * log may be in either loadout, so the level is UNKNOWN there and the time is left out (owner,
+ * 2026-10-13, the rule of d1a8597d), rather than held at the old loadout's last ding. From
+ * startHi the level is the latest of its own dings inside the window when there is one (a later statement
+ * than the opening level; review, 2026-10-13: 41 must not follow a ding to 42), else the
+ * loadout's opening level.
+ */
+function loadoutSaid(l: LoadoutLevel, dings: readonly Said[]): Said[] {
+  const t0 = l.startTs
+  const t1 = swapWindowEnd(l)
+  let latest: Said | undefined
+  for (const d of dings) if (d.ts >= t0 && d.ts <= t1 && dingFits(l, d.level)) latest = d
+  // A loadout whose level the log never stated is at NO known level (owner, 2026-10-13: 50,
+  // swap to 10, ding 11, swap to 40...): its time is left out rather than given the last one.
+  const at: Said = { ts: t1, level: latest?.level ?? openingLevel(l) ?? Number.NaN }
+  return t1 > t0 ? [{ ts: t0, level: Number.NaN }, at] : [at]
+}
+
 /**
  * The log cut at every stated level: each ding, and each loadout's opening level. DINGS ALONE ARE
  * NOT ENOUGH (owner report, 2026-10-13): a swap back to a level-50 loadout after levelling another
  * class to 40 states 50 only in the `/who` bracket, and the last ding would hold the log at 40.
+ * A loadout's level applies from the LATEST its swap can have happened (owner report, 2026-10-13:
+ * Plane of Hate listed at level 10); the swap window itself is at no known level (`loadoutSaid`).
  * The latest statement wins; the last stretch runs to the snapshot's end.
  */
 export function levelSpans(snap: ProgressionSnap, loadouts: readonly LoadoutLevel[] = []): LevelSpan[] {
-  const said = snap.levelTs.map((ts, i) => ({ ts, level: snap.levelValue[i] }))
-  for (const l of loadouts) {
-    // A loadout whose level the log never stated is at NO known level (owner, 2026-10-13: 50,
-    // swap to 10, ding 11, swap to 40...): its time is left out rather than given the last one.
-    const level = openingLevel(l) ?? Number.NaN
-    // From the LATEST the swap can have happened (owner report, 2026-10-13: Plane of Hate listed
-    // at level 10). The best-estimate start can fall back into the old loadout's time, and a
-    // fresh class's low level would then be laid over hours played at 50.
-    said.push({ ts: Math.max(l.startTs, l.startHi ?? l.startTs), level })
-  }
+  const dings: Said[] = snap.levelTs.map((ts, i) => ({ ts, level: snap.levelValue[i] }))
+  // A ding inside a swap window is folded into that loadout's statement at the window's end.
+  const inWindow = (ts: number): boolean => loadouts.some((l) => ts >= l.startTs && ts <= swapWindowEnd(l))
+  const said = dings.filter((d) => !inWindow(d.ts))
+  for (const l of loadouts) said.push(...loadoutSaid(l, dings))
   said.sort((a, b) => a.ts - b.ts)
   const out: LevelSpan[] = []
   for (let i = 0; i < said.length; i++) {
@@ -213,15 +244,18 @@ function stretchPeak(
   data: { ts: readonly number[]; values: readonly number[]; kills: readonly number[] }
 ): number {
   const { ts, values, kills } = data
-  const window = Math.min(PEAK_WINDOW_MS, stretch.end - stretch.start)
+  const short = stretch.end - stretch.start < PEAK_WINDOW_MS
   const lastTs = stretch.end + LOOT_GRACE_MS
+  // The span the sum can cover: a short stretch's whole run INCLUDING its loot grace (review,
+  // 2026-10-13: the sum took the grace minute's coin, the divisor did not), else one window.
+  const window = Math.min(PEAK_WINDOW_MS, lastTs - stretch.start)
   let best = 0
   let sum = 0
   let lo = firstAtOrAfter(ts, stretch.start)
   for (let hi = lo; hi < ts.length && ts[hi] <= lastTs; hi++) {
     sum += values[hi]
     while (ts[hi] - ts[lo] >= PEAK_WINDOW_MS) sum -= values[lo++]
-    const enough = window < PEAK_WINDOW_MS || killsIn(kills, Math.min(ts[hi], stretch.end)) >= MIN_STRETCH_KILLS
+    const enough = short || killsIn(kills, Math.min(ts[hi], stretch.end)) >= MIN_STRETCH_KILLS
     if (sum > best && enough) best = sum
   }
   return (best * HOUR) / window
