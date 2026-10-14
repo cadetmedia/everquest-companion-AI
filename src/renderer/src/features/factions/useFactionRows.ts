@@ -205,7 +205,7 @@ function useFactionEvidence(progress: ProgressState | null, recentMinutes: numbe
 
 /** Everything the tab draws, live on the same push every progress consumer rides. `recentMinutes`
  *  sizes each row's recent tally (the "moved recently" filter's window). */
-export function useFactionData(recentMinutes: number): FactionsData {
+export function useFactionData(recentMinutes = 30): FactionsData {
   const [progress, setProgress] = useState<ProgressState | null>(null)
   useEffect(() => {
     let alive = true
