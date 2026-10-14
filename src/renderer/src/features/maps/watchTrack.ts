@@ -38,3 +38,11 @@ export function withWatched(manual: readonly TrackedPoint[], watched: readonly T
   const have = new Set(manual.map((p) => p.id))
   return [...manual, ...watched.filter((p) => !have.has(p.id))]
 }
+
+/** The snapshot's watches plus those written but not yet echoed back by main, so a second quick
+ *  Timer click builds on the first instead of on the stale snapshot (review, 2026-10-13). */
+export function withPendingWatches(watches: readonly RespawnWatchPref[], pending: ReadonlyMap<string, string>): RespawnWatchPref[] {
+  const have = new Set(watches.map((w) => w.key))
+  const added = [...pending].filter(([key]) => !have.has(key)).map(([key, display]) => ({ key, display }))
+  return [...watches, ...added]
+}

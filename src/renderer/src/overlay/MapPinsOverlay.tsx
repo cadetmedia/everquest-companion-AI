@@ -50,8 +50,8 @@ const HEADER_PX = 36
 const FOOTER_PX = 24
 
 /** The map's clip: off the header row while it shows, off the footer while unlocked. */
-function barClip(locked: boolean, hovering: boolean): string {
-  const top = !locked || hovering ? HEADER_PX : 0
+function barClip(locked: boolean, headerShown: boolean): string {
+  const top = headerShown ? HEADER_PX : 0
   const bottom = locked ? 0 : FOOTER_PX
   return `inset(${String(top)}px 0 ${String(bottom)}px 0)`
 }
@@ -70,14 +70,33 @@ function useWindowSize(): { w: number; h: number } {
   return size
 }
 
+/**
+ * Is the pointer over the header's strip? Pinned, the window captures the mouse over its marks as
+ * well as over the strip (usePinnedMarkZones), so `hovering` alone would bring the header back over
+ * a pin and crop the map's top; the header answers to the strip only (review, 2026-10-13).
+ */
+function useTopStrip(locked: boolean, hovering: boolean): { shown: boolean; onMove: (e: React.PointerEvent) => void; onLeave: () => void } {
+  const [inStrip, setInStrip] = useState(false)
+  const onMove = (e: React.PointerEvent): void => {
+    setInStrip(e.clientY < HEADER_PX)
+  }
+  const onLeave = (): void => {
+    setInStrip(false)
+  }
+  return { shown: !locked || (hovering && inStrip), onMove, onLeave }
+}
+
 /** A 1 Hz clock for the timer labels, ticking only while timers are drawn. */
 function useClock(on: boolean): number {
   const [now, setNow] = useState(() => Date.now())
   useEffect(() => {
     if (!on) return
-    const t = setInterval(() => {
+    // Read at once: `now` may be from mount, long before the first timer appeared.
+    const tick = (): void => {
       setNow(Date.now())
-    }, 1000)
+    }
+    tick()
+    const t = setInterval(tick, 1000)
     return () => {
       clearInterval(t)
     }
@@ -206,18 +225,20 @@ function PinsFooter({
   )
 }
 
-/** The header. Shown unlocked, or while hovered. */
+/** The header. Shown unlocked, or pinned while the pointer is over its strip. */
 function PinsChrome({
   heading,
   count,
-  chrome
+  chrome,
+  shown
 }: {
   heading: string
   count: number
   chrome: ReturnType<typeof useOverlayChrome>
+  shown: boolean
 }): JSX.Element | null {
   const { locked, hovering, toggleLock, capture, dragRegion, noDrag } = chrome
-  if (locked && !hovering) return null
+  if (!shown) return null
   return (
     // Solid while unlocked, as on the other overlays; pinned, it shows only on hover and stays
     // see-through, so the game's map under it is not covered.
@@ -282,13 +303,14 @@ export default function MapPinsOverlay(): JSX.Element {
   const note = emptyNote(zone, ext)
   const labels = useMemo(() => labelRows(data?.points ?? []).map((r) => r.point), [data])
   const zoneInput = useMemo(
-    () => (ext == null || fit == null ? null : { ext, fit, w, h, layers, labels, mobs, timers, tracked }),
-    [ext, fit, w, h, layers, labels, mobs, timers, tracked]
+    () => (ext == null || fit == null ? null : { ext, fit, w, h, layers, labels, mobs, timers, tracked, nowMs }),
+    [ext, fit, w, h, layers, labels, mobs, timers, tracked, nowMs]
   )
   const [follow, toggleFollow] = usePinsFollow()
   const hidden = useFollowHidden(follow, locked)
   usePinnedMarkZones(zoneInput, locked, hidden)
-  const clip = barClip(locked, chrome.hovering)
+  const strip = useTopStrip(locked, chrome.hovering)
+  const clip = barClip(locked, strip.shown)
 
   // Hidden with the game map: nothing drawn, no click taken (useHiddenMouse, the zones above).
   if (hidden) return <div data-testid="map-pins-overlay" data-hidden="true" style={{ width: '100%', height: '100%' }} />
@@ -298,7 +320,11 @@ export default function MapPinsOverlay(): JSX.Element {
       ref={hostRef}
       data-testid="map-pins-overlay"
       onPointerDown={zoom.onPointerDown}
-      onPointerMove={zoom.onPointerMove}
+      onPointerMove={(e) => {
+        strip.onMove(e)
+        zoom.onPointerMove(e)
+      }}
+      onPointerLeave={strip.onLeave}
       onPointerUp={zoom.onPointerUp}
       onPointerCancel={zoom.onPointerUp}
       style={{
@@ -323,7 +349,7 @@ export default function MapPinsOverlay(): JSX.Element {
           <MapPinsField ext={ext} fit={fit} w={w} h={h} data={data} layers={layers} mobs={mobs} timers={timers} tracked={tracked} nowMs={nowMs} onCopy={onCopy} />
         </div>
       )}
-      <PinsChrome heading={who.zone ?? 'Map pins'} count={tracked.length} chrome={chrome} />
+      <PinsChrome heading={who.zone ?? 'Map pins'} count={tracked.length} chrome={chrome} shown={strip.shown} />
       {!locked && note != null && <Note text={note} />}
       {!locked && <PinsFooter layers={layers} onToggle={toggleLayer} zoom={zoom} bg={bg} follow={[follow, toggleFollow]} noDrag={chrome.noDrag} />}
       {copied != null && <Note text={copied} bottom={locked ? CORNER_PX + 2 : 34} />}
