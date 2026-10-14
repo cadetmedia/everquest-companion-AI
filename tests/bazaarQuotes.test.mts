@@ -1,0 +1,39 @@
+// The Bazaar offers list's order and its one-person filter (owner ask, 2026-10-13).
+
+import { test } from 'node:test'
+import assert from 'node:assert/strict'
+import { DEFAULT_QUOTE_SORT, firstQuoteSortDir, quoteSpeakers, quotesBy, sortQuotes } from '../src/shared/bazaarQuotes'
+import type { DayQuote } from '../src/shared/bazaar'
+
+const q = (who: string, when: [day: string, at: string], price: number | null): DayQuote =>
+  ({ who, day: when[0], at: when[1], price, msg: `WTS Fleeting Quiver (${who})`, dir: 'sell', item: 'Fleeting Quiver', tier: 0 }) as DayQuote
+
+const A = q('Kazule', ['2026-10-13', '16:08:00'], 15000)
+const B = q('apple', ['2026-10-12', '21:00:00'], 17000)
+const C = q('Zed', ['2026-10-13', '09:00:00'], null)
+
+test('the default is newest first', () => {
+  assert.deepEqual(sortQuotes([B, C, A], DEFAULT_QUOTE_SORT).map((x) => x.who), ['Kazule', 'Zed', 'apple'])
+})
+
+test('who sorts A to Z ignoring case, and back', () => {
+  assert.deepEqual(sortQuotes([A, B, C], { key: 'who', dir: 'asc' }).map((x) => x.who), ['apple', 'Kazule', 'Zed'])
+  assert.deepEqual(sortQuotes([A, B, C], { key: 'who', dir: 'desc' }).map((x) => x.who), ['Zed', 'Kazule', 'apple'])
+})
+
+test('an unpriced line sorts after every priced one, either way', () => {
+  assert.deepEqual(sortQuotes([C, A, B], { key: 'price', dir: 'desc' }).map((x) => x.who), ['apple', 'Kazule', 'Zed'])
+  assert.deepEqual(sortQuotes([C, A, B], { key: 'price', dir: 'asc' }).map((x) => x.who), ['Kazule', 'apple', 'Zed'])
+})
+
+test('one person, case folded; empty is everyone', () => {
+  assert.deepEqual(quotesBy([A, B, C], 'kazule').map((x) => x.who), ['Kazule'])
+  assert.equal(quotesBy([A, B, C], '').length, 3)
+  assert.equal(quotesBy([A, B, C], null).length, 3)
+})
+
+test('the people list puts the busiest first', () => {
+  assert.deepEqual(quoteSpeakers([A, B, C, { ...B, at: '22:00:00' }]), ['apple', 'Kazule', 'Zed'])
+  assert.equal(firstQuoteSortDir('price'), 'desc')
+  assert.equal(firstQuoteSortDir('who'), 'asc')
+})
