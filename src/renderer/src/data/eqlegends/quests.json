@@ -1,5 +1,5 @@
 {
-  "scrapedAt": "2026-10-11T02:04:32.241Z",
+  "scrapedAt": "2026-10-14T07:24:42.779Z",
   "source": "eqlwiki.com — Category:Quests + quest subcategories + recentchanges delta (scripts/scrape-delta.mts)",
   "quests": [
     {
@@ -31558,6 +31558,7 @@
         "Tergon's Spellbook",
         "Sealed Letter"
       ],
+      "expReward": true,
       "factions": [
         {
           "name": "Eldritch Collective",
