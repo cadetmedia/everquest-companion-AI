@@ -165,7 +165,7 @@ export function LayerChips({
         onClick={onFollow}
         style={chipStyle(follow)}
       >
-        Follow map
+        Auto-hide
       </button>
       {zoomed && (
         <button type="button" data-testid="map-pins-fit" onClick={onFit} style={{ ...chipStyle(true), borderStyle: 'dashed' }}>
