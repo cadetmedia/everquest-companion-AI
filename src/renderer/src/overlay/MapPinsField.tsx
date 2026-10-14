@@ -11,7 +11,7 @@ import { MapCanvas } from '../features/maps/MapCanvas'
 import { DEFAULT_LAYERS, viewRect } from '../features/maps/mapGeometry'
 import { TRACK_COLOR, placeInExtent, type ExtentFit, type TrackedPin, type TrackedPoint, type ZoneExtent } from '../features/maps/mapTrack'
 import { labelRows } from '../features/maps/mobPins'
-import { timerPinLabels, type TimerPin } from '../features/maps/respawnPins'
+import { justDue, timerPinLabels, type TimerPin } from '../features/maps/respawnPins'
 import type { CatalogPin } from '../features/maps/overlayPoints'
 import type { PinLayers } from './mapPinsLayers'
 
@@ -30,9 +30,14 @@ interface MarkProps {
   size: number
   shape: 'dot' | 'diamond'
   faint?: boolean
+  /** A timer that has just come due: the mark grows, shrinks and glows. */
+  pulse?: boolean
   onClick: () => void
   testId: string
 }
+
+/** The pulse, as a keyframe rule the overlay bundle carries itself (it loads no CSS framework). */
+const PULSE_CSS = `@keyframes eqmp-pulse { from { transform: scale(1) rotate(45deg); box-shadow: 0 0 0 1px rgba(0,0,0,0.85); } to { transform: scale(2.2) rotate(45deg); box-shadow: 0 0 10px 3px ${'#ef5350'}; } }`
 
 function dotStyle(size: number, shape: MarkProps['shape'], color: string, flip: boolean): CSSProperties {
   return {
@@ -52,7 +57,7 @@ function dotStyle(size: number, shape: MarkProps['shape'], color: string, flip: 
  * every name at once buried the zone (owner, 2026-10-13); timers and tracked marks always carry
  * theirs. The label flips to the left of the mark when it would cross the right edge.
  */
-function Mark({ at, w, text, color, size, shape, faint = false, onClick, testId }: MarkProps): JSX.Element {
+function Mark({ at, w, text, color, size, shape, faint = false, pulse = false, onClick, testId }: MarkProps): JSX.Element {
   const [hot, setHot] = useState(false)
   const showText = !faint || hot
   const font = faint ? 9 : 10
@@ -82,7 +87,10 @@ function Mark({ at, w, text, color, size, shape, faint = false, onClick, testId 
         zIndex: hot ? 5 : undefined
       }}
     >
-      <span style={dotStyle(size, shape, color, flip)} />
+      <span
+        data-pulse={pulse ? 'true' : undefined}
+        style={{ ...dotStyle(size, shape, color, flip), ...(pulse ? { animation: 'eqmp-pulse 0.6s ease-in-out infinite alternate' } : {}) }}
+      />
       {showText && (
         <span
           data-testid="map-pins-text"
@@ -179,6 +187,7 @@ function TimerMarks({ ext, fit, w, timers, nowMs, onCopy }: MapPinsFieldProps): 
             color={TIMER_COLOR}
             size={8}
             shape="diamond"
+            pulse={justDue(t, nowMs)}
             onClick={() => {
               onCopy(t.display, { x: pin.x, y: pin.y })
             }}
@@ -222,7 +231,12 @@ export function MapPinsField(props: MapPinsFieldProps): JSX.Element {
     <>
       {layers.lines && data != null && <Lines data={data} ext={ext} fit={fit} w={w} h={h} />}
       {layers.poi && <PoiMarks {...props} />}
-      {layers.timers && <TimerMarks {...props} />}
+      {layers.timers && (
+        <>
+          <style>{PULSE_CSS}</style>
+          <TimerMarks {...props} />
+        </>
+      )}
       {layers.tracked && <TrackedMarks {...props} />}
     </>
   )

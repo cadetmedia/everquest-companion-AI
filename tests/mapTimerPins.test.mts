@@ -130,3 +130,15 @@ test('the catalog side is keyed on the stem alone — the zone table names the b
   const unknown = timerZone('notazone' as never, CATALOG)
   assert.equal(unknown?.byKey.size, 0)
 })
+
+// ---- the overlay's pulse on a clock that has just come due (owner, 2026-10-13) ----
+import { JUST_DUE_MS, justDue } from '../src/renderer/src/features/maps/respawnPins'
+
+test('a clock pulses from the moment it comes due, for JUST_DUE_MS, and never before', () => {
+  const row = { id: 'r', key: 'k', display: 'Mob', zone: 'z', baseTs: 0, basis: 'death', estimateMs: 60_000, source: 'observed' } as unknown as Parameters<typeof justDue>[0]['row']
+  const t = { id: 'r', display: 'Mob', row, pins: [] }
+  assert.equal(justDue(t, 59_000), false)
+  assert.equal(justDue(t, 60_000), true)
+  assert.equal(justDue(t, 60_000 + JUST_DUE_MS), true)
+  assert.equal(justDue(t, 60_000 + JUST_DUE_MS + 1), false)
+})
