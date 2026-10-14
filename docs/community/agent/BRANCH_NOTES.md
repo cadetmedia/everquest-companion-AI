@@ -80,6 +80,9 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   dynamic import did). The Map pins overlay gets a slim copy over `maps:mobPlaces` instead, and
   `useZoneTrack.ts` (catalog) is kept out of `useMapTrack.ts` (overlay). Check after a build:
   `grep -c 'Sandgiant Husam' out*/renderer/assets/conCard-*.js` must be 0.
+- Owner ruling (2026-10-13): the app may READ the game's `UI_<char>_<server>*.ini` at runtime for the
+  Map pins overlay's optional Follow map (`[MapViewWnd] Show=`, re-saved by EQ on every M press).
+  Zoom and pan are never saved anywhere (measured). Read-only; nothing else in that file is used.
 - The Map tab's viewport state lives in `MapTab`, below `MapsTabs`: MUI Tabs re-measures its
   indicator (`getBoundingClientRect`) on every render, so the tab bar must not render per frame.
 - Locked overlays are click-through except the header strip, so the pin overlay's clicks work
