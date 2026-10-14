@@ -216,7 +216,9 @@ function PinsChrome({
   const { locked, hovering, toggleLock, capture, dragRegion, noDrag } = chrome
   if (locked && !hovering) return null
   return (
-    <div style={{ ...BAR, top: 0 }}>
+    // Solid while unlocked, as on the other overlays; pinned, it shows only on hover and stays
+    // see-through, so the game's map under it is not covered.
+    <div style={{ ...BAR, top: 0, background: locked ? undefined : 'rgb(14,17,21)' }}>
       <OverlayHeader
         tag="MAP"
         title={heading}
@@ -288,8 +290,11 @@ export default function MapPinsOverlay(): JSX.Element {
         height: '100%',
         fontFamily: 'Inter, "Segoe UI", Roboto, system-ui, sans-serif',
         background: `rgba(14,17,21,${String(bg[0])})`,
-        outline: locked ? undefined : `1px dashed ${TRACK_COLOR}66`,
-        outlineOffset: -1,
+        // The other overlays' frame (RespawnOverlay, XpOverlay): an accent line while unlocked, all
+        // but invisible pinned (owner, 2026-10-13).
+        border: locked ? '1px solid rgba(255,255,255,0.04)' : `1px solid ${TRACK_COLOR}66`,
+        borderRadius: 8,
+        boxSizing: 'border-box',
         overflow: 'hidden'
       }}
     >
