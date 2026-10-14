@@ -178,9 +178,12 @@ function useFactionEvidence(progress: ProgressState | null, recentMinutes: numbe
     // The engine's "a module moved" ping is the existing signal that the log has new lines.
     const off = window.eq.onCombatActivity(refresh.nudge)
     window.addEventListener('focus', refresh.nudge)
+    // A quiet log still ages the recent window: re-ask once a minute so old moves drop out.
+    const tick = setInterval(refresh.nudge, 60_000)
     return () => {
       refresh.cancel()
       off()
+      clearInterval(tick)
       window.removeEventListener('focus', refresh.nudge)
     }
   }, [])
