@@ -40,9 +40,20 @@ const CORNER_PX = 16
 const COPIED_MS = 1800
 const TEXT = 'rgba(255,255,255,0.85)'
 const SHADOW = '0 0 2px #000, 0 0 2px #000'
-/** The header and footer: solid and above the map, so a zoomed-in map stops at their edges
- *  instead of showing through them (owner, 2026-10-13). */
-const BAR: React.CSSProperties = { position: 'absolute', left: 0, right: 0, zIndex: 10, background: 'rgb(14,17,21)' }
+/** The header and footer sit above the map and stay see-through, so the game's own UI under them
+ *  still shows; the map is CLIPPED at their edges instead (owner, 2026-10-13: a zoomed map ran
+ *  into both bars, and a solid bar would hide the game's map window under it). */
+const BAR: React.CSSProperties = { position: 'absolute', left: 0, right: 0, zIndex: 10 }
+/** The header row's height (overlayHotZone.ts measures it at 36) and the footer's. */
+const HEADER_PX = 36
+const FOOTER_PX = 24
+
+/** The map's clip: off the header row while it shows, off the footer while unlocked. */
+function barClip(locked: boolean, hovering: boolean): string {
+  const top = !locked || hovering ? HEADER_PX : 0
+  const bottom = locked ? 0 : FOOTER_PX
+  return `inset(${String(top)}px 0 ${String(bottom)}px 0)`
+}
 
 function useWindowSize(): { w: number; h: number } {
   const [size, setSize] = useState({ w: window.innerWidth, h: window.innerHeight })
@@ -185,7 +196,7 @@ function PinsFooter({
   return (
     <div
       data-testid="map-pins-footer"
-      style={{ ...FOOTER_ROW, ...BAR, bottom: 0, padding: 0 }}
+      style={{ ...FOOTER_ROW, ...BAR, bottom: 0, padding: 0, background: 'rgba(14,17,21,0.78)' }}
     >
       <LayerChips layers={layers} onToggle={onToggle} onFit={zoom.reset} zoomed={zoom.view != null} bg={bg[0]} onBg={bg[1]} noDrag={noDrag} />
     </div>
@@ -261,6 +272,7 @@ export default function MapPinsOverlay(): JSX.Element {
     [ext, fit, w, h, layers, labels, mobs, timers, tracked]
   )
   usePinnedMarkZones(zoneInput, locked)
+  const clip = barClip(locked, chrome.hovering)
 
   return (
     <div
@@ -282,10 +294,12 @@ export default function MapPinsOverlay(): JSX.Element {
       }}
     >
       {ext != null && fit != null && (
-        <>
+        // Clipped, not moved: the fit is still the whole window, so the alignment holds whether
+        // or not the bars are showing (pinned and not hovered, they are not, and nothing is cut).
+        <div style={{ position: 'absolute', inset: 0, clipPath: clip }}>
           <Corners fit={fit} />
           <MapPinsField ext={ext} fit={fit} w={w} h={h} data={data} layers={layers} mobs={mobs} timers={timers} tracked={tracked} nowMs={nowMs} onCopy={onCopy} />
-        </>
+        </div>
       )}
       <PinsChrome heading={who.zone ?? 'Map pins'} count={tracked.length} chrome={chrome} />
       {!locked && note != null && <Note text={note} />}
