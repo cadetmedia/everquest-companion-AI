@@ -31,3 +31,4 @@ nothing listed here is removed or narrowed without the owner's word (RULES.md, r
 | 2026-10-13 | owner | A zoomed map does not run into the overlay's header and footer. | built (the map is clipped between the bars, which stay see-through so the game UI under them shows) |
 | 2026-10-13 | owner | The Map pins overlay has the other overlays' window frame, and a solid header while unlocked. | built |
 | 2026-10-13 | owner | On the Map pins overlay, a timer mob that has just come due pulses (grows, shrinks, glows) for a few seconds. | built (15 s from the moment it comes due) |
+| 2026-10-13 | owner | Optional: the Map pins overlay hides while the in-game map is closed and comes back when it opens (read off the map's Show setting in the game's UI_<character>_<server> file, which EQ re-saves on every M press). Off by default, so the overlay can stay up with the game map closed. Reading that game file at runtime is the owner's call, made here. | open |
