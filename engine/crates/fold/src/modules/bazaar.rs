@@ -121,13 +121,14 @@ impl BazaarModule {
         }
         let mut changed = false;
         for o in offers {
-            let unit = o.unit_pp();
+            // An offer read through a guess is listed, unpriced, and never counted (Offer::sure).
+            let unit = o.unit_pp().filter(|_| o.sure);
             let cents = unit.map_or(-1, |p| (p * 100.0).round() as i64);
             let first = (speaker.to_lowercase(), o.dir, o.item.clone(), o.tier, cents);
             if !self.seen.insert(first) {
                 continue;
             }
-            if live {
+            if live && o.sure {
                 self.hear(raw, speaker, &o);
             }
             let key = (day.clone(), o.dir, o.item, o.tier);
@@ -138,7 +139,9 @@ impl BazaarModule {
                 tier: k.3,
                 ..BazaarRow::default()
             });
-            add(row, unit);
+            if o.sure {
+                add(row, unit);
+            }
             quote(
                 &mut row.quotes,
                 Quote {

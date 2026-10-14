@@ -14,6 +14,9 @@ fn short(o: &Offer) -> String {
     if let Some(p) = o.unit_pp() {
         s += &format!(" {p}pp");
     }
+    if !o.sure {
+        s += " ?";
+    }
     s
 }
 
@@ -41,6 +44,7 @@ fn bazaar_corpus() {
         .filter_map(|e| e["page"].as_str().map(str::to_string));
     let ix = ItemIndex::new(names);
     let (mut trade, mut with_item, mut with_price, mut offers, mut priced) = (0, 0, 0, 0, 0);
+    let mut counted = 0;
     for l in std::fs::read_to_string(corpus).unwrap().lines() {
         let Some((_, msg)) = super::chat_of(crate::message_overlay::message_text_of(l)) else {
             continue;
@@ -60,6 +64,7 @@ fn bazaar_corpus() {
         let o = parse_trade(msg, &ix);
         offers += o.len();
         priced += o.iter().filter(|x| x.price_pp.is_some()).count();
+        counted += o.iter().filter(|x| x.price_pp.is_some() && x.sure).count();
         with_item += usize::from(!o.is_empty());
         if std::env::var("BAZAAR_DUMP").is_ok() {
             println!(
@@ -70,6 +75,6 @@ fn bazaar_corpus() {
         with_price += usize::from(o.iter().any(|x| x.price_pp.is_some()));
     }
     println!(
-        "trade {trade} withItem {with_item} withPrice {with_price} offers {offers} priced {priced}"
+        "trade {trade} withItem {with_item} withPrice {with_price} offers {offers} priced {priced} counted {counted}"
     );
 }
