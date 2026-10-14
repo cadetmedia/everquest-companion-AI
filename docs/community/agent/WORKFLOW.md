@@ -98,6 +98,10 @@ disagree, RULES.md wins; fix this file.
   The gate script runs the tests ONLY: a change that fails `tsc` can pass it (2026-10-11, a
   class-rename fold typed as the rename's value). Typecheck and lint the scratch merge too,
   every time, before merging into `main_community`.
+- **The npm gate does not run the Rust suite.** Before a push, also run `cargo test --workspace` in
+  `engine/` on the merged tree (`CARGO_TARGET_DIR` = the main clone's `engine/target` reuses its
+  build). 2026-10-13 it found two reds the npm gate had passed for days: the module snapshot test
+  (gaps-tab) and the pinned spell-category counts (catch_all x local-data-refresh).
 - Count node:test output with `grep -E "ℹ (tests|pass|fail)"`; failures are `^✖` lines. The pass
   count can wobble by one between runs with the same fail set (a skipping test).
 - Do not run `npm test` while `npm run dist` rebuilds `out/`: symbolicate's round-trip test scans
