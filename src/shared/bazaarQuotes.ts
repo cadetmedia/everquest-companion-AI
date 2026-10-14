@@ -92,3 +92,19 @@ export function speakerAverages(quotes: readonly DayQuote[], last = SPEAKER_AVG_
   }
   return out
 }
+
+/** The fewest priced offers that put a person in the Who list (owner ask, 2026-10-13). */
+export const MIN_SPEAKER_OFFERS = 2
+
+/**
+ * The Who list on one item: only people with at least MIN_SPEAKER_OFFERS priced offers (selling
+ * and buying together), most offers first, then A to Z. Someone who never priced, or priced once,
+ * is left out of the list; their lines still show in the table.
+ */
+export function repeatSpeakers(averages: ReadonlyMap<string, SpeakerAverage>, min = MIN_SPEAKER_OFFERS): string[] {
+  const total = (a: SpeakerAverage): number => (a.sell?.n ?? 0) + (a.buy?.n ?? 0)
+  return [...averages.entries()]
+    .filter(([, a]) => total(a) >= min)
+    .sort((x, y) => total(y[1]) - total(x[1]) || x[0].localeCompare(y[0]))
+    .map(([who]) => who)
+}

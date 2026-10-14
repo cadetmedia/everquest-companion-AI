@@ -2,7 +2,7 @@
 
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { DEFAULT_QUOTE_SORT, firstQuoteSortDir, quoteSpeakers, quotesBy, sortQuotes, speakerAverages } from '../src/shared/bazaarQuotes'
+import { DEFAULT_QUOTE_SORT, firstQuoteSortDir, quoteSpeakers, quotesBy, repeatSpeakers, sortQuotes, speakerAverages } from '../src/shared/bazaarQuotes'
 import type { DayQuote } from '../src/shared/bazaar'
 
 const q = (who: string, when: [day: string, at: string], price: number | null): DayQuote =>
@@ -47,4 +47,11 @@ test("a person's average is their newest ten priced quotes, selling and buying a
   assert.deepEqual(a?.sell, { avg: 750, n: 10 })
   assert.deepEqual(a?.buy, { avg: 50, n: 1 })
   assert.equal(speakerAverages([C]).get('Zed'), undefined)
+})
+
+test('the Who list leaves out people who priced once or never', () => {
+  const twice = [q('Mauxe', ['2026-10-01', '12:00:00'], 20000), q('Mauxe', ['2026-10-02', '12:00:00'], 21000)]
+  const once = [q('Fyrdan', ['2026-10-03', '12:00:00'], 15000)]
+  const never = [q('Darlantan', ['2026-10-03', '12:00:00'], null), q('Darlantan', ['2026-10-04', '12:00:00'], null)]
+  assert.deepEqual(repeatSpeakers(speakerAverages([...twice, ...once, ...never])), ['Mauxe'])
 })

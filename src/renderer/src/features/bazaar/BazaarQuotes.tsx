@@ -13,6 +13,7 @@ import {
   quoteSpeakers,
   quotesBy,
   sortQuotes,
+  repeatSpeakers,
   speakerAverages,
   type QuoteSort,
   type SpeakerAverage,
@@ -105,8 +106,9 @@ function WhoFilter({
   onWho: (w: string | null) => void
   withAverages: boolean
 }): JSX.Element {
-  const people = useMemo(() => quoteSpeakers(quotes), [quotes])
   const averages = useMemo(() => (withAverages ? speakerAverages(quotes) : null), [quotes, withAverages])
+  // On one item, only people with two or more priced offers are offered (owner ask, 2026-10-13).
+  const people = useMemo(() => (averages ? repeatSpeakers(averages) : quoteSpeakers(quotes)), [averages, quotes])
   return (
     <Autocomplete
       size="small"
