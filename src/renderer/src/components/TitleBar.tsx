@@ -1,5 +1,5 @@
 import { type JSX, useEffect, useRef, useState } from 'react'
-import { Box, Checkbox, Chip, Divider, ListItemText, ListSubheader, Menu, MenuItem, Select, Typography } from '@mui/material'
+import { Box, Checkbox, Chip, Divider, IconButton, ListItemText, ListSubheader, Menu, MenuItem, Select, Typography } from '@mui/material'
 import CircleIcon from '@mui/icons-material/Circle'
 import MinimizeIcon from '@mui/icons-material/Remove'
 import CropSquareIcon from '@mui/icons-material/CropSquare'
@@ -7,14 +7,15 @@ import FilterNoneIcon from '@mui/icons-material/FilterNone'
 import CloseIcon from '@mui/icons-material/Close'
 import PictureInPictureAltIcon from '@mui/icons-material/PictureInPictureAlt'
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown'
+import RestartAltIcon from '@mui/icons-material/RestartAlt'
 import type { CharacterRef, OverlayKind } from '@shared/types'
 import type { CloseToTrayPrefs } from '@shared/closeToTray'
 import { OVERLAY_KINDS } from '@shared/types'
+import { track } from '../lib/telemetry'
 // The ONE kind-label map (JOS-405). This menu's wording is what it says, because this menu is
 // where a user meets the window in the first place.
 import { OVERLAY_KIND_LABEL } from '@shared/overlayLabels'
-import { track } from '../lib/telemetry'
-import { clearOverlayLocalKeys } from '@shared/overlayReset'
+import { type OverlayReset, useOverlayReset } from './overlayMenuReset'
 import PerfChip from './PerfChip'
 import { isDragSurfaceDoubleClick } from './titleBarDrag'
 
@@ -164,47 +165,46 @@ function useCloseToTrayMirror(): [CloseToTrayPrefs | null, (patch: Partial<Close
   return [prefs, update]
 }
 
-/** How long the reset row waits for its confirming second click. */
-const RESET_CONFIRM_MS = 4000
-
-/**
- * The reset row (shared/overlayReset.ts): the first click arms it, a second within a few seconds
- * resets. Main closes every overlay and resets it; the overlays' own localStorage keys are cleared
- * while they are closed; then the ones that were open are opened again.
- */
-function useOverlayReset(onDone: () => void): { armed: boolean; click: () => void; disarm: () => void } {
-  const [armed, setArmed] = useState(false)
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const disarm = (): void => {
-    if (timer.current) clearTimeout(timer.current)
-    setArmed(false)
-  }
-  useEffect(
-    () => () => {
-      if (timer.current) clearTimeout(timer.current)
-    },
-    []
+/** One overlay's row: its checkbox toggles the window, its reset button (right) resets just it. */
+export function OverlayRow({
+  kind,
+  secondary,
+  open,
+  onToggle,
+  reset
+}: {
+  kind: OverlayKind
+  secondary: string
+  open: boolean
+  onToggle: (kind: OverlayKind) => void
+  reset: OverlayReset
+}): JSX.Element {
+  const armed = reset.armed === kind
+  return (
+    <MenuItem dense data-testid={`overlay-menu-${kind}`} onClick={() => { onToggle(kind) }}>
+      <Checkbox size="small" edge="start" checked={open} tabIndex={-1} disableRipple />
+      <ListItemText
+        primary={OVERLAY_KIND_LABEL[kind]}
+        secondary={armed ? 'Click reset again: default place, size, lock and look' : secondary}
+        slotProps={{ secondary: armed ? { color: 'warning.main' } : undefined }}
+      />
+      <IconButton
+        size="small"
+        edge="end"
+        aria-label={`Reset ${OVERLAY_KIND_LABEL[kind]}`}
+        title={armed ? 'Click again to reset' : `Reset ${OVERLAY_KIND_LABEL[kind]} to its default place and look`}
+        data-testid={`overlay-menu-reset-${kind}`}
+        color={armed ? 'warning' : 'default'}
+        sx={{ ml: 1, opacity: armed ? 1 : 0.6, '&:hover': { opacity: 1 } }}
+        onClick={(e) => {
+          e.stopPropagation()
+          reset.click(kind)
+        }}
+      >
+        <RestartAltIcon fontSize="small" />
+      </IconButton>
+    </MenuItem>
   )
-  const click = (): void => {
-    if (!armed) {
-      setArmed(true)
-      timer.current = setTimeout(() => {
-        setArmed(false)
-      }, RESET_CONFIRM_MS)
-      return
-    }
-    disarm()
-    onDone()
-    void window.eq.resetOverlays().then(async (open) => {
-      try {
-        clearOverlayLocalKeys(localStorage)
-      } catch {
-        // A blocked store has nothing of ours to clear.
-      }
-      for (const kind of open) await window.eq.toggleOverlay(kind)
-    })
-  }
-  return { armed, click, disarm }
 }
 
 /**
@@ -286,10 +286,7 @@ function OverlayMenu({ overlayState }: { overlayState: Record<OverlayKind, boole
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
         {OVERLAY_MENU_ROWS.map(([kind, secondary]) => (
-          <MenuItem dense key={kind} data-testid={`overlay-menu-${kind}`} onClick={() => { toggle(kind) }}>
-            <Checkbox size="small" edge="start" checked={overlayState[kind]} tabIndex={-1} disableRipple />
-            <ListItemText primary={OVERLAY_KIND_LABEL[kind]} secondary={secondary} />
-          </MenuItem>
+          <OverlayRow key={kind} kind={kind} secondary={secondary} open={overlayState[kind]} onToggle={toggle} reset={reset} />
         ))}
         <Divider />
         {/* THE THIRD MIRROR of "what the X does" (JOS-139; owner, 2026-08-16: "add a mirror to this
@@ -313,11 +310,17 @@ function OverlayMenu({ overlayState }: { overlayState: Record<OverlayKind, boole
           />
         </MenuItem>
         <Divider />
-        <MenuItem dense data-testid="overlay-menu-reset" onClick={reset.click}>
+        <MenuItem
+          dense
+          data-testid="overlay-menu-reset"
+          onClick={() => {
+            reset.click('all')
+          }}
+        >
           <ListItemText
-            primary={reset.armed ? 'Click again to reset' : 'Reset overlay positions'}
+            primary={reset.armed === 'all' ? 'Click again to reset all overlays' : 'Reset all overlay positions'}
             secondary="Default place, size, lock and transparency; open ones stay open"
-            slotProps={{ primary: reset.armed ? { color: 'warning.main' } : undefined }}
+            slotProps={{ primary: reset.armed === 'all' ? { color: 'warning.main' } : undefined }}
           />
         </MenuItem>
       </Menu>
