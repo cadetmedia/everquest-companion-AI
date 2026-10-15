@@ -60,8 +60,9 @@ export const windowsApi = {
   toggleOverlay: (kind: OverlayKind): Promise<boolean> => ipcRenderer.invoke(IPC.overlayToggle, kind),
   /** Read the open-state map for all overlay kinds. */
   getOverlayState: (): Promise<Record<OverlayKind, boolean>> => ipcRenderer.invoke(IPC.overlayGetState),
-  /** Close every overlay and reset its place and look; resolves to the kinds that were open. */
-  resetOverlays: (): Promise<OverlayKind[]> => ipcRenderer.invoke(IPC.overlayReset),
+  /** Close the named overlays (all when none named) and reset their place and look; resolves to
+   *  the kinds that were open. */
+  resetOverlays: (kinds?: OverlayKind[]): Promise<OverlayKind[]> => ipcRenderer.invoke(IPC.overlayReset, kinds),
   /** Subscribe to overlay open-state changes (so the TitleBar menu stays in sync). Payload {kind, open}. */
   onOverlayState: (cb: (s: { kind: OverlayKind; open: boolean }) => void): (() => void) => {
     const listener = (_e: unknown, s: { kind: OverlayKind; open: boolean }): void => cb(s)

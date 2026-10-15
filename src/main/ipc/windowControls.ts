@@ -242,7 +242,7 @@ export function registerWindowIpc(): void {
     setOverlayOpen(kind, !isOverlayOpen(kind))
   )
   ipcMain.handle(IPC.overlayGetState, () => overlayStateMap())
-  ipcMain.handle(IPC.overlayReset, () => resetOverlays())
+  ipcMain.handle(IPC.overlayReset, (_e, kinds: unknown) => resetOverlays(kinds))
   ipcMain.handle(IPC.overlayGetConfig, (_e, kind: OverlayKind) => getOverlayConfig(kind))
   ipcMain.handle(IPC.overlaySetConfig, (_e, kind: OverlayKind, patch: Partial<OverlayConfig>) => {
     // TEXT SCALE AND BACKGROUND ALPHA ARE ROUTED, NOT FANNED OUT (JOS-405, JOS-407).
