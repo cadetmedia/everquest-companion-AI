@@ -364,7 +364,7 @@ export function clearEqDiscoveredRoot(): void {
 
 /** Per-kind defaults. Sizes/positions live in overlayLayout.ts; `bounds` stays undefined here so
  *  a first open is placed by that layout and every later open uses what the user left. */
-const DEFAULT_OVERLAY_CONFIG: Record<OverlayKind, OverlayConfig> = {
+export const DEFAULT_OVERLAY_CONFIG: Record<OverlayKind, OverlayConfig> = {
   fight: { open: false, locked: false, bgAlpha: 0.72, bounds: undefined, drill: null },
   overall: { open: false, locked: false, bgAlpha: 0.72, bounds: undefined, drill: null },
   events: { open: false, locked: false, bgAlpha: 0.72, bounds: undefined, drill: null },
