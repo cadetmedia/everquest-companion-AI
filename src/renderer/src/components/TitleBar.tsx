@@ -11,10 +11,10 @@ import RestartAltIcon from '@mui/icons-material/RestartAlt'
 import type { CharacterRef, OverlayKind } from '@shared/types'
 import type { CloseToTrayPrefs } from '@shared/closeToTray'
 import { OVERLAY_KINDS } from '@shared/types'
-import { track } from '../lib/telemetry'
 // The ONE kind-label map (JOS-405). This menu's wording is what it says, because this menu is
 // where a user meets the window in the first place.
 import { OVERLAY_KIND_LABEL } from '@shared/overlayLabels'
+import { track } from '../lib/telemetry'
 import { type OverlayReset, useOverlayReset } from './overlayMenuReset'
 import PerfChip from './PerfChip'
 import { isDragSurfaceDoubleClick } from './titleBarDrag'
