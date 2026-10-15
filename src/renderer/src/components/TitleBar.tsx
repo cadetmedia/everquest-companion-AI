@@ -14,6 +14,7 @@ import { OVERLAY_KINDS } from '@shared/types'
 // where a user meets the window in the first place.
 import { OVERLAY_KIND_LABEL } from '@shared/overlayLabels'
 import { track } from '../lib/telemetry'
+import { clearOverlayLocalKeys } from '@shared/overlayReset'
 import PerfChip from './PerfChip'
 import { isDragSurfaceDoubleClick } from './titleBarDrag'
 
@@ -163,6 +164,49 @@ function useCloseToTrayMirror(): [CloseToTrayPrefs | null, (patch: Partial<Close
   return [prefs, update]
 }
 
+/** How long the reset row waits for its confirming second click. */
+const RESET_CONFIRM_MS = 4000
+
+/**
+ * The reset row (shared/overlayReset.ts): the first click arms it, a second within a few seconds
+ * resets. Main closes every overlay and resets it; the overlays' own localStorage keys are cleared
+ * while they are closed; then the ones that were open are opened again.
+ */
+function useOverlayReset(onDone: () => void): { armed: boolean; click: () => void; disarm: () => void } {
+  const [armed, setArmed] = useState(false)
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const disarm = (): void => {
+    if (timer.current) clearTimeout(timer.current)
+    setArmed(false)
+  }
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current)
+    },
+    []
+  )
+  const click = (): void => {
+    if (!armed) {
+      setArmed(true)
+      timer.current = setTimeout(() => {
+        setArmed(false)
+      }, RESET_CONFIRM_MS)
+      return
+    }
+    disarm()
+    onDone()
+    void window.eq.resetOverlays().then(async (open) => {
+      try {
+        clearOverlayLocalKeys(localStorage)
+      } catch {
+        // A blocked store has nothing of ours to clear.
+      }
+      for (const kind of open) await window.eq.toggleOverlay(kind)
+    })
+  }
+  return { armed, click, disarm }
+}
+
 /**
  * Floating DPS overlay menu (Task #52; two kinds in Task #54). A compact menu toggles the
  * overlay windows independently; the button is active-tinted when ANY is open so the user
@@ -174,6 +218,9 @@ function OverlayMenu({ overlayState }: { overlayState: Record<OverlayKind, boole
   const btnRef = useRef<HTMLButtonElement>(null)
   const anyOverlayOpen = Object.values(overlayState).some(Boolean)
   const [tray, setTray] = useCloseToTrayMirror()
+  const reset = useOverlayReset(() => {
+    setAnchor(null)
+  })
 
   /**
    * Toggle one overlay and record WHICH and WHETHER (usage-analytics §2 `overlayToggle`) — the
@@ -231,7 +278,10 @@ function OverlayMenu({ overlayState }: { overlayState: Record<OverlayKind, boole
       <Menu
         anchorEl={anchor}
         open={anchor != null}
-        onClose={() => setAnchor(null)}
+        onClose={() => {
+          setAnchor(null)
+          reset.disarm()
+        }}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
@@ -260,6 +310,14 @@ function OverlayMenu({ overlayState }: { overlayState: Record<OverlayKind, boole
           <ListItemText
             primary="Keep running in the tray when the window closes"
             secondary="Overlays stay up; the tray icon brings the window back"
+          />
+        </MenuItem>
+        <Divider />
+        <MenuItem dense data-testid="overlay-menu-reset" onClick={reset.click}>
+          <ListItemText
+            primary={reset.armed ? 'Click again to reset' : 'Reset overlay positions'}
+            secondary="Default place, size, lock and transparency; open ones stay open"
+            slotProps={{ primary: reset.armed ? { color: 'warning.main' } : undefined }}
           />
         </MenuItem>
       </Menu>
