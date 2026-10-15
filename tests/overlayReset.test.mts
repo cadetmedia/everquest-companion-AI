@@ -4,7 +4,8 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { clearOverlayLocalKeys, overlayResetPatch } from '../src/shared/overlayReset'
+import { clearOverlayLocalKeys, overlayResetPatch, resetKinds } from '../src/shared/overlayReset'
+import { OVERLAY_KINDS } from '../src/shared/types'
 import type { OverlayConfig } from '../src/shared/types'
 
 test('the patch drops the stored rectangle and takes the kind default lock and alpha', () => {
@@ -45,7 +46,14 @@ test('the sweep removes only keys under the given prefixes', () => {
   assert.deepEqual(s.keys(), ['eq.maps.track', 'other'])
 })
 
-test('the main process closes every overlay before it writes the reset', () => {
+test('a reset names one overlay, several, or (named none) all of them, and never an unknown kind', () => {
+  assert.deepEqual(resetKinds(['xp']), ['xp'])
+  assert.deepEqual(resetKinds(['respawn', 'nonsense', 'fight']), ['fight', 'respawn'])
+  assert.deepEqual(resetKinds(undefined), OVERLAY_KINDS)
+  assert.deepEqual(resetKinds('xp'), OVERLAY_KINDS)
+})
+
+test('the main process closes the reset overlays before it writes the reset', () => {
   const src = readFileSync(new URL('../src/main/overlayReset.ts', import.meta.url), 'utf8')
   assert.ok(src.indexOf('await Promise.all(open.map(closeAndWait))') < src.indexOf('setOverlayConfig(kind'))
 })

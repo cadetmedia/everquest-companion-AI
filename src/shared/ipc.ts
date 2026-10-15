@@ -229,8 +229,9 @@ export const IPC = {
   overlayToggle: 'overlay:toggle',
   // renderer(main app) -> main: query the open-state map for all kinds. Returns Record<kind,bool>.
   overlayGetState: 'overlay:getState',
-  // renderer(main app) -> main: close every overlay and reset each kind's place and look
-  // (shared/overlayReset.ts). Returns the kinds that were open, for the renderer to reopen.
+  // renderer(main app) -> main: close the named overlays (every one when none is named) and reset
+  // each one's place and look (shared/overlayReset.ts). Returns the kinds that were open, for the
+  // renderer to reopen.
   overlayReset: 'overlay:reset',
   // main -> renderer(main app): a kind's open-state changed. Payload: {kind, open}. Keeps the
   // TitleBar overlay menu in sync (also fires when an overlay closes itself).
