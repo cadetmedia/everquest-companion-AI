@@ -278,12 +278,29 @@ function usePinnedMarkZones(input: MarkZoneInput | null, locked: boolean, hidden
   )
 }
 
-/** Following the game map and the game map is closed: the overlay hides (useGameMapFollow.ts). */
-function useFollowHidden(follow: boolean, locked: boolean): boolean {
+/**
+ * Following the game map and the game map is closed: the overlay hides (useGameMapFollow.ts).
+ * PINNED ONLY. Unlocked it always draws, so the chips that turn Auto-hide off stay reachable: a
+ * tester's overlay hid unlocked while his game map read as closed, and nothing could bring it back
+ * (2026-10-14). Unlocked, the note says what Auto-hide would do.
+ */
+function useFollowHidden(follow: boolean, locked: boolean): { hidden: boolean; note: string | null } {
   const gameMap = useGameMapShown()
-  const hidden = follow && gameMap === false
+  const hidden = locked && follow && gameMap === false
   useHiddenMouse(hidden, locked)
-  return hidden
+  return { hidden, note: followNote(follow, gameMap) }
+}
+
+/** The centred note, unlocked only: the empty-zone note first, else Auto-hide's. */
+function unlockedNote(locked: boolean, note: string | null, autoHide: string | null): string | null {
+  return locked ? null : (note ?? autoHide)
+}
+
+function followNote(follow: boolean, gameMap: boolean | null): string | null {
+  if (!follow) return null
+  if (gameMap === false) return 'Auto-hide: the game map reads as closed, so this hides once pinned.'
+  if (gameMap === null) return "Auto-hide: the game's UI file for this character cannot be found."
+  return null
 }
 
 export default function MapPinsOverlay(): JSX.Element {
@@ -307,9 +324,10 @@ export default function MapPinsOverlay(): JSX.Element {
     [ext, fit, w, h, layers, labels, mobs, timers, tracked, nowMs]
   )
   const [follow, toggleFollow] = usePinsFollow()
-  const hidden = useFollowHidden(follow, locked)
+  const { hidden, note: autoHideNote } = useFollowHidden(follow, locked)
   usePinnedMarkZones(zoneInput, locked, hidden)
   const strip = useTopStrip(locked, chrome.hovering)
+  const shownNote = unlockedNote(locked, note, autoHideNote)
   const clip = barClip(locked, strip.shown)
 
   // Hidden with the game map: nothing drawn, no click taken (useHiddenMouse, the zones above).
@@ -350,7 +368,7 @@ export default function MapPinsOverlay(): JSX.Element {
         </div>
       )}
       <PinsChrome heading={who.zone ?? 'Map pins'} count={tracked.length} chrome={chrome} shown={strip.shown} />
-      {!locked && note != null && <Note text={note} />}
+      {shownNote != null && <Note text={shownNote} />}
       {!locked && <PinsFooter layers={layers} onToggle={toggleLayer} zoom={zoom} bg={bg} follow={[follow, toggleFollow]} noDrag={chrome.noDrag} />}
       {copied != null && <Note text={copied} bottom={locked ? CORNER_PX + 2 : 34} />}
     </div>

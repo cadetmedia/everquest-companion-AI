@@ -20,7 +20,10 @@ export function overlayResetPatch(def: OverlayConfig): Partial<OverlayConfig> {
  * origin). Every key starting with one of these is removed by a reset. An overlay that stores a
  * setting there adds its prefix here.
  */
-export const OVERLAY_LOCAL_KEY_PREFIXES: readonly string[] = []
+export const OVERLAY_LOCAL_KEY_PREFIXES: readonly string[] = [
+  // The Map pins overlay: its layer chips, backdrop, Auto-hide and per-zone zoom (map-waypoints).
+  'eq.maps.overlay'
+]
 
 /** Remove every key under the prefixes. Returns how many went. */
 export function clearOverlayLocalKeys(
