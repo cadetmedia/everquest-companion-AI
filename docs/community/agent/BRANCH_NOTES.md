@@ -89,6 +89,9 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   indicator (`getBoundingClientRect`) on every render, so the tab bar must not render per frame.
 - Locked overlays are click-through except the header strip, so the pin overlay's clicks work
   only unlocked. Open: per-pin capture while locked.
+- Auto-hide never hides the overlay while unlocked (2026-10-14): a hidden window draws no chip,
+  so unlocked is the way back. Pinned and hidden, the Overlay menu's reset is. A new localStorage
+  key the overlay keeps must start with `eq.maps.overlay` (`tests/mapPinsReset.test.mts` checks).
 
 ## bazaar-tab
 
