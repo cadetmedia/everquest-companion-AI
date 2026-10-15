@@ -57,3 +57,11 @@ test('the main process closes the reset overlays before it writes the reset', ()
   const src = readFileSync(new URL('../src/main/overlayReset.ts', import.meta.url), 'utf8')
   assert.ok(src.indexOf('await Promise.all(open.map(closeAndWait))') < src.indexOf('setOverlayConfig(kind'))
 })
+
+test('a reset button only asks: the reset runs from the popup Reset button and nowhere else', () => {
+  const src = readFileSync(new URL('../src/renderer/src/components/OverlayResetDialog.tsx', import.meta.url), 'utf8')
+  assert.equal(src.match(/runReset\(/g)?.length, 2, 'declared once, called once')
+  assert.match(src, /confirm: \(\) => \{\s+if \(pending != null\) void runReset\(pending\)/)
+  const bar = readFileSync(new URL('../src/renderer/src/components/TitleBar.tsx', import.meta.url), 'utf8')
+  assert.doesNotMatch(bar, /runReset|resetOverlays\(/, 'the menu rows never reset directly')
+})
