@@ -15,7 +15,7 @@ import { OVERLAY_KINDS } from '@shared/types'
 // where a user meets the window in the first place.
 import { OVERLAY_KIND_LABEL } from '@shared/overlayLabels'
 import { track } from '../lib/telemetry'
-import { type OverlayReset, useOverlayReset } from './overlayMenuReset'
+import { type OverlayReset, OverlayResetDialog, useOverlayReset } from './OverlayResetDialog'
 import PerfChip from './PerfChip'
 import { isDragSurfaceDoubleClick } from './titleBarDrag'
 
@@ -179,26 +179,23 @@ export function OverlayRow({
   onToggle: (kind: OverlayKind) => void
   reset: OverlayReset
 }): JSX.Element {
-  const armed = reset.armed === kind
   return (
     <MenuItem dense data-testid={`overlay-menu-${kind}`} onClick={() => { onToggle(kind) }}>
       <Checkbox size="small" edge="start" checked={open} tabIndex={-1} disableRipple />
       <ListItemText
         primary={OVERLAY_KIND_LABEL[kind]}
-        secondary={armed ? 'Click reset again: default place, size, lock and look' : secondary}
-        slotProps={{ secondary: armed ? { color: 'warning.main' } : undefined }}
+        secondary={secondary}
       />
       <IconButton
         size="small"
         edge="end"
         aria-label={`Reset ${OVERLAY_KIND_LABEL[kind]}`}
-        title={armed ? 'Click again to reset' : `Reset ${OVERLAY_KIND_LABEL[kind]} to its default place and look`}
+        title={`Reset ${OVERLAY_KIND_LABEL[kind]} to its default place and look`}
         data-testid={`overlay-menu-reset-${kind}`}
-        color={armed ? 'warning' : 'default'}
-        sx={{ ml: 1, opacity: armed ? 1 : 0.6, '&:hover': { opacity: 1 } }}
+        sx={{ ml: 1, opacity: 0.6, '&:hover': { opacity: 1 } }}
         onClick={(e) => {
           e.stopPropagation()
-          reset.click(kind)
+          reset.ask(kind)
         }}
       >
         <RestartAltIcon fontSize="small" />
@@ -278,10 +275,7 @@ function OverlayMenu({ overlayState }: { overlayState: Record<OverlayKind, boole
       <Menu
         anchorEl={anchor}
         open={anchor != null}
-        onClose={() => {
-          setAnchor(null)
-          reset.disarm()
-        }}
+        onClose={() => setAnchor(null)}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
@@ -314,16 +308,16 @@ function OverlayMenu({ overlayState }: { overlayState: Record<OverlayKind, boole
           dense
           data-testid="overlay-menu-reset"
           onClick={() => {
-            reset.click('all')
+            reset.ask('all')
           }}
         >
           <ListItemText
-            primary={reset.armed === 'all' ? 'Click again to reset all overlays' : 'Reset all overlay positions'}
+            primary="Reset all overlay positions"
             secondary="Default place, size, lock and transparency; open ones stay open"
-            slotProps={{ primary: reset.armed === 'all' ? { color: 'warning.main' } : undefined }}
           />
         </MenuItem>
       </Menu>
+      <OverlayResetDialog reset={reset} />
     </Box>
   )
 }
