@@ -8,7 +8,7 @@ import { OVERLAY_LOCAL_KEY_PREFIXES } from '../src/shared/overlayReset'
 
 const dir = new URL('../src/renderer/src/overlay/', import.meta.url)
 
-test('every localStorage key the overlay windows define is cleared by the reset', () => {
+test('every localStorage key the overlay windows define is cleared by the Map pins reset', () => {
   const keys: string[] = []
   for (const f of readdirSync(dir)) {
     const src = readFileSync(new URL(f, dir), 'utf8')
@@ -16,7 +16,7 @@ test('every localStorage key the overlay windows define is cleared by the reset'
   }
   assert.ok(keys.length >= 4, `found ${keys.join(', ')}`)
   for (const k of keys) {
-    assert.ok(OVERLAY_LOCAL_KEY_PREFIXES.some((p) => k.startsWith(p)), `${k} survives a reset`)
+    assert.ok((OVERLAY_LOCAL_KEY_PREFIXES.mapPins ?? []).some((p) => k.startsWith(p)), `${k} survives a reset`)
   }
 })
 
