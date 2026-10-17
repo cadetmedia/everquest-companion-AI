@@ -4,6 +4,8 @@
 //! Every list is a tally of distinct values with counts, kept whole and SERVED capped: the eight
 //! most frequent, with the number of distinct values beside them so a capped list still says how
 //! much it left out. The samples are the last SAMPLES raw lines, as the bazaar keeps its quotes.
+//! The zones list also carries `all`, every zone by name, so the tab's "this zone" filter
+//! (owner ask, 2026-10-17) finds a row whatever zone it ranks the current one.
 //!
 //! A ZONE IS TALLIED ONLY BY AN EVENT THAT PLACES THE NAME: the loot line (its own disposition —
 //! sold, depot, hoard, combined, currency — happens on that line and is fine), a purchase or
@@ -215,6 +217,11 @@ impl Serialize for Details {
             if let Some(v) = tally.serve() {
                 out.insert(name.to_string(), v);
             }
+        }
+        if let Some(zones) = out.get_mut("zones") {
+            let mut all: Vec<&String> = self.zones.0.keys().collect();
+            all.sort();
+            zones["all"] = json!(all);
         }
         let sums = [("salesCopper", self.sales_copper), ("paidCopper", self.paid_copper)];
         for (name, copper) in sums {

@@ -8,6 +8,7 @@
 // rows (owner ruling 4); the Copy list text is rendered here for the same reason.
 
 import { wikiPageUrl } from './wiki'
+import { zoneKey } from './zones'
 
 export const GAPS_MODULE_ID = 'gaps'
 
@@ -22,6 +23,8 @@ export type GapKind = 'looted' | 'dropped-by' | 'received' | 'bought' | 'crafted
 export interface GapTally {
   entries: { name: string; n: number }[]
   distinct: number
+  /** The zones list only: every zone by name, beyond the eight, for the "this zone" filter. */
+  all?: string[]
 }
 
 /** The lists are absent when nothing was tallied; `samples` is always there. */
@@ -101,10 +104,30 @@ export const GAP_LISTS: { key: GapListKey; label: string }[] = [
   { key: 'paid', label: 'paid' }
 ]
 
-/** The rows of one domain whose name or kinds contain the query, case-folded; engine order kept. */
-export function visibleGaps(rows: readonly GapRow[], domain: GapDomain, query: string): GapRow[] {
+/**
+ * Was the row named in this place, any tier (owner ask, 2026-10-17: work through a zone)? The
+ * place is `zones.zoneKey`, so standing in `Befallen 4 (Refined)` admits a row seen in plain
+ * `Befallen`. A row with no zones is in none.
+ */
+export function gapInZone(row: GapRow, zone: string): boolean {
+  const here = zoneKey(zone)
+  const zones = row.details.zones
+  const names = zones?.all ?? zones?.entries.map((e) => e.name) ?? []
+  return here !== '' && names.some((z) => zoneKey(z) === here)
+}
+
+/**
+ * The rows of one domain whose name or kinds contain the query, case-folded, and, given a zone,
+ * only those named there; engine order kept.
+ */
+export function visibleGaps(rows: readonly GapRow[], domain: GapDomain, query: string, zone: string | null = null): GapRow[] {
   const q = query.trim().toLowerCase()
-  return rows.filter((r) => r.domain === domain && (q === '' || r.name.toLowerCase().includes(q) || r.kinds.some((k) => k.includes(q))))
+  return rows.filter(
+    (r) =>
+      r.domain === domain &&
+      (q === '' || r.name.toLowerCase().includes(q) || r.kinds.some((k) => k.includes(q))) &&
+      (zone === null || gapInZone(r, zone))
+  )
 }
 
 /** `a treant (11), a kobold (2) +3 more` — one tally as a phrase. */
@@ -271,8 +294,12 @@ export function gapActions(row: GapRow, verdict: GapVerdict): GapAction[] {
   return actions
 }
 
-/** `76 unknown` — the toggle's caption for one domain (owner, 2026-10-17: the checked total meant nothing to a player). */
-export function gapsCaption(snap: GapsSnap, domain: GapDomain): string {
+/**
+ * `76 unknown` — the toggle's caption for one domain (owner, 2026-10-17: the checked total meant
+ * nothing to a player); `3 here` while the "this zone" filter is on, counted off the served rows.
+ */
+export function gapsCaption(snap: GapsSnap, domain: GapDomain, zone: string | null = null): string {
+  if (zone !== null) return `${visibleGaps(snap.rows, domain, '', zone).length.toLocaleString()} here`
   return `${(snap.totals[domain] ?? 0).toLocaleString()} unknown`
 }
 

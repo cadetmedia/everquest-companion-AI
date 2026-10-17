@@ -8,7 +8,7 @@
 // rows in shared/gaps.ts; "Copy list" puts the visible rows on the clipboard as tab-separated text.
 
 import { type JSX, useCallback, useDeferredValue, useMemo, useState } from 'react'
-import { Button, CircularProgress, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material'
+import { Button, Checkbox, CircularProgress, FormControlLabel, Stack, TextField, ToggleButton, ToggleButtonGroup, Tooltip, Typography } from '@mui/material'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import {
   DEFAULT_GAP_SORT,
@@ -25,6 +25,7 @@ import {
   type GapSortKey,
   type GapsSnap
 } from '@shared/gaps'
+import type { CharacterSnap } from '@shared/types'
 import { useModule } from '../../lib/useModule'
 import { copyText } from '../../lib/clipboard'
 import { useGapVerdicts } from '../../lib/gapVerdicts'
@@ -33,7 +34,66 @@ import GapsTable from './GapsTable'
 // One line (owner, 2026-10-11): the how is in the module header, not on the page.
 const EXPLANATION = 'Differences between what your log names and what the wiki data holds. Click a row for where it was seen.'
 
-function DomainToggle({ snap, domain, onPick }: { snap: GapsSnap; domain: GapDomain; onPick: (d: GapDomain) => void }): JSX.Element {
+/** Where the "Zone I'm in" choice is remembered, per viewer, as the Achievements tab remembers its own. */
+const ZONE_HERE_KEY = 'eq.gaps.zoneHere'
+
+function loadZoneHere(): boolean {
+  try {
+    return localStorage.getItem(ZONE_HERE_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
+function saveZoneHere(on: boolean): void {
+  try {
+    localStorage.setItem(ZONE_HERE_KEY, on ? '1' : '0')
+  } catch {
+    // A blocked store only forgets the choice.
+  }
+}
+
+/** "Zone I'm in (<zone>)", the Achievements tab's control: only the rows seen in that place, any tier. */
+function ZoneHere({ zone, checked, onChange }: { zone: string | null; checked: boolean; onChange: (on: boolean) => void }): JSX.Element {
+  return (
+    <Tooltip
+      title={
+        zone === null
+          ? 'The log has not named a zone yet. Zone once and this fills in.'
+          : `Only what was seen in ${zone} or another tier of it.`
+      }
+    >
+      <FormControlLabel
+        sx={{ mr: 0 }}
+        control={
+          <Checkbox
+            size="small"
+            checked={checked}
+            disabled={zone === null}
+            data-testid="gaps-zone-here"
+            onChange={(e) => {
+              onChange(e.target.checked)
+            }}
+            sx={{ p: 0.5 }}
+          />
+        }
+        label={<Typography variant="caption">{zone === null ? "Zone I'm in" : `Zone I'm in (${zone})`}</Typography>}
+      />
+    </Tooltip>
+  )
+}
+
+function DomainToggle({
+  snap,
+  domain,
+  zone,
+  onPick
+}: {
+  snap: GapsSnap
+  domain: GapDomain
+  zone: string | null
+  onPick: (d: GapDomain) => void
+}): JSX.Element {
   return (
     <ToggleButtonGroup
       exclusive
@@ -51,7 +111,7 @@ function DomainToggle({ snap, domain, onPick }: { snap: GapsSnap; domain: GapDom
               {GAP_DOMAIN_LABELS[d]}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              {gapsCaption(snap, d)}
+              {gapsCaption(snap, d, zone)}
             </Typography>
           </Stack>
         </ToggleButton>
@@ -65,10 +125,15 @@ export default function GapsView(): JSX.Element {
   const [domain, setDomain] = useState<GapDomain>('item')
   const [query, setQuery] = useState('')
   const [copied, setCopied] = useState<number | null>(null)
+  // "Zone I'm in" (owner ask, 2026-10-17): only what was named where you stand, every tier of it,
+  // so a zone can be worked through. With no zone known it filters nothing.
+  const [hereOnly, setHereOnly] = useState(loadZoneHere)
+  const current = useModule<CharacterSnap>('character')?.zone ?? null
+  const zone = hereOnly ? current : null
   const rows = snap?.rows
   // The list follows the query a beat behind the keystroke, so typing never waits on a filter.
   const deferredQuery = useDeferredValue(query)
-  const visible = useMemo(() => visibleGaps(rows ?? [], domain, deferredQuery), [rows, domain, deferredQuery])
+  const visible = useMemo(() => visibleGaps(rows ?? [], domain, deferredQuery, zone), [rows, domain, deferredQuery, zone])
   // What the caches already say about the rows on screen: `unchecked` until the answer lands.
   const verdicts = useGapVerdicts(domain, visible)
   const [sort, setSort] = useState<GapSort>(DEFAULT_GAP_SORT)
@@ -94,7 +159,7 @@ export default function GapsView(): JSX.Element {
         {EXPLANATION}
       </Typography>
       <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" useFlexGap>
-        <DomainToggle snap={snap} domain={domain} onPick={setDomain} />
+        <DomainToggle snap={snap} domain={domain} zone={zone} onPick={setDomain} />
         <TextField
           size="small"
           label="Search"
@@ -105,6 +170,15 @@ export default function GapsView(): JSX.Element {
           }}
           sx={{ minWidth: 220 }}
           slotProps={{ htmlInput: { 'data-testid': 'gaps-search' } }}
+        />
+        <ZoneHere
+          zone={current}
+          checked={hereOnly}
+          onChange={(on) => {
+            setHereOnly(on)
+            saveZoneHere(on)
+            setCopied(null)
+          }}
         />
         <Button size="small" variant="outlined" startIcon={<ContentCopyIcon />} onClick={() => void copy()} disabled={visible.length === 0} data-testid="gaps-copy">
           Copy list
@@ -117,6 +191,7 @@ export default function GapsView(): JSX.Element {
       </Stack>
       <Typography variant="caption" color="text.secondary">
         {visible.length} of {held} unknown {GAP_DOMAIN_LABELS[domain].toLowerCase()} shown
+        {zone !== null ? `, seen in ${zone} or another tier of it` : ''}
         {held > served ? ` (the engine serves the ${served} most mentioned)` : ''}.
       </Typography>
       <GapsTable rows={sorted} verdicts={verdicts} sort={sort} onSort={onSort} />
