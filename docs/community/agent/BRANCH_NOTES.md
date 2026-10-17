@@ -230,7 +230,7 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
 - `tests/e2e/maps.e2e.mts` "the map row never moves or resizes" fails on this branch with or
   without its Maps change (measured 2026-10-13): a red of the base, not of the new tab.
 
-## sky-quest-overlay (bases on fix-sky-turnin-undo)
+## sky-quest-overlay (bases on fix-sky-turnin-undo + item-hover-cards)
 
 - Data path: AppCelebrations' always-mounted `useProgress` -> `useSkyOverlayFeed` -> localStorage
   `eq.skyOverlay.rows` (written only on change) -> the overlay's `storage` listener. No IPC. The
@@ -239,6 +239,8 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
 - "Favorites" here means quest stars (`eq.questFavorites`). The Quests tab's "Favorites only" also
   shows quests that merely need a starred ITEM; the overlay does not list those (2026-10-16
   reading of the ask, not an owner ruling yet).
+- Item icons: the feed asks `items:marks` (committed DB only) and puts `iconId` in the payload. Never
+  `lookupItem` from the overlay: it falls back to the wiki on a DB miss.
 - "Count items from" is a per-window store (`useCountSource.ts`); a new `useProgress` reader
   follows the tab's pick with nothing extra.
 - Merge with `map-waypoints`: `OverlayKind`/`OVERLAY_KINDS`, `OVERLAY_KIND_LABEL`/
