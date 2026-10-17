@@ -1,0 +1,43 @@
+// The Alternate Advancement page's four tables, parsed off the committed cache (no network):
+// every AA by name, its table, its classes, whether it is clicked, and the cast its description
+// names when that is not the AA's own name (owner ask, 2026-10-17: AAs cast in the log are known).
+
+import { test } from 'node:test'
+import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import { parseAaAbilities, parseAaTable } from '../scripts/sources/classWiki'
+
+const WT = readFileSync(new URL('../scripts/sources/cache/classes/Alternate_Advancement.wikitext', import.meta.url), 'utf8')
+const ABBR = new Map(
+  [
+    ['bard', 'BRD'], ['beastlord', 'BST'], ['berserker', 'BER'], ['cleric', 'CLR'], ['druid', 'DRU'],
+    ['enchanter', 'ENC'], ['magician', 'MAG'], ['monk', 'MNK'], ['necromancer', 'NEC'], ['paladin', 'PAL'],
+    ['ranger', 'RNG'], ['rogue', 'ROG'], ['shadow knight', 'SHD'], ['shaman', 'SHM'], ['warrior', 'WAR'],
+    ['wizard', 'WIZ']
+  ] as [string, string][]
+)
+
+test('every AA row of the four tables is read, with its table', () => {
+  const aas = parseAaTable(WT, ABBR)
+  const groups = (g: string): number => [...aas.values()].filter((r) => r.group === g).length
+  assert.deepEqual([groups('general'), groups('archetype'), groups('class'), groups('special')], [30, 34, 76, 1])
+  assert.deepEqual(aas.get('Heroic Leap'), { group: 'class', classes: ['WAR'], activated: true })
+  assert.deepEqual(aas.get('Origin'), { group: 'general', activated: true })
+  assert.deepEqual(aas.get('Mass Group Buff'), { group: 'archetype', activated: true })
+  assert.equal(aas.get('Adamant Will')?.activated, false)
+})
+
+test('an AA whose description casts another name carries that cast', () => {
+  const aas = parseAaTable(WT, ABBR)
+  const casts = [...aas].filter(([, r]) => r.cast !== undefined).map(([n, r]) => `${n} -> ${r.cast}`)
+  assert.deepEqual(casts.sort(), [
+    'Bestow Divine Aura -> Bestowed Divine Aura',
+    "Companion's Fury -> Frenzied Burnout",
+    'Purify Body -> Purification'
+  ])
+})
+
+test('the class AA tables stop at the Special AAs table', () => {
+  assert.equal(parseAaAbilities(WT, ABBR).has('Banestrike'), false)
+  assert.equal(parseAaTable(WT, ABBR).get('Banestrike')?.group, 'special')
+})

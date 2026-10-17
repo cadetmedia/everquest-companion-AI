@@ -13,6 +13,10 @@
  *                "You have become better at <Skill>!" → classes that train it
  *   abilities    castable things that are NOT Template:Spellpage pages
  *                (Lay on Hands, Holy Steed, …) → classes
+ *   aas          every row of the Alternate Advancement page → its table (general,
+ *                archetype, class, special), classes, whether it is clicked, and the
+ *                cast its description names when that differs (`--offline` re-derives
+ *                from the cache and sends nothing)
  *   skillUnlocks class abbr → [{name, level, kind}] for the SKILLS (and the
  *                page-footnoted innate abilities) that class gains, and when
  *   discUnlocks  class abbr → [{name, level, kind:'disc'}] for disciplines
@@ -51,6 +55,7 @@ import { fileURLToPath } from 'url'
 import {
   disputes,
   parseAaAbilities,
+  parseAaTable,
   parseAbilityFootnotes,
   parseClassNames,
   parseClassSkills,
@@ -65,6 +70,7 @@ import {
   unlockSections,
   type ClassUnlock
 } from './sources/classUnlocks'
+import type { AaRow } from './sources/classWiki'
 import { currentRevids, fetchContents, isStale, readRevIndex, writeRevIndex, type ApiGet } from './sources/revCache'
 import { isMain } from './sources/isMain'
 
@@ -188,6 +194,7 @@ interface ClassTableFile {
   invocations: Record<string, string[]>
   skills: Record<string, string[]>
   abilities: Record<string, string[]>
+  aas: Record<string, AaRow>
   skillUnlocks: Record<string, ClassUnlock[]>
   discUnlocks: Record<string, ClassUnlock[]>
   disputed: string[]
@@ -292,6 +299,12 @@ function buildAbilities(
 }
 
 /** Write only when the payload actually changed, so `scrapedAt` (and the file) is stable. */
+/** The committed file's `scrapedAt`, if there is one. */
+function priorStamp(): string | undefined {
+  if (!existsSync(OUT_PATH)) return undefined
+  return (JSON.parse(readFileSync(OUT_PATH, 'utf8')) as Partial<ClassTableFile>).scrapedAt
+}
+
 function writeIfChanged(next: ClassTableFile): void {
   if (existsSync(OUT_PATH)) {
     const prev = JSON.parse(readFileSync(OUT_PATH, 'utf8')) as ClassTableFile
@@ -305,9 +318,30 @@ function writeIfChanged(next: ClassTableFile): void {
   writeFileSync(OUT_PATH, JSON.stringify(next, null, 2) + '\n')
 }
 
+/** `--offline` re-parses the committed cache and sends the wiki nothing. */
+const offline = (): boolean => process.argv.includes('--offline')
+
+/** `refreshPages`, unless offline. */
+async function refresh(titles: string[]): Promise<void> {
+  if (offline()) console.log('  (offline: the cached copies, no requests)')
+  else await refreshPages(titles)
+}
+
+/** Offline, the text is the cache's, so the file keeps the stamp of the run that fetched it. */
+function stamp(): string {
+  return (offline() ? priorStamp() : undefined) ?? new Date().toISOString()
+}
+
+/** Both reads of `Alternate Advancement`: the class-exclusive names, and every row of the page. */
+function readAa(abbrOf: Map<string, string>): { aa: Map<string, Set<string>>; aas: Map<string, AaRow> } {
+  const wt = fetchWikitext('Alternate Advancement')
+  if (wt == null) return { aa: new Map(), aas: new Map() }
+  return { aa: parseAaAbilities(wt, abbrOf), aas: parseAaTable(wt, abbrOf) }
+}
+
 async function main(): Promise<void> {
   console.log('Checking revisions of the index pages…')
-  await refreshPages(['Character Classes', 'Stances & Invocations', 'Alternate Advancement', 'Disciplines'])
+  await refresh(['Character Classes', 'Stances & Invocations', 'Alternate Advancement', 'Disciplines'])
   const classesWt = fetchWikitext('Character Classes')
   if (classesWt == null) throw new Error('Could not fetch Character Classes — nothing to build.')
   const names = parseClassNames(classesWt)
@@ -325,11 +359,10 @@ async function main(): Promise<void> {
   const si = readStanceInvocation(siWt, known, abbrOf)
 
   console.log('Checking revisions of the class pages…')
-  await refreshPages([...names.keys()].sort().map((abbr) => names.get(abbr) ?? abbr))
+  await refresh([...names.keys()].sort().map((abbr) => names.get(abbr) ?? abbr))
   const pages = readClassPages(names)
 
-  const aaWt = fetchWikitext('Alternate Advancement')
-  const aa = aaWt == null ? new Map<string, Set<string>>() : parseAaAbilities(aaWt, abbrOf)
+  const { aa, aas } = readAa(abbrOf)
 
   const discWt = fetchWikitext('Disciplines')
   const disputed = [...si.disputed]
@@ -354,12 +387,13 @@ async function main(): Promise<void> {
   }
 
   const out: ClassTableFile = {
-    scrapedAt: new Date().toISOString(),
+    scrapedAt: stamp(),
     names: sortedRecord(names),
     stances: sortedRecord(si.stances),
     invocations: sortedRecord(si.invocations),
     skills: sortedRecord(new Map([...pages.skills].map(([k, v]) => [k, [...v].sort()]))),
     abilities: sortedRecord(buildAbilities(aa, pages.footnotes)),
+    aas: sortedRecord(aas),
     skillUnlocks: sortedRecord(skillUnlocks),
     discUnlocks: sortedRecord(discUnlocks),
     disputed: disputed.slice().sort()
@@ -371,7 +405,7 @@ async function main(): Promise<void> {
   console.log(
     `\nWrote ${Object.keys(out.names).length} classes · ${Object.keys(out.stances).length} stances · ` +
       `${Object.keys(out.invocations).length} invocations · ${Object.keys(out.skills).length} skills · ` +
-      `${Object.keys(out.abilities).length} abilities · ${rows(out.skillUnlocks)} skill unlocks · ` +
+      `${Object.keys(out.abilities).length} abilities · ${Object.keys(out.aas).length} AAs · ${rows(out.skillUnlocks)} skill unlocks · ` +
       `${rows(out.discUnlocks)} disc unlocks · ${out.disputed.length} disputed → ${OUT_PATH}`
   )
   for (const d of out.disputed) console.log(`  ~ ${d}`)
