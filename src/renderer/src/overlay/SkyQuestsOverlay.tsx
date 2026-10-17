@@ -100,7 +100,7 @@ function StatusCell({ row }: { row: SkyOverlayRow }): JSX.Element {
 /**
  * One quest: status, class, reward (the quest's name when the data names none), giver, items.
  * Rows alternate two shades with a divider between them, so where one turn-in ends is plain even
- * when its items wrap onto a second line (owner, 2026-10-16).
+ * though its items take a second line (owner, 2026-10-16).
  */
 function QuestLine({
   row,
@@ -140,7 +140,10 @@ function QuestLine({
       </span>
       <span style={{ fontSize: 11, color: ACCENT, whiteSpace: 'nowrap' }}>{row.reward ?? row.name}</span>
       {row.giver && <span style={{ fontSize: 9.5, color: DIM, whiteSpace: 'nowrap' }}>{`→ ${row.giver}`}</span>}
-      <span style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+      {/* A line of its own, indented under the quest (owner, 2026-10-16). */}
+      <span
+        style={{ display: 'flex', flexWrap: 'wrap', gap: 3, flexBasis: '100%', paddingLeft: 14, boxSizing: 'border-box' }}
+      >
         {row.items.map((it) => (
           <ItemChip key={it.name} item={it} />
         ))}
