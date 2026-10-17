@@ -752,9 +752,6 @@
     "Area Taunt": [
       "WAR"
     ],
-    "Banestrike": [
-      "WIZ"
-    ],
     "Bestow Divine Aura": [
       "CLR"
     ],
@@ -972,6 +969,804 @@
     "Weapon Mastery of the Scout": [
       "RNG"
     ]
+  },
+  "aas": {
+    "Abyssal Steed": {
+      "group": "class",
+      "classes": [
+        "SHD"
+      ],
+      "activated": true
+    },
+    "Acrobatics": {
+      "group": "archetype",
+      "activated": false
+    },
+    "Act of Valor": {
+      "group": "class",
+      "classes": [
+        "PAL"
+      ],
+      "activated": true
+    },
+    "Adamant Will": {
+      "group": "general",
+      "activated": false
+    },
+    "Alchemy Mastery": {
+      "group": "general",
+      "activated": false
+    },
+    "Ambidexterity": {
+      "group": "archetype",
+      "activated": false
+    },
+    "Area Taunt": {
+      "group": "class",
+      "classes": [
+        "WAR"
+      ],
+      "activated": true
+    },
+    "Baking Mastery": {
+      "group": "general",
+      "activated": false
+    },
+    "Banestrike": {
+      "group": "special",
+      "activated": false
+    },
+    "Bestow Divine Aura": {
+      "group": "class",
+      "classes": [
+        "CLR"
+      ],
+      "activated": true,
+      "cast": "Bestowed Divine Aura"
+    },
+    "Blacksmithing Mastery": {
+      "group": "general",
+      "activated": false
+    },
+    "Blood Rune": {
+      "group": "class",
+      "classes": [
+        "BER"
+      ],
+      "activated": false
+    },
+    "Brewing Mastery": {
+      "group": "general",
+      "activated": false
+    },
+    "Burst of Power": {
+      "group": "archetype",
+      "activated": false
+    },
+    "Cannibalization": {
+      "group": "class",
+      "classes": [
+        "SHM"
+      ],
+      "activated": true
+    },
+    "Chaotic Stab": {
+      "group": "class",
+      "classes": [
+        "ROG"
+      ],
+      "activated": false
+    },
+    "Circular Breathing": {
+      "group": "general",
+      "activated": false
+    },
+    "Combat Agility": {
+      "group": "general",
+      "activated": false
+    },
+    "Combat Fury": {
+      "group": "general",
+      "activated": false
+    },
+    "Combat Stability": {
+      "group": "general",
+      "activated": false
+    },
+    "Companion's Discipline": {
+      "group": "archetype",
+      "activated": false
+    },
+    "Companion's Fury": {
+      "group": "class",
+      "classes": [
+        "MAG"
+      ],
+      "activated": true,
+      "cast": "Frenzied Burnout"
+    },
+    "Conjurer's Efficiency": {
+      "group": "class",
+      "classes": [
+        "MAG"
+      ],
+      "activated": false
+    },
+    "Crafting Mastery": {
+      "group": "general",
+      "activated": false
+    },
+    "Critical Affliction": {
+      "group": "archetype",
+      "activated": false
+    },
+    "Dead Mesmerization": {
+      "group": "class",
+      "classes": [
+        "NEC"
+      ],
+      "activated": true
+    },
+    "Destructive Cascade": {
+      "group": "archetype",
+      "activated": false
+    },
+    "Destructive Fury": {
+      "group": "archetype",
+      "activated": false
+    },
+    "Divine Aura": {
+      "group": "class",
+      "classes": [
+        "CLR"
+      ],
+      "activated": true
+    },
+    "Divine Stun": {
+      "group": "class",
+      "classes": [
+        "PAL"
+      ],
+      "activated": true
+    },
+    "Double Riposte": {
+      "group": "archetype",
+      "activated": false
+    },
+    "Dragon Force": {
+      "group": "class",
+      "classes": [
+        "MNK"
+      ],
+      "activated": true
+    },
+    "Elemental Form": {
+      "group": "class",
+      "classes": [
+        "MAG"
+      ],
+      "activated": true
+    },
+    "Enhanced Root": {
+      "group": "class",
+      "classes": [
+        "DRU"
+      ],
+      "activated": false
+    },
+    "Escape": {
+      "group": "class",
+      "classes": [
+        "ROG"
+      ],
+      "activated": true
+    },
+    "Exodus": {
+      "group": "archetype",
+      "activated": true
+    },
+    "Fear Resistance": {
+      "group": "general",
+      "activated": false
+    },
+    "Fear Storm": {
+      "group": "class",
+      "classes": [
+        "NEC"
+      ],
+      "activated": true
+    },
+    "Finishing Blow": {
+      "group": "archetype",
+      "activated": false
+    },
+    "First Aid": {
+      "group": "general",
+      "activated": false
+    },
+    "Flesh to Bone": {
+      "group": "class",
+      "classes": [
+        "NEC"
+      ],
+      "activated": true
+    },
+    "Fletching Mastery": {
+      "group": "general",
+      "activated": false
+    },
+    "Foraging": {
+      "group": "general",
+      "activated": false
+    },
+    "Frenzy of Spirit": {
+      "group": "class",
+      "classes": [
+        "BST"
+      ],
+      "activated": true
+    },
+    "Fury of Magic": {
+      "group": "archetype",
+      "activated": false
+    },
+    "Gather Party": {
+      "group": "general",
+      "activated": true
+    },
+    "Harm Touch": {
+      "group": "class",
+      "classes": [
+        "SHD"
+      ],
+      "activated": true
+    },
+    "Healing Adept": {
+      "group": "archetype",
+      "activated": false
+    },
+    "Healing Boon": {
+      "group": "archetype",
+      "activated": false
+    },
+    "Healing Gift": {
+      "group": "archetype",
+      "activated": false
+    },
+    "Heroic Leap": {
+      "group": "class",
+      "classes": [
+        "WAR"
+      ],
+      "activated": true
+    },
+    "Hobble of Spirits": {
+      "group": "class",
+      "classes": [
+        "BST"
+      ],
+      "activated": true
+    },
+    "Holy Steed": {
+      "group": "class",
+      "classes": [
+        "PAL"
+      ],
+      "activated": true
+    },
+    "Hunter's Attack Power": {
+      "group": "class",
+      "classes": [
+        "RNG"
+      ],
+      "activated": false
+    },
+    "Improved Bash": {
+      "group": "archetype",
+      "activated": false
+    },
+    "Improved Familiar": {
+      "group": "class",
+      "classes": [
+        "WIZ"
+      ],
+      "activated": true
+    },
+    "Improved Mend": {
+      "group": "class",
+      "classes": [
+        "MNK"
+      ],
+      "activated": false
+    },
+    "Innate Called Shot": {
+      "group": "class",
+      "classes": [
+        "RNG"
+      ],
+      "activated": false
+    },
+    "Innate Camouflage": {
+      "group": "archetype",
+      "activated": true
+    },
+    "Innate Eminence": {
+      "group": "general",
+      "activated": false
+    },
+    "Innate Fighters Tenacity": {
+      "group": "class",
+      "classes": [
+        "WAR"
+      ],
+      "activated": false
+    },
+    "Innate Invis to Undead": {
+      "group": "archetype",
+      "activated": true
+    },
+    "Innate Lung Capacity": {
+      "group": "general",
+      "activated": false
+    },
+    "Innate Metabolism": {
+      "group": "general",
+      "activated": false
+    },
+    "Innate Power Strike": {
+      "group": "class",
+      "classes": [
+        "BER"
+      ],
+      "activated": false
+    },
+    "Innate Regeneration": {
+      "group": "general",
+      "activated": false
+    },
+    "Innate Sneakiness": {
+      "group": "class",
+      "classes": [
+        "ROG"
+      ],
+      "activated": false
+    },
+    "Innate Spell Resistance": {
+      "group": "general",
+      "activated": false
+    },
+    "Instrument Mastery": {
+      "group": "class",
+      "classes": [
+        "BRD"
+      ],
+      "activated": false
+    },
+    "Intimidation": {
+      "group": "archetype",
+      "activated": false
+    },
+    "Jam Fest": {
+      "group": "class",
+      "classes": [
+        "BRD"
+      ],
+      "activated": false
+    },
+    "Jewel Craft Mastery": {
+      "group": "general",
+      "activated": false
+    },
+    "Lay on Hands": {
+      "group": "class",
+      "classes": [
+        "PAL"
+      ],
+      "activated": true
+    },
+    "Leech Touch": {
+      "group": "class",
+      "classes": [
+        "SHD"
+      ],
+      "activated": false
+    },
+    "Life Burn": {
+      "group": "class",
+      "classes": [
+        "NEC"
+      ],
+      "activated": true
+    },
+    "Mana Burn": {
+      "group": "class",
+      "classes": [
+        "WIZ"
+      ],
+      "activated": true
+    },
+    "Mass Group Buff": {
+      "group": "archetype",
+      "activated": true
+    },
+    "Master of All": {
+      "group": "archetype",
+      "activated": false
+    },
+    "Mastery of the Past": {
+      "group": "archetype",
+      "activated": false
+    },
+    "Mend Companion": {
+      "group": "archetype",
+      "activated": true
+    },
+    "Mental Clarity": {
+      "group": "archetype",
+      "activated": false
+    },
+    "Mnemonic Retention": {
+      "group": "archetype",
+      "activated": false
+    },
+    "Natural Durability": {
+      "group": "general",
+      "activated": false
+    },
+    "Origin": {
+      "group": "general",
+      "activated": true
+    },
+    "Packrat": {
+      "group": "general",
+      "activated": false
+    },
+    "Paragon of Spirit": {
+      "group": "class",
+      "classes": [
+        "BST"
+      ],
+      "activated": true
+    },
+    "Permanent Illusion": {
+      "group": "general",
+      "activated": false
+    },
+    "Persistent Casting": {
+      "group": "archetype",
+      "activated": false
+    },
+    "Pet Affinity": {
+      "group": "archetype",
+      "activated": false
+    },
+    "Physical Enhancement": {
+      "group": "archetype",
+      "activated": false
+    },
+    "Playing Possum": {
+      "group": "class",
+      "classes": [
+        "BST"
+      ],
+      "activated": true
+    },
+    "Pottery Mastery": {
+      "group": "general",
+      "activated": false
+    },
+    "Purge Poison": {
+      "group": "class",
+      "classes": [
+        "ROG"
+      ],
+      "activated": true
+    },
+    "Purify Body": {
+      "group": "class",
+      "classes": [
+        "MNK"
+      ],
+      "activated": true,
+      "cast": "Purification"
+    },
+    "Purify Soul": {
+      "group": "class",
+      "classes": [
+        "CLR"
+      ],
+      "activated": true
+    },
+    "Quick Buff": {
+      "group": "general",
+      "activated": true
+    },
+    "Quick Damage": {
+      "group": "archetype",
+      "activated": false
+    },
+    "Quick Evacuation": {
+      "group": "class",
+      "classes": [
+        "DRU",
+        "WIZ"
+      ],
+      "activated": false
+    },
+    "Rampage": {
+      "group": "archetype",
+      "activated": true
+    },
+    "Rapid Feign": {
+      "group": "class",
+      "classes": [
+        "MNK"
+      ],
+      "activated": false
+    },
+    "Reaching Notes": {
+      "group": "class",
+      "classes": [
+        "BRD"
+      ],
+      "activated": true
+    },
+    "Scribble Notes": {
+      "group": "class",
+      "classes": [
+        "BRD"
+      ],
+      "activated": false
+    },
+    "Shroud of Stealth": {
+      "group": "class",
+      "classes": [
+        "ROG"
+      ],
+      "activated": false
+    },
+    "Singing Mastery": {
+      "group": "class",
+      "classes": [
+        "BRD"
+      ],
+      "activated": false
+    },
+    "Slay Undead": {
+      "group": "class",
+      "classes": [
+        "PAL"
+      ],
+      "activated": false
+    },
+    "Soul Abrasion": {
+      "group": "class",
+      "classes": [
+        "SHD"
+      ],
+      "activated": false
+    },
+    "Spell Casting Deftness": {
+      "group": "archetype",
+      "activated": false
+    },
+    "Spell Casting Mastery": {
+      "group": "archetype",
+      "activated": false
+    },
+    "Spell Casting Reinforcement": {
+      "group": "archetype",
+      "activated": false
+    },
+    "Spell Casting Subtlety": {
+      "group": "archetype",
+      "activated": true
+    },
+    "Steadfast Will": {
+      "group": "general",
+      "activated": false
+    },
+    "Stoicism": {
+      "group": "general",
+      "activated": false
+    },
+    "Strong Root": {
+      "group": "class",
+      "classes": [
+        "WIZ"
+      ],
+      "activated": true
+    },
+    "Symphonic Aura": {
+      "group": "class",
+      "classes": [
+        "BRD"
+      ],
+      "activated": true
+    },
+    "Tailoring Mastery": {
+      "group": "general",
+      "activated": false
+    },
+    "Thief's Intuition": {
+      "group": "archetype",
+      "activated": false
+    },
+    "Tireless Spirit": {
+      "group": "class",
+      "classes": [
+        "BER"
+      ],
+      "activated": true
+    },
+    "Tricksters Misdirection": {
+      "group": "class",
+      "classes": [
+        "ENC"
+      ],
+      "activated": false
+    },
+    "Turn Summoned": {
+      "group": "class",
+      "classes": [
+        "MAG"
+      ],
+      "activated": true
+    },
+    "Turn Undead": {
+      "group": "class",
+      "classes": [
+        "CLR"
+      ],
+      "activated": true
+    },
+    "Unbound Affliction": {
+      "group": "class",
+      "classes": [
+        "NEC"
+      ],
+      "activated": false
+    },
+    "Unbound Alacrity": {
+      "group": "class",
+      "classes": [
+        "MNK"
+      ],
+      "activated": false
+    },
+    "Unbound Boon": {
+      "group": "class",
+      "classes": [
+        "CLR"
+      ],
+      "activated": false
+    },
+    "Unbound Cascade": {
+      "group": "class",
+      "classes": [
+        "SHM"
+      ],
+      "activated": false
+    },
+    "Unbound Clarity": {
+      "group": "class",
+      "classes": [
+        "ENC"
+      ],
+      "activated": false
+    },
+    "Unbound Companion": {
+      "group": "class",
+      "classes": [
+        "MAG"
+      ],
+      "activated": false
+    },
+    "Unbound Destruction": {
+      "group": "class",
+      "classes": [
+        "WIZ"
+      ],
+      "activated": false
+    },
+    "Unbound Drain": {
+      "group": "class",
+      "classes": [
+        "SHD"
+      ],
+      "activated": false
+    },
+    "Unbound Ferocity": {
+      "group": "class",
+      "classes": [
+        "BST"
+      ],
+      "activated": false
+    },
+    "Unbound Fury": {
+      "group": "class",
+      "classes": [
+        "BER"
+      ],
+      "activated": false
+    },
+    "Unbound Lethality": {
+      "group": "class",
+      "classes": [
+        "ROG"
+      ],
+      "activated": false
+    },
+    "Unbound Life": {
+      "group": "class",
+      "classes": [
+        "PAL"
+      ],
+      "activated": false
+    },
+    "Unbound Nature": {
+      "group": "class",
+      "classes": [
+        "DRU"
+      ],
+      "activated": false
+    },
+    "Unbound Versatility": {
+      "group": "class",
+      "classes": [
+        "BRD"
+      ],
+      "activated": false
+    },
+    "Unbound Wrath": {
+      "group": "class",
+      "classes": [
+        "WAR"
+      ],
+      "activated": false
+    },
+    "Unbounded Strikethrough": {
+      "group": "class",
+      "classes": [
+        "RNG"
+      ],
+      "activated": false
+    },
+    "Unholy Steed": {
+      "group": "class",
+      "classes": [
+        "SHD"
+      ],
+      "activated": true
+    },
+    "Valiant Steed": {
+      "group": "class",
+      "classes": [
+        "PAL"
+      ],
+      "activated": true
+    },
+    "War Cry": {
+      "group": "class",
+      "classes": [
+        "WAR"
+      ],
+      "activated": true
+    },
+    "Warrior's Endurance": {
+      "group": "class",
+      "classes": [
+        "WAR"
+      ],
+      "activated": false
+    },
+    "Weapon Mastery of the Scout": {
+      "group": "class",
+      "classes": [
+        "RNG"
+      ],
+      "activated": false
+    }
   },
   "skillUnlocks": {
     "BER": [
