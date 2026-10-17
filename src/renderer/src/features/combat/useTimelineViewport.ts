@@ -8,7 +8,7 @@
 //   - Starts fit to the whole encounter, and re-fits whenever the selected encounter changes.
 
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
-import { MIN_SPAN_MS, ZOOM_STEP, type ViewWin } from './timelineGeometry'
+import { MIN_SPAN_MS, ZOOM_STEP, viewOnDurChange, type ViewWin } from './timelineGeometry'
 
 export interface TimelineViewport {
   view: ViewWin
@@ -37,12 +37,21 @@ export interface ViewportArgs {
   plotW: number
 }
 
+// Re-fit when the selected encounter changes; a live fight's growing duration keeps the zoom.
+function useRefitOnEncounter(id: string, dur: number, setView: (f: (v: ViewWin) => ViewWin) => void): void {
+  const prevRef = useRef({ id, dur })
+  useEffect(() => {
+    const prev = prevRef.current
+    prevRef.current = { id, dur }
+    setView((v) => (prev.id !== id ? { start: 0, end: dur } : viewOnDurChange(v, prev.dur, dur)))
+  }, [id, dur, setView])
+}
+
 export function useTimelineViewport({ dur, id, svgRef, labelW, plotW }: ViewportArgs): TimelineViewport {
   const [view, setView] = useState<ViewWin>({ start: 0, end: dur })
   const dragRef = useRef<{ x: number; start: number; end: number } | null>(null)
 
-  // Reset to fit whenever the selected encounter changes (id or duration).
-  useEffect(() => setView({ start: 0, end: dur }), [id, dur])
+  useRefitOnEncounter(id, dur, setView)
 
   const span = Math.max(MIN_SPAN_MS, view.end - view.start)
 
