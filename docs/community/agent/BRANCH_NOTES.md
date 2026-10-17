@@ -248,4 +248,5 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   `OverlayResetDialog` import where this branch has none.
 - Branch-alone reds (2026-10-16): `resistBaseline.test.mts` Nagafen and Zol Ghoul Knight, red on the
   untouched base too (the base carries main's data, not local-data-refresh's).
-- Open: no e2e for the overlay or the checkbox.
+- e2e: `tests/e2e/sky-quest-overlay.e2e.mts` (window opens, a searched quest starred by the Quests
+  tab checkbox reaches the overlay, the second click unstars). Open: the Ready tab checkbox has no e2e.
