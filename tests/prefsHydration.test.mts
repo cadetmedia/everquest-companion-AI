@@ -245,6 +245,31 @@ test('a write updates the cache, so the NEXT mount of a card seeds from the chan
   resetPrefsSnapshotForTests()
 })
 
+test('an overlay toggled elsewhere moves the card seed too, not just overlayOpen', async () => {
+  resetPrefsSnapshotForTests()
+  const { reader } = stubReader()
+  await loadPrefsSnapshot(reader)
+
+  // As App.tsx records main's broadcast: the whole map, one kind changed at a time.
+  const flip = (kind: 'toast' | 'conCard' | 'fight', open: boolean): void => {
+    const cur = peekPrefsSnapshot()?.overlayOpen
+    if (cur) recordPref('overlayOpen', { ...cur, [kind]: open })
+  }
+  flip('toast', false)
+  flip('conCard', true)
+  flip('fight', false)
+
+  const seed = peekPrefsSnapshot()
+  assert.equal(seed?.overlayOpen.toast, false)
+  assert.equal(seed?.toast.open, false, 'the toast card would otherwise seed a stale ON')
+  assert.equal(seed?.toast.locked, false, 'the lock is untouched')
+  assert.equal(seed?.conCard.open, true)
+  assert.equal(seed?.conCard.locked, true)
+  assert.equal(seed?.overlayOpen.fight, false)
+  assert.equal(seed?.alertBanner.open, true, 'kinds not broadcast do not move')
+  resetPrefsSnapshotForTests()
+})
+
 test('recording before the first load is a no-op, never a half-built snapshot', () => {
   resetPrefsSnapshotForTests()
   recordPref('uiScale', 1.5)

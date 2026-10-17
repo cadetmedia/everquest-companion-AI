@@ -365,7 +365,17 @@ export function recordPref<K extends keyof PrefsSnapshot>(key: K, value: PrefsSn
   if (cache === null) return
   const next: PrefsSnapshot = { ...cache }
   next[key] = value
+  if (key === 'overlayOpen') seedCardsFromOpen(next)
   cache = next
+}
+
+/** The toast, banner and con card cards seed their switch from their own `.open`, so an
+ *  open-state recorded from main's broadcast moves those copies too. */
+function seedCardsFromOpen(next: PrefsSnapshot): void {
+  const open = next.overlayOpen
+  if (next.toast.open !== open.toast) next.toast = { ...next.toast, open: open.toast }
+  if (next.alertBanner.open !== open.alertBanner) next.alertBanner = { ...next.alertBanner, open: open.alertBanner }
+  if (next.conCard.open !== open.conCard) next.conCard = { ...next.conCard, open: open.conCard }
 }
 
 /** TEST SEAM ONLY: forget the warm copy, so a test can watch the cold path more than once. */
