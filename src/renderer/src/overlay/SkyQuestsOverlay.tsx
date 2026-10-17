@@ -60,6 +60,8 @@ function ItemChip({ item }: { item: SkyOverlayItem }): JSX.Element {
       data-testid="sky-overlay-item"
       data-held={held ? 'true' : 'false'}
       style={{
+        display: 'inline-flex',
+        alignItems: 'center',
         fontSize: 9.5,
         lineHeight: 1.5,
         padding: '0 4px',
@@ -69,6 +71,17 @@ function ItemChip({ item }: { item: SkyOverlayItem }): JSX.Element {
         border: `1px solid ${held ? `${READY}55` : 'rgba(255,255,255,0.14)'}`
       }}
     >
+      {item.iconId !== undefined && (
+        // The chip's own text height, so an icon never makes a row taller (owner, 2026-10-16).
+        <img
+          src={`eqimg://item/${String(item.iconId)}`}
+          alt=""
+          onError={(e) => {
+            e.currentTarget.style.display = 'none'
+          }}
+          style={{ width: '1.4em', height: '1.4em', marginRight: 3, imageRendering: 'pixelated' }}
+        />
+      )}
       {held ? '✓ ' : ''}
       {item.name}
       {item.need > 1 ? ` ${String(item.have)}/${String(item.need)}` : ''}

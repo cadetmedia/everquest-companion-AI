@@ -13,6 +13,8 @@ export interface SkyOverlayItem {
   name: string
   have: number
   need: number
+  /** the wiki icon id from the committed item database; absent when it names none */
+  iconId?: number
 }
 
 export interface SkyOverlayRow {
@@ -58,7 +60,10 @@ function readItem(v: unknown): SkyOverlayItem | null {
   if (typeof v !== 'object' || v === null) return null
   const o = v as Record<string, unknown>
   const name = str(o.name)
-  return name ? { name, have: count(o.have), need: Math.max(1, count(o.need)) } : null
+  if (!name) return null
+  const item: SkyOverlayItem = { name, have: count(o.have), need: Math.max(1, count(o.need)) }
+  if (Number.isInteger(o.iconId) && (o.iconId as number) > 0) item.iconId = o.iconId as number
+  return item
 }
 
 function readRow(v: unknown): SkyOverlayRow | null {
