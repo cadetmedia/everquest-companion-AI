@@ -13,6 +13,7 @@ import {
   gapsAsText,
   gapsCaption,
   gapZone,
+  gapInZone,
   tallyText,
   visibleGaps,
   sortGaps,
@@ -254,4 +255,25 @@ test('a spell only mobs cast is an NPC spell; one a player or a single-word name
   assert.equal(npc[0].href, 'https://eqlwiki.com/index.php?search=Dragon%20Fear')
   assert.deepEqual(gapActions(cast(['A dracoliche', 'Malkil']), 'unchecked').map((a) => a.kind), ['checkWiki'])
   assert.deepEqual(gapActions(cast(['you']), 'unchecked').map((a) => a.kind), ['checkWiki'])
+})
+
+test('"This zone" keeps the rows named in the place you stand, any tier, past the eight served (owner, 2026-10-17)', () => {
+  const at = (name: string, zones: string[], all?: string[]) =>
+    row(['item', name, ['looted'], 1], {
+      zones: { entries: zones.map((z) => ({ name: z, n: 1 })), distinct: (all ?? zones).length, ...(all ? { all } : {}) }
+    })
+  const plain = at('Plain', ['Befallen'])
+  const tiered = at('Tiered', ['Befallen 3 (Fused)'])
+  const ninth = at('Ninth', ['A', 'B'], ['A', 'B', 'Befallen 4 (Refined)'])
+  const elsewhere = at('Elsewhere', ['The Plane of Sky'])
+  const rows = [plain, tiered, ninth, elsewhere, row(['item', 'Nowhere', ['looted'], 1])]
+  assert.equal(gapInZone(plain, 'Befallen 4 (Refined)'), true)
+  assert.equal(gapInZone(elsewhere, 'Befallen 4 (Refined)'), false)
+  assert.equal(gapInZone(plain, ''), false, 'no zone, no match')
+  assert.deepEqual(visibleGaps(rows, 'item', '', 'Befallen 4 (Refined)').map((r) => r.name), ['Plain', 'Tiered', 'Ninth'])
+  assert.deepEqual(visibleGaps(rows, 'item', 'tier', 'Befallen').map((r) => r.name), ['Tiered'])
+  assert.equal(visibleGaps(rows, 'item', '').length, 5, 'no zone, no filter')
+  const snap: GapsSnap = { rows, totals: { item: 5, mob: 0, spell: 0 }, seen: { item: 9, mob: 0, spell: 0 } }
+  assert.equal(gapsCaption(snap, 'item', 'Befallen'), '3 here')
+  assert.equal(gapsCaption(snap, 'item'), '5 unknown')
 })

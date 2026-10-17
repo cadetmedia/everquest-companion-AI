@@ -183,7 +183,7 @@ fn details_say_where_and_from_whom_and_keep_the_last_lines() {
     let item = &rows[0]["details"];
     assert_eq!(
         item["zones"],
-        json!({ "entries": [{ "name": "The Hole", "n": 2 }, { "name": "Paineel", "n": 1 }], "distinct": 2 })
+        json!({ "entries": [{ "name": "The Hole", "n": 2 }, { "name": "Paineel", "n": 1 }], "distinct": 2, "all": ["Paineel", "The Hole"] })
     );
     assert_eq!(
         item["sources"],
@@ -219,6 +219,8 @@ fn a_capped_list_serves_the_most_frequent_and_still_counts_the_rest() {
     assert_eq!(names.len(), 8);
     assert_eq!(names[0], "Zone 09", "the most frequent first");
     assert_eq!(&names[1..], ["Zone 00", "Zone 01", "Zone 02", "Zone 03", "Zone 04", "Zone 05", "Zone 06"]);
+    // Every zone by name, beyond the cap, for the tab's "this zone" filter.
+    assert_eq!(zones["all"].as_array().expect("all").len(), 10);
     assert_eq!(m.snapshot()["state"]["rows"][0]["count"], json!(12));
     assert_eq!(m.snapshot()["state"]["rows"][0]["details"]["casters"]["entries"], json!([{ "name": "you", "n": 12 }]));
 }
@@ -260,7 +262,10 @@ fn a_later_destroy_line_adds_its_disposition_and_line_but_no_zone_no_count_no_ki
     assert_eq!(row["count"], json!(1));
     assert_eq!(row["kinds"], json!(["looted"]));
     let d = &row["details"];
-    assert_eq!(d["zones"], json!({ "entries": [{ "name": "The Stonebrunt Mountains", "n": 1 }], "distinct": 1 }));
+    assert_eq!(
+        d["zones"],
+        json!({ "entries": [{ "name": "The Stonebrunt Mountains", "n": 1 }], "distinct": 1, "all": ["The Stonebrunt Mountains"] })
+    );
     assert_eq!(d["dispositions"]["entries"], json!([{ "name": "destroyed", "n": 1 }]));
     assert_eq!(d["sources"]["entries"], json!([{ "name": "a highland kobold shaman", "n": 1 }]));
     assert_eq!(d["samples"], json!(["[Tue Oct 06 18:12:26 2026] line 2", "[Tue Oct 06 18:12:26 2026] line 4"]));
