@@ -47,6 +47,7 @@ import {
   conditionRawErr,
   draftFromPrimitive,
   primitiveFromDraft,
+  retypeDraft,
   triggerBadge,
   type ConditionDraft
 } from '../src/renderer/src/features/alerts/conditionDraft'
@@ -166,4 +167,38 @@ test('the editor shows the error on the Field box and stops calling it optional'
 const COVERED: AlertTriggerPrimitive['type'][] = ['event', 'raw', 'app']
 test('every primitive trigger type is covered by the cases above', () => {
   assert.deepEqual(COVERED, ['event', 'raw', 'app'])
+})
+
+// ── re-saving an edited alert keeps every stored `where` key ─────────────────────────────
+
+test('a multi-key where survives draft → trigger, so editing one field does not widen it', () => {
+  const t: AlertTriggerPrimitive = {
+    type: 'event',
+    kind: 'resist',
+    where: { caster: 'you', spell: 'Root Rk. II' }
+  }
+  assert.deepEqual(primitiveFromDraft(draftFromPrimitive(t)), t)
+  const edited = { ...draftFromPrimitive(t), fieldVal: 'them' }
+  assert.deepEqual(primitiveFromDraft(edited), {
+    type: 'event',
+    kind: 'resist',
+    where: { caster: 'them', spell: 'Root Rk. II' }
+  })
+  // Leaving both boxes blank fires on every event of the kind, carried keys included.
+  const cleared = { ...draftFromPrimitive(t), fieldKey: '', fieldVal: '' }
+  assert.deepEqual(primitiveFromDraft(cleared), { type: 'event', kind: 'resist', where: undefined })
+  // A new kind (or trigger type) drops the carried keys: a loot event has no `spell`.
+  const loot = retypeDraft(draftFromPrimitive(t), { kind: 'loot' })
+  assert.deepEqual(primitiveFromDraft({ ...loot, fieldKey: 'item', fieldVal: 'Mote' }), {
+    type: 'event',
+    kind: 'loot',
+    where: { item: 'Mote' }
+  })
+  const raw = retypeDraft(draftFromPrimitive(t), { ttype: 'raw' })
+  const roundTrip = retypeDraft(raw, { ttype: 'event' })
+  assert.deepEqual(primitiveFromDraft(roundTrip), {
+    type: 'event',
+    kind: 'resist',
+    where: { caster: 'you' }
+  })
 })

@@ -13,7 +13,8 @@ import {
   type ConditionDraft,
   conditionFieldKeyErr,
   conditionFieldValErr,
-  conditionRawErr
+  conditionRawErr,
+  retypeDraft
 } from './conditionDraft'
 
 // The LogEvent kinds an 'event' trigger can select. Derived from the LogEventKind union
@@ -52,7 +53,7 @@ function EventConditionFields({ draft, onChange }: ConditionFieldProps): JSX.Ele
           size="small"
           fullWidth
           value={draft.kind}
-          onChange={(e) => set({ kind: e.target.value as LogEventKind })}
+          onChange={(e) => onChange(retypeDraft(draft, { kind: e.target.value as LogEventKind }))}
         >
           {EVENT_KINDS.map((k) => (
             <MenuItem key={k} value={k}>
@@ -84,6 +85,15 @@ function EventConditionFields({ draft, onChange }: ConditionFieldProps): JSX.Ele
           fullWidth
         />
       </Stack>
+      {draft.restWhere && (
+        <Typography variant="caption" data-testid="alert-rest-where">
+          Also matches{' '}
+          {Object.entries(draft.restWhere)
+            .map(([k, v]) => `${k} = ${v}`)
+            .join(', ')}
+          . Kept on save; clearing both boxes or changing the kind drops it.
+        </Typography>
+      )}
       <Typography variant="caption" color="text.secondary">
         Leave BOTH boxes blank to fire on every {draft.kind} event. A value needs a field to match
         against, so name one: a dropped item is <code>item</code>, and <code>loot</code> also
@@ -157,7 +167,9 @@ export default function ConditionEditor({ draft, onChange }: ConditionFieldProps
           fullWidth
           value={draft.ttype}
           onChange={(e) =>
-            onChange({ ...draft, ttype: e.target.value as AlertTriggerPrimitive['type'] })
+            onChange(
+              retypeDraft(draft, { ttype: e.target.value as AlertTriggerPrimitive['type'] })
+            )
           }
         >
           <MenuItem value="event">Log event (typed)</MenuItem>
