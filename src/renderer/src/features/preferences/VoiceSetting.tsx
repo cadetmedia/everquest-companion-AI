@@ -28,7 +28,7 @@
 // before downloading is still allowed and still saves — `lib/speech.ts` falls back to the system
 // voice and warns once — because a preference the user set must not be silently rewritten.
 
-import { type JSX, useCallback, useEffect, useState } from 'react'
+import { type JSX, useCallback, useEffect, useRef, useState } from 'react'
 import {
   Box,
   Button,
@@ -94,12 +94,16 @@ function useVoicePrefs(): [VoicePrefs, (next: VoicePrefs) => void] {
     applyVoicePrefs(seed)
   }, [seed])
 
+  const latestWrite = useRef(0)
   const update = useCallback((next: VoicePrefs) => {
     // Optimistic locally (a slider must not lag an IPC round trip), authoritative from main.
     const normalized = normalizeVoicePrefs(next)
     applyVoicePrefs(normalized)
     setPrefs(normalized)
+    const write = ++latestWrite.current
     void window.eq.setVoicePrefs(normalized).then((stored) => {
+      // A reply to an earlier slider tick must not rewind the thumb the user is still dragging.
+      if (write !== latestWrite.current) return
       applyVoicePrefs(stored)
       setPrefs(stored)
       recordPref('voice', stored)

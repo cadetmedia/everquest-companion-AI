@@ -55,6 +55,11 @@ export function useOverlayModule<Snap>(moduleId: string, empty: Snap): Snap {
         // …and the cursor that landed during the fetch — `lib/useModule.ts` states why it cannot be
         // dropped and why the re-fetch terminates.
         if (pendingSeq > knownSeq) hydrate()
+      }, () => {
+        // A fetch that threw still settles, or every later cursor would only be buffered.
+        if (cancelled) return
+        hydrated = true
+        if (pendingSeq > knownSeq) hydrate()
       })
     }
 

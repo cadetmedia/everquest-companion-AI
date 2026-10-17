@@ -93,7 +93,7 @@ impl FoldSink {
         // with no state directory is byte-for-byte the fold built without one — no read, no source
         // rename, no write — which keeps the equivalence oracle's world reachable structurally.
         let state = inputs.state_dir.map(|dir| {
-            let store = crate::state::StateDir::new(dir);
+            let mut store = crate::state::StateDir::new(dir);
             fold.registry
                 .seed_persisted(&source_key(inputs), &store.read());
             store

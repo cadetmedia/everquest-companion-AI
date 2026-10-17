@@ -256,6 +256,30 @@ test('a cursor at or behind what is held is ignored', async () => {
   off()
 })
 
+test('a fetch that THROWS does not wedge the module: the next cursor asks again', async () => {
+  const spy = spyBridge()
+  let failNext = true
+  const flaky = {
+    ...spy.bridge,
+    getModuleSnapshot: (moduleId: string) => {
+      if (!failNext) return spy.bridge.getModuleSnapshot(moduleId)
+      failNext = false
+      return Promise.reject(new Error('main handler threw'))
+    }
+  } as unknown as ModuleBridge
+  const store = createModuleStore({ bridge: flaky, schedule: spy.schedule })
+
+  const off = store.subscribe('progression', () => undefined)
+  await Promise.resolve()
+  await Promise.resolve()
+  spy.push('progression', 2)
+  assert.equal(spy.frames(), 1, 'a cursor after a failed fetch was only buffered')
+  spy.runFrame()
+  await spy.reply('progression', { lvl: 50 }, 2)
+  assert.deepEqual(store.getSnapshot('progression'), { lvl: 50 })
+  off()
+})
+
 // ---- null is loading, and it survives the move -------------------------------------------------
 
 test('NO SNAPSHOT IS AN ANSWER: a null reply is held as null, never smoothed into empty', async () => {

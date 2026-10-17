@@ -70,6 +70,13 @@ export interface ViewWin {
   end: number
 }
 
+/** The window after the encounter's duration changes from `prevDur` to `dur` (a live fight grows
+ *  every tick): a fitted view stays fitted, a zoomed/panned one is kept unless it no longer fits. */
+export function viewOnDurChange(v: ViewWin, prevDur: number, dur: number): ViewWin {
+  const wasFit = v.start <= 0 && v.end >= prevDur
+  return wasFit || v.end > dur ? { start: 0, end: dur } : v
+}
+
 /** The measured scroll container. */
 export interface WrapSize {
   w: number

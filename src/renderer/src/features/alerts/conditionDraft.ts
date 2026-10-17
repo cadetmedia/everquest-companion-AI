@@ -53,6 +53,8 @@ export interface ConditionDraft {
   fieldVal: string
   regex: string
   signal: AppSignal
+  /** The stored `where` keys beyond the one being edited; kept on re-save, shown read-only. */
+  restWhere?: Record<string, string>
 }
 
 export function blankCondition(): ConditionDraft {
@@ -65,15 +67,24 @@ export function draftFromPrimitive(t: AlertTriggerPrimitive): ConditionDraft {
   d.ttype = t.type
   if (t.type === 'event') {
     d.kind = t.kind
-    const first = t.where ? Object.entries(t.where)[0] : undefined
+    const [first, ...rest] = t.where ? Object.entries(t.where) : []
     d.fieldKey = first?.[0] ?? ''
     d.fieldVal = first?.[1] ?? ''
+    if (rest.length) d.restWhere = Object.fromEntries(rest)
   } else if (t.type === 'raw') {
     d.regex = t.regex
   } else {
     d.signal = t.signal
   }
   return d
+}
+
+/** Change a draft's trigger type or event kind; the carried `where` keys belong to the old one. */
+export function retypeDraft(
+  d: ConditionDraft,
+  patch: Partial<Pick<ConditionDraft, 'ttype' | 'kind'>>
+): ConditionDraft {
+  return { ...d, ...patch, restWhere: undefined }
 }
 
 /**
@@ -88,8 +99,11 @@ export function draftFromPrimitive(t: AlertTriggerPrimitive): ConditionDraft {
 export function primitiveFromDraft(d: ConditionDraft): AlertTriggerPrimitive {
   if (d.ttype === 'raw') return { type: 'raw', regex: d.regex }
   if (d.ttype === 'app') return { type: 'app', signal: d.signal }
-  const where =
+  const pair =
     d.fieldKey.trim() && d.fieldVal.trim() ? { [d.fieldKey.trim()]: d.fieldVal.trim() } : undefined
+  // Both boxes blank means every event of the kind, so carried keys go with the pair.
+  // Otherwise the edited pair keeps its first position and wins over a carried key of that name.
+  const where = pair && d.restWhere ? { ...pair, ...d.restWhere, ...pair } : pair
   return { type: 'event', kind: d.kind, where }
 }
 
