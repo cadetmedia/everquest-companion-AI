@@ -252,6 +252,8 @@ export interface OverlayConfig {
    * re-scoping a window floating over the game.
    */
   xpSlice?: SliceId
+  /** The Sky quest overlay draws item icons (sky-quest-overlay). Absent means on. */
+  skyIcons?: boolean
   // THE XP WINDOW'S DENOMINATOR AND ITS TIER MEMBERSHIP USED TO BE TWO MORE KEYS HERE (`xpBasis`,
   // JOS-288; `xpZoneScope`, JOS-291) AND THEY ARE GONE (JOS-332).
   //

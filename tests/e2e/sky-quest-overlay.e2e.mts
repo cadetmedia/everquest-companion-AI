@@ -23,6 +23,7 @@ const QUEST_ROW = '[data-testid="posky-quest-row"]'
 const OVERLAY = '[data-testid="sky-overlay"]'
 const OVERLAY_ROW = '[data-testid="sky-overlay-row"]'
 const OVERLAY_EMPTY = '[data-testid="sky-overlay-empty"]'
+const ICONS_CHIP = '[data-testid="sky-overlay-icons"]'
 /** One quest by its name: Bard Test of Tone, whose reward is Mask of Song (posky.json). */
 const QUEST = 'Bard Test of Tone'
 const REWARD = 'Mask of Song'
@@ -75,6 +76,12 @@ async function stepFavoriteFiltered(page: Page, overlay: Page): Promise<void> {
     )
     .catch(() => [false])
   check('an icon is no taller than its item chip', fit.every(Boolean), JSON.stringify(fit))
+  await overlay.click(ICONS_CHIP)
+  const hidden = await settle(() => countOf(overlay, `${OVERLAY_ROW} img`), (n) => n === 0, { timeoutMs: 10_000 })
+  check('the footer Icons chip hides the icons', hidden === 0, `${String(hidden)} icons left`)
+  await overlay.click(ICONS_CHIP)
+  const back = await settle(() => countOf(overlay, `${OVERLAY_ROW} img`), (n) => n >= 1, { timeoutMs: 10_000 })
+  check('…and shows them again', back >= 1, `${String(back)} icons`)
   await page.click(`${FAV_ALL} input`)
   const gone = await settle(() => countOf(overlay, OVERLAY_ROW), (n) => n === 0, { timeoutMs: 15_000 })
   check('clicked again with every shown quest starred, it unstars them all', gone === 0, `${String(gone)} rows left`)

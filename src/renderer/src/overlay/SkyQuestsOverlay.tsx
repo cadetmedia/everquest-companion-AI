@@ -53,7 +53,7 @@ function useSkyOverlayRows(): SkyOverlayPayload {
   return payload
 }
 
-function ItemChip({ item }: { item: SkyOverlayItem }): JSX.Element {
+function ItemChip({ item, icon }: { item: SkyOverlayItem; icon: boolean }): JSX.Element {
   const held = item.have >= item.need
   return (
     <span
@@ -71,7 +71,7 @@ function ItemChip({ item }: { item: SkyOverlayItem }): JSX.Element {
         border: `1px solid ${held ? `${READY}55` : 'rgba(255,255,255,0.14)'}`
       }}
     >
-      {item.iconId !== undefined && (
+      {icon && item.iconId !== undefined && (
         // The chip's own text height, so an icon never makes a row taller (owner, 2026-10-16).
         <img
           src={`eqimg://item/${String(item.iconId)}`}
@@ -118,11 +118,14 @@ function StatusCell({ row }: { row: SkyOverlayRow }): JSX.Element {
 function QuestLine({
   row,
   index,
-  interactive
+  interactive,
+  icons
 }: {
   row: SkyOverlayRow
   index: number
   interactive: boolean
+  /** draw item icons (the footer's Icons chip) */
+  icons: boolean
 }): JSX.Element {
   const open = (): void => {
     window.eqOverlay.focusApp({ view: 'posky', quest: row.key })
@@ -158,26 +161,56 @@ function QuestLine({
         style={{ display: 'flex', flexWrap: 'wrap', gap: 3, flexBasis: '100%', paddingLeft: 14, boxSizing: 'border-box' }}
       >
         {row.items.map((it) => (
-          <ItemChip key={it.name} item={it} />
+          <ItemChip key={it.name} item={it} icon={icons} />
         ))}
       </span>
     </div>
   )
 }
 
+/** Item icons on or off (owner, 2026-10-17), kept in this window's own saved config. */
+function IconsChip({ icons, patch }: { icons: boolean; patch: OverlayChrome['patch'] }): JSX.Element {
+  return (
+    <button
+      type="button"
+      data-testid="sky-overlay-icons"
+      aria-pressed={icons}
+      onClick={() => {
+        patch({ skyIcons: !icons })
+      }}
+      style={{
+        flexShrink: 0,
+        fontSize: 9.5,
+        lineHeight: 1.4,
+        padding: '0 6px',
+        borderRadius: 3,
+        cursor: 'pointer',
+        color: icons ? ACCENT : DIM,
+        background: icons ? ACCENT_BG : 'transparent',
+        border: `1px solid ${icons ? `${ACCENT}88` : 'rgba(255,255,255,0.18)'}`
+      }}
+    >
+      Icons
+    </button>
+  )
+}
+
 function SkyFooter({
   bgAlpha,
   textScale,
+  icons,
   patch,
   noDrag
 }: {
   bgAlpha: number
   textScale: number
+  icons: boolean
   patch: OverlayChrome['patch']
   noDrag: React.CSSProperties
 }): JSX.Element {
   return (
     <div style={{ ...FOOTER_ROW, ...noDrag, gap: 6 }}>
+      <IconsChip icons={icons} patch={patch} />
       <input
         type="range"
         aria-label="Background opacity"
@@ -203,8 +236,9 @@ function emptyText(payload: SkyOverlayPayload): string {
 
 export default function SkyQuestsOverlay(): JSX.Element {
   const payload = useSkyOverlayRows()
-  const { locked, bgAlpha, textScale, hovering, patch, toggleLock, capture, dragRegion, noDrag } =
+  const { locked, bgAlpha, textScale, hovering, patch, toggleLock, capture, dragRegion, noDrag, config } =
     useOverlayChrome()
+  const icons = config?.skyIcons !== false
   const rows = payload.rows
   let ready = 0
   for (const r of rows) if (r.ready) ready++
@@ -242,11 +276,15 @@ export default function SkyQuestsOverlay(): JSX.Element {
             {emptyText(payload)}
           </div>
         ) : (
-          rows.map((row, i) => <QuestLine key={row.key} row={row} index={i} interactive={!locked} />)
+          rows.map((row, i) => (
+            <QuestLine key={row.key} row={row} index={i} interactive={!locked} icons={icons} />
+          ))
         )}
       </OverlayContent>
 
-      {!locked && <SkyFooter bgAlpha={bgAlpha} textScale={textScale} patch={patch} noDrag={noDrag} />}
+      {!locked && (
+        <SkyFooter bgAlpha={bgAlpha} textScale={textScale} icons={icons} patch={patch} noDrag={noDrag} />
+      )}
     </div>
   )
 }
