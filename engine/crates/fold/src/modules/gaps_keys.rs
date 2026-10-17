@@ -22,10 +22,17 @@
 //! Measured on the owner's tab: `Torn, Frost-Covered Book` → `torn, frost covered book`,
 //! `Angstlichs Appalling Screech` → `Angstlich's …`, `Illusion: Half Elf` → `Illusion: Half-Elf`,
 //! `Invisibility vs. Undead` → `Invisibility versus Undead`. The row keeps the log's spelling.
+//!
+//! A SPELL'S OWN NUMERAL (owner ask, 2026-10-17): the game ranks a spell whose name already ends in
+//! one, `Yaulp II V`, so the cast strips to `Yaulp II` while the catalog's key had stripped its own
+//! `II`. The catalog is keyed whole as well. And an AA cast (`Heroic Leap I`) is known by the
+//! Alternate Advancement page's rows in `classes.json`, under the cast its description names
+//! (`Companion's Fury` casts `Frenzied Burnout`).
 
 use crate::jsfn::item_tier_key;
 use eqlog::jsstr::js_trim;
 use eqlog::names::spell_canon_key;
+use serde_json::Value;
 use std::collections::HashSet;
 use std::sync::OnceLock;
 
@@ -90,15 +97,38 @@ pub fn spell_known(name: &str) -> bool {
     spell_keys().contains(&key) || spell_keys_loose().contains(&loose_key(&key))
 }
 
-/// Every committed spell under [`spell_gap_key`]. Built once per process off the one effective
-/// catalog.
+/// Every committed spell under [`spell_gap_key`], and whole (`yaulp ii`) — see the header.
+/// Built once per process off the one effective catalog.
 pub fn spell_keys() -> &'static HashSet<String> {
     static KEYS: OnceLock<HashSet<String>> = OnceLock::new();
     KEYS.get_or_init(|| {
+        let whole = |n: &str| fold_quotes(&js_trim(n).to_lowercase());
         eqlog::spelldb::shared()
             .spells
             .iter()
-            .map(|s| spell_gap_key(&s.name))
+            .flat_map(|s| [spell_gap_key(&s.name), whole(&s.name)])
             .collect()
     })
+}
+
+/// The class tables: `aas`, every row of the Alternate Advancement page, and `abilities`, the
+/// castable names that are no spell page. A classes.json older than `aas` answers from
+/// `abilities` alone.
+const CLASSES_JSON: &str = include_str!("../../../../../src/main/data/classes.json");
+
+/// Is the cast an AA's — its name, or the cast its description names? Loose on both sides.
+pub fn aa_known(name: &str) -> bool {
+    static KEYS: OnceLock<HashSet<String>> = OnceLock::new();
+    let keys = KEYS.get_or_init(|| {
+        let file: Value = serde_json::from_str(CLASSES_JSON).unwrap_or(Value::Null);
+        let aas = file["aas"].as_object().into_iter().flatten();
+        let named = aas.flat_map(|(n, row)| [Some(n.as_str()), row["cast"].as_str()]);
+        let abilities = file["abilities"].as_object().into_iter().flatten();
+        named
+            .flatten()
+            .chain(abilities.map(|(n, _)| n.as_str()))
+            .map(|n| loose_key(&spell_gap_key(n)))
+            .collect()
+    });
+    keys.contains(&loose_key(&spell_gap_key(name)))
 }

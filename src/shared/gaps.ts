@@ -204,7 +204,7 @@ export type GapVerdict = 'noPage' | 'hasPage' | 'unchecked'
 /** Verdicts by row name, as the renderer's store hands them to the table. */
 export type GapVerdicts = Record<string, GapVerdict>
 
-export type GapActionKind = 'fixTitle' | 'addToWiki' | 'rescrape' | 'checkWiki' | 'fixParser'
+export type GapActionKind = 'fixTitle' | 'addToWiki' | 'rescrape' | 'checkWiki' | 'npcSpell' | 'fixParser'
 
 /** One chip: what to do, why (the tooltip), and where it goes when it is a link. */
 export interface GapAction {
@@ -228,10 +228,20 @@ export function parserShape(name: string): string | null {
 }
 
 /**
+ * A spell only mobs were seen casting: no caster is you or a single-word name (a player, or a
+ * named mob the rule cannot tell from one, which keeps the row a plain "Check wiki").
+ */
+export function npcOnlySpell(row: GapRow): boolean {
+  const casters = row.details.casters?.entries ?? []
+  return row.domain === 'spell' && casters.length > 0 && !casters.some((c) => c.name === 'you' || /^[A-Z][a-z]+$/.test(c.name))
+}
+
+/**
  * What someone must do to close the gap, one or two chips: the page exists under another
  * spelling (fix its title), the wiki was asked and had nothing (add the page), the wiki has it
- * and our data predates it (re-scrape), or nobody has looked (check the wiki) — plus "fix parser"
- * when the name itself carries a parser's leftover.
+ * and our data predates it (re-scrape), only mobs cast it (an NPC spell, which the wiki seldom
+ * pages), or nobody has looked (check the wiki) — plus "fix parser" when the name itself carries
+ * a parser's leftover.
  */
 export function gapActions(row: GapRow, verdict: GapVerdict): GapAction[] {
   const actions: GapAction[] = []
@@ -246,6 +256,13 @@ export function gapActions(row: GapRow, verdict: GapVerdict): GapAction[] {
     actions.push({ kind: 'addToWiki', label: 'Add to wiki', why: 'The app asked the wiki for this name and it had no page.' })
   } else if (verdict === 'hasPage') {
     actions.push({ kind: 'rescrape', label: 'Re-scrape', why: 'The wiki has this page; the next data scrape picks it up.' })
+  } else if (npcOnlySpell(row)) {
+    actions.push({
+      kind: 'npcSpell',
+      label: 'NPC spell',
+      why: 'Only mobs were seen casting it. The wiki pages few NPC-only spells, so this may need no fix.',
+      href: wikiSearchUrl(row.name)
+    })
   } else {
     actions.push({ kind: 'checkWiki', label: 'Check wiki', why: 'Nobody has looked this name up yet: search the wiki for it.', href: wikiSearchUrl(row.name) })
   }
@@ -254,14 +271,22 @@ export function gapActions(row: GapRow, verdict: GapVerdict): GapAction[] {
   return actions
 }
 
-/** `76 of 468 names` — the toggle's caption for one domain. */
+/** `76 unknown` — the toggle's caption for one domain (owner, 2026-10-17: the checked total meant nothing to a player). */
 export function gapsCaption(snap: GapsSnap, domain: GapDomain): string {
-  return `${snap.totals[domain] ?? 0} of ${snap.seen[domain] ?? 0} names`
+  return `${(snap.totals[domain] ?? 0).toLocaleString()} unknown`
+}
+
+/** Where the row was named most, and how many other zones: `Befallen 4 (Refined) +2`; '' for none. */
+export function gapZone(row: GapRow): string {
+  const zones = row.details.zones
+  const top = zones?.entries[0]?.name
+  if (zones === undefined || top === undefined) return ''
+  return zones.distinct > 1 ? `${top} +${zones.distinct - 1}` : top
 }
 
 // ---- sorting the table (owner ask, 2026-10-13: every column sorts) ----
 
-export type GapSortKey = 'name' | 'kinds' | 'count' | 'first' | 'last' | 'todo'
+export type GapSortKey = 'name' | 'kinds' | 'zone' | 'count' | 'first' | 'last' | 'todo'
 export interface GapSort {
   key: GapSortKey
   dir: 'asc' | 'desc'
@@ -278,6 +303,8 @@ function gapSortValue(r: GapRow, key: GapSortKey, verdicts: GapVerdicts): string
   if (key === 'count') return r.count
   if (key === 'name') return r.name.toLowerCase()
   if (key === 'kinds') return r.kinds.join(', ')
+  // By the zone it was named in most, A to Z; a row with no zone sorts first.
+  if (key === 'zone') return (r.details.zones?.entries[0]?.name ?? '').toLowerCase()
   if (key === 'todo') return gapActions(r, verdicts[r.name] ?? 'unchecked').map((a) => a.label).join(', ')
   // The timestamps are `YYYY-MM-DD HH:MM:SS`, which sort as text.
   return key === 'first' ? r.first : r.last

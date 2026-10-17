@@ -19,10 +19,15 @@
 //!     that dies to a mob is filed as a player for the rest of the fold and its row withdrawn;
 //!   * a /con's name is a mob only when mob-shaped: of 21 single-word names conned, 18 were the
 //!     group's characters and pets (the same name at a dozen rising levels), and a named mob that
-//!     is only ever conned is the gap this leaves.
+//!     is only ever conned is the gap this leaves;
+//!   * a name that speaks as a pet or names its leader is a player's pet, filed as a player.
+//!
+//! What counts as known beyond the exact lookups — the wiki's spellings of a mob, a mob's pet, an
+//! AA or an item's effect cast as a spell — is in [`super::gaps_names`] and [`super::gaps_keys`].
 
 use super::gaps_details::Details;
-use super::gaps_keys::{item_gap_key, loose_key, scroll_known, spell_gap_key, spell_known};
+use super::gaps_keys::{aa_known, item_gap_key, loose_key, scroll_known, spell_gap_key, spell_known};
+use super::gaps_names::{no_mob, owner_of_pet, MobNames};
 use super::gaps_suggest::{item_candidates, spell_candidates, suggest, Candidate, Suggest};
 use crate::event::Event;
 use crate::jsfn::item_base_name;
@@ -85,6 +90,10 @@ pub struct GapsModule {
     items_loose: HashSet<String>,
     /// The same keys with their pages, for a near-miss suggestion — see [`super::gaps_suggest`].
     item_candidates: Vec<Candidate>,
+    /// Every effect an item states, under [`loose_key`]: a cast of one is a known spell.
+    item_effects: HashSet<String>,
+    /// The mob catalog's names under the wiki's spellings — see [`super::gaps_names`].
+    mob_names: MobNames,
     /// Suggestions already made, per (domain, key): a snapshot re-serve costs nothing.
     suggests: Mutex<HashMap<(Domain, String), Option<Suggest>>>,
     rows: HashMap<(Domain, String), GapRow>,
@@ -125,6 +134,8 @@ impl GapsModule {
                 _ => false,
             },
             "castBegin" | "otherCastBegin" => self.spell(ev),
+            "petClaim" | "petSay" => self.player_pet(ev.str("name")),
+            "allyPetLeader" => self.player_pet(ev.str("pet")),
             _ => false,
         }
     }
@@ -187,12 +198,12 @@ impl GapsModule {
         let Some(name) = name else {
             return false;
         };
-        let key = mob_key(name);
-        if self.players.contains(&key) {
+        if self.players.contains(&mob_key(name)) || no_mob(name) {
             return false;
         }
-        let known = self.knowledge.as_ref().is_some_and(|k| k.known_mob(name));
-        self.note(Domain::Mob, key, name, known, kind, ev)
+        let known = (self.knowledge.as_ref()).is_some_and(|k| self.mob_names.known(k.as_ref(), name));
+        let name = if known { name } else { owner_of_pet(name) };
+        self.note(Domain::Mob, mob_key(name), name, known, kind, ev)
     }
 
     /// The death rule from the module header: a player-shaped name that dies to a mob is a player
@@ -210,12 +221,22 @@ impl GapsModule {
         self.mob(Some(name), "killed", ev)
     }
 
+    /// A player's pet, by its own words: filed as a player, and any row it had withdrawn.
+    fn player_pet(&mut self, name: Option<&str>) -> bool {
+        let Some(key) = name.map(mob_key) else {
+            return false;
+        };
+        self.players.insert(key.clone());
+        self.rows.remove(&(Domain::Mob, key)).is_some()
+    }
+
     fn spell(&mut self, ev: &Event) -> bool {
         let Some(name) = ev.str("spell") else {
             return false;
         };
         let key = spell_gap_key(name);
-        let known = spell_known(name);
+        let known =
+            spell_known(name) || aa_known(name) || self.item_effects.contains(&loose_key(&key));
         let display = strip_rank_tail(name);
         self.note(Domain::Spell, key, display.trim(), known, "cast", ev)
     }
@@ -356,10 +377,13 @@ impl EqModule for GapsModule {
     }
 
     fn install_knowledge(&mut self, k: &Arc<dyn Knowledge>) {
-        let pages = k.item_pages();
-        self.items = pages.iter().map(|(key, _)| item_gap_key(key)).collect();
+        let index = k.gap_index();
+        self.items = index.item_pages.iter().map(|(key, _)| item_gap_key(key)).collect();
         self.items_loose = self.items.iter().map(|k| loose_key(k)).collect();
-        self.item_candidates = item_candidates(&pages);
+        self.item_candidates = item_candidates(&index.item_pages);
+        let effect_key = |n: &String| loose_key(&spell_gap_key(n));
+        self.item_effects = index.item_effects.iter().map(|(n, _)| effect_key(n)).collect();
+        self.mob_names = MobNames::new(&index.mob_names);
         self.knowledge = Some(Arc::clone(k));
     }
 }

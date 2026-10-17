@@ -38,6 +38,10 @@ fn gaps_corpus() {
     let state = &gaps["snapshot"]["state"];
     println!("events: {}", folder.events());
     println!("totals: {}  seen: {}", state["totals"], state["seen"]);
+    // `GAPS_OUT=<file>` writes every served row, for an offline audit of the whole list.
+    if let Ok(out) = std::env::var("GAPS_OUT") {
+        std::fs::write(&out, state.to_string()).expect("GAPS_OUT is writable");
+    }
     for domain in ["item", "mob", "spell"] {
         println!("\n== {domain} ==");
         let rows = state["rows"].as_array().expect("rows");

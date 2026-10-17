@@ -2,7 +2,7 @@
 
 use super::GapsModule;
 use crate::event::Event;
-use crate::knowledge::{Answer, Knowledge, Miss, OwnLoot};
+use crate::knowledge::{Answer, GapIndex, Knowledge, Miss, OwnLoot};
 use crate::EqModule;
 use serde_json::{json, Value};
 use std::sync::Arc;
@@ -14,14 +14,19 @@ impl Knowledge for Corpus {
     fn item(&self, _name: &str) -> Answer {
         panic!("the gaps module must never ask a lookup that notes a miss")
     }
+    /// The roster states one alias: the god by his title.
     fn identity_keys(&self, mob: &str) -> Vec<String> {
-        vec![super::mob_key(mob)]
+        let key = super::mob_key(mob);
+        if key == "innoruuk, the prince of hate" {
+            return vec!["innoruuk".to_string(), key];
+        }
+        vec![key]
     }
     fn mob(&self, _name: &str, _loot: &dyn OwnLoot) -> Answer {
         panic!("the gaps module must never ask a lookup that notes a miss")
     }
     fn known_mob(&self, name: &str) -> bool {
-        super::mob_key(name) == "a decaying skeleton"
+        matches!(super::mob_key(name).as_str(), "a decaying skeleton" | "innoruuk")
     }
     fn take_misses(&self) -> Vec<Miss> {
         Vec::new()
@@ -32,8 +37,8 @@ impl Knowledge for Corpus {
     }
     /// The DB's KEYS: a disambiguated page is keyed by its name too; the wiki spells the potion
     /// with an apostrophe where the game prints a backtick.
-    fn item_pages(&self) -> Vec<(String, String)> {
-        [
+    fn gap_index(&self) -> GapIndex {
+        let item_pages = [
             ("bone chips", "Bone Chips"),
             ("copper ring", "Copper Ring (Ring of Opolla)"),
             ("copper ring (ring of opolla)", "Copper Ring (Ring of Opolla)"),
@@ -47,7 +52,15 @@ impl Knowledge for Corpus {
         ]
         .iter()
         .map(|(k, p)| (k.to_string(), p.to_string()))
-        .collect()
+        .collect();
+        // The catalog's names as the wiki writes them: a god's disambiguated page, a name with
+        // no article, a page split by zone.
+        let mob_names = ["a decaying skeleton", "Cazic-Thule (God)", "fire giant warrior", "a kobold (Warrens)", "an imp / imp"];
+        GapIndex {
+            item_pages,
+            item_effects: vec![("Summon Horse".to_string(), "Black Chain Bridle".to_string())],
+            mob_names: mob_names.iter().map(|n| n.to_string()).collect(),
+        }
     }
 }
 
@@ -401,3 +414,8 @@ fn one_substituted_letter_in_a_short_name_is_a_different_word_but_a_dropped_lett
         "a substitution counts in a long name"
     );
 }
+
+/// The wiki's spellings, pets, AAs and item effects (owner ask, 2026-10-17): a file of their own
+/// for the factoring bar, on this file's corpus.
+#[path = "gaps_spelling_tests.rs"]
+mod spelling;
