@@ -191,7 +191,7 @@ function Detail({ item, endDay, ignoreOutliers, onOpenLoot, onHide }: DetailProp
           </Box>
         </Stack>
         {/* Keyed by the item: a Who pick belongs to the item it was made on (review, 2026-10-13). */}
-        <BazaarQuotes key={item.key} quotes={item.quotes} title="Who's offering" />
+        <BazaarQuotes key={item.key} quotes={item.quotes} title="Who's offering" scale={item.combined} />
         <Typography variant="caption" color="text.disabled">
           Predicted: a trend through the last ten priced days, newer and busier days counting more,
           read on the log&apos;s newest day ({endDay}) and kept within half to double the recent median.

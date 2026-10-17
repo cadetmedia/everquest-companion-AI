@@ -55,3 +55,11 @@ test('the Who list leaves out people who priced once or never', () => {
   const never = [q('Darlantan', ['2026-10-03', '12:00:00'], null), q('Darlantan', ['2026-10-04', '12:00:00'], null)]
   assert.deepEqual(repeatSpeakers(speakerAverages([...twice, ...once, ...never])), ['Mauxe'])
 })
+
+test("on a combined item a person's average reads every tier at the price tier", () => {
+  const plain = q('Bob', ['2026-10-01', '12:00:00'], 100)
+  const plus2 = { ...q('Bob', ['2026-10-02', '12:00:00'], 400), tier: 2 } as DayQuote
+  // Rate 2 per tier, priced as +0: the +2 ask of 400 reads as 100.
+  assert.deepEqual(speakerAverages([plain, plus2], undefined, { rate: 2, at: 0 }).get('Bob')?.sell, { avg: 100, n: 2 })
+  assert.deepEqual(speakerAverages([plain, plus2]).get('Bob')?.sell, { avg: 250, n: 2 })
+})

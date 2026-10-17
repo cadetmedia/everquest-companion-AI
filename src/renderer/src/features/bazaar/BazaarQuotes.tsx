@@ -99,14 +99,16 @@ function WhoFilter({
   quotes,
   who,
   onWho,
-  withAverages
+  withAverages,
+  scale
 }: {
   quotes: readonly DayQuote[]
   who: string | null
   onWho: (w: string | null) => void
   withAverages: boolean
+  scale?: TierScale
 }): JSX.Element {
-  const averages = useMemo(() => (withAverages ? speakerAverages(quotes) : null), [quotes, withAverages])
+  const averages = useMemo(() => (withAverages ? speakerAverages(quotes, undefined, scale) : null), [quotes, withAverages, scale])
   // On one item, only people with two or more priced offers are offered (owner ask, 2026-10-13).
   const people = useMemo(() => (averages ? repeatSpeakers(averages) : quoteSpeakers(quotes)), [averages, quotes])
   return (
@@ -140,7 +142,13 @@ function WhoFilter({
   )
 }
 
-export default function BazaarQuotes({ quotes, title, withItem = false, maxHeight = 260 }: { quotes: readonly DayQuote[]; title: string; withItem?: boolean; maxHeight?: number }): JSX.Element | null {
+/** A combined item's tier rate and price tier: the Who averages read every quote at that tier. */
+interface TierScale {
+  rate: number
+  at: number
+}
+
+export default function BazaarQuotes({ quotes, title, withItem = false, maxHeight = 260, scale }: { quotes: readonly DayQuote[]; title: string; withItem?: boolean; maxHeight?: number; scale?: TierScale }): JSX.Element | null {
   const [sort, setSort] = useState<QuoteSort>(DEFAULT_QUOTE_SORT)
   const [who, setWho] = useState<string | null>(null)
   const ordered = useMemo(() => sortQuotes(quotesBy(quotes, who), sort), [quotes, who, sort])
@@ -156,7 +164,7 @@ export default function BazaarQuotes({ quotes, title, withItem = false, maxHeigh
           {title}
           {ordered.length > shown.length ? ` (first ${shown.length} of ${ordered.length}; Export CSV has them all)` : ''}
         </Typography>
-        <WhoFilter quotes={quotes} who={who} onWho={setWho} withAverages={!withItem} />
+        <WhoFilter quotes={quotes} who={who} onWho={setWho} withAverages={!withItem} scale={scale} />
       </Stack>
       <Box sx={{ maxHeight, overflowY: 'auto' }}>
         <Table size="small" stickyHeader>

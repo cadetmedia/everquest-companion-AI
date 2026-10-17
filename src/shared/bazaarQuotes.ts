@@ -71,16 +71,21 @@ export const SPEAKER_AVG_LAST = 10
  * Each person's mean price over their newest `last` priced quotes, selling and buying apart. For
  * ONE item's quotes only: across items a mean means nothing. A quote with no price (unpriced, or
  * listed but not counted) is skipped. The engine keeps one quote per person per day, so "the last
- * ten times" is their last ten days of posting.
+ * ten times" is their last ten days of posting. On a combined item, pass its tier `scale` so each
+ * price is read at the price tier first, as the hours chart does; raw +0 and +5 asks never mix.
  */
-export function speakerAverages(quotes: readonly DayQuote[], last = SPEAKER_AVG_LAST): Map<string, SpeakerAverage> {
+export function speakerAverages(
+  quotes: readonly DayQuote[],
+  last = SPEAKER_AVG_LAST,
+  scale?: { rate: number; at: number }
+): Map<string, SpeakerAverage> {
   const newest = sortQuotes(quotes, DEFAULT_QUOTE_SORT)
   const sums = new Map<string, Record<'sell' | 'buy', number[]>>()
   for (const q of newest) {
     if (q.price == null || (q.dir !== 'sell' && q.dir !== 'buy')) continue
     const s = sums.get(q.who) ?? { sell: [], buy: [] }
     sums.set(q.who, s)
-    if (s[q.dir].length < last) s[q.dir].push(q.price)
+    if (s[q.dir].length < last) s[q.dir].push(scale ? q.price * scale.rate ** (scale.at - q.tier) : q.price)
   }
   const side = (xs: number[]): SideAverage | undefined =>
     xs.length === 0 ? undefined : { avg: xs.reduce((a, b) => a + b, 0) / xs.length, n: xs.length }
