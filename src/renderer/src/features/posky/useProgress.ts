@@ -20,7 +20,8 @@ import {
 } from './heldCounts'
 import { useModule } from '../../lib/useModule'
 import { reconcile, type InventoryRow } from '../inventory/reconcile'
-import { COUNT_SOURCE_KEY, rebaselineInstant, resolveCountSource } from '../inventory/countSource'
+import { rebaselineInstant } from '../inventory/countSource'
+import { setCountSource, useCountSource } from './useCountSource'
 import { questKey } from './keys'
 import { ambiguousQuestNames, computeSharedItems, type SharedItemsMap } from './sharedItems'
 import { skyDroppersFor, type DropperMob } from './poskyDroppers'
@@ -64,18 +65,6 @@ const ambiguousNames = ambiguousQuestNames(posky.quests)
 const questByKey = new Map<string, PoskyQuest>(posky.quests.map((q) => [questKey(q), q]))
 
 export { questKey }
-
-/**
- * The stored pick, or the default for somebody who has never made one (JOS-294).
- *
- * BOTH HALVES LIVE IN `countSource.ts` NOW, and the default there is `both` rather than `log`. The
- * argument, the reports behind it and the proof that it changes nothing for an install with no dump
- * are all in that file's header; this is the one line of storage it needs. An explicit stored choice
- * is returned verbatim — the flip reaches only an absent key.
- */
-function loadCountSource(): CountSource {
-  return resolveCountSource(localStorage.getItem(COUNT_SOURCE_KEY))
-}
 
 /**
  * Display names keyed by the SAME normalized counting key logCounts uses, so the
@@ -565,7 +554,8 @@ function useTurnInLedger(
 export function useProgress(opts?: UseProgressOptions): UseProgress {
   const [progress, setProgress] = useState<ProgressState | null>(null)
   const [character, setCharacter] = useState<string | null>(null)
-  const [countSource, setCountSourceState] = useState<CountSource>(loadCountSource)
+  // One pick per window (useCountSource.ts), so every instance of this hook follows the tab's.
+  const countSource = useCountSource()
 
   const lootHistory = useModule<LootSnap>('loot') ?? EMPTY_LOOT
 
@@ -589,11 +579,6 @@ export function useProgress(opts?: UseProgressOptions): UseProgress {
 
   const ledger = useTurnInLedger(progress, setProgress, opts?.onQuestComplete)
   const { turnIns, detected, logCounts, recordTurnIn, undoTurnIn, resetTurnIns, turnInsReady } = ledger
-
-  const setCountSource = useCallback((s: CountSource) => {
-    localStorage.setItem(COUNT_SOURCE_KEY, s)
-    setCountSourceState(s)
-  }, [])
 
   const reloadInventory = useCallback(async (): Promise<string> => {
     const res = await window.eq.reloadInventory()

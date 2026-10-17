@@ -9,6 +9,7 @@ import ConCardOverlay from './ConCardOverlay'
 import BuffsOverlay from './BuffsOverlay'
 import XpOverlay from './XpOverlay'
 import RespawnOverlay from './RespawnOverlay'
+import SkyQuestsOverlay from './SkyQuestsOverlay'
 import { isHealOverlayKind } from '@shared/types'
 import { isTimerOverlayKind } from '@shared/buffTimers'
 import { installOverlayPointerExit } from './pointerExit'
@@ -52,6 +53,7 @@ function Surface(): React.JSX.Element {
   if (kind === 'conCard') return <ConCardOverlay />
   if (kind === 'xp') return <XpOverlay />
   if (kind === 'respawn') return <RespawnOverlay />
+  if (kind === 'skyQuests') return <SkyQuestsOverlay />
   if (isTimerOverlayKind(kind)) return <BuffsOverlay kind={kind} />
   if (isHealOverlayKind(kind)) return <HealMeter />
   return <OverlayMeter />

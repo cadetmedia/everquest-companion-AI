@@ -38,6 +38,7 @@ import { getBossData } from '../data'
 import { useBossKills } from '../features/bosses/useBossKills'
 import type { TargetStatus } from '../features/bosses/bossStatus'
 import { useProgress } from '../features/posky/useProgress'
+import { useSkyOverlayFeed } from '../features/posky/useSkyOverlayFeed'
 // The canonical `Class::Name` quest key — the same one the tracker keys its rows on, so the
 // toast's anchor and the accordion it opens are the same string by construction.
 import { questKey } from '../features/posky/keys'
@@ -113,7 +114,7 @@ function useAppCelebrations(
     }
   })
 
-  useProgress({
+  const sky = useProgress({
     onQuestComplete: (q, count) => {
       onQuestComplete(q.name)
       fireAppSignal('questComplete', q.name)
@@ -142,6 +143,8 @@ function useAppCelebrations(
       })
     }
   })
+  // The Sky quest overlay's rows come off this same reading, so it counts what the Sky tab counts.
+  useSkyOverlayFeed(sky.quests, sky.progress !== null)
 }
 
 /**

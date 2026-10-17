@@ -66,6 +66,7 @@ const ALL_KINDS = [
   'debuffs',
   'xp',
   'respawn',
+  'skyQuests',
   'toast',
   'alertBanner',
   'conCard'
