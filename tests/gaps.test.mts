@@ -12,6 +12,7 @@ import {
   gapDetailsText,
   gapsAsText,
   gapsCaption,
+  gapZone,
   tallyText,
   visibleGaps,
   sortGaps,
@@ -190,15 +191,15 @@ test('gapsAsText is the header then every row with its details', () => {
   assert.equal(gapsAsText([]), 'Name\tSeen as\tTimes\tFirst\tLast')
 })
 
-test('gapsCaption reads the totals and the denominator, and an absent domain reads as zero', () => {
+test('gapsCaption reads the unknown count alone, and an absent domain reads as zero', () => {
   const snap: GapsSnap = {
     rows: ROWS,
     totals: { item: 29, mob: 76, spell: 34 },
     seen: { item: 611, mob: 468, spell: 428 }
   }
-  assert.equal(gapsCaption(snap, 'mob'), '76 of 468 names')
+  assert.equal(gapsCaption(snap, 'mob'), '76 unknown')
   const bare = { rows: [], totals: {}, seen: {} } as unknown as GapsSnap
-  assert.equal(gapsCaption(bare, 'item'), '0 of 0 names')
+  assert.equal(gapsCaption(bare, 'item'), '0 unknown')
 })
 
 // ---- every column sorts (owner, 2026-10-13) ----
@@ -232,4 +233,25 @@ test('a first click puts counts and dates biggest first, text A to Z', () => {
   assert.equal(firstGapSortDir('count'), 'desc')
   assert.equal(firstGapSortDir('last'), 'desc')
   assert.equal(firstGapSortDir('name'), 'asc')
+})
+
+test('Zone shows where a row was named most and sorts by it, A to Z (owner, 2026-10-17)', () => {
+  const at = (name: string, zones: string[]) =>
+    row(['mob', name, ['killed'], 1], { zones: { entries: zones.map((z) => ({ name: z, n: 1 })), distinct: zones.length } })
+  const rows = [at('A', ['The Plane of Sky', 'Befallen']), at('B', ['Befallen 4 (Refined)']), row(['mob', 'C', ['killed'], 1])]
+  assert.equal(gapZone(rows[0]), 'The Plane of Sky +1')
+  assert.equal(gapZone(rows[1]), 'Befallen 4 (Refined)')
+  assert.equal(gapZone(rows[2]), '')
+  assert.deepEqual(sortGaps(rows, { key: 'zone', dir: 'asc' }).map((r) => r.name), ['C', 'B', 'A'])
+  assert.equal(firstGapSortDir('zone'), 'asc')
+})
+
+test('a spell only mobs cast is an NPC spell; one a player or a single-word name cast is not', () => {
+  const cast = (casters: string[]) =>
+    row(['spell', 'Dragon Fear', ['cast'], 1], { casters: { entries: casters.map((c) => ({ name: c, n: 1 })), distinct: casters.length } })
+  const npc = gapActions(cast(['A dracoliche', 'an imp protector']), 'unchecked')
+  assert.deepEqual(npc.map((a) => [a.kind, a.label]), [['npcSpell', 'NPC spell']])
+  assert.equal(npc[0].href, 'https://eqlwiki.com/index.php?search=Dragon%20Fear')
+  assert.deepEqual(gapActions(cast(['A dracoliche', 'Malkil']), 'unchecked').map((a) => a.kind), ['checkWiki'])
+  assert.deepEqual(gapActions(cast(['you']), 'unchecked').map((a) => a.kind), ['checkWiki'])
 })

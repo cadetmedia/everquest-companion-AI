@@ -83,6 +83,20 @@ pub struct Miss {
     pub name: String,
 }
 
+/// The committed names the gaps module checks the log against, handed over once at install.
+#[derive(Debug, Clone, Default)]
+pub struct GapIndex {
+    /// Every key the item database is keyed by, with the page title it answers with: `item_key`'s
+    /// fold of each page's name and aliases. A page TITLE is not a key when the page is
+    /// disambiguated — `Copper Ring (Ring of Opolla)` is keyed `copper ring` too.
+    pub item_pages: Vec<(String, String)>,
+    /// Every effect an item states (click, proc, worn, focus) with that item's page: a cast of one
+    /// is a known spell, `Summon Horse` off a bridle.
+    pub item_effects: Vec<(String, String)>,
+    /// Every name the mob catalog states, as its pages spell them.
+    pub mob_names: Vec<String>,
+}
+
 /// The engine-internal knowledge lookups — `main/itemLookup.ts lookupItem` and
 /// `main/mobLookup.ts lookupMob`, minus the network.
 ///
@@ -99,14 +113,10 @@ pub trait Knowledge: Send + Sync {
     /// be made. An unaliased name answers with its single key.
     fn identity_keys(&self, mob: &str) -> Vec<String>;
 
-    /// Every key the committed item database is keyed by, with the page title it answers with:
-    /// `item_key`'s fold of each page's name and of its aliases, the keys [`Knowledge::item`]
-    /// answers from. A page TITLE ([`Knowledge::item_names`]) is not a key when the page is
-    /// disambiguated — `Copper Ring (Ring of Opolla)` is keyed `copper ring` too — so the gaps
-    /// module checks loot against these, and names the page when it suggests one. Defaulted
+    /// What the gaps module checks names against beyond the lookups — see [`GapIndex`]. Defaulted
     /// empty, so a test corpus need not list any.
-    fn item_pages(&self) -> Vec<(String, String)> {
-        Vec::new()
+    fn gap_index(&self) -> GapIndex {
+        GapIndex::default()
     }
 
     /// "What does this thing drop", joined with what you have looted off it. Never fails.

@@ -17,7 +17,7 @@
 
 import { type JSX, memo, useCallback, useRef, useState } from 'react'
 import { Box, Chip, Paper, Stack, Table, TableBody, TableCell, TableHead, TableRow, TableSortLabel, Typography } from '@mui/material'
-import { charactersOff, type GapRow, type GapSort, type GapSortKey, type GapSuggest, type GapVerdict, type GapVerdicts } from '@shared/gaps'
+import { charactersOff, gapZone, type GapRow, type GapSort, type GapSortKey, type GapSuggest, type GapVerdict, type GapVerdicts } from '@shared/gaps'
 import { wikiPageUrl } from '@shared/wiki'
 import { useWindowedRows } from '../../lib/useWindowedRows'
 import GapActionChips from './GapActionChips'
@@ -25,7 +25,7 @@ import GapDetailsPanel from './GapDetailsPanel'
 
 /** One line of small cells with a small chip: 6px padding above and below a 24px chip, plus the border. */
 const ROW_HEIGHT = 37
-const COLUMNS = 6
+const COLUMNS = 7
 
 /** Beside the name: the one known name within reach, linked to its page so the owner can fix it. */
 function SuggestCaption({ s }: { s: GapSuggest }): JSX.Element {
@@ -81,6 +81,7 @@ const GapTableRow = memo(function GapTableRow({
           ))}
         </Stack>
       </TableCell>
+      <TableCell sx={{ whiteSpace: 'nowrap', color: 'text.secondary' }}>{gapZone(row)}</TableCell>
       <TableCell align="right">{row.count.toLocaleString()}</TableCell>
       <TableCell sx={{ whiteSpace: 'nowrap', color: 'text.secondary' }}>{row.first}</TableCell>
       <TableCell sx={{ whiteSpace: 'nowrap', color: 'text.secondary' }}>{row.last}</TableCell>
@@ -105,13 +106,14 @@ function DetailsPane({ row }: { row: GapRow }): JSX.Element {
 const HEADERS: readonly (readonly [string, GapSortKey, 'left' | 'right'])[] = [
   ['Name', 'name', 'left'],
   ['Seen as', 'kinds', 'left'],
+  ['Zone', 'zone', 'left'],
   ['Times', 'count', 'right'],
   ['First', 'first', 'left'],
   ['Last', 'last', 'left'],
   ['To do', 'todo', 'left']
 ]
 
-/** Every header sorts (owner ask, 2026-10-13): a click picks the column, a second flips it. */
+/** Every header sorts (owner asks, 2026-10-13 and, for Zone, 2026-10-17): a click picks the column, a second flips it. */
 function SortHeader({ sort, onSort }: { sort: GapSort; onSort: (key: GapSortKey) => void }): JSX.Element {
   return (
     <TableHead>

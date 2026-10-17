@@ -57,7 +57,8 @@ pub const SEARCH_DEFAULT_LIMIT: usize = 20;
 /// See [`SEARCH_DEFAULT_LIMIT`].
 pub const SEARCH_MAX_LIMIT: usize = 100;
 
-/// `Corpus::spell`, apart so this file stays under its recorded size.
+/// `Corpus::spell` and the gaps index, apart so this file stays under its recorded size.
+mod gap_index;
 mod spell_lookup;
 
 /// The process's one corpus: one instance shared by the ingest thread (the fold's own probes) and by
@@ -320,9 +321,8 @@ impl Knowledge for Corpus {
         self.mob_index().identity(mob.trim()).keys
     }
 
-    fn item_pages(&self) -> Vec<(String, String)> {
-        let page = |k: &String, e: &Value| e["page"].as_str().unwrap_or(k).to_string();
-        self.items().iter().map(|(k, e)| (k.clone(), page(k, e))).collect()
+    fn gap_index(&self) -> fold::knowledge::GapIndex {
+        gap_index::build(self.items(), self.mob_index().names())
     }
 
     /// The catalog, then the overlay, then a miss; the local half merged on top of whichever
