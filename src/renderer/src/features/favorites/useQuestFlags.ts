@@ -30,6 +30,8 @@ export interface QuestFlagSet {
   keys: Set<string>
   has: (questKey: string) => boolean
   toggle: (questKey: string) => void
+  /** Flag (or unflag) every one of these quests at once: one write, one render. */
+  setMany: (questKeys: readonly string[], on: boolean) => void
   /** How many quests carry the flag. */
   size: number
 }
@@ -38,6 +40,7 @@ interface QuestFlagStore {
   subscribe: (listener: () => void) => () => void
   snapshot: () => Set<string>
   toggle: (questKey: string) => void
+  setMany: (questKeys: readonly string[], on: boolean) => void
 }
 
 function load(storageKey: string): Set<string> {
@@ -71,6 +74,16 @@ function createQuestFlagStore(storageKey: string): QuestFlagStore {
       current = next
       localStorage.setItem(storageKey, JSON.stringify([...current]))
       for (const l of listeners) l()
+    },
+    setMany(questKeys, on) {
+      const next = new Set(current)
+      for (const k of questKeys) {
+        if (on) next.add(k.toLowerCase())
+        else next.delete(k.toLowerCase())
+      }
+      current = next
+      localStorage.setItem(storageKey, JSON.stringify([...current]))
+      for (const l of listeners) l()
     }
   }
 }
@@ -93,6 +106,7 @@ function useQuestFlagSet(store: QuestFlagStore): QuestFlagSet {
       keys,
       has: (questKey: string) => keys.has(questKey.toLowerCase()),
       toggle: store.toggle,
+      setMany: store.setMany,
       size: keys.size
     }),
     [keys, store]
