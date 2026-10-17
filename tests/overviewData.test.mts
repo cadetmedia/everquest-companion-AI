@@ -148,3 +148,16 @@ test('a `+N` variant resolves knowledge through itemCountKey', () => {
   assert.equal(rows[0].item, 'Shiny Brass Idol +2')
   assert.equal(rows[0].highlighted, true)
 })
+
+test('an ORDINARY drop carries its icon off the marks reader, with no knowledge record at all', () => {
+  // Owner, 2026-10-12: Arrow sat iconless on the Overview because the icon rode the knowledge
+  // record, which only a notable item ever gets. The reader is the Loot rows' marks store, asked
+  // by RAW name.
+  const iconOf = (item: string): number | undefined => (item === 'Arrow' ? 598 : undefined)
+  const rows = buildDropRows([loot(1, 'Arrow')], NO_POSKY, NO_KNOWLEDGE, iconOf)
+  assert.equal(rows[0].iconId, 598)
+  assert.equal(rows[0].knowledge, undefined, 'no record was fetched for it')
+  assert.equal(rows[0].highlighted, false)
+  // Without a reader nothing is invented.
+  assert.equal('iconId' in buildDropRows([loot(1, 'Arrow')], NO_POSKY, NO_KNOWLEDGE)[0], false)
+})

@@ -12,8 +12,9 @@
 // can never disagree about what is notable. It probes the most-recent 40 DISTINCT items, which
 // strictly contains the 25 rows rendered here.
 
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import type { LootSnap } from '@shared/types'
+import { fetchItemMarks, useItemMarksReader } from '../../lib/itemMarks'
 import { useModule } from '../../lib/useModule'
 import { questItemNames } from '../loot/lootItemData'
 import { useNotablePickups } from '../loot/useNotablePickups'
@@ -31,5 +32,24 @@ export function useRecentDrops(): DropRow[] {
   // Nothing is dismissable on this surface (the dismiss affordance belongs to the Loot tab's
   // strip), so the dismissed set is permanently empty — we only want `byKey`.
   const { byKey } = useNotablePickups(history, NOT_DISMISSED)
-  return useMemo(() => buildDropRows(history, questItemNames, byKey), [history, byKey])
+  // The ICON reads off the marks store by name, exactly as the Loot rows' `ItemIcon` does: the
+  // probe has already asked that batch for every recent item, so an ordinary drop has its icon
+  // without a knowledge record (owner, 2026-10-12: Arrow sat iconless here). The reader is a new
+  // identity per landed batch, which is what re-keys the memo.
+  const marksOf = useItemMarksReader()
+  const rows = useMemo(
+    () => buildDropRows(history, questItemNames, byKey, (item) => marksOf(item)?.iconId),
+    [history, byKey, marksOf]
+  )
+  // ...and this surface asks for its OWN spellings, as every mounted Loot row does. The probe
+  // sends one spelling per counting key (`Arrow +1` and `Arrow` share one) and the store keys by
+  // raw name, so a tier the probe did not send would never land (owner, 2026-10-12: `Arrow +1`
+  // iconless beside an iconed `Arrow`). Names the store already holds are skipped: one small
+  // batch at most, nothing on a repaint that adds no new name.
+  useEffect(() => {
+    const names = new Set<string>()
+    for (const r of rows) names.add(r.item)
+    void fetchItemMarks([...names])
+  }, [rows])
+  return rows
 }

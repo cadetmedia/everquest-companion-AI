@@ -10,6 +10,7 @@ import type { JSX } from 'react'
 import { Box, Chip, Stack, Typography } from '@mui/material'
 import { QuestIgnoreButton } from '../favorites/QuestFlagButtons'
 import { TurnInBadge } from './TurnInControls'
+import { SkyItemCard } from './SkyItemCard'
 import type { QuestProgress } from './useProgress'
 
 // Every quest the user hid, in one flat compact list (no accordions — there is nothing to work on
@@ -50,9 +51,11 @@ export function IgnoredList({
               {q.name}
             </Typography>
             {q.reward && (
-              <Typography variant="caption" color="primary.main">
-                → {q.reward}
-              </Typography>
+              <SkyItemCard name={q.reward} stats={q.rewardStats}>
+                <Typography variant="caption" color="primary.main">
+                  → {q.reward}
+                </Typography>
+              </SkyItemCard>
             )}
             <Box sx={{ flexGrow: 1 }} />
             <TurnInBadge count={q.turnIns} evidence={q.completionEvidence} />

@@ -7,7 +7,7 @@ import { IPC } from '../../shared/ipc'
 import { buildLevelUnlocks, isUnlocksRequest } from '../data/levelUnlocks'
 import { buildSpellCatalog } from '../data/spellDb'
 import { buildSpellDetail } from '../data/spellDetail'
-import { lookupItem } from '../itemLookup'
+import { itemMarks, lookupItem } from '../itemLookup'
 import { lookupMob } from '../mobLookup'
 import { appSpellDb } from '../appSpellDb'
 // THE SERVED ARM (JOS-496). These three reads are the census's `spell catalog stats`,
@@ -171,6 +171,8 @@ export function registerKnowledgeIpc(): void {
   // rejects (degrades to a cached negative/offline record that still carries local posky
   // associations), so a failure here never leaves the renderer hanging.
   ipcMain.handle(IPC.itemsLookup, (_e, name: string) => lookupItem(name))
+  // The list-row marks for a whole list of names at once (the Loot rows): DB and local sources only, synchronous.
+  ipcMain.handle(IPC.itemsMarks, (_e, names: string[]) => itemMarks(names))
   // Mob knowledge (Task #63) — "what does this thing drop". Cache-first + local-first in main,
   // so the hover card is usually answered without touching the network. Never rejects.
   /**

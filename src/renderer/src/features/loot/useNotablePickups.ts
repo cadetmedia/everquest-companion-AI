@@ -1,107 +1,95 @@
-// useNotablePickups (Task #53) — surface the last few looted items that are lore- or
-// quest-relevant, for the "Notable pickups" strip + extending the row indicator beyond
-// the local Plane of Sky set to any wiki-known quest item.
+// useNotablePickups — the "notable pickups" strip's probe over the most recent loot (Task #53).
 //
-// Loot knowledge lives in MAIN (local-posky-first + cached wiki lookup). We can't know
-// synchronously whether an arbitrary looted item is notable, so this hook lazily fetches
-// knowledge for the most-recent distinct looted items (bounded), memoizes each result in
-// a renderer-side map, and returns (a) that map for row indicators and (b) the ordered
-// notable subset for the strip. Bounded + memoized so it never storms main: each distinct
-// name is fetched at most once; main's serialized queue + persistent cache throttle the
-// rest. Fully additive — no change to how loot is transported.
+// The renderer cannot say synchronously whether an arbitrary looted item is notable, so this
+// hook probes the 40 most recent distinct pickups. Since 2026-10-10 it asks for their MARKS in
+// one batched call (`lib/itemMarks.ts`: the committed DB and the local quest sources, no wiki)
+// and fetches a full knowledge record only for the ones the marks call notable, all at once.
+// Before that it fetched a full record for each of the 40, one after another, through
+// `lookupItem`'s cache-then-wiki fallback: slow to fill, and a wiki request for every pickup the
+// DB did not know. An item the DB does not know is simply not notable here.
+//
+// Bounded + memoized so it never storms main: each distinct item key is asked once per mount.
 
 import { useEffect, useRef, useState } from 'react'
 import type { ItemKnowledge, LootEvent } from '@shared/types'
-import { isNotableKnowledge } from '@shared/itemKnowledge'
-import { isDestroyed } from '@shared/lootDisposition'
+import { isNotableKnowledge, isNotableMarks } from '../../../../shared/itemKnowledge'
+import { isDestroyed } from '../../../../shared/lootDisposition'
 import { itemCountKey } from '../../lib/itemName'
+import { fetchItemMarks } from '../../lib/itemMarks'
 
-/** How many most-recent distinct looted items to probe for notability. */
 const PROBE_LIMIT = 40
 
 export interface NotablePickup {
-  /** display item name (most recent occurrence) */
   item: string
-  /** most recent loot timestamp */
   ts: number
   knowledge: ItemKnowledge
 }
 
 export interface NotableState {
-  /** knowledge keyed by itemCountKey — for per-row indicators (undefined = unknown yet) */
+  /** full knowledge for the NOTABLE recent pickups (the strip, and the rows' card pre-fill) */
   byKey: Map<string, ItemKnowledge>
   /** the notable pickups (lore or quest-relevant), most-recent first */
   notable: NotablePickup[]
 }
 
-/**
- * Is a knowledge record "notable" (worth flagging / listing)?
- *
- * The rule itself moved to shared/itemKnowledge.ts (Task #59) because the main-side event-feed
- * module applies the SAME test to decide whether a live loot becomes an event-log row — one
- * definition means the strip and the feed can never disagree. Re-exported here so every
- * existing caller keeps its import.
- */
+/** Is a knowledge record "notable" (worth flagging / listing)? Shared with the event feed. */
 export const isNotable = isNotableKnowledge
 
-/**
- * Probe the most-recent distinct looted items for lore/quest knowledge. `history` is the
- * full loot list (oldest→newest, as the loot module serves it). Returns a live-updating
- * map + the notable subset. Dismissed keys are filtered out of the strip.
- */
+interface Recent {
+  item: string
+  ts: number
+  key: string
+}
+
+function recentDistinct(history: LootEvent[]): Recent[] {
+  const seen = new Set<string>()
+  const list: Recent[] = []
+  for (let i = history.length - 1; i >= 0 && list.length < PROBE_LIMIT; i--) {
+    const e = history[i]
+    if (isDestroyed(e)) continue
+    const key = itemCountKey(e.item)
+    if (seen.has(key)) continue
+    seen.add(key)
+    list.push({ item: e.item, ts: e.ts, key })
+  }
+  return list
+}
+
+/** One batch of marks, then one round of full records for the notable ones. */
+async function probe(toFetch: Recent[]): Promise<Map<string, ItemKnowledge>> {
+  const marks = await fetchItemMarks(toFetch.map((r) => r.item))
+  const notable = toFetch.filter((r) => {
+    const m = marks[r.item]
+    return m !== undefined && isNotableMarks(m)
+  })
+  const records = await Promise.all(notable.map((r) => window.eq.lookupItem(r.item).catch(() => null)))
+  const out = new Map<string, ItemKnowledge>()
+  notable.forEach((r, i) => {
+    const k = records[i]
+    if (k) out.set(r.key, k)
+  })
+  return out
+}
+
 export function useNotablePickups(history: LootEvent[], dismissed: Set<string>): NotableState {
   const [byKey, setByKey] = useState<Map<string, ItemKnowledge>>(new Map())
-  // Names we've already requested (dedupe across renders); persists for the component life.
   const requested = useRef<Set<string>>(new Set())
-
-  // The most-recent distinct items (newest first), capped.
-  const recent = useRef<{ item: string; ts: number; key: string }[]>([])
-  {
-    const seen = new Set<string>()
-    const list: { item: string; ts: number; key: string }[] = []
-    for (let i = history.length - 1; i >= 0 && list.length < PROBE_LIMIT; i--) {
-      const e = history[i]
-      // A DESTROY IS NOT A PICKUP (JOS-401, the census), and here that is a cost as well as a
-      // meaning: the probe window is the 40 most recent DISTINCT items, so admitting a bag
-      // cleanup would push real pickups out of it and spend main's lookup queue on items the
-      // player just threw away. An item known to this app ONLY from a destroy line therefore has
-      // no knowledge record, which is the right trade - nothing on any surface asks about it.
-      if (isDestroyed(e)) continue
-      const key = itemCountKey(e.item)
-      if (seen.has(key)) continue
-      seen.add(key)
-      list.push({ item: e.item, ts: e.ts, key })
-    }
-    recent.current = list
-  }
+  const recent = useRef<Recent[]>([])
+  recent.current = recentDistinct(history)
+  const recentKeys = recent.current.map((r) => r.key).join('|')
 
   useEffect(() => {
-    let alive = true
-    const toFetch = recent.current.filter((r) => !requested.current.has(r.key))
+    const asked = requested.current
+    const toFetch = recent.current.filter((r) => !asked.has(r.key))
     if (toFetch.length === 0) return
-    for (const r of toFetch) requested.current.add(r.key)
-    void (async () => {
-      for (const r of toFetch) {
-        if (!alive) return
-        try {
-          const k = await window.eq.lookupItem(r.item)
-          if (!alive) return
-          setByKey((prev) => {
-            const next = new Map(prev)
-            next.set(r.key, k)
-            return next
-          })
-        } catch {
-          /* main never rejects; ignore */
-        }
-      }
-    })()
-    return () => {
-      alive = false
-    }
-    // Re-run when the set of recent keys changes (join of the capped recent keys).
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [recent.current.map((r) => r.key).join('|')])
+    for (const r of toFetch) asked.add(r.key)
+    // No stale-run guard: a newer loot must not discard this probe, since its keys stay asked and
+    // nothing would probe them again. The merge is a functional update, so a late result is safe.
+    void probe(toFetch).then((got) => {
+      if (got.size === 0) return
+      setByKey((prev) => new Map([...prev, ...got]))
+    })
+  }, [recentKeys])
 
   const notable: NotablePickup[] = []
   for (const r of recent.current) {
@@ -109,6 +97,5 @@ export function useNotablePickups(history: LootEvent[], dismissed: Set<string>):
     const k = byKey.get(r.key)
     if (k && isNotable(k)) notable.push({ item: r.item, ts: r.ts, knowledge: k })
   }
-
   return { byKey, notable }
 }

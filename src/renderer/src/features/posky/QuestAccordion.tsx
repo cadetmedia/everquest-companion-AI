@@ -152,9 +152,11 @@ function SharedItemsSection({
       <Stack spacing={0.5}>
         {shared.map((si) => (
           <Stack key={si.key} direction="row" spacing={0.75} alignItems="center" flexWrap="wrap" useFlexGap>
-            <Typography variant="caption" sx={{ fontWeight: 600, minWidth: 150 }}>
-              {si.name}
-            </Typography>
+            <SkyItemCard name={si.name}>
+              <Typography variant="caption" sx={{ fontWeight: 600, minWidth: 150 }}>
+                {si.name}
+              </Typography>
+            </SkyItemCard>
             {si.quests.map((sq) => (
               <SharingQuestChip
                 key={sq.key}

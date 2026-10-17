@@ -47,6 +47,7 @@
 import type { JSX } from 'react'
 import { Box, Checkbox, Chip, FormControlLabel, Link, Stack, Typography } from '@mui/material'
 import type { CountSource } from '@shared/types'
+import { SkyItemCard } from './SkyItemCard'
 import { dropperFacts, islandLabel, islandNumber } from './poskyDroppers'
 import { DropperName } from './DropperCell'
 import { InventorySource } from './QuestFilterBar'
@@ -73,7 +74,10 @@ function NeededItemLine({
 }): JSX.Element {
   return (
     <Typography variant="body2" data-testid="sky-target-item">
-      {item.shortfall}x <strong>{item.name}</strong>
+      {item.shortfall}x{' '}
+      <SkyItemCard name={item.name}>
+        <strong>{item.name}</strong>
+      </SkyItemCard>
       <Typography component="span" variant="body2" color="text.secondary">
         {' - '}
         {item.quests.map((q, i) => (

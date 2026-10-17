@@ -34,6 +34,7 @@ import type { CountSource } from '@shared/types'
 import type { WindowLootRates } from '@shared/lootRates'
 import type { Timeslice } from '@shared/timeslice'
 import { formatDateTime, formatTime } from '../../lib/formatDate'
+import { KnownItemTooltip } from '../../lib/KnownItemTooltip'
 import { COUNT_SOURCE_OPTIONS } from '../inventory/countSource'
 import type { GroupRow } from './lootGrouping'
 import { LOOT_RATE_TITLE, lootRateText } from './lootRateText'
@@ -378,9 +379,11 @@ function OwnedNotLootedNotice({
       {shown.map((r, i) => (
         <span key={r.key}>
           {i > 0 && ', '}
-          <Link component="button" type="button" underline="hover" onClick={() => onSelect(r.item)}>
-            {r.item}
-          </Link>
+          <KnownItemTooltip name={r.item} clickThrough>
+            <Link component="button" type="button" underline="hover" onClick={() => onSelect(r.item)}>
+              {r.item}
+            </Link>
+          </KnownItemTooltip>
           {r.owned !== undefined && r.owned > 0 ? ` (${String(r.owned)})` : ''}
         </span>
       ))}

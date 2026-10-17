@@ -25,6 +25,10 @@
 // drill now also states what the committed DBs know, labelled `db` beside the `observed` columns.
 // With both witnesses on screen, the deep link is a promotion, not a downgrade.
 //
+// AND IT HOVERS AGAIN WHERE A CALLER ASKS (`DonorName`'s `card`), through the click-through card
+// JOS-181 built for exactly this defect — the removal answered a card that could land on a
+// toolbar, and that card can no longer do so.
+//
 // THE FIVE STATE CHIPS LOST THEIRS TOO (JOS-143). They are default-placement, so they open DOWN
 // rather than onto a toolbar — but they render on the SAME rows as the donor name, and a file that
 // is half popper-free is a file whose rule cannot be stated or guarded. Every sentence is a native
@@ -34,6 +38,7 @@
 import type { JSX } from 'react'
 import { Box, Chip } from '@mui/material'
 import { EQ_ITEM_COLORS } from '../../lib/ItemWindow'
+import { KnownItemTooltip } from '../../lib/KnownItemTooltip'
 import { eraChip, type EraSubject } from './plannerData'
 import type { DonorProgress, DonorState } from './plannerProgress'
 
@@ -198,22 +203,31 @@ export function NoSlotChip(): JSX.Element {
  *
  * The name ELLIPSIZES, so it carries a native `title` — the full name with no DOM node and no hit
  * area, which is the one thing the removed card did that nothing else on the row does.
+ *
+ * `card` BRINGS THE ITEM CARD BACK, in `KnownItemTooltip`'s click-through mode (owner ask,
+ * 2026-10-03: a wish list name showed only its own text on hover). That mode is the answer JOS-181
+ * gave to the JOS-143 defect above — it opens downward, takes no pointer events and closes on any
+ * pointerdown, so it cannot sit on a toolbar's controls. Opt-in, because a caller that wraps the
+ * name in `GearRowCompare` already has a card. With the card up the `title` goes: the card states
+ * the full name, and two hovers on one name is one too many.
  */
 export function DonorName({
   name,
   bold,
-  onOpen
+  onOpen,
+  card
 }: {
   name: string
   bold?: boolean
   onOpen?: (name: string) => void
+  card?: boolean
 }): JSX.Element {
   const linked = onOpen !== undefined
-  return (
+  const label = (
     <Box
       component="span"
       data-testid="planner-donor-name"
-      title={name}
+      title={card === true ? undefined : name}
       onClick={linked ? () => onOpen(name) : undefined}
       sx={{
         color: EQ_ITEM_COLORS.name,
@@ -230,5 +244,11 @@ export function DonorName({
     >
       {name}
     </Box>
+  )
+  if (card !== true) return label
+  return (
+    <KnownItemTooltip name={name} clickThrough>
+      {label}
+    </KnownItemTooltip>
   )
 }

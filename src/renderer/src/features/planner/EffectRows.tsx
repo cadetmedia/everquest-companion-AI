@@ -259,12 +259,14 @@ function DonorNameCell({
   compare,
   onOpenLoot
 }: Pick<DonorLineProps, 'donor' | 'compare' | 'onOpenLoot'>): JSX.Element {
-  const name = <DonorName name={donor.name} bold onOpen={onOpenLoot} />
   const row = compare?.byKey.get(donor.key)
-  if (compare === undefined || row === undefined) return name
+  // No gear row to compare (a click, a non-equippable): the item card alone, rather than nothing.
+  if (compare === undefined || row === undefined) return <DonorName name={donor.name} bold onOpen={onOpenLoot} card />
   return (
     <GearRowCompare row={row} data={compare}>
-      <span>{name}</span>
+      <span>
+        <DonorName name={donor.name} bold onOpen={onOpenLoot} />
+      </span>
     </GearRowCompare>
   )
 }
