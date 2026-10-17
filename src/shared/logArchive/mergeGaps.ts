@@ -11,6 +11,8 @@
 interface Tally {
   entries: { name: string; n: number }[]
   distinct: number
+  /** The zones list: every name, past the cap (the Gaps tab's "this zone" filter reads it). */
+  all?: string[]
 }
 
 const LISTS = ['zones', 'sources', 'dispositions', 'drops', 'cons', 'killers', 'casters', 'sales', 'paid'] as const
@@ -52,17 +54,26 @@ function isSnap(x: unknown): x is Snap {
 const byCountThenName = (a: { count: number; name: string }, b: { count: number; name: string }): number =>
   b.count - a.count || (a.name < b.name ? -1 : a.name > b.name ? 1 : 0)
 
+/** Every name a side lists: its `all` where it has one, its served entries where it does not. */
+const namesOf = (t: Tally): string[] => t.all ?? t.entries.map((e) => e.name)
+
 /**
  * Entries summed by name and re-ranked, the fold's way (n desc, then name), the first LIST_CAP kept.
  * `distinct` is the union of what was served, or either side's own count when that is larger: a
  * capped list can only union the entries it carries, so the true distinct count is at least this.
+ * `all`, when either side carries one, is the sorted union of both sides' names.
  */
 function mergeTally(a: Tally | undefined, b: Tally | undefined): Tally | undefined {
   if (a === undefined || b === undefined) return a ?? b
   const n = new Map<string, number>()
   for (const e of [...a.entries, ...b.entries]) n.set(e.name, (n.get(e.name) ?? 0) + e.n)
   const entries = [...n].map(([name, count]) => ({ name, count })).sort(byCountThenName)
-  return { entries: entries.slice(0, LIST_CAP).map((e) => ({ name: e.name, n: e.count })), distinct: Math.max(n.size, a.distinct, b.distinct) }
+  const all = a.all || b.all ? [...new Set([...namesOf(a), ...namesOf(b)])].sort() : undefined
+  return {
+    entries: entries.slice(0, LIST_CAP).map((e) => ({ name: e.name, n: e.count })),
+    distinct: Math.max(n.size, a.distinct, b.distinct, all?.length ?? 0),
+    ...(all ? { all } : {})
+  }
 }
 
 function mergeDetails(a: Details, b: Details): Details {

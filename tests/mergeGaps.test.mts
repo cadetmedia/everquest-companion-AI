@@ -15,6 +15,7 @@ import { CAPTURED_MODULES } from '../src/shared/logArchive/modules'
 interface Tally {
   entries: { name: string; n: number }[]
   distinct: number
+  all?: string[]
 }
 type Details = Record<string, Tally | number | string[] | undefined> & { samples: string[] }
 interface Row {
@@ -146,4 +147,13 @@ test('gaps: a state that is not a gaps snapshot yields null, and the lookup fold
   assert.equal(merged.used, 1)
   assert.deepEqual((merged.state as Snap).rows.map((r) => [r.name, r.count]), [['Copper Ring', 14]])
   assert.equal((merged.state as Snap).seen.item, 300)
+})
+
+test('gaps: the zones list keeps every name across both sides, for the "this zone" filter', () => {
+  const older = snap([row('item', 'Bone Chips', 1, { details: { zones: { ...tally(['Befallen', 3]), all: ['Befallen'] }, samples: [] } })])
+  const newer = snap([row('item', 'Bone Chips', 1, { details: { zones: tally(['Befallen 4 (Refined)', 2]), samples: [] } })])
+  const zones = (mergeGaps(older, newer) as Snap).rows[0].details.zones as Tally
+  assert.deepEqual(zones.all, ['Befallen', 'Befallen 4 (Refined)'], 'a side without `all` gives its served names')
+  const bare = (mergeGaps(newer, newer) as Snap).rows[0].details.zones as Tally
+  assert.equal(bare.all, undefined, 'neither side had one, so none is made up')
 })
