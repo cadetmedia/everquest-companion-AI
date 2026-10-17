@@ -74,6 +74,9 @@ file.
 ## Other scrapers
 
 `npm run scrape:quests|bosses|spells|page-era|mobs|classes` run only on the owner's word.
+`npm run scrape:classes -- --offline` (since 2026-10-17) re-derives `classes.json` from the committed
+cache with zero requests and keeps `scrapedAt`; run it on `local-data-refresh` with the scraper files
+copied from the `wiki-scraper-fixes` worktree (it needs that branch's `revCache.ts` and `isMain.ts`).
 `scrape:spells`, `scrape:classes` and (since `wiki-scraper-fixes`) `scrape:quests` are
 revid-checked: one request per 50 titles, then content only for pages whose revision moved, so a
 rerun is cheap; the quest scraper's first run builds its index (~38 requests). `scrape:mobs` was
@@ -157,5 +160,11 @@ equipped slots before suspecting data; the remedy is equip + `/outputfile invent
   design).
 
 ## Audits
+
+The whole Gaps list for a log, offline: concatenate the archived `.log.gz` and the live log into one
+file named `eqlog_<Name>_<server>.all.txt` (the harness wants a slice-shaped name), then from a
+`main_community` checkout's `engine/`: `GAPS_LOG=<file> GAPS_OUT=<out.json> cargo test --release -p
+knowledge --test gaps_corpus -- --ignored --nocapture`. Fold against `main_community`, not a branch off
+`main`: the data differs and so do the counts.
 
 Dated, offline measurements of the data against the owner's log and the caches live in `docs/community/audits/`. The 2026-10-11 one (`2026-10-11-data-gaps.md`) is the reference for what the log names that the data lacks, what the caches hold that the data lacks, and where a re-derive from THIS clone's item and mob caches would regress (they are older than the committed data; refresh them first). Its section 4 is the to-do list.
