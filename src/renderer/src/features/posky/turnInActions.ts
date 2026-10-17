@@ -6,7 +6,7 @@
 // is the statements that change it. Every statement is arithmetic in shared/questTurnIns.ts
 // (`takeBackTurnIn`, `rejectAllTurnIns`) and one IPC; nothing here decides what a count means.
 
-import { useCallback } from 'react'
+import { useCallback, useRef } from 'react'
 import type { ProgressState } from '@shared/types'
 import {
   rejectAllTurnIns,
@@ -53,6 +53,9 @@ export function useTurnInActions(
   rejected: TurnInInstants,
   setProgress: (p: ProgressState) => void
 ): TurnInActions {
+  // Instants a '+' already sent that `turnIns` may not show yet: main REPLACES the list, so a
+  // second click before the re-render would otherwise restate the old list and drop the first.
+  const sent = useRef<Record<string, number[]>>({})
   /** One more turn-in, dated NOW. `Date.now()` is the honest instant for a statement the user is
    *  making right now, and dating it is what keeps the ledger a list of events rather than a tally
    *  (an instant is what dedupes a detected turn-in against the stored one).
@@ -64,9 +67,11 @@ export function useTurnInActions(
    *  earlier instant; a guessed event time is exactly the kind of invention law 1 forbids. */
   const recordTurnIn = useCallback(
     async (key: string): Promise<void> => {
-      setProgress(
-        await window.eq.setQuestTurnIns(key, [...(turnIns.instants[key] ?? []), Date.now()])
-      )
+      const base = turnIns.instants[key] ?? []
+      const unseen = (sent.current[key] ?? []).filter((ts) => !base.includes(ts))
+      const stamp = Date.now()
+      sent.current[key] = [...unseen, stamp]
+      setProgress(await window.eq.setQuestTurnIns(key, [...base, ...unseen, stamp]))
     },
     [turnIns, setProgress]
   )
@@ -81,6 +86,7 @@ export function useTurnInActions(
   const undoTurnIn = useCallback(
     async (key: string): Promise<void> => {
       if (detected === null) return
+      sent.current[key] = []
       const s = takeBackTurnIn(turnIns.instants[key] ?? [], detected[key] ?? [], rejected[key] ?? [])
       setProgress(await window.eq.setQuestTurnIns(key, s.instants, s.rejected))
     },
@@ -94,6 +100,7 @@ export function useTurnInActions(
    */
   const resetTurnIns = useCallback(async (): Promise<void> => {
     if (detected === null) return
+    sent.current = {}
     let last: ProgressState | null = null
     for (const key of new Set([...Object.keys(turnIns.all), ...Object.keys(detected)])) {
       const s = rejectAllTurnIns(detected[key] ?? [], rejected[key] ?? [])
