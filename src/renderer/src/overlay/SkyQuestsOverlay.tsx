@@ -97,8 +97,20 @@ function StatusCell({ row }: { row: SkyOverlayRow }): JSX.Element {
   )
 }
 
-/** One quest: status, class, reward (the quest's name when the data names none), giver, items. */
-function QuestLine({ row, interactive }: { row: SkyOverlayRow; interactive: boolean }): JSX.Element {
+/**
+ * One quest: status, class, reward (the quest's name when the data names none), giver, items.
+ * Rows alternate two shades with a divider between them, so where one turn-in ends is plain even
+ * when its items wrap onto a second line (owner, 2026-10-16).
+ */
+function QuestLine({
+  row,
+  index,
+  interactive
+}: {
+  row: SkyOverlayRow
+  index: number
+  interactive: boolean
+}): JSX.Element {
   const open = (): void => {
     window.eqOverlay.focusApp({ view: 'posky', quest: row.key })
   }
@@ -115,8 +127,10 @@ function QuestLine({ row, interactive }: { row: SkyOverlayRow; interactive: bool
         alignItems: 'center',
         columnGap: 6,
         rowGap: 2,
-        padding: '2px 2px 2px 5px',
-        borderLeft: `2px solid ${row.ready ? READY : ACCENT}66`,
+        padding: '4px 4px 4px 6px',
+        background: index % 2 === 0 ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.02)',
+        borderLeft: `3px solid ${row.ready ? READY : ACCENT}`,
+        borderTop: index > 0 ? '1px solid rgba(255,255,255,0.16)' : undefined,
         cursor: interactive ? 'pointer' : 'default'
       }}
     >
@@ -212,7 +226,7 @@ export default function SkyQuestsOverlay(): JSX.Element {
             {emptyText(payload)}
           </div>
         ) : (
-          rows.map((row) => <QuestLine key={row.key} row={row} interactive={!locked} />)
+          rows.map((row, i) => <QuestLine key={row.key} row={row} index={i} interactive={!locked} />)
         )}
       </OverlayContent>
 
