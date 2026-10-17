@@ -37,6 +37,9 @@ page list everything.
 - **Gear and planning:** drop sources, worth scores, the +0 to +10 upgrade slider, a level
   route with recommended gear, the Exaltations socket board optimizer.
 - **Maps:** clickable zone links, mob pins, travel routes, ports, and where to level.
+- **Overlays:** a Sky quests overlay that tracks the items for the quests you starred and says
+  when each is ready to turn in, a Map pins overlay that sits over the game's map, and a reset for
+  every overlay.
 - **Log archive:** keep your history while starting a fresh, small log file.
 - **Fixes** to the original's parsing, buffs, debuffs and loot, and community pull requests to
   the original repo that were reviewed before being taken in.
