@@ -134,6 +134,7 @@ const OVERLAY_MENU_ROWS: readonly (readonly [OverlayKind, string])[] = [
   ['xp', 'XP per hour, next level, motes per hour'],
   ['respawn', 'Countdowns started by your own kills'],
   ['mapPins', 'Tracked map points over the game map'],
+  ['skyQuests', 'Starred Plane of Sky quests and the items they need'],
   // JOS-383, and the first row here for a kind that ships ON. It is in this menu on the owner's
   // instruction (2026-08-16, the JOS-139 mirroring precedent): a window that appears by itself
   // needs its off switch within reach of the place you are already looking when you want it gone.

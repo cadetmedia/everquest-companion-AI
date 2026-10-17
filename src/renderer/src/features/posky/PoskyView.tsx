@@ -22,6 +22,7 @@ import type { MobTarget } from '../mobs/mobTarget'
 import Confetti from '../../lib/Confetti'
 import ChipMultiSelect from '../../components/ChipMultiSelect'
 import { filterReadyByClass, useReadyClasses } from './readyClasses'
+import FavoriteAllToggle from './FavoriteAllToggle'
 
 // The one-line status under the filters. It states which of three situations you are in —
 // there is no Sky data at all, there is data but you ignored every quest, or here are the
@@ -208,6 +209,7 @@ function ReadyList(props: ReadyListProps): JSX.Element {
       <Stack direction="row" spacing={2} alignItems="center" useFlexGap sx={{ mb: 2.5 }}>
         <ReadyFirstTimeToggle list={props.list} />
         <ReadyClassPicker classes={props.classes} picked={picked} onPick={setPicked} />
+        <FavoriteAllToggle quests={quests} favorites={props.list.questFavorites} testId="posky-ready-favorite-all" />
         <Box sx={{ flexGrow: 1 }} />
         <InventorySource
           countSource={props.countSource}
@@ -462,6 +464,7 @@ function PoskyBody(x: PoskyBodyProps): JSX.Element {
           control in the bar's right group wrapped the bar onto a fourth row under the dropdown's
           wider labels, moving this very line the freshness caption promises never to move. */}
       <Stack direction="row" spacing={2} alignItems="center" useFlexGap>
+        <FavoriteAllToggle quests={list.filtered} favorites={list.questFavorites} testId="posky-favorite-all" />
         <CountsLine
           questCount={x.quests.length}
           // Counts describe the list you are looking at, so ignored quests are not in them.

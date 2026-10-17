@@ -439,6 +439,8 @@ export const DEFAULT_OVERLAY_CONFIG: Record<OverlayKind, OverlayConfig> = {
   respawn: { open: false, locked: false, bgAlpha: 0.72, bounds: undefined, drill: null },
   // The map pin overlay (map-waypoints). Default off, no migration, as above.
   mapPins: { open: false, locked: false, bgAlpha: 0.72, bounds: undefined, drill: null },
+  // The Sky quest overlay (sky-quest-overlay). Default off, no migration, as above.
+  skyQuests: { open: false, locked: false, bgAlpha: 0.72, bounds: undefined, drill: null },
   // THE ALERT BANNER (JOS-378). `locked: true` is the resting state that makes it a notifier
   // rather than a window — the celebration toast's arrangement, and for the same reason: locked
   // is click-through, and the overlay flips capture on only while a line is actually on screen.

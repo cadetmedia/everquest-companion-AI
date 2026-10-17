@@ -7,7 +7,7 @@
 import { TELEMETRY_OVERLAY_KINDS, type TelemetryOverlayKind } from './telemetry'
 
 /** Overlay kinds the app has and the schema does not. Pinned by tests/telemetryContract. */
-export const UNREPORTED_OVERLAY_KINDS = ['mapPins'] as const
+export const UNREPORTED_OVERLAY_KINDS = ['mapPins', 'skyQuests'] as const
 
 export function isTelemetryOverlayKind(kind: string): kind is TelemetryOverlayKind {
   return (TELEMETRY_OVERLAY_KINDS as readonly string[]).includes(kind)
