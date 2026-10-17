@@ -39,7 +39,7 @@ test('a written payload reads back as it was written', () => {
         reward: 'Mask of Song',
         giver: 'Cilin Spellsinger',
         items: [
-          { name: 'Light Woolen Mask', have: 1, need: 1 },
+          { name: 'Light Woolen Mask', have: 1, need: 1, iconId: 1234 },
           { name: 'Sky Pearl', have: 1, need: 3 }
         ],
         ready: false
@@ -66,7 +66,7 @@ test('a row missing its key, class or name is dropped, and an item needs a name'
         className: 'Cleric',
         name: 'Cleric Test of Faith',
         reward: 42,
-        items: [{ have: 1, need: 1 }, { name: 'Sky Pearl', have: -2, need: 0 }, 'junk'],
+        items: [{ have: 1, need: 1 }, { name: 'Sky Pearl', have: -2, need: 0, iconId: '../x' }, 'junk'],
         ready: 'yes'
       }
     ]
@@ -76,5 +76,5 @@ test('a row missing its key, class or name is dropped, and an item needs a name'
   const [r] = p.rows
   assert.equal(r.reward, undefined)
   assert.equal(r.ready, false, 'only a real true is ready')
-  assert.deepEqual(r.items, [{ name: 'Sky Pearl', have: 0, need: 1 }])
+  assert.deepEqual(r.items, [{ name: 'Sky Pearl', have: 0, need: 1 }], 'an icon id that is not a positive integer is dropped')
 })

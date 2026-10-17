@@ -67,6 +67,14 @@ async function stepFavoriteFiltered(page: Page, overlay: Page): Promise<void> {
   check('"Favorite all shown" stars exactly the filtered quests, and the overlay lists them', rows === shown, `${String(rows)} overlay rows for ${String(shown)} shown`)
   const line = await text(overlay, OVERLAY_ROW)
   check('a row names the reward and the turn-in NPC', line.includes(REWARD) && line.includes('Cilin Spellsinger'), line)
+  const icons = await settle(() => countOf(overlay, `${OVERLAY_ROW} img`), (n) => n >= 1, { timeoutMs: 15_000 })
+  check('items carry their icon from the item database', icons >= 1, `${String(icons)} icons`)
+  const fit = await overlay
+    .$$eval(`${OVERLAY_ROW} img`, (imgs) =>
+      imgs.map((img) => img.getBoundingClientRect().height <= (img.parentElement?.clientHeight ?? 0) + 0.5)
+    )
+    .catch(() => [false])
+  check('an icon is no taller than its item chip', fit.every(Boolean), JSON.stringify(fit))
   await page.click(`${FAV_ALL} input`)
   const gone = await settle(() => countOf(overlay, OVERLAY_ROW), (n) => n === 0, { timeoutMs: 15_000 })
   check('clicked again with every shown quest starred, it unstars them all', gone === 0, `${String(gone)} rows left`)
