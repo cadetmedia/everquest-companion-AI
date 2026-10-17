@@ -12,8 +12,8 @@
 
 import { useEffect, useRef, useState } from 'react'
 import type { ItemKnowledge, LootEvent } from '@shared/types'
-import { isNotableKnowledge, isNotableMarks } from '@shared/itemKnowledge'
-import { isDestroyed } from '@shared/lootDisposition'
+import { isNotableKnowledge, isNotableMarks } from '../../../../shared/itemKnowledge'
+import { isDestroyed } from '../../../../shared/lootDisposition'
 import { itemCountKey } from '../../lib/itemName'
 import { fetchItemMarks } from '../../lib/itemMarks'
 
@@ -79,22 +79,16 @@ export function useNotablePickups(history: LootEvent[], dismissed: Set<string>):
   const recentKeys = recent.current.map((r) => r.key).join('|')
 
   useEffect(() => {
-    let alive = true
     const asked = requested.current
     const toFetch = recent.current.filter((r) => !asked.has(r.key))
     if (toFetch.length === 0) return
     for (const r of toFetch) asked.add(r.key)
+    // No stale-run guard: a newer loot must not discard this probe, since its keys stay asked and
+    // nothing would probe them again. The merge is a functional update, so a late result is safe.
     void probe(toFetch).then((got) => {
-      if (!alive) {
-        for (const r of toFetch) asked.delete(r.key)
-        return
-      }
       if (got.size === 0) return
       setByKey((prev) => new Map([...prev, ...got]))
     })
-    return () => {
-      alive = false
-    }
   }, [recentKeys])
 
   const notable: NotablePickup[] = []
