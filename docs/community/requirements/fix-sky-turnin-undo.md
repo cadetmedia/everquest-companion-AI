@@ -12,3 +12,4 @@ not always who asked; those say "owner" or the upstream issue where the commit d
 | 2026-10-01 | owner | Undo and Reset wait for the log's turn-ins to load, so a take-back right after launch holds. | built |
 | 2026-10-01 | owner | A full list of taken-back turn-ins keeps its newest entries. | built |
 | 2026-10-11 | owner | The Ready tab gets a class filter: "my class, or whatever class I chose". | built (stored, separate from the Quests tab's class filter) |
+| 2026-10-16 | owner (bug hunt, 2026-10-16) | Two quick '+' turn-in clicks counted once. | built (each click builds on the newest list, not the one captured at render) |
