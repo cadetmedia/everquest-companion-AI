@@ -30,7 +30,8 @@
 //! accretion for the folded character can be lost — the one bucket the next attach re-derives in
 //! full, while every other character's is seeded and rewritten unchanged. There is no retry backoff,
 //! so a genuinely full volume will re-try and re-print once a minute. And there is no salvage or
-//! quarantine on the resist read.
+//! quarantine on the resist read: a ledger that exists but did not read as one this build may
+//! replace is not written for the whole generation, because it holds other characters' buckets.
 
 use std::fs::{self, File};
 use std::io::Write;
@@ -77,6 +78,8 @@ pub struct StateDir {
     dir: PathBuf,
     last_ledger: Option<String>,
     last_overlay: Option<String>,
+    /// False once the read found a ledger that must not be written over (see the module header).
+    ledger_writable: bool,
 }
 
 impl StateDir {
@@ -86,21 +89,30 @@ impl StateDir {
             dir: dir.to_path_buf(),
             last_ledger: None,
             last_overlay: None,
+            ledger_writable: true,
         }
     }
 
     /// Read both artifacts, at attach, before the first byte is folded.
     ///
     /// Never fails: a missing file, an unreadable one, a stale version or a shape from another build
-    /// are all an empty seed, which is what both app readers do.
+    /// are all an empty seed, which is what both app readers do. Only a missing file or one
+    /// `read_ledger` calls overwritable leaves the ledger writable.
     #[must_use]
-    pub fn read(&self) -> fold::PersistedState {
-        let ledger = fold::modules::resist::ledger_file::read_ledger(&self.slurp(RESIST_LEDGER));
+    pub fn read(&mut self) -> fold::PersistedState {
+        let text = self.slurp(RESIST_LEDGER);
+        let ledger = fold::modules::resist::ledger_file::read_ledger(text.as_deref().unwrap_or(""));
         if let Some(notice) = &ledger.notice {
             eprintln!("{DIAGNOSTIC_PREFIX} state: {notice}");
         }
+        self.ledger_writable = text.is_some_and(|t| t.is_empty() || ledger.overwritable);
+        if !self.ledger_writable {
+            eprintln!(
+                "{DIAGNOSTIC_PREFIX} state: {RESIST_LEDGER} is left as it is; not written this run"
+            );
+        }
         let overlay = fold::overlay_file::seeds_of(fold::overlay_file::read_register(
-            &self.slurp(MESSAGE_OVERLAY),
+            &self.slurp(MESSAGE_OVERLAY).unwrap_or_default(),
         ));
         eprintln!(
             "{DIAGNOSTIC_PREFIX} state: seeded {} resist bucket(s) and {} overlay bucket(s) from {}",
@@ -114,27 +126,27 @@ impl StateDir {
         }
     }
 
-    /// A file's whole text, or `""` for anything that could not be read.
+    /// A file's whole text, `""` for a missing one, or `None` for one that exists but could not be
+    /// read.
     ///
-    /// ENOENT and every other error collapse to the same answer: an empty string is not valid JSON,
-    /// so it flows into the "reads as empty" arm the readers already have. A file that exists but
-    /// cannot be read is worth a line, and gets one.
-    fn slurp(&self, name: &str) -> String {
+    /// An empty string is not valid JSON, so both flow into the "reads as empty" arm the readers
+    /// already have. A file that exists but cannot be read is worth a line, and gets one.
+    fn slurp(&self, name: &str) -> Option<String> {
         match fs::read_to_string(self.dir.join(name)) {
-            Ok(text) => text,
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => String::new(),
+            Ok(text) => Some(text),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Some(String::new()),
             Err(e) => {
                 eprintln!(
                     "{DIAGNOSTIC_PREFIX} state: {name} could not be read ({e}); starting empty"
                 );
-                String::new()
+                None
             }
         }
     }
 
     /// Write both artifacts, coalesced. Called on every 60th live beat and never during a replay.
     pub fn write(&mut self, registry: &fold::Registry) {
-        if let Some(resist) = registry.resist() {
+        if let Some(resist) = registry.resist().filter(|_| self.ledger_writable) {
             let file = resist.user_ledger_file();
             if let Ok(text) = serde_json::to_string(&file) {
                 self.put(RESIST_LEDGER, &text, true);
@@ -268,9 +280,27 @@ mod tests {
         )
         .expect("half a ledger is written");
         fs::write(dir.join(MESSAGE_OVERLAY), "not json at all").expect("junk is written");
-        let state = StateDir::new(&dir).read();
+        let mut store = StateDir::new(&dir);
+        let state = store.read();
         assert!(state.resist.is_empty());
         assert!(state.overlay.is_empty());
+        // The torn file holds other characters' buckets: this generation must not write over it.
+        assert!(!store.ledger_writable);
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn only_a_missing_or_overwritable_ledger_is_written_over() {
+        let dir = scratch("writable");
+        let mut store = StateDir::new(&dir);
+        let _ = store.read();
+        assert!(store.ledger_writable, "a missing file has nothing to lose");
+        fs::write(dir.join(RESIST_LEDGER), APP_LEDGER).expect("the ledger is written");
+        let _ = store.read();
+        assert!(store.ledger_writable, "this build's own file");
+        fs::write(dir.join(RESIST_LEDGER), r#"{"version":4,"sources":[]}"#).expect("written");
+        let _ = store.read();
+        assert!(!store.ledger_writable, "a newer build's file");
         let _ = fs::remove_dir_all(&dir);
     }
 

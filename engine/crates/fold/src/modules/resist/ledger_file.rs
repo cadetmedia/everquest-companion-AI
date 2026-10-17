@@ -18,9 +18,9 @@
 //!
 //! Named residual: the app's three read tiers past "it parsed" — whole-object salvage, truncation
 //! salvage, and a quarantine that renames the unreadable bytes — are not ported. A file that will
-//! not parse reads as empty and the bytes are left where they are. A torn file costs this run's
-//! seed for the folded character, but it also holds other characters' buckets, which nothing can
-//! re-derive.
+//! not parse reads as empty and the bytes are left where they are: `overwritable` is false, so the
+//! engine does not write over it. A torn file costs this run's seed for the folded character, but
+//! it also holds other characters' buckets, which nothing can re-derive.
 
 use std::collections::HashMap;
 
@@ -226,6 +226,10 @@ pub struct LedgerLoad {
     pub sources: Vec<LedgerSource>,
     /// One sentence for stderr. Absent means an ordinary read with nothing to say.
     pub notice: Option<String>,
+    /// Whether a write may replace the file read: ours, or an older version (a planned discard).
+    /// False for bytes that will not parse or a newer build's file — they hold buckets nothing here
+    /// can re-derive.
+    pub overwritable: bool,
 }
 
 /// The read rules, in order. Every one answers with buckets rather than an error: this never fails.
@@ -244,10 +248,16 @@ pub fn read_ledger(text: &str) -> LedgerLoad {
         return LedgerLoad {
             sources: Vec::new(),
             notice: Some("resist-ledger.json is not valid JSON; starting empty".to_owned()),
+            overwritable: false,
         };
     };
-    if doc.get("version").and_then(serde_json::Value::as_i64) != Some(RESIST_LEDGER_VERSION) {
-        return LedgerLoad::default();
+    let version = doc.get("version").and_then(serde_json::Value::as_i64);
+    if version != Some(RESIST_LEDGER_VERSION) {
+        let older = version.is_some_and(|v| v < RESIST_LEDGER_VERSION);
+        return LedgerLoad {
+            overwritable: older,
+            ..LedgerLoad::default()
+        };
     }
     let Some(raw) = doc.get("sources").and_then(serde_json::Value::as_array) else {
         return LedgerLoad::default();
@@ -271,7 +281,11 @@ pub fn read_ledger(text: &str) -> LedgerLoad {
     let notice = (dropped > 0).then(|| {
         format!("resist-ledger.json: {dropped} character bucket(s) held rows this build cannot read and were dropped")
     });
-    LedgerLoad { sources, notice }
+    LedgerLoad {
+        sources,
+        notice,
+        overwritable: true,
+    }
 }
 
 /// The write rules:
@@ -402,6 +416,11 @@ mod tests {
         let stale = read_ledger(r#"{"version":2,"sources":[{"key":"a","rows":[]}]}"#);
         assert!(stale.sources.is_empty());
         assert!(stale.notice.is_none());
+        assert!(stale.overwritable);
+        // Torn bytes and a newer build's file hold buckets this build cannot re-derive.
+        assert!(!read_ledger("{\"version\":3,\"sources\":[").overwritable);
+        assert!(!read_ledger(r#"{"version":4,"sources":[]}"#).overwritable);
+        assert!(read_ledger(r#"{"version":3,"sources":[]}"#).overwritable);
         // Parsed, ours, but the source is not a shape we can seed from.
         assert!(
             read_ledger(r#"{"version":3,"sources":[{"key":"a","rows":{}}]}"#)
