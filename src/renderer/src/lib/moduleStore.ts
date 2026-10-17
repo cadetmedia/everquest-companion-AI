@@ -199,6 +199,14 @@ function absorb(entry: Entry, snap: ModuleSnapshot | null): void {
   if (snap) entry.seq = snap.seq
 }
 
+/** A fetch that threw settles like an empty answer, marked stale, so a later cursor or reader
+ *  asks again instead of buffering behind a fetch that will never land. */
+function abandon(entry: Entry): void {
+  entry.fetching = false
+  entry.hydrated = true
+  entry.stale = true
+}
+
 /** Buffer the newest cursor heard while a fetch was in flight — contract 2. */
 function noteCursor(entry: Entry, seq: number): void {
   if (seq > entry.pendingSeq) entry.pendingSeq = seq
@@ -278,6 +286,10 @@ export function createModuleStore(deps: {
       // …AND THE CURSOR THAT LANDED DURING THE FETCH. It cannot simply be dropped: the reply it
       // raced may have been taken from the engine BEFORE that cursor moved, and no later frame
       // restates a cursor already reported.
+      if (entry.pendingSeq > entry.seq) markDirty(id)
+    }, () => {
+      if (born !== generation) return
+      abandon(entry)
       if (entry.pendingSeq > entry.seq) markDirty(id)
     })
   }
