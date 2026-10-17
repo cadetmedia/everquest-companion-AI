@@ -58,3 +58,14 @@ test('once it has, the reset rejects every detection it takes back', async () =>
   await actions({ [KEY]: [DETECTED_AT] }).resetTurnIns()
   assert.deepEqual(calls, [{ key: KEY, instants: [], rejected: [DETECTED_AT] }])
 })
+
+test('a second record before the re-render keeps the first one', async () => {
+  const calls = stubBridge()
+  const a = actions({ [KEY]: [DETECTED_AT] })
+  await a.recordTurnIn(KEY)
+  await a.recordTurnIn(KEY)
+  const [first, second] = calls.map((c) => c.instants)
+  assert.equal(first.length, 2)
+  assert.deepEqual(second.slice(0, 2), first)
+  assert.equal(second.length, 3)
+})
