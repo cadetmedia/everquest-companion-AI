@@ -65,3 +65,14 @@ test('a reset button only asks: the reset runs from the popup Reset button and n
   const bar = readFileSync(new URL('../src/renderer/src/components/TitleBar.tsx', import.meta.url), 'utf8')
   assert.doesNotMatch(bar, /runReset|resetOverlays\(/, 'the menu rows never reset directly')
 })
+
+test('a reset tells the app window the per-overlay sizes and alphas, pane open or not', () => {
+  const ipc = readFileSync(new URL('../src/main/ipc/windowControls.ts', import.meta.url), 'utf8')
+  const handler = ipc.slice(ipc.indexOf('IPC.overlayReset'), ipc.indexOf('IPC.overlayGetConfig'))
+  assert.match(handler, /broadcastOverlayTextScales\(\)/)
+  assert.match(handler, /broadcastOverlayBgAlphas\(\)/)
+  // Preferences is unmounted while another view shows; App.tsx keeps its warm snapshot current.
+  const app = readFileSync(new URL('../src/renderer/src/App.tsx', import.meta.url), 'utf8')
+  assert.match(app, /onOverlayTextScales\(\(m\) => \{\s+recordPref\('overlayTextScales', m\)/)
+  assert.match(app, /onOverlayBgAlphas\(\(m\) => \{\s+recordPref\('overlayBgAlphas', m\)/)
+})
