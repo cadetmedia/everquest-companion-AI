@@ -229,3 +229,23 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   basis like its other rates, and every rate sort orders by the active-hour value.
 - `tests/e2e/maps.e2e.mts` "the map row never moves or resizes" fails on this branch with or
   without its Maps change (measured 2026-10-13): a red of the base, not of the new tab.
+
+## sky-quest-overlay (bases on fix-sky-turnin-undo)
+
+- Data path: AppCelebrations' always-mounted `useProgress` -> `useSkyOverlayFeed` -> localStorage
+  `eq.skyOverlay.rows` (written only on change) -> the overlay's `storage` listener. No IPC. The
+  key is the main window's data, defined in `src/shared/`, so `tests/mapPinsReset.test.mts` (which
+  scans keys defined in `overlay/`) does not see it and an overlay reset must not clear it.
+- "Favorites" here means quest stars (`eq.questFavorites`). The Quests tab's "Favorites only" also
+  shows quests that merely need a starred ITEM; the overlay does not list those (2026-10-16
+  reading of the ask, not an owner ruling yet).
+- "Count items from" is a per-window store (`useCountSource.ts`); a new `useProgress` reader
+  follows the tab's pick with nothing extra.
+- Merge with `map-waypoints`: `OverlayKind`/`OVERLAY_KINDS`, `OVERLAY_KIND_LABEL`/
+  `OVERLAY_LABEL_ORDER`, `OVERLAY_TITLE`, `DEFAULT_OVERLAY_CONFIG`, `OVERLAY_MENU_ROWS`,
+  `overlay/main.tsx`, `UNREPORTED_OVERLAY_KINDS` and the hot-zone / appearance test lists each
+  conflict on one line: take both, `mapPins` first. In `TitleBar.tsx` keep main_community's
+  `OverlayResetDialog` import where this branch has none.
+- Branch-alone reds (2026-10-16): `resistBaseline.test.mts` Nagafen and Zol Ghoul Knight, red on the
+  untouched base too (the base carries main's data, not local-data-refresh's).
+- Open: no e2e for the overlay or the checkbox.

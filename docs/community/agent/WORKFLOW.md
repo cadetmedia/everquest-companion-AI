@@ -86,7 +86,10 @@ disagree, RULES.md wins; fix this file.
   gear-progression-plan (home) and gear-tab-improvements; `src/renderer/src/appRouting.ts` on
   gear-tab-improvements, map-improvements, gear-progression-plan; `src/renderer/src/lib/CellLink.tsx`
   on gear-tab-improvements and gear-progression-plan; `src/shared/factionLedger.ts` + its test on
-  log-archive and faction-tab. Verify pairs with `git merge-tree --write-tree <a> <b>`.
+  log-archive and faction-tab; `src/main/storeXpKnobs.ts` (with its `store.ts` hunk),
+  `src/main/telemetry/liveRiders.ts`, `setupSnapshot.ts` and `tests/zoneScope.test.mts` on
+  map-waypoints (home) and sky-quest-overlay, where `src/shared/telemetryOverlays.ts` differs only
+  in the kind its list names. Verify pairs with `git merge-tree --write-tree <a> <b>`.
 - **Branches with two UNRELEASED splices** in `appViews.ts`: `tests/telemetryContract.test.mts`
   on main reads only the first; take spell-upgrades' version of that test.
 
