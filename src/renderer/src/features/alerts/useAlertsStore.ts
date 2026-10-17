@@ -128,6 +128,8 @@ export function useAlertsStore(): AlertsStore {
    */
   const setDefaultPack = useCallback(async (packId: string | null) => {
     setPackPrefs(await window.eq.setDefaultSoundPack(packId))
+    // A ref to a missing pack resolves through the default in main; drop blobs cached under the old one.
+    invalidateSoundCaches()
   }, [])
 
   const persistAlerts = useCallback(async (def: AlertDef) => {
