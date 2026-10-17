@@ -480,6 +480,9 @@ test('progression: coin and death columns join when either side has them, and st
   assert.deepEqual(m.coinCopper, [10, 20])
   assert.deepEqual(m.deathTs, [6])
   assert.deepEqual(m.deathKiller, ['a shiverback'])
+  const sold = progression({ ...({ coinTs: [7], coinCopper: [30], coinSold: ['a bone chip'] } as Partial<ProgressionSnap>) })
+  const s = mergeProgression(older, sold) as unknown as Record<string, unknown[]>
+  assert.deepEqual(s.coinSold, ['', 'a bone chip'], 'coinSold joins, padded where a side lacks it')
   const plain = mergeProgression(progression({}), progression({})) as unknown as Record<string, unknown>
   assert.equal('coinTs' in plain, false)
 })

@@ -50,11 +50,15 @@ type Columns = Record<Column, (number | string)[]>
 /** Columns a newer fold adds (coin and deaths, `coin-and-deaths`), merged when either side has them,
  * so this file builds with or without that branch and an archive made before it reads as none. */
 const OPTIONAL_GROUPS: readonly { cols: readonly string[]; cap: number }[] = [
-  { cols: ['coinTs', 'coinCopper'], cap: 20_000 },
+  { cols: ['coinTs', 'coinCopper', 'coinSold'], cap: 20_000 },
   { cols: ['deathTs', 'deathKiller'], cap: 4_000 }
 ]
 
 const arrayOr = (v: unknown): unknown[] => (Array.isArray(v) ? (v as unknown[]) : [])
+
+/** One side's column, or '' for each of its rows when it lacks it (a fold from before `coinSold`). */
+const column = (side: Record<string, unknown>, c: string, lead: string): unknown[] =>
+  Array.isArray(side[c]) ? (side[c] as unknown[]) : arrayOr(side[lead]).map(() => '')
 
 /** The optional columns joined older first and trimmed to their caps, as `trim` does the rest. */
 function optional(older: ProgressionSnap, newer: ProgressionSnap): { cols: Record<string, unknown[]>; dropped: number; window: number } {
@@ -65,7 +69,7 @@ function optional(older: ProgressionSnap, newer: ProgressionSnap): { cols: Recor
   let window = 0
   for (const g of OPTIONAL_GROUPS) {
     if (!g.cols.some((c) => Array.isArray(o[c]) || Array.isArray(n[c]))) continue
-    for (const c of g.cols) cols[c] = [...arrayOr(o[c]), ...arrayOr(n[c])]
+    for (const c of g.cols) cols[c] = [...column(o, c, g.cols[0]), ...column(n, c, g.cols[0])]
     const len = cols[g.cols[0]].length
     if (len < g.cap + TRIM_BATCH) continue
     const cut = len - g.cap
