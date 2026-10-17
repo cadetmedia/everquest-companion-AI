@@ -30,8 +30,10 @@ type Pending = Map<string, number[]>
 function queueLoot(pending: Pending, loot: readonly LootEvent[], from: number, ts: number): number {
   let li = from
   for (; li < loot.length && loot[li].ts <= ts; li++) {
-    if (!kept(loot[li])) continue
     const k = key(loot[li].item)
+    // A destroy is its own later row: the copy it took never reaches a merchant, oldest first.
+    if (loot[li].disposition === 'destroyed') pending.get(k)?.shift()
+    if (!kept(loot[li])) continue
     const at = pending.get(k)
     if (at === undefined) pending.set(k, [loot[li].ts])
     else at.push(loot[li].ts)

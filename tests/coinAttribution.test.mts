@@ -65,3 +65,10 @@ test('a stack looted at once is one entry, consumed whole by one sale', () => {
   assert.deepEqual(s.coinTs, [1 * MIN, 2 * MIN])
   assert.deepEqual(s.coinCopper, [800, 300])
 })
+
+test('a destroyed copy leaves the queue, so a later sale credits the next loot', () => {
+  const loot = [sash(1 * MIN), sash(2 * MIN, { disposition: 'destroyed' }), sash(5 * MIN, { zone: 'Unrest' })]
+  const s = attributeSales(snap([20 * MIN], [500], ['Bandit Sash']), loot)
+  assert.deepEqual(s.coinTs, [5 * MIN])
+  assert.deepEqual(s.coinCopper, [500])
+})
