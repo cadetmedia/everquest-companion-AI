@@ -38,6 +38,7 @@ import { applyTimerOverlayKnobs } from '../shared/buffTimers'
 // The XP overlay's two persisted knobs (JOS-195), rebuilt in their own file (this one is at the
 // 400-code-line ceiling).
 import { applyXpOverlayKnobs } from './storeXpKnobs'
+import { applySkyQuestsKnob } from './storeSkyQuestsKnob'
 import type { ComboCorrection } from '../shared/classCombo'
 import {
   ALERT_SOUND_MIGRATION_VERSION,
@@ -537,6 +538,7 @@ export function setOverlayConfig(kind: OverlayKind, patch: Partial<OverlayConfig
   // carry this knob" is a fact about.
   applyTimerOverlayKnobs(kind, next)
   applyXpOverlayKnobs(kind, next)
+  applySkyQuestsKnob(kind, next)
   const all = store.get('overlays') ?? {}
   all[kind] = next
   store.set('overlays', all)

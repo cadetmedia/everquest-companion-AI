@@ -9,6 +9,7 @@ import {
   parseSkyOverlay,
   type SkyOverlayRow
 } from '../src/shared/skyQuestOverlay'
+import { applySkyQuestsKnob } from '../src/main/storeSkyQuestsKnob'
 
 function row(className: string, name: string, ready: boolean): SkyOverlayRow {
   return { key: `${className}::${name}`, className, name, items: [{ name: 'Item', have: ready ? 1 : 0, need: 1 }], ready }
@@ -77,4 +78,17 @@ test('a row missing its key, class or name is dropped, and an item needs a name'
   assert.equal(r.reward, undefined)
   assert.equal(r.ready, false, 'only a real true is ready')
   assert.deepEqual(r.items, [{ name: 'Sky Pearl', have: 0, need: 1 }], 'an icon id that is not a positive integer is dropped')
+})
+
+test('the icons switch is kept only on the Sky quest overlay, and only as a real boolean', () => {
+  const base = { open: true, locked: false, bgAlpha: 0.72, drill: null }
+  const off = { ...base, skyIcons: false }
+  applySkyQuestsKnob('skyQuests', off)
+  assert.equal(off.skyIcons, false)
+  const junk = { ...base, skyIcons: 'no' as unknown as boolean }
+  applySkyQuestsKnob('skyQuests', junk)
+  assert.equal('skyIcons' in junk, false, 'a non-boolean is dropped, so the overlay reads it as on')
+  const stray = { ...base, skyIcons: false }
+  applySkyQuestsKnob('xp', stray)
+  assert.equal('skyIcons' in stray, false, 'another window does not keep it')
 })
