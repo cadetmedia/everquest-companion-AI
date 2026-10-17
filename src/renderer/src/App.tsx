@@ -400,9 +400,18 @@ function keepPrefsSnapshotCurrent(): () => void {
     const cur = peekPrefsSnapshot()?.overlayOpen
     if (cur) recordPref('overlayOpen', { ...cur, [s.kind]: s.open })
   })
+  // Per-overlay sizes and alphas change from the windows and the Overlay menu's reset too.
+  const offScales = window.eq.onOverlayTextScales((m) => {
+    recordPref('overlayTextScales', m)
+  })
+  const offAlphas = window.eq.onOverlayBgAlphas((m) => {
+    recordPref('overlayBgAlphas', m)
+  })
   return () => {
     offTray()
     offOverlays()
+    offScales()
+    offAlphas()
   }
 }
 

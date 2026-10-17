@@ -242,7 +242,13 @@ export function registerWindowIpc(): void {
     setOverlayOpen(kind, !isOverlayOpen(kind))
   )
   ipcMain.handle(IPC.overlayGetState, () => overlayStateMap())
-  ipcMain.handle(IPC.overlayReset, (_e, kinds: unknown) => resetOverlays(kinds))
+  ipcMain.handle(IPC.overlayReset, async (_e, kinds: unknown) => {
+    const open = await resetOverlays(kinds)
+    // A reset puts each kind's own size and alpha back; Preferences and its prefs cache must hear it.
+    broadcastOverlayTextScales()
+    broadcastOverlayBgAlphas()
+    return open
+  })
   ipcMain.handle(IPC.overlayGetConfig, (_e, kind: OverlayKind) => getOverlayConfig(kind))
   ipcMain.handle(IPC.overlaySetConfig, (_e, kind: OverlayKind, patch: Partial<OverlayConfig>) => {
     // TEXT SCALE AND BACKGROUND ALPHA ARE ROUTED, NOT FANNED OUT (JOS-405, JOS-407).
