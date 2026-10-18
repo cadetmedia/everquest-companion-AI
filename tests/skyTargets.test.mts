@@ -546,8 +546,13 @@ test('THE ERA/VARIANT MEASUREMENT: page identity is name identity in the Sky cat
   }
   const shared = [...byName.entries()].filter(([, pages]) => pages.size > 1)
   assert.deepEqual(shared.map(([n]) => n), [], 'no Sky mob name spans two catalog pages')
-  // And there is no era annotation on a mob row at all to key a variant off (the `eraTag` the item
-  // DB carries has no counterpart in MobEntry) — so nothing is being dropped by not reading one.
+  // A mob row now carries its page's era banner (`eraTag`, the token the item DB carries). An era
+  // variant would be a SECOND page for one name, and there is none (above), so each tag rides on
+  // the sole row of its name and keying the card on `page` merges no two eras.
   const withEra = sky.filter((m) => 'eraTag' in m)
-  assert.deepEqual(withEra.map((m) => m.page), [], 'MobEntry carries no era tag to honour')
+  assert.ok(withEra.length > 0, 'the Sky rows carry their era banner')
+  assert.ok(
+    withEra.every((m) => byName.get(m.name.toLowerCase())?.size === 1),
+    'every era-tagged Sky row is the only page of its name'
+  )
 })
