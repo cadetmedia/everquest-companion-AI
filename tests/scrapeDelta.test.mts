@@ -316,11 +316,16 @@ test('the caches on disk: batches rewritten, a mob page file and its index title
     const batch = JSON.parse(readFileSync(join(items, 'batch-1-1.json'), 'utf8')) as CachedPage[]
     assert.deepEqual(batch, [cached(1, 'New', 'new')])
     assert.equal(readFileSync(join(items, 'item-pages.json'), 'utf8'), '[]')
-    assert.equal(writeMobCache(mobs, fresh), 1)
+    assert.equal(writeMobCache(mobs, { fresh, gone: new Set(), keep: new Set() }), 1)
     assert.equal(readFileSync(join(mobs, 'page-1.wikitext'), 'utf8'), 'new')
     assert.equal(existsSync(join(mobs, 'page-2.wikitext')), false)
     const index = JSON.parse(readFileSync(join(mobs, 'mob-pages.json'), 'utf8')) as CachedPage[]
     assert.deepEqual(index, [{ pageid: 1, ns: 0, title: 'New' }])
+    // A new mob page joins the cache and its list; a gone one leaves the list.
+    assert.equal(writeMobCache(mobs, { fresh: [fresh[1]], gone: new Set(['New']), keep: new Set(['X']) }), 1)
+    assert.equal(readFileSync(join(mobs, 'page-2.wikitext'), 'utf8'), 'x')
+    const after = JSON.parse(readFileSync(join(mobs, 'mob-pages.json'), 'utf8')) as CachedPage[]
+    assert.deepEqual(after, [{ pageid: 2, ns: 0, title: 'X' }])
   } finally {
     rmSync(root, { recursive: true, force: true })
   }

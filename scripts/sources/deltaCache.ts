@@ -91,24 +91,27 @@ export function writeItemCache(dir: string, change: CacheChange): number {
 }
 
 /**
- * The mob cache under `dir`: each page it already holds (`page-<pageid>.wikitext`) rewritten, and
- * its title in `mob-pages.json` (the list the reader names pages by) moved to the current one.
+ * The mob cache under `dir`: each page it already holds (`page-<pageid>.wikitext`) rewritten and
+ * each new page in `change.keep` added, with `mob-pages.json` (the list the reader names pages by)
+ * carrying every current title; a gone title leaves the list.
  */
-export function writeMobCache(dir: string, fresh: FreshPage[]): number {
+export function writeMobCache(dir: string, change: CacheChange): number {
   const indexPath = join(dir, 'mob-pages.json')
-  const index = existsSync(indexPath)
+  const read = existsSync(indexPath)
     ? (JSON.parse(readFileSync(indexPath, 'utf8')) as CachedPage[])
     : []
+  const index = read.filter((m) => !change.gone.has(m.title ?? ''))
   const byId = new Map(index.map((m) => [m.pageid, m]))
   let n = 0
-  for (const p of fresh) {
+  for (const p of change.fresh) {
     const file = join(dir, `page-${String(p.pageid)}.wikitext`)
-    if (!existsSync(file)) continue
+    if (!existsSync(file) && !change.keep.has(p.title)) continue
     writeAtomic(file, p.content)
     const member = byId.get(p.pageid)
     if (member) member.title = p.title
+    else index.push({ pageid: p.pageid, ns: 0, title: p.title })
     n++
   }
-  if (n > 0 && index.length > 0) writeAtomic(indexPath, JSON.stringify(index))
+  if (n > 0 || index.length < read.length) writeAtomic(indexPath, JSON.stringify(index))
   return n
 }
