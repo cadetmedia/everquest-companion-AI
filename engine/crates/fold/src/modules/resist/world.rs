@@ -28,7 +28,7 @@ use super::catalog::{catalog_knows, local_mob_entry, parse_catalog_level, resolv
 use super::mob_key;
 use crate::jsmap::JsMap;
 use eqlog::jsstr::{js_trim, JS_S};
-use eqlog::names::id_key;
+use eqlog::names::{id_key, mob_article_re};
 use regex::Regex;
 use std::collections::HashMap;
 use std::sync::OnceLock;
@@ -209,7 +209,7 @@ impl CasterIndex {
             return "npc";
         }
         let trimmed = js_trim(name);
-        if article_re().is_match(trimmed) {
+        if mob_article_re().is_match(trimmed) {
             return "npc";
         }
         if any_space_re().is_match(trimmed) {
@@ -230,40 +230,13 @@ fn kind_from(v: &'static str) -> super::ledger::CasterKind {
     }
 }
 
-/// The leading article, the mob-name marker EQ prints, sentence-initial or not. Stated separately
-/// from the single-word test even though `a ` could never satisfy it, because the article is the
-/// mob marker and a reader looking for it should find it.
-fn article_re() -> &'static Regex {
-    static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| Regex::new(&format!(r"(?i)^(?:a|an|the){s}", s = JS_S)).unwrap())
-}
-
 fn any_space_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| Regex::new(JS_S).unwrap())
 }
 
-/// A letter, then letters/apostrophes/backticks. EQ names carry backticks and apostrophes
-/// (``T`Kail``, `N'Kari`) and never spaces, digits or other punctuation. Anchored at both ends, so
-/// any multi-word phrase is refused outright.
-fn single_word_name_re() -> &'static Regex {
-    static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| Regex::new(r"^[A-Z][A-Za-z`']*$").unwrap())
-}
-
-/// EQ gives players a single capitalized word with no space, and mobs an article plus a noun
-/// phrase. The log capitalizes a sentence-initial article, so the word count discriminates and
-/// capitalization does not.
-pub fn is_player_shaped_name(name: &str) -> bool {
-    let n = js_trim(name);
-    if n.is_empty() {
-        return false;
-    }
-    if article_re().is_match(n) {
-        return false;
-    }
-    single_word_name_re().is_match(n)
-}
+/// One definition, in `eqlog::names`, re-exported here so the con card keeps its path.
+pub use eqlog::names::is_player_shaped_name;
 
 /// May a row be filed about this name as a target? Memoised per fold; the verdict is a pure
 /// function of the name, so nothing can invalidate an entry.
