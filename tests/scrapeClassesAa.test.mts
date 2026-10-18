@@ -20,7 +20,10 @@ const ABBR = new Map(
 test('every AA row of the four tables is read, with its table', () => {
   const aas = parseAaTable(WT, ABBR)
   const groups = (g: string): number => [...aas.values()].filter((r) => r.group === g).length
-  assert.deepEqual([groups('general'), groups('archetype'), groups('class'), groups('special')], [30, 34, 77, 1])
+  assert.deepEqual([groups('general'), groups('archetype'), groups('special')], [30, 34, 1])
+  // A FLOOR for the class table: editors add class AAs (76 on 2026-10-10, 77 on 2026-10-18), and a
+  // parser that stops reading rows still falls under it. Holds on the old cache and a re-scrape alike.
+  assert.ok(groups('class') >= 76, `class AAs: ${String(groups('class'))}`)
   assert.deepEqual(aas.get('Heroic Leap'), { group: 'class', classes: ['WAR'], activated: true })
   assert.deepEqual(aas.get('Origin'), { group: 'general', activated: true })
   assert.deepEqual(aas.get('Mass Group Buff'), { group: 'archetype', activated: true })
