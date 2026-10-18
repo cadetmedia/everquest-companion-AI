@@ -5,6 +5,7 @@
  *   npm run scrape:page-era              # incremental: reuses the on-disk response cache
  *   npm run scrape:page-era -- --refresh # ignore the cache, re-ask the wiki
  *   npm run scrape:page-era -- --dry-run # enumerate and print, send NOTHING
+ *   npm run scrape:page-era -- --fresh <titles.json>  # re-ask only the cached batches holding these
  *
  * WHY. eqlwiki draws its red `OUT OF ERA` pill on LINKS, not on pages: its skin module
  * `skins.EQLImmersive.eraFilter` walks every internal anchor, asks a custom `action=eqlmetadata`
@@ -113,6 +114,9 @@ const SOURCE =
 const argv = process.argv.slice(2)
 const refresh = argv.includes('--refresh')
 const dryRun = argv.includes('--dry-run')
+/** `--fresh <file>`: a JSON list of titles changed since the last run (scrape-delta writes it). */
+const freshAt = argv.indexOf('--fresh')
+const FRESH = new Set(freshAt < 0 ? [] : (JSON.parse(readFileSync(argv[freshAt + 1], 'utf8')) as string[]).map(pageEraKey))
 
 // ---- disk cache: sources/diskCache.ts (written only after a complete response) -----------------
 
@@ -120,6 +124,8 @@ const { read: readCache, write: writeCache } = createCache(CACHE_DIR, { refresh 
 
 /** This exact slice's cached batch: its hashed file, else an older-named file that proves it is this slice. */
 function readBatch(prefix: string, slice: readonly string[]): unknown {
+  // A slice holding a page that changed since the last run is asked again.
+  if (slice.some((t) => FRESH.has(pageEraKey(t)))) return null
   const cached = readCache(batchName(prefix, slice))
   if (cached !== null) return cached
   const legacy = readCache(legacyBatchName(prefix, slice))
