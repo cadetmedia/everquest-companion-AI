@@ -2,6 +2,7 @@
 // and the mob fold. No network, no files.
 
 import { isMobPage, parseMobPage } from './mobPage'
+import { applyOtherNames, redirectsOf, redirectTarget, type NamedMob } from './mobRedirects'
 
 /** A move or delete in ns0: listed for the record; its titles are re-read like any edit. */
 export interface PageLogEvent {
@@ -159,8 +160,24 @@ export function foldMobs<T extends { page: string }>(mobs: T[], pages: PageTexts
   return { byPage, folded, removed }
 }
 
+/**
+ * Mob `otherNames` over a fold (sources/mobRedirects.ts): the redirects the committed records
+ * carry, less every page read again, plus each read page that is a redirect now. Returns the
+ * redirect pages that landed on a mob.
+ */
+export function foldRedirects(before: readonly NamedMob[], after: NamedMob[], pages: PageTexts): string[] {
+  const redirects = redirectsOf(before).filter((r) => !pages.has(r.from))
+  for (const [from, wt] of pages) {
+    const to = wt == null ? null : redirectTarget(wt)
+    if (to !== null) redirects.push({ from, to })
+  }
+  applyOtherNames(after, redirects)
+  const landed = new Set(after.flatMap((m) => m.otherNames ?? []))
+  return [...pages.keys()].filter((t) => landed.has(t))
+}
+
 /** The pages scrape-classes.ts reads. */
-const CLASS_PAGES = new Set([
+export const CLASS_PAGES = new Set([
   'Bard', 'Beastlord', 'Berserker', 'Cleric', 'Druid', 'Enchanter', 'Magician', 'Monk',
   'Necromancer', 'Paladin', 'Ranger', 'Rogue', 'Shadow Knight', 'Shaman', 'Warrior', 'Wizard',
   'Character Classes', 'Alternate Advancement', 'Disciplines', 'Stances & Invocations'

@@ -103,11 +103,11 @@ export interface FeedRead {
 }
 
 /**
- * Every ns0 page edited or created since `sinceIso` (by id), every title a log row names. The
- * feed walks backward in time, so the requests after the first row older than `newerThan` are
- * the price of the oldest file's window alone.
+ * Every page of `namespace` (articles; 6 is File:) edited or created since `sinceIso` (by id),
+ * every title a log row names. The feed walks backward in time, so the requests after the first
+ * row older than `newerThan` are the price of the oldest file's window alone.
  */
-export async function changedPages(sinceIso: string, newerThan: string): Promise<FeedRead> {
+export async function changedPages(sinceIso: string, newerThan: string, namespace = '0'): Promise<FeedRead> {
   const read: FeedRead = { feed: emptyFeed(), requests: 0, extra: 0 }
   let rccontinue: string | undefined
   let crossed = false
@@ -119,7 +119,7 @@ export async function changedPages(sinceIso: string, newerThan: string): Promise
       rclimit: '500',
       rcprop: 'title|ids|loginfo|timestamp',
       rctype: 'edit|new|log',
-      rcnamespace: '0'
+      rcnamespace: namespace
     }
     if (rccontinue) params.rccontinue = rccontinue
     if (crossed) read.extra++

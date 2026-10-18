@@ -131,9 +131,13 @@ test('a run reads the feed once and refreshes items, spells and quests, each fro
   const { root, calls } = stubbed(t)
   const p = seed(root)
   await run(p, parseArgs(['--spell-titles', '--since-quests=2026-08-22T19:51:37.602Z']))
-  const feedReads = calls.filter((q) => q.get('list') === 'recentchanges' && !q.get('rcdir'))
+  const feed = (ns: string): URLSearchParams[] =>
+    calls.filter((q) => q.get('list') === 'recentchanges' && !q.get('rcdir') && q.get('rcnamespace') === ns)
+  const feedReads = feed('0')
   assert.equal(feedReads.length, 1)
   assert.equal(feedReads[0].get('rcend'), windowStart(SPELLS_AT))
+  // File: pages once more, from the same start, for the bundled images behind them.
+  assert.deepEqual(feed('6').map((q) => q.get('rcend')), [windowStart(SPELLS_AT)])
   for (const q of calls) assert.ok((q.get('pageids') ?? q.get('titles') ?? '').split('|').length <= 50)
   const read = calls.flatMap((q) => q.get('pageids')?.split('|') ?? [])
   assert.ok(!read.includes('301'), 'a known item changed before items.json was scraped is not read')

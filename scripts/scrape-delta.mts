@@ -17,7 +17,11 @@
 // later runs. `--since-<items|mobs|spells|quests>=<ISO>` moves a file's window back (never
 // forward), for a file whose stamp is newer than the wiki text it was built from.
 //
-// After a run that changed anything: `npm run gen:data-weight` (the ledger pins exact bytes).
+// A redirect page that lands on a mob is kept as that mob's otherNames (sources/mobRedirects.ts).
+// Then every other wiki-derived file the changes reach is brought up to date by its own tool
+// (sources/deltaFollow.ts): respawns, mob factions and races from the mob cache; classes and era
+// verdicts for the changed pages; Plane of Sky when one of its pages changed; images whose File:
+// page changed; the spell overlay and the byte ledger. Changed boss pages are named for a look.
 
 import { existsSync, readFileSync, renameSync, writeFileSync } from 'fs'
 import { dirname, join, resolve } from 'path'
@@ -37,6 +41,7 @@ import { writeItemCache, writeMobCache, type FreshPage } from './sources/deltaCa
 import { foldItems, isItemPage, type ItemFold } from './sources/deltaItems'
 import {
   foldMobs,
+  foldRedirects,
   nextScrapedAt,
   QUESTS_FILE,
   SPELLS_FILE,
@@ -82,7 +87,9 @@ import {
   windowStart,
   type Windows
 } from './sources/deltaWindow'
+import { FOLLOWED, followDelta } from './sources/deltaFollow'
 import { isMobPage } from './sources/mobPage'
+import type { NamedMob } from './sources/mobRedirects'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 
@@ -135,7 +142,7 @@ export function parseArgs(argv: string[]): DeltaOptions {
 interface MobsFile {
   scrapedAt: string
   source: string
-  mobs: { page: string }[]
+  mobs: NamedMob[]
 }
 
 /** The committed files; spells and quests only where this checkout has their caches. */
@@ -313,7 +320,8 @@ function foldAndDeriveSpells(ctx: DeltaCtx): SpellRun | null {
 async function applyDelta(ctx: DeltaCtx): Promise<void> {
   const { db, reads, paths } = ctx
   const itemFold = await readAndFoldItems(ctx)
-  const mobFold = foldMobs(db.mobs.mobs, pagesFor('mobs', ctx.w, ctx.feed, reads))
+  const mobPages = pagesFor('mobs', ctx.w, ctx.feed, reads)
+  const mobFold = foldMobs(db.mobs.mobs, mobPages)
   const questFold = await readAndFoldQuests(ctx)
   const spellRun = foldAndDeriveSpells(ctx)
   const now = new Date().toISOString()
@@ -328,13 +336,14 @@ async function applyDelta(ctx: DeltaCtx): Promise<void> {
     count: distinctPages,
     items: Object.fromEntries(items)
   }))
-  const mobs = [...mobFold.byPage.values()].sort((a, b) => a.page.localeCompare(b.page))
+  const mobs = ([...mobFold.byPage.values()] as NamedMob[]).sort((a, b) => a.page.localeCompare(b.page))
+  const redirected = foldRedirects(db.mobs.mobs, mobs, mobPages)
   writeAtomic(paths.mobs, JSON.stringify({
     scrapedAt: stamp(db.mobs.scrapedAt),
     source: deltaSource(db.mobs.source),
     mobs
-  }))
-  console.log(`\nFolded ${itemFold.folded.length} item pages and ${mobFold.folded.length} mob pages.`)
+  }, null, 2))
+  console.log(`\nFolded ${itemFold.folded.length} item pages, ${mobFold.folded.length} mob pages and ${redirected.length} redirects to mobs.`)
   printRemoved('item', itemFold.removed)
   printRemoved('mob', mobFold.removed)
   console.log(`items.json count: ${db.items.count} → ${distinctPages}`)
@@ -347,13 +356,34 @@ async function applyDelta(ctx: DeltaCtx): Promise<void> {
     refreshed.add(QUESTS_FILE)
   }
   printStamp([...reads.unapplied, ...(questFold?.unapplied ?? []), ...spellStuck])
-  console.log(`Requests this run: ${pacing.requests}`)
-  console.log(`Next: npm run gen:data-weight  (the ledger pins exact bytes)`)
-  const folded = new Set([
-    ...itemFold.folded, ...mobFold.folded, ...(questFold?.folded ?? []), ...(spellRun?.fold.folded ?? [])
-  ])
-  for (const line of unfoldedReport(unfolded(censusPages(ctx), folded), refreshed)) console.log(line)
-  writeBackCaches(paths, reads, new Set([...itemFold.folded, ...mobFold.folded]))
+  writeBackCaches(paths, reads, new Set([...itemFold.folded, ...mobFold.folded]), new Set(mobFold.folded))
+  const spellPages = spellRun?.fold.folded ?? []
+  await followAndReport(ctx, { mobs, refreshed, items: itemFold, mob: mobFold, redirected, spells: spellPages, quests: questFold?.folded ?? [] })
+}
+
+interface Folded {
+  mobs: NamedMob[]
+  refreshed: Set<string>
+  items: { folded: string[]; removed: string[] }
+  mob: { folded: string[]; removed: string[] }
+  redirected: string[]
+  spells: string[]
+  quests: string[]
+}
+
+/** The other files the changes reach (sources/deltaFollow.ts), then the closing report. */
+async function followAndReport(ctx: DeltaCtx, f: Folded): Promise<void> {
+  const changed = {
+    titles: new Set([...ctx.reads.pages.keys(), ...ctx.feed.titles]),
+    items: f.items.folded.length + f.items.removed.length > 0,
+    mobs: f.mob.folded.length + f.mob.removed.length + f.redirected.length > 0,
+    spells: f.spells.length > 0
+  }
+  const stale = await followDelta(ctx.paths.root, changed, oldestStart(ctx.w), f.mobs)
+  for (const file of FOLLOWED) if (!stale.includes(file)) f.refreshed.add(file)
+  console.log(`\nRequests this run (the delta's own): ${pacing.requests}`)
+  const folded = new Set([...f.items.folded, ...f.mob.folded, ...f.redirected, ...f.quests, ...f.spells])
+  for (const line of unfoldedReport(unfolded(censusPages(ctx), folded), f.refreshed)) console.log(line)
 }
 
 /** spells.json and its cache; returns the listed pages that could not be read (they hold the stamp). */
@@ -404,7 +434,7 @@ function censusPages(ctx: DeltaCtx): PageTexts {
 }
 
 /** The fresh wikitext into the gitignored item and mob caches this checkout has (sources/deltaCache). */
-function writeBackCaches(paths: DeltaPaths, reads: Reads, keep: ReadonlySet<string>): void {
+function writeBackCaches(paths: DeltaPaths, reads: Reads, keep: ReadonlySet<string>, mobKeep: ReadonlySet<string>): void {
   const fresh: FreshPage[] = []
   for (const [title, pageid] of reads.pageids) {
     const content = reads.pages.get(title)
@@ -417,7 +447,7 @@ function writeBackCaches(paths: DeltaPaths, reads: Reads, keep: ReadonlySet<stri
     console.log(`Item cache: ${files} batch files updated`)
   } else absent.push('scripts/sources/cache/items')
   if (existsSync(paths.mobCache)) {
-    console.log(`Mob cache: ${writeMobCache(paths.mobCache, fresh)} pages updated`)
+    console.log(`Mob cache: ${writeMobCache(paths.mobCache, { fresh, gone, keep: mobKeep })} pages updated`)
   } else absent.push('scripts/sources/cache/mobs')
   if (absent.length === 0) return
   console.log(
