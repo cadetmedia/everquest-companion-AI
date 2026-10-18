@@ -19,3 +19,4 @@ branch's earlier fixes are listed on its BRANCHES.md row; this list starts on 20
 | 2026-10-16 | owner (bug hunt, 2026-10-16) | Zoom and pan on a live fight's timeline snapped back to the whole encounter about once a second. | built (fix 47: re-fit only when the encounter changes) |
 | 2026-10-16 | owner (bug hunt, 2026-10-16) | A stale voice rate or volume save reply could rewind the slider and be stored. | built (fix 48: only the newest write's reply is adopted) |
 | 2026-10-16 | owner (bug hunt, 2026-10-16) | The toast, alert banner and con card switches in Preferences showed a stale state after the overlay was toggled from the title bar. | built (fix 49) |
+| 2026-10-17 | owner | Duplication clean-up (DRY without going overboard): where whole functions or components are copies with the same behaviour, keep one (the more efficient one that loses no functionality) and use it everywhere; 1-3 identical lines are fine; nothing may change what a feature does. | asked |
