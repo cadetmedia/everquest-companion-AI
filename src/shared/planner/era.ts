@@ -441,6 +441,16 @@ export function eraBadgeOverrides(tag: string | undefined, era: Era): boolean {
 }
 
 /**
+ * IS THIS QUEST OUT OF ERA? Its page banner, read by the one rule: `eraBadgeOverrides` at
+ * `CURRENT_ERA`. A quest has no drop zones to weigh against the banner, so the banner is the whole
+ * of the evidence. An ABSENT tag is `false` (law 1), so a catalog that never read banners behaves as
+ * it always did. NOT FOR MOBS — a mob's verdict is the data build's flag (`mobOutOfEra` below).
+ */
+export function questOutOfEra(quest: { readonly eraTag?: string }): boolean {
+  return eraBadgeOverrides(quest.eraTag, CURRENT_ERA)
+}
+
+/**
  * IS THIS MOB OUT OF ERA? Exactly when its record says so: `MobEntry.outOfEra === true`.
  *
  * A MOB IS NEVER JUDGED BY ITS RAW BANNER (owner ruling). `a cave bat` is bannered Velious and

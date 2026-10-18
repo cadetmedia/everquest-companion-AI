@@ -42,6 +42,7 @@ import {
   layeredVerdict,
   layeredVerdictAt,
   mobOutOfEra,
+  questOutOfEra,
   withoutOutOfEraMobs,
   zoneEra,
   type Era
@@ -584,4 +585,16 @@ test('withoutOutOfEraMobs: drops only the flagged rows and keeps the order of th
   assert.deepEqual(withoutOutOfEraMobs(rows).map((r) => r.page), ['a', 'c', 'e'])
   const unflagged = [{ page: 'x' }, { page: 'y' }]
   assert.deepEqual(withoutOutOfEraMobs(unflagged), unflagged)
+})
+
+// ---- a QUEST: its page banner, read by the one rule -------------------------------------------
+
+test('questOutOfEra: an out badge for an unshipped era (or a revamp) calls the quest out; silence and in-era do not', () => {
+  assert.equal(questOutOfEra({ eraTag: 'FearHateRevamp' }), true)
+  assert.equal(questOutOfEra({ eraTag: 'Classic' }), false)
+  assert.equal(questOutOfEra({ eraTag: '' }), false)
+  assert.equal(questOutOfEra({}), false)
+  for (const tag of ['Classic', 'Kunark', 'Velious', 'FearHateRevamp', 'HoleVP', 'Epics', 'Sky']) {
+    assert.equal(questOutOfEra({ eraTag: tag }), eraBadgeOverrides(tag, CURRENT_ERA), tag)
+  }
 })

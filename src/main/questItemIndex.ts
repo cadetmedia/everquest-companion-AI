@@ -58,6 +58,7 @@ export function buildQuestItemIndex(data: QuestData): Map<string, ItemQuestUse[]
         const use: ItemQuestUse = { quest: q.name, page: q.page, source: 'quests', role }
         if (q.giver) use.giver = q.giver
         if (q.startZone) use.zone = q.startZone
+        if (q.eraTag) use.eraTag = q.eraTag
         // Only a TURN-IN has an outcome to name. A reward-role use IS the outcome; listing
         // the quest's rewards there would just repeat the item back to itself.
         if (role === 'required' && rewardNames.length > 0) use.rewards = [...rewardNames]

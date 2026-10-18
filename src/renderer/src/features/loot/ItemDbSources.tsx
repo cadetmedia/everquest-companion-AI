@@ -30,6 +30,8 @@ import { Box, Chip, Stack, Typography } from '@mui/material'
 import type { ItemKnowledge } from '@shared/types'
 import { mergeItemSources, sourceIndex, sourceItemKey, sourcesFor, type ItemSource } from '../../lib/itemSources'
 import { Tooltip } from '../../lib/Tooltip'
+import { EraChip, MobEraChip } from '../planner/PlannerChips'
+import type { EraSubject } from '../planner/plannerData'
 
 /**
  * How many source rows are drawn before the rest collapse into a count. A handful of common
@@ -72,7 +74,10 @@ function zoneTally(sources: readonly ItemSource[]): { zone: string; mobs: number
     .sort((a, b) => b.mobs - a.mobs || a.zone.localeCompare(b.zone))
 }
 
-/** One known source: the mob, its level text VERBATIM when stated, and where it lives. */
+/**
+ * One known source: the mob, its level text VERBATIM when stated, and where it lives. This list is a
+ * LOOKUP (who drops this item), so a mob the era rules put out of era stays and is chipped.
+ */
 function SourceRow({ source }: { source: ItemSource }): JSX.Element {
   return (
     <Box data-testid="loot-db-source" sx={{ py: 0.25 }}>
@@ -80,6 +85,12 @@ function SourceRow({ source }: { source: ItemSource }): JSX.Element {
         {source.mob}
         {source.levelText != null && (
           <Box component="span" sx={{ color: 'text.disabled' }}> · lvl {source.levelText}</Box>
+        )}
+        {source.outOfEra === true && (
+          <>
+            {' '}
+            <MobEraChip mob={source} />
+          </>
         )}
       </Typography>
       {source.zones.length > 0 && (
@@ -91,20 +102,21 @@ function SourceRow({ source }: { source: ItemSource }): JSX.Element {
   )
 }
 
-function SectionHead({ title }: { title: string }): JSX.Element {
+function SectionHead({ title, era }: { title: string; era?: EraSubject }): JSX.Element {
   return (
     <Stack direction="row" spacing={0.75} alignItems="center" sx={{ mb: 0.5 }}>
       <Typography variant="subtitle2">{title}</Typography>
       <DbChip />
+      {era && <EraChip subject={era} outOnly />}
     </Stack>
   )
 }
 
-function DropsFromColumn({ sources }: { sources: readonly ItemSource[] }): JSX.Element {
+function DropsFromColumn({ sources, era }: { sources: readonly ItemSource[]; era: EraSubject }): JSX.Element {
   const shown = sources.slice(0, MAX_ROWS)
   return (
     <Box sx={{ flex: 1, minWidth: 0 }}>
-      <SectionHead title="Drops from" />
+      <SectionHead title="Drops from" era={era} />
       {sources.length === 0 && (
         <Typography variant="caption" color="text.secondary">
           The mob catalog and this item’s page name no mob for it.
@@ -154,6 +166,17 @@ function DbZonesColumn({ zones }: { zones: { zone: string; mobs: number }[] }): 
   )
 }
 
+/**
+ * THE ITEM ITSELF, as the era join sees it — the same subject shape the Gear and Planner rows hand
+ * `EraChip`: the key (layer 1 inverts the mob catalog from it) and the item page's own banner. Drawn
+ * `outOnly` beside "Drops from", so an item the wiki puts out of era says so where you read its sources.
+ */
+function itemEraSubject(item: string, knowledge: ItemKnowledge | null): EraSubject {
+  const subject: EraSubject = { key: sourceItemKey(item) }
+  if (knowledge?.eraTag !== undefined) subject.eraTag = knowledge.eraTag
+  return subject
+}
+
 export interface ItemDbSourcesProps {
   /** the item's DISPLAY name — keyed through `sourceItemKey`, never used raw */
   item: string
@@ -177,11 +200,12 @@ export function ItemDbSources({ item, knowledge }: ItemDbSourcesProps): JSX.Elem
     [item, knowledge]
   )
   const zones = useMemo(() => zoneTally(sources), [sources])
+  const era = useMemo(() => itemEraSubject(item, knowledge), [item, knowledge])
 
   return (
     <Box data-testid="loot-db-sources" sx={{ mt: 2 }}>
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3}>
-        <DropsFromColumn sources={sources} />
+        <DropsFromColumn sources={sources} era={era} />
         <DbZonesColumn zones={zones} />
       </Stack>
     </Box>

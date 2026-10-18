@@ -471,6 +471,8 @@ export interface QuestEntry {
   name: string
   /** wiki page title (linkable) */
   page: string
+  /** the page's era banner token (`Classic`, `FearHateRevamp`); absent when the page states none */
+  eraTag?: string
   /** "Start Zone" cell */
   startZone?: string
   /** "Quest Giver" NPC */
@@ -528,6 +530,11 @@ export interface ItemQuestUse {
    * invented), and never on a 'reward'-role use — an item is not its own outcome.
    */
   rewards?: string[]
+  /**
+   * The QUEST page's era banner token, copied from `QuestEntry.eraTag` (quests catalog only, and only
+   * when the page states one). What it means is `shared/planner/era.ts questOutOfEra`'s call.
+   */
+  eraTag?: string
 }
 
 /**

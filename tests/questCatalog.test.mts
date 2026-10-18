@@ -317,3 +317,18 @@ test('quest metadata survives the scrape (givers, zones, levels are real values)
     for (const z of q.relatedZones ?? []) assert.ok(!/^none$/i.test(z))
   }
 })
+
+test('a quest page era banner rides onto each use built from it, and an untagged quest adds nothing', () => {
+  const index = buildQuestItemIndex({
+    scrapedAt: '',
+    source: 'fixture',
+    quests: [
+      { name: 'Revamp Quest', page: 'Revamp Quest', eraTag: 'FearHateRevamp', requiredItems: ['Fear Shard'] },
+      { name: 'Plain Quest', page: 'Plain Quest', requiredItems: ['Fear Shard'] }
+    ]
+  })
+  const uses = index.get(questItemKey('Fear Shard')) ?? []
+  assert.equal(uses.find((u) => u.page === 'Revamp Quest')?.eraTag, 'FearHateRevamp')
+  const plain = uses.find((u) => u.page === 'Plain Quest')
+  assert.ok(plain && !('eraTag' in plain), 'absent, never undefined')
+})

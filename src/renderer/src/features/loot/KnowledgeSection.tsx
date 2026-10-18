@@ -1,10 +1,11 @@
-import type { JSX } from 'react'
+import { Fragment, type JSX } from 'react'
 import { Box, Chip, CircularProgress, Stack, Typography } from '@mui/material'
 import AutoStoriesIcon from '@mui/icons-material/AutoStories'
 import type { ItemKnowledge, ItemQuestUse, ItemRecipeUse } from '@shared/types'
 import { craftedByLabel, recipeUseLabel } from '@shared/itemKnowledge'
 import { wikiPageUrl } from '@shared/wiki'
 import { questUseWhere } from '../../lib/itemKnowledgeView'
+import { QuestEraChip } from '../planner/PlannerChips'
 
 // The quiet "still asking" state — shown only while the FIRST lookup for this item is in
 // flight (a re-open with cached data never flashes it).
@@ -75,16 +76,19 @@ function QuestUsesBlock({
           Used in {data.questUses.length === 1 ? 'quest' : 'quests'}:
         </Typography>
         <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap sx={{ mt: 0.5 }}>
+          {/* A lookup (what is this item for), so an out-of-era quest stays listed and is chipped. */}
           {data.questUses.map((u) => (
-            <Chip
-              key={`${u.source}:${u.quest}:${u.role ?? ''}`}
-              size="small"
-              variant="outlined"
-              data-testid="loot-quest-use"
-              color={u.source === 'posky' ? 'primary' : 'default'}
-              label={questUseLabel(u)}
-              sx={{ height: 22 }}
-            />
+            <Fragment key={`${u.source}:${u.quest}:${u.role ?? ''}`}>
+              <Chip
+                size="small"
+                variant="outlined"
+                data-testid="loot-quest-use"
+                color={u.source === 'posky' ? 'primary' : 'default'}
+                label={questUseLabel(u)}
+                sx={{ height: 22 }}
+              />
+              <QuestEraChip eraTag={u.eraTag} />
+            </Fragment>
           ))}
         </Stack>
       </Box>

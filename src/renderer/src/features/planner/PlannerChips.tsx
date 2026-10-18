@@ -34,7 +34,7 @@
 import type { JSX } from 'react'
 import { Box, Chip } from '@mui/material'
 import { EQ_ITEM_COLORS } from '../../lib/ItemWindow'
-import { mobOutOfEra } from '@shared/planner/era'
+import { mobOutOfEra, questOutOfEra } from '@shared/planner/era'
 import { eraChip, type EraSubject } from './plannerData'
 import type { DonorProgress, DonorState } from './plannerProgress'
 
@@ -100,10 +100,13 @@ export function StateChip({ progress, title }: { progress: DonorProgress; title?
  * banner ride on it; a plan entry the corpus has no row for passes `{ key }` and gets the
  * catalog-only answer. `plannerData.eraChip` writes the hover text, so the chip never has to guess
  * which witness spoke.
+ *
+ * `outOnly` draws the chip for a positive out-of-era verdict and nothing for `era?` — for a surface
+ * that is not a filter over the corpus (the loot drill-down), where a question mark says nothing.
  */
-export function EraChip({ subject }: { subject: EraSubject }): JSX.Element | null {
+export function EraChip({ subject, outOnly }: { subject: EraSubject; outOnly?: boolean }): JSX.Element | null {
   const info = eraChip(subject)
-  if (info === null) return null
+  if (info === null || (outOnly === true && info.unknown)) return null
   return (
     <Chip
       size="small"
@@ -142,6 +145,15 @@ function OutOfEraPageChip({ title }: { title: string }): JSX.Element {
 export function MobEraChip({ mob }: { mob: { readonly outOfEra?: true } }): JSX.Element | null {
   if (!mobOutOfEra(mob)) return null
   return <OutOfEraPageChip title="The era rules put this mob out of era: this server has not opened its content." />
+}
+
+/**
+ * A QUEST's chip: drawn exactly when `shared/planner/era.ts questOutOfEra` calls its page banner out
+ * of era, and nothing for an absent or in-era tag — silence is not a verdict (law 1).
+ */
+export function QuestEraChip({ eraTag }: { eraTag?: string }): JSX.Element | null {
+  if (eraTag === undefined || !questOutOfEra({ eraTag })) return null
+  return <OutOfEraPageChip title={`Its wiki page is banner-tagged ${eraTag}, which the wiki marks out of era.`} />
 }
 
 /**

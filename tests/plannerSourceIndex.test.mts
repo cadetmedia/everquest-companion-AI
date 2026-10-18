@@ -61,3 +61,14 @@ test('a mob is listed once per item even when its page lists +N variants', () =>
 test('an item nobody drops is absent, not an empty list', () => {
   assert.equal(index.has(sourceItemKey('a thing no mob has ever dropped')), false)
 })
+
+test('a source mob flagged outOfEra carries the flag; an unflagged one (even bannered) carries nothing', () => {
+  const fixture = buildSourceIndex([
+    { page: 'Revamp Mob', name: 'a revamp mob', outOfEra: true, drops: ['Fear Shard'] },
+    { page: 'Cave Bat', name: 'a cave bat', eraTag: 'Velious', drops: ['Fear Shard'] }
+  ])
+  const sources = fixture.get(sourceItemKey('Fear Shard')) ?? []
+  assert.equal(sources.find((s) => s.mobPage === 'Revamp Mob')?.outOfEra, true)
+  const bat = sources.find((s) => s.mobPage === 'Cave Bat')
+  assert.ok(bat && !('outOfEra' in bat), 'absent, never false')
+})
