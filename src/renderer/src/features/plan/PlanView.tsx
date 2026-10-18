@@ -371,7 +371,7 @@ export default function PlanView({ onOpenLoot, onOpenMapZone, onOpenMob }: PlanV
   // switching role re-reads what you have rather than merely re-sorting what you might get. The
   // wish list goes to the ROUTE and not the corpora (planData's header): a wish click re-cuts the
   // brackets, never re-scores the corpus.
-  const corpora = usePlanCorpora(rows, ownership.map, { role, classes: classes.classes, survivability })
+  const corpora = usePlanCorpora(rows, ownership.map, { role, classes: classes.classes, survivability, eraOnly })
   const ownedUps = useOwnedUpgrades(rows, ownership.map, { role, classes: classes.classes, survivability })
   const picks = useMemo(
     () => ({ classes: classes.classes, role, reach, eraOnly, survivability }),

@@ -32,6 +32,13 @@
 // so taking the maximum is the CAUTIOUS read, the same direction `conBands.SEED_BANDS` rounds its
 // unsampled risky/deadly split ("a plan that calls a mob risky when it is deadly gets someone
 // killed; the reverse wastes a pull"). Taking the minimum would advertise a camp you cannot hold.
+// The fold itself is `shared/planner/zoneLevels.mobLevelIndex`.
+//
+// BOTH FOLDS ARE PER ERA CHIP, AND PER STATE OF THE LOG'S EVIDENCE. With the route's "Current era"
+// chip on, a mob the one era predicate puts out of era (`shared/mobEra.mobOutOfEra`) is no evidence
+// about its zone and lends no level to the route; the player's own log outranks the flag, and its
+// evidence arrives after the first fold, so each fold is taken again when `metVersion()` moves
+// (`shared/planner/eraCache.eraCached`).
 //
 // THE PLAN IS TWO MEMOS, NOT ONE, AND THE SEAM IS THE WISH LIST. `candidatePool` is the expensive
 // half (every one of ~6.8k rows scored and witness-resolved) and depends on the corpus, what is
@@ -43,6 +50,7 @@
 import { useCallback, useMemo } from 'react'
 import type { ClassAbbr } from '@shared/classCombo'
 import { conBand } from '@shared/conBands'
+import { metVersion } from '@shared/metInLog'
 import { mobKey } from '@shared/mobKey'
 import type { MobEntry } from '@shared/mobTypes'
 import type { GearRow } from '@shared/planner/gear'
@@ -57,7 +65,8 @@ import {
   type QuestSource
 } from '@shared/planner/progressionPlan'
 import { ownershipKey } from '@shared/planner/ownership'
-import { statedLevel, zoneLevelProfile, type ZoneLevels } from '@shared/planner/zoneLevels'
+import { eraCached } from '@shared/planner/eraCache'
+import { mobLevelIndex, zoneLevelProfile, type ZoneLevels } from '@shared/planner/zoneLevels'
 import questsJson from '../../data/eqlegends/quests.json'
 import poskyJson from '../../data/eqlegends/posky.json'
 import { MOB_CATALOG } from '../mobs/mobSearch'
@@ -69,14 +78,18 @@ import { ownedKeysOf, ownedSide, ownedUpgrades, type OwnedUpgrade } from './plan
 
 // ---- the catalog folds ------------------------------------------------------------------------
 
-let PROFILES: ReadonlyMap<string, ZoneLevels> | null = null
-let MOB_LEVELS: ReadonlyMap<string, number> | null = null
+/** One profile map per state of the era chip, each folded once per state of the log's evidence. */
+const PROFILES = eraCached((eraOnly): ReadonlyMap<string, ZoneLevels> => zoneLevelProfile(MOB_CATALOG, eraOnly))
+/** The mob-level join, kept the same way. */
+const MOB_LEVELS = eraCached((eraOnly): ReadonlyMap<string, number> => mobLevelIndex(MOB_CATALOG, eraOnly))
 let MOB_PAGES: ReadonlyMap<string, MobEntry> | null = null
 
-/** Every zone the catalog places a levelled mob in, profiled. Built on first use — see the header. */
-export function zoneProfiles(): ReadonlyMap<string, ZoneLevels> {
-  PROFILES ??= zoneLevelProfile(MOB_CATALOG)
-  return PROFILES
+/**
+ * Every zone the catalog places a levelled mob in, profiled. Built on first use — see the header.
+ * `eraOnly` is the route's era chip: on, out-of-era mobs are no evidence (`zoneLevelProfile`).
+ */
+export function zoneProfiles(eraOnly = true): ReadonlyMap<string, ZoneLevels> {
+  return PROFILES(eraOnly)
 }
 
 // ---- the quest lane (fork, 2026-09-05) --------------------------------------------------------
@@ -140,29 +153,16 @@ function questSourcesOf(key: string): readonly QuestSource[] {
   return QUEST_SOURCES.get(key) ?? []
 }
 
-function mobLevels(): ReadonlyMap<string, number> {
-  if (MOB_LEVELS !== null) return MOB_LEVELS
-  const out = new Map<string, number>()
-  for (const mob of MOB_CATALOG) {
-    const level = statedLevel(mob.level)
-    if (level === null) continue
-    const key = mobKey(mob.name)
-    const held = out.get(key)
-    if (held === undefined || level > held) out.set(key, level)
-  }
-  MOB_LEVELS = out
-  return out
-}
-
 /**
  * The level the catalog states for a mob, or `null` when it states none.
  *
  * `null` is an ANSWER and the fold treats it as one: a base witness whose mob has no stated level
  * is not a target at all, because an unlevelled mob cannot be conned and will not be guessed at
- * (`progressionPlan.qualify`). It is never 0.
+ * (`progressionPlan.qualify`). It is never 0. With `eraOnly` (the route's era chip, on by default)
+ * a mob out of era states no level here either, so a drop only it witnesses is no target.
  */
-export function mobLevelOf(name: string): number | null {
-  return mobLevels().get(mobKey(name)) ?? null
+export function mobLevelOf(name: string, eraOnly = true): number | null {
+  return MOB_LEVELS(eraOnly).get(mobKey(name)) ?? null
 }
 
 /**
@@ -216,10 +216,11 @@ export interface PlanPicks {
 export function usePlanCorpora(
   rows: readonly GearRow[],
   ownership: GearOwnershipMap | null,
-  picks: Pick<PlanPicks, 'role' | 'classes' | 'survivability'>
+  picks: Pick<PlanPicks, 'role' | 'classes' | 'survivability' | 'eraOnly'>
 ): PlanCorpora {
-  // Destructured so the memos key on the three values and not on the pick object's identity.
-  const { role, classes, survivability } = picks
+  // Destructured so the memos key on the values and not on the pick object's identity. The era
+  // chip picks which zone profiles the route reads (out-of-era mobs are no evidence while it is on).
+  const { role, classes, survivability, eraOnly } = picks
   const keys = useMemo(() => ownedKeysOf(ownership), [ownership])
   // Keyed on the ARRAY identity, which `useGearIndex` holds stable for the life of the window, so
   // this 6,766-entry map is built once per window and never per pick — `useGearCompare` builds the
@@ -229,18 +230,22 @@ export function usePlanCorpora(
     () => ownedSide(keys, byKey, { role, classes, survivability }),
     [keys, byKey, role, classes, survivability]
   )
+  // The log's evidence version: the two folds are taken again when it moves (`eraCached`), and
+  // the corpora with them, so a flagged mob the player met is evidence again.
+  const met = metVersion()
   return useMemo(
     () => ({
       gear: rows,
-      profiles: zoneProfiles(),
-      mobLevel: mobLevelOf,
+      profiles: zoneProfiles(eraOnly),
+      mobLevel: (name: string) => mobLevelOf(name, eraOnly),
       con: conBand,
       owned: keys.held,
       questSources: questSourcesOf,
       ownedBestBySlot: side.bars,
       ownedHaste: side.haste
     }),
-    [rows, keys, side]
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `met` keys the era verdicts both folds read through mobOutOfEra
+    [rows, keys, side, eraOnly, met]
   )
 }
 

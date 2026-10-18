@@ -35,7 +35,9 @@
 // `MOB_CATALOG` and the tests hand in a synthetic one, which is what keeps the fold node-testable
 // (the shared/planner house rule — relative imports, no `@shared` for values).
 
+import { mobKey } from '../mobKey'
 import type { MobEntry } from '../mobTypes'
+import { mobOutOfEra } from '../mobEra'
 
 // ---- the two spellings of a tiered zone ------------------------------------------------------
 
@@ -156,6 +158,34 @@ function medianOf(sorted: readonly number[]): number {
   return Math.round((sorted[mid - 1] + sorted[mid]) / 2)
 }
 
+/** The level a mob lends its zones' profiles and the route's level join: its stated level, or
+ *  `null` (no evidence) when it states none or `eraOnly` holds and the mob is out of era
+ *  (`mobEra.mobOutOfEra`, the one mob era predicate: the data build's flag, outranked by the
+ *  player's own log). */
+function evidenceLevel(mob: MobEntry, eraOnly: boolean): number | null {
+  return eraOnly && mobOutOfEra(mob) ? null : statedLevel(mob.level)
+}
+
+/**
+ * MOB NAME (`mobKey`) → THE LEVEL THE ROUTE CONS IT AT: the Recommended tab's mob-level join
+ * (`plan/planData.mobLevelOf`, whose header argues the key and the rule). A name the catalog
+ * states twice keeps the HIGHER level, the cautious read. A mob out of era is no evidence while
+ * `eraOnly` holds (the route's "Current era" chip), exactly as in `zoneLevelProfile`: its level is
+ * not offered, so a drop it alone witnesses is no target, and a classic row sharing its name keeps
+ * the classic level rather than the revamp's.
+ */
+export function mobLevelIndex(catalog: readonly MobEntry[], eraOnly = true): Map<string, number> {
+  const out = new Map<string, number>()
+  for (const mob of catalog) {
+    const level = evidenceLevel(mob, eraOnly)
+    if (level === null) continue
+    const key = mobKey(mob.name)
+    const held = out.get(key)
+    if (held === undefined || level > held) out.set(key, level)
+  }
+  return out
+}
+
 /**
  * EVERY ZONE THE CATALOG PLACES A LEVELLED MOB IN, profiled.
  *
@@ -167,12 +197,17 @@ function medianOf(sorted: readonly number[]): number {
  * A ZONE WITH ZERO READABLE LEVELS GETS NO ENTRY. Absent, not a zero profile — law 1, and the
  * practical version of it is that `Various` (a real catalog value, not a placeholder) and the
  * merchant-only zones must not surface in a route as "level 0 content".
+ *
+ * AN OUT-OF-ERA MOB IS NOT EVIDENCE ABOUT THE ZONE while `eraOnly` holds (the route's "Current era"
+ * chip, on by default). The Plane of Hate's page list carries the Fear/Hate revamp's level 60-63
+ * mobs beside the classic ones, and they would lift its median past anything the server runs there.
+ * Which mob is out is `mobEra.mobOutOfEra` (the data build's `outOfEra` flag); an unflagged mob is in.
  */
-export function zoneLevelProfile(catalog: readonly MobEntry[]): Map<string, ZoneLevels> {
+export function zoneLevelProfile(catalog: readonly MobEntry[], eraOnly = true): Map<string, ZoneLevels> {
   const levels = new Map<string, number[]>()
   const display = new Map<string, string>()
   for (const mob of catalog) {
-    const level = statedLevel(mob.level)
+    const level = evidenceLevel(mob, eraOnly)
     if (level === null) continue
     for (const zone of mob.zones ?? []) {
       const key = zoneLevelKey(zone)
