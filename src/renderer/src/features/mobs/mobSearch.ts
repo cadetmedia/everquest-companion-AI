@@ -62,7 +62,8 @@ function haystacks(): string[][] {
   if (HAYSTACKS) return HAYSTACKS
   HAYSTACKS = MOB_CATALOG.map((m) => {
     const zones = m.zones?.length ? ` ${m.zones.join(' ')}` : ''
-    return tokenize(`${m.name}${zones}`)
+    const other = m.otherNames?.length ? ` ${m.otherNames.join(' ')}` : ''
+    return tokenize(`${m.name}${other}${zones}`)
   })
   return HAYSTACKS
 }

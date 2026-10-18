@@ -45,6 +45,13 @@ for (const m of mobData.mobs ?? []) {
   const key = mobKey(m.page)
   if (key && !mobByName.has(key)) mobByName.set(key, m)
 }
+// Then the wiki redirects that land on the page, also only filling gaps.
+for (const m of mobData.mobs ?? []) {
+  for (const other of m.otherNames ?? []) {
+    const key = mobKey(other)
+    if (key && !mobByName.has(key)) mobByName.set(key, m)
+  }
+}
 
 /** The catalog's entry for a mob, or null when it has none (⇒ try the live wiki fallback). */
 export function localMobEntry(name: string): MobEntry | null {

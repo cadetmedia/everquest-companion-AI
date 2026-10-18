@@ -51,7 +51,13 @@ impl MobIndex {
     /// displaced by another page's title.
     #[must_use]
     pub fn build() -> Self {
-        let file: Value = serde_json::from_str(MOBS_JSON).expect("mobs.json is not readable");
+        Self::from_json(MOBS_JSON)
+    }
+
+    /// [`Self::build`] over any catalog text (a test fixture).
+    #[must_use]
+    pub fn from_json(json: &str) -> Self {
+        let file: Value = serde_json::from_str(json).expect("mobs.json is not readable");
         let mobs = file["mobs"].as_array().cloned().unwrap_or_default();
         let mut by_name: std::collections::HashMap<String, Value> =
             std::collections::HashMap::with_capacity(mobs.len() * 2);
@@ -68,6 +74,20 @@ impl MobIndex {
         for m in &mobs {
             if let Some(page) = m["page"].as_str() {
                 let key = mob_key(page);
+                if !key.is_empty() {
+                    by_name.entry(key).or_insert_with(|| m.clone());
+                }
+            }
+        }
+        // Then the wiki redirects that land on the page (`otherNames`), also only filling gaps.
+        for m in &mobs {
+            for other in m["otherNames"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .filter_map(Value::as_str)
+            {
+                let key = mob_key(other);
                 if !key.is_empty() {
                     by_name.entry(key).or_insert_with(|| m.clone());
                 }
@@ -294,6 +314,7 @@ pub fn unanswered(display: &str) -> Value {
 mod tests {
     use super::{
         annotate_drop_eras, knowledge_from_catalog, merge_local_knowledge, quests_by_mob, Identity,
+        MobIndex,
     };
     use fold::knowledge::{NoOwnLoot, OwnLoot, SeenDrop};
     use serde_json::{json, Map, Value};
@@ -311,6 +332,22 @@ mod tests {
             keys: vec![name.to_lowercase()],
             aliased: false,
         }
+    }
+
+    #[test]
+    fn a_wiki_redirect_to_the_page_finds_the_mob_but_never_displaces_another() {
+        let index = MobIndex::from_json(
+            r#"{"mobs":[
+              {"page":"The Ghoul Lord","name":"the ghoul lord (Hoptor Thaggelum)","otherNames":["Hoptor Thaggelum","A bat"]},
+              {"page":"A bat","name":"a bat"}
+            ]}"#,
+        );
+        assert_eq!(
+            index.entry("hoptor thaggelum").unwrap()["page"],
+            "The Ghoul Lord"
+        );
+        assert_eq!(index.entry("a bat").unwrap()["page"], "A bat");
+        assert_eq!(index.names().len(), 2);
     }
 
     #[test]

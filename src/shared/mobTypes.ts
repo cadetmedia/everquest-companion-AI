@@ -64,6 +64,8 @@ export interface MobEntry {
   outOfEra?: true
   /** the page's own `|name` — the IN-GAME name, article and casing as the wiki writes it */
   name: string
+  /** titles of the wiki redirects that land on this page (`Hoptor Thaggelum`): the same creature */
+  otherNames?: string[]
   /** level EXACTLY as the page states it — a RANGE as often as a number ("36-40", "2 - 4") */
   level?: string
   /** home zone(s) from the `|zone` field; "Various" is a real value, not a placeholder */
