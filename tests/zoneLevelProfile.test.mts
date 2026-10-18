@@ -21,7 +21,9 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import type { MobEntry } from '../src/shared/mobTypes'
-import { plusSuffix, statedLevel, zoneLevelKey, zoneLevelProfile } from '../src/shared/planner/zoneLevels'
+import { metVersion, setMet } from '../src/shared/metInLog'
+import { eraCached } from '../src/shared/planner/eraCache'
+import { mobLevelIndex, plusSuffix, statedLevel, zoneLevelKey, zoneLevelProfile } from '../src/shared/planner/zoneLevels'
 
 // =================================================================================================
 // FIXTURES — synthetic, see the header
@@ -240,4 +242,68 @@ test('a mob flagged outOfEra in a classic zone is left out of the profile; unfla
   assert.equal(zoneLevelProfile([hate('a revamp lieutenant', '60', 'FearHateRevamp', true)]).size, 0)
   // Unflagged, the chip changes nothing: the committed catalog today.
   assert.deepEqual(zoneLevelProfile(CATALOG), zoneLevelProfile(CATALOG, false))
+})
+
+// =================================================================================================
+// 4. the player's log outranks the flag (owner ruling, 2026-10-17), and the route's mob-level join
+//    reads the same predicate. The log's evidence is module state (`shared/metInLog`), empty unless
+//    a test fills it; each test empties it again.
+// =================================================================================================
+
+const flagged = (name: string, level: string): MobEntry => ({ ...mob(name, level, ['Plane of Hate']), outOfEra: true })
+
+const HATE = [
+  mob('Maestro of Rancor', '52', ['Plane of Hate']),
+  mob('Master of Spite', '50', ['Plane of Hate']),
+  flagged('a revamp lieutenant', '60'),
+  flagged('the revamped Innoruuk', '63'),
+  // One name on two pages: the classic row and a flagged revamp row.
+  mob('an avatar of hate', '48', ['Plane of Hate']),
+  flagged('An Avatar of Hate', '61')
+]
+
+test("the route's mob-level join leaves out a flagged mob under the era chip, and keeps the higher level otherwise", () => {
+  const on = mobLevelIndex(HATE)
+  assert.equal(on.get('maestro of rancor'), 52)
+  assert.equal(on.get('a revamp lieutenant'), undefined, 'out of era: no level, so no target')
+  assert.equal(on.get('an avatar of hate'), 48, "the classic row's level, not the revamp's")
+  const off = mobLevelIndex(HATE, false)
+  assert.equal(off.get('a revamp lieutenant'), 60, 'the chip off: every mob lends its level')
+  assert.equal(off.get('an avatar of hate'), 61, 'the higher of the two, the cautious read')
+})
+
+test('a flagged mob the log met is evidence again, in the profile and in the level join; unmet stays out', () => {
+  try {
+    setMet('mobs', ['The Revamped Innoruuk'])
+    assert.equal(mobLevelIndex(HATE).get('the revamped innoruuk'), 63)
+    assert.equal(mobLevelIndex(HATE).get('a revamp lieutenant'), undefined, 'not met: still out')
+    assert.equal(zoneLevelProfile(HATE).get('plane of hate')?.sampled, 4)
+  } finally {
+    setMet('mobs', [])
+  }
+  assert.equal(zoneLevelProfile(HATE).get('plane of hate')?.sampled, 3, 'evidence gone: the flag decides')
+})
+
+test("the Recommended tab's folds are taken again when the log's evidence moves, and only then", () => {
+  let builds = 0
+  const profiles = eraCached((eraOnly) => {
+    builds++
+    return zoneLevelProfile(HATE, eraOnly)
+  })
+  const first = profiles(true)
+  assert.equal(profiles(true), first, 'held while nothing changes')
+  assert.notEqual(profiles(false), first, 'one answer per chip state')
+  assert.equal(builds, 2)
+  const v = metVersion()
+  try {
+    setMet('mobs', ['a revamp lieutenant'])
+    assert.notEqual(metVersion(), v)
+    const after = profiles(true)
+    assert.notEqual(after, first, 'a new fold under the new evidence')
+    assert.equal(after.get('plane of hate')?.sampled, 4, 'and the met mob counts in it')
+    assert.equal(profiles(true), after)
+    assert.equal(builds, 3)
+  } finally {
+    setMet('mobs', [])
+  }
 })
