@@ -200,3 +200,44 @@ test('the fold never mutates the catalog it was handed', () => {
   )
   assert.equal(zoneLevelProfile([]).size, 0, 'an empty catalog profiles nothing, and does not throw')
 })
+
+// =================================================================================================
+// 3. the era flag (`mobEra.mobOutOfEra`, the data build's `outOfEra`): an out-of-era mob is no
+//    evidence about its zone
+// =================================================================================================
+
+test('a mob flagged outOfEra in a classic zone is left out of the profile; unflagged mobs stay, whatever their banner', () => {
+  const hate = (name: string, level: string, eraTag?: string, outOfEra?: true): MobEntry => {
+    const entry = mob(name, level, ['Plane of Hate'])
+    if (eraTag !== undefined) entry.eraTag = eraTag
+    if (outOfEra !== undefined) entry.outOfEra = outOfEra
+    return entry
+  }
+  const corpus = [
+    hate('Maestro of Rancor', '52', 'Classic'),
+    hate('Master of Spite', '50', 'Hate'),
+    hate('an avatar of hate', '48'),
+    hate('a revamp lieutenant', '60', 'FearHateRevamp', true),
+    hate('a revamp general', '62', 'FearHateRevamp', true),
+    hate('the revamped Innoruuk', '63', 'FearHateRevamp', true)
+  ]
+  assert.deepEqual(zoneLevelProfile(corpus).get('plane of hate'), {
+    zone: 'Plane of Hate',
+    low: 48,
+    median: 50,
+    sampled: 3
+  })
+  // The era chip lifted, every documented mob is evidence again.
+  assert.deepEqual(zoneLevelProfile(corpus, false).get('plane of hate'), {
+    zone: 'Plane of Hate',
+    low: 48,
+    median: 56,
+    sampled: 6
+  })
+  // A banner alone hides nothing: only the data build's flag does (a cave bat is bannered Velious).
+  assert.equal(zoneLevelProfile([hate('a cave bat', '20', 'Velious')]).get('plane of hate')?.sampled, 1)
+  // A zone whose every levelled mob is out of era gets no entry, as one with no readable level.
+  assert.equal(zoneLevelProfile([hate('a revamp lieutenant', '60', 'FearHateRevamp', true)]).size, 0)
+  // Unflagged, the chip changes nothing: the committed catalog today.
+  assert.deepEqual(zoneLevelProfile(CATALOG), zoneLevelProfile(CATALOG, false))
+})

@@ -69,14 +69,22 @@ import { ownedKeysOf, ownedSide, ownedUpgrades, type OwnedUpgrade } from './plan
 
 // ---- the catalog folds ------------------------------------------------------------------------
 
-let PROFILES: ReadonlyMap<string, ZoneLevels> | null = null
+/** One profile map per state of the era chip, each folded once. */
+const PROFILES = new Map<boolean, ReadonlyMap<string, ZoneLevels>>()
 let MOB_LEVELS: ReadonlyMap<string, number> | null = null
 let MOB_PAGES: ReadonlyMap<string, MobEntry> | null = null
 
-/** Every zone the catalog places a levelled mob in, profiled. Built on first use — see the header. */
-export function zoneProfiles(): ReadonlyMap<string, ZoneLevels> {
-  PROFILES ??= zoneLevelProfile(MOB_CATALOG)
-  return PROFILES
+/**
+ * Every zone the catalog places a levelled mob in, profiled. Built on first use — see the header.
+ * `eraOnly` is the route's era chip: on, out-of-era mobs are no evidence (`zoneLevelProfile`).
+ */
+export function zoneProfiles(eraOnly = true): ReadonlyMap<string, ZoneLevels> {
+  let held = PROFILES.get(eraOnly)
+  if (held === undefined) {
+    held = zoneLevelProfile(MOB_CATALOG, eraOnly)
+    PROFILES.set(eraOnly, held)
+  }
+  return held
 }
 
 // ---- the quest lane (fork, 2026-09-05) --------------------------------------------------------
@@ -216,10 +224,11 @@ export interface PlanPicks {
 export function usePlanCorpora(
   rows: readonly GearRow[],
   ownership: GearOwnershipMap | null,
-  picks: Pick<PlanPicks, 'role' | 'classes' | 'survivability'>
+  picks: Pick<PlanPicks, 'role' | 'classes' | 'survivability' | 'eraOnly'>
 ): PlanCorpora {
-  // Destructured so the memos key on the three values and not on the pick object's identity.
-  const { role, classes, survivability } = picks
+  // Destructured so the memos key on the values and not on the pick object's identity. The era
+  // chip picks which zone profiles the route reads (out-of-era mobs are no evidence while it is on).
+  const { role, classes, survivability, eraOnly } = picks
   const keys = useMemo(() => ownedKeysOf(ownership), [ownership])
   // Keyed on the ARRAY identity, which `useGearIndex` holds stable for the life of the window, so
   // this 6,766-entry map is built once per window and never per pick — `useGearCompare` builds the
@@ -232,7 +241,7 @@ export function usePlanCorpora(
   return useMemo(
     () => ({
       gear: rows,
-      profiles: zoneProfiles(),
+      profiles: zoneProfiles(eraOnly),
       mobLevel: mobLevelOf,
       con: conBand,
       owned: keys.held,
@@ -240,7 +249,7 @@ export function usePlanCorpora(
       ownedBestBySlot: side.bars,
       ownedHaste: side.haste
     }),
-    [rows, keys, side]
+    [rows, keys, side, eraOnly]
   )
 }
 
