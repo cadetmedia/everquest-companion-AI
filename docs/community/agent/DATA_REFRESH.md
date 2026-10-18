@@ -79,6 +79,12 @@ A posky rescrape trips two audits by design: rows in `skyQuestRewards.ts` the wi
 must be deleted, and `achievementInference` needs every reward to match the game's achievements
 file.
 
+## Boss portraits
+
+- If either wiki has an image of a boss, use it (owner, 2026-10-18): a re-scrape never drops a portrait
+  it cannot re-fetch (the P99 wiki failed every request on 2026-10-18). eqlwiki and P99 both name NPC
+  portraits `Npc_*`; scrape-bosses prefers those over the page's first image (a map, for Phinigel).
+
 ## Other scrapers
 
 `npm run scrape:quests|bosses|spells|page-era|mobs|classes` run only on the owner's word. A real `scrape:spells` refuses to write when the wiki lists no spell pages or under half the catalog (an error body or an outage); `--allow-shrink` overrides after a look.
