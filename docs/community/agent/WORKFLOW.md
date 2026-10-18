@@ -140,8 +140,10 @@ disagree, RULES.md wins; fix this file.
   (stale specs): `default-sound-pack`, `sky-recent-sort`, `plan`. Still red, not yet investigated,
   not regressions: `whats-new` (footer gap 60.9px under the last link), `overview` (nav order vs the
   sidebar groups; Preferences row hit-test null with the update indicator hovered), `maps` (map row
-  resizes when the map arrives), `voice-alerts` (waits for a `custom` voice option). Baseline a
-  red against the last release tag before calling it a regression.
+  resizes when the map arrives), `voice-alerts` (waits for a `custom` voice option); the owner
+  looked at those four in the app and found them fine (2026-10-18), so they are most likely stale
+  specs. The TEST-build three could be skipped on a TEST build so a red always means something.
+  Baseline a red against the last release tag before calling it a regression.
 - **Headless look at an UNRELEASED tab:** temporarily set `UNRELEASED = true as boolean` in
   `devFlags.ts`, `electron-vite build --outDir=<worktree>/out-e2e`, `git checkout` the flag file,
   then a throwaway spec with `launchOnFixture(..., { env: { EQ_UNRELEASED: '1' } })`.
@@ -249,6 +251,16 @@ disagree, RULES.md wins; fix this file.
   and hand edits to `engine/factoring-baseline.json`. Plan around them; ask the owner.
 - Several agent sessions may run on this clone at once. Before a task-specific message to another
   session, confirm which session holds which task.
+- Backticks inside a double-quoted bash string are command substitution: a doc line built that way
+  lost every `code` name silently (2026-10-18). Write prose with backticks through Write/Edit.
+- Scratch worktrees under `%TEMP%` can vanish mid-job (2026-10-18: a scratch tree's node_modules
+  junction, then a whole scratch tree, while the drive was nearly full; most likely Windows temp
+  cleanup). Check the junction exists before a gate (a missing one fails as `tsc` not recognized),
+  and keep long jobs under `.claude/worktrees/`. A junction to `engine/target` is unlinked before
+  removal exactly like `node_modules` (RULES.md rule 18).
+- A pin that only the merged data satisfies goes red on its branch alone (the AA census on the
+  upstream PR branch, 2026-10-18). Prefer a floor, or a fixture under `tests/fixtures/`, so the test
+  holds on the branch and on the merged tree; `spell-upgrades` is the recorded exception.
 
 ## Bug hunts that worked
 
