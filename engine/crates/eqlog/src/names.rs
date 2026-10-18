@@ -73,13 +73,18 @@ pub fn strip_rank_tail(name: &str) -> std::borrow::Cow<'_, str> {
     rank_tail().replace(name, "")
 }
 
+/// A trailing, word-bounded I–X at the end of a name, case-insensitive: the tail [`db_canon_key`]
+/// strips, and the one the buff-timer rows fold and read their rank chip with.
+pub fn db_rank_tail() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| Regex::new(r"(?i) (?:I|II|III|IV|V|VI|VII|VIII|IX|X)$").unwrap())
+}
+
 /// The spell DB's own key: the same fold with a case-insensitive rank tail. Separate from
 /// [`spell_canon_key`] so the difference stays visible instead of being merged away.
 pub fn db_canon_key(name: &str) -> String {
-    static RE: OnceLock<Regex> = OnceLock::new();
-    let re = RE.get_or_init(|| Regex::new(r"(?i) (?:I|II|III|IV|V|VI|VII|VIII|IX|X)$").unwrap());
     let t = js_trim(name);
-    let stripped = re.replace(t, "");
+    let stripped = db_rank_tail().replace(t, "");
     js_trim(&stripped).to_lowercase()
 }
 
