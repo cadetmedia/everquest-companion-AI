@@ -31,6 +31,7 @@ import { ledgerFileName } from '../../shared/factionLedger'
 import { logInfo } from '../errorLog'
 import { readDefine } from '../dataServer/appKnowledge'
 import { pushAppKnowledge } from '../dataServer/definePush'
+import { pushWorldChanged } from '../dataServer/serveDeltas'
 import type { RespawnRow } from '../../shared/respawn'
 import { refreshSegment, sweepRefreshLeftovers } from './refresh'
 import { readJournal, recoverRotation, restoreLog, rotateLog, type RotateDeps } from './rotate'
@@ -391,6 +392,8 @@ export function refreshHistory(id: string): Promise<LogArchiveReply> {
       await keepFactionLedger(logArchiveDir(), r.segment.id, { path: r.segment.archivePath, gz: true, logName: liveLogName(r.segment) })
     }
     liveHistory.forgetHistoryContext()
+    // Open screens keep the old merge until their module moves: have them fetch it again now.
+    pushWorldChanged()
     const what = r.changed.length === 0 ? 'Nothing in it changed.' : `Updated: ${r.changed.join(', ')}.`
     return reply(true, `Refreshed with this version. ${what}`)
   })
