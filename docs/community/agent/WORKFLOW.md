@@ -112,14 +112,17 @@ disagree, RULES.md wins; fix this file.
   count can wobble by one between runs with the same fail set (a skipping test).
 - Do not run `npm test` while `npm run dist` rebuilds `out/`: symbolicate's round-trip test scans
   `out/renderer/assets` and goes red for that alone.
-- **Lint ceilings bite, and are split for, never raised:** 100 code lines per function,
-  complexity 12, max-params 4, max-depth 3, 400 code lines per file. `max-lines` skips comments,
-  so trimming prose buys nothing; split the code. Files at or near 400: `preload/index.ts` (a new
-  bridge method needs its own slice file plus a listing in `tsconfig.web.json`, inserted mid-list),
-  `ItemWindow.tsx`, `store.ts`, `spellLoadout.ts`, `progressionPlan.ts`, `gear.e2e.mts`.
-- **Engine factoring ratchet** (`engine/factoring-baseline.json`): a file over 400 lines may not
-  grow at all. New behaviour rides an existing match arm or pays by moving code to a new file;
-  `npm run check:rust-factoring -- --write` records a shrink in the SAME commit.
+- **Size ceilings, with headroom** (owner, 2026-10-17: "400 is NOT that huge for a class with
+  comments"; a hard count was driving splits and comment cuts that bought nothing): 440 code lines
+  per file, 110 per function, complexity 13, max-params 4, max-depth 3 (`eslint.config.mjs`
+  FACTORING_RULES, on `catch_all`). Comments and blanks never count, so never trim prose to fit.
+  Split only where the code has a real seam; do not invent files, classes or methods to dodge a
+  count. `preload/index.ts`: a new bridge method needs its own slice file plus a listing in
+  `tsconfig.web.json`, inserted mid-list.
+- **Engine factoring register** (`engine/factoring-baseline.json`): each recorded value is a
+  ceiling with 10% headroom; a recorded file or function may grow until it passes that, a new one
+  must stay under the bars above. A shrink stays green and needs no `--write`; the register is
+  never rewritten smaller as a chore.
 - **`eqc/no-domain-munging` lint rule** forbids filter/sort over shared types inside the renderer;
   such logic lives in `src/shared/`.
 - **Test imports:** tests import renderer code by relative path for values (`@shared` resolves for
@@ -194,6 +197,8 @@ disagree, RULES.md wins; fix this file.
 - **Ledgers and commit messages are public.** Record rulings as decision + reason in neutral
   words; never paste casual chat; findings describe code, not authors (RULES.md rule 5).
 - **Ask concrete questions with a default**, not overviews of phase numbers.
+- **A remark is not an answer.** A reply to a question that comments on it ("that's silly") rather
+  than picking an option is not approval; ask what they want instead of acting (owner, 2026-10-17).
 
 ## Release notes (the `Test build 0.1.0-test.N:` commit body)
 
