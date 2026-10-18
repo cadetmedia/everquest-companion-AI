@@ -5,5 +5,3 @@
 # tests pin for the creator's official build:
 the sign hook is wired, and it is the one every shipped executable goes through
 nothing in the config narrows the signable set out from under the engine
-# The engine factoring register is a pending hand-edit on the fork (docs/community/BRANCHES.md):
-the committed register describes the engine as it stands today
