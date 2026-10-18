@@ -25,29 +25,19 @@ use serde_json::{json, Map, Value};
 use crate::names::item_key;
 use fold::knowledge::{OwnLoot, SeenDrop};
 use fold::modules::consider::mob_key;
+// The scraped mob catalog — local source 1, the definitive drop table. The fold embeds these bytes
+// for its level table; this reads the same copy.
+use fold::modules::resist::catalog::{resolve_mob_identity, MOBS_JSON};
 
-/// The scraped mob catalog — local source 1, the definitive drop table.
-const MOBS_JSON: &str = include_str!("../../../../src/renderer/src/data/eqlegends/mobs.json");
-/// The raid roster — the one place two spellings are stated to be one creature.
-const BOSSES_JSON: &str = include_str!("../../../../src/renderer/src/data/eqlegends/bosses.json");
+/// One creature, and every spelling the roster states for it: `canonical` is the name to ASK the
+/// catalog and the overlay with (the roster's own `name`, never what the card displays), `keys`
+/// every `mob_key` it answers to, canonical key first, and `aliased` whether the roster stated more
+/// than one spelling. The fold's type, so both read the raid roster through ONE alias index.
+pub use fold::modules::resist::catalog::MobIdentity as Identity;
 
-/// One creature, and every spelling the roster states for it.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Identity {
-    /// The name to ASK the catalog and the overlay with — the roster's own `name`, which is the
-    /// spelling those sources use. Never what the card displays.
-    pub canonical: String,
-    /// Every `mob_key` this creature answers to, canonical key first.
-    pub keys: Vec<String>,
-    /// The roster stated more than one spelling for this creature.
-    pub aliased: bool,
-}
-
-/// The catalog, keyed BOTH ways a mob can be named, and the alias table.
+/// The catalog, keyed BOTH ways a mob can be named. The alias table is the fold's.
 pub struct MobIndex {
     by_name: std::collections::HashMap<String, Value>,
-    /// Every alias key of every multi-spelling roster target → its identity.
-    identity_by_key: std::collections::HashMap<String, Identity>,
     /// Catalog display names in file order, for `knowledge.search`.
     names: Vec<String>,
 }
@@ -83,11 +73,7 @@ impl MobIndex {
                 }
             }
         }
-        Self {
-            by_name,
-            identity_by_key: build_identities(),
-            names,
-        }
+        Self { by_name, names }
     }
 
     /// The catalog's entry for a mob, or `None` when it has none.
@@ -101,22 +87,10 @@ impl MobIndex {
     ///
     /// Total and allocation-light: an unaliased name — nearly every mob — gets a trivial identity
     /// whose `canonical` is the name it was handed, so every downstream read is the read it was
-    /// before aliases existed.
+    /// before aliases existed. The roster is read once, by the fold's alias index.
     #[must_use]
     pub fn identity(&self, name: &str) -> Identity {
-        let key = mob_key(name);
-        if let Some(known) = self.identity_by_key.get(&key) {
-            return known.clone();
-        }
-        Identity {
-            canonical: name.to_owned(),
-            keys: if key.is_empty() {
-                Vec::new()
-            } else {
-                vec![key]
-            },
-            aliased: false,
-        }
+        resolve_mob_identity(name)
     }
 
     /// Every catalog display name, for the search surface.
@@ -124,48 +98,6 @@ impl MobIndex {
     pub fn names(&self) -> &[String] {
         &self.names
     }
-}
-
-/// Read the roster's own statement that two spellings are one creature.
-///
-/// Targets whose spellings all collapse to ONE key are skipped entirely: they never enter the map,
-/// so `identity` hands back the trivial identity and every caller runs the path it ran before. A key
-/// claimed by two targets keeps the first — silently merging two creatures on a later scrape is not
-/// something this boundary should be able to do by accident.
-fn build_identities() -> std::collections::HashMap<String, Identity> {
-    let file: Value = serde_json::from_str(BOSSES_JSON).expect("bosses.json is not readable");
-    let mut by_key: std::collections::HashMap<String, Identity> = std::collections::HashMap::new();
-    for t in file["targets"].as_array().unwrap_or(&Vec::new()) {
-        let Some(name) = t["name"].as_str() else {
-            continue;
-        };
-        let mut keys: Vec<String> = Vec::new();
-        let spellings = std::iter::once(name).chain(
-            t["match"]
-                .as_array()
-                .into_iter()
-                .flatten()
-                .filter_map(Value::as_str),
-        );
-        for spelling in spellings {
-            let k = mob_key(spelling);
-            if !k.is_empty() && !keys.contains(&k) {
-                keys.push(k);
-            }
-        }
-        if keys.len() < 2 {
-            continue;
-        }
-        let id = Identity {
-            canonical: name.to_owned(),
-            keys: keys.clone(),
-            aliased: true,
-        };
-        for k in keys {
-            by_key.entry(k).or_insert_with(|| id.clone());
-        }
-    }
-    by_key
 }
 
 /// mob key → the quests that name it under "Related NPCs".
