@@ -326,27 +326,9 @@ pub const DEFAULT_CHARM_DURATION_MS: i64 = 960_000;
 /// the log has ever produced one — so a long memory costs only a handful of names.
 pub const PROMOTE_MS: i64 = 600_000;
 
-/// A single capitalized word with no space in it.
-///
-/// The word count is the discriminator, not the capitalization: the log capitalizes a
-/// sentence-initial article (`A fire giant warrior begins singing …`), so the article test and the
-/// anchored single-word test are two statements of one refusal.
-pub fn is_player_shaped_name(name: &str) -> bool {
-    static ARTICLE: OnceLock<Regex> = OnceLock::new();
-    static WORD: OnceLock<Regex> = OnceLock::new();
-    let n = js_trim(name);
-    if n.is_empty() {
-        return false;
-    }
-    // JS's `\s`, not Rust's; the two differ and `jsstr::JS_S` is the JS spelling.
-    let article = ARTICLE
-        .get_or_init(|| Regex::new(&format!(r"(?i)^(?:a|an|the){}", eqlog::jsstr::JS_S)).unwrap());
-    if article.is_match(n) {
-        return false;
-    }
-    let word = WORD.get_or_init(|| Regex::new(r"^[A-Z][A-Za-z`']*$").unwrap());
-    word.is_match(n)
-}
+/// A single capitalized word with no space in it. One definition, in `eqlog::names`, re-exported
+/// here so the ally and others folds keep their path.
+pub use eqlog::names::is_player_shaped_name;
 
 #[cfg(test)]
 mod tests {

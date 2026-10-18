@@ -130,9 +130,12 @@ test('MAIN holds the selection, and holds it EPHEMERALLY', () => {
   // A no-op write broadcasts nothing.
   assert.match(mod, /if \(sameScopeSelection\(next, selection\)\) return selection/)
   // EVERY window, on one channel — the main window and all overlay kinds, exactly like the fight
-  // selection beside it. A subscriber registry is the thing this shape refuses.
-  assert.match(mod, /\[getMainWindow\(\), \.\.\.OVERLAY_KINDS\.map\(\(k\) => getOverlayWindow\(k\)\)\]/)
-  assert.match(mod, /webContents\.send\(IPC\.onScopeSelection, selection\)/)
+  // selection beside it. A subscriber registry is the thing this shape refuses. The fan-out itself
+  // is windows.ts's one helper, shared with the fight selection and the session marks.
+  assert.match(mod, /sendToEveryWindow\(IPC\.onScopeSelection, selection\)/)
+  const windows = code('../src/main/windows.ts')
+  assert.match(windows, /\[getMainWindow\(\), \.\.\.OVERLAY_KINDS\.map\(\(k\) => getOverlayWindow\(k\)\)\]/)
+  assert.match(windows, /if \(w && !w\.isDestroyed\(\)\) w\.webContents\.send\(channel, \.\.\.args\)/)
 })
 
 test('the handler pair is registered where the fight selection is, and validates at the handler', () => {

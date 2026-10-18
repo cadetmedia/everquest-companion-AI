@@ -46,6 +46,7 @@ import { peekTailIoTimeline } from '../log/tailIoStats'
 import { getCursorRing, getOverlayAutoHide, getOverlayConfig } from '../store'
 import { gpuCompositingOf, gpuVendorOf } from '../telemetry/setupFacts'
 import { overlayStateMap } from '../windows'
+import { safely } from '../safely'
 
 /**
  * The cap on `getGPUInfo`, and it is DELIBERATELY SHORTER than the setup snapshot's five seconds.
@@ -54,16 +55,6 @@ import { overlayStateMap } from '../windows'
  * the ones whose GPU process is unhealthy. One second, then the vendor is `unknown`.
  */
 const GPU_INFO_TIMEOUT_MS = 1_000
-
-/** Run a reading, or answer with the fallback. The lambda-per-field shape is what keeps ONE
- *  failing driver call from costing the other ten readings their place in the block. */
-function safely<T>(read: () => T, fallback: T): T {
-  try {
-    return read()
-  } catch {
-    return fallback
-  }
-}
 
 /**
  * The GPU's PCI vendor id, asked ONCE PER PROCESS and remembered.

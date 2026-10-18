@@ -17,9 +17,10 @@
 //        "The Ruins of Old Paineel - Solo 4 (Refined)", "The Plane of Hate - Solo".
 //      The catalog never carries any of it, so an un-stripped zone matches ZERO rows — the
 //      instance of a zone has the same bestiary as the zone.
-//      We RE-IMPLEMENT the three strips here rather than import them: this file is renderer-side
-//      and node-testable (see mobSearch.ts:33 for the same reasoning about value imports), and
-//      main's copy carries a tier NUMBER we have no use for. If the game adds a tier adjective,
+//      The fold itself (all three string rules) is `zoneKey` in `src/shared/zones.ts`, imported
+//      and re-exported below, so the map viewer and this join can never fold a zone differently.
+//      It re-implements main's strips rather than importing them because main's copy carries a
+//      tier NUMBER we have no use for. If the game adds a tier adjective,
 //      the paren strip is shape-based and already covers it; parseWorld's TIER_ADJ table is the
 //      one that would need teaching.
 //
@@ -61,34 +62,10 @@ import type { MobEntry } from '@shared/types'
 // exists inside the vite build, while `tests/mobZone.test.mts` drives this module under the node
 // test runner. Same constraint, same reasoning as mobSearch.ts:33. (`shared/zones` is pure — its
 // own only import is type-only — so nothing follows it into the test process.)
-import { zoneSpellingsFor } from '../../../../shared/zones'
+import { zoneKey, zoneSpellingsFor } from '../../../../shared/zones'
 
-/** ` - Solo` / ` - Group 2` and everything after it — instance selection, never part of a name. */
-const SOLO_GROUP_RE = /\s*-\s*(Solo|Group)\b.*$/i
-/** A trailing tier parenthetical, with or without the instance ordinal: ` 4 (Refined)`. */
-const TIER_ORDINAL_RE = /\s+\d+\s*\([^)]*\)\s*$/
-/** A bare trailing parenthetical: ` (Awakened)`, and the catalog's ` (Pre-Revamp)` / ` (37)`. */
-const TIER_PAREN_RE = /\s+\([^)]*\)\s*$/
-/** Runs of whitespace and hyphens, collapsed to one space (rule 3). */
-const SEPARATORS_RE = /[\s-]+/g
-/** The one leading article EQ zone names use. */
-const LEADING_ARTICLE_RE = /^the /
-
-/**
- * Canonical key for a zone name, from EITHER source. Case-insensitive, instance noise stripped,
- * leading article folded, separators normalized. Never throws; a nullish/blank name folds to ''.
- */
-export function zoneKey(zone: string | undefined | null): string {
-  return (zone ?? '')
-    .replace(SOLO_GROUP_RE, '')
-    .replace(TIER_ORDINAL_RE, '')
-    .replace(TIER_PAREN_RE, '')
-    .toLowerCase()
-    .replace(SEPARATORS_RE, ' ')
-    .trim()
-    .replace(LEADING_ARTICLE_RE, '')
-    .trim()
-}
+/** The zone fold (rules 1-3 above), re-exported for the renderer callers that import it from here. */
+export { zoneKey }
 
 /**
  * The level to SORT by. The catalog states level exactly as the wiki page wrote it, which across

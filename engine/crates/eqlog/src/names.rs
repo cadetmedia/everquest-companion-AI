@@ -73,13 +73,18 @@ pub fn strip_rank_tail(name: &str) -> std::borrow::Cow<'_, str> {
     rank_tail().replace(name, "")
 }
 
+/// A trailing, word-bounded I–X at the end of a name, case-insensitive: the tail [`db_canon_key`]
+/// strips, and the one the buff-timer rows fold and read their rank chip with.
+pub fn db_rank_tail() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| Regex::new(r"(?i) (?:I|II|III|IV|V|VI|VII|VIII|IX|X)$").unwrap())
+}
+
 /// The spell DB's own key: the same fold with a case-insensitive rank tail. Separate from
 /// [`spell_canon_key`] so the difference stays visible instead of being merged away.
 pub fn db_canon_key(name: &str) -> String {
-    static RE: OnceLock<Regex> = OnceLock::new();
-    let re = RE.get_or_init(|| Regex::new(r"(?i) (?:I|II|III|IV|V|VI|VII|VIII|IX|X)$").unwrap());
     let t = js_trim(name);
-    let stripped = re.replace(t, "");
+    let stripped = db_rank_tail().replace(t, "");
     js_trim(&stripped).to_lowercase()
 }
 
@@ -124,6 +129,38 @@ pub fn clean_mob(s: Option<&str>) -> Option<String> {
     } else {
         Some(out.to_string())
     }
+}
+
+/// The leading article, the mob-name marker EQ prints, sentence-initial or not. JS's `\s`
+/// ([`crate::jsstr::JS_S`]), not Rust's; the two differ.
+pub fn mob_article_re() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| Regex::new(&format!(r"(?i)^(?:a|an|the){}", crate::jsstr::JS_S)).unwrap())
+}
+
+/// EQ gives players a single capitalized word with no space, and mobs an article plus a noun
+/// phrase. The log capitalizes a sentence-initial article (`A fire giant warrior begins singing …`),
+/// so the word count discriminates and capitalization does not.
+///
+/// The article test is stated separately from the single-word test even though `a ` could never
+/// satisfy it, because the article is the mob marker and a reader looking for it should find it.
+/// The word is a letter, then letters/apostrophes/backticks: EQ names carry backticks and
+/// apostrophes (``T`Kail``, `N'Kari`) and never spaces, digits or other punctuation. Anchored at
+/// both ends, so any multi-word phrase is refused outright.
+///
+/// The one definition: the pet-leader parse, the ally/others folds, the resist target verdict and
+/// the con card all ask this same question.
+pub fn is_player_shaped_name(name: &str) -> bool {
+    static WORD: OnceLock<Regex> = OnceLock::new();
+    let n = js_trim(name);
+    if n.is_empty() {
+        return false;
+    }
+    if mob_article_re().is_match(n) {
+        return false;
+    }
+    let word = WORD.get_or_init(|| Regex::new(r"^[A-Z][A-Za-z`']*$").unwrap());
+    word.is_match(n)
 }
 
 #[cfg(test)]

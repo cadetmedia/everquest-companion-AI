@@ -1,8 +1,8 @@
 import { useMemo, useSyncExternalStore } from 'react'
 
 // QUEST-LEVEL flags — favorite (star) and permanently ignored — as two small
-// localStorage-backed sets, siblings of the ITEM-level `useFavorites` store and
-// deliberately NOT overloading it: starring a quest and starring one of its drops are
+// localStorage-backed sets, siblings of the ITEM-level `useFavorites` store (built on the same
+// `createQuestFlagStore` factory below, under its own key) and deliberately NOT overloading it: starring a quest and starring one of its drops are
 // different intents, and conflating them is exactly the indirection that made quest
 // favoriting undiscoverable.
 //
@@ -53,6 +53,10 @@ function load(storageKey: string): Set<string> {
   }
 }
 
+/**
+ * A set of lowercased keys kept in localStorage under `storageKey` as a JSON array, read once at
+ * creation. Every flag set here is one, and so is the item-level favorites store.
+ */
 export function createQuestFlagStore(storageKey: string): QuestFlagStore {
   let current = load(storageKey)
   const listeners = new Set<() => void>()

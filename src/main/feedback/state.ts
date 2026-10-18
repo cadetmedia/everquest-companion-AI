@@ -21,8 +21,9 @@
 
 import { app } from 'electron'
 import { randomUUID } from 'node:crypto'
-import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { writeFileDurable } from '../telemetry/durableWrite'
 import {
   UUID_V4_RE,
   type FeedbackDraft,
@@ -132,18 +133,14 @@ export function readState(): FeedbackState {
 }
 
 /**
- * Persist atomically (temp file + rename). A torn write here would cost the install id and
- * every queued report, and the whole point of the "corrupt ⇒ regenerate" policy is that it
- * never has to fire.
+ * Persist atomically, through this app's one whole-file writer (`writeFileDurable`: temp + fsync
+ * + rename, synchronous). A torn write here would cost the install id and every queued report,
+ * and the whole point of the "corrupt ⇒ regenerate" policy is that it never has to fire.
  */
 export function writeState(next: FeedbackState): void {
   cached = next
-  const path = statePath()
-  const tmp = `${path}.tmp`
   try {
-    mkdirSync(app.getPath('userData'), { recursive: true })
-    writeFileSync(tmp, JSON.stringify(next, null, 2), 'utf8')
-    renameSync(tmp, path)
+    writeFileDurable(app.getPath('userData'), statePath(), JSON.stringify(next, null, 2))
   } catch (err) {
     logError('main:feedbackState', { message: 'feedback.json write failed', err })
   }

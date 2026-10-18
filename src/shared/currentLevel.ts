@@ -35,9 +35,10 @@
 // prints the number can say where it came from and how long ago — `currentLevelRead` words that
 // once, so four surfaces cannot word it four ways.
 //
-// Pure and dependency-free (a type import only): the XP overlay is a second renderer bundle whose
+// Pure and dependency-free (a type import and the pure `durationText` formatter): the XP overlay is a second renderer bundle whose
 // contract is to be cheap to paint over the game, and the same sentence has to reach it.
 
+import { fmtDuration } from './durationText'
 import type { ProgressionSnap } from './progressionTypes'
 
 /** Who stated the level. Both are the game speaking — neither is inference. */
@@ -125,16 +126,6 @@ export function dingStatement(snap: ProgressionSnap): LevelStatement | null {
   return { level: snap.levelValue[n - 1], ts: snap.levelTs[n - 1], source: 'ding' }
 }
 
-/** `3d 4h` / `2h 10m` / `14m` / `31s` — the vocabulary the leveling surfaces already speak. */
-function agoText(ms: number): string {
-  const total = Math.max(0, Math.round(ms / 1000))
-  const hrs = Math.floor(total / 3600)
-  if (hrs >= 48) return `${String(Math.floor(hrs / 24))}d ${String(hrs % 24)}h`
-  const mins = Math.floor((total % 3600) / 60)
-  if (hrs > 0) return `${String(hrs)}h ${String(mins)}m`
-  return mins > 0 ? `${String(mins)}m` : `${String(total % 60)}s`
-}
-
 /** The words for each source, in the two places they are needed. */
 const SOURCE_WORDS: Record<LevelSource, { from: string; said: string }> = {
   who: { from: '/who', said: 'Your own /who row stated this level' },
@@ -165,7 +156,8 @@ export function currentLevelRead(
   const ageMs = Math.max(0, snap.lastTs - statement.ts)
   const stale = ageMs >= LEVEL_STALE_MS
   const words = SOURCE_WORDS[statement.source]
-  const age = `${agoText(ageMs)} ago`
+  // `3d 4h` / `2h 10m` / `14m` / `31s` — the vocabulary the leveling surfaces already speak.
+  const age = `${fmtDuration(ageMs)} ago`
   const title = `${words.said}, ${age}.${stale ? ` ${STALE_CAVEAT}` : ''}`
   // AGE AND PROVENANCE COMPOSE — see `CurrentLevelRead.cue`. The ding's cue is the age alone
   // because "level-up" is what a bare level already implies; the `/who` cue keeps its word because

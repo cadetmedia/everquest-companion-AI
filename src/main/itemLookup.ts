@@ -32,13 +32,11 @@
 // The PURE classification (wikitext → ItemKnowledge fields) is `parseItemWikitext`,
 // unit-tested in tests/itemLookup.test.mts against verbatim real wikitext.
 
-import { app } from 'electron'
-import { existsSync, readFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
 import { logError } from './errorLog'
-// THE ATOMIC WRITE, REUSED RATHER THAN RE-SPELLED (the storeFile.ts precedent, JOS-272): this app
-// has ONE answer to writing a whole file, and since JOS-371 it has an asynchronous one.
-import { writeFileDurableAsync } from './telemetry/durableWrite'
+// The wiki client and the userData cache are shared with mobLookup.ts as SPELLINGS; each service
+// creates its own instance, so the state (cooldown, queue, file, save latch) stays per-service.
+import { createWikiClient } from './wikiClient'
+import { createKnowledgeCache } from './knowledgeCache'
 import { normalizeItemName, parseItemWikitext } from './itemLookupParse'
 import { buildQuestItemIndex } from './questItemIndex'
 import { buildItemDbIndex, itemKey, knowledgeFromDb, type ItemDbEntry, type ItemDbFile } from './itemsDb'
@@ -62,14 +60,11 @@ import poskyJson from '../renderer/src/data/eqlegends/posky.json'
 // side; this catalog is built the other way round — from the quest pages themselves.
 import questsJson from '../renderer/src/data/eqlegends/quests.json'
 
-const API = 'https://eqlwiki.com/api.php'
-const UA = 'everquest-companion/0.1 (personal quest tracker)'
-
 // Bumped to 2 when the local quest catalog (quests.json) joined posky as a local source:
 // the cache stores the MERGED ItemKnowledge (see `finish()`), and positive entries never
 // expire, so every item cached before the catalog existed would otherwise keep serving its
 // stale zero-quest answer for the item-page fields. A version mismatch drops the whole file
-// (loadCache), so the next lookup re-merges against the new index.
+// (knowledgeCache.ts `load`), so the next lookup re-merges against the new index.
 //
 // Bumped to 3 when the item page's TRADESKILL fields joined the parse (`|recipes` — the
 // recipes that CONSUME this item — and `|playercrafted`). Same reasoning: the cache stores
@@ -83,10 +78,6 @@ const UA = 'everquest-companion/0.1 (personal quest tracker)'
 // reward-less turn-in uses and the hover card's outcome line ("→ Bunker Battle Blade") would
 // never appear for anything already looted.
 const CACHE_VERSION = 4
-const NEG_TTL_MS = 7 * 24 * 60 * 60 * 1000 // negative results: retry after 7 days
-const OFFLINE_TTL_MS = 30 * 60 * 1000 // offline misses: retry after 30 min
-const REQUEST_SPACING_MS = 150 // polite inter-request delay (wiki)
-const REQUEST_TIMEOUT_MS = 8000
 
 // ---- normalization ------------------------------------------------------------
 
@@ -275,48 +266,9 @@ export function localKnowledge(name: string): ItemQuestUse[] | null {
 
 // ---- wiki client (search → wikitext) ------------------------------------------
 
-/**
- * Server-asked-us-to-back-off state. When the wiki answers 429 (or any 5xx), we honour its
- * Retry-After (seconds; falls back to 60s when absent/unparseable) by refusing to issue ANY
- * request until the cooldown passes — the whole serialized queue goes quiet, not just the one
- * item. During the cooldown apiFetch returns null, which callers already treat as "offline":
- * the item caches as a short-TTL miss and is retried later, so being polite costs nothing.
- */
-let cooldownUntil = 0
-const RETRY_AFTER_FALLBACK_MS = 60_000
-
-async function apiFetch(params: Record<string, string>): Promise<unknown> {
-  if (Date.now() < cooldownUntil) return null // server asked for quiet — stay quiet
-  const url = API + '?' + new URLSearchParams({ format: 'json', formatversion: '2', ...params }).toString()
-  const ctrl = new AbortController()
-  const t = setTimeout(() => ctrl.abort(), REQUEST_TIMEOUT_MS)
-  try {
-    const res = await fetch(url, { headers: { 'User-Agent': UA }, signal: ctrl.signal })
-    if (res.status === 429 || res.status >= 500) {
-      const retryAfter = Number(res.headers.get('retry-after'))
-      const waitMs =
-        Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : RETRY_AFTER_FALLBACK_MS
-      cooldownUntil = Date.now() + waitMs
-      return null
-    }
-    if (!res.ok) return null
-    return await res.json()
-  } catch {
-    return null // offline / abort / parse error — caller distinguishes null via the throw path
-  } finally {
-    clearTimeout(t)
-  }
-}
-
-/** Fetch a page's raw wikitext. Returns '' when the page doesn't exist, null on network error. */
-async function fetchWikitext(title: string): Promise<string | null> {
-  const j = (await apiFetch({ action: 'parse', page: title, prop: 'wikitext', redirects: '1' })) as
-    | { parse?: { wikitext?: string }; error?: { code?: string } }
-    | null
-  if (j === null) return null // network error (offline)
-  if (j.error) return '' // missingtitle etc. — a real negative
-  return j.parse?.wikitext ?? ''
-}
+/** This service's OWN client — its own Retry-After cooldown and its own serialized, politely
+ *  spaced queue (wikiClient.ts; mobLookup.ts's header says why each service keeps its own). */
+const wiki = createWikiClient()
 
 /**
  * Resolve an item name to its wiki page title via search. Distinguishes a NETWORK failure
@@ -325,14 +277,8 @@ async function fetchWikitext(title: string): Promise<string | null> {
  */
 type ResolveResult = { status: 'ok'; title: string } | { status: 'none' } | { status: 'offline' }
 async function resolvePage(name: string): Promise<ResolveResult> {
-  const j = (await apiFetch({
-    action: 'query',
-    list: 'search',
-    srsearch: name,
-    srlimit: '8'
-  })) as { query?: { search?: { title: string }[] } } | null
-  if (j === null) return { status: 'offline' }
-  const hits = j.query?.search ?? []
+  const hits = await wiki.searchTitles(name)
+  if (hits === null) return { status: 'offline' }
   if (hits.length === 0) return { status: 'none' }
   const lower = name.toLowerCase()
   const exact = hits.find((h) => h.title.toLowerCase() === lower)
@@ -341,97 +287,13 @@ async function resolvePage(name: string): Promise<ResolveResult> {
 
 // ---- persistent cache (userData, versioned) -----------------------------------
 
-interface CacheEntry {
-  at: number
-  data: ItemKnowledge
-}
-interface CacheFile {
-  version: number
-  entries: Record<string, CacheEntry>
-}
-
-let mem: Map<string, CacheEntry> | null = null
-
-function cacheFilePath(): string {
-  return join(app.getPath('userData'), 'item-knowledge-cache.json')
-}
-
-/** The cache file's entries, or null when it is absent, empty, or written by another
- *  CACHE_VERSION (a version mismatch drops the whole file — see the version note above). */
-function readCacheEntries(path: string): Record<string, CacheEntry> | null {
-  if (!existsSync(path)) return null
-  const parsed = JSON.parse(readFileSync(path, 'utf8')) as CacheFile | null
-  if (parsed === null) return null
-  if (parsed.version !== CACHE_VERSION) return null
-  if (!parsed.entries) return null
-  return parsed.entries
-}
-
-function loadCache(): Map<string, CacheEntry> {
-  if (mem) return mem
-  mem = new Map()
-  try {
-    const entries = readCacheEntries(cacheFilePath())
-    if (entries) {
-      for (const [k, v] of Object.entries(entries)) mem.set(k, v)
-    }
-  } catch (err) {
-    logError('main:itemLookup', { message: 'failed reading item-knowledge cache', err })
-  }
-  return mem
-}
-
-/**
- * Persist the cache, 1.5 s after the write that dirtied it — off the main thread since JOS-371.
- *
- * WHY IT WAS SYNCHRONOUS: for no reason beyond being the shortest way to write a file. The debounce
- * was already doing the load-bearing work (many lookups in a burst, one write), but the write itself
- * still stopped the main process — on a LIVE path, once per burst of loot, for as long as the app is
- * open, and while an overlay holds the mouse a main-thread stall is a system-wide one.
- *
- * WHAT GUARANTEES THE SAME THING NOW: `writeFileDurableAsync` — this app's ONE answer to writing a
- * whole file (temp + fsync + rename, JOS-265), through libuv's threadpool. It is strictly stronger
- * than what was here: the old `writeFileSync` truncated the live cache FIRST, so a process killed
- * mid-write left a torn file, and `loadCache` reads a file that will not parse as an EMPTY one —
- * every item this install had ever resolved, silently gone. The atomic write cannot produce that.
- *
- * The debounce latch is what serialises it: `saveTimer` is cleared when the write is SCHEDULED and
- * `saving` holds until it settles, so a second write can never be started into the first one's
- * scratch file. A save asked for during a write simply re-arms the timer.
- */
-let saveTimer: ReturnType<typeof setTimeout> | null = null
-let saving = false
-function scheduleSave(): void {
-  if (saveTimer) return
-  saveTimer = setTimeout(() => {
-    saveTimer = null
-    if (saving) {
-      // A write is still in the threadpool. Re-arm rather than race its temp file; the cache only
-      // accretes, so the next write is a superset of the one being skipped.
-      scheduleSave()
-      return
-    }
-    saving = true
-    const entries: Record<string, CacheEntry> = {}
-    for (const [k, v] of (mem ?? new Map<string, CacheEntry>()).entries()) entries[k] = v
-    const path = cacheFilePath()
-    void writeFileDurableAsync(dirname(path), path, JSON.stringify({ version: CACHE_VERSION, entries } satisfies CacheFile))
-      .catch((err: unknown) => {
-        logError('main:itemLookup', { message: 'failed writing item-knowledge cache', err })
-      })
-      .finally(() => {
-        saving = false
-      })
-  }, 1500)
-}
-
-/** A cache entry is usable when it's a positive result, or a still-fresh negative/offline. */
-function cacheHit(entry: CacheEntry): boolean {
-  const age = Date.now() - entry.at
-  if (entry.data.offline) return age < OFFLINE_TTL_MS
-  if (entry.data.notFound) return age < NEG_TTL_MS
-  return true // positive results don't expire (item lore/quest data is static)
-}
+/** `item-knowledge-cache.json` — the WIKI fallback's cache (knowledgeCache.ts). Positive results
+ *  never expire (item lore/quest data is static), hence the CACHE_VERSION bump history above. */
+const knowledge = createKnowledgeCache<ItemKnowledge>({
+  name: 'item-knowledge',
+  version: CACHE_VERSION,
+  tag: 'main:itemLookup'
+})
 
 // ---- merge + public API -------------------------------------------------------
 
@@ -451,8 +313,6 @@ function mergeLocal(base: Omit<ItemKnowledge, 'cached'>, local: ItemQuestUse[] |
   }
   return { ...base, quest: true, questUses: uses }
 }
-
-let queue: Promise<unknown> = Promise.resolve()
 
 /**
  * Look up an item's knowledge. Resolution order: the COMMITTED item DB (items.json) →
@@ -474,9 +334,9 @@ export async function lookupItem(name: string): Promise<ItemKnowledge> {
   const fromDb = dbKnowledge(key, display)
   if (fromDb) return { ...mergeLocal(fromDb, local), cached: true }
 
-  const cache = loadCache()
+  const cache = knowledge.load()
   const cached = cache.get(key)
-  if (cached && cacheHit(cached)) {
+  if (cached && knowledge.hit(cached)) {
     // Re-merge local in case the dataset changed since the cache was written.
     return { ...mergeLocal(cached.data, local), cached: true }
   }
@@ -490,26 +350,20 @@ export async function lookupItem(name: string): Promise<ItemKnowledge> {
     )
     const data: ItemKnowledge = { ...base, cached: false }
     cache.set(key, { at: Date.now(), data })
-    scheduleSave()
+    knowledge.scheduleSave()
     return data
   }
 
-  // Serialize wiki requests through a single queue with polite spacing.
-  const run = queue.then(async (): Promise<ItemKnowledge> => {
+  // Serialize wiki requests through this service's queue with polite spacing.
+  const run = wiki.enqueue(async (): Promise<ItemKnowledge> => {
     const res = await resolvePage(display)
     if (res.status === 'offline') return finish({ offline: true }) // network failed — retry soon
     if (res.status === 'none') return finish({ notFound: true }) // zero search hits — real negative
-    const wt = await fetchWikitext(res.title)
+    const wt = await wiki.fetchWikitext(res.title)
     if (wt === null) return finish({ offline: true }) // network failed on the page fetch
     if (wt === '') return finish({ notFound: true }) // page missing
     return finish({ page: res.title, ...parseItemWikitext(display, wt) })
   })
-
-  // Keep the queue serialized + spaced regardless of this call's outcome.
-  queue = run.then(
-    () => new Promise((r) => setTimeout(r, REQUEST_SPACING_MS)),
-    () => new Promise((r) => setTimeout(r, REQUEST_SPACING_MS))
-  )
 
   try {
     return await run
@@ -524,14 +378,13 @@ export async function lookupItem(name: string): Promise<ItemKnowledge> {
 /**
  * Fire-and-forget prefetch: warm the cache for a freshly-looted item in the background
  * so the answer is ready by the time the user clicks. No-op if already cached. Throttled
- * naturally by the shared serialized queue.
+ * naturally by this service's serialized queue.
  */
 export function prefetchItem(name: string): void {
   const key = cacheKey(name)
   if (itemDb().has(key)) return // the committed DB already answers this — nothing to warm
-  const cache = loadCache()
-  const cached = cache.get(key)
-  if (cached && cacheHit(cached)) return
+  const cached = knowledge.load().get(key)
+  if (cached && knowledge.hit(cached)) return
   void lookupItem(name).catch(() => {
     /* prefetch errors are silent — the interactive lookup will retry + surface state */
   })

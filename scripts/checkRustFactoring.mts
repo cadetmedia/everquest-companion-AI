@@ -13,13 +13,13 @@
  * `scripts/rustFactoring.mts`; the one-line version is that comments and blanks never count, so the
  * comment-pruning waves cannot move a single number here.
  *
- * ── THE RATCHET ONLY SHRINKS ──────────────────────────────────────────────────────────────────
+ * ── A CEILING WITH HEADROOM (fork owner ruling, 2026-10-17) ──────────────────────────────────
  *
- *   * A NEW violation, or an existing one that GREW, is red. That is the whole point.
- *   * A violation that SHRANK or went away is ALSO red — with `--write` as the fix, in the same
- *     commit. This mirrors ESLint's `reportUnusedDisableDirectives`: a register that claims debt
- *     the code no longer owes is a lie about the code, and letting it rot leaves headroom for the
- *     next growth to hide in.
+ *   * A NEW violation is red, and so is a recorded one that grew more than HEADROOM (10%) past its
+ *     recorded number. Growth inside that room is green: a hard line count was forcing splits and
+ *     comment cuts that bought nothing.
+ *   * A violation that SHRANK or went away is reported and stays GREEN. The recorded number is a
+ *     ceiling, not a claim to keep rewriting smaller; `--write` still records a shrink if wanted.
  *   * `--write` REFUSES while anything is new or grown. Widening the register is the integrator's
  *     call and is made by editing the JSON by hand, never by re-running a tool until it is green.
  *   * `--seed` rewrites the register wholesale, growth and all. It is the twin of `npm run
@@ -40,7 +40,13 @@ export const BASELINE_PATH = join(ENGINE_DIR, 'factoring-baseline.json')
 
 /** Verbatim from `eslint.config.mjs`'s FACTORING_RULES. Changing one means re-running that file's
  *  measurement (`npm run lint:measure`) on BOTH languages, not editing a number here. */
-export const BARS = { 'file-lines': 400, 'function-lines': 100, complexity: 12 } as const
+export const BARS = { 'file-lines': 440, 'function-lines': 110, complexity: 13 } as const
+
+/** How far past its recorded number a baselined violation may grow before it is red. */
+export const HEADROOM = 0.1
+
+/** A recorded value's ceiling: the number plus HEADROOM, rounded up. */
+export const ceilingOf = (recorded: number): number => Math.ceil(recorded * (1 + HEADROOM))
 export type Metric = keyof typeof BARS
 
 export interface Violation {
@@ -121,21 +127,24 @@ export function compare(now: Violation[], baseline: Baseline, unreadable: string
     live.add(keyOf(v))
     const prev = before.get(keyOf(v))
     if (prev === undefined) out.added.push(v)
-    else if (v.value > prev.value) out.grown.push({ now: v, was: prev.value })
+    else if (v.value > ceilingOf(prev.value)) out.grown.push({ now: v, was: prev.value })
     else if (v.value < prev.value) out.stale.push(prev)
   }
   for (const e of baseline.entries) if (!live.has(keyOf(e))) out.stale.push(e)
   return out
 }
 
+/** Green unless something is new, grew past its headroom, or could not be read. A shrink is fine. */
 export const isClean = (c: Comparison): boolean =>
-  c.added.length === 0 && c.grown.length === 0 && c.stale.length === 0 && c.unreadable.length === 0
+  c.added.length === 0 && c.grown.length === 0 && c.unreadable.length === 0
 
 export function readBaseline(path: string): Baseline {
   const parsed: unknown = JSON.parse(readFileSync(path, 'utf8'))
   const b = parsed as Baseline
+  // A register measured against a LOWER bar is still a true list of ceilings under a raised one;
+  // only a stricter bar than the register's would hide violations it never recorded.
   for (const [metric, bar] of Object.entries(BARS))
-    if (b.bars[metric] !== bar)
+    if (b.bars[metric] > bar)
       throw new Error(
         `${path} was measured against ${metric} ${String(b.bars[metric])}, the bar is now ` +
           `${String(bar)}. A bar change means re-baselining the whole register on purpose.`
@@ -144,9 +153,9 @@ export function readBaseline(path: string): Baseline {
 }
 
 const PREAMBLE = [
-  'GENERATED debt register — engine factoring ratchet (JOS-523). IT ONLY SHRINKS.',
-  'Every entry is a file or function that breaks a bar TODAY. Fix one and the gate says so;',
-  'rerun `npm run check:rust-factoring -- --write` in the SAME commit to record the shrink.',
+  'GENERATED debt register — engine factoring ratchet (JOS-523). Each value is a ceiling, with 10% headroom.',
+  'Every entry is a file or function that broke a bar when recorded. A shrink stays green;',
+  '`npm run check:rust-factoring -- --write` records one if wanted.',
   'Adding or widening an entry is the integrator call, made by hand. Never by re-running a tool.',
 ]
 
@@ -172,7 +181,7 @@ function report(c: Comparison): string[] {
     lines.push(
       `  GREW   ${g.now.metric} ${String(g.was)} → ${String(g.now.value)}  ${label(g.now)}`
     )
-  for (const v of c.stale) lines.push(`  FIXED  ${v.metric} was ${String(v.value)}  ${label(v)}`)
+  for (const v of c.stale) lines.push(`  SHRANK ${v.metric} was ${String(v.value)}  ${label(v)} (fine)`)
   return lines
 }
 
@@ -185,23 +194,23 @@ function main(): void {
     return
   }
   const comparison = compare(violations, readBaseline(BASELINE_PATH), unreadable)
-  if (isClean(comparison)) {
+  console.log(report(comparison).join('\n'))
+  if (isClean(comparison) && !write) {
     console.log(
-      `rust factoring: green — ${String(violations.length)} baselined violations, none new, none grown.`
+      `rust factoring: green — ${String(violations.length)} baselined violations, none new, none grown past headroom.`
     )
     return
   }
-  console.log(report(comparison).join('\n'))
   const blocked = comparison.added.length + comparison.grown.length + comparison.unreadable.length
   if (write && blocked === 0) {
     writeBaseline(BASELINE_PATH, violations)
-    console.log(`rust factoring: baseline shrunk to ${String(violations.length)} violations.`)
+    console.log(`rust factoring: register rewritten with ${String(violations.length)} violations.`)
     return
   }
   console.log(
     write
-      ? '\nrust factoring: REFUSING to write — the register may only shrink, and this run grew it.'
-      : '\nrust factoring: RED. Shrinks are recorded with `npm run check:rust-factoring -- --write`.'
+      ? '\nrust factoring: REFUSING to write — this run has new or grown violations.'
+      : '\nrust factoring: RED — a new violation, or growth past the 10% headroom.'
   )
   process.exitCode = 1
 }

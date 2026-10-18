@@ -16,6 +16,7 @@
 
 import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react'
 import type { QuestProgress } from './useProgress'
+import { useBoolPref } from '../combat/useCombatPrefs'
 import { useFavorites } from '../favorites/useFavorites'
 import { useQuestFavorites, useQuestIgnored, type QuestFlagSet } from '../favorites/useQuestFlags'
 import { DEFAULT_SORT, isSortKey, orderQuests, type SortKey } from './questSort'
@@ -142,19 +143,8 @@ function useStoredSort(): [SortKey, (v: SortKey) => void] {
  * default is what we do until they make one. Nothing is migrated and no existing key moves.
  */
 function useStoredFlag(key: string, whenAbsent = false): [boolean, (v: boolean) => void] {
-  const [value, setValue] = useState(() => {
-    const raw = localStorage.getItem(key)
-    return raw === null ? whenAbsent : raw === '1'
-  })
   // Written when the user sets it, never on mount: that is what keeps an absent key absent.
-  const set = useCallback(
-    (v: boolean) => {
-      localStorage.setItem(key, v ? '1' : '0')
-      setValue(v)
-    },
-    [key]
-  )
-  return [value, set]
+  return useBoolPref(key, whenAbsent)
 }
 
 /**

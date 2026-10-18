@@ -45,13 +45,11 @@
 // The PURE half (wikitext → facts, the own-loot index, the name key) is mobLookupParse.ts,
 // unit-tested against verbatim real wikitext in tests/considerWindows.test.mts.
 
-import { app } from 'electron'
-import { existsSync, readFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
 import { logError } from './errorLog'
-// THE ATOMIC WRITE, REUSED RATHER THAN RE-SPELLED (the storeFile.ts precedent, JOS-272): this app
-// has ONE answer to writing a whole file, and since JOS-371 it has an asynchronous one.
-import { writeFileDurableAsync } from './telemetry/durableWrite'
+// The wiki client and the userData cache are shared with itemLookup.ts as SPELLINGS; this service
+// creates its own instance of each, so the state (cooldown, queue, file, save latch) stays its own.
+import { createWikiClient } from './wikiClient'
+import { createKnowledgeCache } from './knowledgeCache'
 import { MobLootIndex, mobKey, parseMobWikitext } from './mobLookupParse'
 import { annotateDropEras } from './mobDropEra'
 import { knowledgeFromCatalog, localMobEntry, mergeLocalKnowledge } from './mobLookupLocal'
@@ -60,16 +58,9 @@ import type { MobKnowledge } from '../shared/types'
 
 export { MobLootIndex, mobKey, parseMobWikitext }
 
-const API = 'https://eqlwiki.com/api.php'
-const UA = 'everquest-companion/0.1 (personal quest tracker)'
-
 /** Cache schema version. Bump whenever the SHAPE of a stored MobKnowledge changes — positives
  *  never expire, so a stale shape would otherwise be served forever. */
 const CACHE_VERSION = 1
-const NEG_TTL_MS = 7 * 24 * 60 * 60 * 1000 // negative results: retry after 7 days
-const OFFLINE_TTL_MS = 30 * 60 * 1000 // offline misses: retry after 30 min
-const REQUEST_SPACING_MS = 150 // polite inter-request delay (wiki)
-const REQUEST_TIMEOUT_MS = 8000
 
 // ---- LOCAL 1: the shared own-loot index ---------------------------------------
 //
@@ -87,48 +78,9 @@ export { localMobEntry, localMobQuests, MOB_CATALOG_SIZE } from './mobLookupLoca
 
 // ---- wiki client (search → wikitext) ------------------------------------------
 
-/**
- * Server-asked-us-to-back-off state — the same contract itemLookup honors. On 429 (or any 5xx)
- * we obey Retry-After (seconds; 60s fallback) by refusing to issue ANY request until it passes:
- * the whole serialized queue goes quiet, not just the one mob. During the cooldown apiFetch
- * returns null, which callers treat as "offline" — the mob caches as a short-TTL miss and is
- * retried later, so being polite costs nothing.
- */
-let cooldownUntil = 0
-const RETRY_AFTER_FALLBACK_MS = 60_000
-
-async function apiFetch(params: Record<string, string>): Promise<unknown> {
-  if (Date.now() < cooldownUntil) return null // server asked for quiet — stay quiet
-  const url = API + '?' + new URLSearchParams({ format: 'json', formatversion: '2', ...params }).toString()
-  const ctrl = new AbortController()
-  const t = setTimeout(() => ctrl.abort(), REQUEST_TIMEOUT_MS)
-  try {
-    const res = await fetch(url, { headers: { 'User-Agent': UA }, signal: ctrl.signal })
-    if (res.status === 429 || res.status >= 500) {
-      const retryAfter = Number(res.headers.get('retry-after'))
-      const waitMs =
-        Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : RETRY_AFTER_FALLBACK_MS
-      cooldownUntil = Date.now() + waitMs
-      return null
-    }
-    if (!res.ok) return null
-    return await res.json()
-  } catch {
-    return null // offline / abort / parse error
-  } finally {
-    clearTimeout(t)
-  }
-}
-
-/** Fetch a page's raw wikitext. '' when the page doesn't exist, null on network error. */
-async function fetchWikitext(title: string): Promise<string | null> {
-  const j = (await apiFetch({ action: 'parse', page: title, prop: 'wikitext', redirects: '1' })) as
-    | { parse?: { wikitext?: string }; error?: { code?: string } }
-    | null
-  if (j === null) return null
-  if (j.error) return ''
-  return j.parse?.wikitext ?? ''
-}
+/** This service's OWN client — its own Retry-After cooldown and its own serialized, politely
+ *  spaced queue (wikiClient.ts; the header above says why it is not itemLookup's). */
+const wiki = createWikiClient()
 
 /**
  * Resolve a mob name to candidate wiki page titles. Distinguishes a NETWORK failure ('offline')
@@ -146,14 +98,8 @@ type ResolveResult =
   | { status: 'none' }
   | { status: 'offline' }
 async function resolvePage(id: MobIdentity): Promise<ResolveResult> {
-  const j = (await apiFetch({
-    action: 'query',
-    list: 'search',
-    srsearch: id.canonical,
-    srlimit: '8'
-  })) as { query?: { search?: { title: string }[] } } | null
-  if (j === null) return { status: 'offline' }
-  const hits = j.query?.search ?? []
+  const hits = await wiki.searchTitles(id.canonical)
+  if (hits === null) return { status: 'offline' }
   if (hits.length === 0) return { status: 'none' }
   // "Exact" means ANY spelling the roster states for this creature (JOS-142) — for the 7.9k
   // catalog mobs and the 30 name-identical roster targets that key list is one key, so this is
@@ -170,100 +116,14 @@ function identityMatches(id: MobIdentity, name: string): boolean {
 
 // ---- persistent cache (userData, versioned) -----------------------------------
 
-interface CacheEntry {
-  at: number
-  /** the WIKI half only — local sources are re-merged on every read so they stay current. */
-  data: MobKnowledge
-}
-interface CacheFile {
-  version: number
-  entries: Record<string, CacheEntry>
-}
-
-let mem: Map<string, CacheEntry> | null = null
-
-function cacheFilePath(): string {
-  return join(app.getPath('userData'), 'mob-knowledge-cache.json')
-}
-
-/** The cache file's entries, or null when it is absent, empty, or written by another
- *  CACHE_VERSION (a version mismatch drops the whole file). */
-function readCacheEntries(path: string): Record<string, CacheEntry> | null {
-  if (!existsSync(path)) return null
-  const parsed = JSON.parse(readFileSync(path, 'utf8')) as CacheFile | null
-  if (parsed === null) return null
-  if (parsed.version !== CACHE_VERSION) return null
-  if (!parsed.entries) return null
-  return parsed.entries
-}
-
-function loadCache(): Map<string, CacheEntry> {
-  if (mem) return mem
-  mem = new Map()
-  try {
-    const entries = readCacheEntries(cacheFilePath())
-    if (entries) {
-      for (const [k, v] of Object.entries(entries)) mem.set(k, v)
-    }
-  } catch (err) {
-    logError('main:mobLookup', { message: 'failed reading mob-knowledge cache', err })
-  }
-  return mem
-}
-
-/**
- * Persist the cache, 1.5 s after the write that dirtied it — off the main thread since JOS-460.
- *
- * WHY IT WAS SYNCHRONOUS: for no reason beyond being the shortest way to write a file — this module
- * was written field for field against itemLookup.ts, and it inherited that spelling too. The debounce
- * was already doing the load-bearing work (a burst of `/con`s, one write), but the write itself still
- * stopped the main process — on a LIVE path, once per burst, for as long as the app is open, and
- * while an overlay holds the mouse a main-thread stall is a system-wide one.
- *
- * WHAT GUARANTEES THE SAME THING NOW: `writeFileDurableAsync` — this app's ONE answer to writing a
- * whole file (temp + fsync + rename, JOS-265), through libuv's threadpool. It is strictly stronger
- * than what was here: the old `writeFileSync` truncated the live cache FIRST, so a process killed
- * mid-write left a torn file, and `loadCache` reads a file that will not parse as an EMPTY one —
- * every mob this install had ever resolved, silently gone. The atomic write cannot produce that.
- *
- * The debounce latch is what serialises it: `saveTimer` is cleared when the write is SCHEDULED and
- * `saving` holds until it settles, so a second write can never be started into the first one's
- * scratch file. A save asked for during a write simply re-arms the timer.
- */
-let saveTimer: ReturnType<typeof setTimeout> | null = null
-let saving = false
-function scheduleSave(): void {
-  if (saveTimer) return
-  saveTimer = setTimeout(() => {
-    saveTimer = null
-    if (saving) {
-      // A write is still in the threadpool. Re-arm rather than race its temp file; every write
-      // serialises the whole live map, so the re-armed one states everything the skipped one would
-      // have — including an alias repair's deletions (`repairAliasCache`).
-      scheduleSave()
-      return
-    }
-    saving = true
-    const entries: Record<string, CacheEntry> = {}
-    for (const [k, v] of (mem ?? new Map<string, CacheEntry>()).entries()) entries[k] = v
-    const path = cacheFilePath()
-    void writeFileDurableAsync(dirname(path), path, JSON.stringify({ version: CACHE_VERSION, entries } satisfies CacheFile))
-      .catch((err: unknown) => {
-        logError('main:mobLookup', { message: 'failed writing mob-knowledge cache', err })
-      })
-      .finally(() => {
-        saving = false
-      })
-  }, 1500)
-}
-
-/** Usable when it's a positive result, or a still-fresh negative/offline one. */
-function cacheHit(entry: CacheEntry): boolean {
-  const age = Date.now() - entry.at
-  if (entry.data.offline) return age < OFFLINE_TTL_MS
-  if (entry.data.notFound) return age < NEG_TTL_MS
-  return true // a mob's drop table is static wiki content — positives don't expire
-}
+/** `mob-knowledge-cache.json` — the WIKI half only (knowledgeCache.ts); local sources are
+ *  re-merged on every read so they stay current. A mob's drop table is static wiki content, so
+ *  positives don't expire. */
+const knowledge = createKnowledgeCache<MobKnowledge>({
+  name: 'mob-knowledge',
+  version: CACHE_VERSION,
+  tag: 'main:mobLookup'
+})
 
 // ---- merge + public API -------------------------------------------------------
 
@@ -293,14 +153,12 @@ function mergeLocal(base: MobKnowledge, id: MobIdentity): MobKnowledge {
  * version bump would throw away every user's whole mob cache to repair at most two entries.
  */
 function repairAliasCache(id: MobIdentity): void {
-  const cache = loadCache()
+  const cache = knowledge.load()
   const poisoned = poisonedAliasKeys(id, cache)
   if (poisoned.length === 0) return
   for (const key of poisoned) cache.delete(key)
-  scheduleSave()
+  knowledge.scheduleSave()
 }
-
-let queue: Promise<unknown> = Promise.resolve()
 
 /**
  * Look up a mob's drop knowledge. Local-first, then cache, then a serialized, politely-spaced
@@ -329,23 +187,23 @@ export async function lookupMob(name: string): Promise<MobKnowledge> {
   const entry = localMobEntry(ask)
   if (entry) return mergeLocal(knowledgeFromCatalog(display, entry), id)
 
-  const cache = loadCache()
+  const cache = knowledge.load()
   const cached = cache.get(key)
-  if (cached && cacheHit(cached)) return mergeLocal({ ...cached.data, cached: true }, id)
+  if (cached && knowledge.hit(cached)) return mergeLocal({ ...cached.data, cached: true }, id)
 
   /** Build + persist the WIKI half, then merge the (never-cached) local half on top. */
   const finish = (extra: Partial<MobKnowledge>): MobKnowledge => {
     const data: MobKnowledge = { name: display, cached: false, ...extra }
     cache.set(key, { at: Date.now(), data })
-    scheduleSave()
+    knowledge.scheduleSave()
     return mergeLocal(data, id)
   }
 
-  const run = queue.then(async (): Promise<MobKnowledge> => {
+  const run = wiki.enqueue(async (): Promise<MobKnowledge> => {
     const res = await resolvePage(id)
     if (res.status === 'offline') return finish({ offline: true })
     if (res.status === 'none') return finish({ notFound: true })
-    const wt = await fetchWikitext(res.title)
+    const wt = await wiki.fetchWikitext(res.title)
     if (wt === null) return finish({ offline: true })
     if (wt === '') return finish({ notFound: true })
     const facts = parseMobWikitext(wt)
@@ -356,12 +214,6 @@ export async function lookupMob(name: string): Promise<MobKnowledge> {
     if (!res.exact && !identityMatches(id, facts.pageName ?? res.title)) return finish({ notFound: true })
     return finish({ page: res.title, ...facts })
   })
-
-  // Keep the queue serialized + spaced regardless of this call's outcome.
-  queue = run.then(
-    () => new Promise((r) => setTimeout(r, REQUEST_SPACING_MS)),
-    () => new Promise((r) => setTimeout(r, REQUEST_SPACING_MS))
-  )
 
   try {
     return await run

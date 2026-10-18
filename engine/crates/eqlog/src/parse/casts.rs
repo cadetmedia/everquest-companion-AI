@@ -56,8 +56,6 @@ pub struct CastRes {
     emote_pet: Regex,
     coat_other_named: Regex,
     coat_other_generic: Regex,
-    article: Regex,
-    single_word_name: Regex,
     /// Last word of every proc emote to the emotes that end with it.
     proc_by_last_word: HashMap<&'static str, Vec<usize>>,
     say_kind_by_text: HashMap<&'static str, &'static str>,
@@ -119,8 +117,6 @@ impl CastRes {
             coat_other_named: Regex::new(r"^(.+?) coats their blades in (.+?)!$").unwrap(),
             coat_other_generic: Regex::new(&format!(r"^(.+?){s}?coats their blades in poison\.$"))
                 .unwrap(),
-            article: Regex::new(&format!(r"(?i)^(?:a|an|the){s}")).unwrap(),
-            single_word_name: Regex::new(r"^[A-Z][A-Za-z`']*$").unwrap(),
             proc_by_last_word,
             say_kind_by_text: PET_SAY_LINES.iter().map(|(k, s)| (*s, *k)).collect(),
         }
@@ -402,7 +398,7 @@ pub fn classify_ally_pet_leader(
     if owner.to_lowercase() == crate::jsstr::js_trim(self_name).to_lowercase() {
         return false;
     }
-    if !is_player_shaped_name(r, owner) {
+    if !crate::names::is_player_shaped_name(owner) {
         return false;
     }
     out.begin(Kind::AllyPetLeader);
@@ -410,18 +406,6 @@ pub fn classify_ally_pet_leader(
     out.s(Key::Pet, &norm(&m[1]));
     out.s(Key::Owner, &norm(owner));
     true
-}
-
-/// A leading article is the mob marker; a player is one capitalized word.
-fn is_player_shaped_name(r: &CastRes, name: &str) -> bool {
-    let n = crate::jsstr::js_trim(name);
-    if n.is_empty() {
-        return false;
-    }
-    if r.article.is_match(n) {
-        return false;
-    }
-    r.single_word_name.is_match(n)
 }
 
 pub fn classify_aa_activate(r: &CastRes, c: &Ctx, out: &mut Ev) -> bool {

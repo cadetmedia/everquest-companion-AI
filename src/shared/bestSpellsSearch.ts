@@ -67,12 +67,10 @@ import { observedRankRow, type ObservedSpellRanksSnap } from './spellRanks'
 import { effectiveSpellRank, normalizeSpellRank } from './spellScale'
 import {
   compileSpellQuery,
-  matchesCompiledQuery,
-  type CompiledSpellQuery,
   type SearchClassLevel,
   type SpellSearchToken
 } from './spellSearch'
-import { foldClassLevels, unlockSearchSurface } from './unlockSearch'
+import { foldClassLevels, matchingSpells, type FoldedSpellMatch } from './unlockSearch'
 
 /**
  * Most result rows the panel mounts at once.
@@ -153,30 +151,6 @@ export interface BestSpellSearchAsk {
   cap?: number
 }
 
-/** One matched spell with every duplicate wiki page for it already merged into its class pairs. */
-interface FoldedMatch {
-  spell: UnlockSpell
-  pairs: SearchClassLevel[]
-}
-
-/**
- * The matching spells, FOLDED BY NAME — the unlock search's rule and the ranked fold's, for the one
- * measured reason both of them state: the wiki carries a few spells on two pages (`Imbue Emerald`
- * twice at CLR 29), and two identical rows read as a bug in the app rather than an artefact on the
- * wiki. The first record's fields win — it is the same spell — and the class pairs merge.
- */
-function matchingSpells(spells: readonly UnlockSpell[], q: CompiledSpellQuery): FoldedMatch[] {
-  const byName = new Map<string, FoldedMatch>()
-  for (const spell of spells) {
-    if (!matchesCompiledQuery(unlockSearchSurface(spell), q)) continue
-    const key = spell.name.toLowerCase()
-    const seen = byName.get(key)
-    if (seen) seen.pairs.push(...spell.at)
-    else byName.set(key, { spell, pairs: [...spell.at] })
-  }
-  return [...byName.values()]
-}
-
 /** What one spell reads as under the tab's assumption and the reader's ranks. */
 interface SpellReading {
   metrics: SpellMetrics
@@ -231,7 +205,7 @@ function gainLevelOf(owned: { gainedAt: number } | null, levels: readonly Search
 }
 
 /** One matched spell as a result row, or null when this tab cannot read it. */
-function searchRow(found: FoldedMatch, ask: BestSpellSearchAsk, want: ReadonlySet<string>): BestSpellSearchRow | null {
+function searchRow(found: FoldedSpellMatch, ask: BestSpellSearchAsk, want: ReadonlySet<string>): BestSpellSearchRow | null {
   // The gain level is resolved FIRST since JOS-452: it is the level the row prints and the level the
   // focus's `Limit Max Level` is tested against, and those two must be one number.
   const levels = foldClassLevels(found.pairs)

@@ -31,8 +31,8 @@
 // `src/shared/perf.ts` and is pinned by `tests/perf.test.mts`. What is left here is I/O.
 
 import { app } from 'electron'
-import { mkdirSync, renameSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { writeFileDurable } from './telemetry/durableWrite'
 import { IPC } from '../shared/ipc'
 import {
   addMark,
@@ -467,7 +467,8 @@ function profilePath(): string {
 }
 
 /**
- * Persist the profile ATOMICALLY (temp file + rename), replacing the previous launch's —
+ * Persist the profile ATOMICALLY (`writeFileDurable`: temp + fsync + rename, synchronous),
+ * replacing the previous launch's —
  * one file, last launch only (plan P4/P6). Best effort: a profile that cannot be written is
  * never a reason to fail a launch, so every failure is logged and startup continues.
  *
@@ -478,12 +479,8 @@ function writeStartupProfile(): void {
   const profile = startupProfile()
   if (profile.phases.length === 0) return
   profileWritten = true
-  const path = profilePath()
-  const tmp = `${path}.tmp`
   try {
-    mkdirSync(app.getPath('userData'), { recursive: true })
-    writeFileSync(tmp, JSON.stringify(profile, null, 2), 'utf8')
-    renameSync(tmp, path)
+    writeFileDurable(app.getPath('userData'), profilePath(), JSON.stringify(profile, null, 2))
     logStartupSummary(profile)
   } catch (err) {
     logError('main:perfStartup', { message: 'perf-startup.json write failed', err })

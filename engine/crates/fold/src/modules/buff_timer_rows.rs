@@ -15,8 +15,7 @@
 //! than in the renderer. Every other term of the comparison is exact.
 
 use eqlog::jsstr::js_trim;
-use regex::Regex;
-use std::sync::OnceLock;
+use eqlog::names::{db_canon_key, db_rank_tail};
 
 use crate::modules::buff_timers::{CcEnd, CcHold};
 use crate::modules::buffs_shapes::BuffClass;
@@ -207,12 +206,6 @@ pub fn timer_ends_at(row: &BuffTimerRow) -> Option<i64> {
     row.duration_ms.map(|d| row.started_ts + d)
 }
 
-/// The rank tail a spell name may carry.
-fn rank_tail() -> &'static Regex {
-    static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| Regex::new(r"(?i) (?:I|II|III|IV|V|VI|VII|VIII|IX|X)$").unwrap())
-}
-
 /// A row's spell name folded to its FAMILY, case kept.
 ///
 /// This is the spelling a wear-off line prints: a row's name comes from the ranked cast line, and
@@ -220,13 +213,14 @@ fn rank_tail() -> &'static Regex {
 /// whole log). Casing is kept because a firing alert speaks the name.
 #[must_use]
 pub fn timer_name_base(name: &str) -> String {
-    js_trim(&rank_tail().replace(js_trim(name), "")).to_owned()
+    js_trim(&db_rank_tail().replace(js_trim(name), "")).to_owned()
 }
 
-/// The same fold, case-folded. What row ids are built from.
+/// The same fold, case-folded. What row ids are built from. It is exactly the spell DB's key (trim,
+/// case-insensitive rank strip, trim, lowercase), so it is that function.
 #[must_use]
 pub fn timer_name_key(name: &str) -> String {
-    timer_name_base(name).to_lowercase()
+    db_canon_key(name)
 }
 
 /// The rank a row may print — the numeral off the cast line, or nothing.
@@ -241,7 +235,7 @@ pub fn row_rank_label(name: &str, cast_name: Option<&str>) -> Option<String> {
         return None;
     }
     let trimmed = js_trim(cast);
-    rank_tail()
+    db_rank_tail()
         .find(trimmed)
         .map(|m| js_trim(m.as_str()).to_uppercase())
 }

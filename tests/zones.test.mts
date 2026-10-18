@@ -13,9 +13,8 @@
 //      character allowlist the IPC handler validates with (`isSafePackId`).
 //   2. An unknown zone returns `null`, NEVER a nearest guess — the viewer opens its picker
 //      instead of confidently drawing the wrong dungeon (world-model law 1).
-//   3. `zoneKey` here and `zoneKey` in the renderer's mobZone.ts are the SAME fold. They are
-//      deliberate copies (shared may not import renderer), so parity is asserted against the real
-//      renderer implementation on real log zone names.
+//   3. `zoneKey` here and `zoneKey` in the renderer's mobZone.ts are the SAME fold: mobZone.ts
+//      re-exports this one, and the test below pins that it stays the same function.
 //
 // No Electron, no network, no fixtures, no game directory ⇒ this suite never skips (the
 // security.test.mts / imageCache.test.mts precedent). Disk verification of every `short` was done
@@ -197,22 +196,10 @@ test('zoneKey folds the leading article, the separators and the instance tiers',
   assert.equal(zoneKey(undefined), '')
 })
 
-test('the fold agrees with the mobs tab, name for name', () => {
-  // Two hand-copied implementations of one rule set: this is the tripwire that keeps them from
-  // drifting into a state where a zone has a map but no mob roster (or the reverse) for no
-  // reason a user could ever discover. Real log spellings, one per fold rule plus two plain ones.
-  const REAL = [
-    'The Ruins of Old Paineel - Solo 4 (Refined)',
-    'Neriak - Foreign Quarter',
-    'Najena 4 (Refined)',
-    'The Plane of Sky 1 (Awakened)',
-    "Nagafen's Lair - Group 3 (Fused)",
-    'The Oasis of Marr',
-    'West Commonlands'
-  ]
-  for (const raw of REAL) assert.equal(zoneKey(raw), mobZoneKey(raw), `folds disagree on "${raw}"`)
-  // Including the degenerate inputs, where a mismatch would be easiest to miss.
-  for (const raw of ['', '   ', 'the ']) assert.equal(zoneKey(raw), mobZoneKey(raw))
+test('the mobs tab folds with this very function, not a copy', () => {
+  // A copy could drift into a state where a zone has a map but no mob roster (or the reverse)
+  // for no reason a user could ever discover. mobZone.ts re-exports the shared fold instead.
+  assert.equal(mobZoneKey, zoneKey)
 })
 
 // ---- resolution -------------------------------------------------------------------------------

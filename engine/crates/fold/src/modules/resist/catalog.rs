@@ -25,8 +25,13 @@ use std::sync::OnceLock;
 
 use super::mob_key;
 
-const MOBS_JSON: &str = include_str!("../../../../../../src/renderer/src/data/eqlegends/mobs.json");
-const BOSSES_JSON: &str =
+/// The scraped mob catalog's bytes, embedded once for the workspace: `knowledge`'s drop-table index
+/// reads these same bytes. A `static`, not a `const`, so a second crate borrows the one copy rather
+/// than inlining its own.
+pub static MOBS_JSON: &str =
+    include_str!("../../../../../../src/renderer/src/data/eqlegends/mobs.json");
+/// The raid roster's bytes. Read only by [`alias_index`]; `knowledge` asks [`resolve_mob_identity`].
+static BOSSES_JSON: &str =
     include_str!("../../../../../../src/renderer/src/data/eqlegends/bosses.json");
 
 /// One row of `mobs.json`, cut down to what the resist fold reads. The scrape carries `zones`,
@@ -83,21 +88,9 @@ pub fn catalog_knows(name: &str) -> bool {
     mob_levels().contains_key(&mob_key(name))
 }
 
-#[derive(Debug, Deserialize)]
-struct BossTarget {
-    name: String,
-    #[serde(default, rename = "match")]
-    matches: Vec<String>,
-}
-
-#[derive(Deserialize)]
-struct BossFile {
-    #[serde(default)]
-    targets: Vec<BossTarget>,
-}
-
-/// One creature and every spelling the roster states for it.
-#[derive(Debug, Clone)]
+/// One creature and every spelling the roster states for it. `knowledge::mobs::Identity` is this
+/// type, so the fold and the knowledge corpus resolve a spelling through one alias index.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MobIdentity {
     /// The name to ask the catalog with: the roster's own `name`, never what a surface displays.
     pub canonical: String,
@@ -109,15 +102,22 @@ pub struct MobIdentity {
 
 /// A target whose `name` and every `match` collapse to one key is not indexed at all, so every
 /// unaliased name gets the trivial identity and runs the ordinary path.
+///
+/// Read untyped and tolerantly: a target with no string `name` is skipped, and a `match` that is not
+/// a list, or an entry in it that is not a string, contributes nothing.
 fn alias_index() -> &'static HashMap<String, MobIdentity> {
     static T: OnceLock<HashMap<String, MobIdentity>> = OnceLock::new();
     T.get_or_init(|| {
-        let file: BossFile =
+        let file: serde_json::Value =
             serde_json::from_str(BOSSES_JSON).expect("bosses.json is not readable");
         let mut out: HashMap<String, MobIdentity> = HashMap::new();
-        for t in &file.targets {
+        for t in file["targets"].as_array().into_iter().flatten() {
+            let Some(name) = t["name"].as_str() else {
+                continue;
+            };
+            let matches = t["match"].as_array().into_iter().flatten();
             let mut keys: Vec<String> = Vec::new();
-            for spelling in std::iter::once(&t.name).chain(t.matches.iter()) {
+            for spelling in std::iter::once(name).chain(matches.filter_map(|s| s.as_str())) {
                 let k = mob_key(spelling);
                 if !k.is_empty() && !keys.contains(&k) {
                     keys.push(k);
@@ -127,7 +127,7 @@ fn alias_index() -> &'static HashMap<String, MobIdentity> {
                 continue;
             }
             let id = MobIdentity {
-                canonical: t.name.clone(),
+                canonical: name.to_owned(),
                 keys: keys.clone(),
                 aliased: true,
             };

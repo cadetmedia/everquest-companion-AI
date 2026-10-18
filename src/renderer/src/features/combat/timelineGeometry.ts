@@ -31,6 +31,7 @@ import type { StanceSpan, TimelineEvent, TimelineMarker, TimelineView } from '@s
 import type { ChartTooltipModel, TooltipRow } from '../../lib/ChartTooltip'
 import { formatTime } from '../../lib/formatDate'
 import { formatNum as fmt } from '../../lib/formatRate'
+import { fmtDur as fmtDurSec } from './copyTable'
 import { MARKER_COLOR, MARKER_VERB, MARKER_WORD } from './markerStyle'
 
 export const MIN_LANE_H = 22
@@ -51,9 +52,9 @@ function labelGutter(laneH: number): number {
   return laneH >= 32 ? 168 : laneH >= 26 ? 148 : 132
 }
 
+/** `m:ss` for a time in MS — the app's one `fmtDur` spelling (copyTable.ts), which takes seconds. */
 export function fmtDur(ms: number): string {
-  const s = Math.max(0, Math.round(ms / 1000))
-  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
+  return fmtDurSec(ms / 1000)
 }
 
 export function fmtClock(ms: number): string {

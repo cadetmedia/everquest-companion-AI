@@ -309,8 +309,8 @@ test('SOURCE PIN: `filtering` survives, and its ONE job is what an empty list sa
 
 test('SOURCE PIN: the box is in the toolbar and the narrowed list is what renders', () => {
   const toolbar = src('renderer/src/features/alerts/AlertsToolbar.tsx')
-  assert.match(toolbar, /data-testid="alerts-search"/, 'the handle the e2e types into')
-  assert.match(toolbar, /data-testid="alerts-search-clear"/, '…and the one that empties it')
+  assert.match(toolbar, /testid="alerts-search"/, 'the handle the e2e types into')
+  assert.match(toolbar, /clearTestid="alerts-search-clear"/, '…and the one that empties it')
 
   const view = src('renderer/src/features/alerts/AlertsView.tsx')
   assert.match(view, /useAlertFilter\(alerts, sortedPacks\)/)

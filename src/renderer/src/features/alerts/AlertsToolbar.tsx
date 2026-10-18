@@ -11,17 +11,12 @@ import {
   Box,
   Button,
   FormControlLabel,
-  IconButton,
-  InputAdornment,
   Paper,
   Slider,
   Stack,
   Switch,
-  TextField,
   Typography
 } from '@mui/material'
-import ClearIcon from '@mui/icons-material/Clear'
-import SearchIcon from '@mui/icons-material/Search'
 import RestartAltIcon from '@mui/icons-material/RestartAlt'
 import VolumeUpIcon from '@mui/icons-material/VolumeUp'
 import VolumeOffIcon from '@mui/icons-material/VolumeOff'
@@ -30,6 +25,7 @@ import AudioFileIcon from '@mui/icons-material/AudioFile'
 import IosShareIcon from '@mui/icons-material/IosShare'
 import FileUploadIcon from '@mui/icons-material/FileUpload'
 import type { AlertPrefs } from '@shared/types'
+import { SearchField } from '../../lib/SearchField'
 import { Tooltip } from '../../lib/Tooltip'
 
 /**
@@ -110,36 +106,17 @@ function AlertSearchField({
   query: string
   onQuery: (q: string) => void
 }): JSX.Element {
+  // The handle sits on the TextField's ROOT here (the e2e types into `[testid] input`).
   return (
-    <TextField
-      size="small"
-      data-testid="alerts-search"
+    <SearchField
+      query={query}
+      onChange={onQuery}
       placeholder="Search name, spell, trigger, sound, phrase, note"
-      value={query}
-      onChange={(e) => onQuery(e.target.value)}
+      testid="alerts-search"
+      testidOnRoot
+      clearTestid="alerts-search-clear"
+      clearLabel="Clear the search"
       sx={{ minWidth: 280, flexGrow: 1, maxWidth: 420 }}
-      slotProps={{
-        input: {
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchIcon fontSize="small" />
-            </InputAdornment>
-          ),
-          endAdornment:
-            query === '' ? null : (
-              <InputAdornment position="end">
-                <IconButton
-                  size="small"
-                  aria-label="Clear the search"
-                  data-testid="alerts-search-clear"
-                  onClick={() => onQuery('')}
-                >
-                  <ClearIcon fontSize="small" />
-                </IconButton>
-              </InputAdornment>
-            )
-        }
-      }}
     />
   )
 }

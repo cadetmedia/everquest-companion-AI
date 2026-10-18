@@ -23,18 +23,13 @@ import { type JSX } from 'react'
 import {
   Box,
   Chip,
-  IconButton,
-  InputAdornment,
   Stack,
   Table,
   TableBody,
   TableHead,
   TableRow,
-  TextField,
   Typography
 } from '@mui/material'
-import ClearIcon from '@mui/icons-material/Clear'
-import SearchIcon from '@mui/icons-material/Search'
 import {
   TAB_LABEL,
   type BestSpellColumn,
@@ -45,6 +40,7 @@ import { elsewhereLabel, type BestSpellSearchResults } from '@shared/bestSpellsS
 import type { ObservedSpellRanksSnap } from '@shared/spellRanks'
 import type { SearchClassLevel } from '@shared/spellSearch'
 import { classLevelLabel } from '@shared/unlockSearch'
+import { SearchField } from '../../lib/SearchField'
 import { HeadCell, SpellRow, widthOf } from './BestSpellsRows'
 import { OutOfEraChip } from './UnlockList'
 
@@ -66,35 +62,17 @@ export function BestSpellsSearchField({
   onChange: (q: string) => void
 }): JSX.Element {
   return (
-    <TextField
-      size="small"
-      value={query}
-      onChange={(e) => onChange(e.target.value)}
+    <SearchField
+      query={query}
+      onChange={onChange}
       placeholder={PLACEHOLDER}
+      testid="best-spells-search"
+      ariaLabel="search all spells"
+      clearTestid="best-spells-search-clear"
+      clearLabel="clear search"
       sx={{ width: '100%', mb: 0.5, '& .MuiInputBase-input': { fontSize: 11, py: 0.25 } }}
-      slotProps={{
-        htmlInput: { 'data-testid': 'best-spells-search', 'aria-label': 'search all spells' },
-        input: {
-          startAdornment: (
-            <InputAdornment position="start" sx={{ mr: 0.5 }}>
-              <SearchIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
-            </InputAdornment>
-          ),
-          endAdornment:
-            query === '' ? undefined : (
-              <InputAdornment position="end">
-                <IconButton
-                  size="small"
-                  aria-label="clear search"
-                  data-testid="best-spells-search-clear"
-                  onClick={() => onChange('')}
-                >
-                  <ClearIcon sx={{ fontSize: 13 }} />
-                </IconButton>
-              </InputAdornment>
-            )
-        }
-      }}
+      iconSizes={{ search: 14, clear: 13 }}
+      startSx={{ mr: 0.5 }}
     />
   )
 }

@@ -69,12 +69,24 @@ function subscribe(cb: () => void): () => void {
   }
 }
 
+/**
+ * Bits a blocked store refused to keep (a renderer without storage). The switch still flips for
+ * this session — it just isn't remembered — and a read or a write never throws.
+ */
+const unsaved = new Map<string, boolean>()
+
 /** '1'/'0' rather than JSON: these are one-bit view prefs and the value should be readable in
  *  devtools at a glance. An absent key is the DEFAULT, never `false` — a user who has never
  *  touched the setting has not turned it off. */
 function read(key: string, dflt: boolean): boolean {
-  const v = localStorage.getItem(key)
-  return v === null ? dflt : v === '1'
+  const kept = unsaved.get(key)
+  if (kept !== undefined) return kept
+  try {
+    const v = localStorage.getItem(key)
+    return v === null ? dflt : v === '1'
+  } catch {
+    return dflt
+  }
 }
 
 /**
@@ -106,7 +118,12 @@ export function useRawPref(key: string): [string | null, (v: string | null) => v
 }
 
 function write(key: string, v: boolean): void {
-  localStorage.setItem(key, v ? '1' : '0')
+  try {
+    localStorage.setItem(key, v ? '1' : '0')
+    unsaved.delete(key)
+  } catch {
+    unsaved.set(key, v)
+  }
   // The writing document gets no 'storage' event of its own, so notify it directly. Other
   // windows are served by the listener above — hence exactly one notification each, never two.
   notifyAll()

@@ -1,6 +1,7 @@
 // Pure geometry + lookup for the two leveling charts (levelCharts.tsx) and everything
 // that has to agree with what they DRAW — the hover layer today, a range/drag selection
-// later. No React, no DOM, no MUI, and only TYPE imports from sibling modules, so
+// later. No React, no DOM, no MUI, and only TYPE imports from sibling modules (plus one
+// RELATIVE value import of the pure shared duration formatter), so
 // tests/levelHover.test.mts can import it straight under tsx (there is no `@shared/*`
 // alias in the node test runner — see AGENTS.md / the hover plan's D6).
 //
@@ -9,6 +10,7 @@
 // disagree with the pixels it is pointing at. One mapping, one source.
 
 import type { LevelSegment } from './levelSeries'
+import { fmtDuration } from '../../../../shared/durationText'
 
 /** The viewBox width both charts draw at (`viewBox="0 0 720 H"`, preserveAspectRatio="none"). */
 export const CHART_W = 720
@@ -281,12 +283,8 @@ export function fmtDelta(ms: number): string {
  *
  * Days roll over at 48h for the same reason `fmtDelta` does — a multi-day drag would
  * otherwise read `169h 30m`.
+ *
+ * The implementation lives in `src/shared/durationText.ts`, because `shared/currentLevel.ts`
+ * words a stated level's age with the same spelling and shared may not import the renderer.
  */
-export function fmtDuration(ms: number): string {
-  const total = Math.max(0, Math.round(ms / 1000))
-  const hrs = Math.floor(total / 3600)
-  if (hrs >= 48) return `${Math.floor(hrs / 24)}d ${hrs % 24}h`
-  const mins = Math.floor((total % 3600) / 60)
-  if (hrs > 0) return `${hrs}h ${mins}m`
-  return mins > 0 ? `${mins}m` : `${total % 60}s`
-}
+export { fmtDuration }

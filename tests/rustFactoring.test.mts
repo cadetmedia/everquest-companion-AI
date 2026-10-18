@@ -22,6 +22,7 @@ import { join } from 'node:path'
 import { blankNonCode, complexityOf, measureRustSource } from '../scripts/rustFactoring.mjs'
 import {
   BARS,
+  ceilingOf,
   BASELINE_PATH,
   ENGINE_DIR,
   compare,
@@ -199,16 +200,18 @@ const violation = (over: Partial<Violation> = {}): Violation => ({
 
 const baselineOf = (entries: Violation[]): Baseline => ({ bars: { ...BARS }, entries })
 
-test('THE NEGATIVE PROOF: a baselined violation that GREW turns the gate red', () => {
+test('THE NEGATIVE PROOF: a baselined violation that grew past its 10% headroom turns the gate red', () => {
   const before = baselineOf([violation()])
-  const held = compare([violation()], before, [])
-  assert.equal(isClean(held), true)
+  assert.equal(isClean(compare([violation()], before, [])), true)
+  // 1512 + 10% = 1663.2, so the ceiling is 1664: growth up to it is green (owner ruling, 2026-10-17).
+  assert.equal(ceilingOf(1512), 1664)
+  assert.equal(isClean(compare([violation({ value: 1664 })], before, [])), true)
 
-  const grown = compare([violation({ value: 1513 })], before, [])
+  const grown = compare([violation({ value: 1665 })], before, [])
   assert.equal(isClean(grown), false)
   assert.equal(grown.grown.length, 1)
   assert.equal(grown.grown[0].was, 1512)
-  assert.equal(grown.grown[0].now.value, 1513)
+  assert.equal(grown.grown[0].now.value, 1665)
   assert.deepEqual(grown.added, [])
 })
 
@@ -224,20 +227,21 @@ test('a violation nobody has ever seen turns the gate red', () => {
 test('a function that grew is red on its NAME, so the comment waves cannot move it', () => {
   const fn = violation({ metric: 'complexity', name: 'BuffsModule::on_event', value: 27 })
   assert.equal(isClean(compare([fn], baselineOf([fn]), [])), true)
-  assert.equal(isClean(compare([{ ...fn, value: 28 }], baselineOf([fn]), [])), false)
+  assert.equal(isClean(compare([{ ...fn, value: 30 }], baselineOf([fn]), [])), true, 'inside 10%')
+  assert.equal(isClean(compare([{ ...fn, value: 31 }], baselineOf([fn]), [])), false)
 })
 
-test('a violation that SHRANK is red too — the register may not claim debt the code has paid', () => {
+test('a violation that SHRANK is reported and stays green: the recorded number is a ceiling', () => {
   const shrunk = compare([violation({ value: 1400 })], baselineOf([violation()]), [])
-  assert.equal(isClean(shrunk), false)
+  assert.equal(isClean(shrunk), true)
   assert.equal(shrunk.stale.length, 1)
   assert.deepEqual(shrunk.added, [])
   assert.deepEqual(shrunk.grown, [])
 })
 
-test('a violation that went away entirely is red for the same reason', () => {
+test('a violation that went away entirely is reported and stays green', () => {
   const gone = compare([], baselineOf([violation()]), [])
-  assert.equal(isClean(gone), false)
+  assert.equal(isClean(gone), true)
   assert.equal(gone.stale.length, 1)
 })
 
@@ -246,13 +250,15 @@ test('a file the lexer lost the thread on is red rather than quietly measured', 
   assert.equal(measureRustSource('fn f() { { }').unbalanced, true)
 })
 
-test('a register measured against a different bar refuses to be read', () => {
-  // A bar change invalidates every number in the file. Silently re-reading it against the new bar
-  // would keep entries that are no longer violations and drop ones that now are.
+test('a register measured against a STRICTER bar refuses to be read; a lower one is read', () => {
+  // A raised bar leaves every recorded number a true ceiling. A lowered one would hide violations the
+  // register never recorded, so that file must be re-baselined on purpose.
   const dir = mkdtempSync(join(tmpdir(), 'eqc-factoring-'))
   const path = join(dir, 'factoring-baseline.json')
   writeFileSync(path, JSON.stringify({ bars: { ...BARS, complexity: 15 }, entries: [] }), 'utf8')
-  assert.throws(() => readBaseline(path), /complexity 15, the bar is now 12/)
+  assert.throws(() => readBaseline(path), /complexity 15, the bar is now 13/)
+  writeFileSync(path, JSON.stringify({ bars: { 'file-lines': 400, 'function-lines': 100, complexity: 12 }, entries: [] }), 'utf8')
+  assert.doesNotThrow(() => readBaseline(path))
   rmSync(dir, { recursive: true, force: true })
 })
 
@@ -304,6 +310,5 @@ test('the committed register describes the engine as it stands today', () => {
   assert.deepEqual(unreadable, [], 'every engine .rs file lexed cleanly')
   const c = compare(violations, readBaseline(BASELINE_PATH), unreadable)
   assert.deepEqual(c.added, [], 'new factoring debt — run the gate for the list')
-  assert.deepEqual(c.grown, [], 'a baselined violation grew')
-  assert.deepEqual(c.stale, [], 'the register is stale: rerun with --write in this commit')
+  assert.deepEqual(c.grown, [], 'a baselined violation grew past its 10% headroom')
 })

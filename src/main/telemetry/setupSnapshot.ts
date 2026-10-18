@@ -53,6 +53,7 @@ import {
   getVoicePrefs
 } from '../store'
 import { listPacks } from '../sounds'
+import { safely } from '../safely'
 import { recordEvent, telemetryCollecting } from './collector'
 import { buildSetupSnapshot, type SetupFacts } from './setupFacts'
 
@@ -178,16 +179,6 @@ async function gatherFacts(): Promise<SetupFacts> {
     displayCount: safely(() => screen.getAllDisplays().length, undefined),
     primaryScaleFactor: safely(() => screen.getPrimaryDisplay().scaleFactor, undefined),
     eqClientIni: safely(readEqClientIni, null)
-  }
-}
-
-/** Run a reading, or answer with the fallback. The lambda-per-field shape is what keeps ONE
- *  failing driver call from costing the other twelve readings their event. */
-function safely<T>(read: () => T, fallback: T): T {
-  try {
-    return read()
-  } catch {
-    return fallback
   }
 }
 

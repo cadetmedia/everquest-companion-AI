@@ -159,7 +159,7 @@
       "file": "crates/eqlog/src/parse/casts.rs",
       "metric": "file-lines",
       "name": "",
-      "value": 634
+      "value": 620
     },
     {
       "file": "crates/eqlog/src/parse/combat.rs",
@@ -345,7 +345,7 @@
       "file": "crates/fold/src/modules/buff_timer_rows.rs",
       "metric": "file-lines",
       "name": "",
-      "value": 569
+      "value": 564
     },
     {
       "file": "crates/fold/src/modules/buff_timers.rs",

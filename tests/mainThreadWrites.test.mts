@@ -79,16 +79,26 @@ test('THE FOUR LIVE-PATH WRITERS all reach disk asynchronously', () => {
   }
 })
 
+/** The shared knowledge-cache writer both services instantiate: atomic, off the thread, latched. */
+function assertKnowledgeCacheWrite(): void {
+  const src = read('src/main/knowledgeCache.ts')
+  assert.equal(/\bwriteFileSync\s*\(/.test(src), false, 'no bare truncating write on a live path')
+  assert.match(src, /void writeFileDurableAsync\(dirname\(path\), path,/)
+  assert.match(src, /let saving = false/)
+  assert.match(src, /if \(saving\) \{/, 'a save asked for mid-write re-arms rather than racing the temp')
+}
+
 test('THE ITEM-KNOWLEDGE CACHE writes atomically and off the thread, on its existing debounce', () => {
   // This one was not just synchronous, it was a bare `writeFileSync` onto the LIVE path — which
   // truncates first, so a process killed mid-write left a torn file that `loadCache` reads as an
   // EMPTY one. The async durable write cannot produce that, and the debounce that was already
   // there is what serialises it.
+  // The write itself lives in knowledgeCache.ts since the two services' hand copies were merged;
+  // each service still creates its OWN cache (its own file, version, map and save latch).
   const src = read('src/main/itemLookup.ts')
+  assertKnowledgeCacheWrite()
   assert.equal(/\bwriteFileSync\s*\(/.test(src), false, 'no bare truncating write on a live path')
-  assert.match(src, /void writeFileDurableAsync\(dirname\(path\), path,/)
-  assert.match(src, /let saving = false/)
-  assert.match(src, /if \(saving\) \{/, 'a save asked for mid-write re-arms rather than racing the temp')
+  assert.match(src, /createKnowledgeCache<ItemKnowledge>\(\{\s*name: 'item-knowledge',/)
 
   // …and the three DERIVED indexes this module used to build during main's module evaluation are
   // built on first use now, which is only ever a live lookup — see the file's own header for the
@@ -104,10 +114,9 @@ test('THE MOB-KNOWLEDGE CACHE writes atomically and off the thread, on its exist
   // mid-write left a torn file that `loadCache` reads as an EMPTY one: every mob this install ever
   // resolved, silently gone. Same fix, same shape, asserted the same way.
   const src = read('src/main/mobLookup.ts')
+  assertKnowledgeCacheWrite()
   assert.equal(/\bwriteFileSync\s*\(/.test(src), false, 'no bare truncating write on a live path')
-  assert.match(src, /void writeFileDurableAsync\(dirname\(path\), path,/)
-  assert.match(src, /let saving = false/)
-  assert.match(src, /if \(saving\) \{/, 'a save asked for mid-write re-arms rather than racing the temp')
+  assert.match(src, /createKnowledgeCache<MobKnowledge>\(\{\s*name: 'mob-knowledge',/)
 })
 
 test('EVERY SYNC SURVIVOR ON THESE PATHS IS A NAMED FINAL, and there are no others', () => {
