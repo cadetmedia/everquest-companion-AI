@@ -25,7 +25,6 @@ import {
   eraRank,
   layeredVerdict,
   zoneEra,
-  type DropEvidence,
   type Era,
   type EraDerivation,
   type EraVerdict
@@ -34,7 +33,7 @@ import { metVersion, wasMet } from '../../../../shared/metInLog'
 import { useBoolPref } from '../combat/useCombatPrefs'
 import { classesMismatch } from './plannerClasses'
 import { defaultAxis, isAxisFor, type GroupAxis } from './plannerGroups'
-import { catalogRowsNamed, sourcesFor } from './sourceIndex'
+import { sourcesFor } from './sourceIndex'
 
 /** A donor row with its search haystack precomputed. `searchKey` is never displayed. */
 export interface DonorRow extends PlannerDonor {
@@ -281,13 +280,10 @@ function eraCacheKey(subject: EraSubject): string {
 function statedEra(subject: EraSubject, zones: readonly string[]): DonorEra {
   const fromZone = latestZoneEra(zones)
   const fromTag = subject.eraTag === undefined ? null : eraFromTag(subject.eraTag)
-  // The item page's own drop list, judged against the mob catalog: an expansion banner it
-  // contradicts gives way (`era.ts bannerGivesWay`). Both calls below read the same evidence.
-  const drops: DropEvidence = { sources: subject.wikiSources ?? [], catalogRows: catalogRowsNamed }
-  const overruled = eraBadgeOverrides(subject.eraTag, CURRENT_ERA, drops)
+  const overruled = eraBadgeOverrides(subject.eraTag, CURRENT_ERA)
   const era = overruled ? fromTag : (fromZone ?? fromTag)
   return {
-    verdict: layeredVerdict(zones, subject.eraTag, drops),
+    verdict: layeredVerdict(zones, subject.eraTag),
     era,
     by: overruled ? 'tag' : fromZone !== null ? 'zone' : era === null ? null : 'tag'
   }

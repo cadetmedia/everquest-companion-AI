@@ -174,15 +174,12 @@ function DbZonesColumn({ zones }: { zones: { zone: string; mobs: number }[] }): 
 
 /**
  * THE ITEM ITSELF, as the era join sees it — the same subject shape the Gear and Planner rows hand
- * `EraChip`: the key (layer 1 inverts the mob catalog from it), the item page's own banner and its
- * `|dropsfrom` rows. Drawn
+ * `EraChip`: the key (layer 1 inverts the mob catalog from it) and the item page's own banner. Drawn
  * `outOnly` beside "Drops from", so an item the wiki puts out of era says so where you read its sources.
  */
 function itemEraSubject(item: string, knowledge: ItemKnowledge | null): EraSubject {
   const subject: EraSubject = { key: sourceItemKey(item) }
   if (knowledge?.eraTag !== undefined) subject.eraTag = knowledge.eraTag
-  // The page's own drop rows: what lets an expansion banner give way (`era.ts bannerGivesWay`).
-  if (knowledge?.dropsFrom?.length) subject.wikiSources = knowledge.dropsFrom
   return subject
 }
 
