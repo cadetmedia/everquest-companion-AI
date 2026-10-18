@@ -99,7 +99,23 @@ interface RawUnlock {
 
 /** classes.json's `kind` strings, narrowed to the closed union. An unknown kind is dropped. */
 function unlockKind(kind: string): UnlockSkill['kind'] | null {
-  return kind === 'skill' || kind === 'disc' || kind === 'innate' ? kind : null
+  return kind === 'skill' || kind === 'disc' || kind === 'innate' || kind === 'aa' ? kind : null
+}
+
+/** classes.json `aas` rows: the classes whose table lists the AA, and the level each rank needs. */
+type AaTable = Record<string, { classes?: string[]; levels?: number[] }>
+
+/**
+ * A class's AAs, one row per rank at the level that rank needs (`Harm Touch`, then `Harm Touch
+ * (rank 2)`...). Only AAs the wiki names classes for; a name the class's own tables list is skipped.
+ */
+export function aaUnlocks(aas: AaTable, cls: string, listed: readonly RawUnlock[]): RawUnlock[] {
+  const out: RawUnlock[] = []
+  for (const [name, aa] of Object.entries(aas)) {
+    if (!aa.classes?.includes(cls) || listed.some((r) => r.name === name)) continue
+    aa.levels?.forEach((level, i) => out.push({ name: i === 0 ? name : `${name} (rank ${String(i + 1)})`, level, kind: 'aa' }))
+  }
+  return out
 }
 
 /**
@@ -604,10 +620,12 @@ export function buildLevelUnlocks(client: SpellResistTable | null = null): Level
   const skillTable = classesJson.skillUnlocks as Record<string, RawUnlock[]>
   const discTable = classesJson.discUnlocks as Record<string, RawUnlock[]>
   const disputed: string[] = classesJson.disputed
+  const aas = (classesJson as { aas?: AaTable }).aas ?? {}
   const skills: LevelUnlockData['skills'] = {}
   for (const code of new Set([...Object.keys(skillTable), ...Object.keys(discTable)])) {
     if (!isClassAbbr(code)) continue
-    skills[code] = skillsFor(code, skillTable[code] ?? [], discTable[code] ?? [], disputed)
+    const listed = [...(skillTable[code] ?? []), ...(discTable[code] ?? [])]
+    skills[code] = skillsFor(code, [...(skillTable[code] ?? []), ...aaUnlocks(aas, code, listed)], discTable[code] ?? [], disputed)
   }
   cached = { spells: unlockSpells(client), skills, scrapedAt: classesJson.scrapedAt }
   cachedWithClient = client !== null

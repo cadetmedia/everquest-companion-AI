@@ -88,14 +88,16 @@ const KIND_LABEL: Record<UnlockRow['kind'], string> = {
   spell: 'spell',
   skill: 'skill',
   disc: 'disc',
-  innate: 'innate'
+  innate: 'innate',
+  aa: 'AA'
 }
 
 const KIND_COLOR: Record<UnlockRow['kind'], string> = {
   spell: '#6fb3d2',
   skill: '#5fbf72',
   disc: '#b07fd0',
-  innate: '#d9b25f'
+  innate: '#d9b25f',
+  aa: '#d97f6f'
 }
 
 /**
