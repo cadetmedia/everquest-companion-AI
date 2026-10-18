@@ -123,9 +123,8 @@ function chooseLadder(name: string, combo: readonly ClassAbbr[]): { pick: Candid
  * `spellStepWhen` turns it into "not for your classes" or "loadout unknown", which are two different
  * statements and neither is a number.
  */
-function comboLevelFor(db: SpellDb, name: string, combo: readonly ClassAbbr[]): number | null {
+function comboLevelFor(row: SpellEntry | undefined, combo: readonly ClassAbbr[]): number | null {
   if (combo.length === 0) return null
-  const row = dbRowFor(db, name)
   if (!row) return null
   const mine = parseSpellClassLevels(row.classes).filter((l) => combo.includes(l.cls))
   return mine.length === 0 ? null : Math.min(...mine.map((l) => l.level))
@@ -156,12 +155,17 @@ export function buildSpellLinePath(
   if (!chosen) return null
   const { line } = chosen.pick.place
   const place = replacedBy(name, chosen.pick.cls)
-  const steps: SpellLineStep[] = line.members.map((m) => ({
-    name: m.name,
-    level: m.level,
-    queried: sameName(m.name, name),
-    yoursAt: comboLevelFor(db, m.name, combo)
-  }))
+  const steps: SpellLineStep[] = line.members.map((m) => {
+    const row = dbRowFor(db, m.name)
+    return {
+      name: m.name,
+      level: m.level,
+      queried: sameName(m.name, name),
+      yoursAt: comboLevelFor(row, combo),
+      // The rung's own era verdict, read off its DB row (`spellEra.ts`); absent when it has none.
+      ...(row?.outOfEra === true ? { outOfEra: true as const } : {})
+    }
+  })
   return {
     line: line.name,
     cls: chosen.pick.cls,

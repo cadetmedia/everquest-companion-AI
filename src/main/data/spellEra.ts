@@ -33,7 +33,14 @@
 //
 // KEYED BY THE CATALOG'S OWN NAME, through `pageEraKey` — the same fold the sidecar's other two
 // tables use. The scrape asks about both spellings for exactly this reason; see its header.
+//
+// A SECOND WITNESS, THE ROW'S OWN BANNER. A spell record may carry its page's era banner token
+// (`eraTag`, e.g. `Kunark`). When `shared/planner/era.ts eraBadgeOverrides` calls that banner out at
+// `CURRENT_ERA` the row is marked too — the one era rule, not a second one. It catches the pages
+// whose banner says `{{Kunark Era}}` while the sidecar's row says in era (Speed of the Shissar and
+// four others). A record with no `eraTag` is judged by the sidecar alone, exactly as before.
 
+import { CURRENT_ERA, eraBadgeOverrides } from '../../shared/planner/era'
 import { pageEraKey } from '../pageEraDb'
 import type { PageEraFile } from '../pageEraDb'
 import type { SpellEntry } from '../../shared/types'
@@ -55,6 +62,14 @@ function spellVerdicts(file: PageEraFile): Record<string, boolean> {
 }
 
 /**
+ * Does the row's OWN page banner put it out of era? Read structurally: `eraTag` is optional, and a
+ * catalog from a scrape that never recorded it answers `false` for every row.
+ */
+export function spellBannerOutOfEra(spell: SpellEntry & { readonly eraTag?: string }): boolean {
+  return eraBadgeOverrides(spell.eraTag, CURRENT_ERA)
+}
+
+/**
  * MARK THE SPELLS THE WIKI BADGES OUT OF ERA.
  *
  * NON-MUTATING, like the three passes it runs beside and for the same reason: `spells.json` is one
@@ -73,11 +88,12 @@ export function applySpellEra(
     // TypeScript would call a missing key a `boolean` and quietly agree that the silence branch
     // below is dead. The whole point of the table is that a key can be absent.
     const verdict: boolean | undefined = verdicts[pageEraKey(s.name)]
-    if (verdict === undefined) {
+    const banner = spellBannerOutOfEra(s)
+    if (verdict === undefined && !banner) {
       report.silent += 1
       return s
     }
-    if (!verdict) return s
+    if (!verdict && !banner) return s
     report.marked += 1
     return s.outOfEra === undefined ? { ...s, outOfEra: true } : s
   })

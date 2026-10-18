@@ -40,6 +40,7 @@ import type { AppRouting, NavBack } from '../../appRouting'
 import type { View } from '../../appViews'
 import { SpellCardBody, SpellTooltip, useSpellDetail } from '../../lib/SpellCard'
 import { useBackTarget } from '../../appBack'
+import { OutOfEraChip } from '../leveling/UnlockList'
 
 /**
  * THE ONE RUNG OF THE LADDER, as a row: the level its class gains it at, the name, and when YOU
@@ -76,6 +77,8 @@ function LadderRow({ step, combo }: { step: SpellLineStep; combo: readonly Class
           <Typography variant="body2">{step.name}</Typography>
         </SpellTooltip>
       )}
+      {/* The rung stays on the ladder (it is the table's); an out-of-era one says so. */}
+      <OutOfEraChip outOfEra={step.outOfEra} />
       <Box sx={{ flexGrow: 1 }} />
       <Typography variant="caption" color="text.secondary" data-testid="spell-line-when">
         {when}
