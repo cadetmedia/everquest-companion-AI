@@ -103,6 +103,33 @@ export function foldClassLevels(pairs: readonly SearchClassLevel[]): SearchClass
     .sort((a, b) => a.level - b.level || a.cls.localeCompare(b.cls))
 }
 
+/** One matched spell with every duplicate wiki page for it already merged into its class pairs. */
+export interface FoldedSpellMatch {
+  spell: UnlockSpell
+  pairs: SearchClassLevel[]
+}
+
+/**
+ * The spells that match `q`, FOLDED BY NAME, in first-seen order. The wiki carries a few spells on
+ * two pages (`Imbue Emerald` twice at CLR 29), and two identical rows read as a bug in the app
+ * rather than an artefact on the wiki. The first record's fields win — it is the same spell — and
+ * the class pairs merge.
+ *
+ * EXPORTED for the same reason as the surface above: the best-spells search folds its matches the
+ * same way (JOS-450).
+ */
+export function matchingSpells(spells: readonly UnlockSpell[], q: CompiledSpellQuery): FoldedSpellMatch[] {
+  const byName = new Map<string, FoldedSpellMatch>()
+  for (const spell of spells) {
+    if (!matchesCompiledQuery(unlockSearchSurface(spell), q)) continue
+    const key = spell.name.toLowerCase()
+    const seen = byName.get(key)
+    if (seen) seen.pairs.push(...spell.at)
+    else byName.set(key, { spell, pairs: [...spell.at] })
+  }
+  return [...byName.values()]
+}
+
 /**
  * The loadout classes that ALREADY have this spell — they reach it at or below the level the
  * character has actually reached. Ascending, the `already yours (CLR 24)` claim's own order.
@@ -151,15 +178,7 @@ export function searchUnlockSpells(
   cap: number = UNLOCK_SEARCH_CAP
 ): UnlockSearchResults {
   const q = compileSpellQuery(tokens)
-  const byName = new Map<string, { spell: UnlockSpell; pairs: SearchClassLevel[] }>()
-  for (const spell of spells) {
-    if (!matchesCompiledQuery(unlockSearchSurface(spell), q)) continue
-    const key = spell.name.toLowerCase()
-    const seen = byName.get(key)
-    if (seen) seen.pairs.push(...spell.at)
-    else byName.set(key, { spell, pairs: [...spell.at] })
-  }
-  const rows = [...byName.values()]
+  const rows = matchingSpells(spells, q)
     .map((r) => searchRow(r.spell, r.pairs, q, ctx))
     .sort((a, b) => a.level - b.level || a.name.localeCompare(b.name))
   return { rows: rows.slice(0, cap), matched: rows.length, hidden: Math.max(0, rows.length - cap) }
