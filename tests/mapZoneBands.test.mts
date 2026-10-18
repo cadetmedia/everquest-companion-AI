@@ -6,7 +6,9 @@
 
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { wishedByZone, zoneBands, zoneBandsOf } from '../src/renderer/src/features/maps/zoneBands'
+import { wishedByZone, zoneBandOf, zoneBands, zoneBandsOf } from '../src/renderer/src/features/maps/zoneBands'
+import { mobRows } from '../src/renderer/src/features/maps/mobPins'
+import { metVersion, setMet } from '../src/shared/metInLog'
 import { rankZones } from '../src/shared/zoneAdvice'
 import { MOB_CATALOG } from '../src/renderer/src/features/mobs/mobSearch'
 import { mobsInZone } from '../src/renderer/src/features/mobs/mobZone'
@@ -101,4 +103,62 @@ test('the zone advice rests on the in-era mobs alone', () => {
 test('with no mob flagged, the bands are what they were', () => {
   const unflagged = HATE.map(({ outOfEra: _drop, ...rest }) => rest)
   assert.deepEqual(zoneBandsOf(unflagged, true), zoneBandsOf(unflagged, false))
+})
+
+// ---- the player's log outranks the flag (owner ruling, 2026-10-17) ------------------------------
+// A flagged mob the log met (killed, conned, looted from) is in era for this player. The evidence
+// is module state (`shared/metInLog`), empty unless a test fills it; each test empties it again.
+
+const SWORDS = new Set(['Revamp Blade', 'Sword of Rancor'].map(sourceItemKey))
+
+test('a flagged mob the log met counts in the band and as a source of a wished drop; unmet stays out', () => {
+  try {
+    setMet('mobs', ['Innoruuk, the Revamped'])
+    const band = zoneBandsOf(HATE, true).get('The Plane of Hate')
+    assert.equal(band?.n, 4, 'the met revamp mob is back; the unmet lieutenant is still out')
+    assert.equal(band?.max, 63)
+    assert.equal(wishedByZone(SWORDS, true, HATE).get('The Plane of Hate'), 2, 'its Revamp Blade counts')
+  } finally {
+    setMet('mobs', [])
+  }
+  assert.equal(zoneBandsOf(HATE, true).get('The Plane of Hate')?.n, 3, 'evidence gone: the flag decides')
+})
+
+test("the map's zone caption leaves out a flagged mob under the era switch, unless the log met it", () => {
+  assert.equal(zoneBandOf('Plane of Hate', true, HATE)?.n, 3)
+  assert.equal(zoneBandOf('Plane of Hate', true, HATE)?.max, 52, 'no revamp level stretches the caption')
+  assert.equal(zoneBandOf('Plane of Hate', false, HATE)?.n, 5, 'the switch off counts every mob')
+  try {
+    setMet('mobs', ['a revamp lieutenant'])
+    assert.equal(zoneBandOf('Plane of Hate', true, HATE)?.n, 4)
+  } finally {
+    setMet('mobs', [])
+  }
+})
+
+test('the mob list beside the map, and its wished pins, leave out a flagged mob under the era switch', () => {
+  const names = (eraOnly: boolean): string[] => mobRows('Plane of Hate', HATE, SWORDS, eraOnly).map((r) => r.name)
+  assert.deepEqual(names(true), ['Master of Spite', 'Maestro of Rancor'], 'no revamp named; the common stays out')
+  assert.deepEqual(names(false), ['Master of Spite', 'Maestro of Rancor', 'Innoruuk, the Revamped'])
+  try {
+    setMet('mobs', ['Innoruuk, the Revamped'])
+    assert.ok(names(true).includes('Innoruuk, the Revamped'), 'met in the log: listed, and its drops pin')
+  } finally {
+    setMet('mobs', [])
+  }
+})
+
+test("Where to level's cached bands are taken again when the log's evidence moves", () => {
+  const before = zoneBands(true)
+  assert.equal(zoneBands(true), before, 'held while nothing changes')
+  const v = metVersion()
+  try {
+    setMet('mobs', ['Innoruuk, the Revamped'])
+    assert.notEqual(metVersion(), v)
+    const after = zoneBands(true)
+    assert.notEqual(after, before, 'a new walk under the new evidence')
+    assert.equal(zoneBands(true), after, 'and held again')
+  } finally {
+    setMet('mobs', [])
+  }
 })

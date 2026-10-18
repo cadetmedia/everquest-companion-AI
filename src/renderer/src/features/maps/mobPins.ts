@@ -42,6 +42,7 @@ import { sourceItemKey } from '../../lib/itemSources'
 // The article rule is SHARED with the Recommended tab (shared/mobNames.ts): one fold, so the two
 // surfaces cannot disagree about what a common is.
 import { isCommonMob } from '../../../../shared/mobNames'
+import { mobCountsInEra } from '../../../../shared/zoneLevels'
 import { mobsInZone } from '../mobs/mobZone'
 import { mapFromLoc } from './mapGeometry'
 
@@ -134,13 +135,23 @@ export function mobPins(entry: MobEntry): MobPin[] {
  * item whose only droppers are `a bandit`-style commons would otherwise never pin, and the wish
  * lane would be silently empty for most of the corpus. `wished` is the wish list's canonical
  * item keys; absent or empty, the filter is the plain article rule.
+ *
+ * A MOB OUT OF ERA IS NOT LISTED while `eraOnly` holds (the Maps tab's "Current era only" switch,
+ * on by default): `shared/zoneLevels.mobCountsInEra`, the gate the zone's caption and Where to
+ * level ask, so the list, its pins, its wished drops and the caption are about the same mobs. A
+ * wished drop therefore pins only through an in-era mob, as `wishedByZone` counts it.
  */
 export function mobRows(
   zoneRaw: string,
   catalog: MobEntry[],
-  wished: ReadonlySet<string> = NO_WISHES
+  wished: ReadonlySet<string> = NO_WISHES,
+  eraOnly = true
 ): MobPaneRow[] {
-  return mobsInZone(zoneRaw, catalog, (m) => !isCommonMob(m.name) || wishedDrops(m, wished).length > 0)
+  return mobsInZone(
+    zoneRaw,
+    catalog,
+    (m) => mobCountsInEra(m, eraOnly) && (!isCommonMob(m.name) || wishedDrops(m, wished).length > 0)
+  )
     .map((m) => {
       const zoneCount = m.zones?.length ?? 0
       const ambiguous = zoneCount > 1
