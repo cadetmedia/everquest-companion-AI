@@ -1,6 +1,6 @@
 // metInLog — what the player's own log met (owner ruling, 2026-10-17: the log outranks an era
 // banner). Pins the evidence store's set/version semantics and the one mob predicate that reads it
-// (`shared/mobEra.ts mobOutOfEra`). Every test empties what it filled, so the suite's other tests
+// (`shared/mobEra.ts mobOutOfEra`), the zone table (`zoneEra`) and the item verdict (`donorEra`). Every test empties what it filled, so the suite's other tests
 // see the wiki's verdicts only.
 //
 // Run: `npm test`.
@@ -9,7 +9,8 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { metVersion, setMet, wasMet } from '../src/shared/metInLog'
 import { mobOutOfEra } from '../src/shared/mobEra'
-import { withoutOutOfEraMobs } from '../src/shared/planner/era'
+import { CURRENT_ERA, eraVerdict, withoutOutOfEraMobs, zoneEra } from '../src/shared/planner/era'
+import { donorEra, eraHides, type EraSubject } from '../src/renderer/src/features/planner/plannerData'
 
 function clearAll(): void {
   setMet('mobs', [])
@@ -62,6 +63,39 @@ test('mobOutOfEra: a flagged mob the log met is in era; by its name or by its pa
     setMet('mobs', [])
     assert.equal(mobOutOfEra(fiend), true, 'evidence gone, the flag speaks again')
     assert.equal(mobOutOfEra({ name: 'a plain rat' }), false, 'no flag is in era, met or not')
+  } finally {
+    clearAll()
+  }
+})
+
+test('zoneEra: a zone the log entered is the current era, whatever the zone table says', () => {
+  try {
+    assert.equal(zoneEra("Sleeper's Tomb"), 'velious')
+    assert.equal(eraVerdict(["Sleeper's Tomb"]), 'out-of-era')
+    setMet('zones', ["Sleeper's Tomb"])
+    assert.equal(zoneEra("Sleeper's Tomb"), CURRENT_ERA)
+    assert.equal(zoneEra("SLEEPER'S TOMB"), CURRENT_ERA, 'joined by zoneKey')
+    assert.equal(eraVerdict(["Sleeper's Tomb"]), 'in-era')
+    assert.equal(zoneEra('Kael Drakkel'), 'velious', 'only the zone the log met')
+  } finally {
+    clearAll()
+  }
+})
+
+test('donorEra: an item the log looted is in era, over every wiki layer, and the cache sees it', () => {
+  // A Velious drop by its only zone, and a revamp-bannered one: both out of era on the wiki.
+  const tomb: EraSubject = { key: 'a test warder blade', zones: ["Sleeper's Tomb"] }
+  const revamp: EraSubject = { key: 'a test revamp choker', eraTag: 'FearHateRevamp', zones: ['Plane of Fear'] }
+  try {
+    assert.equal(donorEra(tomb).verdict, 'out-of-era')
+    assert.equal(donorEra(revamp).verdict, 'out-of-era')
+    setMet('items', ['A Test Warder Blade +2', 'a test revamp choker'])
+    assert.equal(donorEra(tomb).verdict, 'in-era', 'looted, so in era: the cached out-of-era answer is gone')
+    assert.equal(donorEra(tomb).by, 'log')
+    assert.equal(donorEra(revamp).verdict, 'in-era', 'the log outranks even a no-expansion banner')
+    assert.equal(eraHides(tomb, true), false)
+    setMet('items', [])
+    assert.equal(donorEra(tomb).verdict, 'out-of-era', 'evidence gone, the wiki speaks again')
   } finally {
     clearAll()
   }

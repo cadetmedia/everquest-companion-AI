@@ -86,6 +86,7 @@
 // directly (the shared/planner house style).
 
 import { ZONES, zoneKey, type ZoneEntry, type ZoneEra } from '../zones'
+import { wasMet } from '../metInLog'
 import { mobOutOfEra } from '../mobEra'
 
 /** What the mob era predicate reads off a row (`shared/mobEra.ts mobOutOfEra`). */
@@ -172,6 +173,10 @@ function index(): Map<string, ZoneEntry> {
 /**
  * The expansion a CATALOG zone string belongs to, or `null`.
  *
+ * A ZONE THE PLAYER'S OWN LOG ENTERED IS THE CURRENT ERA (owner ruling, 2026-10-17: the log
+ * outranks the tables, `shared/metInLog.ts`). They stood in it, so whatever the table says it is
+ * open on their server. Only what the log has not met is answered from the table below.
+ *
  * `null` means one of two honest things and the caller cannot tell them apart (nor should it):
  * the string is not a zone this app knows (junk, prose, a concatenation, an ambiguous city), or
  * it is a known zone that deliberately carries no era claim (the Luclin/PoP hub zones in the map
@@ -181,6 +186,7 @@ function index(): Map<string, ZoneEntry> {
 export function zoneEra(zoneName: string): Era | null {
   const key = zoneKey(zoneName)
   if (key === '') return null
+  if (wasMet('zones', zoneName)) return CURRENT_ERA
   return index().get(key)?.era ?? null
 }
 

@@ -29,6 +29,7 @@ import {
   type EraDerivation,
   type EraVerdict
 } from '../../../../shared/planner/era'
+import { metVersion, wasMet } from '../../../../shared/metInLog'
 import { useBoolPref } from '../combat/useCombatPrefs'
 import { classesMismatch } from './plannerClasses'
 import { defaultAxis, isAxisFor, type GroupAxis } from './plannerGroups'
@@ -181,8 +182,9 @@ export interface DonorEra {
   era: Era | null
   /** which witness produced the verdict — the chip's tooltip must not claim a zone we never saw.
    *  `derived` is LAYER 3 (JOS-333): no witness spoke about this page, and something it stated it
-   *  is MADE of, or awarded by, is itself out of era. It names no expansion on purpose. */
-  by: 'zone' | 'tag' | 'derived' | null
+   *  is MADE of, or awarded by, is itself out of era. It names no expansion on purpose.
+   *  `log` is the player's own log: they looted it, so it is in era for them (`shared/metInLog`). */
+  by: 'zone' | 'tag' | 'derived' | 'log' | null
 }
 
 /**
@@ -215,6 +217,12 @@ export const CURRENT_ERA_LABEL = ERA_LABEL[CURRENT_ERA]
 // identity is the EVIDENCE, not just the key — the same key reaches this function with a corpus
 // row (zones + tag) or as a bare `{ key }`, and those two are entitled to different answers.
 const ERA_CACHE = new Map<string, DonorEra>()
+/** The `metVersion()` the cache was filled at: the log's evidence feeds every verdict in it (an item
+ *  looted, a dropper killed, a zone entered), so new evidence empties it. */
+let cacheMetVersion = -1
+
+/** An item the player's own log looted is in era for them, whatever any wiki layer says. */
+const LOOTED: DonorEra = { verdict: 'in-era', era: CURRENT_ERA, by: 'log' }
 
 /** The LATEST expansion any of these zones claims, or null when none of them resolves. */
 function latestZoneEra(zones: readonly string[]): Era | null {
@@ -282,6 +290,14 @@ function statedEra(subject: EraSubject, zones: readonly string[]): DonorEra {
 }
 
 export function donorEra(subject: EraSubject): DonorEra {
+  if (cacheMetVersion !== metVersion()) {
+    ERA_CACHE.clear()
+    cacheMetVersion = metVersion()
+  }
+  // THE LOG OUTRANKS EVERY LAYER BELOW (owner ruling, 2026-10-17): "I've seen it drop, so it can't
+  // be out of era". One check here, so every surface that asks this function — gear, planner, wish
+  // list, loot detail, a mob's drop list — honours it. The key is already the item DB's own fold.
+  if (wasMet('items', subject.key)) return LOOTED
   const id = eraCacheKey(subject)
   const hit = ERA_CACHE.get(id)
   if (hit) return hit
