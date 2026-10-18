@@ -35,6 +35,7 @@ import { Box, Stack, TextField, Typography } from '@mui/material'
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder'
 import type { ExaltPlan } from '@shared/planner/types'
 import { seedWishes, type WishEntry, type WishList } from '@shared/planner/wishlist'
+import { useMetVersion } from '../../lib/useMetInLog'
 import { useGearIndex } from '../gear/gearData'
 import { useRememberedSearch } from '../gear/useAreaMemory'
 import { useBrowseClasses } from '../planner/useBrowseClasses'
@@ -205,10 +206,12 @@ export default function WishlistView({ onOpenLoot }: WishlistViewProps = {}): JS
     () => new Set(entries.filter((e) => e.source === 'planImport').map((e) => e.itemKey)),
     [entries]
   )
-  const view = useMemo(
-    () => foldWishes({ list, index, progressOf: progress.of, eraOnly, text }),
-    [list, index, progress, eraOnly, text]
-  )
+  // The era filter and the farm zones read the player's own log too (lib/useMetInLog).
+  const met = useMetVersion()
+  const view = useMemo(() => {
+    void met
+    return foldWishes({ list, index, progressOf: progress.of, eraOnly, text })
+  }, [list, index, progress, eraOnly, text, met])
   const wished = useMemo(() => new Set(entries.map((e) => e.itemKey)), [entries])
   const nothing = view.groups.length === 0 && view.done.length === 0
 

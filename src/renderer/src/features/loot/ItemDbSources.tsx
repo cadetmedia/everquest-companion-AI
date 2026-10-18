@@ -31,6 +31,7 @@ import type { ItemKnowledge } from '@shared/types'
 import { mergeItemSources, sourceIndex, sourceItemKey, sourcesFor, type ItemSource } from '../../lib/itemSources'
 import { Tooltip } from '../../lib/Tooltip'
 import { mobOutOfEra } from '@shared/mobEra'
+import { useMetVersion } from '../../lib/useMetInLog'
 import { EraChip, MobEraChip } from '../planner/PlannerChips'
 import type { EraSubject } from '../planner/plannerData'
 
@@ -80,7 +81,9 @@ function zoneTally(sources: readonly ItemSource[]): { zone: string; mobs: number
  * LOOKUP (who drops this item), so a mob the era rules put out of era stays and is chipped.
  */
 function SourceRow({ source }: { source: ItemSource }): JSX.Element {
-  // The mob era predicate reads a row's NAME (and page) to ask the player's own log first.
+  // The mob era predicate reads a row's NAME (and page) to ask the player's own log first, and the
+  // row redraws when that log meets more (lib/useMetInLog).
+  useMetVersion()
   const mob = { name: source.mob, page: source.mobPage, outOfEra: source.outOfEra }
   return (
     <Box data-testid="loot-db-source" sx={{ py: 0.25 }}>

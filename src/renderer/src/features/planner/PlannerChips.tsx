@@ -36,6 +36,7 @@ import { Box, Chip } from '@mui/material'
 import { EQ_ITEM_COLORS } from '../../lib/ItemWindow'
 import { questOutOfEra } from '@shared/planner/era'
 import { mobOutOfEra } from '@shared/mobEra'
+import { useMetVersion } from '../../lib/useMetInLog'
 import { eraChip, type EraSubject } from './plannerData'
 import type { DonorProgress, DonorState } from './plannerProgress'
 
@@ -106,6 +107,8 @@ export function StateChip({ progress, title }: { progress: DonorProgress; title?
  * that is not a filter over the corpus (the loot drill-down), where a question mark says nothing.
  */
 export function EraChip({ subject, outOnly }: { subject: EraSubject; outOnly?: boolean }): JSX.Element | null {
+  // The player's own log outranks the wiki (lib/useMetInLog): redraw when it meets more.
+  useMetVersion()
   const info = eraChip(subject)
   if (info === null || (outOnly === true && info.unknown)) return null
   return (
@@ -144,6 +147,7 @@ function OutOfEraPageChip({ title }: { title: string }): JSX.Element {
  * flag, unless the player's own log met the mob), and nothing otherwise — an absent flag is in era.
  */
 export function MobEraChip({ mob }: { mob: Parameters<typeof mobOutOfEra>[0] }): JSX.Element | null {
+  useMetVersion()
   if (!mobOutOfEra(mob)) return null
   return <OutOfEraPageChip title="The era rules put this mob out of era: this server has not opened its content." />
 }

@@ -55,6 +55,7 @@ import { killIndex, killsFor } from '@shared/kills'
 import type { NavBack } from '../../appRouting'
 import { useBackTarget } from '../../appBack'
 import { useModule } from '../../lib/useModule'
+import { useMetVersion } from '../../lib/useMetInLog'
 import { MobEraChip } from '../planner/PlannerChips'
 import { MobPage } from './MobPage'
 import { RecentlyConsidered } from './RecentlyConsidered'
@@ -347,7 +348,12 @@ export default function MobsView({
   // A filter over 7,866 rows — cheap (render-bound, AGENTS.md "Search"), but it only changes
   // when you zone, so memoize on the zone string.
   // Out-of-era mobs (their own page bannered so) are left off the roster: it OFFERS a zone's mobs.
-  const zoneRows = useMemo(() => (zone ? rosterInZone(zone, MOB_CATALOG) : []), [zone])
+  // …and a mob the player's own log met is back on it (lib/useMetInLog), so the evidence keys it too.
+  const met = useMetVersion()
+  const zoneRows = useMemo(() => {
+    void met
+    return zone ? rosterInZone(zone, MOB_CATALOG) : []
+  }, [zone, met])
 
   if (drill) return <MobDrill target={drill} kills={kills} nav={nav} onClose={() => setDrill(null)} />
 

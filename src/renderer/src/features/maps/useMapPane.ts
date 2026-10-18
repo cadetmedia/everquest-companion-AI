@@ -18,6 +18,7 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react'
 import type { MapData, MapPackPrefs, MapPoint, MapSearchHit, ZoneShort } from '@shared/maps'
 import type { MobEntry } from '@shared/types'
+import { useMetVersion } from '../../lib/useMetInLog'
 import { MOB_CATALOG } from '../mobs/mobSearch'
 import { CROSS_ZONE_LIMIT, crossZoneRows, type CrossZoneRow } from './crossZone'
 import { loadPaneOpen, savePaneOpen } from './useMapData'
@@ -72,10 +73,12 @@ export function useMapPane({ zoneName, points, catalog, mapId, onCenter }: MapPa
   // The box echoes every keystroke; only the filtering waits for the paint to settle.
   const q = useDeferredValue(query)
 
-  const allMobs = useMemo<MobPaneRow[]>(
-    () => (zoneName == null ? [] : mobRows(zoneName, catalog)),
-    [zoneName, catalog]
-  )
+  // The roster leaves out-of-era mobs off unless the player's own log met them (lib/useMetInLog).
+  const met = useMetVersion()
+  const allMobs = useMemo<MobPaneRow[]>(() => {
+    void met
+    return zoneName == null ? [] : mobRows(zoneName, catalog)
+  }, [zoneName, catalog, met])
   const allLabels = useMemo<LabelPaneRow[]>(() => labelRows(points), [points])
   const mobs = useMemo(() => filterPaneRows(allMobs, q), [allMobs, q])
   const labels = useMemo(() => filterPaneRows(allLabels, q), [allLabels, q])
@@ -187,10 +190,13 @@ export function useCrossZoneRows(args: {
 }): CrossZoneRow[] {
   const { query, hits, here, zones } = args
   const installed = useMemo(() => new Set(zones), [zones])
+  // Each row carries its mob's era verdict, which the player's own log can overrule.
+  const met = useMetVersion()
   return useMemo(() => {
+    void met
     if (query.length === 0) return NO_ROWS
     return crossZoneRows({ query, catalog: MOB_CATALOG, hits, here, installed })
-  }, [query, hits, here, installed])
+  }, [query, hits, here, installed, met])
 }
 
 // ---- the view's whole pane wiring, in one call ------------------------------------------

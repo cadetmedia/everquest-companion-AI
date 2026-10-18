@@ -31,6 +31,7 @@ import { useComboSnap } from '../profiles/ClassComboData'
 // see `useGearCompare` for why this channel and not the ownership payload beside it.
 import { usePlannerInventory } from '../planner/plannerInventory'
 import { outputUpdatedMillis } from '../../lib/outputFreshness'
+import { useMetVersion } from '../../lib/useMetInLog'
 import { equippedIndex, type EquippedIndex } from './gearCompare'
 // ONE era verdict for the whole app: the exaltation browser's, reached through the same three
 // witnesses (mob catalog ∪ the page's own drop list ∪ the era banner). A `GearRow` carries `key`,
@@ -116,9 +117,14 @@ export function useGearIndex(): GearIndexState {
   return state
 }
 
-/** The era verdict as the pure filter model wants it — a stable identity, so the memo can key on it. */
+/** The era verdict as the pure filter model wants it — a stable identity, so the memo can key on it.
+ *  A NEW identity whenever the player's log meets more (lib/useMetInLog), because the verdict moved. */
 export function useEraHidden(): { eraHidden: (row: GearRow) => boolean } {
-  return useMemo(() => ({ eraHidden: (row: GearRow) => eraHides(row, true) }), [])
+  const met = useMetVersion()
+  return useMemo(() => {
+    void met
+    return { eraHidden: (row: GearRow) => eraHides(row, true) }
+  }, [met])
 }
 
 // ---- the ownership join (JOS-285, phase 4) --------------------------------------------
