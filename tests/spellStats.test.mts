@@ -244,9 +244,12 @@ test('the corpus is the one the header measured', () => {
   // beneficial, 2,066 -> 2,076 lines): the header's own numbers did not move - 702 of 727
   // shape-matches still read, and the unread-noun list below is unchanged. The ten new lines all
   // fall outside the stat shape.
-  assert.equal(SPELLS.length, 2013)
-  assert.equal(BENEFICIAL.length, 1083)
-  assert.equal(BENEFICIAL_LINES.length, 2075)
+  // Re-read 2026-10-18 after the full re-scrape (2,013 -> 2,012 spells, 1,083 -> 1,082 beneficial,
+  // 2,075 -> 2,074 lines: Magical Monologue, marked {{Delete}}, left): the coverage band below still
+  // reads the header's 702 of 727, so only the corpus size moved.
+  assert.equal(SPELLS.length, 2012)
+  assert.equal(BENEFICIAL.length, 1082)
+  assert.equal(BENEFICIAL_LINES.length, 2074)
 })
 
 test('coverage over the real bytes matches the header, within a band', () => {
