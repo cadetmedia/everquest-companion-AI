@@ -9,6 +9,7 @@ import assert from 'node:assert/strict'
 import { wishedByZone, zoneBandOf, zoneBands, zoneBandsOf } from '../src/renderer/src/features/maps/zoneBands'
 import { mobRows } from '../src/renderer/src/features/maps/mobPins'
 import { metVersion, setMet } from '../src/shared/metInLog'
+import { mobOutOfEra } from '../src/shared/mobEra'
 import { rankZones } from '../src/shared/zoneAdvice'
 import { MOB_CATALOG } from '../src/renderer/src/features/mobs/mobSearch'
 import { mobsInZone } from '../src/renderer/src/features/mobs/mobZone'
@@ -32,11 +33,12 @@ test('a row counts every levelled mob of the zone, "~19" included', () => {
   const crushbone = MOB_CATALOG.filter(resolves('crushbone'))
   for (const level of ['~19', '~18', '~20']) assert.ok(crushbone.some((m) => m.level === level), level)
   for (const [name, stem] of [['Clan Crushbone', 'crushbone'], ['Clan RunnyEye', 'runnyeye']] as const) {
-    const levelled = MOB_CATALOG.filter(resolves(stem)).filter((m) => /\d/.test(m.level ?? ''))
+    // The bands count only in-era mobs while Current era only is on (the default).
+    const levelled = MOB_CATALOG.filter(resolves(stem)).filter((m) => /\d/.test(m.level ?? '') && !mobOutOfEra(m))
     assert.equal(zoneBands().get(name)?.n, levelled.length, `${name}: one row, every levelled mob`)
   }
   // Where the catalog's spellings are all reached by the caption's join, the two agree exactly.
-  const caption = mobsInZone('Cazic-Thule', MOB_CATALOG).filter((m) => /\d/.test(m.level ?? ''))
+  const caption = mobsInZone('Cazic-Thule', MOB_CATALOG).filter((m) => /\d/.test(m.level ?? '') && !mobOutOfEra(m))
   assert.equal(zoneBands().get('Cazic-Thule')?.n, caption.length)
 })
 
