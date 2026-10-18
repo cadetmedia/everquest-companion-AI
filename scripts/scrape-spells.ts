@@ -6,6 +6,7 @@
  * SpellEntry, writing the committed catalog to src/main/data/spells.json.
  *
  *   npm run scrape:spells
+ *   npm run scrape:spells -- --allow-shrink   # write even when the listing is under half the catalog
  *
  * The catalog is the PRIOR/TRUTH for buff durations and — crucially — the source of
  * the exact chat messages a spell prints when it lands (msg_cast_on_you /
@@ -85,7 +86,10 @@ async function api<T>(params: Record<string, string>): Promise<T> {
   const q = new URLSearchParams({ format: 'json', formatversion: '2', ...params })
   const res = await fetch(`${API}?${q}`, { headers: { 'User-Agent': UA } })
   if (!res.ok) throw new Error(`${params.action ?? 'query'} failed: ${res.status}`)
-  return (await res.json()) as T
+  const j = (await res.json()) as T & { error?: { code?: string; info?: string } }
+  // An error body arrives as HTTP 200; read as data it was an empty list that wiped the catalog.
+  if (j.error) throw new Error(`${params.action ?? 'query'}: API error ${j.error.code ?? '?'}: ${j.error.info ?? ''}`)
+  return j
 }
 
 /** Enumerate all page titles embedding Template:Spellpage, following eicontinue. */
@@ -104,7 +108,8 @@ async function listSpellPages(): Promise<WikiPage[]> {
       eilimit: '500',
       ...(eicontinue ? { eicontinue } : {})
     })
-    for (const p of json.query?.embeddedin ?? []) out.push(p)
+    if (!json.query) throw new Error('embeddedin Template:Spellpage: the response carries no query block')
+    for (const p of json.query.embeddedin ?? []) out.push(p)
     eicontinue = json.continue?.eicontinue
     if (!eicontinue) break
   }
@@ -514,15 +519,48 @@ async function refreshCache(pages: WikiPage[], idx: CacheIndex): Promise<{ hits:
   return { hits, stale, failures }
 }
 
+/** The flag that lets a run write a catalog far smaller than the committed one. */
+const ALLOW_SHRINK = '--allow-shrink'
+
+/** How many spell pages the committed run knew: the index's titles, or the catalog's count. */
+function knownPageCount(idx: CacheIndex): number {
+  const titles = Object.keys(idx.titles ?? {}).length
+  try {
+    return Math.max(titles, (JSON.parse(readFileSync(OUT_PATH, 'utf8')) as Partial<SpellDbFile>).count ?? 0)
+  } catch {
+    return titles
+  }
+}
+
+/**
+ * Why an enumeration of `found` pages must not replace a catalog of `known`, or null when it may.
+ * Zero, or under half, is a failed or truncated listing, never a wiki that lost its spells.
+ */
+export function shrinkProblem(found: number, known: number): string | null {
+  if (found === 0) return 'the enumeration found 0 spell pages'
+  return found < known / 2 ? `the enumeration found ${found} spell pages, under half of the ${known} committed` : null
+}
+
+/** The page list: the index's titles offline, else the live enumeration; null when it is refused. */
+async function enumerate(offline: boolean, idx: CacheIndex): Promise<WikiPage[] | null> {
+  console.log(offline ? 'Reading the cache index (offline, no requests)…' : 'Enumerating Template:Spellpage pages…')
+  const pages = offline ? indexedPages(idx) : await listSpellPages()
+  console.log(`Found ${pages.length} spell pages.`)
+  const shrunk = offline ? null : shrinkProblem(pages.length, knownPageCount(idx))
+  if (!shrunk || process.argv.includes(ALLOW_SHRINK)) return pages
+  console.error(`Refusing to write ${OUT_PATH} or the index titles: ${shrunk}. ${ALLOW_SHRINK} overrides.`)
+  process.exitCode = 1
+  return null
+}
+
 async function main(): Promise<void> {
   const t0 = Date.now()
   // `--offline` re-parses the committed cache and sends the wiki nothing: the way to re-derive
   // spells.json after a parser change (owner, 2026-10-10). It needs the titles a real run records.
   const offline = process.argv.includes('--offline')
   const idx = readIndex()
-  console.log(offline ? 'Reading the cache index (offline, no requests)…' : 'Enumerating Template:Spellpage pages…')
-  const pages = offline ? indexedPages(idx) : await listSpellPages()
-  console.log(`Found ${pages.length} spell pages.`)
+  const pages = await enumerate(offline, idx)
+  if (!pages) return
 
   const { hits, stale, failures } = offline
     ? { hits: pages.length, stale: [] as WikiPage[], failures: [] as number[] }
