@@ -122,7 +122,7 @@ function catalogMobs(): MobIndex {
 const NO_INDEX: BookIndex = new Map()
 
 /** No map is named '', so nothing is worked on here. */
-const NOWHERE: ZoneHere = { zone: '', counters: new Set(), mobs: new Map() }
+const NOWHERE: ZoneHere = { zone: '', counters: new Set(), mobs: new Map(), outOfEra: false }
 
 /** The stored choices, each written back on change. */
 function useChoices(): Pick<
@@ -175,9 +175,10 @@ function useChoices(): Pick<
   }
 }
 
-/** The zone filter for this zone: the counters the plan over every counter places here. */
-function zoneHere(zone: ZoneShort, everyZone: readonly PlanZone[]): ZoneHere {
-  return { zone, counters: countersIn(everyZone, zone), mobs: catalogMobs() }
+/** The zone filter for this zone: the counters the plan over every counter places here, read
+ *  under the plan's era switch. */
+function zoneHere(zone: ZoneShort, everyZone: readonly PlanZone[], outOfEra: boolean): ZoneHere {
+  return { zone, counters: countersIn(everyZone, zone), mobs: catalogMobs(), outOfEra }
 }
 
 function shownIn(book: AchievementBook | null, scope: Scope): Scope {
@@ -206,8 +207,8 @@ export function useAchievementsController(props: SlayerViewProps): AchievementsC
   const here = useMemo((): ZoneHere | null => {
     if (!zoneOnly) return null
     const zone = zoneShortName(zoneName)
-    return zone === null ? NOWHERE : zoneHere(zone, slayer.everyZone)
-  }, [zoneOnly, zoneName, slayer.everyZone])
+    return zone === null ? NOWHERE : zoneHere(zone, slayer.everyZone, slayer.plan.outOfEra)
+  }, [zoneOnly, zoneName, slayer.everyZone, slayer.plan.outOfEra])
   const pickable = useMemo(
     () => book !== null && familyHasCounter(book, scope.family),
     [book, scope.family]

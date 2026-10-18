@@ -348,7 +348,7 @@ test("an achievement works here by its own name, an open counter placed here, or
   const bats = { name: 'Bat Country!', done: false, components: [line('Bats and Werebats.', { have: 4, need: 100 })] }
   const batId = counterIds(slayer, bats)[0]
   const here: ZoneHere = {
-    zone: 'crushbone',
+    zone: 'crushbone', outOfEra: false,
     counters: new Set([batId]),
     mobs: mobIndex([{ name: 'Emperor Crush', page: 'Emperor Crush', zones: ['Crushbone'] }])
   }
@@ -395,7 +395,7 @@ test('a search reads names and requirement lines, in every group, and keeps the 
     ]
   )
   assert.equal(shownCount(visibleSections(FULL, INDEX, { ...SHOW_ALL, query: 'bats skill' })), 1)
-  const nowhere: ZoneHere = { zone: '', counters: new Set(), mobs: new Map() }
+  const nowhere: ZoneHere = { zone: '', counters: new Set(), mobs: new Map(), outOfEra: false }
   assert.equal(shownCount(visibleSections(FULL, INDEX, { ...SHOW_ALL, here: nowhere })), 0, 'no zone keeps nothing')
   const crushbone = shownCount(visibleSections(FULL, INDEX, { ...SHOW_ALL, here: { ...nowhere, zone: 'crushbone' } }))
   assert.ok(crushbone >= 2, 'Hunter of Crushbone and Crushbone Traveler, by name')

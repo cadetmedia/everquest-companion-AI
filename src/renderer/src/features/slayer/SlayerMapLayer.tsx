@@ -22,6 +22,7 @@ import { slayerAreas, type SlayerArea } from './slayerAreas'
 import { slayerCatalog, useSlayerData } from './slayerData'
 import {
   NO_FACTION_HITS_KEY,
+  OUT_OF_ERA_KEY,
   counterRows,
   levelCap,
   loadFlag,
@@ -97,12 +98,16 @@ export default function SlayerMapLayer({
   vp: MapViewport
 }): JSX.Element | null {
   const { record } = useSlayerData()
-  // The Achievements tab's level cap and faction switch, read as its plan reads them, so the
-  // shading and the zone list leave out the same mobs.
+  // The Achievements tab's level cap, faction switch and era switch, read as its plan reads them,
+  // so the shading and the zone list leave out the same mobs.
   const own = useModule<CharacterSnap>('character')?.level?.level
   const maxLevel = levelCap(loadMaxLevel(), own)
   const noFactionHits = loadFlag(NO_FACTION_HITS_KEY)
-  const cap = useMemo(() => ({ maxLevel, noFactionHits }), [maxLevel, noFactionHits])
+  const outOfEra = loadFlag(OUT_OF_ERA_KEY)
+  const cap = useMemo(
+    () => ({ maxLevel, noFactionHits, outOfEra }),
+    [maxLevel, noFactionHits, outOfEra]
+  )
   const [hidden, setHidden] = useState(() => loadFlag(MAP_AREAS_HIDDEN_KEY))
   const picked = useMemo(() => {
     if (record === null) return []
