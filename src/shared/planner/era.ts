@@ -441,6 +441,27 @@ export function eraBadgeOverrides(tag: string | undefined, era: Era): boolean {
 }
 
 /**
+ * IS THIS MOB OUT OF ERA? Exactly when its record says so: `MobEntry.outOfEra === true`.
+ *
+ * A MOB IS NEVER JUDGED BY ITS RAW BANNER (owner ruling). `a cave bat` is bannered Velious and
+ * lives in a classic zone; reading the banner here would hide a mob the player fights. The era
+ * rules (banner and zones) run once, at data build, and the verdict is stored on the record, so a
+ * surface reads the flag and never re-decides. Absent means in era — which is also what a record
+ * from a build that never computed the flag says, so nothing changes for those.
+ */
+export function mobOutOfEra(mob: { readonly outOfEra?: true }): boolean {
+  return mob.outOfEra === true
+}
+
+/**
+ * The mobs a list that RECOMMENDS may show (a zone roster, map pins): every `mobOutOfEra` row
+ * dropped, the rest in their own order. Lookups (a search, a detail page) keep them and chip them.
+ */
+export function withoutOutOfEraMobs<T extends { readonly outOfEra?: true }>(mobs: readonly T[]): T[] {
+  return mobs.filter((m) => !mobOutOfEra(m))
+}
+
+/**
  * THE VERDICT THE UI ASKS FOR — three rules, in this order.
  *
  * 0. AN EXPLICIT OUT-OF-ERA BADGE OVERRULES THE ZONES (JOS-298, 2026-08-13). The wiki has drawn a

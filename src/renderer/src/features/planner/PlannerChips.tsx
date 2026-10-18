@@ -34,6 +34,7 @@
 import type { JSX } from 'react'
 import { Box, Chip } from '@mui/material'
 import { EQ_ITEM_COLORS } from '../../lib/ItemWindow'
+import { mobOutOfEra } from '@shared/planner/era'
 import { eraChip, type EraSubject } from './plannerData'
 import type { DonorProgress, DonorState } from './plannerProgress'
 
@@ -114,6 +115,33 @@ export function EraChip({ subject }: { subject: EraSubject }): JSX.Element | nul
       sx={CHIP_SX}
     />
   )
+}
+
+/**
+ * The era chip's look for a wiki page that is NOT an item (a mob, a quest), on a LOOKUP surface — a
+ * search result, a detail page — where an out-of-era row is kept and labelled rather than hidden.
+ */
+function OutOfEraPageChip({ title }: { title: string }): JSX.Element {
+  return (
+    <Chip
+      size="small"
+      label="out of era"
+      title={title}
+      data-testid="page-era-chip"
+      color="warning"
+      variant="outlined"
+      sx={{ ...CHIP_SX, flexShrink: 0 }}
+    />
+  )
+}
+
+/**
+ * A MOB's chip: drawn exactly when `shared/planner/era.ts mobOutOfEra` says so (the record's
+ * data-build flag), and nothing otherwise — an absent flag is in era.
+ */
+export function MobEraChip({ mob }: { mob: { readonly outOfEra?: true } }): JSX.Element | null {
+  if (!mobOutOfEra(mob)) return null
+  return <OutOfEraPageChip title="The era rules put this mob out of era: this server has not opened its content." />
 }
 
 /**

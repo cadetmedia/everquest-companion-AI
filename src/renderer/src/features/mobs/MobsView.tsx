@@ -55,10 +55,11 @@ import { killIndex, killsFor } from '@shared/kills'
 import type { NavBack } from '../../appRouting'
 import { useBackTarget } from '../../appBack'
 import { useModule } from '../../lib/useModule'
+import { MobEraChip } from '../planner/PlannerChips'
 import { MobPage } from './MobPage'
 import { RecentlyConsidered } from './RecentlyConsidered'
 import { MOB_CATALOG, searchMobs } from './mobSearch'
-import { mobsInZone } from './mobZone'
+import { rosterInZone } from './mobZone'
 import type { MobTarget } from './mobTarget'
 
 /**
@@ -124,6 +125,9 @@ function MobResultRow({
         {entry.zones?.join(', ')}
       </Typography>
       <Box sx={{ flexGrow: 1 }} />
+      {/* A search is a lookup, so an out-of-era mob stays listed and says so. The roster never
+          reaches this: `rosterInZone` has already left those mobs off it. */}
+      <MobEraChip mob={entry} />
       {kill && kill.count > 0 && (
         <Typography variant="caption" sx={{ color: 'success.main', flexShrink: 0 }}>
           {kill.count} killed
@@ -342,7 +346,8 @@ export default function MobsView({
   const searching = deferred.trim().length > 0
   // A filter over 7,866 rows — cheap (render-bound, AGENTS.md "Search"), but it only changes
   // when you zone, so memoize on the zone string.
-  const zoneRows = useMemo(() => (zone ? mobsInZone(zone, MOB_CATALOG) : []), [zone])
+  // Out-of-era mobs (their own page bannered so) are left off the roster: it OFFERS a zone's mobs.
+  const zoneRows = useMemo(() => (zone ? rosterInZone(zone, MOB_CATALOG) : []), [zone])
 
   if (drill) return <MobDrill target={drill} kills={kills} nav={nav} onClose={() => setDrill(null)} />
 

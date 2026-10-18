@@ -63,6 +63,7 @@ import type { MobEntry } from '@shared/types'
 // test runner. Same constraint, same reasoning as mobSearch.ts:33. (`shared/zones` is pure — its
 // own only import is type-only — so nothing follows it into the test process.)
 import { zoneKey, zoneSpellingsFor } from '../../../../shared/zones'
+import { withoutOutOfEraMobs } from '../../../../shared/planner/era'
 
 /** The zone fold (rules 1-3 above), re-exported for the renderer callers that import it from here. */
 export { zoneKey }
@@ -125,4 +126,17 @@ export function mobsInZone(zoneRaw: string, catalog: MobEntry[]): MobEntry[] {
     if (na !== nb) return na < nb ? -1 : 1
     return a.page < b.page ? -1 : a.page > b.page ? 1 : 0
   })
+}
+
+/**
+ * THE ROSTER a player is OFFERED for this zone: `mobsInZone`, minus the mobs the era rules put out
+ * of era (`shared/planner/era.ts mobOutOfEra`: the record's data-build `outOfEra` flag, never its
+ * raw banner). A revamp keeps the zone's name while replacing what lives in it, so the zone join
+ * alone cannot tell the two bestiaries apart. A mob without the flag is kept, exactly as before.
+ *
+ * Both rosters that recommend — the Mobs tab's "In <zone>" and the map pane's rows and pins — read
+ * this one. Search is a lookup and keeps every row (it chips them instead).
+ */
+export function rosterInZone(zoneRaw: string, catalog: MobEntry[]): MobEntry[] {
+  return withoutOutOfEraMobs(mobsInZone(zoneRaw, catalog))
 }
