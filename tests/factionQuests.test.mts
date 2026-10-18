@@ -4,7 +4,8 @@
 
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { buildFactionWorkIndex } from '../src/renderer/src/features/factions/factionQuests'
+import { buildFactionWorkIndex, raisedKeysOf } from '../src/renderer/src/features/factions/factionQuests'
+import { inEraQuests, questOutOfEra } from '../src/shared/questEra'
 import questsJson from '../src/renderer/src/data/eqlegends/quests.json'
 import { factionNameKey } from '../src/shared/outputs/factions'
 import type { QuestData, QuestEntry } from '../src/shared/types'
@@ -60,11 +61,13 @@ test('the real catalog answers the questions the tab was built for', () => {
   assert.deepEqual(kaladimBones.items, ['Bone Chips'])
   assert.equal(kaladimBones.amount, 10)
 
-  // The Kerra Isle ask: the necklace quests that raise the island's regard.
+  // The Kerra Isle ask: the necklace quests that raise the island's regard. Rat Teeth and Gnomish
+  // Toy used to answer it, but both pages now open `{{Unknown Era}}` over a `{{delete|…revamped…}}`
+  // notice — retired quests the era rule keeps out of the work list (questEra.ts).
   const kerra = index.get('kerra isle')
   assert.ok(kerra)
-  assert.ok(kerra.raise.some((q) => q.name === 'Rat Teeth'))
-  assert.ok(kerra.raise.some((q) => q.name === 'Gnomish Toy'))
+  assert.ok(!kerra.raise.some((q) => q.name === 'Rat Teeth'), 'a retired Unknown Era page is not work')
+  assert.ok(!kerra.raise.some((q) => q.name === 'Gnomish Toy'), 'a retired Unknown Era page is not work')
 
   // THE SILENT HOME-ZONE QUESTS: the wiki attributes 2 of Kerra Island's quests; the regen
   // necklace the user actually quested (This Means Warrr → Talisman of Kejaar Kerrath) is on a
@@ -102,4 +105,61 @@ test('a quest page that drops the dump spelling still attaches to the dump row',
     const attached = [...(work?.raise ?? []), ...(work?.lower ?? [])].map((q) => q.name)
     assert.ok(named.length > 0 && named.every((n) => attached.includes(n)), short)
   }
+})
+
+test('an out-of-era quest is not offered as work; an in-era and an un-bannered one are', () => {
+  const quests: QuestEntry[] = [
+    {
+      name: 'Dragon Scales Quest',
+      page: 'Dragon Scales Quest',
+      eraTag: 'Kunark',
+      startZone: 'Firiona Vie',
+      factions: [
+        { name: 'Temple Of Sol Ro', up: true },
+        { name: 'Shadowed Men', up: false }
+      ]
+    },
+    {
+      name: 'Classic Turn-in',
+      page: 'Classic Turn-in',
+      eraTag: 'Classic',
+      startZone: 'Temple of Solusek Ro',
+      factions: [{ name: 'Temple Of Sol Ro', up: true, amount: 10 }]
+    },
+    {
+      name: 'Unbannered Turn-in',
+      page: 'Unbannered Turn-in',
+      startZone: 'Temple of Solusek Ro',
+      factions: [{ name: 'Temple Of Sol Ro', up: true }]
+    },
+    // a silent Kunark quest in the home zone must not slip in as a nearby candidate either
+    { name: 'Silent Kunark Quest', page: 'Silent Kunark Quest', eraTag: 'Kunark', startZone: 'Temple of Solusek Ro' },
+    { name: 'Silent Classic Quest', page: 'Silent Classic Quest', startZone: 'Temple of Solusek Ro' }
+  ]
+  const index = buildFactionWorkIndex(quests, 'classic')
+  const sol = index.get(factionNameKey('Temple Of Sol Ro'))
+  assert.ok(sol)
+  assert.deepEqual(sol.raise.map((q) => q.name), ['Classic Turn-in', 'Unbannered Turn-in'])
+  assert.deepEqual(sol.nearby.map((q) => q.name), ['Silent Classic Quest'])
+  assert.equal(index.get(factionNameKey('Shadowed Men')), undefined, 'its cost is not on record either')
+  assert.equal(raisedKeysOf(quests.slice(0, 1), 'classic').size, 0, 'nor is it a win-back witness')
+
+  // The same rule, read the day the server opens Kunark: the banner stops being a reason.
+  assert.ok(buildFactionWorkIndex(quests, 'kunark').get(factionNameKey('Shadowed Men')))
+
+  // The predicate itself: out names a shipped-later expansion or a no-expansion token; silence is in.
+  assert.equal(questOutOfEra({ eraTag: 'Kunark' }, 'classic'), true)
+  assert.equal(questOutOfEra({ eraTag: 'Unknown' }, 'kunark'), true)
+  assert.equal(questOutOfEra({ eraTag: 'Classic' }, 'classic'), false)
+  assert.equal(questOutOfEra({}, 'classic'), false)
+  assert.equal(inEraQuests(quests, 'classic').length, 3)
+})
+
+test('the real catalog no longer offers the Kunark Dragon Scales Quest for Temple Of Sol Ro', () => {
+  const dragon = CATALOG.find((q) => q.page === 'Dragon Scales Quest')
+  assert.equal(dragon?.eraTag, 'Kunark')
+  assert.ok(dragon?.factions?.some((f) => f.name === 'Temple Of Sol Ro' && f.up), 'the page does quote the raise')
+  const sol = buildFactionWorkIndex(CATALOG, 'classic').get(factionNameKey('Temple Of Sol Ro'))
+  const offered = [...(sol?.raise ?? []), ...(sol?.lower ?? []), ...(sol?.nearby ?? [])].map((q) => q.name)
+  assert.ok(!offered.includes('Dragon Scales Quest'))
 })
