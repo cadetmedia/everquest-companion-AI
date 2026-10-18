@@ -43,6 +43,9 @@ const CHOSEN = 'portal-turret'
 
 const ROW = '[data-testid="alert-row"]'
 const NOTICE = '[data-testid="alert-sound-notice"]'
+/** A SPOKEN alert (the Bazaar watchlist's) cannot play on a machine with no speech voices either, and
+ *  its row says so with the voice-setup notice instead: either notice is the row saying it. */
+const VOICE_NOTICE = '[data-testid="alert-row-voice-setup"]'
 const DEFAULT_ROW = '[data-testid="pack-default-row"]'
 
 interface PackPrefs {
@@ -81,7 +84,10 @@ async function stepSilentIsVisible(page: Page): Promise<void> {
   await openAlerts(page)
   const rows = await countOf(page, ROW)
   check('the seeded alerts are on screen', rows >= 1, String(rows))
-  const notices = await countOf(page, NOTICE)
+  const notices = await page.evaluate(
+    ([row, pack, voice]) => [...document.querySelectorAll(row)].filter((r) => r.querySelector(pack) ?? r.querySelector(voice)).length,
+    [ROW, NOTICE, VOICE_NOTICE] as const
+  )
   check(
     'with no pack installed, every alert row SAYS it cannot play - it does not just sit there',
     notices === rows,
