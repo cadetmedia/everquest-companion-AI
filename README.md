@@ -160,6 +160,11 @@ exact source URL, byte length and SHA-256 of every file it ships. Neither wiki i
 affiliated with this app. The same credit is in the app itself, under
 **Preferences → Thanks**.
 
+The text of the **EverQuest Legends Wiki** (eqlwiki.com) is licensed
+[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), as its
+[About page](https://eqlwiki.com/index.php?title=Project:About) states; the item, mob, spell
+and quest data this app builds from it is credited to that wiki.
+
 The bundled **Alan Rickman** voice pack comes from
 [utensils/openpeon-alan-rickman-soundpack](https://github.com/utensils/openpeon-alan-rickman-soundpack)
 and is licensed CC-BY-4.0. Packs you install from the in-app browser carry their own

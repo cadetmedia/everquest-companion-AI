@@ -33,6 +33,11 @@ interface Credit {
   readonly host: string
   readonly url: string
   readonly what: string
+  /**
+   * The licence the source states for its text, and the page of theirs that states it. Only a
+   * licence the source itself publishes is named here; the link stays on their (allowlisted) host.
+   */
+  readonly licence?: { readonly text: string; readonly url: string }
 }
 
 /**
@@ -52,7 +57,13 @@ export const IMAGE_CREDITS: readonly Credit[] = [
   {
     host: 'eqlwiki.com',
     url: 'https://eqlwiki.com/',
-    what: 'the item icons throughout loot, inventory and the planner - and the item, spell and quest knowledge behind them'
+    what: 'the item icons throughout loot, inventory and the planner - and the item, spell and quest knowledge behind them',
+    // The wiki's About page: "all original text on EQL Wiki is licensed under Creative Commons
+    // Attribution-ShareAlike 4.0 International", reused "with credit and attribution".
+    licence: {
+      text: 'EverQuest Legends Wiki text is licensed CC BY-SA 4.0 (Creative Commons Attribution-ShareAlike 4.0)',
+      url: 'https://eqlwiki.com/index.php?title=Project:About'
+    }
   }
 ]
 
@@ -97,6 +108,18 @@ export function ThanksSetting(): JSX.Element {
             <Typography variant="caption" color="text.secondary">
               {c.what}
             </Typography>
+            {c.licence && (
+              <Link
+                href={c.licence.url}
+                target="_blank"
+                rel="noreferrer"
+                variant="caption"
+                color="text.secondary"
+                data-testid={`prefs-thanks-licence-${c.host}`}
+              >
+                {c.licence.text}
+              </Link>
+            )}
           </Stack>
         ))}
       </Stack>
