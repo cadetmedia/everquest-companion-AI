@@ -94,6 +94,9 @@ import { stepAncientKillIsWatchable } from './respawnRound8Steps.mjs'
 // Round 9's two: the edit modal that superseded round 7's seconds box, and the pair of claims about
 // the overridden state that need both renderers open at once.
 import { stepEditTheNumber, stepOverriddenOverTheGame } from './respawnRound9Steps.mjs'
+// Clear all (2026-10-17): the scope's clocks in one confirmed press, and a typed respawn that
+// survives it. It runs last because it empties the watch list.
+import { stepClearAll } from './respawnClearAllSteps.mjs'
 
 /** A mob the committed wiki floor states a duration for: `9.5 min` → 570 s. */
 const WIKI_MOB = 'a frenzied ghoul'
@@ -754,6 +757,7 @@ async function main(): Promise<void> {
     await stepUnwatchOnTheMob(page, overlay, launched.app)
     await stepZoneScope(page, overlay, fixture)
   }
+  await stepClearAll(page)
 
   if (failures.length) await dumpArtifacts(page, 'respawn-timers-FAIL')
   await launched.close()

@@ -16,6 +16,11 @@
 // still carries it reads as its watch list and is rewritten without it on the next set.
 // The `lastSeenNotesVersion` / `uiScale` precedent, stated in StoreShape.
 //
+// THE KEPT TYPED NUMBERS RIDE THE SAME KEY (2026-10-17). `respawn.keptCustom` is additive and
+// optional by the same argument: absent reads as none, the normalizer only writes it when it holds
+// something, and an older build drops it as an unknown field — losing the kept numbers on its next
+// write and nothing else. It is read and written only here, in main; see shared/respawnWatchList.ts.
+//
 // TWO CALLERS, AND THEY WANT DIFFERENT MOMENTS. `src/main/pipeline.ts` reads it while CONSTRUCTING
 // the module graph, so the first fold already knows what you watch; `src/main/ipc/respawn.ts`
 // writes it and applies it to the running module in the same call, so a watch added mid-session

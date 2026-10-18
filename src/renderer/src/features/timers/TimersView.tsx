@@ -76,10 +76,15 @@
 //     Recently-killed column and nothing else. The clocks column, which re-renders once a second on
 //     its own, is not dragged into it.
 //   * THE ROW IS MEMOIZED AND ITS PROPS ARE STABLE — it takes the mob's KEY and hands it back, so
-//     the two writers are `useCallback`s with no per-row closure and no `prefs` in their deps (the
-//     prefs are read through a ref at click time, which is the only moment they are needed).
+//     the two writers are `useCallback`s with no per-row closure and no `prefs` in their deps. (They
+//     used to read the prefs through a ref at click time and send the edited list; since 2026-10-17
+//     they send the KEY and main edits the stored list, so there is no list here to read at all.)
+//
+// AND THE SCOPE CAN BE CLEARED (owner ruling, 2026-10-17). Clear all sits beside the scope switch
+// and clears what the switch shows, after a dialog that says how many and where (ClearAllClocks.tsx).
+// A respawn typed on any of those mobs is kept by main and comes back with the next Watch.
 
-import { memo, useCallback, useMemo, useRef, useState, type JSX } from 'react'
+import { memo, useMemo, useState, type JSX } from 'react'
 import {
   Box,
   Button,
@@ -97,31 +102,27 @@ import {
   respawnCandidateNote,
   respawnInZone,
   type RespawnCandidate,
-  type RespawnPrefs,
   type RespawnRow
 } from '@shared/respawn'
+import { respawnClearPlan } from '@shared/respawnWatchList'
 import Tooltip from '../../lib/Tooltip'
 import { MOB_CARD_SLOT_PROPS, MobCard } from '../../lib/hoverCards'
 import { mainMobLookup } from './mobLookup'
 import { RespawnRowBar } from './RespawnRowBar'
 import { RESPAWN_TOGGLE_SX, UnwatchButton } from './UnwatchButton'
+import { ClearAllClocks } from './ClearAllClocks'
 import {
   useConfirmSighting,
   useRespawnSnap,
   useSecondsClock,
-  useSetRespawnPrefs,
-  useUnwatch
+  useSetCustom,
+  useUnwatch,
+  useUnwatchMany,
+  useWatch
 } from './useRespawn'
 
 /** Which zone the page is showing. Component state: a view mode, not a preference. */
 type Scope = 'zone' | 'all'
-
-/** Add or update one watch, leaving the rest of the list alone. */
-function withWatch(prefs: RespawnPrefs, key: string, display: string, customSec?: number): RespawnPrefs {
-  const rest = prefs.watches.filter((w) => w.key !== key)
-  const entry = customSec === undefined ? { key, display } : { key, display, customSec }
-  return { ...prefs, watches: [...rest, entry] }
-}
 
 /**
  * ONE RECENTLY-KILLED ENTRY. `memo` because this list is the one on the page that a keystroke
@@ -405,32 +406,15 @@ function DiscoveryPanel({
 export default function TimersView(): JSX.Element {
   const snap = useRespawnSnap()
   const nowMs = useSecondsClock()
-  const setPrefs = useSetRespawnPrefs()
   const confirmSighting = useConfirmSighting()
   const unwatch = useUnwatch()
-  const prefs = snap.prefs
+  const unwatchMany = useUnwatchMany()
+  // KEY-SHAPED WRITERS (2026-10-17), stable for the life of the page: each names one mob and main
+  // edits the STORED list, which is the only copy that holds the kept typed numbers. So the rows
+  // they are handed to stay memoized, and nothing here reads the watch list at all.
+  const onWatch = useWatch()
+  const onSetCustom = useSetCustom()
   const [scope, setScope] = useState<Scope>('zone')
-
-  // THE WATCH LIST, READ AT CLICK TIME RATHER THAN CLOSED OVER (JOS-206's "stable props"). Both
-  // writers below edit one entry of a list they must not otherwise disturb, so they need the
-  // CURRENT list — but taking it as a dependency would rebuild them on every module delta and
-  // un-memoize every row they are handed to. A ref is the standard answer: the value is only ever
-  // needed inside a handler, which by definition runs after the render that set it.
-  const prefsRef = useRef(prefs)
-  prefsRef.current = prefs
-
-  const onWatch = useCallback(
-    (key: string, display: string) => {
-      setPrefs(withWatch(prefsRef.current, key, display))
-    },
-    [setPrefs]
-  )
-  const onSetCustom = useCallback(
-    (key: string, display: string, sec?: number) => {
-      setPrefs(withWatch(prefsRef.current, key, display, sec))
-    },
-    [setPrefs]
-  )
 
   // The zone name as the switch and the empty states say it. The fold has no zone before the log
   // states one, and "this zone" is then a claim it cannot make.
@@ -451,7 +435,7 @@ export default function TimersView(): JSX.Element {
         <Typography variant="h6">Timers</Typography>
         {snap.zone.length > 0 && <Chip size="small" label={snap.zone} variant="outlined" />}
       </Stack>
-      <Box sx={{ mb: 2, mt: 1.5 }}>
+      <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 2, mt: 1.5 }}>
         <ScopeSwitch
           scope={scope}
           onScope={setScope}
@@ -459,7 +443,14 @@ export default function TimersView(): JSX.Element {
           here={hereRows.length}
           total={snap.rows.length}
         />
-      </Box>
+        {/* What the switch shows is what this clears — the plan is worked out in shared/, because
+            deciding which served rows go is not the renderer's job (owner ruling 4). */}
+        <ClearAllClocks
+          plan={respawnClearPlan(rows, snap.rows)}
+          zone={scope === 'zone' ? zoneName : null}
+          onClear={unwatchMany}
+        />
+      </Stack>
 
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={3} alignItems="flex-start">
         <Box sx={{ flex: 1, minWidth: 0 }}>

@@ -146,7 +146,7 @@
 // surface removes it everywhere — including a clock for the same name running in a zone you are
 // not standing in. Round 4 put that sentence on the control's tooltip; the owner deleted the
 // tooltip in round 7 (the control speaks for itself), so it is argued HERE and pinned by
-// tests/respawnUnwatch.test.mts instead of recited on screen — which is the same bargain round 5
+// tests/respawnWatchList.test.mts instead of recited on screen — which is the same bargain round 5
 // struck with every other caption on this feature.
 //
 // AND IT THROWS AWAY NOTHING BUT THE WATCH. The kills, the gaps and the sightings are the fold's,
@@ -154,7 +154,10 @@
 // the row and keeps the history behind it, the mob is still offered in Recently killed the moment
 // after (`RespawnCandidate.watched` flips back to false), and watching it again brings back the
 // same clock with the same numbers — which is what makes an unwatch on a floating window safe
-// enough to be one click with no confirmation.
+// enough to be one click with no confirmation. (AMENDED 2026-10-17: "the same numbers" now
+// includes a respawn you TYPED. It lived on the watch entry and an unwatch deleted it with the
+// entry, so the one number the log can never restate was the one thing an unwatch destroyed. The
+// write now MOVES it aside and a later Watch brings it back — the Clear all section below.)
 //
 // THE ROW SURFACES OFFER ONLY THE UNWATCH HALF, and that is not an asymmetry: a clock row exists
 // only because the mob is watched (the opt-in ruling is the admission rule), so "Watch" on one
@@ -312,6 +315,37 @@
 // JOS-207), restated for the other list in the app that grows while you play. Pure and node-tested;
 // the renderer's half of those learnings (a memoized row, stable props, an input that owns its own
 // state) lives in TimersView.tsx.
+//
+// ─────────────────────────────────────────────────────────────────────────────
+// CLEAR ALL, AND A TYPED NUMBER OUTLIVES ITS WATCH (owner ruling, 2026-10-17)
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// THE TAB CAN CLEAR WHAT ITS SCOPE SHOWS. Beside the scope switch sits one Clear all, and it clears
+// exactly the clocks the switch is showing: the zone you stand in, or every zone. It is round 4's
+// unwatch applied to each of those mobs — `respawnWithoutWatches` is that same pure write once per
+// key, landed in ONE store write by one IPC — so it means nothing a single Unwatch does not mean,
+// and the watch-is-a-name rule comes with it: clearing a zone's clocks also stops the same names'
+// clocks in other zones, and the dialog says so when it happens (`respawnClearAllText`).
+//
+// IT ASKS FIRST, AND THE SINGLE UNWATCH STILL DOES NOT. One click that stops a dozen clocks is a
+// different size of mistake from one that stops the clock in front of you, so Clear all opens a
+// dialog stating how many clocks it will stop and where, with Cancel. The single Unwatch stays one
+// click with no confirmation, for the reason round 4 gave: what it takes away, a Watch gives back.
+//
+// AND THAT IS NOW TRUE OF A TYPED NUMBER TOO. A respawn you typed is the one thing on a row the log
+// can never restate, and it lived on the watch entry, so Unwatch, Clear all and the floating
+// window's Unwatch all deleted it with the entry. Now the writes MOVE it: an unwatched entry's
+// `customSec` goes to `RespawnPrefs.keptCustom`, Watch on the same name takes it back out, and the
+// edit modal's way back to the calculated number drops it for good, so a cleared override never
+// returns (shared/respawnWatchList.ts holds all four writes). A name is in at most one of the two
+// lists and the normalizer enforces it: while a watch exists, its entry is the authority.
+//
+// THE KEPT LIST IS MAIN'S AND NOBODY ELSE'S. A kept number numbers no clock, so the engine is never
+// told it (`respawn.define` carries the watch list alone), the module snapshot never carries it,
+// and no renderer writes it: Watch, Save, clear and Unwatch each name a mob, and main does the move
+// on the stored list. A surface that still sends the WHOLE list (`respawn:set`, which the Maps tab
+// writes through) gets the same promise: main restores a kept number onto a name the list newly
+// watches and sets aside the number of one it stopped watching (`respawnWithWatchList`).
 
 /** Which rung of the ladder produced the estimate on a row. `'none'` = no rung had anything. */
 export type RespawnSource = 'custom' | 'observed' | 'wiki' | 'none'
@@ -399,6 +433,20 @@ export interface RespawnPrefs {
    * Watch — see the opt-in paragraph in the header for why there is no rule that fills this in.
    */
   watches: RespawnWatchPref[]
+  /**
+   * THE TYPED NUMBERS AN UNWATCH LEFT BEHIND (owner ruling, 2026-10-17 — see the header's Clear all
+   * section). Oldest first; a name is never both here and in `watches`. Absent when empty, so a
+   * store that never unwatched a typed number reads and writes exactly the shape it always did.
+   */
+  keptCustom?: RespawnKeptCustom[]
+}
+
+/** One respawn the player typed, kept after its watch went away so a later Watch brings it back. */
+export interface RespawnKeptCustom {
+  /** Canonical (lowercased) mob name, the same key the watch had. */
+  key: string
+  /** The number they typed, in SECONDS, bounded exactly as `RespawnWatchPref.customSec` is. */
+  customSec: number
 }
 
 export const DEFAULT_RESPAWN_PREFS: RespawnPrefs = { watches: [] }
@@ -411,12 +459,23 @@ export const RESPAWN_CUSTOM_MAX_SEC = 7 * 24 * 3600
 export const RESPAWN_MAX_WATCHES = 200
 
 /**
+ * Most kept typed numbers. The same bound as the watch list, and when it is full the OLDEST goes:
+ * the number somebody typed and unwatched last week is the one least likely to be watched again.
+ */
+export const RESPAWN_MAX_KEPT = 200
+
+/**
  * Normalize whatever came out of the store or in over IPC. Runs at BOTH ends — the store reader
  * and the IPC handler — so a renderer can never write a shape the module then has to defend
  * against. Unknown fields are dropped rather than carried, which is also how the retired
  * `autoWiki` flag leaves: a store written by the prototype build loads here as its watch list and
  * nothing else, so the ruling that removed auto-watch takes effect on the next read with no
  * migration to write.
+ *
+ * `keptCustom` is additive in both directions (2026-10-17). A store with no such field loads to
+ * the same value it always did — the field is emitted only when it holds something — and a build
+ * that predates it reads a store written here as its watch list, by the rule just stated (and drops
+ * the kept numbers the next time it writes, which costs the numbers and nothing else).
  */
 export function normalizeRespawnPrefs(raw: unknown): RespawnPrefs {
   if (typeof raw !== 'object' || raw === null) return { ...DEFAULT_RESPAWN_PREFS, watches: [] }
@@ -430,38 +489,53 @@ export function normalizeRespawnPrefs(raw: unknown): RespawnPrefs {
     watches.push(clean)
     if (watches.length >= RESPAWN_MAX_WATCHES) break
   }
-  return { watches }
+  const keptCustom = normalizeKept(obj.keptCustom, seen)
+  return keptCustom.length > 0 ? { watches, keptCustom } : { watches }
+}
+
+/**
+ * The ONE spelling of a stored mob key: trimmed, lowercased, at most 64 chars, `''` for anything
+ * that is not a string. Every write in shared/respawnWatchList.ts lands on it, so a row's `key`, a
+ * hand-edited settings file and a kept number all meet on the same entry (world-model law 2).
+ */
+export function canonRespawnKey(raw: unknown): string {
+  return typeof raw === 'string' ? raw.trim().toLowerCase().slice(0, 64) : ''
+}
+
+/** A typed respawn in whole seconds, or undefined when it is not one the editor would accept. */
+export function normalizeCustomSec(raw: unknown): number | undefined {
+  const sec = typeof raw === 'number' && Number.isFinite(raw) ? Math.round(raw) : 0
+  return sec >= RESPAWN_CUSTOM_MIN_SEC && sec <= RESPAWN_CUSTOM_MAX_SEC ? sec : undefined
 }
 
 function normalizeWatch(raw: unknown): RespawnWatchPref | null {
   if (typeof raw !== 'object' || raw === null) return null
   const w = raw as Partial<RespawnWatchPref>
   const display = typeof w.display === 'string' ? w.display.trim().slice(0, 64) : ''
-  const key = typeof w.key === 'string' ? w.key.trim().toLowerCase().slice(0, 64) : ''
+  const key = canonRespawnKey(w.key)
   if (key.length === 0) return null
   const out: RespawnWatchPref = { key, display: display.length > 0 ? display : key }
-  const sec = typeof w.customSec === 'number' && Number.isFinite(w.customSec) ? Math.round(w.customSec) : 0
-  if (sec >= RESPAWN_CUSTOM_MIN_SEC && sec <= RESPAWN_CUSTOM_MAX_SEC) out.customSec = sec
+  const sec = normalizeCustomSec(w.customSec)
+  if (sec !== undefined) out.customSec = sec
   return out
 }
 
 /**
- * DROP ONE MOB FROM THE WATCH LIST, and touch nothing else — the whole of round 4's write.
- *
- * Pure, and shared by every surface through the IPC handler that calls it, so "stop watching this"
- * has ONE definition: the clock row in the tab, the row in the floating window and the
- * Recently-killed entry cannot drift into three ideas of what the button did. The key is
- * canonicalized here the way `normalizeWatch` canonicalizes what it stores (world-model law 2 —
- * canonicalize at boundaries), so a row's `key` (which is `idKey(name)` on the far side of that
- * rule) and a hand-edited settings file both land on the same entry.
- *
- * Removing a name that is not watched is not an error and not a special case: it returns a list
- * equal to the one it was given, and the caller decides whether an unchanged list is worth
- * persisting. That is what a click racing a delta looks like.
+ * The kept list, cleaned: a bad entry is dropped, a duplicate's LATER copy wins (and moves to the
+ * newest end, which is what an unwatch appends), a name that is watched is dropped because its
+ * watch entry is the authority, and the newest `RESPAWN_MAX_KEPT` survive.
  */
-export function respawnWithoutWatch(prefs: RespawnPrefs, key: string): RespawnPrefs {
-  const want = key.trim().toLowerCase()
-  return { ...prefs, watches: prefs.watches.filter((w) => w.key !== want) }
+function normalizeKept(raw: unknown, watched: ReadonlySet<string>): RespawnKeptCustom[] {
+  const byKey = new Map<string, number>()
+  for (const k of Array.isArray(raw) ? (raw as unknown[]) : []) {
+    const entry = (typeof k === 'object' && k !== null ? k : {}) as Partial<RespawnKeptCustom>
+    const key = canonRespawnKey(entry.key)
+    const sec = normalizeCustomSec(entry.customSec)
+    if (key.length === 0 || sec === undefined || watched.has(key)) continue
+    byKey.delete(key)
+    byKey.set(key, sec)
+  }
+  return [...byKey].slice(-RESPAWN_MAX_KEPT).map(([key, customSec]) => ({ key, customSec }))
 }
 
 /**

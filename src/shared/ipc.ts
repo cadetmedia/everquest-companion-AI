@@ -946,6 +946,21 @@ export const IPC = {
   // running module and pushes (`registry.flushNow`) exactly as the setter does. Returns whether
   // anything was actually watching that name — false is a no-op, not a failure.
   respawnUnwatch: 'respawn:unwatch',
+  // renderer -> main: "stop watching all of these" — the Timers tab's Clear all (owner ruling,
+  // 2026-10-17). Payload is the list of canonical mob KEYS the tab's current scope shows; main
+  // validates every one exactly as `respawnUnwatch` does, refuses the whole call when any fails or
+  // the list is over `RESPAWN_MAX_WATCHES`, applies the same pure unwatch per key, and persists and
+  // pushes ONCE. Returns how many watches it removed.
+  respawnUnwatchMany: 'respawn:unwatchMany',
+  // renderer -> main: "watch this mob" — the Recently-killed panel's Watch. Payload is the KEY and
+  // the display name; main adds the watch to the STORED list and brings back a number the player
+  // typed before an earlier unwatch (2026-10-17). Returns whether a watch was added.
+  respawnWatch: 'respawn:watch',
+  // renderer -> main: "this mob's respawn is N seconds", or with null "go back to the calculated
+  // number" — the edit modal's Save and its way back (round 9). Payload is KEY, display and the
+  // seconds or null; clearing also drops any kept copy of an older typed number. Returns whether
+  // the call was valid and applied.
+  respawnSetCustom: 'respawn:setCustom',
 
   // ---- per-mob resist profiles (JOS-382 — docs/plans/resist-mining.md) -------------------
   //
