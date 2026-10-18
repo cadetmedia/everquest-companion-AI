@@ -20,13 +20,8 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node
 import { join, resolve, sep } from 'node:path'
 import { app } from 'electron'
 import { logError } from './errorLog'
-import {
-  cespToManifestSounds,
-  deriveSoundId,
-  listPacks,
-  userPacksRoot,
-  type CespManifest
-} from './sounds'
+import { writeFileDurable } from './telemetry/durableWrite'
+import { cespToManifestSounds, deriveSoundId, listPacks, userPacksRoot, type CespManifest } from './sounds'
 import { USER_SOUNDS_PACK_ID } from '../shared/userSounds'
 import { packInstallHttpError } from '../shared/packInstall'
 import { isSafePackId, isSafeSourceRepo, isSafeSourceRef, isSafeSourcePath } from './security'
@@ -138,9 +133,11 @@ function readDiskCache(): { at: number; packs: RegistryPack[] } | null {
   return null
 }
 
+/** Atomic (temp + fsync + rename) through this app's one whole-file writer, so a process killed
+ *  mid-write leaves the previous cache rather than a torn one. */
 function writeDiskCache(packs: RegistryPack[]): void {
   try {
-    writeFileSync(cacheFile(), JSON.stringify({ at: Date.now(), packs }), 'utf8')
+    writeFileDurable(app.getPath('userData'), cacheFile(), JSON.stringify({ at: Date.now(), packs }))
   } catch (err) {
     logError('main:packRegistry', { message: 'failed writing registry cache', err })
   }

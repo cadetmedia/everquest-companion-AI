@@ -19,8 +19,9 @@
 // on every profile goes false, and the mob page says so instead of showing an empty card.
 
 import { app } from 'electron'
-import { readFileSync, statSync, writeFileSync, renameSync, mkdirSync } from 'node:fs'
+import { readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
+import { writeFileDurable } from '../telemetry/durableWrite'
 import { Worker } from 'node:worker_threads'
 import { effectiveEqRoot } from '../log/config'
 import { logError } from '../errorLog'
@@ -91,13 +92,9 @@ function readCache(stamp: { size: number; mtimeMs: number }): SpellResistTable |
 }
 
 function writeCache(stamp: { size: number; mtimeMs: number }, table: SpellResistTable): void {
-  const path = cachePath()
-  const tmp = `${path}.tmp`
   const file: CacheFile = { version: SPELL_RESIST_CACHE_VERSION, ...stamp, table }
   try {
-    mkdirSync(app.getPath('userData'), { recursive: true })
-    writeFileSync(tmp, JSON.stringify(file), 'utf8')
-    renameSync(tmp, path)
+    writeFileDurable(app.getPath('userData'), cachePath(), JSON.stringify(file))
   } catch (err) {
     // Best-effort: a failed cache write costs one re-parse next launch, nothing else.
     logError('main:resistTable', { message: 'spell-resist-cache write failed', err })
