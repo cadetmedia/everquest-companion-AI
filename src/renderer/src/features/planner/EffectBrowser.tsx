@@ -67,6 +67,7 @@ import { Box, Typography } from '@mui/material'
 import type { ClassAbbr } from '@shared/classCombo'
 import type { SocketType } from '@shared/planner/types'
 import { useWindowedRows } from '../../lib/useWindowedRows'
+import { useMetVersion } from '../../lib/useMetInLog'
 import EffectFilterBar from './EffectFilterBar'
 import { DonorLine, GroupLine, ROW_HEIGHT } from './EffectRows'
 import {
@@ -134,7 +135,10 @@ interface RowsInput {
  */
 function useVisibleRows(input: RowsInput): { rows: BrowserRow[]; hidden: HiddenByView } {
   const { donors, filters, text, planClasses, view, focus, axis, open } = input
+  // The era filter reads the player's own log too (lib/useMetInLog): refilter when it meets more.
+  const met = useMetVersion()
   const filtered = useMemo(() => {
+    void met
     const rows = filterDonors(donors, { ...filters, text }, planClasses, view)
     // ONE pass, ONE rule — `itemFits` (plannerPreset.ts), which is R3's flat no on haste plus R2's
     // two halves asked about the HOST rather than the set: an effect can only move into an item it
@@ -142,14 +146,13 @@ function useVisibleRows(input: RowsInput): { rows: BrowserRow[]; hidden: HiddenB
     // still wear once the socket has narrowed it. Nothing about it is restated here.
     const wearer = filters.trioOnly ? planClasses : []
     return focus === null ? rows : rows.filter((d) => itemFits(d, focus, wearer))
-  }, [donors, filters, text, planClasses, view, focus])
+  }, [donors, filters, text, planClasses, view, focus, met])
   const groups = useMemo(() => groupDonors(filtered, axis, donorEraOf), [filtered, axis])
   const rows = useMemo(() => browserRows(groups, open), [groups, open])
-  const hidden = useMemo(
-    () =>
-      rows.length > 0 ? NOTHING_HIDDEN : hiddenByView(donors, { ...filters, text }, planClasses, view),
-    [rows.length, donors, filters, text, planClasses, view]
-  )
+  const hidden = useMemo(() => {
+    void met
+    return rows.length > 0 ? NOTHING_HIDDEN : hiddenByView(donors, { ...filters, text }, planClasses, view)
+  }, [rows.length, donors, filters, text, planClasses, view, met])
   return { rows, hidden }
 }
 

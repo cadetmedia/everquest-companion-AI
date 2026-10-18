@@ -47,6 +47,7 @@ import { useBackTarget } from '../../appBack'
 // these are what it DOES, what upgrading buys, and what carries it.
 import { GrantsSection, UpgradeSection } from './SpellUpgradePanel'
 import SpellItemsSection from './SpellItemsSection'
+import { OutOfEraChip } from '../leveling/UnlockList'
 
 /**
  * THE ONE RUNG OF THE LADDER, as a row: the level its class gains it at, the name, and when YOU
@@ -83,6 +84,8 @@ function LadderRow({ step, combo }: { step: SpellLineStep; combo: readonly Class
           <Typography variant="body2">{step.name}</Typography>
         </SpellTooltip>
       )}
+      {/* The rung stays on the ladder (it is the table's); an out-of-era one says so. */}
+      <OutOfEraChip outOfEra={step.outOfEra} />
       <Box sx={{ flexGrow: 1 }} />
       <Typography variant="caption" color="text.secondary" data-testid="spell-line-when">
         {when}

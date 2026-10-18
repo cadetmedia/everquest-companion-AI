@@ -39,6 +39,9 @@ import type { JSX } from 'react'
 import { Box, Chip } from '@mui/material'
 import { EQ_ITEM_COLORS } from '../../lib/ItemWindow'
 import { KnownItemTooltip } from '../../lib/KnownItemTooltip'
+import { questOutOfEra } from '@shared/planner/era'
+import { mobOutOfEra } from '@shared/mobEra'
+import { useMetVersion } from '../../lib/useMetInLog'
 import { eraChip, type EraSubject } from './plannerData'
 import type { DonorProgress, DonorState } from './plannerProgress'
 
@@ -104,10 +107,15 @@ export function StateChip({ progress, title }: { progress: DonorProgress; title?
  * banner ride on it; a plan entry the corpus has no row for passes `{ key }` and gets the
  * catalog-only answer. `plannerData.eraChip` writes the hover text, so the chip never has to guess
  * which witness spoke.
+ *
+ * `outOnly` draws the chip for a positive out-of-era verdict and nothing for `era?` — for a surface
+ * that is not a filter over the corpus (the loot drill-down), where a question mark says nothing.
  */
-export function EraChip({ subject }: { subject: EraSubject }): JSX.Element | null {
+export function EraChip({ subject, outOnly }: { subject: EraSubject; outOnly?: boolean }): JSX.Element | null {
+  // The player's own log outranks the wiki (lib/useMetInLog): redraw when it meets more.
+  useMetVersion()
   const info = eraChip(subject)
-  if (info === null) return null
+  if (info === null || (outOnly === true && info.unknown)) return null
   return (
     <Chip
       size="small"
@@ -156,6 +164,43 @@ export function OwnedChip({ owned }: { owned?: boolean }): JSX.Element | null {
       sx={CHIP_SX}
     />
   )
+}
+
+/**
+ * The era chip's look for a wiki page that is NOT an item (a mob, a quest), on a LOOKUP surface — a
+ * search result, a detail page — where an out-of-era row is kept and labelled rather than hidden.
+ */
+function OutOfEraPageChip({ title }: { title: string }): JSX.Element {
+  return (
+    <Chip
+      size="small"
+      label="out of era"
+      title={title}
+      data-testid="page-era-chip"
+      color="warning"
+      variant="outlined"
+      sx={{ ...CHIP_SX, flexShrink: 0 }}
+    />
+  )
+}
+
+/**
+ * A MOB's chip: drawn exactly when `shared/mobEra.ts mobOutOfEra` says so (the record's data-build
+ * flag, unless the player's own log met the mob), and nothing otherwise — an absent flag is in era.
+ */
+export function MobEraChip({ mob }: { mob: Parameters<typeof mobOutOfEra>[0] }): JSX.Element | null {
+  useMetVersion()
+  if (!mobOutOfEra(mob)) return null
+  return <OutOfEraPageChip title="The era rules put this mob out of era: this server has not opened its content." />
+}
+
+/**
+ * A QUEST's chip: drawn exactly when `shared/planner/era.ts questOutOfEra` calls its page banner out
+ * of era, and nothing for an absent or in-era tag — silence is not a verdict (law 1).
+ */
+export function QuestEraChip({ eraTag }: { eraTag?: string }): JSX.Element | null {
+  if (eraTag === undefined || !questOutOfEra({ eraTag })) return null
+  return <OutOfEraPageChip title={`Its wiki page is banner-tagged ${eraTag}, which the wiki marks out of era.`} />
 }
 
 /**

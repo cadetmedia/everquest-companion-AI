@@ -19,6 +19,7 @@ import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } f
 import type { MapData, MapPackPrefs, MapPoint, MapSearchHit, ZoneShort } from '@shared/maps'
 import { metVersion } from '@shared/metInLog'
 import type { MobEntry } from '@shared/types'
+import { useMetVersion } from '../../lib/useMetInLog'
 import { MOB_CATALOG } from '../mobs/mobSearch'
 import { useWishlist } from '../wishlist/useWishlist'
 import { CROSS_ZONE_LIMIT, crossZoneRows, type CrossZoneRow } from './crossZone'
@@ -91,6 +92,8 @@ export function useMapPane({ zoneName, points, catalog, mapId, onCenter }: MapPa
   const wishlist = useWishlist().list
   const wishedKeys = useMemo(() => new Set(wishlist.entries.map((e) => e.itemKey)), [wishlist.entries])
   const eraOnly = useTravelEra()
+  // The subscription (lib/useMetInLog): this view re-renders when the log meets more.
+  useMetVersion()
   const met = metVersion()
   const allMobs = useMemo<MobPaneRow[]>(
     () => (zoneName == null ? [] : mobRows(zoneName, catalog, wishedKeys, eraOnly)),
@@ -212,10 +215,13 @@ export function useCrossZoneRows(args: {
 }): CrossZoneRow[] {
   const { query, hits, here, zones } = args
   const installed = useMemo(() => new Set(zones), [zones])
+  // Each row carries its mob's era verdict, which the player's own log can overrule.
+  const met = useMetVersion()
   return useMemo(() => {
+    void met
     if (query.length === 0) return NO_ROWS
     return crossZoneRows({ query, catalog: MOB_CATALOG, hits, here, installed })
-  }, [query, hits, here, installed])
+  }, [query, hits, here, installed, met])
 }
 
 // ---- the view's whole pane wiring, in one call ------------------------------------------

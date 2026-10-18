@@ -51,6 +51,7 @@ import { formatDate, formatDateTime } from '../../lib/formatDate'
 import { tierStyle } from '../../lib/tierChip'
 import { CellLink } from '../../lib/CellLink'
 import { dropZoneTarget } from '../gear/dropLinks'
+import { useMetVersion } from '../../lib/useMetInLog'
 import { outOfEraLabel } from './dropEra'
 import { ItemDrillDown, type OpenItem } from './MobDropRow'
 // The two DROP BLOCKS and the derivation behind them, split out at the 400-line ceiling when the
@@ -409,6 +410,8 @@ export function MobPage({
     setDrill({ item, family: family === true })
   }
 
+  // The era split reads the player's own log too (lib/useMetInLog): redraw when it meets more.
+  useMetVersion()
   const { wiki, outOfEra, lines, byKey, extra } = dropSections(data)
   const quests = data?.quests ?? []
   const wikiUrl = wikiPageUrl(data?.page)

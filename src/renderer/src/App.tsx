@@ -92,6 +92,7 @@ import { TelemetryNotice } from './features/preferences/TelemetryNotice'
 import { WhatsNewTeaser } from './features/whatsnew/WhatsNewTeaser'
 import { setCurrentView } from './lib/currentView'
 import { dwellView, useViewDwell } from './lib/telemetry'
+import { MetInLogFeed } from './lib/useMetInLog'
 
 /**
  * The views the router reaches with at most ONE callback — split out of `ViewContent` purely as
@@ -603,6 +604,10 @@ export default function App(): JSX.Element {
           player — all of it below this component rather than inside it, so a push to any of the
           four modules they read re-renders THEM and not the app. See AppCelebrations. */}
       <AppCelebrations />
+
+      {/* What the player's own log met (mobs, items, zones), fed to the era predicates once for the
+          window: the log outranks a wiki era banner. Renders nothing; see lib/useMetInLog. */}
+      <MetInLogFeed />
 
       <LogSwitchNudge />
 

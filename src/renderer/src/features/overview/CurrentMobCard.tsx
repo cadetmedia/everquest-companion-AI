@@ -29,6 +29,7 @@ import type { MobDrop, MobKnowledge } from '@shared/types'
 import { DashCard, QuietNote } from '../combat/combatShared'
 import { KnownItemTooltip } from '../../lib/KnownItemTooltip'
 import { itemCountKey } from '../../lib/itemName'
+import { useMetVersion } from '../../lib/useMetInLog'
 import { dropEraSubject, outOfEraLabel, splitDropsByEra } from '../mobs/dropEra'
 import type { MobTarget } from '../mobs/mobTarget'
 import { foldSeenVariants } from '../mobs/seenVariants'
@@ -136,6 +137,7 @@ function TapLine({
  */
 function DropList({ state, onOpen }: { state: CurrentMobState; onOpen: () => void }): JSX.Element {
   const [showOut, setShowOut] = useState(false)
+  useMetVersion()
   const { shown, out } = splitDropsByEra(state.knowledge?.dropsWiki ?? [])
   // The SAME fold the mob page uses (JOS-196) — this card has no room for the breakdown and
   // deliberately does not offer it, but "3× yours" and "1× yours" cannot be two answers to one

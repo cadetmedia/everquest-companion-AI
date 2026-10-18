@@ -47,6 +47,7 @@ export function dropEraSubject(drop: MobDrop): EraSubject {
   // becoming an explicit `undefined`, which reads as a claim.
   if (drop.eraTag !== undefined) subject.eraTag = drop.eraTag
   if (drop.eraZones?.length) subject.zones = drop.eraZones
+  if (drop.eraSources?.length) subject.wikiSources = drop.eraSources
   return subject
 }
 

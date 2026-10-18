@@ -44,6 +44,7 @@ import type { MapSearchHit, ZoneShort } from '@shared/maps'
 import type { MobEntry } from '@shared/types'
 import { scoreQuery, tokenize } from '../../../../shared/fuzzy'
 import { zoneShortNameFromCatalog } from '../../../../shared/zones'
+import { mobOutOfEra } from '../../../../shared/mobEra'
 import { mobPins } from './mobPins'
 import { zoneLabel } from './zoneOptions'
 
@@ -75,6 +76,11 @@ export interface CrossZoneRow {
   note: string | null
   /** The catalog row itself (mob rows only) — pins the mob-page deep link's identity. */
   entry?: MobEntry
+  /**
+   * Set when the era rules put this mob out of era (`shared/mobEra.ts mobOutOfEra`, the
+   * record's data-build flag over the player's own log); absent otherwise. A search is a lookup, so the row is kept and chipped.
+   */
+  outOfEra?: true
   score: number
 }
 
@@ -162,6 +168,7 @@ function mobRow(entry: MobEntry, zoneRaw: string, score: number, installed: Read
     at: zone == null || !first ? null : { x: first.x, y: first.y },
     note: mobNote(entry, stem, zone, zoneCount),
     entry,
+    ...(mobOutOfEra(entry) ? { outOfEra: true as const } : {}),
     score
   }
 }

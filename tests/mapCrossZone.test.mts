@@ -306,3 +306,19 @@ test('every row the real corpus produces is internally consistent', () => {
     if (row.zone != null && row.at != null) assert.equal(row.note, null)
   }
 })
+
+// ---- the era chip: a search is a LOOKUP, so an out-of-era mob is kept and tagged --------------
+
+test('a mob flagged outOfEra stays in the cross-zone search and says so; an unflagged one (even bannered) carries nothing', () => {
+  const catalog: MobEntry[] = [
+    ...CATALOG,
+    { page: 'Revamp', outOfEra: true, name: 'Visilin', zones: ['Plane of Fear'] },
+    { page: 'Classic', eraTag: 'Velious', name: 'Visilin', zones: ['Najena'] }
+  ]
+  const rows = searchMobsAcrossZones({ query: 'visilin', catalog, here: null, installed: INSTALLED })
+  const revamp = rows.find((r) => r.id.startsWith('mob#Revamp#'))
+  assert.ok(revamp, 'the out-of-era mob is still a search result')
+  assert.equal(revamp.outOfEra, true)
+  assert.equal(rows.find((r) => r.id.startsWith('mob#Classic#'))?.outOfEra, undefined)
+  assert.ok(!('outOfEra' in (rows.find((r) => r.id.startsWith('mob#Exact#')) ?? {})), 'absent, never undefined')
+})

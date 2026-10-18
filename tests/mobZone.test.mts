@@ -15,7 +15,7 @@ import assert from 'node:assert/strict'
 import type { MobEntry } from '../src/shared/types'
 // RELATIVE, not `@shared/…`-style: these are VALUE imports and the alias only exists inside the
 // vite build (mobSearch.ts:33 documents the same constraint for the same reason).
-import { mobsInZone, zoneKey } from '../src/renderer/src/features/mobs/mobZone'
+import { mobsInZone, rosterInZone, zoneKey } from '../src/renderer/src/features/mobs/mobZone'
 import mobsJson from '../src/renderer/src/data/eqlegends/mobs.json'
 
 /** A minimal catalog row — only the fields mobsInZone reads. */
@@ -240,4 +240,26 @@ test('real catalog: an unknown place returns [] rather than guessing', () => {
   // "The Ruins of Old Guk" and friends — are renames, and are answered above by the verified
   // table rather than by a string rule.)
   assert.deepEqual(mobsInZone('Definitely Not A Zone', REAL), [])
+})
+
+// =============================================================================
+// 4. THE ERA FOLD — the roster a player is OFFERED (rosterInZone)
+// =============================================================================
+
+test('rosterInZone: a mob flagged outOfEra is hidden; a raw banner alone (the cave bat case) and an untagged mob are kept', () => {
+  const catalog: MobEntry[] = [
+    { page: 'r1', outOfEra: true, name: 'a revamp fiend', level: '55', zones: ['Plane of Fear'] },
+    { page: 'r2', eraTag: 'Velious', name: 'a dracoliche', level: '55', zones: ['Plane of Fear'] },
+    { page: 'r3', name: 'a fright', level: '50', zones: ['Plane of Fear'] }
+  ]
+  assert.deepEqual(
+    rosterInZone('Plane of Fear', catalog).map((m) => m.page),
+    ['r3', 'r2']
+  )
+  // The join itself is untouched — it still knows where the out-of-era mob lives.
+  assert.equal(mobsInZone('Plane of Fear', catalog).length, 3)
+})
+
+test('rosterInZone: a catalog with no era tags at all is exactly mobsInZone', () => {
+  assert.deepEqual(rosterInZone('Plane of Sky', CATALOG), mobsInZone('Plane of Sky', CATALOG))
 })

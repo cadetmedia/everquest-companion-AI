@@ -30,6 +30,7 @@ import type { MobEntry } from '@shared/types'
 // inside the vite build, and `tests/plannerSourceIndex.test.mts` reaches this module under the
 // node runner. Type-only imports are erased, so they keep the alias.
 import { buildSourceIndex, type ItemSource, type SourceIndex } from '../../../shared/itemSources'
+import { mobKey } from '../../../shared/mobKey'
 import mobsJson from '../data/eqlegends/mobs.json'
 
 export {
@@ -58,6 +59,26 @@ let INDEX: Map<string, ItemSource[]> | null = null
 export function sourceIndex(): SourceIndex {
   INDEX ??= buildSourceIndex(catalog.mobs ?? [])
   return INDEX
+}
+
+/** mobKey(name) → every catalog row of that name. Built on first use, like the index above. */
+let BY_NAME: Map<string, MobEntry[]> | null = null
+
+/**
+ * Every mob-catalog row whose NAME is this one (folded by `mobKey`), or `[]` when the catalog holds
+ * none. The era rule's join from an item page's `|dropsfrom` mob to the catalog's verdict on it.
+ */
+export function catalogRowsNamed(name: string): readonly MobEntry[] {
+  if (BY_NAME === null) {
+    BY_NAME = new Map()
+    for (const mob of catalog.mobs ?? []) {
+      const key = mobKey(mob.name)
+      const rows = BY_NAME.get(key)
+      if (rows) rows.push(mob)
+      else BY_NAME.set(key, [mob])
+    }
+  }
+  return BY_NAME.get(mobKey(name)) ?? []
 }
 
 /**

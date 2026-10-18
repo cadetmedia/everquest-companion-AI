@@ -34,6 +34,7 @@ import type { CharacterSnap } from '@shared/characterTypes'
 // see `useGearCompare` for why this channel and not the ownership payload beside it.
 import { usePlannerInventory } from '../planner/plannerInventory'
 import { outputUpdatedMillis } from '../../lib/outputFreshness'
+import { useMetVersion } from '../../lib/useMetInLog'
 import { equippedIndex, type EquippedIndex } from './gearCompare'
 // ONE era verdict for the whole app: the exaltation browser's, reached through the same three
 // witnesses (mob catalog ∪ the page's own drop list ∪ the era banner). A `GearRow` carries `key`,
@@ -173,10 +174,12 @@ export function useGearIndex(): GearIndexState {
 /** The era verdict as the pure filter model wants it — a stable identity, so the memo can key on it.
  *  ONE for the window since the lag sweep (2026-10-11), not one per mount: the Gear tab's kept
  *  filter answer (`lib/kept.ts`) keys on this identity, and a per-mount closure would miss on
- *  every re-open. */
-const ERA_HIDDEN = { eraHidden: (row: GearRow): boolean => eraHides(row, true) }
+ *  every re-open. A NEW identity whenever the player's log meets more (lib/useMetInLog), because
+ *  the verdict moved: the window's one slot is keyed by the evidence's version. */
+const ERA_HIDDEN: Kept<{ eraHidden: (row: GearRow) => boolean }> = { last: null }
 export function useEraHidden(): { eraHidden: (row: GearRow) => boolean } {
-  return ERA_HIDDEN
+  const met = useMetVersion()
+  return kept(ERA_HIDDEN, [met], () => ({ eraHidden: (row: GearRow): boolean => eraHides(row, true) }))
 }
 
 // ---- the ownership join (JOS-285, phase 4) --------------------------------------------

@@ -28,7 +28,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { loadSpellDb } from '../src/main/data/spellDb'
 import { buildSpellDetail } from '../src/main/data/spellDetail'
-import { buildSpellLinePath } from '../src/main/data/spellLinePath'
+import { buildSpellLinePath, dbRowFor } from '../src/main/data/spellLinePath'
 import { lineContaining, replacedBy } from '../src/main/data/spellLineLookup'
 import { spellLineNote, spellNeighbourLine, spellStepWhen } from '../src/shared/spellDetail'
 import { CLASS_ABBRS, type ClassAbbr } from '../src/shared/classCombo'
@@ -252,4 +252,19 @@ test('P6 a client spelling with an apostrophe finds the wiki row under the one f
   const db = loadSpellDb()
   assert.equal(buildSpellDetail(db, 'O`Keil\'s Radiation', [], {}).found, true)
   assert.equal(buildSpellDetail(db, "Jonthan's Whistling Warsong III", [], {}).found, true)
+})
+
+test('P14 a rung whose spell row is out of era is marked on the ladder; an in-era rung carries nothing', () => {
+  // Aegolism is the cleric Symbol line's out-of-era rung (Kunark); the rest of the ladder is classic.
+  const path = buildSpellLinePath(db, 'Aegolism', ['CLR'])
+  assert.ok(path, 'Aegolism sits on a ladder')
+  const out = path.steps.filter((s) => s.outOfEra === true)
+  assert.ok(out.some((s) => s.name === 'Aegolism'), 'the out-of-era rung is not marked')
+  assert.ok(path.steps.length > out.length, 'every rung was marked')
+  for (const s of path.steps) {
+    // The step's mark IS its DB row's verdict, and an unmarked step has no field at all.
+    const row = dbRowFor(db, s.name)
+    if (row?.outOfEra === true) assert.equal(s.outOfEra, true, s.name)
+    else assert.equal('outOfEra' in s, false, s.name)
+  }
 })

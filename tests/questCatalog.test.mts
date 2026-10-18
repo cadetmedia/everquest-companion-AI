@@ -415,3 +415,18 @@ test('the committed catalog carries the coin costs, and a known donation quest r
   assert.ok((scrolls.factions?.length ?? 0) > 0, 'a faction quest whose whole cost is coin')
   for (const q of coined) assert.match(q.coin ?? '', /^\d+ (gold|platinum|silver|copper)$/)
 })
+
+test('a quest page era banner rides onto each use built from it, and an untagged quest adds nothing', () => {
+  const index = buildQuestItemIndex({
+    scrapedAt: '',
+    source: 'fixture',
+    quests: [
+      { name: 'Revamp Quest', page: 'Revamp Quest', eraTag: 'FearHateRevamp', requiredItems: ['Fear Shard'] },
+      { name: 'Plain Quest', page: 'Plain Quest', requiredItems: ['Fear Shard'] }
+    ]
+  })
+  const uses = index.get(questItemKey('Fear Shard')) ?? []
+  assert.equal(uses.find((u) => u.page === 'Revamp Quest')?.eraTag, 'FearHateRevamp')
+  const plain = uses.find((u) => u.page === 'Plain Quest')
+  assert.ok(plain && !('eraTag' in plain), 'absent, never undefined')
+})

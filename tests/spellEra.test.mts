@@ -31,7 +31,7 @@
 
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { applySpellEra } from '../src/main/data/spellEra.ts'
+import { applySpellEra, spellBannerOutOfEra } from '../src/main/data/spellEra.ts'
 import { loadSpellDb } from '../src/main/data/spellDb.ts'
 import { buildSpellDetail } from '../src/main/data/spellDetail.ts'
 import { buildLevelUnlocks } from '../src/main/data/levelUnlocks.ts'
@@ -113,12 +113,14 @@ test('applySpellEra marks the badged rows and says nothing about the rest', () =
   assert.ok(report.silent <= 5, `${report.silent} rows with no verdict`)
   assert.equal(report.table, Object.keys(SIDECAR.spells).length)
   // The marked set IS the badged set, name for name — the join invents nothing and drops nothing.
-  const marked = spells.filter((s) => s.outOfEra === true).map((s) => s.name)
+  // (A row's own out-of-era banner is the second witness; on a catalog without `eraTag` it adds none.)
+  const badged = (s: SpellEntry): boolean => verdict(s.name) === true || spellBannerOutOfEra(s)
+  const marked = spells.filter((s) => s.outOfEra === true)
   assert.deepEqual(
-    marked.filter((n) => verdict(n) !== true),
+    marked.filter((s) => !badged(s)).map((s) => s.name),
     []
   )
-  assert.equal(marked.length, RAW.filter((s) => verdict(s.name) === true).length)
+  assert.equal(marked.length, RAW.filter(badged).length)
 })
 
 test('a table that is silent about a spell leaves the row untouched — silence is not a verdict', () => {
@@ -216,7 +218,10 @@ test('every folded row is one the sidecar BADGED — the fold never runs on sile
     const u = unlocksAtLevel(data, combo('CLR', 'DRU', 'SHM'), level)
     for (const row of u.outOfEraSpells) {
       folded += 1
-      assert.equal(verdict(row.name), true, `${row.name} was folded without a verdict`)
+      // A verdict is the sidecar's badge OR the row's own out-of-era banner (spellBannerOutOfEra).
+      const raw = RAW.find((s) => s.name === row.name)
+      const badged = verdict(row.name) === true || (raw !== undefined && spellBannerOutOfEra(raw))
+      assert.equal(badged, true, `${row.name} was folded without a verdict`)
     }
     for (const row of u.spells) assert.notEqual(row.spell?.outOfEra, true, `${row.name} was shown while badged`)
   }
@@ -238,4 +243,28 @@ test('the SEARCH still answers for a badged spell, and marks it (JOS-392 rows, J
     currentLevel: null
   }).rows.find((r) => r.name === 'Snails Healing')
   assert.equal(snails?.spell?.outOfEra, undefined)
+})
+
+test('a row whose OWN banner is out of era is marked even where the sidecar says in era; no banner, no change', () => {
+  // Speed of the Shissar's shape: a `{{Kunark Era}}` page whose sidecar row answered `false`.
+  const rows: (SpellEntry & { eraTag?: string })[] = [
+    { name: 'Bannered Kunark', eraTag: 'Kunark', durationMs: null, illusion: false },
+    { name: 'Bannered Classic', eraTag: 'Classic', durationMs: null, illusion: false },
+    { name: 'Unbannered', durationMs: null, illusion: false },
+    { name: 'Bannered But Never Asked', eraTag: 'FearHateRevamp', durationMs: null, illusion: false }
+  ]
+  const file = {
+    ...SIDECAR,
+    spells: { 'bannered kunark': false, 'bannered classic': false, unbannered: false }
+  } as PageEraFile
+  const { spells, report } = applySpellEra(rows, file)
+  assert.equal(spells[0].outOfEra, true)
+  assert.equal('outOfEra' in spells[1], false)
+  assert.equal('outOfEra' in spells[2], false)
+  assert.equal(spells[3].outOfEra, true)
+  // A banner is a verdict, so the never-asked row is MARKED rather than counted silent.
+  assert.equal(report.marked, 2)
+  assert.equal(report.silent, 0)
+  assert.equal(spellBannerOutOfEra(rows[0]), true)
+  assert.equal(spellBannerOutOfEra(rows[2]), false)
 })

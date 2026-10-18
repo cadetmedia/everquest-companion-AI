@@ -1,4 +1,4 @@
-import type { JSX } from 'react'
+import { Fragment, type JSX } from 'react'
 import { Box, Chip, CircularProgress, Stack, Typography } from '@mui/material'
 import AutoStoriesIcon from '@mui/icons-material/AutoStories'
 import type { ItemKnowledge, ItemQuestUse, ItemRecipeUse } from '@shared/types'
@@ -7,6 +7,7 @@ import { wikiPageUrl } from '@shared/wiki'
 import { CellLink } from '../../lib/CellLink'
 import { KnownItemTooltip } from '../../lib/KnownItemTooltip'
 import { questUseOutcomes, questUseWhere } from '../../lib/itemKnowledgeView'
+import { QuestEraChip } from '../planner/PlannerChips'
 // What the item is on the way to (a race, a class, a deity), drawn under the quest uses.
 import UnlockChips from '../unlocks/UnlockChips'
 import { itemUnlockPaths } from '../unlocks/unlockJoins'
@@ -147,8 +148,12 @@ function QuestUsesBlock({
           Used in {data.questUses.length === 1 ? 'quest' : 'quests'}:
         </Typography>
         <Stack direction="row" spacing={1.25} flexWrap="wrap" useFlexGap sx={{ mt: 0.5 }}>
+          {/* A lookup (what is this item for), so an out-of-era quest stays listed and is chipped. */}
           {data.questUses.map((u) => (
-            <QuestUseChip key={`${u.source}:${u.quest}:${u.role ?? ''}`} use={u} links={links} />
+            <Fragment key={`${u.source}:${u.quest}:${u.role ?? ''}`}>
+              <QuestUseChip use={u} links={links} />
+              <QuestEraChip eraTag={u.eraTag} />
+            </Fragment>
           ))}
         </Stack>
       </Box>

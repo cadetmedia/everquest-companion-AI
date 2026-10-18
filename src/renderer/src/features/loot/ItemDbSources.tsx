@@ -37,6 +37,10 @@ import { CellLink } from '../../lib/CellLink'
 // stop working — so the names open the same surfaces by the same refuse-over-guess rules.
 import { dropMobTarget, dropZoneTarget } from '../gear/dropLinks'
 import type { MobTarget } from '../mobs/mobTarget'
+import { mobOutOfEra } from '@shared/mobEra'
+import { useMetVersion } from '../../lib/useMetInLog'
+import { EraChip, MobEraChip } from '../planner/PlannerChips'
+import type { EraSubject } from '../planner/plannerData'
 
 /**
  * How many source rows are drawn before the rest collapse into a count. A handful of common
@@ -86,7 +90,10 @@ function ZoneName({ zone, onOpenMapZone }: { zone: string; onOpenMapZone?: OpenM
   return <CellLink text={zone} onOpen={() => { onOpenMapZone(stem) }} />
 }
 
-/** One known source: the mob, its level text VERBATIM when stated, and where it lives. */
+/**
+ * One known source: the mob, its level text VERBATIM when stated, and where it lives. This list is a
+ * LOOKUP (who drops this item), so a mob the era rules put out of era stays and is chipped.
+ */
 function SourceRow({
   source,
   onOpenMob,
@@ -96,6 +103,10 @@ function SourceRow({
   onOpenMob?: OpenMob
   onOpenMapZone?: OpenMapZone
 }): JSX.Element {
+  // The mob era predicate reads a row's NAME (and page) to ask the player's own log first, and the
+  // row redraws when that log meets more (lib/useMetInLog).
+  useMetVersion()
+  const mob = { name: source.mob, page: source.mobPage, outOfEra: source.outOfEra }
   return (
     <Box data-testid="loot-db-source" sx={{ py: 0.25 }}>
       <Typography variant="caption" sx={{ display: 'block' }}>
@@ -106,6 +117,12 @@ function SourceRow({
         )}
         {source.levelText != null && (
           <Box component="span" sx={{ color: 'text.disabled' }}> · lvl {source.levelText}</Box>
+        )}
+        {mobOutOfEra(mob) && (
+          <>
+            {' '}
+            <MobEraChip mob={mob} />
+          </>
         )}
       </Typography>
       {source.zones.length > 0 && (
@@ -122,28 +139,31 @@ function SourceRow({
   )
 }
 
-function SectionHead({ title }: { title: string }): JSX.Element {
+function SectionHead({ title, era }: { title: string; era?: EraSubject }): JSX.Element {
   return (
     <Stack direction="row" spacing={0.75} alignItems="center" sx={{ mb: 0.5 }}>
       <Typography variant="subtitle2">{title}</Typography>
       <DbChip />
+      {era && <EraChip subject={era} outOnly />}
     </Stack>
   )
 }
 
 function DropsFromColumn({
   sources,
+  era,
   onOpenMob,
   onOpenMapZone
 }: {
   sources: readonly ItemSource[]
+  era: EraSubject
   onOpenMob?: OpenMob
   onOpenMapZone?: OpenMapZone
 }): JSX.Element {
   const shown = sources.slice(0, MAX_ROWS)
   return (
     <Box sx={{ flex: 1, minWidth: 0 }}>
-      <SectionHead title="Drops from" />
+      <SectionHead title="Drops from" era={era} />
       {sources.length === 0 && (
         <Typography variant="caption" color="text.secondary">
           The mob catalog and this item’s page name no mob for it.
@@ -203,6 +223,20 @@ function DbZonesColumn({
 type OpenMob = ((t: MobTarget) => void) | undefined
 type OpenMapZone = ((zone: ZoneShort) => void) | undefined
 
+/**
+ * THE ITEM ITSELF, as the era join sees it — the same subject shape the Gear and Planner rows hand
+ * `EraChip`: the key (layer 1 inverts the mob catalog from it), the item page's own banner and its
+ * `|dropsfrom` rows. Drawn
+ * `outOnly` beside "Drops from", so an item the wiki puts out of era says so where you read its sources.
+ */
+function itemEraSubject(item: string, knowledge: ItemKnowledge | null): EraSubject {
+  const subject: EraSubject = { key: sourceItemKey(item) }
+  if (knowledge?.eraTag !== undefined) subject.eraTag = knowledge.eraTag
+  // The page's own drop rows: what lets an expansion banner give way (`era.ts bannerGivesWay`).
+  if (knowledge?.dropsFrom?.length) subject.wikiSources = knowledge.dropsFrom
+  return subject
+}
+
 export interface ItemDbSourcesProps {
   /** the item's DISPLAY name — keyed through `sourceItemKey`, never used raw */
   item: string
@@ -230,11 +264,12 @@ export function ItemDbSources({ item, knowledge, onOpenMob, onOpenMapZone }: Ite
     [item, knowledge]
   )
   const zones = useMemo(() => zoneTally(sources), [sources])
+  const era = useMemo(() => itemEraSubject(item, knowledge), [item, knowledge])
 
   return (
     <Box data-testid="loot-db-sources" sx={{ mt: 2 }}>
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3}>
-        <DropsFromColumn sources={sources} onOpenMob={onOpenMob} onOpenMapZone={onOpenMapZone} />
+        <DropsFromColumn sources={sources} era={era} onOpenMob={onOpenMob} onOpenMapZone={onOpenMapZone} />
         <DbZonesColumn zones={zones} onOpenMapZone={onOpenMapZone} />
       </Stack>
     </Box>

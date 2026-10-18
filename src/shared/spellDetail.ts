@@ -65,6 +65,11 @@ export interface SpellLineStep {
    * reading a cleric's ladder must not be told he gets Complete Healing at 39.
    */
   yoursAt: number | null
+  /**
+   * The rung's own spell row is out of era (`SpellEntry.outOfEra`, JOS-393) — `true` or absent, never
+   * `false`. The ladder keeps the rung (it is the table's), and the page marks it.
+   */
+  outOfEra?: true
 }
 
 /** The ladder one class files one spell under, with the spell's own place in it marked. */
