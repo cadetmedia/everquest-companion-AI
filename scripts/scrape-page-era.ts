@@ -77,6 +77,7 @@ import { pageEraKey, type PageEraEntry, type PageEraFile } from '../src/main/pag
 import { eraBadge, layeredVerdict } from '../src/shared/planner/era'
 import type { SpellDbFile } from '../src/shared/types'
 import { isMain } from './sources/isMain'
+import { createCache } from './sources/diskCache'
 import {
   answersSlice,
   asRevBatch,
@@ -113,23 +114,9 @@ const argv = process.argv.slice(2)
 const refresh = argv.includes('--refresh')
 const dryRun = argv.includes('--dry-run')
 
-// ---- disk cache (the scrape-items contract: write only after a complete response) --------------
+// ---- disk cache: sources/diskCache.ts (written only after a complete response) -----------------
 
-function readCache(name: string): unknown {
-  if (refresh) return null
-  const p = resolve(CACHE_DIR, name)
-  if (!existsSync(p)) return null
-  try {
-    return JSON.parse(readFileSync(p, 'utf8')) as unknown
-  } catch {
-    return null
-  }
-}
-
-function writeCache(name: string, data: unknown): void {
-  mkdirSync(CACHE_DIR, { recursive: true })
-  writeFileSync(resolve(CACHE_DIR, name), JSON.stringify(data), 'utf8')
-}
+const { read: readCache, write: writeCache } = createCache(CACHE_DIR, { refresh })
 
 /** This exact slice's cached batch: its hashed file, else an older-named file that proves it is this slice. */
 function readBatch(prefix: string, slice: readonly string[]): unknown {

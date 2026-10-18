@@ -47,12 +47,13 @@
  * resume batch-by-batch instead of duplicating work (a batch file is written only after its
  * response arrived intact). Output keys are sorted, so a re-scrape produces a clean diff.
  */
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
+import { mkdirSync, writeFileSync } from 'fs'
 import { dirname, resolve } from 'path'
 import { fileURLToPath } from 'url'
 import { parseItemWikitext, templateField } from '../src/main/itemLookupParse'
 import { itemKey, type ItemDbEntry, type ItemDbFile } from '../src/main/itemsDb'
 import { isMain } from './sources/isMain'
+import { createCache } from './sources/diskCache'
 import { wikiGet } from './sources/wikiApi'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
@@ -92,28 +93,9 @@ export async function embeddedIn(template: string): Promise<Member[]> {
   throw new Error(`embeddedin ${template}: still continuing after 200 pages, refusing a truncated list`)
 }
 
-// ---- disk cache --------------------------------------------------------------------
+// ---- disk cache: sources/diskCache.ts ------------------------------------------
 
-function cachePath(name: string): string {
-  return resolve(CACHE_DIR, name)
-}
-
-/** Cached JSON, or null when absent/unreadable/`--refresh`. The CALLER names the shape. */
-function readCache(name: string): unknown {
-  if (refresh) return null
-  const p = cachePath(name)
-  if (!existsSync(p)) return null
-  try {
-    return JSON.parse(readFileSync(p, 'utf8')) as unknown
-  } catch {
-    return null
-  }
-}
-
-function writeCache(name: string, data: unknown): void {
-  mkdirSync(CACHE_DIR, { recursive: true })
-  writeFileSync(cachePath(name), JSON.stringify(data), 'utf8')
-}
+const { read: readCache, write: writeCache } = createCache(CACHE_DIR, { refresh })
 
 /** One page of a `prop=revisions` response. `missing` pages carry no revision at all. */
 interface RevPage {

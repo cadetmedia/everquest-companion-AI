@@ -36,6 +36,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
 import { dirname, resolve } from 'path'
 import { fileURLToPath } from 'url'
 import { isMain } from './sources/isMain'
+import { createCache } from './sources/diskCache'
 import { isEmptyParse, parseQuestPage, titleKey, type ParsedQuestPage } from './sources/questPage'
 import type { QuestData, QuestEntry } from '../src/shared/types'
 import { WikiError, wikiGet } from './sources/wikiApi'
@@ -102,28 +103,9 @@ async function allCategories(): Promise<string[]> {
   return out
 }
 
-// ---- disk cache ----------------------------------------------------------------
+// ---- disk cache: sources/diskCache.ts ------------------------------------------
 
-function cachePath(name: string): string {
-  return resolve(CACHE_DIR, name)
-}
-
-/** Cached JSON, or null when absent/unreadable/`--refresh`. The CALLER names the shape. */
-function readCache(name: string): unknown {
-  if (refresh) return null
-  const p = cachePath(name)
-  if (!existsSync(p)) return null
-  try {
-    return JSON.parse(readFileSync(p, 'utf8')) as unknown
-  } catch {
-    return null
-  }
-}
-
-function writeCache(name: string, data: unknown): void {
-  mkdirSync(CACHE_DIR, { recursive: true })
-  writeFileSync(cachePath(name), JSON.stringify(data), 'utf8')
-}
+const { path: cachePath, read: readCache, write: writeCache } = createCache(CACHE_DIR, { refresh })
 
 const pageFile = (pageid: number): string => cachePath(`page-${pageid}.wikitext`)
 

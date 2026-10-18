@@ -39,6 +39,7 @@ import { fileURLToPath } from 'url'
 import { isMobPage, parseMobPage } from './sources/mobPage'
 import type { MobData, MobEntry } from '../src/shared/types'
 import { isMain } from './sources/isMain'
+import { createCache } from './sources/diskCache'
 import { wikiGet } from './sources/wikiApi'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
@@ -94,28 +95,9 @@ async function embeddedIn(template: string): Promise<Member[]> {
   return out
 }
 
-// ---- disk cache ------------------------------------------------------------------
+// ---- disk cache: sources/diskCache.ts ------------------------------------------
 
-function cachePath(name: string): string {
-  return resolve(CACHE_DIR, name)
-}
-
-/** Cached JSON, or null when absent/unreadable/`--refresh`. The CALLER names the shape. */
-function readCache(name: string): unknown {
-  if (refresh) return null
-  const p = cachePath(name)
-  if (!existsSync(p)) return null
-  try {
-    return JSON.parse(readFileSync(p, 'utf8')) as unknown
-  } catch {
-    return null
-  }
-}
-
-function writeCache(name: string, data: unknown): void {
-  mkdirSync(CACHE_DIR, { recursive: true })
-  writeFileSync(cachePath(name), JSON.stringify(data), 'utf8')
-}
+const { path: cachePath, read: readCache, write: writeCache } = createCache(CACHE_DIR, { refresh })
 
 /** MEASURED anonymous multi-value limit (scrape-items.ts header) — 60 ids silently returns nothing. */
 const BATCH = 50
