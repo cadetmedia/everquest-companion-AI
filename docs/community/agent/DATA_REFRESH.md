@@ -5,9 +5,16 @@ How to bring the committed wiki corpus up to date. Running any of this is an own
 
 ## When
 
+Baseline: a full fresh scrape of every wiki file on 2026-10-18 (the phase doc in `../plans/` has the
+run, the checks and what was kept). From then on refreshes are the delta only (owner, 2026-10-18).
+The wiki keeps about 90 days of changes, so a delta must run within 90 days of the last stamp; past
+that it refuses and only a full scrape is left. Respawns, mob factions and races derive offline
+from the mob cache; classes, Plane of Sky, bosses and the era verdicts are not yet covered.
+
 After a game patch or zone rework, give wiki editors a few days, then run the delta. The Gear
 tab's "wiki data from <date>" caption shows the current `scrapedAt`. Before the run, tell the
-owner which files it touches: the delta covers ONLY `items.json` + `mobs.json`. Since 2026-10-10 it
+owner which files it touches: the delta folds `items.json`, `mobs.json`, `spells.json` (with the spell
+title index) and `quests.json` (with the quest cache). Since 2026-10-10 it
 lists every changed page it read and folded nowhere (spell, quest, class, Plane of Sky, redirect),
 and closes with every wiki-derived file it leaves stale and the command that refreshes each.
 

@@ -30,8 +30,8 @@ Merged into `main_community` (local only, NOTHING PUSHED; push after the owner t
 duplication clean-up, Gaps work, Timers Clear all, size-limit headroom, and the era work:
 
 - Data: `mobs.json` records carry `eraTag` (page banner) and `outOfEra: true` by the banner alone
-  (2,941 mobs); `spells.json` and `quests.json` carry `eraTag`. Filled OFFLINE from the local
-  caches, which are STALE (next section).
+  (2,953 mobs after the 2026-10-18 re-baseline); `spells.json` and `quests.json` carry `eraTag`.
+  Filled from the full 2026-10-18 re-scrape (next sections).
 - One mob predicate `src/shared/mobEra.ts` (`mobOutOfEra`) over `src/shared/metInLog.ts` (the log
   evidence store, fed by `src/renderer/src/lib/useMetInLog.ts` from the engine's kills, loot,
   consider and progression modules). Zones (`era.ts zoneEra`) and items (`plannerData.ts
@@ -40,68 +40,57 @@ duplication clean-up, Gaps work, Timers Clear all, size-limit headroom, and the 
 - Surfaces: Achievements Where to go / slayer map / Zone I'm in; Mobs roster (hide) and search
   (tag); map pane, pins, bands, wish counts, level caption; Plan zone levels and mob levels;
   Factions work panel (quests); loot detail droppers / quests / item chip; spell ladder.
-- Verified on the owner's whole log: 2,327 mobs, 2,260 items, 143 zones met; none out of era.
+- Verified on the owner's whole log after the re-baseline: 2,330 mobs, 2,265 looted item keys, 143
+  zones met; none out of era.
 - Known gaps: spells are NOT fed from the log (a cast spell the wiki marks out stays out); the
   in-game map overlay window shows every mob (it gets no log evidence); `questOutOfEra` exists in
   both `shared/questEra.ts` (faction-tab) and `shared/planner/era.ts` (catch_all); a stale comment
   in `features/maps/mobPins.ts` mentions `rosterInZone`.
 
-## The scrape defect (why the data is stale)
+## The scrape defect (fixed 2026-10-18 by a full re-baseline)
 
-- Found 2026-10-18 via "A cave bat": wiki rev 177918 (2026-09-11) is `{{Classic Era}}`; our cache
-  and data hold rev 106364 (`{{Velious Era}}`).
+- Found 2026-10-18 via "A cave bat": wiki rev 177918 (2026-09-11) is `{{Classic Era}}`; the cache
+  and data held rev 106364 (`{{Velious Era}}`).
 - Cause: `scrape-mobs.ts` reads any cached page with no revision check; on 2026-09-29 its cache was
   seeded from the August item cache (5,406 pages carried forward). The item cache has the same
-  no-revision design. The delta tool (`scrape-delta.mts`, recentchanges since `items.json`
-  `scrapedAt`) never looks before that stamp, and the 2026-10-10 delta ran without caches so its
-  fetched text was lost. Every item/mob page edited between August and the stamps may be stale,
-  and the era fields filled from those caches inherit it.
+  no-revision design; the 2026-10-10 delta ran without caches, so its fetched text was lost.
 
-## Phase 1: gap-proof tooling (CODE ONLY, zero requests) — NOT STARTED
+## Re-baseline: DONE 2026-10-18 (owner chose a full re-scrape over the August delta)
 
-Not started: waiting on the owner's go. (An implementer was launched and stopped before it changed
-anything; no commits exist for this phase.) Work goes on `wiki-scraper-fixes` (scraper code) and
-`scrape-delta-tool` (the delta tool, which merges wiki-scraper-fixes first). Target:
+- Backup first: every branch committed and pushed; the gitignored item and mob caches archived at
+  `.claude/worktrees/cache-backup-2026-10-18-items-mobs.tar.gz` (21,585 files).
+- Run in a scratch `main_community` tree with EVERY cache emptied (committed ones too), 1 req/s:
+  `scrape:items --refresh` (378 batches), `scrape:mobs --refresh` (7,964 candidates), `scrape:spells`,
+  `scrape:quests --refresh`, `scrape:classes`, `scrape:posky` (208 item pages), `scrape:bosses`,
+  `scrape:page-era --refresh` (70 requests), `scrape-page-era-spells` (0 left). Respawns were derived
+  offline from the fresh mob pages through scrape-respawns' own `rowsFromBatch`/`dedupe` (same
+  pages, same order, 158 requests saved); `gen-mob-factions`, `gen-mob-races`, `gen:spell-lines`,
+  `gen:engine-spell-overlay` (unchanged), `gen:data-weight` on the merged tree.
+- Before each type's full run, one request of 50 known pages went through the real parsers and was
+  compared with the committed records (owner's ask): mobs 50/50, spells 49/50, quests 46/50 (the 4
+  differ only through the sample's item list), Plane of Sky 16 classes, 95 quests, set unchanged.
+- Result (data-diff vs dd6f4a93): items 269 changed, +9/-12 (renames, redirects); mobs 141 changed,
+  outOfEra +32/-20 (A giant cave bat in); Megan O`Reilly and A kobold king moves fixed; quests +3,
+  34 changed; spells -Magical Monologue ({{Delete}}), Lower Element -> Lower Element I; respawns 545.
+  Every loss was checked against the old and new page text: renames, redirects and editors' edits,
+  except Sulgar (page blanked 2026-09-26; owner: trust the wiki, he may restore it there).
+- bosses.json kept as committed: the P99 wiki failed every portrait request (each target ~35 s of
+  retries, then eqlwiki at 900px; Protector of Sky got a blank `Item_.png`, Sister of the Spire a
+  placeholder). Tonight's eqlwiki file is kept at `.claude/worktrees/bosses-eqlwiki-2026-10-18.json`
+  for the owner to decide on (it adds Phinigel Autropos and Master of Spite portraits).
+- The scrapers' and the delta's User-Agent now name the fork (github.com/kaltinril/everquest-companion).
+- Owner dropped the planned revision-tracked caches: "after this run we only need to hit the changes
+  endpoint". The wiki keeps ~90 days of changes, so the next delta must run before ~2027-01-16.
 
-- A1 items and mobs caches record each page's revid (generalise `scripts/sources/revCache.ts`);
-  a run asks revids 50/request via `scripts/sources/wikiApi.ts` and re-downloads only changed,
-  new, or revid-less pages (a page without a recorded revid is stale). `--offline` unchanged.
-- A2 no cache is seeded from another.
-- A3 `--delay <ms>` pace option (minimum 1000) on the shared client and scrapers.
-- B1 delta start = OLDEST `scrapedAt` of the files it updates; B2 `--since <ISO>`; B3 refuse
-  (unless `--allow-gap`) when recentchanges does not reach back to the start (wiki retention,
-  often 90 days); B4 always keep fetched text with revids in the caches; B5 delta uses the shared
-  polite client and `--delay`.
-- Tests with stubbed fetch for every item above.
+## Next: every future refresh is the delta, and nothing is missed (owner, 2026-10-18)
 
-When it lands: gate each branch alone (typecheck, lint, npm test vs baseline), add BRANCHES.md
-notes and set the requirement rows, rehearse the merge in a scratch tree, gate, merge.
-
-## Phase 2: catch up from August with the changes-since endpoint (NEEDS REQUESTS — owner's final go first)
-
-Owner ruling (2026-10-18): do NOT re-scrape everything; use the wiki's recent-changes endpoint from
-the last known-good point. The August item corpus was fetched whole on 2026-08-03 and 2026-08-13
-(JOS-298 re-fetch), with a top-up on 2026-08-22, and the mob cache was seeded from it, so every page
-NOT edited since then is already correct; only pages edited since need fetching.
-
-1. `scrape-delta.mts --since 2026-08-01 --delay 2000` (flags from Phase 1). 2026-08-01 precedes
-   every August fetch; it is ~78 days before 2026-10-18, inside the wiki's usual 90-day change
-   history — the B3 gap guard must confirm the list reaches back that far, else stop and ask.
-   Cost: the change list (~500 changes per request) plus the changed pages at 50/request; a
-   3-week window was ~1,200 pages / ~25 requests, so expect on the order of 100 requests. Run where
-   `scripts/sources/cache/{items,mobs}` exist (the main clone's, junctioned into a scratch
-   worktree of `local-data-refresh`; DATA_REFRESH.md "The ETL"), so the fetched text is kept.
-   Mob pages ARE in the change list (the delta folds items and mobs); spell, quest and class pages
-   it lists are reported as "folded nowhere" — their own scrapers are revision-checked.
-2. Refresh the wiki's own era verdicts (`npm run scrape:page-era`, ~20 requests) — `pageEra.json`
-   mob verdicts date from 2026-08-22.
-3. Re-derive offline: items.json, mobs.json (eraTag + outOfEra from fresh text), quests/spells if
-   their caches moved, mobFactions/mobRaces (slayer-tab `gen-mob-*`), respawns; `data-diff.mts`
-   and `validate-data.mts`; `gen:data-weight` on the merged tree (committed on local-data-refresh).
-4. Gate the merged tree, run the log check (below), merge, rebuild the engine (`npm run
-   build:engine`: the engine embeds mobs.json), owner tests, then push every touched branch.
-5. Expected visible change: A cave bat (and other Warrens/Stonebrunt mobs edited since August)
-   come in by the wiki itself, not only through the owner's log.
+The delta tool already reads the change feed once from the oldest stamp, takes `--since-<file>`,
+refuses when the feed does not reach back, keeps fetched text where the caches exist, and folds
+items, mobs, spells and quests. Not yet covered, so a delta-only refresh would leave them stale:
+respawns (derivable offline from the mob cache), mobFactions/mobRaces (offline from the mob cache),
+classes (~20 pages, revid-checked), Plane of Sky (the `Plane of Sky` page plus its reward item
+pages), bosses (32 curated pages; P99 portraits), the era verdicts (pageEra.json, per changed name).
+Requirement row: `requirements/scrape-delta-tool.md` 2026-10-18. Not started.
 
 ## Re-runnable checks (scripts in the session scratchpad; recreate if gone)
 
@@ -120,3 +109,8 @@ NOT edited since then is already correct; only pages edited since need fetching.
 - Creator-code bugs found that RULES.md rule 20 says to file upstream: spell scraper wrote an
   empty catalog on an error body; scrape-bosses paced 80/120 ms; release triage sorts `main.10`
   before `main.9` (not fixed: `releaseNotes.ts` is the creator's).
+- Boss portraits: keep the committed P99 ones or take eqlwiki's (`.claude/worktrees/bosses-eqlwiki-2026-10-18.json`);
+  the owner looks at the four that differ in substance first.
+- Wiki fixes for the owner to make: restore Sulgar (blanked 2026-09-26,
+  https://eqlwiki.com/index.php?title=Sulgar&action=history); `Clockwork Merchant (LG-16)` has
+  `|name = Clockwork Merchant (1105, -1030)`, should be `|name = Clockwork Merchant` like its 37 siblings.
