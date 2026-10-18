@@ -12,7 +12,9 @@
 // WHY A WORD AND NOT AN ICON. A trash can says "delete", and this deletes nothing the log cannot
 // restate — it stops a clock and keeps every kill behind it. That promise is what makes the control
 // safe with no confirmation step, and it is a property of the WRITE (`respawnWithoutWatch` touches
-// one entry of the watch list and nothing else), not of anything the button says.
+// one entry of the watch list and nothing else — and since 2026-10-17 a respawn you typed on that
+// entry is set aside rather than deleted, so a later Watch restores it), not of anything the button
+// says. Clear all is the one unwatch that asks first (ClearAllClocks.tsx): it stops many at once.
 //
 // AND IT SAYS NOTHING (owner ruling, round 7 addendum). It carried a tooltip stating the two
 // consequences until the owner deleted it: the control speaks for itself. So there is no Tooltip

@@ -41,5 +41,22 @@ export const respawnBridge = {
    * entry, each of which knows one mob, and the handler is the only thing that rewrites the list.
    * Resolves to whether anything was watching that name; false is a no-op, not an error.
    */
-  unwatchRespawn: (key: string): Promise<boolean> => ipcRenderer.invoke(IPC.respawnUnwatch, key)
+  unwatchRespawn: (key: string): Promise<boolean> => ipcRenderer.invoke(IPC.respawnUnwatch, key),
+  /**
+   * The Timers tab's Clear all (2026-10-17): `unwatchRespawn` for every key the tab's scope shows,
+   * in one store write. Resolves to how many watches went; a respawn typed on any of them is kept.
+   */
+  unwatchRespawnMany: (keys: string[]): Promise<number> => ipcRenderer.invoke(IPC.respawnUnwatchMany, keys),
+  /**
+   * Watch one mob (the Recently-killed Watch). KEY-shaped for the reason unwatch is, and main brings
+   * back a respawn typed before an earlier unwatch. Resolves to whether a watch was added.
+   */
+  watchRespawn: (key: string, display: string): Promise<boolean> =>
+    ipcRenderer.invoke(IPC.respawnWatch, key, display),
+  /**
+   * Type a mob's respawn in seconds, or pass null to go back to the calculated number (the edit
+   * modal, round 9). Clearing also forgets any kept copy of an older typed number.
+   */
+  setRespawnCustom: (key: string, display: string, sec: number | null): Promise<boolean> =>
+    ipcRenderer.invoke(IPC.respawnSetCustom, key, display, sec)
 }

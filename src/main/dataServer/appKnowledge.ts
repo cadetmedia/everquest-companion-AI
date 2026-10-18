@@ -48,7 +48,9 @@ export function readDefine<O extends DefineOp>(op: O): DefineParams<O> {
     case 'buffTrust.define':
       return { trust: getBuffTrustPrefs() } as unknown as DefineParams<O>
     case 'respawn.define':
-      return { prefs: getRespawnPrefs() } as unknown as DefineParams<O>
+      // THE WATCH LIST ALONE (2026-10-17): the kept typed numbers number no clock, so the fold has no
+      // use for them and they stay out of a payload that is part of what the world records.
+      return { prefs: { watches: getRespawnPrefs().watches } } as unknown as DefineParams<O>
     case 'combo.define':
       return { corrections: getComboCorrections(activeCharId()) } as unknown as DefineParams<O>
     default:

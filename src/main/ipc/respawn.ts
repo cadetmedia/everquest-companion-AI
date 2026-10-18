@@ -25,7 +25,15 @@
 
 import { ipcMain } from 'electron'
 import { IPC } from '../../shared/ipc'
-import { respawnWithoutWatch } from '../../shared/respawn'
+import { normalizeCustomSec, normalizeRespawnPrefs, type RespawnPrefs } from '../../shared/respawn'
+import {
+  isRespawnMobKey,
+  respawnClearKeys,
+  respawnWithCustom,
+  respawnWithWatch,
+  respawnWithoutWatch,
+  respawnWithoutWatches
+} from '../../shared/respawnWatchList'
 import { getRespawnPrefs, setRespawnPrefs } from '../storeRespawn'
 // A FOURTH DUTY, ADDITIVE (JOS-482): the engine's own respawn module holds the same watch list and
 // bumps its own revision on the push, which is the engine-side spelling of duties 2 and 3 above.
@@ -45,19 +53,45 @@ import { serveConfirmSighting } from '../dataServer/serveCommands'
 const MAX_ROW_ID = 160
 
 /**
- * Longest mob key the unwatch handler will look at — the same 64 the store's own normalizer slices
- * a key to, so a string this door accepts is a string that could have been stored in the first
- * place. Same rule as `MAX_ROW_ID` above: the refusal belongs at the door.
+ * Longest display name the watch and edit handlers will take. The store slices a display to 64, so
+ * this only refuses a string no log name could be; it is the door's refusal, not the store's rule.
  */
-const MAX_MOB_KEY = 64
+const MAX_DISPLAY = 256
+
+/**
+ * A mob key this door accepts — the one test every key-taking handler below applies: at most the 64
+ * chars the store slices a key to (`RESPAWN_MAX_KEY_LEN`), so a string a door accepts is one that
+ * could have been stored. Same rule as `MAX_ROW_ID` above: the refusal belongs at the door.
+ */
+const isMobKey = isRespawnMobKey
+
+function isDisplay(display: unknown): display is string {
+  return typeof display === 'string' && display.length <= MAX_DISPLAY
+}
+
+/** Duties 1 and 4 together, for a value a handler already built from the STORED list. */
+function commit(next: RespawnPrefs): void {
+  setRespawnPrefs(next)
+  pushAppKnowledge('respawn.define')
+}
 
 export function registerRespawnIpc(): void {
   ipcMain.handle(IPC.respawnGet, () => getRespawnPrefs())
+  /**
+   * THE WHOLE-LIST REPLACE. Nothing in the app calls it since 2026-10-17 — Watch and the edit modal
+   * have their own key-shaped doors below, for round 4's reason — and it stays because it is the
+   * bridge's oldest member. It replaces the WATCH LIST only: the kept typed numbers are main's (the
+   * renderer's snapshot never carries them), so they are carried over from the store untouched.
+   */
   ipcMain.handle(IPC.respawnSet, (_e, value: unknown) => {
-    const next = setRespawnPrefs(value)
+    const next = setRespawnPrefs({
+      watches: normalizeRespawnPrefs(value).watches,
+      keptCustom: getRespawnPrefs().keptCustom
+    })
     pushAppKnowledge('respawn.define')
     return next
   })
+  registerWatchEdits()
   /**
    * STOP WATCHING ONE MOB (round 4). All three of the setter's duties apply — persist, apply live,
    * push now — and it is a separate channel from the setter for one reason: the surfaces that call
@@ -71,12 +105,11 @@ export function registerRespawnIpc(): void {
    * case, so a stale click cannot re-write the list it agrees with.
    */
   ipcMain.handle(IPC.respawnUnwatch, (_e, key: unknown) => {
-    if (typeof key !== 'string' || key.length === 0 || key.length > MAX_MOB_KEY) return false
+    if (!isMobKey(key)) return false
     const current = getRespawnPrefs()
     const next = respawnWithoutWatch(current, key)
     if (next.watches.length === current.watches.length) return false
-    setRespawnPrefs(next)
-    pushAppKnowledge('respawn.define')
+    commit(next)
     return true
   })
   /**
@@ -115,6 +148,50 @@ export function registerRespawnIpc(): void {
       // though it happened.
       serveConfirmSighting(id)
     }
+    return true
+  })
+}
+
+/**
+ * THE KEY-SHAPED EDITS (2026-10-17): Clear all, Watch, and the edit modal's Save and clear. Each one
+ * names mobs rather than handing over a list, for round 4's reason, and applies the matching pure
+ * write from shared/respawnWatchList.ts to the STORED list — which is also what lets a typed number
+ * survive an unwatch: the kept list lives in the store, and only main ever reads it.
+ */
+function registerWatchEdits(): void {
+  /**
+   * CLEAR ALL. The single unwatch's validation on EVERY key, a bound on how many, and the whole call
+   * refused when any of it fails — a half-applied Clear all is a state no dialog described. One
+   * store write and one push for the lot. Answers how many watches went; 0 is a no-op, not an error.
+   */
+  ipcMain.handle(IPC.respawnUnwatchMany, (_e, raw: unknown) => {
+    const keys = respawnClearKeys(raw)
+    if (keys === null) return 0
+    const current = getRespawnPrefs()
+    const next = respawnWithoutWatches(current, keys)
+    const removed = current.watches.length - next.watches.length
+    if (removed > 0) commit(next)
+    return removed
+  })
+  /** WATCH. A no-op (false, nothing persisted) when the name is already watched or the list is full. */
+  ipcMain.handle(IPC.respawnWatch, (_e, key: unknown, display: unknown) => {
+    if (!isMobKey(key) || !isDisplay(display)) return false
+    const current = getRespawnPrefs()
+    const next = respawnWithWatch(current, key, display)
+    if (next === current) return false
+    commit(next)
+    return true
+  })
+  /**
+   * SAVE OR CLEAR A TYPED NUMBER. `null` is the clear; a number the editor would not accept is
+   * REFUSED rather than read as a clear, because silently reverting an override is the opposite of
+   * what the person pressing Save asked for.
+   */
+  ipcMain.handle(IPC.respawnSetCustom, (_e, key: unknown, display: unknown, sec: unknown) => {
+    if (!isMobKey(key) || !isDisplay(display)) return false
+    const clean = sec === null ? undefined : normalizeCustomSec(sec)
+    if (sec !== null && clean === undefined) return false
+    commit(respawnWithCustom(getRespawnPrefs(), key, display, clean))
     return true
   })
 }

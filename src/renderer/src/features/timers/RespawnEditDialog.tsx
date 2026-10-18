@@ -29,8 +29,11 @@
 // the OVERRIDDEN state (it is a fact about the clock it is drawing) and carries no way to edit it.
 //
 // THE WRITE IS THE ONE THAT ALREADY EXISTED. Saving calls the same `onSetCustom` the retired seconds
-// box called, which lands on `setRespawn` → normalize → module → `flushNow` — so rung 1, the module
-// revision and the persistence are untouched by this round, exactly as the brief said they would be.
+// box called — so rung 1, the module revision and the persistence are untouched by this round,
+// exactly as the brief said they would be. Since 2026-10-17 that lands on `setRespawnCustom`, which
+// names the mob and lets main edit the stored list (shared/respawnWatchList.ts `respawnWithCustom`),
+// and the way back now also forgets a typed number kept from an earlier unwatch, so a cleared
+// override cannot return the next time the mob is watched.
 
 import { type JSX, useEffect, useState } from 'react'
 import {

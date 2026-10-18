@@ -10,11 +10,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { useModule } from '../../lib/useModule'
-import {
-  EMPTY_RESPAWN_SNAP,
-  type RespawnPrefs,
-  type RespawnSnap
-} from '@shared/respawn'
+import { EMPTY_RESPAWN_SNAP, type RespawnSnap } from '@shared/respawn'
 
 export function useRespawnSnap(): RespawnSnap {
   const snap = useModule<RespawnSnap>('respawn')
@@ -36,14 +32,32 @@ export function useSecondsClock(): number {
 }
 
 /**
- * Write the watch list. The handler re-normalizes, applies it to the running module and forces a
- * push, so the module delta that comes back is the authority — this hook deliberately keeps NO
- * local copy of the prefs to render optimistically from. An optimistic copy would be a second
- * answer to "what am I watching", and the round trip is a few milliseconds of a same-process IPC.
+ * Watch one mob. Main adds it to the stored list, applies it and forces a push, so the module delta
+ * that comes back is the authority — this hook deliberately keeps NO local copy of the prefs to
+ * render optimistically from. An optimistic copy would be a second answer to "what am I watching",
+ * and the round trip is a few milliseconds of a same-process IPC.
+ *
+ * KEY-SHAPED SINCE 2026-10-17, like `useUnwatch` below. It used to send the whole edited list, which
+ * worked only while the list was everything there was to know; a respawn typed before an earlier
+ * unwatch now waits in main's kept list, which no renderer holds, so main does the edit.
  */
-export function useSetRespawnPrefs(): (next: RespawnPrefs) => void {
-  return useCallback((next: RespawnPrefs) => {
-    void window.eq.setRespawn(next)
+export function useWatch(): (key: string, display: string) => void {
+  return useCallback((key: string, display: string) => {
+    void window.eq.watchRespawn(key, display)
+  }, [])
+}
+
+/** Type a mob's number, or clear it with `undefined` (the edit modal). Same shape as `useWatch`. */
+export function useSetCustom(): (key: string, display: string, sec?: number) => void {
+  return useCallback((key: string, display: string, sec?: number) => {
+    void window.eq.setRespawnCustom(key, display, sec ?? null)
+  }, [])
+}
+
+/** Clear all (2026-10-17): unwatch every key the tab's scope shows, in one write. */
+export function useUnwatchMany(): (keys: string[]) => void {
+  return useCallback((keys: string[]) => {
+    void window.eq.unwatchRespawnMany(keys)
   }, [])
 }
 
