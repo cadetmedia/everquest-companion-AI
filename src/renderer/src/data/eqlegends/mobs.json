@@ -506,6 +506,9 @@
       "level": "5",
       "zones": [
         "Qeynos Aqueducts"
+      ],
+      "otherNames": [
+        "A beggar (Qeynos Catacombs)"
       ]
     },
     {
@@ -2219,6 +2222,9 @@
         "Chunk of Meat",
         "Gator Meat",
         "Words of the Element"
+      ],
+      "otherNames": [
+        "A caimen"
       ]
     },
     {
@@ -2386,6 +2392,9 @@
           "ew": -193,
           "pct": 80
         }
+      ],
+      "otherNames": [
+        "Cauldron Shark"
       ]
     },
     {
@@ -3962,7 +3971,10 @@
           "ew": 3096
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Cliff Golem"
+      ]
     },
     {
       "page": "A cliff spider",
@@ -4211,6 +4223,9 @@
           "ns": 1242,
           "ew": -775
         }
+      ],
+      "otherNames": [
+        "Clockwork Merchant (NG-6)"
       ]
     },
     {
@@ -4439,7 +4454,10 @@
           "ew": -930
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Coerced Channeler"
+      ]
     },
     {
       "page": "A coerced crusader",
@@ -4460,7 +4478,10 @@
           "pct": 20
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Coerced Crusader"
+      ]
     },
     {
       "page": "A coerced dwarf",
@@ -4477,7 +4498,11 @@
         "Coercion Implant",
         "Serrated Wire"
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "A coerced dwarf (female)",
+        "A coerced dwarf (male)"
+      ]
     },
     {
       "page": "A coerced Erudite",
@@ -4587,7 +4612,10 @@
         "Serrated Wire",
         "Coercion Implant"
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Coerced Penkeeper"
+      ]
     },
     {
       "page": "A coerced revenant",
@@ -5148,7 +5176,10 @@
       "drops": [
         "Corrupted Fauns Skin"
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Corrupted Faun"
+      ]
     },
     {
       "page": "A corrupted panther",
@@ -5169,7 +5200,10 @@
           "pct": 50
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Corrupted Panther"
+      ]
     },
     {
       "page": "A corrupted unicorn",
@@ -5259,6 +5293,9 @@
           "ns": -300,
           "ew": -3000
         }
+      ],
+      "otherNames": [
+        "Crag Spider"
       ]
     },
     {
@@ -5289,7 +5326,10 @@
           "pct": 100
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Cragwyrm"
+      ]
     },
     {
       "page": "A Craknek Emissary",
@@ -5354,6 +5394,10 @@
           "ew": -150,
           "pct": 20
         }
+      ],
+      "otherNames": [
+        "Crazed Goblin",
+        "Crazed Goblins"
       ]
     },
     {
@@ -5530,7 +5574,10 @@
           "ew": 138
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "The Crypt Wurm"
+      ]
     },
     {
       "page": "A Crystal Crawler",
@@ -5742,7 +5789,10 @@
           "ew": -951
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Crystal Purifier"
+      ]
     },
     {
       "page": "A Crystal Sentinel",
@@ -6012,7 +6062,10 @@
           "ew": -1303
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "A crystalline shardwurm"
+      ]
     },
     {
       "page": "A crystalline cloud",
@@ -7284,7 +7337,10 @@
           "pct": 100
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "A Di'Zok Captain"
+      ]
     },
     {
       "page": "A Di`zok Channeler",
@@ -7345,6 +7401,9 @@
       "level": "53",
       "zones": [
         "Chardok"
+      ],
+      "otherNames": [
+        "A Di'Zok Cryptmaster"
       ]
     },
     {
@@ -7375,6 +7434,9 @@
           "ew": -44,
           "pct": 50
         }
+      ],
+      "otherNames": [
+        "A Di'Zok Dragoon"
       ]
     },
     {
@@ -7453,7 +7515,10 @@
           "pct": 50
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "A Di'zok Herbalist"
+      ]
     },
     {
       "page": "A Di`zok Invoker",
@@ -7531,7 +7596,10 @@
           "pct": 100
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "A Di'zok Librarian"
+      ]
     },
     {
       "page": "A Di`zok Myrmidon",
@@ -7684,7 +7752,11 @@
         "Iksar Skin Gloves",
         "Withered Staff"
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "A Di'zok Recruit",
+        "A Di'zok recruit"
+      ]
     },
     {
       "page": "A Di`zok Revealer",
@@ -7781,7 +7853,10 @@
           "pct": 14
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "A Di'zok Underling"
+      ]
     },
     {
       "page": "A dire pup",
@@ -8059,6 +8134,9 @@
           "ns": 67,
           "ew": -22
         }
+      ],
+      "otherNames": [
+        "Diseased shark"
       ]
     },
     {
@@ -8459,6 +8537,10 @@
         "Grotesque Girdle",
         "Shawl of Protection",
         "Zombie Flesh Bracer"
+      ],
+      "otherNames": [
+        "Draco",
+        "Dracoliche"
       ]
     },
     {
@@ -9067,7 +9149,10 @@
         "Part of Tasarin's Grimoire Pg. 390 (Left)",
         "Splinted Bronze Cloak"
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Drolvarg Snarler"
+      ]
     },
     {
       "page": "A Drolvarg warlord",
@@ -9091,7 +9176,10 @@
           "pct": 25
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Drolvarg Warlord"
+      ]
     },
     {
       "page": "A droopy slave",
@@ -9318,6 +9406,9 @@
           "ns": 598,
           "ew": 164
         }
+      ],
+      "otherNames": [
+        "A dwarven mercenary"
       ]
     },
     {
@@ -9336,6 +9427,10 @@
           "ew": 398,
           "pct": 33
         }
+      ],
+      "otherNames": [
+        "A dwarven slave (female)",
+        "A dwarven slave (male)"
       ]
     },
     {
@@ -10320,6 +10415,9 @@
           "ew": 35,
           "z": -54
         }
+      ],
+      "otherNames": [
+        "A ferocious cauldron shark"
       ]
     },
     {
@@ -10412,6 +10510,9 @@
           "ew": -38,
           "pct": 3
         }
+      ],
+      "otherNames": [
+        "Fierce Impaler"
       ]
     },
     {
@@ -10820,7 +10921,10 @@
           "pct": 100
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Fire sprite"
+      ]
     },
     {
       "page": "A firescale crocodile",
@@ -11377,6 +11481,9 @@
           "ew": -193,
           "pct": 34
         }
+      ],
+      "otherNames": [
+        "Frenzied Cauldron Shark"
       ]
     },
     {
@@ -11397,6 +11504,9 @@
           "ew": -1060,
           "pct": 100
         }
+      ],
+      "otherNames": [
+        "Frenzied Ghoul"
       ]
     },
     {
@@ -12005,6 +12115,9 @@
         "Froglok Meat",
         "Froglok Blood",
         "Words of Tyranny"
+      ],
+      "otherNames": [
+        "Froglok gaz shaman"
       ]
     },
     {
@@ -13410,6 +13523,9 @@
           "ew": -466,
           "pct": 50
         }
+      ],
+      "otherNames": [
+        "Froglok Urd Shaman"
       ]
     },
     {
@@ -13615,6 +13731,9 @@
           "ew": -431,
           "pct": 17
         }
+      ],
+      "otherNames": [
+        "A Yun Priest"
       ]
     },
     {
@@ -14733,7 +14852,10 @@
           "pct": 10
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Gale Wolf"
+      ]
     },
     {
       "page": "A Gargoyle",
@@ -14966,6 +15088,9 @@
           "ew": 344,
           "pct": 20
         }
+      ],
+      "otherNames": [
+        "A Gelatinous Cube (Clan Runnyeye)"
       ]
     },
     {
@@ -15653,6 +15778,9 @@
         "Giant Fire Beetle Leg",
         "Fire Beetle Eye",
         "Fire Beetle Leg"
+      ],
+      "otherNames": [
+        "A giant fire beetle"
       ]
     },
     {
@@ -15958,6 +16086,9 @@
       "drops": [
         "Bear Meat",
         "Giant Polar Bear Skin"
+      ],
+      "otherNames": [
+        "Giant Polar Bear"
       ]
     },
     {
@@ -15973,6 +16104,9 @@
         "Giant Rat Ear",
         "Giant Rat Pelt",
         "Rat Meat"
+      ],
+      "otherNames": [
+        "Giant rat"
       ]
     },
     {
@@ -18104,6 +18238,9 @@
           "ns": -990,
           "ew": -1575
         }
+      ],
+      "otherNames": [
+        "Goblin caster"
       ]
     },
     {
@@ -18136,6 +18273,9 @@
       "drops": [
         "Crystalline Blade",
         "Fine Steel Weapons"
+      ],
+      "otherNames": [
+        "Ice Goblin Champion"
       ]
     },
     {
@@ -18471,6 +18611,9 @@
           "ew": -329,
           "pct": 25
         }
+      ],
+      "otherNames": [
+        "Goblin Jail Master"
       ]
     },
     {
@@ -18788,6 +18931,9 @@
           "ew": -264,
           "pct": 50
         }
+      ],
+      "otherNames": [
+        "Goblin Patriarch"
       ]
     },
     {
@@ -19104,6 +19250,9 @@
           "ew": -589,
           "pct": 35
         }
+      ],
+      "otherNames": [
+        "Goblin Scryer"
       ]
     },
     {
@@ -19338,7 +19487,10 @@
         "Choker of Majdd",
         "Eye of Melnor"
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "A Goblin Soothsayer (Droga)"
+      ]
     },
     {
       "page": "A goblin stalagknight",
@@ -19788,6 +19940,9 @@
           "z": 95,
           "pct": 20
         }
+      ],
+      "otherNames": [
+        "Golden Haired Mermaid"
       ]
     },
     {
@@ -20993,7 +21148,10 @@
           "pct": 5
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Gwurm"
+      ]
     },
     {
       "page": "A guk ghoul knight",
@@ -21685,6 +21843,9 @@
         "Sphinx Tallow",
         "Nebulous Emerald",
         "Replica of the Wyrm Queen"
+      ],
+      "otherNames": [
+        "Heartsbane drake"
       ]
     },
     {
@@ -21899,6 +22060,9 @@
           "ns": -5485,
           "ew": -2615
         }
+      ],
+      "otherNames": [
+        "Hermit"
       ]
     },
     {
@@ -22584,7 +22748,10 @@
           "pct": 100
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Human skeleton"
+      ]
     },
     {
       "page": "A Hungry Cube",
@@ -23134,6 +23301,10 @@
         "Bottle of Milk",
         "Raw-hide Boots",
         "Kerran Doll"
+      ],
+      "otherNames": [
+        "A kerran 'amir",
+        "Kerran `amir"
       ]
     },
     {
@@ -23592,6 +23763,9 @@
           "ew": 348,
           "pct": 100
         }
+      ],
+      "otherNames": [
+        "A kerran sha'rr apprentice"
       ]
     },
     {
@@ -23845,7 +24019,10 @@
           "ew": -887
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Kly Imprecator"
+      ]
     },
     {
       "page": "A Kly Invoker",
@@ -25378,7 +25555,10 @@
         "Velium Short Sword",
         "Velium Warhammer"
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Large Undead Gnoll"
+      ]
     },
     {
       "page": "A Large Velium Statue",
@@ -25671,7 +25851,10 @@
           "pct": 11
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "A lava walker (Wyvern)"
+      ]
     },
     {
       "page": "A lead explorer",
@@ -25861,7 +26044,10 @@
           "pct": 33
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Lesser Ice Shade"
+      ]
     },
     {
       "page": "A lesser icebone skeleton",
@@ -25952,6 +26138,9 @@
         "Bamboo Tanto Bo",
         "Bronze Tonfa",
         "Fish Wine"
+      ],
+      "otherNames": [
+        "A lesser shaman"
       ]
     },
     {
@@ -26324,6 +26513,10 @@
         "Allize Volew Medicine Bag",
         "Lizard Tail",
         "Lizard Meat"
+      ],
+      "otherNames": [
+        "A Lizardman Mystic",
+        "A lizardman mystic"
       ]
     },
     {
@@ -26500,6 +26693,9 @@
         "Pristine Lizard Scale",
         "Rusty Weapons",
         "Bronze Weapons"
+      ],
+      "otherNames": [
+        "A lizardman warrior"
       ]
     },
     {
@@ -26806,6 +27002,9 @@
         "Umbral Platemail Bracer",
         "Wand of Conflagration",
         "Woven Shadow Bracer"
+      ],
+      "otherNames": [
+        "A loathing lich"
       ]
     },
     {
@@ -27720,7 +27919,10 @@
           "ew": 265
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Mimic"
+      ]
     },
     {
       "page": "A mimic (Clan RunnyEye)",
@@ -27847,6 +28049,9 @@
       "drops": [
         "Minotaur Battle Axe",
         "Minotaur Horn"
+      ],
+      "otherNames": [
+        "Minotaur slaver"
       ]
     },
     {
@@ -28240,6 +28445,9 @@
         "Axe of the Iron Back",
         "Hill Giant Toes",
         "Honey Berry"
+      ],
+      "otherNames": [
+        "Mountain giant brae"
       ]
     },
     {
@@ -28310,7 +28518,10 @@
         "Straw Spun Belt",
         "A Weighted Axe"
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Mountain Giant Hillock"
+      ]
     },
     {
       "page": "A mountain giant patriarch",
@@ -28420,7 +28631,11 @@
           "ew": -3230
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "A moutain giant tump",
+        "Mountain Giant Tump"
+      ]
     },
     {
       "page": "A Mountain Lion",
@@ -28953,6 +29168,9 @@
           "z": 3,
           "pct": 100
         }
+      ],
+      "otherNames": [
+        "Nisch Mas Mender"
       ]
     },
     {
@@ -29046,6 +29264,9 @@
           "ew": -12,
           "pct": 50
         }
+      ],
+      "otherNames": [
+        "A one eyed gnoll"
       ]
     },
     {
@@ -30288,7 +30509,10 @@
         "Gunthak Harpoon",
         "Short Beer"
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Pirate Destroyer"
+      ]
     },
     {
       "page": "A pixie",
@@ -30326,6 +30550,9 @@
           "ew": 2830,
           "pct": 100
         }
+      ],
+      "otherNames": [
+        "Pixie jongleur"
       ]
     },
     {
@@ -30709,6 +30936,9 @@
           "ew": -345,
           "pct": 100
         }
+      ],
+      "otherNames": [
+        "Priest of Nagafen"
       ]
     },
     {
@@ -30812,6 +31042,9 @@
           "ns": -59,
           "ew": -598
         }
+      ],
+      "otherNames": [
+        "A prisoner (HHK)"
       ]
     },
     {
@@ -31627,6 +31860,9 @@
         "Imbued Granite Spauldors",
         "Smoldering Brand",
         "Paineel Steel Armor Set"
+      ],
+      "otherNames": [
+        "Ratman Warrior"
       ]
     },
     {
@@ -31908,6 +32144,9 @@
       ],
       "drops": [
         "Bone Chips"
+      ],
+      "otherNames": [
+        "A Reckless Skeleton"
       ]
     },
     {
@@ -31983,6 +32222,9 @@
       "level": "3-7",
       "zones": [
         "The Warrens"
+      ],
+      "otherNames": [
+        "River rat"
       ]
     },
     {
@@ -32489,7 +32731,10 @@
         "Rune of Solusek Ro",
         "Ry`Gorr Scalp"
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "A Ry'Gorr Centurion"
+      ]
     },
     {
       "page": "A Ry`Gorr clan lookout",
@@ -32637,7 +32882,10 @@
           "pct": 13
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "A Ry'Gorr Legionaire"
+      ]
     },
     {
       "page": "A Ry`Gorr messenger",
@@ -32709,7 +32957,10 @@
         "Shimmering Velium Ruby",
         "Bottle of Karsin Acid"
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "A Ry'Gorr miner"
+      ]
     },
     {
       "page": "A Ry`Gorr oracle",
@@ -32758,7 +33009,10 @@
           "pct": 15
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "A Ry'Gorr Prison Guard"
+      ]
     },
     {
       "page": "A Ry`Gorr Snow Trooper",
@@ -32775,7 +33029,10 @@
         "Velium Great Staff",
         "Velium Short Sword"
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "A Ry'Gorr snow trooper"
+      ]
     },
     {
       "page": "A Ry`Gorr watchman",
@@ -32816,7 +33073,10 @@
         "Ivory",
         "Bottle of Karsin Acid"
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "A Ry'Gorr Watchman"
+      ]
     },
     {
       "page": "A Sabertooth Cat",
@@ -32953,6 +33213,9 @@
           "ew": -2252,
           "pct": 50
         }
+      ],
+      "otherNames": [
+        "Sabertooth tiger"
       ]
     },
     {
@@ -33220,6 +33483,9 @@
           "ns": 1020,
           "ew": -1060
         }
+      ],
+      "otherNames": [
+        "Sandbar Serpent"
       ]
     },
     {
@@ -33324,7 +33590,11 @@
         "Words of Recluse",
         "Words of the Sentient (Beza)"
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "A Sarnak Adherant",
+        "A Sarnak adherant"
+      ]
     },
     {
       "page": "A sarnak aruspex",
@@ -33403,7 +33673,11 @@
         "Sarnak Berserker Head",
         "Rune of Rallos Zek"
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "A Sarnak Berserker",
+        "A Sarnak berserker"
+      ]
     },
     {
       "page": "A Sarnak berzerker",
@@ -33571,7 +33845,10 @@
           "ew": -2520
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Sarnak Courier"
+      ]
     },
     {
       "page": "A Sarnak Dog Handler",
@@ -34531,7 +34808,10 @@
           "ew": 3304
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Scaled Prowler"
+      ]
     },
     {
       "page": "A scaled wolf",
@@ -34770,6 +35050,9 @@
           "ns": -3190,
           "ew": -5715
         }
+      ],
+      "otherNames": [
+        "Scarecrow"
       ]
     },
     {
@@ -35184,6 +35467,9 @@
         "Salil's Writ Pg. 174 (Left)",
         "Salil's Writ Pg. 282 (Left)",
         "Salil's Writ Pg. 288 (Left)"
+      ],
+      "otherNames": [
+        "Seafury Cyclops"
       ]
     },
     {
@@ -35222,6 +35508,9 @@
           "ew": -494,
           "pct": 17
         }
+      ],
+      "otherNames": [
+        "Seahorse Matriarch"
       ]
     },
     {
@@ -35241,6 +35530,9 @@
           "ew": -33,
           "pct": 50
         }
+      ],
+      "otherNames": [
+        "Seahorse Patriarch"
       ]
     },
     {
@@ -36615,7 +36907,10 @@
           "pct": 100
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Shady goblin"
+      ]
     },
     {
       "page": "A Shady Halfling",
@@ -36655,6 +36950,9 @@
           "ew": 340,
           "pct": 10
         }
+      ],
+      "otherNames": [
+        "A shady mercernary"
       ]
     },
     {
@@ -36743,7 +37041,10 @@
         "Ruby",
         "Diamond"
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Nightfear"
+      ]
     },
     {
       "page": "A Shai`din Partisan",
@@ -36782,6 +37083,9 @@
         "Stave of Shielding",
         "Blue Diamond",
         "Jagged Blade of Mourning"
+      ],
+      "otherNames": [
+        "A Shai'din Soultrapper"
       ]
     },
     {
@@ -38008,7 +38312,10 @@
           "pct": 100
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Skeletal Jester"
+      ]
     },
     {
       "page": "A Skeletal Monk",
@@ -38404,6 +38711,9 @@
           "ew": 571,
           "pct": 50
         }
+      ],
+      "otherNames": [
+        "Skunk"
       ]
     },
     {
@@ -38600,6 +38910,9 @@
           "ew": -60,
           "pct": 100
         }
+      ],
+      "otherNames": [
+        "Slime Elemental"
       ]
     },
     {
@@ -38947,6 +39260,9 @@
         "Rusty Weapons",
         "Lixt Wing Stalk",
         "Wrath Orc Wristbands"
+      ],
+      "otherNames": [
+        "Snow orc trooper"
       ]
     },
     {
@@ -39335,7 +39651,10 @@
           "pct": 33
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Spectral Crusader"
+      ]
     },
     {
       "page": "A spectral shimmer",
@@ -39428,6 +39747,9 @@
         "Words of Seizure",
         "Words of the Spectre",
         "Words of the Suffering"
+      ],
+      "otherNames": [
+        "Spectre"
       ]
     },
     {
@@ -39666,6 +39988,9 @@
           "ew": 1072,
           "pct": 100
         }
+      ],
+      "otherNames": [
+        "Spiroc arbiter"
       ]
     },
     {
@@ -39946,6 +40271,9 @@
           "ns": 1067,
           "ew": -15394
         }
+      ],
+      "otherNames": [
+        "Splitpaw assassin"
       ]
     },
     {
@@ -40000,6 +40328,9 @@
         "Large Brick of High Quality Ore",
         "Sporestrand Shield",
         "Words of the Sentient (Azia)"
+      ],
+      "otherNames": [
+        "Sporali Miner"
       ]
     },
     {
@@ -40063,6 +40394,9 @@
           "ew": -107,
           "pct": 100
         }
+      ],
+      "otherNames": [
+        "A spirited harpie"
       ]
     },
     {
@@ -40192,6 +40526,9 @@
       "drops": [
         "Russet Oxide",
         "Swirling Mist"
+      ],
+      "otherNames": [
+        "Steam Elemental"
       ]
     },
     {
@@ -41061,7 +41398,10 @@
         "Words of Resolve",
         "Salil's Writ Pg. 60 (Left)"
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Tatterback Ape"
+      ]
     },
     {
       "page": "A Tatterback Gorilla",
@@ -41712,6 +42052,9 @@
       "level": "48",
       "zones": [
         "Plane of Fear"
+      ],
+      "otherNames": [
+        "Thought bleeder"
       ]
     },
     {
@@ -43169,6 +43512,9 @@
         "Turmoil Warts",
         "Umbral Platemail Gauntlets",
         "Woven Shadow Gauntlets"
+      ],
+      "otherNames": [
+        "Turmoil toad"
       ]
     },
     {
@@ -43672,6 +44018,9 @@
           "ns": 397,
           "ew": -569
         }
+      ],
+      "otherNames": [
+        "Venomous Spikefish"
       ]
     },
     {
@@ -43877,6 +44226,9 @@
           "ew": 170,
           "pct": 10
         }
+      ],
+      "otherNames": [
+        "Visiting Priestess"
       ]
     },
     {
@@ -44864,7 +45216,10 @@
       "drops": [
         "A Yellow Whip"
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "A wulfare lonewolf"
+      ]
     },
     {
       "page": "A Wurm",
@@ -44927,7 +45282,10 @@
         "Arctic Wyvern Hide",
         "Ice Wyvern Stinger"
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Wyvern"
+      ]
     },
     {
       "page": "A wyvern (Western Wastes)",
@@ -45258,6 +45616,9 @@
           "ns": -1475,
           "ew": 1396
         }
+      ],
+      "otherNames": [
+        "Young Ronin"
       ]
     },
     {
@@ -45330,6 +45691,9 @@
           "ew": -22,
           "pct": 100
         }
+      ],
+      "otherNames": [
+        "Young shark"
       ]
     },
     {
@@ -45596,7 +45960,10 @@
           "pct": 100
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Aary"
+      ]
     },
     {
       "page": "Abandoned heretic pet",
@@ -47413,6 +47780,9 @@
           "ew": 2309,
           "pct": 100
         }
+      ],
+      "otherNames": [
+        "Advisor C'Zatl"
       ]
     },
     {
@@ -47448,7 +47818,10 @@
           "ew": 1022
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Adwetram Fe'Dhar"
+      ]
     },
     {
       "page": "Aenia Ghenson",
@@ -47601,7 +47974,10 @@
           "pct": 10
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Ali the Elder"
+      ]
     },
     {
       "page": "Aimie Moonspin",
@@ -48162,6 +48538,9 @@
           "ns": 102,
           "ew": 313
         }
+      ],
+      "otherNames": [
+        "Amata D'Lavi"
       ]
     },
     {
@@ -48240,6 +48619,9 @@
           "ns": -184,
           "ew": 202
         }
+      ],
+      "otherNames": [
+        "Amber (NPC)"
       ]
     },
     {
@@ -48487,6 +48869,9 @@
         "Midnight Clad Leggings",
         "Umbral Platemail Greaves",
         "Woven Shadow Greaves"
+      ],
+      "otherNames": [
+        "Agent of Innoruuk"
       ]
     },
     {
@@ -48627,6 +49012,9 @@
           "ew": 462,
           "pct": 10
         }
+      ],
+      "otherNames": [
+        "Ancient Crocodile"
       ]
     },
     {
@@ -48658,6 +49046,9 @@
       ],
       "drops": [
         "Ring of the Ancients"
+      ],
+      "otherNames": [
+        "Ancient Cyclops (Southern Ro)"
       ]
     },
     {
@@ -49148,7 +49539,10 @@
           "ew": 750
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Angry Librarian"
+      ]
     },
     {
       "page": "An angry shardwurm",
@@ -50618,6 +51012,9 @@
           "ns": 686,
           "ew": -281
         }
+      ],
+      "otherNames": [
+        "Elite Goblin Guard"
       ]
     },
     {
@@ -50651,6 +51048,9 @@
           "ns": 636,
           "ew": -228
         }
+      ],
+      "otherNames": [
+        "Elite Honor Guard"
       ]
     },
     {
@@ -50784,6 +51184,10 @@
           "ew": -257,
           "pct": 11
         }
+      ],
+      "otherNames": [
+        "An elven slave (female)",
+        "An elven slave (male)"
       ]
     },
     {
@@ -51057,6 +51461,9 @@
         "Bloodstone Earring",
         "Silver Ring",
         "Star Rose Quartz"
+      ],
+      "otherNames": [
+        "An emperor fae drake"
       ]
     },
     {
@@ -51112,7 +51519,10 @@
         "Velium Spiked Skull Helm",
         "Beer Stained Coldain Tunic"
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Enraged relative"
+      ]
     },
     {
       "page": "An enraged shadow beast",
@@ -51127,7 +51537,10 @@
         "Finely Crafted Velium Ring",
         "Frosty key"
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Enraged Shadowbeast"
+      ]
     },
     {
       "page": "An enraged slave",
@@ -51162,7 +51575,10 @@
         "Spell: Ro`s Fiery Sundering",
         "Crystallized Shadow Boots"
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "An enraged vampire (male)"
+      ]
     },
     {
       "page": "An enslaved iksar",
@@ -51401,7 +51817,11 @@
         "Star Ruby Earring",
         "Stonewood Mail"
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "An Entoling Essense Channeller",
+        "An entoling essense channeller"
+      ]
     },
     {
       "page": "An entoling essence conduit",
@@ -52068,6 +52488,9 @@
           "ns": 1994,
           "ew": -6465
         }
+      ],
+      "otherNames": [
+        "A ice giant"
       ]
     },
     {
@@ -52125,6 +52548,10 @@
           "ew": 69,
           "pct": 100
         }
+      ],
+      "otherNames": [
+        "An Ice Giant Magus",
+        "An ice giant magus"
       ]
     },
     {
@@ -52568,7 +52995,10 @@
         "Crushed Lava Ruby",
         "Crushed Onyx Sapphire"
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Icepaw kobold"
+      ]
     },
     {
       "page": "An Icepaw Kobold Priest",
@@ -52992,7 +53422,10 @@
           "pct": 33
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Iksar Abductor"
+      ]
     },
     {
       "page": "An Iksar anchoret",
@@ -53048,7 +53481,10 @@
           "pct": 50
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Iksar Anchorite"
+      ]
     },
     {
       "page": "An Iksar Bandit",
@@ -53062,7 +53498,10 @@
       "drops": [
         "Iksar Bandit Mask"
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Iksar bandit"
+      ]
     },
     {
       "page": "An iksar betrayer",
@@ -53194,7 +53633,10 @@
           "pct": 100
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Iksar Knight"
+      ]
     },
     {
       "page": "An Iksar Manslayer",
@@ -53385,7 +53827,10 @@
           "pct": 33
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Iksar Picaroon"
+      ]
     },
     {
       "page": "An Iksar prisoner",
@@ -53754,6 +54199,9 @@
           "ew": -224,
           "z": -110
         }
+      ],
+      "otherNames": [
+        "Injured Polar Bear"
       ]
     },
     {
@@ -53910,6 +54358,9 @@
         "Trueheart Shield",
         "Valorium Vambraces",
         "Vermiculated Armplates"
+      ],
+      "otherNames": [
+        "Ire ghast"
       ]
     },
     {
@@ -55339,7 +55790,11 @@
           "pct": 100
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "A Ulthork Man O War",
+        "A ulthork man o war"
+      ]
     },
     {
       "page": "An Ulthork Warrior",
@@ -56035,6 +56490,9 @@
           "ns": -1063,
           "ew": -936
         }
+      ],
+      "otherNames": [
+        "Undine spirit"
       ]
     },
     {
@@ -56219,6 +56677,9 @@
           "ns": -135,
           "ew": -1062
         }
+      ],
+      "otherNames": [
+        "Andara C'Luzz"
       ]
     },
     {
@@ -56898,7 +57359,10 @@
           "pct": 12
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Arch Duke Latol"
+      ]
     },
     {
       "page": "Arch Duke Xog",
@@ -56937,7 +57401,10 @@
           "pct": 20
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Arch Inspector Nibi'zi"
+      ]
     },
     {
       "page": "Archenm",
@@ -57236,7 +57703,10 @@
           "pct": 100
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Arreken"
+      ]
     },
     {
       "page": "Arrias Arcanum",
@@ -57345,6 +57815,9 @@
           "ns": 916,
           "ew": -1351
         }
+      ],
+      "otherNames": [
+        "Ash C'Luzz"
       ]
     },
     {
@@ -57690,6 +58163,9 @@
           "ns": 762,
           "ew": 849
         }
+      ],
+      "otherNames": [
+        "Auhrik Siet'ka"
       ]
     },
     {
@@ -57868,6 +58344,9 @@
         "Bronze Mace",
         "Gold Ring",
         "Star Rose Quartz"
+      ],
+      "otherNames": [
+        "An Aviak Darter"
       ]
     },
     {
@@ -59801,7 +60280,10 @@
           "ew": 394
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Battle Master Ska'tu"
+      ]
     },
     {
       "page": "Battlelord Paluk",
@@ -59940,6 +60422,10 @@
         "Wind Tablet",
         "Silvered Spiroc Necklace",
         "Pulsating Ruby"
+      ],
+      "otherNames": [
+        "Queen Bee",
+        "Queen bee"
       ]
     },
     {
@@ -60320,6 +60806,9 @@
           "ns": 864,
           "ew": -1424
         }
+      ],
+      "otherNames": [
+        "Belyea K'Jartan"
       ]
     },
     {
@@ -60861,6 +61350,9 @@
         "Nebulous Ruby",
         "Obsidian Shard (Sky)",
         "Virulent Poison"
+      ],
+      "otherNames": [
+        "Bizazzt"
       ]
     },
     {
@@ -62180,6 +62672,9 @@
           "ns": -814,
           "ew": -206
         }
+      ],
+      "otherNames": [
+        "Boondin Babbinsport"
       ]
     },
     {
@@ -63390,6 +63885,9 @@
           "ns": 787,
           "ew": 2302
         }
+      ],
+      "otherNames": [
+        "Brigadier G'tav"
       ]
     },
     {
@@ -64082,6 +64580,9 @@
           "ns": -4833,
           "ew": 3176
         }
+      ],
+      "otherNames": [
+        "Brother Q"
       ]
     },
     {
@@ -64118,6 +64619,10 @@
       "drops": [
         "Black Headband",
         "Robe of the Lost Circle"
+      ],
+      "otherNames": [
+        "Bro z",
+        "Brother Z"
       ]
     },
     {
@@ -65420,6 +65925,9 @@
           "ns": 1334,
           "ew": -1277
         }
+      ],
+      "otherNames": [
+        "Camor V'Retta"
       ]
     },
     {
@@ -65575,6 +66083,9 @@
           "ew": -5387,
           "pct": 50
         }
+      ],
+      "otherNames": [
+        "Captain Surestout"
       ]
     },
     {
@@ -65617,7 +66128,10 @@
           "pct": 100
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Berradin"
+      ]
     },
     {
       "page": "Captain Bipnubble",
@@ -65762,7 +66276,10 @@
           "ew": -15
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Captain Di'ouz"
+      ]
     },
     {
       "page": "Captain Dunstan Coldheart",
@@ -65877,6 +66394,9 @@
           "ew": -946,
           "pct": 50
         }
+      ],
+      "otherNames": [
+        "Captain N'Farre"
       ]
     },
     {
@@ -66557,6 +67077,9 @@
         "Halo of the Enlightened",
         "Pauldrons of Ferocity",
         "Robe of Inspiration"
+      ],
+      "otherNames": [
+        "Cazic Thule (God)"
       ]
     },
     {
@@ -66587,6 +67110,9 @@
           "ns": 910,
           "ew": -1413
         }
+      ],
+      "otherNames": [
+        "Cecile K'Jartan"
       ]
     },
     {
@@ -68059,6 +68585,9 @@
           "ns": 134,
           "ew": -924
         }
+      ],
+      "otherNames": [
+        "Cizzar J'Axx"
       ]
     },
     {
@@ -68966,6 +69495,9 @@
           "ew": -517,
           "pct": 100
         }
+      ],
+      "otherNames": [
+        "Mizzle Gepple"
       ]
     },
     {
@@ -69954,6 +70486,9 @@
           "ew": -92,
           "pct": 100
         }
+      ],
+      "otherNames": [
+        "Commander Windstream"
       ]
     },
     {
@@ -69996,6 +70531,9 @@
           "ns": 793,
           "ew": 2290
         }
+      ],
+      "otherNames": [
+        "Coercer Q'ioul"
       ]
     },
     {
@@ -70271,6 +70809,9 @@
           "ns": -236,
           "ew": -826
         }
+      ],
+      "otherNames": [
+        "Conium Darkbalde"
       ]
     },
     {
@@ -70473,6 +71014,9 @@
           "ew": 39,
           "pct": 50
         }
+      ],
+      "otherNames": [
+        "Corporal D'Abth"
       ]
     },
     {
@@ -70484,6 +71028,9 @@
       ],
       "drops": [
         "Bronze Long Sword"
+      ],
+      "otherNames": [
+        "Corporal J'Rais"
       ]
     },
     {
@@ -70518,6 +71065,9 @@
           "ew": -21,
           "pct": 50
         }
+      ],
+      "otherNames": [
+        "Corporal X'Horn"
       ]
     },
     {
@@ -70529,6 +71079,9 @@
       ],
       "drops": [
         "Bronze Long Sword"
+      ],
+      "otherNames": [
+        "Corporal X'Tis"
       ]
     },
     {
@@ -70961,7 +71514,10 @@
           "pct": 100
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Councilor Juliah Lockheart"
+      ]
     },
     {
       "page": "Councilor Thubins",
@@ -71304,6 +71860,9 @@
           "ns": 400,
           "ew": -640
         }
+      ],
+      "otherNames": [
+        "Crookstinger Mob"
       ]
     },
     {
@@ -72279,6 +72838,9 @@
           "ns": -320,
           "ew": -900
         }
+      ],
+      "otherNames": [
+        "CWS Model SX"
       ]
     },
     {
@@ -72646,7 +73208,10 @@
           "pct": 100
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Dagarn"
+      ]
     },
     {
       "page": "Dagron Stonecutter",
@@ -72697,7 +73262,10 @@
           "ew": 4
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Dain"
+      ]
     },
     {
       "page": "Dalbar Tarbrind",
@@ -72848,7 +73416,10 @@
           "pct": 3
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Dalshim Fe'Dhar"
+      ]
     },
     {
       "page": "Daman",
@@ -73554,6 +74125,9 @@
           "ew": 301,
           "pct": 9
         }
+      ],
+      "otherNames": [
+        "A deathfist pawn"
       ]
     },
     {
@@ -74151,7 +74725,10 @@
         "Frosted Gloves",
         "Medium Coin Purse"
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Deoryn Fe'Dhar"
+      ]
     },
     {
       "page": "Depnar Bulrious",
@@ -75017,7 +75594,10 @@
           "ew": 1379
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Vindi"
+      ]
     },
     {
       "page": "Derasinal",
@@ -75631,6 +76211,9 @@
           "ns": 167,
           "ew": -898
         }
+      ],
+      "otherNames": [
+        "Dissa C'Luzz"
       ]
     },
     {
@@ -75659,6 +76242,9 @@
           "ns": 0,
           "ew": -115
         }
+      ],
+      "otherNames": [
+        "Divn L'Crit"
       ]
     },
     {
@@ -75934,7 +76520,10 @@
           "ew": 2193
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Dom K'Perl"
+      ]
     },
     {
       "page": "Dom McMarrin",
@@ -76456,7 +77045,11 @@
           "pct": 10
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Doze",
+        "Dozekar"
+      ]
     },
     {
       "page": "Dozing ghulam",
@@ -76488,6 +77081,9 @@
           "ns": 694,
           "ew": -1780
         }
+      ],
+      "otherNames": [
+        "Draan N'Ryt"
       ]
     },
     {
@@ -76558,7 +77154,10 @@
           "pct": 50
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Dragoon Barber W'Selo"
+      ]
     },
     {
       "page": "Dragoon Darl",
@@ -76584,6 +77183,9 @@
       ],
       "drops": [
         "Dragoon Dirk"
+      ],
+      "otherNames": [
+        "Dragoon J'Len"
       ]
     },
     {
@@ -76622,7 +77224,10 @@
           "pct": 100
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Dragoon T'Vem"
+      ]
     },
     {
       "page": "Dragoon T`Vex",
@@ -76639,7 +77244,10 @@
           "pct": 50
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Dragoon T'Vex"
+      ]
     },
     {
       "page": "Dragoon Tsanne",
@@ -76673,7 +77281,10 @@
           "pct": 50
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Dragoon V'Lask"
+      ]
     },
     {
       "page": "Dragoon V`Resh",
@@ -76727,6 +77338,9 @@
           "ew": -75.7,
           "z": -6.84
         }
+      ],
+      "otherNames": [
+        "Dragoon X'Lottl"
       ]
     },
     {
@@ -76935,6 +77549,9 @@
           "ns": 120,
           "ew": -985
         }
+      ],
+      "otherNames": [
+        "Draxiz N`Ryt"
       ]
     },
     {
@@ -77044,6 +77661,9 @@
           "ns": -4140,
           "ew": -2490
         }
+      ],
+      "otherNames": [
+        "Dreamspeaker Lyssira"
       ]
     },
     {
@@ -77307,6 +77927,9 @@
           "ns": 915,
           "ew": -1278
         }
+      ],
+      "otherNames": [
+        "Drisi J'Axx"
       ]
     },
     {
@@ -77654,6 +78277,9 @@
           "ns": 315,
           "ew": -680
         }
+      ],
+      "otherNames": [
+        "Dumisa D'Enetti"
       ]
     },
     {
@@ -78225,7 +78851,10 @@
           "pct": 3
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Dygwyn Fe'Dhar"
+      ]
     },
     {
       "page": "Dyllin Starsine",
@@ -78244,6 +78873,9 @@
           "ew": 126,
           "pct": 50
         }
+      ],
+      "otherNames": [
+        "Dyllin Starshine"
       ]
     },
     {
@@ -78319,7 +78951,10 @@
         "Frosted Gloves",
         "Medium Coin Purse"
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Dyr Fe'Dhar"
+      ]
     },
     {
       "page": "Dyrna Nlith",
@@ -78421,7 +79056,10 @@
           "pct": 100
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Eashen"
+      ]
     },
     {
       "page": "Ebon Bloodrose",
@@ -79095,7 +79733,10 @@
           "pct": 3
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Eldriaks Fe'Dhar"
+      ]
     },
     {
       "page": "Eldrig the Old",
@@ -79511,7 +80152,10 @@
           "pct": 3
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Elyshum Fe'Dhar"
+      ]
     },
     {
       "page": "Elytan Rantas",
@@ -79575,7 +80219,10 @@
       "drops": [
         "Scarab Carapace"
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "An emerald fencer"
+      ]
     },
     {
       "page": "Emerald stalker",
@@ -79705,6 +80352,9 @@
           "ns": 86,
           "ew": -74
         }
+      ],
+      "otherNames": [
+        "Emporer Crush"
       ]
     },
     {
@@ -81016,7 +81666,10 @@
           "ew": 555
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Faelin Bloodbrir"
+      ]
     },
     {
       "page": "Faerie of Dismay",
@@ -81347,7 +82000,10 @@
           "pct": 50
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Fardonad Fe'Dhar"
+      ]
     },
     {
       "page": "Faren",
@@ -81732,6 +82388,9 @@
           "ns": 34,
           "ew": -915
         }
+      ],
+      "otherNames": [
+        "Felok N'Tan"
       ]
     },
     {
@@ -82984,7 +83643,10 @@
           "pct": 25
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Foreman Mirt'akk"
+      ]
     },
     {
       "page": "Foreman Rixact",
@@ -85126,7 +85788,10 @@
           "ew": 1200
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "A Froglok Yun Shaman (Trak's Teeth)"
+      ]
     },
     {
       "page": "Froglok Zol Knight",
@@ -86287,6 +86952,9 @@
           "ns": 1279,
           "ew": -1274
         }
+      ],
+      "otherNames": [
+        "Gasia N'Mare"
       ]
     },
     {
@@ -87540,7 +88208,11 @@
           "ew": 1340
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Giz X'Tin",
+        "Giz X’Tin"
+      ]
     },
     {
       "page": "Gkrean Prophet of Tallon",
@@ -87682,7 +88354,10 @@
           "pct": 25
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Gleed"
+      ]
     },
     {
       "page": "Glen Garginburr",
@@ -87956,7 +88631,10 @@
         "Frosted Gloves",
         "Medium Coin Purse"
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Glydoc Fe'Dhar"
+      ]
     },
     {
       "page": "Glynda Smeltpot",
@@ -88370,6 +89048,9 @@
           "ns": -790,
           "ew": -710
         }
+      ],
+      "otherNames": [
+        "Fire Goblin Drunkard"
       ]
     },
     {
@@ -88530,6 +89211,9 @@
           "ew": -6278,
           "pct": 100
         }
+      ],
+      "otherNames": [
+        "A goblin miner"
       ]
     },
     {
@@ -88540,7 +89224,10 @@
       "zones": [
         "Firiona Vie"
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "A Goblin Pillager"
+      ]
     },
     {
       "page": "Goblin Preacher",
@@ -88684,6 +89371,9 @@
           "ew": -160,
           "pct": 100
         }
+      ],
+      "otherNames": [
+        "Goblin Warlord (Runnyeye Citadel)"
       ]
     },
     {
@@ -88957,6 +89647,9 @@
         "Silken Strands",
         "Silver Hoop",
         "Worn Leather Mask"
+      ],
+      "otherNames": [
+        "Gorgolosk"
       ]
     },
     {
@@ -89184,7 +89877,10 @@
           "pct": 15
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Gozz"
+      ]
     },
     {
       "page": "Gra`Vloren",
@@ -89329,7 +90025,10 @@
           "ew": 2951
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Gracie F'Liler"
+      ]
     },
     {
       "page": "Gragek Mjlorkigar",
@@ -89594,7 +90293,10 @@
           "pct": 20
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Grand Herbalist Mak'ha"
+      ]
     },
     {
       "page": "Grand Historian Thoridain",
@@ -89694,7 +90396,10 @@
           "pct": 100
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Grand Vizier Poolakacha'tei"
+      ]
     },
     {
       "page": "Grandmaster H`Qilm",
@@ -89828,7 +90533,10 @@
           "pct": 25
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Grave Master Zo'lun"
+      ]
     },
     {
       "page": "Grazhak the Berzerker",
@@ -89848,6 +90556,9 @@
           "ew": -492,
           "pct": 10
         }
+      ],
+      "otherNames": [
+        "Grazhak the Berserker"
       ]
     },
     {
@@ -89991,6 +90702,9 @@
         "Mithril Earring",
         "Jade Earring",
         "Pearl"
+      ],
+      "otherNames": [
+        "A Greater Kobold"
       ]
     },
     {
@@ -90172,7 +90886,10 @@
         "Reinforced Rhino Armor",
         "Burynai Hide Armor"
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "A greater skeleton (Iksar)"
+      ]
     },
     {
       "page": "Greater Spurbone",
@@ -90619,6 +91336,9 @@
           "ns": 196,
           "ew": 299
         }
+      ],
+      "otherNames": [
+        "Greta Mottle"
       ]
     },
     {
@@ -90727,7 +91447,11 @@
           "pct": 100
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Grik",
+        "Grik the Exiled"
+      ]
     },
     {
       "page": "Grim Oakfist",
@@ -90760,7 +91484,10 @@
           "pct": 50
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Grimeworm"
+      ]
     },
     {
       "page": "GrimFeather",
@@ -90785,6 +91512,9 @@
           "ew": -1996,
           "pct": 50
         }
+      ],
+      "otherNames": [
+        "Griffin Grimfeather"
       ]
     },
     {
@@ -90946,6 +91676,9 @@
           "ns": -1690,
           "ew": -1300
         }
+      ],
+      "otherNames": [
+        "Grizzlenot"
       ]
     },
     {
@@ -93201,6 +93934,9 @@
           "ew": 49,
           "pct": 50
         }
+      ],
+      "otherNames": [
+        "Guard E'Brona"
       ]
     },
     {
@@ -93216,6 +93952,9 @@
           "ew": -990,
           "pct": 50
         }
+      ],
+      "otherNames": [
+        "Guard E'Tru"
       ]
     },
     {
@@ -93448,6 +94187,9 @@
           "ew": 0,
           "pct": 50
         }
+      ],
+      "otherNames": [
+        "Guard F'Lok"
       ]
     },
     {
@@ -93456,6 +94198,9 @@
       "level": "17",
       "zones": [
         "Nektulos Forest"
+      ],
+      "otherNames": [
+        "Guard F'Losta"
       ]
     },
     {
@@ -94767,6 +95512,9 @@
           "ns": 7,
           "ew": -562
         }
+      ],
+      "otherNames": [
+        "Guard Huitan"
       ]
     },
     {
@@ -96625,6 +97373,9 @@
           "ew": 49,
           "pct": 50
         }
+      ],
+      "otherNames": [
+        "Guard N'Lan"
       ]
     },
     {
@@ -97237,6 +97988,9 @@
       "level": "35",
       "zones": [
         "Eastern Karana"
+      ],
+      "otherNames": [
+        "Utils/0"
       ]
     },
     {
@@ -98001,6 +98755,9 @@
           "ew": 1447,
           "pct": 100
         }
+      ],
+      "otherNames": [
+        "Guard Rundel"
       ]
     },
     {
@@ -98073,6 +98830,9 @@
           "ns": 15,
           "ew": 1
         }
+      ],
+      "otherNames": [
+        "Guard S'Kor"
       ]
     },
     {
@@ -98869,6 +99629,9 @@
           "ns": -818,
           "ew": -22
         }
+      ],
+      "otherNames": [
+        "Guard T'Aba"
       ]
     },
     {
@@ -98888,6 +99651,9 @@
           "ew": -109,
           "pct": 50
         }
+      ],
+      "otherNames": [
+        "Guard T'Kix"
       ]
     },
     {
@@ -99468,6 +100234,9 @@
           "ns": 2640,
           "ew": 655
         }
+      ],
+      "otherNames": [
+        "Guard V'Ehn"
       ]
     },
     {
@@ -99883,6 +100652,9 @@
           "ew": 49,
           "pct": 50
         }
+      ],
+      "otherNames": [
+        "Guard X'Onnu"
       ]
     },
     {
@@ -100037,6 +100809,9 @@
           "ew": 700,
           "pct": 50
         }
+      ],
+      "otherNames": [
+        "Guard Z'Den"
       ]
     },
     {
@@ -100198,7 +100973,10 @@
       "drops": [
         "Fusible Velium Ore"
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Kozz"
+      ]
     },
     {
       "page": "Guardian Laigyr",
@@ -100308,6 +101086,9 @@
           "ns": -492,
           "ew": -8854
         }
+      ],
+      "otherNames": [
+        "Guardian of K'Arnon"
       ]
     },
     {
@@ -100325,7 +101106,10 @@
           "pct": 50
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Takish"
+      ]
     },
     {
       "page": "Guardian of Tunare",
@@ -101350,7 +102134,10 @@
           "ew": 351
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Haggle Baron Dry'dn"
+      ]
     },
     {
       "page": "Haggle Baron Klok",
@@ -101489,6 +102276,9 @@
           "ns": -131,
           "ew": -985
         }
+      ],
+      "otherNames": [
+        "Halvn B'Div"
       ]
     },
     {
@@ -102975,6 +103765,9 @@
           "ns": 137,
           "ew": -337
         }
+      ],
+      "otherNames": [
+        "Holana O'Leary"
       ]
     },
     {
@@ -103162,7 +103955,10 @@
         "Green Dragon Scales",
         "Robe of Burning Rage"
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Hosh"
+      ]
     },
     {
       "page": "Hraashna the Warder",
@@ -104305,7 +105101,10 @@
           "pct": 100
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Ikatiar"
+      ]
     },
     {
       "page": "Iksar Bandit Lord",
@@ -104540,6 +105339,9 @@
           "ew": -930,
           "pct": 100
         }
+      ],
+      "otherNames": [
+        "Ilanics Skeleton"
       ]
     },
     {
@@ -105793,6 +106595,10 @@
           "ew": 10,
           "z": 150
         }
+      ],
+      "otherNames": [
+        "Innoruuk (God - Hate Revamp)",
+        "Prince of Hate"
       ]
     },
     {
@@ -105963,7 +106769,10 @@
           "pct": 50
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Interrogator Gi'mok"
+      ]
     },
     {
       "page": "Interrogator of Ry`Gorr",
@@ -106367,6 +107176,9 @@
           "ns": 404,
           "ew": -766
         }
+      ],
+      "otherNames": [
+        "Issia H'Rugla"
       ]
     },
     {
@@ -106468,6 +107280,9 @@
           "ns": 447,
           "ew": -848
         }
+      ],
+      "otherNames": [
+        "Ithvol K'Jasn"
       ]
     },
     {
@@ -106973,7 +107788,10 @@
           "ew": -119
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Jaled Dar's Shade"
+      ]
     },
     {
       "page": "Jaleel Hoglomp",
@@ -107047,6 +107865,9 @@
           "ew": -725,
           "pct": 50
         }
+      ],
+      "otherNames": [
+        "Janam"
       ]
     },
     {
@@ -108669,6 +109490,9 @@
           "ns": 913,
           "ew": -1278
         }
+      ],
+      "otherNames": [
+        "Jusar V'Lask"
       ]
     },
     {
@@ -108782,6 +109606,9 @@
           "ns": 1319,
           "ew": -1264
         }
+      ],
+      "otherNames": [
+        "Jys D'Bious"
       ]
     },
     {
@@ -109058,7 +109885,10 @@
           "pct": 3
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Kalacs Fe'Dhar"
+      ]
     },
     {
       "page": "Kalameky Darkfoam",
@@ -109337,6 +110167,9 @@
           "ns": 510,
           "ew": -505
         }
+      ],
+      "otherNames": [
+        "Kar O'Dansin"
       ]
     },
     {
@@ -109733,6 +110566,9 @@
           "ew": -1561,
           "pct": 50
         }
+      ],
+      "otherNames": [
+        "Kazzel D'Leryt"
       ]
     },
     {
@@ -110101,7 +110937,11 @@
           "pct": 100
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "KDT",
+        "Shieldfuck"
+      ]
     },
     {
       "page": "Keldyn Dunfire",
@@ -110259,7 +111099,12 @@
         "Pristine Emerald",
         "Flawless Diamond"
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "KD",
+        "Kelorek'Dar",
+        "Kelorek'dar"
+      ]
     },
     {
       "page": "Kelsi Q`Grinol",
@@ -110275,7 +111120,10 @@
           "ew": 2365
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Kelsi Q'Grinol"
+      ]
     },
     {
       "page": "Kelynn",
@@ -110332,7 +111180,10 @@
           "pct": 20
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Kennel Master Al'ele"
+      ]
     },
     {
       "page": "Kerafyrm",
@@ -110342,7 +111193,11 @@
       "zones": [
         "Sleeper's Tomb"
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Sleeper",
+        "The Sleeper"
+      ]
     },
     {
       "page": "Kerd",
@@ -110514,6 +111369,9 @@
           "ew": -150,
           "pct": 100
         }
+      ],
+      "otherNames": [
+        "Kerren Tiger Spahi"
       ]
     },
     {
@@ -110839,6 +111697,9 @@
           "ns": 620,
           "ew": 56
         }
+      ],
+      "otherNames": [
+        "Khrix's Abomination"
       ]
     },
     {
@@ -111016,6 +111877,9 @@
           "ns": 807,
           "ew": -206
         }
+      ],
+      "otherNames": [
+        "King Ak'Anon"
       ]
     },
     {
@@ -111126,7 +111990,11 @@
           "ew": 1700
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "KT",
+        "Tormax"
+      ]
     },
     {
       "page": "King Tranix",
@@ -111283,6 +112151,9 @@
           "ns": 172,
           "ew": -874
         }
+      ],
+      "otherNames": [
+        "Kis K'Jartan"
       ]
     },
     {
@@ -111404,6 +112275,9 @@
           "ns": 176,
           "ew": -925
         }
+      ],
+      "otherNames": [
+        "Kizya D'Dbth"
       ]
     },
     {
@@ -111566,7 +112440,10 @@
           "pct": 10
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Klandi"
+      ]
     },
     {
       "page": "Klarp Bartleby",
@@ -111768,7 +112645,10 @@
           "ew": 9140
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Klok F'tshai"
+      ]
     },
     {
       "page": "Klok Foob",
@@ -111816,7 +112696,10 @@
           "ew": -2912
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Klok G'rshai"
+      ]
     },
     {
       "page": "Klok Gnask",
@@ -113127,7 +114010,10 @@
           "pct": 20
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Korucust's Courier"
+      ]
     },
     {
       "page": "Korven Nisere",
@@ -113464,6 +114350,9 @@
           "ns": 63,
           "ew": -886
         }
+      ],
+      "otherNames": [
+        "Krivn S'Tai"
       ]
     },
     {
@@ -114093,6 +114982,9 @@
           "ns": 561,
           "ew": -493
         }
+      ],
+      "otherNames": [
+        "Kylan O'Danos"
       ]
     },
     {
@@ -114267,7 +115159,11 @@
           "pct": 100
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Lady M",
+        "Lady m"
+      ]
     },
     {
       "page": "Lady Nevederia",
@@ -114294,7 +115190,11 @@
           "pct": 100
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Lady N",
+        "Nevederia"
+      ]
     },
     {
       "page": "Lady Nidra the Escaped",
@@ -114302,6 +115202,9 @@
       "level": "?",
       "zones": [
         "Lesser Faydark"
+      ],
+      "otherNames": [
+        "Lady Nidra"
       ]
     },
     {
@@ -115311,6 +116214,9 @@
       "drops": [
         "Spider Silk",
         "Spider Legs"
+      ],
+      "otherNames": [
+        "Ldc"
       ]
     },
     {
@@ -116568,7 +117474,12 @@
           "pct": 12
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "LTK",
+        "Lendi",
+        "Ltk"
+      ]
     },
     {
       "page": "Lenka Stoutheart",
@@ -116917,6 +117828,9 @@
           "ns": 3989,
           "ew": 1477
         }
+      ],
+      "otherNames": [
+        "Lianna"
       ]
     },
     {
@@ -118224,6 +119138,9 @@
         "Torn Page of Mastery Fire",
         "Torn Page of Mastery Water",
         "Torn Page of Mastery Earth"
+      ],
+      "otherNames": [
+        "Linare Parlone"
       ]
     },
     {
@@ -118359,7 +119276,10 @@
           "ew": 2396
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Lissa T'Born"
+      ]
     },
     {
       "page": "Lisv D`Unnar",
@@ -118466,7 +119386,10 @@
           "ew": 654
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Lithrise Frizen"
+      ]
     },
     {
       "page": "Litz B`Doph",
@@ -118481,6 +119404,10 @@
           "ns": 130,
           "ew": -955
         }
+      ],
+      "otherNames": [
+        "Litz B'Div",
+        "Litz B`Div"
       ]
     },
     {
@@ -118495,6 +119422,9 @@
           "ns": -108,
           "ew": -271
         }
+      ],
+      "otherNames": [
+        "Livam T'Lant"
       ]
     },
     {
@@ -118670,7 +119600,10 @@
           "ew": 2392
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Lodi"
+      ]
     },
     {
       "page": "Lodrand Dindlenod",
@@ -118856,7 +119789,11 @@
           "pct": 100
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Lord Bob",
+        "Lord Doljo"
+      ]
     },
     {
       "page": "Lord Elgnub",
@@ -118903,7 +119840,12 @@
           "pct": 100
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Fesh",
+        "Feshlak",
+        "Lord Fesh"
+      ]
     },
     {
       "page": "Lord Ghiosk",
@@ -119034,6 +119976,9 @@
           "ns": 1377,
           "ew": 1172
         }
+      ],
+      "otherNames": [
+        "Lord Grimrot (live)"
       ]
     },
     {
@@ -119079,7 +120024,11 @@
           "pct": 100
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Koi",
+        "Lord koi'den"
+      ]
     },
     {
       "page": "Lord Korzin",
@@ -119122,7 +120071,10 @@
           "pct": 100
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Kreizenn"
+      ]
     },
     {
       "page": "Lord Lyfyx of Burwood",
@@ -119173,6 +120125,9 @@
           "ns": -1395,
           "ew": -871
         }
+      ],
+      "otherNames": [
+        "Naggy"
       ]
     },
     {
@@ -119189,7 +120144,10 @@
           "ew": -342
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Realm of heroes"
+      ]
     },
     {
       "page": "Lord of Ire",
@@ -119333,7 +120291,10 @@
         "Atramentous Shield",
         "Iksar Scale"
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Lord Rak'Ashiir"
+      ]
     },
     {
       "page": "Lord Searfire",
@@ -119492,7 +120453,10 @@
           "pct": 100
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Vyemm"
+      ]
     },
     {
       "page": "Lord Yelinak",
@@ -119765,7 +120729,11 @@
           "pct": 25
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Loremaster Piza'Tak",
+        "Loremaster Piza'tak"
+      ]
     },
     {
       "page": "Loremaster Sarl",
@@ -119946,7 +120914,10 @@
           "ew": 1370
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Lothieder Fe'Dhar"
+      ]
     },
     {
       "page": "Loveal S`Nez",
@@ -120375,6 +121346,9 @@
           "ns": 409,
           "ew": -861
         }
+      ],
+      "otherNames": [
+        "Lyniv S'Kor"
       ]
     },
     {
@@ -120647,6 +121621,9 @@
           "ew": 295,
           "pct": 100
         }
+      ],
+      "otherNames": [
+        "Maestro"
       ]
     },
     {
@@ -120739,6 +121716,9 @@
           "ns": -371,
           "ew": -164
         }
+      ],
+      "otherNames": [
+        "Magi P'Tasa"
       ]
     },
     {
@@ -120789,6 +121769,9 @@
           "ew": -825,
           "pct": 100
         }
+      ],
+      "otherNames": [
+        "Magi Rokyl"
       ]
     },
     {
@@ -121132,7 +122115,10 @@
           "pct": 50
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "A man-eating fern"
+      ]
     },
     {
       "page": "Man Eating Plant",
@@ -121161,6 +122147,10 @@
           "ew": -2975,
           "pct": 50
         }
+      ],
+      "otherNames": [
+        "A man-eating plant",
+        "Daisy Man"
       ]
     },
     {
@@ -121751,6 +122741,9 @@
           "ns": 90,
           "ew": -174
         }
+      ],
+      "otherNames": [
+        "Marshall Lanena"
       ]
     },
     {
@@ -121875,6 +122868,9 @@
           "ew": -875,
           "z": -53
         }
+      ],
+      "otherNames": [
+        "Marza T'Kix"
       ]
     },
     {
@@ -122028,7 +123024,10 @@
           "pct": 100
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Motg"
+      ]
     },
     {
       "page": "Master Raska",
@@ -122152,6 +123151,9 @@
           "ns": 800,
           "ew": 200
         }
+      ],
+      "otherNames": [
+        "Yael"
       ]
     },
     {
@@ -122428,6 +123430,9 @@
           "ns": 769,
           "ew": -1310
         }
+      ],
+      "otherNames": [
+        "Medron Y'Lask"
       ]
     },
     {
@@ -122482,7 +123487,10 @@
           "pct": 3
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Medry Fe'Dhar"
+      ]
     },
     {
       "page": "Meeka Diggs",
@@ -123841,6 +124849,9 @@
           "ew": 3795,
           "pct": 34
         }
+      ],
+      "otherNames": [
+        "Mytha Wintersong"
       ]
     },
     {
@@ -124021,6 +125032,9 @@
           "ew": -1002,
           "pct": 100
         }
+      ],
+      "otherNames": [
+        "Mikaela S'Kor"
       ]
     },
     {
@@ -124433,6 +125447,9 @@
           "ns": 1335,
           "ew": -1240
         }
+      ],
+      "otherNames": [
+        "Misal S'Kor"
       ]
     },
     {
@@ -124448,6 +125465,9 @@
           "ns": 913,
           "ew": -1352
         }
+      ],
+      "otherNames": [
+        "Misar D'Dbth"
       ]
     },
     {
@@ -124650,6 +125670,9 @@
           "ew": 2580,
           "pct": 100
         }
+      ],
+      "otherNames": [
+        "Misty Tekchita"
       ]
     },
     {
@@ -124701,6 +125724,9 @@
           "ns": 913,
           "ew": -1314
         }
+      ],
+      "otherNames": [
+        "Mizr N'Mar"
       ]
     },
     {
@@ -124936,6 +125962,9 @@
           "ns": 124,
           "ew": -773
         }
+      ],
+      "otherNames": [
+        "Monat D'Larme"
       ]
     },
     {
@@ -124967,6 +125996,9 @@
           "ns": 106,
           "ew": -378
         }
+      ],
+      "otherNames": [
+        "Monita O'Donner"
       ]
     },
     {
@@ -124994,6 +126026,9 @@
       "drops": [
         "Zombie Skin",
         "Monstrous Zombie Heart"
+      ],
+      "otherNames": [
+        "A monstrous zombie"
       ]
     },
     {
@@ -125101,7 +126136,10 @@
           "pct": 3
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Morachii Fe'Dhar"
+      ]
     },
     {
       "page": "Moran Smith",
@@ -125162,6 +126200,9 @@
           "ns": 300,
           "ew": -637
         }
+      ],
+      "otherNames": [
+        "Moreo O'Meek"
       ]
     },
     {
@@ -125368,6 +126409,9 @@
           "ew": -222,
           "pct": 100
         }
+      ],
+      "otherNames": [
+        "Mrac"
       ]
     },
     {
@@ -125927,7 +126971,10 @@
           "ew": 109
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Fungus king"
+      ]
     },
     {
       "page": "Myconid Warrior",
@@ -126104,6 +127151,9 @@
           "ns": 400,
           "ew": -854
         }
+      ],
+      "otherNames": [
+        "Myris N'Tan"
       ]
     },
     {
@@ -126152,6 +127202,9 @@
           "ns": 164,
           "ew": -955
         }
+      ],
+      "otherNames": [
+        "Mys S'Tai"
       ]
     },
     {
@@ -126211,7 +127264,10 @@
           "pct": 12
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Mystic of Ry'Gorr"
+      ]
     },
     {
       "page": "Mywyn Tinendel",
@@ -126473,7 +127529,10 @@
           "pct": 16
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Narandi"
+      ]
     },
     {
       "page": "Narex T`Vem",
@@ -126764,7 +127823,10 @@
         "Ornate Rune Shield",
         "Woodsman's Staff"
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Neh'Ashiir"
+      ]
     },
     {
       "page": "Nekexin Virulence",
@@ -126795,6 +127857,9 @@
           "ns": 82,
           "ew": -931
         }
+      ],
+      "otherNames": [
+        "Nekola N'Ryt"
       ]
     },
     {
@@ -127409,6 +128474,9 @@
           "ns": 1675,
           "ew": -1600
         }
+      ],
+      "otherNames": [
+        "Nilits Contraption"
       ]
     },
     {
@@ -127439,6 +128507,9 @@
           "ew": -431,
           "pct": 100
         }
+      ],
+      "otherNames": [
+        "Nillipus"
       ]
     },
     {
@@ -127663,6 +128734,9 @@
           "ns": 82,
           "ew": -884
         }
+      ],
+      "otherNames": [
+        "Niz L'Crit"
       ]
     },
     {
@@ -127760,6 +128834,9 @@
           "ew": -121,
           "pct": 100
         }
+      ],
+      "otherNames": [
+        "Noclins Pet"
       ]
     },
     {
@@ -128116,6 +129193,9 @@
           "ew": -237,
           "pct": 25
         }
+      ],
+      "otherNames": [
+        "Nox spider"
       ]
     },
     {
@@ -128514,7 +129594,10 @@
           "pct": 34
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Observer Aq'touz"
+      ]
     },
     {
       "page": "Obsolete model",
@@ -128820,6 +129903,9 @@
           "ns": 1335,
           "ew": -1228
         }
+      ],
+      "otherNames": [
+        "Olak N'Mar"
       ]
     },
     {
@@ -128949,6 +130035,9 @@
           "ns": 83,
           "ew": -904
         }
+      ],
+      "otherNames": [
+        "Olyna Midel"
       ]
     },
     {
@@ -129458,7 +130547,10 @@
           "pct": 15
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Oracle of Ry'Gorr"
+      ]
     },
     {
       "page": "Oracle Qulin",
@@ -130097,6 +131189,10 @@
           "ns": 2389,
           "ew": -145
         }
+      ],
+      "otherNames": [
+        "An Orc Shaman",
+        "An orc shaman"
       ]
     },
     {
@@ -130341,7 +131437,10 @@
           "pct": 50
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Orivin Vor'Tun"
+      ]
     },
     {
       "page": "Oriyame Nelafre",
@@ -130630,7 +131729,10 @@
           "pct": 10
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Overseer Dal'guur"
+      ]
     },
     {
       "page": "Overseer Dlubish",
@@ -130660,6 +131762,9 @@
       ],
       "drops": [
         "Gem Encrusted Circlet"
+      ],
+      "otherNames": [
+        "Overseer Miklik"
       ]
     },
     {
@@ -130951,7 +132056,13 @@
       "zones": [
         "Plane of Mischief"
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "A dandy pansy",
+        "A pretty ugly pansy",
+        "A puny pansy",
+        "An angry pansy"
+      ]
     },
     {
       "page": "Pantrilla",
@@ -131330,7 +132441,10 @@
           "pct": 100
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Peachy D'Vicci"
+      ]
     },
     {
       "page": "Pearce Icefang",
@@ -131710,7 +132824,10 @@
           "ew": -1314
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "PD"
+      ]
     },
     {
       "page": "Phenocryst",
@@ -131836,6 +132953,9 @@
           "ew": 111,
           "pct": 100
         }
+      ],
+      "otherNames": [
+        "Phinny"
       ]
     },
     {
@@ -132125,6 +133245,9 @@
           "ns": 133,
           "ew": -911
         }
+      ],
+      "otherNames": [
+        "Pisna H'Rugla"
       ]
     },
     {
@@ -133152,6 +134275,9 @@
           "ew": 1101,
           "pct": 100
         }
+      ],
+      "otherNames": [
+        "Princess Llandra"
       ]
     },
     {
@@ -133905,7 +135031,10 @@
           "pct": 3
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Qalcnic Fe'Dhar"
+      ]
     },
     {
       "page": "Qarrgy Scallopgobbler",
@@ -134273,7 +135402,10 @@
           "ew": 990
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Queen Velazul Di'zok"
+      ]
     },
     {
       "page": "Quegin Hadder",
@@ -134536,7 +135668,10 @@
           "ew": 1370
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Qynydd Fe'Dhar"
+      ]
     },
     {
       "page": "Raarrk",
@@ -135203,6 +136338,9 @@
       "level": "40",
       "zones": [
         "Neriak Commons"
+      ],
+      "otherNames": [
+        "Ranza S'Ion"
       ]
     },
     {
@@ -135423,7 +136561,10 @@
         "Blue Knight",
         "Words of Wealth: Bottom Left"
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "A ratman rager"
+      ]
     },
     {
       "page": "Ratmlet",
@@ -135568,6 +136709,9 @@
           "ew": 38,
           "pct": 100
         }
+      ],
+      "otherNames": [
+        "Raz the Rat"
       ]
     },
     {
@@ -135711,6 +136855,9 @@
           "ew": -720,
           "pct": 50
         }
+      ],
+      "otherNames": [
+        "Rebby"
       ]
     },
     {
@@ -135896,6 +137043,9 @@
           "ns": 89,
           "ew": -147
         }
+      ],
+      "otherNames": [
+        "Refugee spiltpaw"
       ]
     },
     {
@@ -136626,6 +137776,9 @@
           "ns": -45,
           "ew": 19
         }
+      ],
+      "otherNames": [
+        "Rin Dislemor"
       ]
     },
     {
@@ -136721,7 +137874,10 @@
           "pct": 3
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Riran Fe'Dhar"
+      ]
     },
     {
       "page": "Risen corporal",
@@ -136784,6 +137940,9 @@
           "ns": -152,
           "ew": -1011
         }
+      ],
+      "otherNames": [
+        "Rista S'lon"
       ]
     },
     {
@@ -136830,6 +137989,9 @@
           "ns": 141,
           "ew": -977
         }
+      ],
+      "otherNames": [
+        "Riv N'Mar"
       ]
     },
     {
@@ -136860,6 +138022,9 @@
           "ns": 1336,
           "ew": -1214
         }
+      ],
+      "otherNames": [
+        "Rizyra F'Lok"
       ]
     },
     {
@@ -137065,6 +138230,9 @@
         "Etched Iron Girdle",
         "Kobold Head",
         "Aged Filthy Bastard Sword"
+      ],
+      "otherNames": [
+        "Rognarog"
       ]
     },
     {
@@ -137108,6 +138276,10 @@
           "ns": -264,
           "ew": 246
         }
+      ],
+      "otherNames": [
+        "Rogue Clockworks",
+        "Rogue clockworks"
       ]
     },
     {
@@ -137516,6 +138688,9 @@
           "ns": 1592,
           "ew": -887
         }
+      ],
+      "otherNames": [
+        "Roshmael"
       ]
     },
     {
@@ -138316,7 +139491,10 @@
           "pct": 11
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Ry'Gorr Elite Guard"
+      ]
     },
     {
       "page": "Ry`Gorr Emissary",
@@ -138408,6 +139586,9 @@
           "ns": 11,
           "ew": -848
         }
+      ],
+      "otherNames": [
+        "Rysva To'Biath"
       ]
     },
     {
@@ -140426,7 +141607,10 @@
           "ew": 80
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Bile Sentinel"
+      ]
     },
     {
       "page": "Sentinel Adrial",
@@ -143405,7 +144589,10 @@
       "zones": [
         "Great Divide"
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Badain"
+      ]
     },
     {
       "page": "Sentry Boris",
@@ -143945,6 +145132,9 @@
           "ns": 156,
           "ew": -4773
         }
+      ],
+      "otherNames": [
+        "Sentry Xyrinn"
       ]
     },
     {
@@ -144268,6 +145458,9 @@
           "ew": -946,
           "pct": 50
         }
+      ],
+      "otherNames": [
+        "Sergeant C'orm"
       ]
     },
     {
@@ -144487,6 +145680,9 @@
           "ew": 3025,
           "pct": 100
         }
+      ],
+      "otherNames": [
+        "Slate"
       ]
     },
     {
@@ -144590,6 +145786,9 @@
           "ns": 3608,
           "ew": 701
         }
+      ],
+      "otherNames": [
+        "Seria O'Danos"
       ]
     },
     {
@@ -144861,7 +146060,10 @@
           "ew": 3500
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Sev"
+      ]
     },
     {
       "page": "Shadow Treebright",
@@ -145053,6 +146255,9 @@
           "ew": 153,
           "pct": 25
         }
+      ],
+      "otherNames": [
+        "Shaman Ren'Rex"
       ]
     },
     {
@@ -146496,6 +147701,10 @@
           "ns": 29,
           "ew": -178
         }
+      ],
+      "otherNames": [
+        "Lucan",
+        "Sir Lucan D'Lere"
       ]
     },
     {
@@ -146999,6 +148208,9 @@
           "ns": 61,
           "ew": -799
         }
+      ],
+      "otherNames": [
+        "Sivy G'Noir"
       ]
     },
     {
@@ -148722,6 +149934,9 @@
           "ew": -313,
           "pct": 10
         }
+      ],
+      "otherNames": [
+        "Fire goblin king"
       ]
     },
     {
@@ -148992,7 +150207,10 @@
           "pct": 100
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Sont"
+      ]
     },
     {
       "page": "Soonog",
@@ -149460,7 +150678,10 @@
           "pct": 25
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Spectral harbringer"
+      ]
     },
     {
       "page": "Spectral keeper",
@@ -149502,7 +150723,10 @@
         "Salil's Writ Pg. 288 (Left)",
         "Rune of the Combine"
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Spectral Keepers"
+      ]
     },
     {
       "page": "Spectral Knight",
@@ -150343,6 +151567,9 @@
           "ns": -168,
           "ew": -724
         }
+      ],
+      "otherNames": [
+        "Stablehand Brack"
       ]
     },
     {
@@ -150357,6 +151584,9 @@
           "ns": 201,
           "ew": 572
         }
+      ],
+      "otherNames": [
+        "Stablehand Kaye"
       ]
     },
     {
@@ -150371,6 +151601,9 @@
           "ns": -2244,
           "ew": 589
         }
+      ],
+      "otherNames": [
+        "Stable hand Fleeb"
       ]
     },
     {
@@ -151409,6 +152642,9 @@
           "ns": 400,
           "ew": -786
         }
+      ],
+      "otherNames": [
+        "Svlia C'Luzz"
       ]
     },
     {
@@ -151656,6 +152892,9 @@
           "ns": 139,
           "ew": -900
         }
+      ],
+      "otherNames": [
+        "Syrn L'Crit"
       ]
     },
     {
@@ -151894,7 +153133,10 @@
           "pct": 3
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Taegria Fe'Dhar"
+      ]
     },
     {
       "page": "Tagnis Ginfarr",
@@ -152180,6 +153422,9 @@
           "ns": 156,
           "ew": -976
         }
+      ],
+      "otherNames": [
+        "Tal G'Noir"
       ]
     },
     {
@@ -152235,6 +153480,9 @@
           "ew": 1347,
           "pct": 100
         }
+      ],
+      "otherNames": [
+        "Taldrik"
       ]
     },
     {
@@ -152342,7 +153590,10 @@
         "Frosted Gloves",
         "Medium Coin Purse"
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Talgixn Fe'Dhar"
+      ]
     },
     {
       "page": "Talin O`Donal",
@@ -152356,6 +153607,10 @@
           "ns": 3611,
           "ew": 671
         }
+      ],
+      "otherNames": [
+        "Talin O'Donal",
+        "Talin ODonal"
       ]
     },
     {
@@ -153187,6 +154442,10 @@
           "ns": -209,
           "ew": -441
         }
+      ],
+      "otherNames": [
+        "Te'Anara",
+        "TeAnara"
       ]
     },
     {
@@ -153430,7 +154689,10 @@
           "pct": 13
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Telk"
+      ]
     },
     {
       "page": "Telnaq",
@@ -153462,6 +154724,9 @@
           "ns": 816,
           "ew": -1425
         }
+      ],
+      "otherNames": [
+        "Telnor D'Unnar"
       ]
     },
     {
@@ -153653,6 +154918,9 @@
         "Tentacle Whip",
         "Wand",
         "Terror Spines"
+      ],
+      "otherNames": [
+        "A tentacle terror (Najena)"
       ]
     },
     {
@@ -153774,7 +155042,10 @@
           "ew": -73
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Terbkyn Zelbus"
+      ]
     },
     {
       "page": "Tergon Brenclog",
@@ -153999,6 +155270,9 @@
       "level": "15-70",
       "zones": [
         "Arena"
+      ],
+      "otherNames": [
+        "Training Dummy"
       ]
     },
     {
@@ -154133,7 +155407,11 @@
         "Flayed Barbarian Skin Leggings",
         "Flayed Barbarian Hide Mask"
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Aow",
+        "Avatar of War"
+      ]
     },
     {
       "page": "The Blood Artist",
@@ -154362,7 +155640,10 @@
           "pct": 100
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Tfa"
+      ]
     },
     {
       "page": "The froglok king",
@@ -154458,7 +155739,10 @@
           "pct": 100
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Ghost of Kindle"
+      ]
     },
     {
       "page": "The ghoul arch magi",
@@ -154478,6 +155762,9 @@
           "ew": -832,
           "pct": 25
         }
+      ],
+      "otherNames": [
+        "The ghoul arch magus"
       ]
     },
     {
@@ -154499,6 +155786,9 @@
           "ew": -749,
           "pct": 25
         }
+      ],
+      "otherNames": [
+        "Hoptor Thaggelum"
       ]
     },
     {
@@ -154636,7 +155926,10 @@
           "pct": 100
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Oowomp"
+      ]
     },
     {
       "page": "The guard captain",
@@ -154717,6 +156010,9 @@
         "Golden Efreeti Gauntlets",
         "Golden Efreeti Greaves",
         "Large Sky Pearl"
+      ],
+      "otherNames": [
+        "Hand of Veeshan"
       ]
     },
     {
@@ -154782,6 +156078,9 @@
           "z": -6,
           "pct": 100
         }
+      ],
+      "otherNames": [
+        "The Kerran Sha'rr"
       ]
     },
     {
@@ -154823,7 +156122,11 @@
           "pct": 97
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Kly Overseer",
+        "Overseer of Kly"
+      ]
     },
     {
       "page": "The Mighty Bear Paw",
@@ -154873,6 +156176,9 @@
           "ew": 279,
           "pct": 100
         }
+      ],
+      "otherNames": [
+        "Muglwump"
       ]
     },
     {
@@ -154901,7 +156207,10 @@
           "pct": 100
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Prog"
+      ]
     },
     {
       "page": "The Prophet",
@@ -155043,6 +156352,9 @@
           "ew": 766,
           "pct": 100
         }
+      ],
+      "otherNames": [
+        "Spiroc Guardian"
       ]
     },
     {
@@ -155071,6 +156383,9 @@
         "Spiroc Elder's Totem",
         "Spiroc Sky Totem",
         "Spiroc Wingblade"
+      ],
+      "otherNames": [
+        "Spiroc Lord"
       ]
     },
     {
@@ -155125,7 +156440,11 @@
           "ew": 1379
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Statue",
+        "Statue of Rallos Zek"
+      ]
     },
     {
       "page": "The Stone Caller",
@@ -155299,6 +156618,9 @@
           "ns": 460,
           "ew": 220
         }
+      ],
+      "otherNames": [
+        "Widow Mistress"
       ]
     },
     {
@@ -156319,6 +157641,9 @@
           "ew": -5430,
           "pct": 50
         }
+      ],
+      "otherNames": [
+        "Tiny"
       ]
     },
     {
@@ -156444,6 +157769,9 @@
           "ns": 175,
           "ew": -911
         }
+      ],
+      "otherNames": [
+        "Tizzy C'Luzz"
       ]
     },
     {
@@ -156459,6 +157787,9 @@
           "ns": 162,
           "ew": -970
         }
+      ],
+      "otherNames": [
+        "Tkaz H'Rugla"
       ]
     },
     {
@@ -156959,7 +158290,10 @@
           "ew": 645
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Tonvan Fe'Dhar"
+      ]
     },
     {
       "page": "Topala Xenem",
@@ -157562,7 +158896,10 @@
           "ew": -679
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Trak"
+      ]
     },
     {
       "page": "Trakanon (triggered)",
@@ -158167,6 +159504,9 @@
           "ns": 413,
           "ew": -761
         }
+      ],
+      "otherNames": [
+        "Trik N'Tan"
       ]
     },
     {
@@ -160683,7 +162023,10 @@
           "ew": 1200
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Trooper Strengekkar"
+      ]
     },
     {
       "page": "Trooper Syenn",
@@ -161783,7 +163126,10 @@
           "pct": 3
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Tyddyn Fe'Dhar"
+      ]
     },
     {
       "page": "Tyeg Envil",
@@ -161815,6 +163161,9 @@
           "z": -52,
           "pct": 14
         }
+      ],
+      "otherNames": [
+        "Blanket Guy"
       ]
     },
     {
@@ -161940,7 +163289,10 @@
           "ew": 2406
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Tyrin F'Linz"
+      ]
     },
     {
       "page": "Tyrsa Henic",
@@ -162483,7 +163835,10 @@
           "pct": 20
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Undead Jailor"
+      ]
     },
     {
       "page": "Undead keeper",
@@ -163662,6 +165017,9 @@
           "ew": 3808,
           "pct": 4
         }
+      ],
+      "otherNames": [
+        "Vali Greenwhisper"
       ]
     },
     {
@@ -163698,7 +165056,10 @@
           "ew": 135
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Velk"
+      ]
     },
     {
       "page": "Velketors Experiment",
@@ -163714,7 +165075,10 @@
         "Girdle of Wurmslaying",
         "Stein of Bitter Cold"
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Velketor's Experiment"
+      ]
     },
     {
       "page": "Vellenon Harrance",
@@ -163796,7 +165160,10 @@
           "pct": 3
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Vellyn Fe'Dhar"
+      ]
     },
     {
       "page": "Venar Icepaw",
@@ -164026,7 +165393,10 @@
           "pct": 100
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "VS"
+      ]
     },
     {
       "page": "Venril Sathir (Triggered)",
@@ -164071,7 +165441,11 @@
           "pct": 100
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "VSR",
+        "Venril Sathir Remains"
+      ]
     },
     {
       "page": "Ventani the Warder",
@@ -164287,7 +165661,11 @@
           "pct": 5
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Verix",
+        "Vkr"
+      ]
     },
     {
       "page": "Verolk Kishneal",
@@ -165107,7 +166485,10 @@
         "Section of a Draconic Tome",
         "Large metal key"
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Vhal'Sera"
+      ]
     },
     {
       "page": "Vicar M`Kari",
@@ -165341,6 +166722,9 @@
           "ns": 1320,
           "ew": -1240
         }
+      ],
+      "otherNames": [
+        "Vissa D'Dbth"
       ]
     },
     {
@@ -165413,7 +166797,10 @@
           "ew": 2429
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Vizra L'Nizlon"
+      ]
     },
     {
       "page": "Vkaak",
@@ -165572,7 +166959,10 @@
           "pct": 3
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Vobryn Fe'Dhar"
+      ]
     },
     {
       "page": "Voglan Dransed",
@@ -165864,7 +167254,10 @@
           "pct": 100
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Vren T'Nek"
+      ]
     },
     {
       "page": "Vrionele",
@@ -165969,7 +167362,11 @@
           "ew": -740
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Vulak",
+        "Vulak'Aerr"
+      ]
     },
     {
       "page": "Vuli Greenwhisper",
@@ -166405,6 +167802,9 @@
           "ew": 2293,
           "pct": 50
         }
+      ],
+      "otherNames": [
+        "War Priestess T'zan"
       ]
     },
     {
@@ -166544,7 +167944,10 @@
           "ew": 1950
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Skargus"
+      ]
     },
     {
       "page": "Warlord Skarlon",
@@ -166666,7 +168069,10 @@
           "pct": 25
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Watch Captain Hir'roul"
+      ]
     },
     {
       "page": "Watch Sergeant Coldbones",
@@ -166833,7 +168239,10 @@
           "pct": 20
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Watch Sergeant Riz'oul"
+      ]
     },
     {
       "page": "Watch Sergeant Tlygrerion",
@@ -167186,7 +168595,10 @@
           "pct": 8
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Watch Sergeant Hyren"
+      ]
     },
     {
       "page": "Watcher Sergeant Vlreemar",
@@ -168436,7 +169848,10 @@
           "ew": 1321
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Watcman Ymmedlor"
+      ]
     },
     {
       "page": "Watchman Zakrek",
@@ -169380,6 +170795,9 @@
           "ns": 804,
           "ew": 413
         }
+      ],
+      "otherNames": [
+        "Wraith of a Shissar"
       ]
     },
     {
@@ -169529,7 +170947,10 @@
           "pct": 25
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Woushi"
+      ]
     },
     {
       "page": "Wyle Bimlin",
@@ -169731,7 +171152,12 @@
           "ew": -542
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Xene",
+        "Xeno",
+        "Xenovorash"
+      ]
     },
     {
       "page": "Xentil Herkanon",
@@ -170943,7 +172369,10 @@
         "Frosted Gloves",
         "Medium Coin Purse"
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Zaldin Fe'Dhar"
+      ]
     },
     {
       "page": "Zalerez",
@@ -171090,6 +172519,9 @@
           "ns": 82,
           "ew": -901
         }
+      ],
+      "otherNames": [
+        "Zartox Ru'Soe"
       ]
     },
     {
@@ -171583,6 +173015,10 @@
         "Fire Emerald",
         "Opal Bracelet",
         "Gossamer Robe"
+      ],
+      "otherNames": [
+        "Drow Nixx",
+        "Nixx the Drow"
       ]
     },
     {
@@ -171612,7 +173048,10 @@
           "pct": 50
         }
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Zlandi"
+      ]
     },
     {
       "page": "Zlexak",
@@ -171908,7 +173347,10 @@
         "Gauntlets of Fiery Might",
         "Heart of Zordak Ragefire"
       ],
-      "outOfEra": true
+      "outOfEra": true,
+      "otherNames": [
+        "Ragefire"
+      ]
     },
     {
       "page": "Zorglim the Dead",
