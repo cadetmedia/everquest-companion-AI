@@ -15,12 +15,11 @@
 // by `useLevelUnlocks`; the filter runs here, over ~1,450 rows, on a memo keyed by the query.
 
 import { type JSX } from 'react'
-import { Box, IconButton, InputAdornment, Stack, TextField, Typography } from '@mui/material'
-import ClearIcon from '@mui/icons-material/Clear'
-import SearchIcon from '@mui/icons-material/Search'
+import { Box, Stack, Typography } from '@mui/material'
 import type { SpellSetsSnap } from '@shared/spellSets'
 import type { ObservedSpellRanksSnap } from '@shared/spellRanks'
 import type { UnlockSearchResults } from '@shared/unlockSearch'
+import { SearchField } from '../../lib/SearchField'
 import { UnlockList } from './UnlockList'
 
 /** The one example in the placeholder is the owner's own query, spelled the way he typed it. */
@@ -35,35 +34,16 @@ export function UnlockSearchField({
   onChange: (q: string) => void
 }): JSX.Element {
   return (
-    <TextField
-      size="small"
-      value={query}
-      onChange={(e) => onChange(e.target.value)}
+    <SearchField
+      query={query}
+      onChange={onChange}
       placeholder={PLACEHOLDER}
+      testid="new-at-level-search"
+      ariaLabel="search spells"
+      clearTestid="new-at-level-search-clear"
+      clearLabel="clear search"
       sx={{ width: '100%', maxWidth: 380, mb: 0.75, '& .MuiInputBase-input': { fontSize: 12, py: 0.5 } }}
-      slotProps={{
-        htmlInput: { 'data-testid': 'new-at-level-search', 'aria-label': 'search spells' },
-        input: {
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchIcon sx={{ fontSize: 15, color: 'text.disabled' }} />
-            </InputAdornment>
-          ),
-          endAdornment:
-            query === '' ? undefined : (
-              <InputAdornment position="end">
-                <IconButton
-                  size="small"
-                  aria-label="clear search"
-                  data-testid="new-at-level-search-clear"
-                  onClick={() => onChange('')}
-                >
-                  <ClearIcon sx={{ fontSize: 14 }} />
-                </IconButton>
-              </InputAdornment>
-            )
-        }
-      }}
+      iconSizes={{ search: 15, clear: 14 }}
     />
   )
 }
