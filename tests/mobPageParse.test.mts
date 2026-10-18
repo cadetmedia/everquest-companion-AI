@@ -62,3 +62,15 @@ test('the page era banner is kept as eraTag, right after page, and absent when t
   assert.equal(bare?.eraTag, undefined)
   assert.equal(bare !== null && 'eraTag' in bare, false)
 })
+
+test('the blanket era rule: a revamp banner stands; an expansion banner gives way to an in-era zone', () => {
+  const page = (era: string, zone: string): string => `{{${era} Era}}{{Namedmobpage\n| name = x\n| zone = [[${zone}]]\n| level = 10\n}}`
+  // FearHateRevamp names no expansion, so the classic Plane of Hate cannot rescue it.
+  assert.equal(parseMobPage('A Hatebone Drake', page('FearHateRevamp', 'Plane of Hate'))?.outOfEra, true)
+  // A classic mob the wiki filed under Velious: its own page places it in a classic zone.
+  assert.equal(parseMobPage('A cave bat', page('Velious', 'Befallen'))?.outOfEra, undefined)
+  // A Velious mob in a Velious zone stays out.
+  assert.equal(parseMobPage('A Kael Drakkel guard', page('Velious', 'Kael Drakkel'))?.outOfEra, true)
+  // In-era and unbannered mobs carry no flag at all.
+  assert.equal(parseMobPage('A rat', page('Classic', 'Befallen'))?.outOfEra, undefined)
+})
