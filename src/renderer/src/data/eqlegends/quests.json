@@ -1,6 +1,6 @@
 {
-  "scrapedAt": "2026-10-14T07:24:42.779Z",
-  "source": "eqlwiki.com — Category:Quests + quest subcategories + recentchanges delta (scripts/scrape-delta.mts)",
+  "scrapedAt": "2026-10-18T09:08:55.161Z",
+  "source": "eqlwiki.com — Category:Quests + quest subcategories",
   "quests": [
     {
       "name": "10th Coldain Ring Quest",
@@ -566,7 +566,6 @@
         "Melatite",
         "Mistmoore Granite",
         "Sand of Ro",
-        "Soil of Underfoot",
         "Platinum Bar",
         "Fairy Dust",
         "SoulFire",
@@ -2211,6 +2210,7 @@
       "requiredItems": [
         "Vial of Infectious Disease",
         "Empty Infectious Vial",
+        "Airtight Metal Box",
         "Gnomish Spirits",
         "Diseased Bone Marrow",
         "Sprig of Wormwood",
@@ -2337,7 +2337,8 @@
       "factions": [
         {
           "name": "Protectors of Pine",
-          "up": true
+          "up": true,
+          "amount": 20
         },
         {
           "name": "Jaggedpine Treefolk",
@@ -2349,7 +2350,8 @@
         },
         {
           "name": "Guards of Qeynos",
-          "up": true
+          "up": true,
+          "amount": 5
         }
       ]
     },
@@ -3726,7 +3728,7 @@
         "Spiderling Eye",
         "Spiderling Silk",
         "Fire Beetle Eye",
-        "Giant Scarab Egg Sack",
+        "Giant Scarab Egg Sac",
         "Giant Fire Beetle Leg",
         "Giant Wasp Wing"
       ],
@@ -4582,7 +4584,6 @@
         }
       ],
       "requiredItems": [
-        "Soil of Underfoot",
         "Foot of Candlestick",
         "Stem of Candlestick",
         "Candle of Bravery",
@@ -9630,6 +9631,17 @@
       ]
     },
     {
+      "name": "Escort the Cargo Clockwork",
+      "page": "Escort the Cargo Clockwork",
+      "requiredItems": [
+        "Fine Steel Dagger",
+        "Fine Steel Katana",
+        "Fine Steel Rapier",
+        "Fine Steel Spear"
+      ],
+      "expReward": true
+    },
+    {
       "name": "Essence Lens Quest",
       "page": "Essence Lens Quest",
       "eraTag": "Chardok",
@@ -10002,7 +10014,10 @@
         "Sansa Nusk"
       ],
       "requiredItems": [
-        "Bag of Troll Guts"
+        "Bag of Troll Guts",
+        "Lute Strings",
+        "Etched Silver Coin",
+        "Note from Fabian"
       ],
       "expReward": true,
       "factions": [
@@ -11079,6 +11094,9 @@
         },
         {
           "name": "Small Leather Wristbands"
+        },
+        {
+          "name": "Small Leather Boots"
         }
       ],
       "requiredItems": [
@@ -11431,6 +11449,7 @@
         }
       ],
       "requiredItems": [
+        "Spider Venom Sac",
         "Crows Special Brew"
       ],
       "expReward": true
@@ -11489,6 +11508,7 @@
     {
       "name": "Gnasher's Head",
       "page": "Gnasher's Head",
+      "eraTag": "Classic",
       "startZone": "Surefall Glade",
       "giver": "Larsk Juton",
       "minLevel": 10,
@@ -11512,42 +11532,49 @@
         }
       ],
       "requiredItems": [
-        "Gnoll Head",
-        "a tattered note"
+        "Gnoll Head"
       ],
       "expReward": true,
       "factions": [
         {
           "name": "Protectors of Pine",
-          "up": true
+          "up": true,
+          "amount": 25
         },
         {
           "name": "Jaggedpine Treefolk",
-          "up": true
+          "up": true,
+          "amount": 6
         },
         {
           "name": "Sabertooths of Blackburrow",
-          "up": false
+          "up": false,
+          "amount": -3
         },
         {
           "name": "Guards of Qeynos",
-          "up": true
+          "up": true,
+          "amount": 6
         },
         {
           "name": "Antonius Bayle",
-          "up": true
+          "up": true,
+          "amount": 6
         },
         {
           "name": "Corrupt Qeynos Guards",
-          "up": false
+          "up": false,
+          "amount": -6
         },
         {
           "name": "Circle Of Unseen Hands",
-          "up": false
+          "up": false,
+          "amount": -10
         },
         {
           "name": "Merchants of Qeynos",
-          "up": true
+          "up": true,
+          "amount": 5
         }
       ]
     },
@@ -16084,7 +16111,8 @@
         "Tattered Recipe",
         "High Elf Flesh",
         "Preserved Leg",
-        "Ogre Butcher Gloves"
+        "Ogre Butcher Gloves",
+        "Grub Locker"
       ],
       "expReward": true,
       "factions": [
@@ -16594,8 +16622,10 @@
       ],
       "requiredItems": [
         "Jeweled Skull",
+        "Torn Parchment (Letter to Hyrill Pon)",
         "Hollow Skull (Skull of Wun Toque)",
         "Torn Parchment",
+        "Large Ruby",
         "Ruby Pendant"
       ],
       "expReward": true,
@@ -17921,6 +17951,7 @@
         }
       ],
       "requiredItems": [
+        "Empty Box",
         "Barbarian Femur",
         "Barbarian Jaw",
         "Barbarian Skull",
@@ -18018,7 +18049,6 @@
         "Enchanted Platinum Bar",
         "Platinum Bar",
         "Sands of Ro",
-        "Soil of Underfoot",
         "Fairy Dust"
       ]
     },
@@ -20194,6 +20224,12 @@
           "name": "Rusty Axe"
         }
       ],
+      "requiredItems": [
+        "Full Bottle of Elixir",
+        "One Quarter of Elixir",
+        "One Half of Elixir",
+        "Empty Bottle of Elixir"
+      ],
       "expReward": true,
       "factions": [
         {
@@ -20244,6 +20280,7 @@
         }
       ],
       "requiredItems": [
+        "Token of Mastery",
         "Torn Page of Magi`kot pg. 1",
         "Torn Page of Magi`kot pg. 2",
         "Torn Page of Magi`kot pg. 3",
@@ -21150,7 +21187,6 @@
         }
       ],
       "requiredItems": [
-        "A Sealed List",
         "A Sealed Letter"
       ],
       "expReward": true,
@@ -21207,6 +21243,28 @@
           "up": true,
           "amount": 5
         }
+      ]
+    },
+    {
+      "name": "Militia Seals",
+      "page": "Militia Seals",
+      "eraTag": "Velious",
+      "giver": "Guard Jup",
+      "minLevel": 35,
+      "classes": [
+        "All"
+      ],
+      "relatedZones": [
+        "Dulak's Harbor",
+        "Gulf of Gunthak"
+      ],
+      "relatedNpcs": [
+        "Guard Jup"
+      ],
+      "requiredItems": [
+        "Twisted Silver Torque",
+        "Militia Crate",
+        "Pirate's Seal"
       ]
     },
     {
@@ -22451,7 +22509,6 @@
         "Spiroc Feathers",
         "Black Silk Cape",
         "Cloak of Spiroc Feathers",
-        "Slime Blood of Cazic Thule",
         "Tome of Instruction"
       ],
       "expReward": true,
@@ -22942,6 +22999,7 @@
         "Nesiff Tallaherd"
       ],
       "requiredItems": [
+        "Claim Check",
         "Wooden Statue"
       ],
       "expReward": true,
@@ -25765,7 +25823,8 @@
         "Embroidered Bag of Bronze Symbols",
         "Odd Cold Iron Necklace",
         "Sealed Parchment",
-        "Hieroglyph Translations"
+        "Hieroglyph Translations",
+        "Encrypted Document"
       ],
       "expReward": true,
       "factions": [
@@ -26010,7 +26069,6 @@
       ],
       "requiredItems": [
         "Trueshot Longbow",
-        "A Wooden Heart",
         "Small Lantern",
         "Tattered Toupee",
         "Crate for Tonics",
@@ -26857,6 +26915,22 @@
         {
           "name": "QeynosCitizen",
           "up": true
+        }
+      ]
+    },
+    {
+      "name": "Rathe Mountains Spiders",
+      "page": "Rathe Mountains Spiders",
+      "eraTag": "Classic",
+      "requiredItems": [
+        "Spiderling Eye"
+      ],
+      "expReward": true,
+      "factions": [
+        {
+          "name": "Protectors of Gukta",
+          "up": true,
+          "amount": 5
         }
       ]
     },
@@ -27955,6 +28029,7 @@
         "Case of Spirits",
         "Gem of Stamina",
         "Gem Case",
+        "Mammoth Skin",
         "Gnoll Pup Scalp"
       ],
       "expReward": true,
@@ -29394,7 +29469,6 @@
         "Shadow Wolf Pelt",
         "Hand of Shadow",
         "Inky Shadow Silk",
-        "A Werebat Wing",
         "Globe of Shadow",
         "Mask of Shadow",
         "Large Shadow Silk"
@@ -31050,6 +31124,9 @@
         {
           "name": "Hamed's Ring of Tears"
         }
+      ],
+      "requiredItems": [
+        "Desecrated Kejaar Totem"
       ],
       "expReward": true,
       "factions": [
@@ -32770,6 +32847,7 @@
         "Various"
       ],
       "requiredItems": [
+        "Dusty Ribcage",
         "Dusty Old Finger Bones",
         "Dusty Old Skull",
         "Pick",
@@ -32785,6 +32863,8 @@
         "Jade",
         "Enchanted Platinum Bar",
         "Platinum Bar",
+        "Full Gem Bag",
+        "Gem Encrusted Casket",
         "Revenant Ash"
       ],
       "expReward": true
@@ -33261,6 +33341,7 @@
         }
       ],
       "requiredItems": [
+        "Sealed List",
         "Human Decapitated Head",
         "Gnome Decapitated Head",
         "Dwarf Decapitated Head"
@@ -35454,7 +35535,8 @@
         }
       ],
       "requiredItems": [
-        "Sealed Letter"
+        "Sealed Letter",
+        "Locked Chest"
       ],
       "expReward": true,
       "factions": [
@@ -36133,7 +36215,8 @@
         "Chomper (NPC)"
       ],
       "requiredItems": [
-        "Torn Old Pouch"
+        "Torn Old Pouch",
+        "Large Ruby"
       ],
       "expReward": true,
       "factions": [
@@ -36186,11 +36269,11 @@
       ],
       "requiredItems": [
         "SoulFire",
+        "Dark Reaver",
         "Burning Soul of the Pious",
         "Pestilence Scythe",
         "Burning Soul of the Pestilent",
         "Burning Soul of the Virtuous",
-        "A Dark Reaver",
         "Bone Chips",
         "Fire Beetle Eye",
         "Spiderling Silk"
@@ -36645,10 +36728,6 @@
       "expReward": true,
       "factions": [
         {
-          "name": "Burning Dead",
-          "up": false
-        },
-        {
           "name": "The Dead",
           "up": true,
           "amount": 100
@@ -36701,6 +36780,10 @@
         {
           "name": "Talisman of Kejaar Kerrath"
         }
+      ],
+      "requiredItems": [
+        "Heretic Insurrection Orders",
+        "Desecrated Kejaar Totem"
       ],
       "expReward": true,
       "factions": [
@@ -37360,6 +37443,7 @@
         "a decaying skeleton"
       ],
       "requiredItems": [
+        "Spider Venom Sac",
         "Wolf Meat",
         "Bone Chips",
         "Giant Bat Fur"
@@ -37584,7 +37668,6 @@
         "Dwarven Wire",
         "Small Lantern",
         "Wooden Shards",
-        "A Wooden Heart",
         "Spiderling silk",
         "Micro Servo",
         "Pack of Materials",
@@ -39426,23 +39509,63 @@
       "factions": [
         {
           "name": "Guards of Qeynos",
-          "up": true
+          "up": false,
+          "amount": -7
         },
         {
           "name": "Knights of Truth",
-          "up": true
+          "up": true,
+          "amount": 1
         },
         {
           "name": "League of Antonican Bards",
-          "up": true
+          "up": true,
+          "amount": 5
         },
         {
           "name": "Mayong Mistmoore (Faction)",
-          "up": false
+          "up": false,
+          "amount": -1
         },
         {
           "name": "Ring of Scale",
-          "up": false
+          "up": false,
+          "amount": -1
+        },
+        {
+          "name": "Jaggedpine Treefolk",
+          "up": false,
+          "amount": -50
+        },
+        {
+          "name": "Protectors of Pine",
+          "up": false,
+          "amount": -12
+        },
+        {
+          "name": "QRG Protected Animals",
+          "up": false,
+          "amount": -7
+        },
+        {
+          "name": "Unkempt Druids",
+          "up": true,
+          "amount": 12
+        },
+        {
+          "name": "Karana Residents",
+          "up": false,
+          "amount": -2
+        },
+        {
+          "name": "Priests of Life",
+          "up": false,
+          "amount": -1
+        },
+        {
+          "name": "Knights of Thunder",
+          "up": false,
+          "amount": -1
         }
       ]
     },
@@ -40229,7 +40352,6 @@
         "Drom's Champagne",
         "H. K. 102",
         "Testimony",
-        "A Spider Venom Sac",
         "Cloth Shirt",
         "Token of Generosity",
         "Token of Bravery",
