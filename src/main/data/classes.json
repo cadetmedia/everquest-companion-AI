@@ -1,5 +1,5 @@
 {
-  "scrapedAt": "2026-08-05T07:52:20.850Z",
+  "scrapedAt": "2026-10-18T09:08:59.560Z",
   "names": {
     "BER": "Berserker",
     "BRD": "Bard",
@@ -521,9 +521,6 @@
       "WAR",
       "WIZ"
     ],
-    "Harm Touch": [
-      "SHD"
-    ],
     "Hide": [
       "BRD",
       "RNG",
@@ -594,6 +591,9 @@
     ],
     "Pick Pockets": [
       "ROG"
+    ],
+    "Reave": [
+      "SHD"
     ],
     "Riposte": [
       "BER",
@@ -821,6 +821,9 @@
     "Innate Called Shot": [
       "RNG"
     ],
+    "Innate Divine Healing": [
+      "CLR"
+    ],
     "Innate Fighters Tenacity": [
       "WAR"
     ],
@@ -894,7 +897,7 @@
     "Symphonic Aura": [
       "BRD"
     ],
-    "Tireless Spirit": [
+    "Tireless Sprint": [
       "BER"
     ],
     "Tricksters Misdirection": [
@@ -1290,6 +1293,13 @@
       "group": "archetype",
       "activated": true
     },
+    "Innate Divine Healing": {
+      "group": "class",
+      "classes": [
+        "CLR"
+      ],
+      "activated": false
+    },
     "Innate Eminence": {
       "group": "general",
       "activated": false
@@ -1592,7 +1602,7 @@
       "group": "archetype",
       "activated": false
     },
-    "Tireless Spirit": {
+    "Tireless Sprint": {
       "group": "class",
       "classes": [
         "BER"
@@ -3575,11 +3585,6 @@
         "kind": "skill"
       },
       {
-        "name": "Harm Touch",
-        "level": 1,
-        "kind": "innate"
-      },
-      {
         "name": "Meditate",
         "level": 1,
         "kind": "skill"
@@ -3612,6 +3617,11 @@
       {
         "name": "Throwing",
         "level": 1,
+        "kind": "skill"
+      },
+      {
+        "name": "Reave",
+        "level": 9,
         "kind": "skill"
       },
       {
@@ -4231,10 +4241,8 @@
     "discUnlocks 'BER': the class page states 2 discipline(s) with levels, but the Disciplines page strikes its whole BER table through and states \"only Rogue poison disciplines are on Legends.\" — kept, labeled disputed",
     "discUnlocks 'MNK': the class page states 10 discipline(s) with levels, but the Disciplines page strikes its whole MNK table through and states \"only Rogue poison disciplines are on Legends.\" — kept, labeled disputed",
     "discUnlocks 'RNG': the class page states 1 discipline(s) with levels, but the Disciplines page strikes its whole RNG table through and states \"only Rogue poison disciplines are on Legends.\" — kept, labeled disputed",
-    "invocation 'divine': prose BST CLR DRU PAL RNG SHM vs the per-class sections CLR DRU PAL RNG SHM — prose wins",
     "invocation 'empowering': the prose row is headed \"Empower\"; keyed on the client string",
     "invocation 'overchannel': the wiki writes \"Over Channel\" (\"Overchannel\" in the Magician table); keyed on the client string",
-    "invocation 'unyielding': the per-class sections has no row; prose says BER MNK ROG WAR — prose wins",
     "skill 'Feign Death': also a Template:Spellpage spell name with a DIFFERENT class set — resolve skill-ups against skills[] and casts against spells.json; never union them",
     "skill 'Frenzy': also a Template:Spellpage spell name with a DIFFERENT class set — resolve skill-ups against skills[] and casts against spells.json; never union them",
     "skill 'Smite': also a Template:Spellpage spell name with a DIFFERENT class set — resolve skill-ups against skills[] and casts against spells.json; never union them",

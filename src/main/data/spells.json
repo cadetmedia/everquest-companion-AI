@@ -1,8 +1,8 @@
 {
-  "scrapedAt": "2026-10-11T04:19:33.641Z",
+  "scrapedAt": "2026-10-18T09:06:53.467Z",
   "schema": 3,
-  "count": 2013,
-  "withEffects": 2010,
+  "count": 2012,
+  "withEffects": 2009,
   "spells": [
     {
       "name": "Aanya's Animation",
@@ -19464,7 +19464,7 @@
       ]
     },
     {
-      "name": "Lower Element",
+      "name": "Lower Element I",
       "durationText": "5 minutes",
       "durationMs": 300000,
       "castTimeMs": 0,
@@ -19894,25 +19894,6 @@
         "Limit Spell: Exclude",
         "Limit Resist: Magic",
         "Limit Type: Exclude Combat Skills"
-      ]
-    },
-    {
-      "name": "Magical Monologue",
-      "eraTag": "Classic",
-      "durationText": "18 Sec",
-      "durationMs": 18000,
-      "castTimeMs": 3000,
-      "recastMs": 0,
-      "targetType": "Self",
-      "spellType": "Beneficial",
-      "classes": "* Bard - Level 9",
-      "msgCastOnYou": "Your weapons glow.",
-      "msgCastOnOther": "'s weapons glow.",
-      "msgWearsOff": "The glow fades from your weapons.",
-      "illusion": false,
-      "mana": 0,
-      "effects": [
-        "Grant ability to hit Magic-immune creatures"
       ]
     },
     {

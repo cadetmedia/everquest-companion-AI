@@ -38,7 +38,7 @@ When selecting a race, a big consideration is the factions it is associate with 
 |-
 | style="text-align: left"| '''[[Dwarf]]''' || 90 || 90 || 70 || 90 || 83 || 60 || 45
 |-
-| style="text-align: left"| '''[[Kerra]]''' || TBD || TBD || TBD || TBD || TBD || TBD || TBD
+| style="text-align: left"| '''[[Kerran]]''' || 90 || 75 || 90 || 70 || 70 || 65 || 65
 |-
 | style="text-align: left"| '''[[Ogre]]''' || 130 || 127 || 70 || 70 || 67 || 60 || 37
 |-
@@ -60,6 +60,7 @@ All AAs are available at [[Alternate Advancement]], the class AAs listed here ar
 {{#lsth:Alternate Advancement|Berserker Class AAs}}
 
 =Skills=
+*[[Berserker_Skills|Berserker Skill Table]]
 
 == Frenzy ==
 
@@ -79,57 +80,57 @@ Berserkers rely on aggressive offensive disciplines and abilities to maximize da
 ! scope="col" | '''Post 50 Cap'''
 |-
 | 1
-| [[Frenzy]]
+| [[Skill Frenzy|Frenzy]]
 |No
-| [Cap]
+| 204
 | [Cap]
 |-
 | 1
 | [[Throwing]]
 |No
-| [Cap]
+| 250
 | [Cap]
 |-
 | 10
 | [[Disarm]]
 |No
-| [Cap]
+| 255
 | [Cap]
 |-
 | 10
 | [[Dodge]]
 |No
-| [Cap]
+| 205
 | [Cap]
 |-
 | 15
 | [[Parry]]
 |No
-| [Cap]
+| 155
 | [Cap]
 |-
 | 20
 | [[Block]]
 |No
-| [Cap]
+| 155
 | [Cap]
 |-
 | 20
 | [[Double Attack]]
 |No
-| [Cap]
+| 225
 | [Cap]
 |-
 | 25
 | [[Riposte]]
 |No
-| [Cap]
+| 130
 | [Cap]
 |-
 | 46
 | [[Skill Triple Attack|Triple Attack]]
 |No
-| [Cap]
+| 100
 | [Cap]
 |}
 
