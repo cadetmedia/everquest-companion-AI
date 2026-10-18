@@ -68,7 +68,7 @@ All AAs are available at [[Alternate Advancement]], the class AAs listed here ar
 {{#lsth:Alternate Advancement|Monk Class AAs}}
 
 =Skills=
-
+*[[Monk_Skills|Monk Skill Table]]
 ==Combat Skills==
 
 {| class="eoTable2 sortable"

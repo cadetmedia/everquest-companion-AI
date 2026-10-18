@@ -60,9 +60,8 @@ When selecting a race, key factors include its associated and opposed factions, 
 | style="text-align: left"| '''[[Halfling]]''' || 70 || 75 || 95 || 90 || 80 || 67 || 50
 |-
 | style="text-align: left"| '''[[Human]]''' || 75 || 75 || 75 || 75 || 75 || 75 || 75
-
 |-
-| style="text-align: left"| '''[[Kerra]]''' || TBD || TBD || TBD || TBD || TBD || TBD || TBD
+| style="text-align: left"| '''[[Kerran]]''' || 90 || 75 || 90 || 70 || 70 || 65 || 65
 |-
 | style="text-align: left"| '''[[Wood Elf]]''' || 65 || 65 || 95 || 80 || 80 || 75 || 75
 |-
@@ -91,6 +90,7 @@ The disadvantage of agnosticism is that some items and quests can only be done b
 If you plan to use illusion masks, you should go Agnostic for the same reason Enchanters do: NPCs can "see" your religion. It's very important to notice though that illusions and religion only partially change their reaction (/con) regarding NPCs individually, they don't modify the amount of points a player has with a given faction, which are required to unlock different character races. For detailed information: [[Game_Mechanics#Faction System and Levels|Faction System and Levels]].
 
 =Skills=
+*[[Rogue_Skills|Rogue Skill Table]]
 
 ==Combat Skills==
 
@@ -408,7 +408,7 @@ In Everquest Legends, Rogues can imbue their attacks with poisons:
 | Clumsiness Poison
 | 18
 | <span style="background:#dbeafe; color:#153e75; border:1px solid #7aa6d9; padding:2px 6px; font-weight:bold;">Utility</span> 
-| Coats your weapon in Clumsiness Poison, giving you a chance to trigger Clumsiness Strike on striking. This is considered a utility Poison, only one of which may be active at a time. (Sepll Cast Slow Proc)
+| Coats your weapon in Clumsiness Poison, giving you a chance to trigger Clumsiness Strike on striking. This is considered a utility Poison, only one of which may be active at a time. (Spell Cast Slow Proc)
 | Permanent
 | 5 Sec
 |-

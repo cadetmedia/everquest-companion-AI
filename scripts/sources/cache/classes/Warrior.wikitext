@@ -58,7 +58,7 @@ When selecting a race, a big consideration is the factions it is associate with 
 |-
 | style="text-align: left"| '''[[Iksar]]''' || 70 || 70 || 90 || 85 || 80 || 75 || 55
 |-
-| style="text-align: left"| '''[[Kerra]]''' || TBD || TBD || TBD || TBD || TBD || TBD || TBD
+| style="text-align: left"| '''[[Kerran]]''' || 90 || 75 || 90 || 70 || 70 || 65 || 65
 |-
 | style="text-align: left"| '''[[Ogre]]''' || 130 || 127 || 70 || 70 || 67 || 60 || 37
 |-
@@ -89,7 +89,7 @@ Generally speaking being Agnostic is a fairly safe bet in Everquest.  Religion s
 * {{Class And Religion Gear Search|Warrior|Rallos Zek}}
 
 =Skills=
-
+*[[Warrior_Skills|Warrior Skill Table]]
 ==Berserker Frenzy (Warrior Ability)==
 
 Going into a berserker frenzy is an innate, passive ability of the warrior class that is present from level 1 onward.  Anytime a player character warrior's health falls too low, their enters a berserker frenzy, converting all of their critical hits into crippling blows, which do more damage and have a chance to stun the enemy.
