@@ -50,6 +50,10 @@
 //   table places but gives NO era (New Sebilis Expedition, EQL-new) is kept - it is in the game,
 //   and calling it out of era would be a lie - and so is a spelling the table cannot place at
 //   all: unknown reads as unknown, never as out of era (`zones.ts`, the `ZoneEra` rule).
+//   The same switch holds for the MOBS a zone is judged by: the bands and wish counts this ranks
+//   are built without the mobs the data build flagged out of era (`shared/mobEra.mobOutOfEra`:
+//   the Fear/Hate revamp's level 60-63 Plane of Hate pages, say), so an in-era zone's row is about
+//   its in-era inhabitants.
 //
 //   A CITY. *"make sure it exits cities, we don't want to kill npcs like that"*. A home city has
 //   a band because the catalog documents its guards; farming them is not a plan, on any goal.
@@ -102,7 +106,8 @@ export interface RankOptions {
   fits?: ReadonlySet<ZoneFit>
   /** a zone-name search, folded case-insensitively; absent or blank means everything */
   search?: string
-  /** keep only zones EQ Legends has now - ON unless the caller lifts it, the Closest-port rule */
+  /** keep only zones EQ Legends has now - ON unless the caller lifts it, the Closest-port rule.
+   *  The caller builds `bands` and `wished` under the same switch (`maps/zoneBands`). */
   eraOnly?: boolean
 }
 
