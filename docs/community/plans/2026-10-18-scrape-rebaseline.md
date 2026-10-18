@@ -57,12 +57,11 @@ duplication clean-up, Gaps work, Timers Clear all, size-limit headroom, and the 
   fetched text was lost. Every item/mob page edited between August and the stamps may be stale,
   and the era fields filled from those caches inherit it.
 
-## Phase 1: gap-proof tooling (CODE ONLY, zero requests) — IN PROGRESS
+## Phase 1: gap-proof tooling (CODE ONLY, zero requests) — NOT STARTED
 
-Being built by a background implementer in worktrees `.claude/worktrees/wiki-scraper-fixes` and
-`.claude/worktrees/scrape-delta-tool` (the latter merges wiki-scraper-fixes first). Check with
-`git log --oneline -8 wiki-scraper-fixes scrape-delta-tool` and each worktree's `git status`.
-Target:
+Not started: waiting on the owner's go. (An implementer was launched and stopped before it changed
+anything; no commits exist for this phase.) Work goes on `wiki-scraper-fixes` (scraper code) and
+`scrape-delta-tool` (the delta tool, which merges wiki-scraper-fixes first). Target:
 
 - A1 items and mobs caches record each page's revid (generalise `scripts/sources/revCache.ts`);
   a run asks revids 50/request via `scripts/sources/wikiApi.ts` and re-downloads only changed,
