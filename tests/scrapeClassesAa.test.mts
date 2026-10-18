@@ -24,9 +24,9 @@ test('every AA row of the four tables is read, with its table', () => {
   // A FLOOR for the class table: editors add class AAs (76 on 2026-10-10, 77 on 2026-10-18), and a
   // parser that stops reading rows still falls under it. Holds on the old cache and a re-scrape alike.
   assert.ok(groups('class') >= 76, `class AAs: ${String(groups('class'))}`)
-  assert.deepEqual(aas.get('Heroic Leap'), { group: 'class', classes: ['WAR'], activated: true })
-  assert.deepEqual(aas.get('Origin'), { group: 'general', activated: true })
-  assert.deepEqual(aas.get('Mass Group Buff'), { group: 'archetype', activated: true })
+  assert.deepEqual(aas.get('Heroic Leap'), { group: 'class', classes: ['WAR'], activated: true, levels: [12] })
+  assert.deepEqual(aas.get('Origin'), { group: 'general', activated: true, levels: [1] })
+  assert.deepEqual(aas.get('Mass Group Buff'), { group: 'archetype', activated: true, levels: [50] })
   assert.equal(aas.get('Adamant Will')?.activated, false)
 })
 
@@ -38,6 +38,19 @@ test('an AA whose description casts another name carries that cast', () => {
     "Companion's Fury -> Frenzied Burnout",
     'Purify Body -> Purification'
   ])
+})
+
+test('each rank carries the level its Requirements clause states; a struck-out row carries none', () => {
+  // The first eight ranks: the older cache wrote the last two as `?/?`.
+  assert.deepEqual(parseAaTable(WT, ABBR).get('Harm Touch')?.levels?.slice(0, 8), [1, 6, 11, 16, 21, 26, 31, 36])
+  const wt = [
+    '== Class AAs ==', '=== Shadow Knight Class AAs ===', '{| class="wikitable"', '|-',
+    '| <s>Struck</s>|| 1 || 9 || <s>Requirements: Level 50.</s> This AA has been removed.', '|-',
+    '| Kept || 2 || 3/6 || Passive. Requirements: level 12/30<br>', '|}'
+  ].join('\n')
+  const aas = parseAaTable(wt, ABBR)
+  assert.deepEqual(aas.get('Kept')?.levels, [12, 30])
+  assert.equal(aas.get('Struck')?.levels, undefined)
 })
 
 test('the class AA tables stop at the Special AAs table', () => {

@@ -275,12 +275,12 @@ function aaRowNames(section: string): string[] {
   return aaRows(section).map((r) => r.name)
 }
 
-/** Each AA row's Name and Description cells. */
-function aaRows(section: string): { name: string; description: string }[] {
+/** Each AA row's Name and Description cells, and whether the wiki struck the row out (removed). */
+function aaRows(section: string): { name: string; description: string; struck: boolean }[] {
   return tableRows(section)
     .map((chunk) => rowCells(chunk)[0]?.split('||') ?? [])
     .filter((cells) => cells.length >= 3)
-    .map((cells) => ({ name: plain(cells[0]), description: plain(cells[3] ?? '') }))
+    .map((cells) => ({ name: plain(cells[0]), description: plain(cells[3] ?? ''), struck: cells[0].includes('<s>') }))
     .filter((r) => r.name.length > 0 && r.name.length <= 40)
 }
 
@@ -297,6 +297,13 @@ export interface AaRow {
    * is cast as `Frenzied Burnout I`, `Bestow Divine Aura` as `Bestowed Divine Aura I`.
    */
   cast?: string
+  /** The level each rank needs (`Requirements: Level 1/6/11`); absent on a row the wiki struck out. */
+  levels?: number[]
+}
+
+/** The first `Requirements: Level 1/6/11` clause, one level per rank. */
+function aaLevels(description: string): number[] | undefined {
+  return /Requirements:\s*Level\s+(\d+(?:\/\d+)*)/i.exec(description)?.[1].split('/').map(Number)
 }
 
 /** `<Name> I, when activated` / `<Name> II, which when activated` → `<Name>`. */
@@ -328,13 +335,15 @@ export function parseAaTable(wt: string, abbrOf: Map<string, string>): Map<strin
           }))
         : [{ abbr: undefined, text: block }]
     for (const { abbr, text } of parts) {
-      for (const { name, description } of aaRows(text)) {
+      for (const { name, description, struck } of aaRows(text)) {
         const cast = aaCastName(description)
+        const levels = struck ? undefined : aaLevels(description)
         addAaRow(out, name, {
           group,
           ...(abbr !== undefined ? { classes: [abbr] } : {}),
           activated: description.includes('Activation ID'),
-          ...(cast !== undefined && cast !== name ? { cast } : {})
+          ...(cast !== undefined && cast !== name ? { cast } : {}),
+          ...(levels !== undefined ? { levels } : {})
         })
       }
     }
