@@ -309,9 +309,12 @@ const COF_BASE: ItemStatBlock = block({
 })
 
 test('the acceptance case: a `Cloak of Flames +5` reads at +5 in EVERY stat it states', () => {
+  // Order-free: the page listing AGI before DEX (a 2026-10 wiki edit) states the same block.
+  const byKey = (s: readonly { key: string; value: string }[] | undefined): { key: string; value: string }[] =>
+    [...(s ?? [])].sort((a, b) => a.key.localeCompare(b.key))
   assert.deepEqual(
-    dbIndex.get(itemKey('Cloak of Flames'))?.stats?.stats,
-    COF_BASE.stats,
+    byKey(dbIndex.get(itemKey('Cloak of Flames'))?.stats?.stats),
+    byKey(COF_BASE.stats),
     'the committed corpus no longer states the block this case was written against — re-read it'
   )
 
