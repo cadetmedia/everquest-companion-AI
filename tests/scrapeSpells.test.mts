@@ -2,7 +2,7 @@
 // cache. Fixtures are trimmed copies of the pages named; nothing touches the network.
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { parseSpell, parseSpellpageFields, spellName } from '../scripts/scrape-spells'
+import { parseSpell, parseSpellpageFields, shrinkProblem, spellName } from '../scripts/scrape-spells'
 
 test('a doubled-pipe field is its own field, not the tail of the one before (50178 Harmshield)', () => {
   const wt = '{{Spellpage\n| spellname = Harmshield\n| msg_wears_off = Your invulnerability fades.\n|| where_to_obtain = Necromancer Spell Vendors\n}}'
@@ -52,4 +52,11 @@ test('casting_time = Instant reads as a zero cast time, not an absent one', () =
   assert.equal(parseSpell('Brass Resonance 14', f).castTimeMs, 0)
   const g = parseSpellpageFields('{{Spellpage\n| spellname = Healing\n| casting_time = 2.5\n| mana = 10\n}}')
   assert.equal(parseSpell('Healing', g).castTimeMs, 2500)
+})
+
+test('an enumeration of zero pages, or under half the committed catalog, is refused', () => {
+  assert.match(shrinkProblem(0, 0) ?? '', /0 spell pages/)
+  assert.match(shrinkProblem(900, 2035) ?? '', /under half of the 2035/)
+  assert.equal(shrinkProblem(1018, 2035), null)
+  assert.equal(shrinkProblem(2040, 2035), null)
 })

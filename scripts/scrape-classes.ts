@@ -32,11 +32,12 @@
  * Spell→class is NOT here: spells.json already carries a `classes` field and is
  * parsed at runtime by src/main/data/spellClasses.ts. No spell re-crawl.
  *
- * This file owns politeness, caching and output; the wikitext parsers live in
+ * This file owns caching and output (politeness is sources/wikiApi.ts); the wikitext parsers live in
  * scripts/sources/classWiki.ts (the eqlegends.ts precedent).
  *
  * SCRAPER ETIQUETTE (AGENTS.md, LAW):
- *  - exactly 20 pages, each fetched at most once, DELAY_MS between live fetches;
+ *  - exactly 20 pages, each fetched at most once, every request through sources/wikiApi.ts
+ *    (a second apart, maxlag=5, an API error body thrown);
  *  - 429/5xx → exponential backoff honouring Retry-After;
  *  - raw wikitext cached under scripts/sources/cache/classes, so a re-run is
  *    network-free and a partial run resumes where it stopped;
@@ -73,9 +74,7 @@ import {
 import type { AaRow } from './sources/classWiki'
 import { currentRevids, fetchContents, isStale, readRevIndex, writeRevIndex, type ApiGet } from './sources/revCache'
 import { isMain } from './sources/isMain'
-
-const API = 'https://eqlwiki.com/api.php'
-const UA = 'everquest-companion/0.1 (personal class-table scraper)'
+import { wikiGet } from './sources/wikiApi'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const CACHE_DIR = resolve(HERE, 'sources/cache/classes')
@@ -83,50 +82,17 @@ const OUT_PATH = resolve(HERE, '../src/main/data/classes.json')
 const SPELLS_PATH = resolve(HERE, '../src/main/data/spells.json')
 const INDEX_PATH = resolve(CACHE_DIR, 'index.json')
 
-/** Politeness between LIVE fetches (cache hits never sleep). */
-const DELAY_MS = 1000
-/** First backoff step; doubles per attempt. */
-const BACKOFF_MS = 1000
-const MAX_ATTEMPTS = 5
-
-const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms))
-
 // ---- fetch layer ----------------------------------------------------------
-
-/** One request, retried with exponential backoff on 429/5xx, honouring Retry-After. */
-async function politeFetch(url: string): Promise<Response | null> {
-  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-    const res = await fetch(url, { headers: { 'User-Agent': UA } })
-    if (res.status !== 429 && res.status < 500) return res
-    const retryAfter = Number(res.headers.get('retry-after') ?? '')
-    const waitMs =
-      Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : BACKOFF_MS * 2 ** attempt
-    console.warn(`  ${res.status} — backing off ${waitMs}ms (attempt ${attempt + 1}/${MAX_ATTEMPTS})`)
-    await sleep(waitMs)
-  }
-  return null
-}
 
 function cachePath(title: string): string {
   return resolve(CACHE_DIR, `${title.replace(/[^A-Za-z0-9]+/g, '_')}.wikitext`)
-}
-
-/** One throttled query; an HTTP failure or an API error body throws rather than reading as empty. */
-const classApi: ApiGet = async <T>(params: Record<string, string>): Promise<T> => {
-  const q = new URLSearchParams({ format: 'json', formatversion: '2', ...params })
-  const res = await politeFetch(`${API}?${q.toString()}`)
-  await sleep(DELAY_MS)
-  if (!res?.ok) throw new Error(`${params.action}: HTTP ${res ? res.status : 'no response'}`)
-  const j = (await res.json()) as T & { error?: { code?: string; info?: string } }
-  if (j.error) throw new Error(`${params.action}: API error ${j.error.code}: ${j.error.info ?? ''}`)
-  return j
 }
 
 /**
  * Bring the cached copies of `titles` up to date: one `rvprop=ids` request per 50 titles, then
  * content only for pages whose revision moved since it was cached (or that were never cached).
  */
-export async function refreshPages(titles: string[], api: ApiGet = classApi): Promise<string[]> {
+export async function refreshPages(titles: string[], api: ApiGet = wikiGet): Promise<string[]> {
   const revs = readRevIndex(INDEX_PATH)
   const live = await currentRevids(api, titles)
   const stale = titles.filter((t) => isStale(revs[t], live.get(t), existsSync(cachePath(t))))

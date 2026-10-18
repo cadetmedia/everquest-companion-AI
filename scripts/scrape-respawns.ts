@@ -21,9 +21,10 @@
  * UI shows when the parse refused, and keeping it means a grammar fix in respawnWiki.ts applies
  * to the committed data without another 158 requests at the wiki's expense.
  *
- * Scraper etiquette (AGENTS.md LAW): one serialized request at a time, 1 s between them
- * (owner ruling 2026-08-22 — fan-run servers),
- * exponential backoff honouring Retry-After on 429/5xx, and revisions batched at 50 titles —
+ * Scraper etiquette (AGENTS.md LAW): every request goes through sources/wikiApi.ts — one
+ * serialized request at a time, 1 s between them (owner ruling 2026-08-22 — fan-run servers),
+ * maxlag=5, exponential backoff honouring Retry-After on 429/5xx, an error body thrown rather
+ * than read as empty — and revisions batched at 50 titles —
  * BATCH=50 is MEASURED, not tunable (>50 pageids returns HTTP 200 with zero pages and no
  * warning). Output is sorted by key, so a re-scrape produces a clean diff.
  */
@@ -34,46 +35,13 @@ import { parseWikiRespawn, type WikiRespawn, type WikiRespawnData } from '../src
 import type { MobData } from '../src/shared/types'
 import { templateField } from '../src/main/itemLookupParse'
 import { isMain } from './sources/isMain'
+import { wikiGet } from './sources/wikiApi'
 
-const API = 'https://eqlwiki.com/api.php'
-const UA = 'everquest-companion/0.1 (personal quest tracker)'
-const DELAY_MS = 1000
-const MAX_RETRIES = 5
 const BATCH = 50
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const MOBS_PATH = resolve(HERE, '../src/renderer/src/data/eqlegends/mobs.json')
 const OUT_PATH = resolve(HERE, '../src/main/data/respawns.json')
-
-const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms))
-
-/** One serialized GET with exponential backoff on 429/5xx (honours Retry-After). */
-async function api<T>(params: Record<string, string>): Promise<T> {
-  const url = `${API}?${new URLSearchParams({ format: 'json', formatversion: '2', ...params }).toString()}`
-  let wait = 1000
-  for (let attempt = 0; ; attempt++) {
-    let res: Response
-    try {
-      res = await fetch(url, { headers: { 'User-Agent': UA } })
-    } catch (err) {
-      if (attempt >= MAX_RETRIES) throw err
-      await sleep(wait)
-      wait *= 2
-      continue
-    }
-    if (res.ok) {
-      await sleep(DELAY_MS)
-      return (await res.json()) as T
-    }
-    if ((res.status === 429 || res.status >= 500) && attempt < MAX_RETRIES) {
-      const retryAfter = Number(res.headers.get('retry-after'))
-      await sleep(Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : wait)
-      wait *= 2
-      continue
-    }
-    throw new Error(`${res.status} ${res.statusText}`)
-  }
-}
 
 /**
  * The field, verbatim, off one page's wikitext: `|respawn_time` or `| Respawn Time`, read by the
@@ -190,7 +158,7 @@ async function main(): Promise<void> {
   const stripped = new Set<WikiRespawn>()
 
   for (let i = 0; i < titles.length; i += BATCH) {
-    const j = await api<{ query?: { pages?: RevPage[] } }>({
+    const j = await wikiGet<{ query?: { pages?: RevPage[] } }>({
       action: 'query',
       prop: 'revisions',
       rvprop: 'content',

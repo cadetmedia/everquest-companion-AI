@@ -6,6 +6,7 @@
  * SpellEntry, writing the committed catalog to src/main/data/spells.json.
  *
  *   npm run scrape:spells
+ *   npm run scrape:spells -- --allow-shrink   # write even when the listing is under half the catalog
  *
  * The catalog is the PRIOR/TRUTH for buff durations and — crucially — the source of
  * the exact chat messages a spell prints when it lands (msg_cast_on_you /
@@ -37,8 +38,9 @@
  *      are, and only pages whose revid MOVED are re-fetched. So a re-run against an unchanged
  *      wiki fetches no content at all and writes a byte-identical spells.json — the ticket's
  *      "a full re-scrape is a no-op diff" acceptance, enforced by mechanism rather than by luck.
- *   3. A THROTTLE AND AN HONEST NAME. `THROTTLE_MS` (750) between every request, sequential —
- *      never concurrent — and a `User-Agent` that says who we are and links the repo.
+ *   3. A THROTTLE AND AN HONEST NAME. Every request goes through sources/wikiApi.ts: sequential,
+ *      never concurrent, a second apart, maxlag=5, retried on 429/5xx, and a `User-Agent` that
+ *      says who we are and links the repo.
  *
  * RESUMABLE: the cache file and the index entry are written per BATCH, so a run killed halfway
  * resumes from what it already has. Nothing is ever written before a complete response, so a
@@ -59,12 +61,8 @@ import { parseDurationMs } from '../src/shared/spellDuration'
 import { isMain } from './sources/isMain'
 import { cachePath, indexedPages, readIndex, writeIndex } from './sources/spellCache'
 import type { CacheIndex, WikiPage } from './sources/spellCache'
+import { wikiGet, wikiRequestCount } from './sources/wikiApi'
 
-const API = 'https://eqlwiki.com/api.php'
-const UA = 'everquest-companion/0.1 (+https://github.com/jmoyers/everquest-companion) spell catalog'
-
-/** Milliseconds between HTTP requests. Sequential, never concurrent. */
-const THROTTLE_MS = 1000
 /** Pageids per query. MEASURED ceiling — 51 returns 200 OK with zero pages (AGENTS.md). */
 const BATCH = 50
 /** The scrape schema this script writes (SpellDbFile.schema). */
@@ -73,27 +71,12 @@ const SCHEMA = 3
 const HERE = dirname(fileURLToPath(import.meta.url))
 const OUT_PATH = resolve(HERE, '../src/main/data/spells.json')
 
-const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms))
-
-/** How many HTTP requests this run made — reported at the end so the cost is never invisible. */
-let requests = 0
-
-/** ONE throttled, honestly-identified GET. Every request in this file goes through it. */
-async function api<T>(params: Record<string, string>): Promise<T> {
-  if (requests > 0) await sleep(THROTTLE_MS)
-  requests++
-  const q = new URLSearchParams({ format: 'json', formatversion: '2', ...params })
-  const res = await fetch(`${API}?${q}`, { headers: { 'User-Agent': UA } })
-  if (!res.ok) throw new Error(`${params.action ?? 'query'} failed: ${res.status}`)
-  return (await res.json()) as T
-}
-
 /** Enumerate all page titles embedding Template:Spellpage, following eicontinue. */
 async function listSpellPages(): Promise<WikiPage[]> {
   const out: WikiPage[] = []
   let eicontinue: string | undefined
   for (let page = 0; page < 200; page++) {
-    const json = await api<{
+    const json = await wikiGet<{
       query?: { embeddedin?: WikiPage[] }
       continue?: { eicontinue?: string }
     }>({
@@ -104,7 +87,8 @@ async function listSpellPages(): Promise<WikiPage[]> {
       eilimit: '500',
       ...(eicontinue ? { eicontinue } : {})
     })
-    for (const p of json.query?.embeddedin ?? []) out.push(p)
+    if (!json.query) throw new Error('embeddedin Template:Spellpage: the response carries no query block')
+    for (const p of json.query.embeddedin ?? []) out.push(p)
     eicontinue = json.continue?.eicontinue
     if (!eicontinue) break
   }
@@ -127,7 +111,7 @@ async function fetchRevIds(pages: WikiPage[]): Promise<Map<number, number>> {
   const out = new Map<number, number>()
   for (let i = 0; i < pages.length; i += BATCH) {
     const slice = pages.slice(i, i + BATCH)
-    const j = await api<{ query?: { pages?: RevPage[] } }>({
+    const j = await wikiGet<{ query?: { pages?: RevPage[] } }>({
       action: 'query',
       prop: 'revisions',
       rvprop: 'ids',
@@ -151,7 +135,7 @@ async function fetchStaleContent(stale: WikiPage[], idx: CacheIndex): Promise<nu
   const failures: number[] = []
   for (let i = 0; i < stale.length; i += BATCH) {
     const slice = stale.slice(i, i + BATCH)
-    const j = await api<{ query?: { pages?: RevPage[] } }>({
+    const j = await wikiGet<{ query?: { pages?: RevPage[] } }>({
       action: 'query',
       prop: 'revisions',
       rvprop: 'ids|content',
@@ -514,15 +498,48 @@ async function refreshCache(pages: WikiPage[], idx: CacheIndex): Promise<{ hits:
   return { hits, stale, failures }
 }
 
+/** The flag that lets a run write a catalog far smaller than the committed one. */
+const ALLOW_SHRINK = '--allow-shrink'
+
+/** How many spell pages the committed run knew: the index's titles, or the catalog's count. */
+function knownPageCount(idx: CacheIndex): number {
+  const titles = Object.keys(idx.titles ?? {}).length
+  try {
+    return Math.max(titles, (JSON.parse(readFileSync(OUT_PATH, 'utf8')) as Partial<SpellDbFile>).count ?? 0)
+  } catch {
+    return titles
+  }
+}
+
+/**
+ * Why an enumeration of `found` pages must not replace a catalog of `known`, or null when it may.
+ * Zero, or under half, is a failed or truncated listing, never a wiki that lost its spells.
+ */
+export function shrinkProblem(found: number, known: number): string | null {
+  if (found === 0) return 'the enumeration found 0 spell pages'
+  return found < known / 2 ? `the enumeration found ${found} spell pages, under half of the ${known} committed` : null
+}
+
+/** The page list: the index's titles offline, else the live enumeration; null when it is refused. */
+async function enumerate(offline: boolean, idx: CacheIndex): Promise<WikiPage[] | null> {
+  console.log(offline ? 'Reading the cache index (offline, no requests)…' : 'Enumerating Template:Spellpage pages…')
+  const pages = offline ? indexedPages(idx) : await listSpellPages()
+  console.log(`Found ${pages.length} spell pages.`)
+  const shrunk = offline ? null : shrinkProblem(pages.length, knownPageCount(idx))
+  if (!shrunk || process.argv.includes(ALLOW_SHRINK)) return pages
+  console.error(`Refusing to write ${OUT_PATH} or the index titles: ${shrunk}. ${ALLOW_SHRINK} overrides.`)
+  process.exitCode = 1
+  return null
+}
+
 async function main(): Promise<void> {
   const t0 = Date.now()
   // `--offline` re-parses the committed cache and sends the wiki nothing: the way to re-derive
   // spells.json after a parser change (owner, 2026-10-10). It needs the titles a real run records.
   const offline = process.argv.includes('--offline')
   const idx = readIndex()
-  console.log(offline ? 'Reading the cache index (offline, no requests)…' : 'Enumerating Template:Spellpage pages…')
-  const pages = offline ? indexedPages(idx) : await listSpellPages()
-  console.log(`Found ${pages.length} spell pages.`)
+  const pages = await enumerate(offline, idx)
+  if (!pages) return
 
   const { hits, stale, failures } = offline
     ? { hits: pages.length, stale: [] as WikiPage[], failures: [] as number[] }
@@ -570,7 +587,7 @@ async function main(): Promise<void> {
       `instrument-flag: ${withInstrument}`
   )
   console.log(
-    `  requests: ${requests}  cache hits: ${hits}  fetched: ${stale.length - failures.length}  ` +
+    `  requests: ${wikiRequestCount()}  cache hits: ${hits}  fetched: ${stale.length - failures.length}  ` +
       `wall: ${((Date.now() - t0) / 1000).toFixed(1)}s`
   )
   if (failures.length) console.log(`  FETCH FAILURES (no revision returned): ${failures.join(', ')}`)

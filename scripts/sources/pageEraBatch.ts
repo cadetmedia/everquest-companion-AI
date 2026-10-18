@@ -111,14 +111,6 @@ export function asRevBatch<P = RevPage>(cached: unknown): RevBatch<P> | null {
   return exact ? { pages } : null
 }
 
-/** Whether an API error body is a maxlag to retry; any other error, or maxlag past the last attempt, throws. */
-export function retryOnError(j: unknown, attempt: number, maxRetries: number): boolean {
-  const error = (j as { error?: { code?: string; info?: string } } | null)?.error
-  if (error === undefined) return false
-  if (error.code === 'maxlag' && attempt < maxRetries) return true
-  throw new Error(`API error ${String(error.code)}: ${error.info ?? ''}`)
-}
-
 /** A fresh query response as a cacheable batch; one without pages throws instead of caching []. */
 export function batchOf<P>(j: { query?: Partial<RevBatch<P>> }): RevBatch<P> {
   const q = j.query

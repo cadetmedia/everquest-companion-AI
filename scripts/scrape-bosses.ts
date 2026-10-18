@@ -6,16 +6,20 @@
  *   npm run scrape:bosses
  *
  * `match` holds the exact in-log "slain" names used to detect kills.
+ *
+ * Every request goes through sources/wikiApi.ts: a second apart across both wikis, maxlag=5,
+ * retried on 429/5xx with Retry-After honoured.
  */
 import { mkdirSync, writeFileSync } from 'fs'
 import { dirname, resolve } from 'path'
 import { fileURLToPath } from 'url'
 import type { BossData, RaidTarget } from '../src/shared/types'
+import { wikiGet } from './sources/wikiApi'
 
 const EQL = 'https://eqlwiki.com'
 const P99 = 'https://wiki.project1999.com'
+/** The identity this scraper has always sent both wikis; the P99 wiki is not ours to re-test. */
 const UA = 'Mozilla/5.0 everquest-companion/0.2 (personal raid tracker)'
-const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms))
 
 interface Curated {
   name: string
@@ -92,14 +96,11 @@ const TARGETS: Curated[] = [
   { name: 'The Hand of Veeshan', category: 'Plane of Sky', page: 'The Hand of Veeshan', match: ['The Hand of Veeshan', 'the Hand of Veeshan'], zone: 'Plane of Sky — Efreeti Cycle (Island 8)' }
 ]
 
+/** A page's parsed HTML, or undefined on any failure (the next image source is tried instead). */
 async function pageHtml(apiBase: string, page: string): Promise<string | undefined> {
-  const url = `${apiBase}/api.php?action=parse&page=${encodeURIComponent(
-    page
-  )}&prop=text&format=json&redirects=1`
   try {
-    const res = await fetch(url, { headers: { 'User-Agent': UA } })
-    const json = (await res.json()) as { parse?: { text?: string | { '*'?: string } }; error?: unknown }
-    if (json.error) return undefined
+    const params = { action: 'parse', page, prop: 'text', redirects: '1' }
+    const json = await wikiGet<{ parse?: { text?: string | { '*'?: string } } }>(params, `${apiBase}/api.php`, UA)
     const t = json.parse?.text
     return typeof t === 'string' ? t : t?.['*']
   } catch {
@@ -135,7 +136,6 @@ async function fetchImage(t: Curated): Promise<string | undefined> {
   if (t.image) return t.image
   const p99 = await p99Image(t.p99 ?? t.name)
   if (p99) return p99
-  await sleep(80)
   return eqlImage(t.page ?? t.name)
 }
 
@@ -147,7 +147,6 @@ async function main(): Promise<void> {
     if (image) withImg++
     targets.push({ name: t.name, category: t.category, match: t.match, zone: t.zone, image })
     console.log(`  ${image ? '🖼 ' : '·  '}${t.name}`)
-    await sleep(120)
   }
   const data: BossData = { scrapedAt: new Date().toISOString(), targets }
   const here = dirname(fileURLToPath(import.meta.url))
