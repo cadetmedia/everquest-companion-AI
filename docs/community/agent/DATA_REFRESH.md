@@ -8,47 +8,63 @@ How to bring the committed wiki corpus up to date. Running any of this is an own
 Baseline: a full fresh scrape of every wiki file on 2026-10-18 (the phase doc in `../plans/` has the
 run, the checks and what was kept). From then on refreshes are the delta only (owner, 2026-10-18).
 The wiki keeps about 90 days of changes, so a delta must run within 90 days of the last stamp; past
-that it refuses and only a full scrape is left. Respawns, mob factions and races derive offline
-from the mob cache; classes, Plane of Sky, bosses and the era verdicts are not yet covered.
+that it refuses and only a full scrape is left (next one due before about 2027-01-16).
 
 After a game patch or zone rework, give wiki editors a few days, then run the delta. The Gear
 tab's "wiki data from <date>" caption shows the current `scrapedAt`. Before the run, tell the
-owner which files it touches: the delta folds `items.json`, `mobs.json`, `spells.json` (with the spell
-title index) and `quests.json` (with the quest cache). Since 2026-10-10 it
-lists every changed page it read and folded nowhere (spell, quest, class, Plane of Sky, redirect),
-and closes with every wiki-derived file it leaves stale and the command that refreshes each.
+owner what it touches: it folds `items.json`, `mobs.json` (with redirects as `otherNames`),
+`spells.json` (with the spell title index) and `quests.json` (with the quest cache), then refreshes
+every other file the changes reach (next section). It lists every changed page it read and folded
+nowhere, and closes with any wiki-derived file it left stale and the command that refreshes it.
 
-## Delta procedure (items.json + mobs.json)
+## What the delta covers (since 2026-10-18, `sources/deltaFollow.ts`)
 
-The script is `scripts/scrape-delta.mts` on `scrape-delta-tool` (not on the data branch). It reads
-MediaWiki `list=recentchanges` since `items.json`'s `scrapedAt` and fetches only changed ns0 pages
-at 1 request per second, through the creator's own parsers (output byte-compatible, keys are
-lowercased names). A 3-week window was ~1,200 pages in ~25 batched requests.
+| File | When | How |
+| --- | --- | --- |
+| `mobs.json` `otherNames` | a redirect page changed | folded from the read text (`sources/mobRedirects.ts`) |
+| `respawns.json` | a mob page changed | rebuilt from the mob cache, zero requests; refuses if a catalog page is missing from it |
+| `mobFactions.json`, `mobRaces.json` | a mob page changed | `gen-mob-factions.mts`, `gen-mob-races.mts` over the cache |
+| `classes.json` | a class page changed | `scrape-classes.ts` (revid-checked) |
+| `pageEra.json` | items, mobs or spells changed | `scrape-page-era.ts --fresh <changed titles>`: only batches holding a changed or new name are asked |
+| `posky.json` | `Plane of Sky` or one of its reward/item pages changed | `scrape-posky.ts` in full (~209 requests) |
+| `spell-overlay.json` | spells changed | `gen-engine-spell-overlay.mts` |
+| `resources/wiki-images` | always; a File: page changed | the bundled copy is dropped, then `fetch-wiki-images.mts` fetches what is missing |
+| `dataWeight.generated.json` | always | `gen-data-weight.mts` |
+| `bosses.json` | a boss page changed | named only: portraits are hand-picked across two wikis |
+
+A script missing from the checkout it runs in (the generators live on slayer-tab) is named stale.
+
+## Delta procedure
+
+The script is `scripts/scrape-delta.mts` on `scrape-delta-tool`. It reads MediaWiki
+`list=recentchanges` (articles, then File:) once from the oldest stamp and fetches only changed
+pages at 1 request per second, through the creator's own parsers (output byte-compatible with the
+full scrapers). A 3-week window was ~1,200 pages in ~25 batched requests.
 
 1. `npx tsx scripts/scrape-delta.mts --dry-run` from the main clone to see volume. It reads the
    wiki, so it is part of the owner's run, never a development check (WORKFLOW.md).
-2. Make a throwaway worktree of `local-data-refresh` under the session temp dir with a
-   `node_modules` junction, copy the script in, run it for real there. The dev app can stay up.
-3. `npm run gen:data-weight` (`dataWeight.test` pins exact bytes of every data JSON).
-4. `node --import tsx --test tests/itemsDb.test.mts tests/dataWeight.test.mts`.
-5. Commit on `local-data-refresh`.
-6. Gate the merged result in a second scratch worktree
-   (`git worktree add --detach <scratch>/mc main_community`, merge, typecheck/lint/test) and
-   compare `^✖` lines against a baseline run at `main_community`'s head.
-- Since 2026-10-10 the delta follows moves (reads by pageid, so the current title comes back),
-  removes a page that was deleted, became a redirect or is no longer an item or mob, re-reads
-  restores, and re-decides every key a change touches (a page's own title wins its key; an
-  `|itemname` alias only takes a key no title holds). A page that came back unreadable holds
-  `scrapedAt` back and is named.
-- It writes the text it fetched back into `scripts/sources/cache/{items,mobs}` only where those
-  caches exist. The throwaway worktree of step 2 has none, so it warns that `scrape:page-era`,
-  `gen-mob-races` and `gen-mob-factions` still read the last full scrape's text.
-- Moves stamped past before that fix are not seen again: `Megan OReilly` and
-  `Solusek kobold king` in `mobs.json` are the wiki's `Megan O`Reilly` and `A kobold king`.
-  Repair is a full `scrape:mobs`, or a delta from an earlier date (no `--since` option yet).
-7. Remove the junctions first (`(Get-Item <wt>\node_modules).Delete()`), then
-   `git worktree remove --force`. Only the final merge into the main clone needs the dev app
-   closed.
+2. A scratch tree that has every script and the caches:
+   `git worktree add --detach .claude/worktrees/delta-run main_community`, then junctions to the
+   main clone's `node_modules`, `scripts/sources/cache/items` and `scripts/sources/cache/mobs`
+   (gitignored, so the run keeps their text current where they live). The dev app can stay up.
+3. `npx tsx scripts/scrape-delta.mts` there (`--spell-titles` the first time). It folds, writes the
+   caches back, runs the follow-ups above and re-measures the byte ledger.
+4. `npx tsx scripts/data-diff.mts` and `npx tsx scripts/validate-data.mts`; cite the diff in the
+   commits.
+5. Each changed file to its branch: quests and the quest cache to faction-tab, mobFactions and
+   mobRaces to slayer-tab, the spell overlay to catch_all, everything else (items, mobs, spells and
+   their cache, classes and its cache, pageEra and its cache, respawns, posky, images, the ledger)
+   to local-data-refresh.
+6. Gate the merged result in a second scratch tree and compare `^✖` lines against
+   `main_community`'s head; clear the census reds (next section).
+7. Remove the junctions first (`(Get-Item <wt>\node_modules).Delete()`, the same for the two cache
+   junctions), then `git worktree remove --force`.
+- The delta follows moves (reads by pageid), removes a page that was deleted, became a redirect or
+  is no longer an item or mob, re-reads restores, and re-decides every key a change touches. A page
+  that came back unreadable holds `scrapedAt` back and is named.
+- Mob redirects after a full `scrape:mobs` (which writes records without them):
+  `npx tsx scripts/scrape-mob-redirects.ts` (2026-10-18: 4,482 redirects in 19 requests, 516 on
+  463 mobs).
 
 ## Expect new reds, and clear them
 
@@ -69,7 +85,7 @@ New wiki content turns the creator's census tests red. Each failing test names i
   are 404 upstream and stay missing.
 - A top-up is not finished until those reds are cleared (BRANCHES.md, known reds).
 
-## Plane of Sky quests (posky.json): not covered by the delta
+## Plane of Sky quests (posky.json)
 
 `npm run scrape:posky` reads the rendered `Plane of Sky` page plus one request per item/reward page
 (~209). Since 2026-10-17 every scraper sends through `scripts/sources/wikiApi.ts` (1 s apart, maxlag,
@@ -81,8 +97,9 @@ file.
 
 ## Boss portraits
 
-- If either wiki has an image of a boss, use it (owner, 2026-10-18): a re-scrape never drops a portrait
-  it cannot re-fetch (the P99 wiki failed every request on 2026-10-18). eqlwiki and P99 both name NPC
+- If either wiki has an image of a boss, use it (owner, 2026-10-18). scrape-bosses itself does not
+  keep a portrait it cannot re-fetch (the P99 wiki failed every request on 2026-10-18), so the delta
+  only names changed boss pages and a re-scrape is compared by hand. eqlwiki and P99 both name NPC
   portraits `Npc_*`; scrape-bosses prefers those over the page's first image (a map, for Phinigel).
 - On 2026-10-18 the P99 wiki's `action=parse` failed for every boss (about 35 s of retries each)
   while its image files downloaded fine; the scraper then fell back to eqlwiki for all of them.

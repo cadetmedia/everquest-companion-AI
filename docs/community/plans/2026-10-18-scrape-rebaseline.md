@@ -123,7 +123,16 @@ branch is level. No release since test.26: the owner validates the build first, 
   Autropos and Magi P`tasa (the roster now asks for `Magi P`Tasa`, the wiki's capital T), the rest P99;
   `eqlImage` prefers an `Npc_*` image as the P99 path does (Phinigel's page shows a map first).
 
-## Open owner items (none started; each needs the owner's go)
+## Open owner items (status after the second 2026-10-18 session)
+
+Done, on main_community, not yet in a test build (owner: no release until all of it is in): wiki
+redirects as mob `otherNames` (516 on 463 mobs; Gaps and lookups); AAs in New at this level (each
+rank at its level, class AAs only); the delta covering every file (not yet run against the wiki);
+open screens refetch after an archive refresh; the stale UI specs (maps left red). Skipped by the
+owner: the table-driven item test. Still open: release test.27; whether general and archetype AAs
+belong in New at this level (archetype AAs name no classes on the wiki).
+
+The list as it stood before that session:
 
 - Release test.27 after the owner validates.
 - Wiki redirects as mob aliases: "Hoptor Thaggelum" redirects to "The Ghoul Lord" (whose `|name`

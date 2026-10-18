@@ -89,7 +89,8 @@ disagree, RULES.md wins; fix this file.
   log-archive and faction-tab; `src/main/storeXpKnobs.ts` (with its `store.ts` hunk),
   `src/main/telemetry/liveRiders.ts`, `setupSnapshot.ts` and `tests/zoneScope.test.mts` on
   map-waypoints (home) and sky-quest-overlay, where `src/shared/telemetryOverlays.ts` differs only
-  in the kind its list names. Verify pairs with `git merge-tree --write-tree <a> <b>`.
+  in the kind its list names; `scripts/sources/mobRedirects.ts` on wiki-scraper-fixes (home) and
+  scrape-delta-tool; `scripts/sources/mobCache.ts` on slayer-tab (home) and scrape-delta-tool. Verify pairs with `git merge-tree --write-tree <a> <b>`.
 - **Branches with two UNRELEASED splices** in `appViews.ts`: `tests/telemetryContract.test.mts`
   on main reads only the first; take spell-upgrades' version of that test.
 
@@ -137,13 +138,11 @@ disagree, RULES.md wins; fix this file.
   Measured 2026-10-18 (full run on main_community, then serial, then the same specs on test.26):
   58/68 green; the 10 reds were identical on test.26. By design on the TEST build: `feedback`,
   `telemetry` (no analytics compiled in), `spells-gate` (UNRELEASED forced open). Fixed that night
-  (stale specs): `default-sound-pack`, `sky-recent-sort`, `plan`. Still red, not yet investigated,
-  not regressions: `whats-new` (footer gap 60.9px under the last link), `overview` (nav order vs the
-  sidebar groups; Preferences row hit-test null with the update indicator hovered), `maps` (map row
-  resizes when the map arrives), `voice-alerts` (waits for a `custom` voice option); the owner
-  looked at those four in the app and found them fine (2026-10-18), so they are most likely stale
-  specs. The TEST-build three could be skipped on a TEST build so a red always means something.
-  Baseline a red against the last release tag before calling it a regression.
+  (stale specs): `default-sound-pack`, `sky-recent-sort`, `plan`. Since 2026-10-18 the
+  TEST-build three are skipped by test-neutering's runner with the reason, and `overview`,
+  `whats-new` (TEST build) and `voice-alerts` pass. `maps` stays red as a stale spec (canvas
+  vs pane height, and the pane-close width read before the map settles; the owner found the
+  map fine, so it was not chased). Baseline a red against the last release tag before calling it a regression.
 - **Headless look at an UNRELEASED tab:** temporarily set `UNRELEASED = true as boolean` in
   `devFlags.ts`, `electron-vite build --outDir=<worktree>/out-e2e`, `git checkout` the flag file,
   then a throwaway spec with `launchOnFixture(..., { env: { EQ_UNRELEASED: '1' } })`.
