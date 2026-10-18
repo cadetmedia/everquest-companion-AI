@@ -39,7 +39,9 @@ interface MobCatalog {
   mobs: MobEntry[]
 }
 
-const catalog = mobsJson as unknown as MobCatalog
+// Read through `unknown`: the JSON's inferred type changes with the data (a refreshed catalog's rows infer as any[]), and this reads the same either way.
+const mobsRaw: unknown = mobsJson
+const catalog = mobsRaw as MobCatalog
 
 /** Every mob the committed catalog knows, in scrape order. */
 export const MOB_CATALOG: MobEntry[] = catalog.mobs ?? []

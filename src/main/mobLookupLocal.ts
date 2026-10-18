@@ -23,7 +23,9 @@ import questsJson from '../renderer/src/data/eqlegends/quests.json'
 
 // ---- LOCAL 1: the scraped mob catalog (the definitive drop table) ---------------
 
-const mobData = mobsJson as unknown as MobData
+// Read through `unknown`: the JSON's inferred type changes with the data (a refreshed catalog's rows infer as any[]), and this reads the same either way.
+const mobsRaw: unknown = mobsJson
+const mobData = mobsRaw as MobData
 
 /**
  * Index the committed mob catalog by canonical name. Keyed BOTH ways a mob can be named:

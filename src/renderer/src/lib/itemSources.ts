@@ -48,7 +48,9 @@ interface MobCatalog {
   mobs: MobEntry[]
 }
 
-const catalog = mobsJson as unknown as MobCatalog
+// Read through `unknown`: the JSON's inferred type changes with the data (a refreshed catalog's rows infer as any[]), and this reads the same either way.
+const mobsRaw: unknown = mobsJson
+const catalog = mobsRaw as MobCatalog
 
 /** Built on first use, never at module load. The catalog is immutable, so one build is enough. */
 let INDEX: Map<string, ItemSource[]> | null = null
