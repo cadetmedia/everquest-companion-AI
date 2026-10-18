@@ -2,36 +2,16 @@
 // 2026-10-07). The choice is remembered for this viewer in local storage, a convenience only: a
 // blocked or empty store just opens the panel. Picking a row opens it again.
 
-import { type JSX, useCallback, useState } from 'react'
+import type { JSX } from 'react'
 import { Button, Paper, Stack, Typography } from '@mui/material'
+import { useBoolPref } from '../combat/useCombatPrefs'
 
 const KEY = 'eq.bazaar.detailHidden'
 
-function stored(): boolean {
-  try {
-    return localStorage.getItem(KEY) === '1'
-  } catch {
-    return false
-  }
-}
-
-function store(hidden: boolean): void {
-  try {
-    localStorage.setItem(KEY, hidden ? '1' : '0')
-  } catch {
-    // A blocked store only means the choice is not remembered.
-  }
-}
-
-/** Whether the panel is folded away, and a setter that remembers it. */
+/** Whether the panel is folded away, and a setter that remembers it: the app's one-bit view pref,
+ *  whose setter holds for the component's life, so the memoized panel and rows that take it hold. */
 export function useDetailHidden(): [boolean, (hidden: boolean) => void] {
-  const [hidden, setHidden] = useState(stored)
-  // One setter for the component's life, so the memoized panel and rows that take it hold.
-  const set = useCallback((next: boolean) => {
-    store(next)
-    setHidden(next)
-  }, [])
-  return [hidden, set]
+  return useBoolPref(KEY, false)
 }
 
 /** The header's button: fold the panel away. */
