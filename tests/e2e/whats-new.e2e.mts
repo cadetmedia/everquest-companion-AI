@@ -131,6 +131,7 @@ function paneFit(page: Page): Promise<{
     const box = document.querySelector('[data-testid="whats-new-history"]')?.getBoundingClientRect()
     const pane = document.querySelector('main')?.getBoundingClientRect()
     const footer = document.querySelector('[data-testid="whats-new-github"]')?.getBoundingClientRect()
+    const last = document.querySelector('[data-testid="whats-new-original"]')?.getBoundingClientRect()
     const scroller = document.querySelector('main > div')
     return {
       // The list ends where the ONE thing under it begins (JOS-254 put the GitHub link there).
@@ -138,7 +139,8 @@ function paneFit(page: Page): Promise<{
       // …and that link is the last thing in the pane. Two readings rather than one, because
       // "the box claims the height" and "nothing else is squatting at the bottom" are two
       // claims, and a single pane-bottom measurement could not tell them apart any more.
-      footerGap: footer && pane ? pane.bottom - footer.bottom : Number.NaN,
+      // TEST build: the original app's releases link sits under this one and is the last thing.
+      footerGap: footer && pane ? pane.bottom - (last ?? footer).bottom : Number.NaN,
       boxHeight: box ? box.height : 0,
       // How far the pane's own scroller can travel. The list scrolls; the page must not.
       pageOverflow: scroller ? scroller.scrollHeight - scroller.clientHeight : Number.NaN
