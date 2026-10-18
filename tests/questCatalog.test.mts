@@ -188,6 +188,26 @@ test('Bone Chips Quests: a disambiguation hub parses to nothing and is flagged, 
   )
 })
 
+// "Dragon Scales Quest": the page head verbatim (cached corpus, page 15614) — a Kunark banner
+// on a quest that also quotes a classic faction, which is why the catalog must carry the era.
+const DRAGON_SCALES_HEAD = `{{Kunark Era}}
+[[File:npc_squire_fuzzmin.png|frame|Squire Fuzzmin]]
+{| class="questTopTable"
+! ''' Start Zone: '''
+|[[Firiona Vie]]
+|-
+! ''' Quest Giver: '''
+|[[Squire Fuzzmin]]
+|}`
+
+test('the era banner: {{Kunark Era}} reads Kunark, {{Classic Era}} reads Classic, none is absent', () => {
+  assert.equal(parseQuestPage('Dragon Scales Quest', DRAGON_SCALES_HEAD, isItem).eraTag, 'Kunark')
+  assert.equal(parseQuestPage('Ale for Beur', ALE_FOR_BEUR, isItem).eraTag, 'Classic')
+  const silent = parseQuestPage('Bone Chips Quests', BONE_CHIPS_HUB, isItem)
+  assert.equal(silent.eraTag, undefined)
+  assert.equal('eraTag' in silent, false) // absent, not an undefined-valued key
+})
+
 test('link/transclusion extraction: labels vs targets, namespaces skipped, dedupe', () => {
   assert.deepEqual(linkTargets('[[Freeport|East Freeport]] and [[Dwarven Ale]]'), ['Freeport', 'Dwarven Ale'])
   assert.deepEqual(linkTargets('[[File:x.png|frame|Cap]] [[Category:Quests]] [[Bone Chips]]'), ['Bone Chips'])
@@ -429,4 +449,15 @@ test('a quest page era banner rides onto each use built from it, and an untagged
   assert.equal(uses.find((u) => u.page === 'Revamp Quest')?.eraTag, 'FearHateRevamp')
   const plain = uses.find((u) => u.page === 'Plain Quest')
   assert.ok(plain && !('eraTag' in plain), 'absent, never undefined')
+})
+
+test('the committed catalog carries the era banners, key right after page, and Dragon Scales reads Kunark', () => {
+  const tagged = data.quests.filter((q) => q.eraTag !== undefined)
+  assert.ok(tagged.length >= 700, `expected the measured ~734 bannered quests, got ${tagged.length}`)
+  for (const q of tagged) {
+    assert.ok((q.eraTag ?? '').trim().length > 0, `${q.page}: an empty banner token`)
+    assert.deepEqual(Object.keys(q).slice(0, 3), ['name', 'page', 'eraTag'], `${q.page}: eraTag key order`)
+  }
+  assert.equal(data.quests.find((q) => q.page === 'Dragon Scales Quest')?.eraTag, 'Kunark')
+  assert.equal(data.quests.find((q) => q.page === 'Ale for Beur')?.eraTag, 'Classic')
 })

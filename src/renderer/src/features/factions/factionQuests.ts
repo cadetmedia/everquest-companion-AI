@@ -11,6 +11,12 @@
 // pages name but the dump does not track (Kunark/Velious-era names in a classic dump) are indexed
 // anyway and shown or not by the caller.
 //
+// OUT-OF-ERA QUESTS ARE NOT WORK. A page bannered for an expansion the server has not opened
+// (`{{Kunark Era}}` Dragon Scales Quest quotes a Temple Of Sol Ro raise) is dropped before it is
+// indexed, through the shared rule (questEra.ts `inEraQuests` → era.ts `eraBadgeOverrides`), so it
+// is neither a raise, a cost, a nearby candidate, a home-zone vote nor a "some quest raises this"
+// witness. Un-bannered pages stay in: silence is not an out-of-era claim.
+//
 // THE PROJECTION HAPPENS HERE, ONCE (owner ruling 4's shape): quests project into this file's own
 // row model as they are indexed, so the view filters and sorts ITS OWN rows, never the catalog's.
 //
@@ -20,6 +26,8 @@
 
 import type { QuestData, QuestEntry } from '@shared/types'
 import { factionNameKey } from '../../../../shared/outputs/factions'
+import type { Era } from '../../../../shared/planner/era'
+import { inEraQuests } from '../../../../shared/questEra'
 import questsJson from '../../data/eqlegends/quests.json'
 
 /** ONE QUEST as the factions tab draws it — this file's own shape, projected from the catalog. */
@@ -167,11 +175,13 @@ function finishWork(work: FactionWork, silentByZone: ReadonlyMap<string, Faction
   work.nearby = [...(silentByZone.get(home) ?? [])].sort((a, b) => a.name.localeCompare(b.name))
 }
 
-export function buildFactionWorkIndex(quests: readonly QuestEntry[]): Map<string, FactionWork> {
+/** `era` defaults to what the server ships (questEra.ts); quests whose banner is out of it are
+ *  never indexed. */
+export function buildFactionWorkIndex(quests: readonly QuestEntry[], era?: Era): Map<string, FactionWork> {
   const index = new Map<string, FactionWork>()
   // The silent half: zone → the quests whose pages state no faction effect at all.
   const silentByZone = new Map<string, FactionQuestRef[]>()
-  for (const q of quests) {
+  for (const q of inEraQuests(quests, era)) {
     fileSilent(q, silentByZone)
     for (const hit of q.factions ?? []) {
       const key = factionNameKey(hit.name)
@@ -195,10 +205,11 @@ export function factionWorkIndex(): Map<string, FactionWork> {
   return cached
 }
 
-/** The join keys of every faction at least one quest RAISES — `raisedFactionKeys` folds it. */
-export function raisedKeysOf(quests: readonly QuestEntry[]): Set<string> {
+/** The join keys of every faction at least one IN-ERA quest RAISES — `raisedFactionKeys` folds it.
+ *  A Kunark quest that would win a faction back cannot today, so it is no witness. */
+export function raisedKeysOf(quests: readonly QuestEntry[], era?: Era): Set<string> {
   const out = new Set<string>()
-  for (const q of quests) for (const h of q.factions ?? []) if (h.up) out.add(factionNameKey(h.name))
+  for (const q of inEraQuests(quests, era)) for (const h of q.factions ?? []) if (h.up) out.add(factionNameKey(h.name))
   return out
 }
 

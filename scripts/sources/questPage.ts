@@ -29,6 +29,7 @@
  * what turns prose links into a trustworthy required-item list.
  */
 
+import { parsePageEraTag } from '../../src/main/itemLookupParse'
 import type { QuestFactionHit } from '../../src/shared/types'
 
 export type { QuestFactionHit }
@@ -48,6 +49,9 @@ export interface QuestTopTable {
 export interface ParsedQuestPage extends QuestTopTable {
   /** wiki page title (also the quest's display name) */
   page: string
+  /** the page's era banner token (`Kunark`, `FearHateRevamp`), when it states one — read by
+   *  `parsePageEraTag`, the app's one non-item banner reader (see eraField) */
+  eraTag?: string
   /** reward item names (transclusion boxes + item links inside the Reward section) */
   rewards: string[]
   /** item names referenced by the page body (turn-ins/collectibles), minus rewards */
@@ -289,6 +293,18 @@ function coinField(wikitext: string): { coin?: string } {
   return coin === undefined ? {} : { coin }
 }
 
+/**
+ * The page's era banner (`{{Kunark Era}}` → `Kunark`) as a spreadable field. `parsePageEraTag`
+ * is the non-item page reader beside the item ones in itemLookupParse.ts, so a quest page and an
+ * item page that open the same banner produce the identical token, and there is no second regex
+ * to drift. Absent when the page states none (or states disagreeing ones). Split out for the same
+ * complexity ceiling as coinField.
+ */
+function eraField(wikitext: string): { eraTag?: string } {
+  const eraTag = parsePageEraTag(wikitext)
+  return eraTag === undefined ? {} : { eraTag }
+}
+
 /** The page's coin turn-in as words ("2 gold"), or undefined when it states none. First
  *  occurrence wins — a page hosting several turn-in variants repeats the same donation line. */
 export function parseCoinCost(wikitext: string): string | undefined {
@@ -361,6 +377,7 @@ export function parseQuestPage(
 
   return {
     page,
+    ...eraField(wikitext),
     startZone: top?.startZone,
     giver: top?.giver,
     minLevel: top?.minLevel,
