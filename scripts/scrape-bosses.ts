@@ -65,7 +65,9 @@ const TARGETS: Curated[] = [
   { name: 'Master of Spite', category: 'Plane of Hate', match: ['Master of Spite'], zone: 'Plane of Hate' },
   { name: 'Mistress of Scorn', category: 'Plane of Hate', match: ['Mistress of Scorn'], zone: 'Plane of Hate' },
   { name: 'High Priest M`kari', category: 'Plane of Hate', match: ['High Priest M`kari'], zone: 'Plane of Hate' },
-  { name: 'Magi P`tasa', category: 'Plane of Hate', match: ['Magi P`tasa'], zone: 'Plane of Hate' },
+  // eqlwiki titles the page with a capital T (Magi P`Tasa) and a title is case-sensitive after its
+  // first letter, so the lowercase name found no page, and no portrait, on either wiki.
+  { name: 'Magi P`tasa', category: 'Plane of Hate', page: 'Magi P`Tasa', p99: 'Magi P`Tasa', match: ['Magi P`tasa'], zone: 'Plane of Hate' },
   { name: 'Coercer T`vala', category: 'Plane of Hate', match: ['Coercer T`vala'], zone: 'Plane of Hate' },
   { name: 'Grandmaster R`Tal', category: 'Plane of Hate', match: ['Grandmaster R`Tal'], zone: 'Plane of Hate' },
   { name: 'Ashenbone Broodmaster', category: 'Plane of Hate', match: ['Ashenbone Broodmaster'], zone: 'Plane of Hate' },
@@ -122,11 +124,13 @@ async function p99Image(page: string): Promise<string | undefined> {
   return pick.startsWith('http') ? pick : P99 + pick
 }
 
-/** EQ Legends wiki fallback: first non-loot-icon image. */
+/** EQ Legends wiki fallback: the "Npc_*" portrait when the page has one, as on P99 (Phinigel
+ *  Autropos's page shows a Kedge Keep map first), else the first non-loot-icon image. */
 async function eqlImage(page: string): Promise<string | undefined> {
   const html = await pageHtml(EQL, page)
   if (!html) return undefined
-  const pick = imgSrcs(html).find((s) => !/Item_\d+/i.test(s))
+  const srcs = imgSrcs(html)
+  const pick = srcs.find((s) => /Npc_/i.test(s)) ?? srcs.find((s) => !/Item_\d+/i.test(s))
   if (!pick) return undefined
   return pick.startsWith('http') ? pick : EQL + pick
 }
