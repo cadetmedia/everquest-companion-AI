@@ -435,3 +435,14 @@ test('the committed catalog carries the coin costs, and a known donation quest r
   assert.ok((scrolls.factions?.length ?? 0) > 0, 'a faction quest whose whole cost is coin')
   for (const q of coined) assert.match(q.coin ?? '', /^\d+ (gold|platinum|silver|copper)$/)
 })
+
+test('the committed catalog carries the era banners, key right after page, and Dragon Scales reads Kunark', () => {
+  const tagged = data.quests.filter((q) => q.eraTag !== undefined)
+  assert.ok(tagged.length >= 700, `expected the measured ~734 bannered quests, got ${tagged.length}`)
+  for (const q of tagged) {
+    assert.ok((q.eraTag ?? '').trim().length > 0, `${q.page}: an empty banner token`)
+    assert.deepEqual(Object.keys(q).slice(0, 3), ['name', 'page', 'eraTag'], `${q.page}: eraTag key order`)
+  }
+  assert.equal(data.quests.find((q) => q.page === 'Dragon Scales Quest')?.eraTag, 'Kunark')
+  assert.equal(data.quests.find((q) => q.page === 'Ale for Beur')?.eraTag, 'Classic')
+})
