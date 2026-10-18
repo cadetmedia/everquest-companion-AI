@@ -28,6 +28,7 @@
 import { useMemo, useRef, useState, type JSX } from 'react'
 import { Paper, Typography } from '@mui/material'
 import { nextAdviceSort, rankZones, sortAdvice, type AdviceSort, type ZoneGoal } from '@shared/zoneAdvice'
+import { metVersion } from '@shared/metInLog'
 import type { ProgressionSnap } from '@shared/types'
 import { useModule } from '../../lib/useModule'
 import { useWindowedRows } from '../../lib/useWindowedRows'
@@ -86,16 +87,19 @@ export default function MapZoneAdvice({ onPick }: { onPick?: (zone: string) => v
   const level = Number.parseInt(query.level, 10)
 
   // The wish list is the one input that is the PLAYER's rather than the catalog's; the per-zone
-  // count is one walk of the bestiary, redone only when the list itself changes.
+  // count is one walk of the bestiary, redone only when the list, the era switch or the log's
+  // evidence (`met`: a flagged mob the player met counts again) changes.
   const wishlist = useWishlist().list
+  const met = metVersion()
   const wished = useMemo(
-    () => wishedByZone(new Set(wishlist.entries.map((e) => e.itemKey))),
-    [wishlist.entries]
+    () => wishedByZone(new Set(wishlist.entries.map((e) => e.itemKey)), query.eraOnly),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `met` keys the era verdicts the walk reads through mobOutOfEra
+    [wishlist.entries, query.eraOnly, met]
   )
 
   const rows = useMemo(() => {
     if (!Number.isFinite(level) || level <= 0) return []
-    const ranked = rankZones(zoneBands(), level, {
+    const ranked = rankZones(zoneBands(query.eraOnly), level, {
       goal: query.goal,
       min: MIN_EVIDENCE,
       wished,
@@ -104,7 +108,8 @@ export default function MapZoneAdvice({ onPick }: { onPick?: (zone: string) => v
       eraOnly: query.eraOnly
     })
     return sort === null ? ranked : sortAdvice(ranked, sort)
-  }, [level, query.goal, query.fits, query.search, query.eraOnly, wished, sort])
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `met` keys `zoneBands`' cache of era verdicts
+  }, [level, query.goal, query.fits, query.search, query.eraOnly, wished, sort, met])
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const win = useWindowedRows({ count: rows.length, rowHeight: ROW_HEIGHT, scrollRef })
