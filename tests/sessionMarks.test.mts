@@ -133,10 +133,12 @@ test('ONE HOOK, BOTH BUNDLES: both preload bridges expose the same three members
 })
 
 test('the broadcast reaches EVERY window, the way its two neighbours do', () => {
+  // Through windows.ts's one fan-out helper — the main window plus every overlay kind — which the
+  // scope and fight selections use too.
   const mod = code('../src/main/sessionMarks.ts')
-  assert.match(mod, /getMainWindow\(\)/)
-  assert.match(mod, /OVERLAY_KINDS\.map/)
-  assert.match(mod, /IPC\.onSessionMarks/)
+  assert.match(mod, /sendToEveryWindow\(IPC\.onSessionMarks, marks\)/)
+  const windows = code('../src/main/windows.ts')
+  assert.match(windows, /export function sendToEveryWindow\([\s\S]*?getMainWindow\(\)[\s\S]*?OVERLAY_KINDS\.map/)
 })
 
 // ── 4. the renderer is a cache, not an owner ───────────────────────────────────────────

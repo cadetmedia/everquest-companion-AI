@@ -24,8 +24,7 @@ import {
   sameScopeSelection,
   type ScopeSelection
 } from '../shared/scopeSelection'
-import { OVERLAY_KINDS } from '../shared/types'
-import { getMainWindow, getOverlayWindow } from './windows'
+import { sendToEveryWindow } from './windows'
 
 /** The whole state. Resets to the opening at process start — see the header. */
 let selection: ScopeSelection = SCOPE_SELECTION_OPENING
@@ -65,8 +64,5 @@ export function resetScopeSelection(): void {
  * harder to get wrong than maintaining a registry of which windows care today.
  */
 function broadcastScopeSelection(): void {
-  const targets = [getMainWindow(), ...OVERLAY_KINDS.map((k) => getOverlayWindow(k))]
-  for (const w of targets) {
-    if (w && !w.isDestroyed()) w.webContents.send(IPC.onScopeSelection, selection)
-  }
+  sendToEveryWindow(IPC.onScopeSelection, selection)
 }

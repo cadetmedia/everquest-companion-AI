@@ -26,12 +26,11 @@
 
 import { IPC } from '../shared/ipc'
 import { addSessionMark } from '../shared/sessionSegments'
-import { OVERLAY_KINDS } from '../shared/types'
 // THE THIRD HOLDER OF THE BOUNDARY (JOS-493). It owns the serve flag and the fire-and-forget rule;
 // this file simply hands it the instant it already stamped. A launch that is not serving from an
 // engine pays one boolean read per press.
 import { serveSessionMark } from './dataServer/serveCommands'
-import { getMainWindow, getOverlayWindow } from './windows'
+import { sendToEveryWindow } from './windows'
 
 /** The whole state, ascending. Resets to empty at process start — see the header. */
 let marks: number[] = []
@@ -100,8 +99,5 @@ export function resetSessionMarks(): void {
  * harder to get wrong than maintaining a registry of which windows care today.
  */
 function broadcastSessionMarks(): void {
-  const targets = [getMainWindow(), ...OVERLAY_KINDS.map((k) => getOverlayWindow(k))]
-  for (const w of targets) {
-    if (w && !w.isDestroyed()) w.webContents.send(IPC.onSessionMarks, marks)
-  }
+  sendToEveryWindow(IPC.onSessionMarks, marks)
 }

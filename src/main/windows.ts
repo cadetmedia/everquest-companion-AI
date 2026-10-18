@@ -155,6 +155,19 @@ export function sendToMain(channel: string, ...args: unknown[]): void {
   getMainWindow()?.webContents.send(channel, ...args)
 }
 
+/**
+ * Push one payload on one channel to the MAIN window and every overlay kind's window, skipping
+ * any that is absent or destroyed (the same guard `sendToMain` states above). A window with no
+ * listener for the channel simply ignores it — the shared selection broadcasts (scope, fight,
+ * session marks) rely on that rather than keeping a registry of which windows care today.
+ */
+export function sendToEveryWindow(channel: string, ...args: unknown[]): void {
+  const targets = [getMainWindow(), ...OVERLAY_KINDS.map((k) => getOverlayWindow(k))]
+  for (const w of targets) {
+    if (w && !w.isDestroyed()) w.webContents.send(channel, ...args)
+  }
+}
+
 /** A kind's overlay window while it is open (null when closed). */
 export function getOverlayWindow(kind: OverlayKind): BrowserWindow | null {
   return overlayWindows[kind]

@@ -15,8 +15,7 @@
 
 import { IPC } from '../shared/ipc'
 import { LIVE_FIGHT, normalizeFightSelection } from '../shared/fightSelection'
-import { OVERLAY_KINDS } from '../shared/types'
-import { getMainWindow, getOverlayWindow } from './windows'
+import { sendToEveryWindow } from './windows'
 
 /** The whole state. Resets to the sentinel at process start — see the header. */
 let fightId: string = LIVE_FIGHT
@@ -51,8 +50,5 @@ export function setFightSelection(next: unknown): string {
  */
 function broadcastFightSelection(): void {
   const payload = { fightId }
-  const targets = [getMainWindow(), ...OVERLAY_KINDS.map((k) => getOverlayWindow(k))]
-  for (const w of targets) {
-    if (w && !w.isDestroyed()) w.webContents.send(IPC.onFightSelection, payload)
-  }
+  sendToEveryWindow(IPC.onFightSelection, payload)
 }
