@@ -25,10 +25,11 @@
 // settled when it is not. The planner acts on R7 by excluding summoned items from the donor index;
 // that is a conservative filter, not a rule worth telling a player.
 
-import { type JSX, useCallback, useState } from 'react'
+import type { JSX } from 'react'
 import { Alert, AlertTitle, Box, Stack, Typography } from '@mui/material'
 import { SOCKET_TYPES, type SocketType } from '@shared/planner/types'
 import { extractionCost, extractionTier } from '@shared/planner/rules'
+import { useBoolPref } from '../combat/useCombatPrefs'
 import { CURRENT_ERA_LABEL } from './plannerData'
 import { SOCKET_LABEL } from './plannerGroups'
 
@@ -41,11 +42,7 @@ const KEY = 'eq.planner.explainer'
  * door in and the state is still remembered in both directions.
  */
 export function useExplainer(): { open: boolean; show: () => void; dismiss: () => void } {
-  const [open, setOpen] = useState(() => localStorage.getItem(KEY) === '1')
-  const set = useCallback((v: boolean) => {
-    localStorage.setItem(KEY, v ? '1' : '0')
-    setOpen(v)
-  }, [])
+  const [open, set] = useBoolPref(KEY, false)
   return { open, show: () => set(true), dismiss: () => set(false) }
 }
 

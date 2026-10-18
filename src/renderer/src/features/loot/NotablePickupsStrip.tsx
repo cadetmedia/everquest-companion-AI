@@ -6,6 +6,7 @@ import type { ItemKnowledge, LootEvent } from '@shared/types'
 import { recipeUseLabel } from '@shared/itemKnowledge'
 import { itemCountKey } from '../../lib/itemName'
 import { isTradeskillOnly } from '../../lib/itemKnowledgeView'
+import { useBoolPref } from '../combat/useCombatPrefs'
 import { useNotablePickups, type NotablePickup } from './useNotablePickups'
 
 // Renderer-local view pref (same shape as App.tsx's saved view / `eq.combat.scope`): does the
@@ -13,14 +14,6 @@ import { useNotablePickups, type NotablePickup } from './useNotablePickups'
 // loots hundreds of spider legs, and a strip full of ingredients drowns the one coin that
 // actually starts a quest. The loot HISTORY table is never filtered by this: it is a ledger.
 const TRADESKILL_KEY = 'eq.loot.showTradeskill'
-
-function loadShowTradeskill(): boolean {
-  try {
-    return localStorage.getItem(TRADESKILL_KEY) === '1'
-  } catch {
-    return false
-  }
-}
 
 /** Everything the strip needs except the "open this item" callback the view owns. */
 export interface NotableStripState {
@@ -43,20 +36,14 @@ export function useNotableStrip(history: LootEvent[]): {
   const [dismissed, setDismissed] = useState<Set<string>>(new Set())
   const { byKey, notable } = useNotablePickups(history, dismissed)
   // Tradeskill-only pickups are hidden by default (see TRADESKILL_KEY).
-  const [showTradeskill, setShowTradeskill] = useState<boolean>(loadShowTradeskill)
+  // A renderer without storage just doesn't remember it — never a crash (useBoolPref guards both).
+  const [showTradeskill, setShowTradeskill] = useBoolPref(TRADESKILL_KEY, false)
   const tradeskillHidden = useMemo(() => notable.filter((n) => isTradeskillOnly(n.knowledge)), [notable])
   const visibleNotable = useMemo(
     () => (showTradeskill ? notable : notable.filter((n) => !isTradeskillOnly(n.knowledge))),
     [notable, showTradeskill]
   )
-  const onToggleTradeskill = (v: boolean): void => {
-    setShowTradeskill(v)
-    try {
-      localStorage.setItem(TRADESKILL_KEY, v ? '1' : '0')
-    } catch {
-      /* a renderer without storage just doesn't remember — never a crash */
-    }
-  }
+  const onToggleTradeskill = setShowTradeskill
   return {
     knowledgeByKey: byKey,
     strip: {

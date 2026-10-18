@@ -29,6 +29,7 @@ import {
   type EraDerivation,
   type EraVerdict
 } from '../../../../shared/planner/era'
+import { useBoolPref } from '../combat/useCombatPrefs'
 import { classesMismatch } from './plannerClasses'
 import { defaultAxis, isAxisFor, type GroupAxis } from './plannerGroups'
 import { sourcesFor } from './sourceIndex'
@@ -404,12 +405,7 @@ const ERA_KEY = 'eq.planner.era'
  * localStorage-backed value is the whole synchronisation story.
  */
 export function useEraOnly(): [boolean, (v: boolean) => void] {
-  const [on, setOn] = useState(() => localStorage.getItem(ERA_KEY) !== '0')
-  const set = useCallback((v: boolean) => {
-    localStorage.setItem(ERA_KEY, v ? '1' : '0')
-    setOn(v)
-  }, [])
-  return [on, set]
+  return useBoolPref(ERA_KEY, true)
 }
 
 // ---- the equippability rule (R2) ----------------------------------------------------
@@ -448,12 +444,7 @@ export function isNonEquippable(donor: Pick<PlannerDonor, 'slots'>): boolean {
  * you cannot reach YET, this hides things the rules say can never donate at all.
  */
 export function useNonEquip(): [boolean, (v: boolean) => void] {
-  const [on, setOn] = useState(() => localStorage.getItem(NONEQUIP_KEY) === '1')
-  const set = useCallback((v: boolean) => {
-    localStorage.setItem(NONEQUIP_KEY, v ? '1' : '0')
-    setOn(v)
-  }, [])
-  return [on, set]
+  return useBoolPref(NONEQUIP_KEY, false)
 }
 
 // ---- the filter model ---------------------------------------------------------------

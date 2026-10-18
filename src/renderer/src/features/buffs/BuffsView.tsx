@@ -20,6 +20,7 @@ import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh'
 import ScienceOutlinedIcon from '@mui/icons-material/ScienceOutlined'
 import type { ActiveBuff, BuffsSnap, MessageOverlay, OverlayVerdict } from '@shared/types'
 import { useModule } from '../../lib/useModule'
+import { useBoolPref } from '../combat/useCombatPrefs'
 import { ActiveRow } from './ActiveBuffRow'
 import { groupKey, groupLabel } from './format'
 import { Tooltip } from '../../lib/Tooltip'
@@ -132,10 +133,6 @@ function OverlayDiagnostics({ overlay }: { overlay: MessageOverlay }): JSX.Eleme
  * A MISSING KEY IS HIDDEN, which is what makes "absent" and "the default" the same fact.
  */
 const SHOW_PERMANENT_KEY = 'eq.buffs.showPermanent'
-
-function readShowPermanent(): boolean {
-  return localStorage.getItem(SHOW_PERMANENT_KEY) === '1'
-}
 
 /** The section header for Active: the word, and the switch for the buffs that never expire. */
 function ActiveHeader({
@@ -252,7 +249,7 @@ export default function BuffsView(): JSX.Element {
 
   // HIDDEN BY DEFAULT (JOS-215) — a display filter over the snapshot, never a request to the
   // model. `snap.active` keeps every row; this page just chooses which to draw.
-  const [showPermanent, setShowPermanent] = useState(readShowPermanent)
+  const [showPermanent, setShowPermanent] = useBoolPref(SHOW_PERMANENT_KEY, false)
   // eslint-disable-next-line eqc/no-domain-munging -- JOS-459 cutover ledger item 3: no served view source answers this yet, so the renderer still derives ActiveBuff. Becomes a view descriptor when the source lands.
   const permanentCount = useMemo(() => snap.active.filter((b) => b.permanent === true).length, [snap.active])
   const active = useMemo(
@@ -314,13 +311,7 @@ export default function BuffsView(): JSX.Element {
         <ActiveHeader
           permanentCount={permanentCount}
           showPermanent={showPermanent}
-          onToggle={() => {
-            setShowPermanent((v) => {
-              const next = !v
-              localStorage.setItem(SHOW_PERMANENT_KEY, next ? '1' : '0')
-              return next
-            })
-          }}
+          onToggle={() => setShowPermanent(!showPermanent)}
         />
         {active.length === 0 ? (
           <Typography variant="body2" color="text.secondary">
