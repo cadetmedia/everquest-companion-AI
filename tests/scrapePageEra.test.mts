@@ -12,7 +12,6 @@ import {
   batchOf,
   categoryVerdicts,
   readTitleList,
-  retryOnError,
   wikitextByRequested
 } from '../scripts/sources/pageEraBatch'
 import type { PageEraFile } from '../src/main/pageEraDb'
@@ -75,14 +74,6 @@ test('an older first-title-named batch is reused only when its rows are exactly 
   assert.equal(answersSlice(titles, read('meta-a-goblin-seer-151.json')), false)
   assert.equal(answersSlice(titles.slice(0, 50), read('target-a-goblin-seer-50.json')), true)
   assert.equal(answersSlice(titles.slice(0, 50), read('target-Ornate-Chain-50.json')), false)
-})
-
-test('an API error body is retried only as a maxlag with attempts left, otherwise it throws', () => {
-  const maxlag = { error: { code: 'maxlag', info: 'lagged' } }
-  assert.equal(retryOnError({ query: {} }, 0, 5), false)
-  assert.equal(retryOnError(maxlag, 4, 5), true)
-  assert.throws(() => retryOnError(maxlag, 5, 5), /maxlag/)
-  assert.throws(() => retryOnError({ error: { code: 'badvalue' } }, 0, 5), /badvalue/)
 })
 
 test('a query response without pages throws instead of becoming an empty cached batch', () => {

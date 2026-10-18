@@ -26,9 +26,10 @@
  * the category or the template index; the direct-template filter is what makes over-broad
  * enumeration safe, so quest/zone/index pages are dropped by evidence instead of by a guess.
  *
- * Scraper etiquette (AGENTS.md LAW): one serialized request at a time with a 1s delay
- * (owner ruling 2026-08-22 — fan-run servers; bulk API batching does the heavy lifting),
- * exponential backoff honouring Retry-After on 429/5xx, a disk cache under
+ * Scraper etiquette (AGENTS.md LAW): every request goes through sources/wikiApi.ts — one
+ * serialized request at a time, a second apart (owner ruling 2026-08-22 — fan-run servers; bulk
+ * API batching does the heavy lifting), maxlag=5, exponential backoff honouring Retry-After on
+ * 429/5xx, an error body thrown rather than read as empty — a disk cache under
  * scripts/sources/cache/mobs so a re-run is nearly free, and partial runs resume rather than
  * duplicating work. Output is sorted by page title, so a re-scrape produces a clean diff.
  */
@@ -38,69 +39,13 @@ import { fileURLToPath } from 'url'
 import { isMobPage, parseMobPage } from './sources/mobPage'
 import type { MobData, MobEntry } from '../src/shared/types'
 import { isMain } from './sources/isMain'
-
-const API = 'https://eqlwiki.com/api.php'
-const UA = 'everquest-companion/0.1 (personal quest tracker)'
+import { wikiGet } from './sources/wikiApi'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const CACHE_DIR = resolve(HERE, 'sources/cache/mobs')
 const OUT_PATH = resolve(HERE, '../src/renderer/src/data/eqlegends/mobs.json')
 
-const DELAY_MS = 1000
-const MAX_RETRIES = 5
-
-const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms))
-
 const refresh = process.argv.slice(2).includes('--refresh')
-
-// ---- polite API client (identical contract to scrape-quests.ts) ------------------
-
-/** Wait before a retry: the server's Retry-After when it gave a usable one, else our backoff. */
-function retryDelayMs(res: Response, backoff: number): number {
-  const retryAfter = Number(res.headers.get('retry-after'))
-  return Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : backoff
-}
-
-/** Which request failed, for the thrown message — whichever identifying param it carried. */
-function describeRequest(params: Record<string, string>): string {
-  return `${params.action} ${params.cmtitle ?? params.eititle ?? params.pageid ?? ''}`
-}
-
-/** One serialized GET with exponential backoff on 429/5xx (honours Retry-After). */
-async function api<T>(params: Record<string, string>): Promise<T> {
-  // maxlag=5: MediaWiki's own bot-courtesy contract — the server refuses the request outright
-  // when replication lag exceeds 5s, instead of straining to serve it (owner ruling 2026-08-22).
-  const url = `${API}?${new URLSearchParams({ format: 'json', formatversion: '2', maxlag: '5', ...params }).toString()}`
-  let wait = 1000
-  for (let attempt = 0; ; attempt++) {
-    let res: Response
-    try {
-      res = await fetch(url, { headers: { 'User-Agent': UA } })
-    } catch (err) {
-      if (attempt >= MAX_RETRIES) throw err
-      await sleep(wait)
-      wait *= 2
-      continue
-    }
-    if (res.ok) {
-      await sleep(DELAY_MS)
-      const j = (await res.json()) as T
-      // A maxlag deferral arrives as HTTP 200 with an error body and a Retry-After header.
-      if ((j as { error?: { code?: string } }).error?.code === 'maxlag' && attempt < MAX_RETRIES) {
-        await sleep(retryDelayMs(res, wait))
-        wait *= 2
-        continue
-      }
-      return j
-    }
-    if ((res.status === 429 || res.status >= 500) && attempt < MAX_RETRIES) {
-      await sleep(retryDelayMs(res, wait))
-      wait *= 2
-      continue
-    }
-    throw new Error(`${res.status} ${res.statusText} for ${describeRequest(params)}`)
-  }
-}
 
 interface Member {
   pageid: number
@@ -120,7 +65,7 @@ async function categoryMembers(title: string): Promise<Member[]> {
       cmlimit: '500'
     }
     if (cont) params.cmcontinue = cont
-    const j = await api<{ query?: { categorymembers?: Member[] }; continue?: { cmcontinue?: string } }>(params)
+    const j = await wikiGet<{ query?: { categorymembers?: Member[] }; continue?: { cmcontinue?: string } }>(params)
     out.push(...(j.query?.categorymembers ?? []))
     cont = j.continue?.cmcontinue
     if (!cont) break
@@ -141,7 +86,7 @@ async function embeddedIn(template: string): Promise<Member[]> {
       eilimit: '500'
     }
     if (cont) params.eicontinue = cont
-    const j = await api<{ query?: { embeddedin?: Member[] }; continue?: { eicontinue?: string } }>(params)
+    const j = await wikiGet<{ query?: { embeddedin?: Member[] }; continue?: { eicontinue?: string } }>(params)
     out.push(...(j.query?.embeddedin ?? []))
     cont = j.continue?.eicontinue
     if (!cont) break
@@ -219,7 +164,7 @@ async function prefetchWikitexts(pages: Member[]): Promise<void> {
   let notCarried = 0
   for (let i = 0; i < batches; i++) {
     const slice = missing.slice(i * BATCH, (i + 1) * BATCH)
-    const j = await api<{ query?: { pages?: PrefetchedPage[] }; continue?: unknown }>({
+    const j = await wikiGet<{ query?: { pages?: PrefetchedPage[] }; continue?: unknown }>({
       action: 'query',
       prop: 'revisions',
       rvprop: 'content',
@@ -240,14 +185,15 @@ async function fetchWikitext(pageid: number): Promise<string | null> {
   const file = cachePath(`page-${pageid}.wikitext`)
   // The prefetch already honored --refresh by rewriting these files, so the cache is current.
   if (existsSync(file)) return readFileSync(file, 'utf8')
-  const j = await api<{ parse?: { wikitext?: string }; error?: { code?: string } }>({
+  // An error body (a page deleted since) throws, and readMobPage logs it as the page's skip reason.
+  const j = await wikiGet<{ parse?: { wikitext?: string } }>({
     action: 'parse',
     pageid: String(pageid),
     prop: 'wikitext',
     redirects: '1'
   })
   const wt = j.parse?.wikitext
-  if (j.error || wt == null) return null
+  if (wt == null) return null
   mkdirSync(CACHE_DIR, { recursive: true })
   writeFileSync(file, wt, 'utf8')
   return wt

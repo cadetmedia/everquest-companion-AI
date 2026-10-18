@@ -9,9 +9,7 @@ import * as cheerio from 'cheerio'
 import type { AnyNode } from 'domhandler'
 import type { PoskyData, PoskyItem, PoskyQuest } from '../../src/shared/types'
 import type { QuestSource } from './types'
-
-const API = 'https://eqlwiki.com/api.php'
-const UA = 'everquest-companion/0.1 (personal quest tracker)'
+import { WikiError, wikiGet } from './wikiApi'
 
 const CLASSES = [
   'Bard',
@@ -32,31 +30,20 @@ const CLASSES = [
   'Wizard'
 ]
 
-const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms))
-
-/** One request per second (owner ruling 2026-08-22), and a bounded retry on 429/5xx. */
-const DELAY_MS = 1000
-const MAX_ATTEMPTS = 4
-
-/** The server's Retry-After when it gave a usable one, else 2 s, 4 s, 8 s. */
-function backoffMs(res: Response, attempt: number): number {
-  const retryAfter = Number(res.headers.get('retry-after'))
-  return Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : 1000 * 2 ** attempt
-}
-
-/** A page's parsed HTML, or null. Only 429/5xx are retried; any other status fails at once. */
+/**
+ * A page's parsed HTML, or null when the wiki answered with a failure (an error body, a 4xx, or a
+ * 429/5xx that outlasted wikiApi's retries). wikiApi spaces every request a second apart (owner
+ * ruling 2026-08-22); a network failure that outlasts the retries still throws.
+ */
 export async function fetchParsedHtml(title: string): Promise<string | null> {
-  const url = `${API}?action=parse&page=${encodeURIComponent(
-    title
-  )}&prop=text&format=json&formatversion=2&redirects=1`
-  for (let attempt = 1; ; attempt++) {
-    const res = await fetch(url, { headers: { 'User-Agent': UA } })
-    if (res.ok) {
-      const json = (await res.json()) as { parse?: { text?: string }; error?: unknown }
-      return json.error || !json.parse?.text ? null : json.parse.text
-    }
-    if ((res.status !== 429 && res.status < 500) || attempt >= MAX_ATTEMPTS) return null
-    await sleep(backoffMs(res, attempt))
+  try {
+    const json = await wikiGet<{ parse?: { text?: string } }>({ action: 'parse', page: title, prop: 'text', redirects: '1' })
+    const text = json.parse?.text
+    // An empty text is no page, as before.
+    return text === undefined || text === '' ? null : text
+  } catch (err) {
+    if (err instanceof WikiError) return null
+    throw err
   }
 }
 
@@ -376,7 +363,6 @@ export async function attachItemStats(all: PoskyQuest[]): Promise<void> {
   const noBlock: string[] = []
   let done = 0
   for (const page of pages) {
-    await sleep(DELAY_MS) // also spaces the first item from the main-page request
     const html = await fetchParsedHtml(page)
     const stats = html ? parseItemStats(html, page) : undefined
     if (stats) statByPage.set(page, stats)

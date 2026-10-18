@@ -34,9 +34,9 @@
  *       `mw.config.wgEQLEraOutKeys`, which is the eleven `out` rows of `PAGE_ERA` in
  *       `shared/planner/era.ts` at `wgEQLEraConfigRevision` 156232. We do not re-implement that
  *       list; `eraBadge`/`namesEra` ARE it.
- * Five requests, warm cache zero. Same UA, same 1 s serialized delay (owner ruling 2026-08-22
- * — fan-run servers), same Retry-After backoff
- * as every other scraper here (AGENTS.md scraper etiquette).
+ * Five requests, warm cache zero, all through sources/wikiApi.ts like every other scraper here:
+ * the same UA, 1 s serialized delay (owner ruling 2026-08-22 — fan-run servers), maxlag=5 and
+ * Retry-After backoff (AGENTS.md scraper etiquette).
  *
  * THE SILENCE PROBLEM, and why the token is fetched rather than inferred. `outOfEra: false` is
  * returned both for a page the wiki classifies as classic content and for a page nobody has
@@ -85,15 +85,12 @@ import {
   categoryVerdicts,
   legacyBatchName,
   readTitleList,
-  retryOnError,
   wikitextByRequested,
   type CatPage,
   type RevBatch,
   type RevPage
 } from './sources/pageEraBatch'
-
-const API = 'https://eqlwiki.com/api.php'
-const UA = 'everquest-companion/0.1 (personal quest tracker)'
+import { wikiGet, wikiPost, wikiRequestCount } from './sources/wikiApi'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const CACHE_DIR = resolve(HERE, 'sources/cache/page-era')
@@ -103,8 +100,6 @@ const MOBS_PATH = resolve(HERE, '../src/renderer/src/data/eqlegends/mobs.json')
 const SPELLS_PATH = resolve(HERE, '../src/main/data/spells.json')
 const OUT_PATH = resolve(HERE, '../src/main/data/pageEra.json')
 
-const DELAY_MS = 1000
-const MAX_RETRIES = 5
 /** MEASURED anonymous multi-value limit (scrape-items.ts header) — 60 silently returns nothing. */
 const TITLE_BATCH = 50
 /** The batch size eqlwiki's OWN era filter uses against this endpoint. */
@@ -114,77 +109,9 @@ const SOURCE =
   'link targets of the corpus pages layers 1-2 leave silent, the mobs that drop them, and every ' +
   'spell page the spell catalog enumerates'
 
-const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms))
-
 const argv = process.argv.slice(2)
 const refresh = argv.includes('--refresh')
 const dryRun = argv.includes('--dry-run')
-
-// ---- polite API client (identical contract to scrape-items.ts, plus a POST) --------------------
-
-/** Wait before a retry: the server's Retry-After when it gave a usable one, else our backoff. */
-function retryDelayMs(res: Response, backoff: number): number {
-  const retryAfter = Number(res.headers.get('retry-after'))
-  return Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : backoff
-}
-
-let requestsSent = 0
-
-/**
- * One serialized request with exponential backoff on 429/5xx (honours Retry-After).
- *
- * POST exists for exactly one caller: `action=eqlmetadata` is POST-only (JOS-333's live probe), and
- * 450 titles would not fit a query string anyway.
- */
-/** GET puts the params in the query string; POST puts them in the body. One shape either way. */
-function requestFor(params: Record<string, string>, method: 'GET' | 'POST'): [string, RequestInit] {
-  // maxlag=5: MediaWiki's own bot-courtesy contract — the server refuses the request outright
-  // when replication lag exceeds 5s, instead of straining to serve it (owner ruling 2026-08-22).
-  const body = new URLSearchParams({ format: 'json', formatversion: '2', maxlag: '5', ...params })
-  if (method === 'GET') return [`${API}?${body.toString()}`, { headers: { 'User-Agent': UA } }]
-  return [
-    API,
-    {
-      method: 'POST',
-      headers: { 'User-Agent': UA, 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: body.toString()
-    }
-  ]
-}
-
-async function api<T>(params: Record<string, string>, method: 'GET' | 'POST' = 'GET'): Promise<T> {
-  const [url, init] = requestFor(params, method)
-  let wait = 1000
-  for (let attempt = 0; ; attempt++) {
-    let res: Response
-    try {
-      requestsSent++
-      res = await fetch(url, init)
-    } catch (err) {
-      if (attempt >= MAX_RETRIES) throw err
-      await sleep(wait)
-      wait *= 2
-      continue
-    }
-    if (res.ok) {
-      await sleep(DELAY_MS)
-      const j = (await res.json()) as T
-      // A maxlag deferral is retried; any other error body, or maxlag past the last try, throws.
-      if (retryOnError(j, attempt, MAX_RETRIES)) {
-        await sleep(retryDelayMs(res, wait))
-        wait *= 2
-        continue
-      }
-      return j
-    }
-    if ((res.status === 429 || res.status >= 500) && attempt < MAX_RETRIES) {
-      await sleep(retryDelayMs(res, wait))
-      wait *= 2
-      continue
-    }
-    throw new Error(`${res.status} ${res.statusText} for ${params.action} ${params.prop ?? ''}`)
-  }
-}
 
 // ---- disk cache (the scrape-items contract: write only after a complete response) --------------
 
@@ -244,7 +171,7 @@ async function fetchWikitext(titles: readonly string[], prefix: string): Promise
     let batch = asRevBatch(readBatch(prefix, slice))
     if (batch === null) {
       // redirects=1: a redirect's era is its target's, resolved in this same request.
-      const j = await api<{ query?: Partial<RevBatch> }>({
+      const j = await wikiGet<{ query?: Partial<RevBatch> }>({
         action: 'query',
         prop: 'revisions',
         rvprop: 'content',
@@ -344,7 +271,7 @@ export async function fetchMetadata(titles: readonly string[]): Promise<Map<stri
     const slice = titles.slice(i, i + META_BATCH)
     const file = batchName('meta', slice)
     const cached = readBatch('meta', slice) as MetaResponse | null
-    const j = cached ?? (await api<MetaResponse>({ action: 'eqlmetadata', titles: slice.join('|') }, 'POST'))
+    const j = cached ?? (await wikiPost<MetaResponse>({ action: 'eqlmetadata', titles: slice.join('|') }))
     const rows = j.eqlmetadata?.pages
     if (rows === undefined) throw new Error(`eqlmetadata returned no pages: ${JSON.stringify(j).slice(0, 300)}`)
     // Cached only once it has rows: a failed answer must never look cached.
@@ -377,7 +304,7 @@ async function fetchCategories(titles: readonly string[]): Promise<Map<string, b
     const file = batchName('cats', slice)
     let batch = asRevBatch<CatPage>(readBatch('cats', slice))
     if (batch === null) {
-      const j = await api<{ query?: Partial<RevBatch<CatPage>> }>({
+      const j = await wikiGet<{ query?: Partial<RevBatch<CatPage>> }>({
         action: 'query',
         prop: 'categories',
         cllimit: 'max',
@@ -460,7 +387,7 @@ async function spellPageTitles(): Promise<string[]> {
   const out: string[] = []
   let eicontinue: string | undefined
   for (let page = 0; page < 200; page++) {
-    const j = await api<{
+    const j = await wikiGet<{
       query?: { embeddedin?: { title: string }[] }
       continue?: { eicontinue?: string }
     }>({
@@ -633,7 +560,7 @@ async function main(): Promise<void> {
     `  spells out of era: ${String(spellsOut)}   in era: ${String(Object.keys(spells).length - spellsOut)}   ` +
       `unanswered: ${String(spellTitles.length - Object.keys(spells).length)} of ${String(spellTitles.length)} asked`
   )
-  console.log(`  eraRevision: ${String(eraRevision)}   live requests sent this run: ${String(requestsSent)}`)
+  console.log(`  eraRevision: ${String(eraRevision)}   live requests sent this run: ${String(wikiRequestCount())}`)
 }
 
 // Runs only as the entry script, so a test import can never start a scrape.

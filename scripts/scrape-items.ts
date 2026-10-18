@@ -39,9 +39,10 @@
  * the live fallback uses. The committed record is therefore the identical shape a live lookup
  * would have produced; there is no second parser to drift.
  *
- * Scraper etiquette (AGENTS.md LAW): one serialized request at a time with a 1s delay
- * (owner ruling 2026-08-22 — fan-run servers; bulk API batching does the heavy lifting),
- * exponential backoff honouring Retry-After on 429/5xx, a disk cache under
+ * Scraper etiquette (AGENTS.md LAW): every request goes through sources/wikiApi.ts — one
+ * serialized request at a time, a second apart (owner ruling 2026-08-22 — fan-run servers; bulk
+ * API batching does the heavy lifting), maxlag=5, exponential backoff honouring Retry-After on
+ * 429/5xx, an error body thrown rather than read as empty — a disk cache under
  * scripts/sources/cache/items so a warm re-run hits the network ZERO times, and partial runs
  * resume batch-by-batch instead of duplicating work (a batch file is written only after its
  * response arrived intact). Output keys are sorted, so a re-scrape produces a clean diff.
@@ -52,82 +53,17 @@ import { fileURLToPath } from 'url'
 import { parseItemWikitext, templateField } from '../src/main/itemLookupParse'
 import { itemKey, type ItemDbEntry, type ItemDbFile } from '../src/main/itemsDb'
 import { isMain } from './sources/isMain'
-
-const API = 'https://eqlwiki.com/api.php'
-const UA = 'everquest-companion/0.1 (personal quest tracker)'
+import { wikiGet } from './sources/wikiApi'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const CACHE_DIR = resolve(HERE, 'sources/cache/items')
 const OUT_PATH = resolve(HERE, '../src/main/data/items.json')
 
-const DELAY_MS = 1000
-const MAX_RETRIES = 5
 /** MEASURED anonymous multi-value limit (see header) — 60 ids silently returns nothing. */
 const BATCH = 50
 const SOURCE = 'eqlwiki.com — embeddedin Template:Itempage (ns0), filtered to pages opening {{Itempage}}'
 
-const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms))
-
 const refresh = process.argv.slice(2).includes('--refresh')
-
-// ---- polite API client (identical contract to scrape-quests.ts / scrape-mobs.ts) --------
-
-/** Wait before a retry: the server's Retry-After when it gave a usable one, else our backoff. */
-function retryDelayMs(res: Response, backoff: number): number {
-  const retryAfter = Number(res.headers.get('retry-after'))
-  return Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : backoff
-}
-
-/** Which request failed, for the thrown message — whichever identifying param it carried. */
-function describeRequest(params: Record<string, string>): string {
-  return `${params.action} ${params.eititle ?? params.pageids?.slice(0, 40) ?? ''}`
-}
-
-/**
- * A maxlag deferral (HTTP 200, error body, Retry-After) is retried while attempts remain; any
- * other error body, or maxlag on the last attempt, throws rather than reading as an empty answer.
- */
-function maxlagRetry(j: unknown, params: Record<string, string>, attempt: number): boolean {
-  const error = (j as { error?: { code?: string; info?: string } }).error
-  if (!error) return false
-  if (error.code === 'maxlag' && attempt < MAX_RETRIES) return true
-  throw new Error(`API error ${error.code}: ${error.info ?? ''} for ${describeRequest(params)}`)
-}
-
-/** One serialized GET with exponential backoff on 429/5xx (honours Retry-After). */
-async function api<T>(params: Record<string, string>): Promise<T> {
-  // maxlag=5: MediaWiki's own bot-courtesy contract — the server refuses the request outright
-  // when replication lag exceeds 5s, instead of straining to serve it (owner ruling 2026-08-22).
-  const url = `${API}?${new URLSearchParams({ format: 'json', formatversion: '2', maxlag: '5', ...params }).toString()}`
-  let wait = 1000
-  for (let attempt = 0; ; attempt++) {
-    let res: Response
-    try {
-      res = await fetch(url, { headers: { 'User-Agent': UA } })
-    } catch (err) {
-      if (attempt >= MAX_RETRIES) throw err
-      await sleep(wait)
-      wait *= 2
-      continue
-    }
-    if (res.ok) {
-      await sleep(DELAY_MS)
-      const j = (await res.json()) as T
-      if (maxlagRetry(j, params, attempt)) {
-        await sleep(retryDelayMs(res, wait))
-        wait *= 2
-        continue
-      }
-      return j
-    }
-    if ((res.status === 429 || res.status >= 500) && attempt < MAX_RETRIES) {
-      await sleep(retryDelayMs(res, wait))
-      wait *= 2
-      continue
-    }
-    throw new Error(`${res.status} ${res.statusText} for ${describeRequest(params)}`)
-  }
-}
 
 interface Member {
   pageid: number
@@ -148,7 +84,7 @@ export async function embeddedIn(template: string): Promise<Member[]> {
       eilimit: '500'
     }
     if (cont) params.eicontinue = cont
-    const j = await api<{ query?: { embeddedin?: Member[] }; continue?: { eicontinue?: string } }>(params)
+    const j = await wikiGet<{ query?: { embeddedin?: Member[] }; continue?: { eicontinue?: string } }>(params)
     out.push(...(j.query?.embeddedin ?? []))
     cont = j.continue?.eicontinue
     if (!cont) return out
@@ -198,7 +134,7 @@ async function fetchBatch(slice: Member[]): Promise<RevPage[]> {
   const cached = readCache(file) as RevPage[] | null
   // A batch left by an older page list can share the name; reuse it only if it holds exactly this slice.
   if (Array.isArray(cached) && batchProblem(slice, cached, false) === null) return cached
-  const j = await api<{ query?: { pages?: RevPage[] }; continue?: unknown }>({
+  const j = await wikiGet<{ query?: { pages?: RevPage[] }; continue?: unknown }>({
     action: 'query',
     prop: 'revisions',
     rvprop: 'content',

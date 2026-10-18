@@ -6,7 +6,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
 import { dirname } from 'path'
 
-/** The caller's polite, throttled API GET (it owns delay, retry and the error-body check). */
+/** A polite, throttled API GET (sources/wikiApi.ts `wikiGet`; a test passes a stub). */
 export type ApiGet = <T>(params: Record<string, string>) => Promise<T>
 
 /** MEASURED anonymous multi-value limit (scrape-items.ts header). */
