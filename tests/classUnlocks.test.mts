@@ -104,10 +104,15 @@ test('kind innate comes from the page FOOTNOTING it as an ability, never from a 
   // (not a Skill) in EQL", "* Harm Touch is now an Ability, not a Skill".
   assert.deepEqual(at('PAL', 'Lay on Hands'), { name: 'Lay on Hands', level: 1, kind: 'innate' })
   assert.deepEqual(at('PAL', 'Smite'), { name: 'Smite', level: 9, kind: 'innate' })
-  assert.deepEqual(at('SHD', 'Harm Touch'), { name: 'Harm Touch', level: 1, kind: 'innate' })
-  // Exactly those three across all 16 pages — nothing else is called innate.
+  // The Shadow Knight page dropped its footnoted Harm Touch skill row on 2026-10-15 (rev 198084):
+  // Harm Touch is a ranked ability now, in the AA table. Either way the class still knows it, as
+  // the footnoted innate or as an ability; it is never silently gone. Holds on both corpora.
+  const harmTouch = at('SHD', 'Harm Touch')
+  if (harmTouch) assert.deepEqual(harmTouch, { name: 'Harm Touch', level: 1, kind: 'innate' })
+  else assert.ok((classes.abilities as Record<string, string[]>)['Harm Touch']?.includes('SHD'))
+  // Exactly the footnoted rows across all 16 pages — nothing else is called innate.
   const innate = everyRow(skillUnlocks).filter((r) => r.kind === 'innate')
-  assert.equal(innate.length, 3)
+  assert.equal(innate.length, harmTouch ? 3 : 2)
 })
 
 test('the discipline anchors match, Rogue poisons included', () => {
