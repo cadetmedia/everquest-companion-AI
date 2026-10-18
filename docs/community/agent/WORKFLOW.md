@@ -135,12 +135,12 @@ disagree, RULES.md wins; fix this file.
   serially. `feedback.e2e.mts` is red on the TEST build by design (test-neutering disables the
   feedback controls).
   Measured 2026-10-18 (full run on main_community, then serial, then the same specs on test.26):
-  58/68 green; the 10 reds were identical on test.26. By design on the TEST build: ,
-   (no analytics compiled in),  (UNRELEASED forced open). Fixed that night
-  (stale specs): , , . Still red, not yet investigated,
-  not regressions:  (footer gap 60.9px under the last link),  (nav order vs the
-  sidebar groups; Preferences row hit-test null with the update indicator hovered),  (map row
-  resizes when the map arrives),  (waits for a  voice option). Baseline a
+  58/68 green; the 10 reds were identical on test.26. By design on the TEST build: `feedback`,
+  `telemetry` (no analytics compiled in), `spells-gate` (UNRELEASED forced open). Fixed that night
+  (stale specs): `default-sound-pack`, `sky-recent-sort`, `plan`. Still red, not yet investigated,
+  not regressions: `whats-new` (footer gap 60.9px under the last link), `overview` (nav order vs the
+  sidebar groups; Preferences row hit-test null with the update indicator hovered), `maps` (map row
+  resizes when the map arrives), `voice-alerts` (waits for a `custom` voice option). Baseline a
   red against the last release tag before calling it a regression.
 - **Headless look at an UNRELEASED tab:** temporarily set `UNRELEASED = true as boolean` in
   `devFlags.ts`, `electron-vite build --outDir=<worktree>/out-e2e`, `git checkout` the flag file,
