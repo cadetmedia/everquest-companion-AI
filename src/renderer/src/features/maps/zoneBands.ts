@@ -18,23 +18,30 @@
 // Plane of Hate's page list carries the Fear/Hate revamp's level 60-63 mobs beside the classic
 // ones, and they stretched its band and credited it with drops no classic server holds. Which
 // mob is out is `shared/mobEra.mobOutOfEra`, the flag the data build sets from the era rules (a
-// raw page banner alone decides nothing); a mob without the flag is in.
-// Lifting the switch counts every documented mob again, as it lifts the zone rule.
+// raw page banner alone decides nothing), outranked by the player's own log (a mob they killed,
+// conned or looted from is in era for them); a mob without the flag is in. Every walk here asks
+// it through `shared/zoneLevels.mobCountsInEra`. Lifting the switch counts every documented mob
+// again, as it lifts the zone rule.
+//
+// THE CACHE IS KEYED BY THE LOG'S EVIDENCE TOO (`metInLog.metVersion()`): the evidence arrives
+// after the first walk, and a mob it brings back must count from then on.
 
 // Relative value imports, as in mobSearch.ts, so the node test runner can load this module.
-import { zoneLevelBand, type ZoneLevelBand } from '../../../../shared/zoneLevels'
+import { metVersion } from '../../../../shared/metInLog'
+import { mobCountsInEra, zoneLevelBand, type ZoneLevelBand } from '../../../../shared/zoneLevels'
 import { zoneEntryFromCatalog, zoneKey } from '../../../../shared/zones'
-import { mobOutOfEra } from '../../../../shared/mobEra'
 import type { MobEntry } from '@shared/types'
 import { MOB_CATALOG } from '../mobs/mobSearch'
-import { sortLevel } from '../mobs/mobZone'
+import { mobsInZone, sortLevel } from '../mobs/mobZone'
 // The same two readers the map's own wish-list pins use, so a zone's count and the pins on its map
 // can never disagree about which drops are wished.
 import { sourceItemKey } from '../../lib/itemSources'
 import { wishedDrops } from './mobPins'
 
-/** One answer per state of the era switch, each taken once. */
+/** One answer per state of the era switch, each taken once per state of the log's evidence. */
 const CACHE = new Map<boolean, ReadonlyMap<string, ZoneLevelBand>>()
+/** The evidence version the cached answers were taken under; a move empties the cache. */
+let cachedMet = metVersion()
 
 /** The fold key → the name its row is shown under, filled as the catalog is walked. */
 const ROW_NAME = new Map<string, string>()
@@ -62,6 +69,11 @@ function rowsOf(zones: readonly string[] | undefined): Set<string> {
  * `eraOnly` (the "Current era only" switch, on by default) leaves out the mobs `mobOutOfEra` names.
  */
 export function zoneBands(eraOnly = true): ReadonlyMap<string, ZoneLevelBand> {
+  const met = metVersion()
+  if (met !== cachedMet) {
+    CACHE.clear()
+    cachedMet = met
+  }
   let held = CACHE.get(eraOnly)
   if (held === undefined) {
     held = zoneBandsOf(MOB_CATALOG, eraOnly)
@@ -74,7 +86,7 @@ export function zoneBands(eraOnly = true): ReadonlyMap<string, ZoneLevelBand> {
 export function zoneBandsOf(catalog: readonly MobEntry[], eraOnly: boolean): ReadonlyMap<string, ZoneLevelBand> {
   const levels = new Map<string, number[]>()
   for (const mob of catalog) {
-    if (eraOnly && mobOutOfEra(mob)) continue
+    if (!mobCountsInEra(mob, eraOnly)) continue
     // The first digit run, as the mob lists read it, so "~19" and "<52" are levels too.
     const level = sortLevel(mob)
     if (level === null) continue
@@ -90,6 +102,17 @@ export function zoneBandsOf(catalog: readonly MobEntry[], eraOnly: boolean): Rea
     if (band !== null) out.set(zone, band)
   }
   return out
+}
+
+/**
+ * ONE zone's band, the Maps tab's caption for the map on screen (`useZoneTravel`). Joined through
+ * `mobsInZone`, the join the map's own pins and mob list make, so the caption and the list never
+ * describe two different sets of inhabitants; under `eraOnly` without the mobs out of era, as
+ * every band here. Uncached: one zone, on a zone change.
+ */
+export function zoneBandOf(zoneName: string, eraOnly: boolean, catalog: MobEntry[] = MOB_CATALOG): ZoneLevelBand | null {
+  const rows = mobsInZone(zoneName, catalog, (m) => mobCountsInEra(m, eraOnly))
+  return zoneLevelBand(rows.map((m) => sortLevel(m) ?? Number.NaN))
 }
 
 /**
@@ -117,7 +140,7 @@ export function wishedByZone(
   if (wished.size === 0) return out
   const byZone = new Map<string, Set<string>>()
   for (const mob of catalog) {
-    if (eraOnly && mobOutOfEra(mob)) continue
+    if (!mobCountsInEra(mob, eraOnly)) continue
     const drops = wishedDrops(mob, wished)
     if (drops.length === 0) continue
     for (const zone of rowsOf(mob.zones)) {

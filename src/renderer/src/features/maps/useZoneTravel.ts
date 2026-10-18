@@ -9,7 +9,9 @@
 //   THE EXITS come from the map on screen (`shared/zoneTravel.zoneExits`) - the client labels its
 //   own zone lines and this app already parses them into `MapData.points`.
 //   THE LEVEL BAND comes from the committed bestiary, through the SAME zone join the mob pins on
-//   this map already make (`mobsInZone`). No second notion of "which mobs are here".
+//   this map already make (`mobsInZone`). No second notion of "which mobs are here". Under the
+//   era switch it leaves out the mobs out of era, as the list beside the map and Where to level
+//   do (`zoneBands.zoneBandOf`).
 //   THE PORTS come from main, once (`getZonePorts`), because they are derived from the spell and
 //   item corpora that live there.
 //
@@ -40,11 +42,9 @@ import {
   type ZoneGraph,
   type ZonePort
 } from '@shared/zoneTravel'
-import { zoneLevelBand, type ZoneLevelBand } from '@shared/zoneLevels'
-import { mobsInZone, sortLevel } from '../mobs/mobZone'
-// The one committed bestiary the whole app reads — the same export the mob search and the pins on
-// this map use, so no second copy of "which mobs are here" can drift from it.
-import { MOB_CATALOG } from '../mobs/mobSearch'
+import { metVersion } from '@shared/metInLog'
+import type { ZoneLevelBand } from '@shared/zoneLevels'
+import { zoneBandOf } from './zoneBands'
 
 export interface ZoneTravel {
   /** what the zone's own mobs say it is for, or null when the bestiary states no level here */
@@ -134,13 +134,15 @@ export function useZoneTravel(stem: string | null, zoneName: string | null, data
 
   const exits = useMemo(() => (data === null ? [] : zoneExits(data.points)), [data])
 
+  // The log's evidence version: a flagged mob the player met counts again once it arrives.
+  const met = metVersion()
   const band = useMemo(() => {
     if (zoneName === null || zoneName === '') return null
     // The mob pins on this very map make the same join; reusing it is what stops the caption and
     // the pins ever describing two different sets of inhabitants.
-    const rows = mobsInZone(zoneName, MOB_CATALOG)
-    return zoneLevelBand(rows.map((m) => sortLevel(m) ?? Number.NaN))
-  }, [zoneName])
+    return zoneBandOf(zoneName, eraOnly)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `met` keys the era verdicts `zoneBandOf` reads through mobOutOfEra
+  }, [zoneName, eraOnly, met])
 
   const landed = useMemo(() => {
     if (ports === null || stem === null) return []

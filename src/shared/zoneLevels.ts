@@ -23,6 +23,16 @@
 // down, so a zone with four documented mobs gets a band computed from four mobs — `n` rides on the
 // answer for exactly that reason, and a surface that draws this without drawing `n` is overstating
 // it. A zone with NO levelled rows answers null, never a zero (law 1: silence is not a number).
+//
+// ── WHICH MOBS COUNT ─────────────────────────────────────────────────────────────────────────
+//
+// Under the Maps tab's "Current era only" switch (on by default) a mob the one era predicate puts
+// out of era (`shared/mobEra.mobOutOfEra`: the data build's flag, outranked by the player's own
+// log) counts for nothing: not in a zone's band, not in its caption, not in its mob list, and not
+// as a source of a wished drop. `mobCountsInEra` is that gate, so every Maps surface asks it.
+
+import { mobOutOfEra } from './mobEra'
+import type { MobEntry } from './mobTypes'
 
 /** What a zone's documented inhabitants say about it. */
 export interface ZoneLevelBand {
@@ -33,6 +43,11 @@ export interface ZoneLevelBand {
   /** the outright extremes, including the one wandering named */
   min: number
   max: number
+}
+
+/** The mob counts on a Maps surface: the era switch is off, or the mob is in era. */
+export function mobCountsInEra(mob: Pick<MobEntry, 'outOfEra' | 'name' | 'page'>, eraOnly: boolean): boolean {
+  return !eraOnly || !mobOutOfEra(mob)
 }
 
 /** The p-th percentile of an ascending list, nearest-rank — no interpolation to invent a level. */

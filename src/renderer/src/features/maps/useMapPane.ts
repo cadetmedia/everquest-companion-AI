@@ -17,11 +17,12 @@
 
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import type { MapData, MapPackPrefs, MapPoint, MapSearchHit, ZoneShort } from '@shared/maps'
+import { metVersion } from '@shared/metInLog'
 import type { MobEntry } from '@shared/types'
 import { MOB_CATALOG } from '../mobs/mobSearch'
 import { useWishlist } from '../wishlist/useWishlist'
 import { CROSS_ZONE_LIMIT, crossZoneRows, type CrossZoneRow } from './crossZone'
-import { loadPaneOpen, savePaneOpen } from './useMapData'
+import { loadPaneOpen, savePaneOpen, useTravelEra } from './useMapData'
 import type { MapViewport } from './useMapViewport'
 import { useZoneTrack, type ZoneTrack } from './useZoneTrack'
 import {
@@ -84,14 +85,20 @@ export function useMapPane({ zoneName, points, catalog, mapId, onCenter }: MapPa
 
   // The wish-list keys come FIRST because the row walk reads them: a wished common is listed
   // (mobRows' exemption), so the catalog scan re-runs on a wish edit as well as a zone change.
-  // That is the same 3ms join, on an event that is a click, not a keystroke.
+  // That is the same 3ms join, on an event that is a click, not a keystroke. The era switch and
+  // the log's evidence (`met`) re-run it too: a mob out of era is not listed (mobRows), and one
+  // the player met is back once the evidence arrives.
   const wishlist = useWishlist().list
   const wishedKeys = useMemo(() => new Set(wishlist.entries.map((e) => e.itemKey)), [wishlist.entries])
+  const eraOnly = useTravelEra()
+  const met = metVersion()
   const allMobs = useMemo<MobPaneRow[]>(
-    () => (zoneName == null ? [] : mobRows(zoneName, catalog, wishedKeys)),
-    [zoneName, catalog, wishedKeys]
+    () => (zoneName == null ? [] : mobRows(zoneName, catalog, wishedKeys, eraOnly)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `met` keys the era verdicts mobRows reads through mobOutOfEra
+    [zoneName, catalog, wishedKeys, eraOnly, met]
   )
   // The wish-list join — walks the zone's rows, not the catalog, so an edit re-derives cheaply.
+  // Only the listed rows are walked, so a wished drop pins only through an in-era mob.
   const wishes = useMemo(() => {
     const m = new Map<string, readonly string[]>()
     if (wishedKeys.size > 0)
