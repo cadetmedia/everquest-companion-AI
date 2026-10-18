@@ -16,6 +16,7 @@ import { Chip, useTheme } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import type { CharacterSnap } from '@shared/characterTypes'
 import type { ZoneShort } from '@shared/maps'
+import { metVersion } from '@shared/metInLog'
 import { useModule } from '../../lib/useModule'
 import type { MapViewport } from '../maps/useMapViewport'
 import { slayerAreas, type SlayerArea } from './slayerAreas'
@@ -99,14 +100,16 @@ export default function SlayerMapLayer({
 }): JSX.Element | null {
   const { record } = useSlayerData()
   // The Achievements tab's level cap, faction switch and era switch, read as its plan reads them,
-  // so the shading and the zone list leave out the same mobs.
+  // so the shading and the zone list leave out the same mobs; and the log's evidence version,
+  // so a flagged mob the player met is shaded again when the evidence arrives.
   const own = useModule<CharacterSnap>('character')?.level?.level
   const maxLevel = levelCap(loadMaxLevel(), own)
   const noFactionHits = loadFlag(NO_FACTION_HITS_KEY)
   const outOfEra = loadFlag(OUT_OF_ERA_KEY)
+  const met = metVersion()
   const cap = useMemo(
-    () => ({ maxLevel, noFactionHits, outOfEra }),
-    [maxLevel, noFactionHits, outOfEra]
+    () => ({ maxLevel, noFactionHits, outOfEra, met }),
+    [maxLevel, noFactionHits, outOfEra, met]
   )
   const [hidden, setHidden] = useState(() => loadFlag(MAP_AREAS_HIDDEN_KEY))
   const picked = useMemo(() => {

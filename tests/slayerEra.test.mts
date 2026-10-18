@@ -14,12 +14,13 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { mobIndex, worksHere, type ZoneHere } from '../src/shared/achievements/bookRows'
+import { metVersion, setMet } from '../src/shared/metInLog'
+import { mobOutOfEra } from '../src/shared/mobEra'
 import type { MobEntry } from '../src/shared/mobTypes'
 import type { BookComponent } from '../src/shared/outputs/achievementBook'
 import {
   NO_CAP,
   keptMob,
-  mobOutOfEra,
   planZones,
   slayerMobs,
   slayerTarget,
@@ -71,7 +72,7 @@ test('the flag decides, absent is in era, and a banner without the flag hides no
     ]
   )
   assert.deepEqual(
-    HATE_MOBS.map((m) => m.outOfEra),
+    HATE_MOBS.map((m) => mobOutOfEra(m.entry)),
     [true, false, false, false, true]
   )
 })
@@ -109,7 +110,7 @@ test('a catalog with no era flags plans exactly as before', () => {
     HATE.map(({ outOfEra: _, ...rest }) => rest),
     () => undefined
   )
-  assert.ok(unflagged.every((m) => !m.outOfEra && keptMob(m, IN_ERA)))
+  assert.ok(unflagged.every((m) => !mobOutOfEra(m.entry) && keptMob(m, IN_ERA)))
   assert.deepEqual(
     planZones(unflagged, [DRAKES], IN_ERA).map((z) => [z.short, z.spawns, z.low, z.high]),
     [
@@ -159,4 +160,40 @@ test("a named mob flagged out of era does not make its line work in the zone it'
   assert.ok(!worksHere(general, drake, here(true)), 'a flagged mob in a classic zone')
   assert.ok(worksHere(general, drake, here(true, true)), 'the era switch brings it back')
   assert.ok(worksHere(general, drake, here(false)), 'no flag is in era, whatever the banner says')
+})
+
+// ---- THE PLAYER'S LOG OUTRANKS THE FLAG (owner ruling, 2026-10-17) --------------------------------
+// A flagged mob the log shows was killed, conned or looted from is in era for this player. The
+// evidence is module state (`shared/metInLog`), empty unless a test fills it; each test resets it.
+
+test('a flagged mob the log met is offered again, in the zone list, the map and the zone filter', () => {
+  setMet('mobs', ['A Hatebone Drake'])
+  try {
+    assert.equal(mobOutOfEra(HATE[0]), false, 'met in the log: in era, whatever the flag says')
+    assert.equal(mobOutOfEra(HATE[4]), true, 'the fearbone drake was not met: still out')
+    const zones = planZones(HATE_MOBS, [DRAKES], IN_ERA)
+    assert.deepEqual(zones.map((z) => z.short), ['hateplane'])
+    assert.equal(zones[0].mobs.length, 4, 'the hatebone drake is back in its zone')
+    assert.equal(zones[0].spawns, 10)
+    const field = slayerMobs([mob('a hatebone drake', 'Plane of Hate', ['60', 1], true)], () => undefined)
+    assert.equal(slayerAreas('hateplane', field, [DRAKES], IN_ERA).length, 1, 'and shaded on the map')
+    const general = { category: 'EverQuest: Hunter', family: 'EverQuest', name: 'Hunter', achievements: [] }
+    const drake = { name: 'Hate Hunter', done: false, components: [{ line: 'a hatebone drake', done: false }] }
+    const here: ZoneHere = { zone: 'hateplane', counters: new Set(), mobs: mobIndex([HATE[0]]), outOfEra: false }
+    assert.ok(worksHere(general, drake, here), 'and its line works here again')
+  } finally {
+    setMet('mobs', [])
+  }
+  assert.equal(mobOutOfEra(HATE[0]), true, 'with the evidence gone the flag decides again')
+})
+
+test('the evidence version moves when the log meets something new, and only then', () => {
+  const before = metVersion()
+  setMet('mobs', ['a hatebone drake'])
+  const after = metVersion()
+  assert.notEqual(after, before, 'new evidence moves the version that keys the plan memos')
+  setMet('mobs', ['A Hatebone Drake'])
+  assert.equal(metVersion(), after, 'the same evidence again is no change')
+  setMet('mobs', [])
+  assert.notEqual(metVersion(), after)
 })

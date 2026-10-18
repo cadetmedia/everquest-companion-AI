@@ -37,7 +37,8 @@ import {
   achievementKey,
   type SlayerCounter
 } from '../outputs/slayer'
-import { counterId, mobOutOfEra } from '../slayer/slayerPlan'
+import { mobOutOfEra } from '../mobEra'
+import { counterId } from '../slayer/slayerPlan'
 import { zoneShortName, zoneShortNameFromCatalog } from '../zones'
 
 /** An achievement and the group it was printed under. */

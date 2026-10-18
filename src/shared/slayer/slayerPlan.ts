@@ -25,11 +25,16 @@
 //     Hate and passed the zone rule (owner, 2026-10-17). It is left out of the zone's mobs, its
 //     spawn points, its level range and its counts, and a zone left with nothing in era is not
 //     listed. THE FLAG IS THE ONLY WITNESS: a raw banner is not read here, because it hides mobs
-//     the player fights (a cave bat is bannered Velious and lives in a classic zone).
+//     the player fights (a cave bat is bannered Velious and lives in a classic zone). The verdict
+//     is `shared/mobEra.mobOutOfEra`, the one mob era predicate, and the player's own log outranks
+//     the flag there (a mob they killed, conned or looted from is in era for them). It is read at
+//     plan time, never stored on a `SlayerMob`: the catalog index is built once, the log's
+//     evidence arrives later (`metVersion()` keys the memos over a plan, `PlanOptions.met`).
 // A zone the era table makes no claim about stays in (`unknown` is not `out-of-era`), and so does
 // a mob with no flag. The "Zones not open yet" switch brings both kinds back.
 
 import type { ZoneShort } from '../maps'
+import { mobOutOfEra } from '../mobEra'
 import type { MobEntry } from '../mobTypes'
 import { achievementKey, type SlayerCounter } from '../outputs/slayer'
 import { eraVerdict } from '../planner/era'
@@ -74,14 +79,6 @@ export interface SlayerMob {
   high: number | null
   /** the wiki says a kill lowers a faction (`mobFactions.json`); false when it says none or nothing */
   factionHit: boolean
-  /** the era rules put this mob out of era (`mobOutOfEra`) */
-  outOfEra: boolean
-}
-
-/** The data build's era verdict says this mob is not in the game the server runs. Absent is in
- *  era: silence is not a verdict. Every surface that offers a catalog mob asks this. */
-export function mobOutOfEra(entry: MobEntry): boolean {
-  return entry.outOfEra === true
 }
 
 /** The number the text opens with, and the one a dash or `to` joins to it. */
@@ -115,8 +112,7 @@ export function slayerMobs(
     entry,
     facts: mobFacts(entry.name, raceOf(entry.page)),
     ...levelSpan(entry.level),
-    factionHit: hitsFaction(entry.page),
-    outOfEra: mobOutOfEra(entry)
+    factionHit: hitsFaction(entry.page)
   }))
 }
 
@@ -127,6 +123,10 @@ export interface PlanOptions {
   outOfEra: boolean
   /** leave out mobs the wiki says lower a faction; a mob it is silent on stays */
   noFactionHits: boolean
+  /** the log evidence version (`metInLog.metVersion()`) the plan is read under. Nothing here reads
+   *  it: `mobOutOfEra` reads the evidence itself. A memo keyed by the options carries it so the
+   *  plan recomputes when the evidence moves. */
+  met?: number
 }
 
 /** One mob in a zone that counts toward at least one picked counter. */
@@ -185,14 +185,14 @@ export function withinLevel(mob: SlayerMob, maxLevel: number | null): boolean {
 }
 
 /** The options that leave a MOB out, which the zone list and the map shading both apply. */
-export type MobCap = Pick<PlanOptions, 'maxLevel' | 'noFactionHits' | 'outOfEra'>
+export type MobCap = Pick<PlanOptions, 'maxLevel' | 'noFactionHits' | 'outOfEra' | 'met'>
 
 export const NO_CAP: MobCap = { maxLevel: null, noFactionHits: false, outOfEra: true }
 
 /** The mob is under the level cap, costs no faction while the faction switch is on, and is in era
  *  unless the switch for what is not open yet is on. */
 export function keptMob(mob: SlayerMob, cap: MobCap): boolean {
-  if (mob.outOfEra && !cap.outOfEra) return false
+  if (!cap.outOfEra && mobOutOfEra(mob.entry)) return false
   return withinLevel(mob, cap.maxLevel) && !(cap.noFactionHits && mob.factionHit)
 }
 
