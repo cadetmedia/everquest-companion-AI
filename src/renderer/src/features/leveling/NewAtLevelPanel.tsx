@@ -244,7 +244,7 @@ export function NewAtLevelPanel({
             empty={`no new spells at level ${String(level)} for this loadout`}
           />
           <UnlockList
-            title="Skills, disciplines & innates"
+            title="Skills, disciplines, innates & AAs"
             rows={unlocks.skills}
             resolved={resolved}
             sets={sets}

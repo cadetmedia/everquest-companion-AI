@@ -30,7 +30,7 @@ import type { SpellStatGrant } from './spellStats'
 import type { UpgradeCategory } from './spellUpgrade'
 
 /** What kind of thing unlocked. `skill`/`disc`/`innate` are classes.json's own words. */
-export type UnlockKind = 'spell' | 'skill' | 'disc' | 'innate'
+export type UnlockKind = 'spell' | 'skill' | 'disc' | 'innate' | 'aa'
 
 /** One spell, with every (class, level) statement the DB makes about it and its card fields. */
 export interface UnlockSpell {
@@ -212,11 +212,11 @@ export interface UnlockSpell {
   outOfEra?: boolean
 }
 
-/** One skill / discipline / innate, as classes.json states it for ONE class. */
+/** One skill / discipline / innate / AA rank, as classes.json states it for ONE class. */
 export interface UnlockSkill {
   name: string
   level: number
-  kind: 'skill' | 'disc' | 'innate'
+  kind: 'skill' | 'disc' | 'innate' | 'aa'
   /**
    * A source that DISPUTES this row, quoted verbatim from classes.json's `disputed[]`.
    *

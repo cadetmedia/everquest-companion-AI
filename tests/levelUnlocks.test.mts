@@ -32,8 +32,7 @@ import {
 } from '../src/shared/levelUnlocks'
 import { spellMetricsParts } from '../src/shared/spellMetrics'
 import type { SpellResistTable } from '../src/shared/resistTypes'
-import { buildLevelUnlocks, dedupeByName, type NamedRow } from '../src/main/data/levelUnlocks'
-import classes from '../src/main/data/classes.json'
+import { aaUnlocks, buildLevelUnlocks, dedupeByName, type NamedRow } from '../src/main/data/levelUnlocks'
 
 // ---- fixtures ---------------------------------------------------------------------------
 
@@ -307,10 +306,26 @@ test('the innates the structure derived are placed: PAL Lay on Hands @1, SHD Har
   const u = unlocksAtLevel(REAL, pal, 1)
   const innates = u.skills.filter((r) => r.kind === 'innate').map((r) => r.name)
   assert.ok(innates.includes('Lay on Hands'), innates.join(', '))
-  // The Shadow Knight page dropped its footnoted Harm Touch skill row on 2026-10-15 (rev 198084; a
-  // ranked ability in the AA table now): it is placed exactly while the committed class data lists it.
-  const shdLists = classes.skillUnlocks.SHD.some((r: { name: string; kind: string }) => r.name === 'Harm Touch' && r.kind === 'innate')
-  assert.equal(innates.includes('Harm Touch'), shdLists, innates.join(', '))
+  // The Shadow Knight page dropped its footnoted Harm Touch skill row on 2026-10-15 (rev 198084): a
+  // ranked AA now, which the AA table places at level 1. Either way it is new at 1.
+  const harmTouch = u.skills.find((r) => r.name === 'Harm Touch')
+  assert.ok(harmTouch?.kind === 'innate' || harmTouch?.kind === 'aa', u.skills.map((r) => r.name).join(', '))
+})
+
+test('an AA is new at the level each rank needs, for the classes the wiki lists it under', () => {
+  const aas = {
+    'Harm Touch': { classes: ['SHD'], levels: [1, 6, 11] },
+    'Lay on Hands': { classes: ['PAL'], levels: [1] },
+    Origin: { levels: [1] },
+    Gone: { classes: ['SHD'] }
+  }
+  assert.deepEqual(aaUnlocks(aas, 'SHD', []), [
+    { name: 'Harm Touch', level: 1, kind: 'aa' },
+    { name: 'Harm Touch (rank 2)', level: 6, kind: 'aa' },
+    { name: 'Harm Touch (rank 3)', level: 11, kind: 'aa' }
+  ])
+  // A name the class's own tables already list stays that row.
+  assert.deepEqual(aaUnlocks(aas, 'PAL', [{ name: 'Lay on Hands', level: 1, kind: 'innate' }]), [])
 })
 
 /** Rows a player has confirmed in EQ Legends — `CONFIRMED_UNLOCKS` in src/main/data/levelUnlocks.ts. */
