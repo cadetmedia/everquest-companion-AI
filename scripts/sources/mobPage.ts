@@ -16,6 +16,7 @@
  *   2. THE COMPACT PROJECTION. The committed catalog is names only (see MobEntry) — no drop
  *      rates, no wikitext — because it is inlined into the main bundle.
  */
+import { parsePageEraTag } from '../../src/main/itemLookupParse'
 import { parseMobWikitext } from '../../src/main/mobLookupParse'
 import type { MobEntry } from '../../src/shared/types'
 
@@ -73,7 +74,11 @@ export function parseMobPage(title: string, wikitext: string): MobEntry | null {
   // `|name` can be present-but-empty (or unlink to nothing), and an EMPTY name is "the page
   // does not state one" — so the fallback is on emptiness, not merely on absence.
   const stated = facts.pageName ?? ''
-  const entry: MobEntry = { page: title, name: stated.length > 0 ? stated : title }
+  // The era banner (`{{FearHateRevamp Era}}`), read by the ONE non-item page reader so a mob and
+  // an armour-set page that open the same banner get the same token. Keyed right after `page` so
+  // the committed catalog keeps one field order; absent when the page states no era.
+  const eraTag = parsePageEraTag(wikitext)
+  const entry: MobEntry = { page: title, ...(eraTag !== undefined && { eraTag }), name: stated.length > 0 ? stated : title }
   if (facts.levelText) entry.level = facts.levelText
   const zones = splitZones(facts.zone)
   if (zones.length) entry.zones = zones
