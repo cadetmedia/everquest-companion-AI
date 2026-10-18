@@ -41,12 +41,12 @@ import {
   eraVerdictAt,
   layeredVerdict,
   layeredVerdictAt,
-  mobOutOfEra,
   questOutOfEra,
   withoutOutOfEraMobs,
   zoneEra,
   type Era
 } from '../src/shared/planner/era'
+import { mobOutOfEra } from '../src/shared/mobEra'
 import { ZONES, zoneKey } from '../src/shared/zones'
 import mobsJson from '../src/renderer/src/data/eqlegends/mobs.json'
 import type { MobData } from '../src/shared/types'
@@ -566,24 +566,27 @@ test('the reverse index has one row per folded spelling — name, alias and cata
 // ---- a MOB: the data-build flag is the whole of the verdict, never the raw banner ------------
 
 test('mobOutOfEra: true exactly when the record carries outOfEra; a raw out-of-era banner alone is not enough', () => {
-  assert.equal(mobOutOfEra({ outOfEra: true }), true)
-  assert.equal(mobOutOfEra({}), false)
+  assert.equal(mobOutOfEra({ name: 'a revamp fiend', outOfEra: true }), true)
+  assert.equal(mobOutOfEra({ name: 'a plain rat' }), false)
   // `a cave bat`: bannered Velious, lives in a classic zone, and the data build left it in era.
-  const caveBat: { eraTag: string; outOfEra?: true } = { eraTag: 'Velious' }
+  const caveBat: { name: string; eraTag: string; outOfEra?: true } = { name: 'a cave bat', eraTag: 'Velious' }
   assert.equal(eraBadgeOverrides(caveBat.eraTag, CURRENT_ERA), true, 'the banner alone WOULD call it out')
   assert.equal(mobOutOfEra(caveBat), false)
 })
 
 test('withoutOutOfEraMobs: drops only the flagged rows and keeps the order of the rest', () => {
-  const rows: { page: string; eraTag?: string; outOfEra?: true }[] = [
-    { page: 'a' },
-    { page: 'b', outOfEra: true },
-    { page: 'c', eraTag: 'Velious' },
-    { page: 'd', eraTag: 'FearHateRevamp', outOfEra: true },
-    { page: 'e' }
+  const rows: { page: string; name: string; eraTag?: string; outOfEra?: true }[] = [
+    { page: 'a', name: 'mob a' },
+    { page: 'b', name: 'mob b', outOfEra: true },
+    { page: 'c', name: 'mob c', eraTag: 'Velious' },
+    { page: 'd', name: 'mob d', eraTag: 'FearHateRevamp', outOfEra: true },
+    { page: 'e', name: 'mob e' }
   ]
   assert.deepEqual(withoutOutOfEraMobs(rows).map((r) => r.page), ['a', 'c', 'e'])
-  const unflagged = [{ page: 'x' }, { page: 'y' }]
+  const unflagged = [
+    { page: 'x', name: 'mob x' },
+    { page: 'y', name: 'mob y' }
+  ]
   assert.deepEqual(withoutOutOfEraMobs(unflagged), unflagged)
 })
 

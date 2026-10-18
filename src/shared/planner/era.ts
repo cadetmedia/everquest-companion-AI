@@ -86,6 +86,10 @@
 // directly (the shared/planner house style).
 
 import { ZONES, zoneKey, type ZoneEntry, type ZoneEra } from '../zones'
+import { mobOutOfEra } from '../mobEra'
+
+/** What the mob era predicate reads off a row (`shared/mobEra.ts mobOutOfEra`). */
+type MobEraRow = Parameters<typeof mobOutOfEra>[0]
 
 /**
  * An EverQuest expansion the planner can rank.
@@ -444,30 +448,19 @@ export function eraBadgeOverrides(tag: string | undefined, era: Era): boolean {
  * IS THIS QUEST OUT OF ERA? Its page banner, read by the one rule: `eraBadgeOverrides` at
  * `CURRENT_ERA`. A quest has no drop zones to weigh against the banner, so the banner is the whole
  * of the evidence. An ABSENT tag is `false` (law 1), so a catalog that never read banners behaves as
- * it always did. NOT FOR MOBS — a mob's verdict is the data build's flag (`mobOutOfEra` below).
+ * it always did. NOT FOR MOBS — a mob's verdict is `shared/mobEra.ts mobOutOfEra`.
  */
 export function questOutOfEra(quest: { readonly eraTag?: string }): boolean {
   return eraBadgeOverrides(quest.eraTag, CURRENT_ERA)
 }
 
 /**
- * IS THIS MOB OUT OF ERA? Exactly when its record says so: `MobEntry.outOfEra === true`.
- *
- * A MOB IS NEVER JUDGED BY ITS RAW BANNER (owner ruling). `a cave bat` is bannered Velious and
- * lives in a classic zone; reading the banner here would hide a mob the player fights. The era
- * rules (banner and zones) run once, at data build, and the verdict is stored on the record, so a
- * surface reads the flag and never re-decides. Absent means in era — which is also what a record
- * from a build that never computed the flag says, so nothing changes for those.
- */
-export function mobOutOfEra(mob: { readonly outOfEra?: true }): boolean {
-  return mob.outOfEra === true
-}
-
-/**
  * The mobs a list that RECOMMENDS may show (a zone roster, map pins): every `mobOutOfEra` row
  * dropped, the rest in their own order. Lookups (a search, a detail page) keep them and chip them.
+ * The verdict is `shared/mobEra.ts mobOutOfEra`, the one mob era predicate: the data build's flag,
+ * and the player's own log over it.
  */
-export function withoutOutOfEraMobs<T extends { readonly outOfEra?: true }>(mobs: readonly T[]): T[] {
+export function withoutOutOfEraMobs<T extends MobEraRow>(mobs: readonly T[]): T[] {
   return mobs.filter((m) => !mobOutOfEra(m))
 }
 

@@ -130,8 +130,8 @@ export function mobsInZone(zoneRaw: string, catalog: MobEntry[]): MobEntry[] {
 
 /**
  * THE ROSTER a player is OFFERED for this zone: `mobsInZone`, minus the mobs the era rules put out
- * of era (`shared/planner/era.ts mobOutOfEra`: the record's data-build `outOfEra` flag, never its
- * raw banner). A revamp keeps the zone's name while replacing what lives in it, so the zone join
+ * of era (`shared/mobEra.ts mobOutOfEra`: the record's data-build `outOfEra` flag, never its raw
+ * banner, and never a mob the player's own log met). A revamp keeps the zone's name while replacing what lives in it, so the zone join
  * alone cannot tell the two bestiaries apart. A mob without the flag is kept, exactly as before.
  *
  * Both rosters that recommend — the Mobs tab's "In <zone>" and the map pane's rows and pins — read

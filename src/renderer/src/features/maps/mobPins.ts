@@ -107,7 +107,7 @@ export function mobPins(entry: MobEntry): MobPin[] {
  * The zone's named mobs, in `mobsInZone` order (level ascending, unknown level last).
  *
  * THE ROSTER, NOT THE RAW JOIN: `rosterInZone` leaves off a mob the era rules put out of era
- * (`shared/planner/era.ts mobOutOfEra`, the record's data-build flag), because these rows and the
+ * (`shared/mobEra.ts mobOutOfEra`, the record's data-build flag over the player's log), because these rows and the
  * pins drawn from them OFFER the zone's mobs. The cross-zone search (crossZone.ts) is a lookup and keeps them, chipped.
  *
  * `zoneRaw` is a LONG zone name — the raw one the log printed, or the zone table's name for a

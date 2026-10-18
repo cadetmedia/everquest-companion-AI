@@ -34,7 +34,8 @@
 import type { JSX } from 'react'
 import { Box, Chip } from '@mui/material'
 import { EQ_ITEM_COLORS } from '../../lib/ItemWindow'
-import { mobOutOfEra, questOutOfEra } from '@shared/planner/era'
+import { questOutOfEra } from '@shared/planner/era'
+import { mobOutOfEra } from '@shared/mobEra'
 import { eraChip, type EraSubject } from './plannerData'
 import type { DonorProgress, DonorState } from './plannerProgress'
 
@@ -139,10 +140,10 @@ function OutOfEraPageChip({ title }: { title: string }): JSX.Element {
 }
 
 /**
- * A MOB's chip: drawn exactly when `shared/planner/era.ts mobOutOfEra` says so (the record's
- * data-build flag), and nothing otherwise — an absent flag is in era.
+ * A MOB's chip: drawn exactly when `shared/mobEra.ts mobOutOfEra` says so (the record's data-build
+ * flag, unless the player's own log met the mob), and nothing otherwise — an absent flag is in era.
  */
-export function MobEraChip({ mob }: { mob: { readonly outOfEra?: true } }): JSX.Element | null {
+export function MobEraChip({ mob }: { mob: Parameters<typeof mobOutOfEra>[0] }): JSX.Element | null {
   if (!mobOutOfEra(mob)) return null
   return <OutOfEraPageChip title="The era rules put this mob out of era: this server has not opened its content." />
 }
