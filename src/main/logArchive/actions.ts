@@ -163,16 +163,17 @@ export async function learnEngineModules(): Promise<void> {
 }
 
 /**
- * Refresh every kept history that lacks a module this engine serves, oldest first, so a new tab's
- * data reaches logs archived before it existed without the player coming back to the card
- * (owner, 2026-10-06). A history recorded by an older version only lacks parser fixes and keeps its
- * button: re-reading every archive after every update is not done unasked.
+ * Refresh every kept history that lacks a module this engine serves, or was recorded by an older
+ * version, oldest first, so a new tab's data and every later fix reach logs archived before them
+ * without the player coming back to the card (owner, 2026-10-06; 2026-10-18 for older versions: an
+ * archive read by test.19 still listed pets and AA casts as unknown on the Gaps tab under test.26).
+ * A refresh stamps the archive with this version, so it runs once per update, not once per launch.
  */
 export async function refreshLackingHistories(note: (line: string) => void): Promise<void> {
   const a = attached()
   if (!logArchiveOn() || a === null || engineModules === null) return
   const lacking = listSegments(logArchiveDir(), a.character).segments.filter(
-    (s) => s.state === 'sealed' && s.archivePath !== null && lacksModules(s)
+    (s) => s.state === 'sealed' && s.archivePath !== null && (s.producedBy.engine !== app.getVersion() || lacksModules(s))
   )
   for (const s of lacking.sort((x, y) => x.log.lastStamp.localeCompare(y.log.lastStamp))) {
     const r = await refreshHistory(s.id)
