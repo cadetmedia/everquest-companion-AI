@@ -16,6 +16,8 @@
  *   2. THE COMPACT PROJECTION. The committed catalog is names only (see MobEntry) — no drop
  *      rates, no wikitext — because it is inlined into the main bundle.
  */
+import { parsePageEraTag } from '../../src/main/itemLookupParse'
+import { CURRENT_ERA, eraBadgeOverrides, eraFromTag, eraRank, zoneEra } from '../../src/shared/planner/era'
 import { parseMobWikitext } from '../../src/main/mobLookupParse'
 import type { MobEntry } from '../../src/shared/types'
 
@@ -73,7 +75,11 @@ export function parseMobPage(title: string, wikitext: string): MobEntry | null {
   // `|name` can be present-but-empty (or unlink to nothing), and an EMPTY name is "the page
   // does not state one" — so the fallback is on emptiness, not merely on absence.
   const stated = facts.pageName ?? ''
-  const entry: MobEntry = { page: title, name: stated.length > 0 ? stated : title }
+  // The era banner (`{{FearHateRevamp Era}}`), read by the ONE non-item page reader so a mob and
+  // an armour-set page that open the same banner get the same token. Keyed right after `page` so
+  // the committed catalog keeps one field order; absent when the page states no era.
+  const eraTag = parsePageEraTag(wikitext)
+  const entry: MobEntry = { page: title, ...(eraTag !== undefined && { eraTag }), name: stated.length > 0 ? stated : title }
   if (facts.levelText) entry.level = facts.levelText
   const zones = splitZones(facts.zone)
   if (zones.length) entry.zones = zones
@@ -83,5 +89,26 @@ export function parseMobPage(title: string, wikitext: string): MobEntry | null {
   // for the map viewer to pin a zone's named mobs, and the ~20% that only say "Various" stay
   // absent rather than acquiring a guessed one.
   if (facts.locations?.length) entry.loc = facts.locations
+  if (mobOutOfEra(eraTag, zones)) entry.outOfEra = true
   return entry
+}
+
+/** A zone the app's era table places at or before the current era. */
+function inEraZone(zone: string): boolean {
+  const era = zoneEra(zone)
+  return era !== null && eraRank(era) <= eraRank(CURRENT_ERA)
+}
+
+/**
+ * THE BLANKET WIKI ERA RULE FOR A MOB (owner ruling, 2026-10-17: rules, never per-name lists). The
+ * page's out-of-era banner puts the mob out, unless that banner names a later EXPANSION and the
+ * same page places the mob in an in-era zone: a classic mob the wiki filed under the expansion that
+ * reused it ("a cave bat", `{{Velious Era}}`). A banner that names no expansion — a revamp, Epics,
+ * Unknown — stands, so `{{FearHateRevamp Era}}` A Hatebone Drake stays out in the Plane of Hate.
+ * What the player's own log shows they met outranks this at runtime.
+ */
+export function mobOutOfEra(eraTag: string | undefined, zones: readonly string[]): boolean {
+  if (eraTag === undefined || !eraBadgeOverrides(eraTag, CURRENT_ERA)) return false
+  if (eraFromTag(eraTag) === null) return true
+  return !zones.some(inEraZone)
 }
