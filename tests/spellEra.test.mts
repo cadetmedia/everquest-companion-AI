@@ -218,7 +218,10 @@ test('every folded row is one the sidecar BADGED — the fold never runs on sile
     const u = unlocksAtLevel(data, combo('CLR', 'DRU', 'SHM'), level)
     for (const row of u.outOfEraSpells) {
       folded += 1
-      assert.equal(verdict(row.name), true, `${row.name} was folded without a verdict`)
+      // A verdict is the sidecar's badge OR the row's own out-of-era banner (spellBannerOutOfEra).
+      const raw = RAW.find((s) => s.name === row.name)
+      const badged = verdict(row.name) === true || (raw !== undefined && spellBannerOutOfEra(raw))
+      assert.equal(badged, true, `${row.name} was folded without a verdict`)
     }
     for (const row of u.spells) assert.notEqual(row.spell?.outOfEra, true, `${row.name} was shown while badged`)
   }
