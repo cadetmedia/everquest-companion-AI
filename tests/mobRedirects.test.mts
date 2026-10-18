@@ -31,18 +31,18 @@ test("a mob keeps the redirects that land on its page, minus re-cased copies of 
   ])
 })
 
-test('the collector pages through every redirect, 500 a request', async () => {
+test('the collector joins the redirect pages to their targets by page id, 500 a request', async () => {
   const asked: Record<string, string>[] = []
-  const pages = [
-    { query: { redirects: [{ from: 'A', to: 'B' }] }, continue: { gapcontinue: 'M' } },
-    { query: { redirects: [{ from: 'N', to: 'O' }] } }
+  const answers = [
+    { query: { allpages: [{ pageid: 1, title: 'A' }] }, continue: { apcontinue: 'M' } },
+    { query: { allpages: [{ pageid: 2, title: 'N' }] } },
+    { query: { allredirects: [{ fromid: 1, title: 'B' }, { fromid: 2, title: 'O' }, { fromid: 9, title: 'X' }] } }
   ]
   const get = (async (params: Record<string, string>) => {
     asked.push(params)
-    return pages[asked.length - 1]
+    return answers[asked.length - 1]
   }) as Parameters<typeof allRedirects>[0]
   assert.deepEqual(await allRedirects(get), [{ from: 'A', to: 'B' }, { from: 'N', to: 'O' }])
-  assert.equal(asked.length, 2)
-  assert.equal(asked[0].gapfilterredir, 'redirects')
-  assert.equal(asked[1].gapcontinue, 'M')
+  assert.deepEqual(asked.map((q) => [q.list, q.apcontinue ?? q.arcontinue ?? '']), [['allpages', ''], ['allpages', 'M'], ['allredirects', '']])
+  assert.equal(asked[0].apfilterredir, 'redirects')
 })
