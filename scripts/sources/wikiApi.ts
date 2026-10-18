@@ -15,7 +15,8 @@
 
 /** eqlwiki's API endpoint, the default for every call. */
 export const EQL_API = 'https://eqlwiki.com/api.php'
-export const USER_AGENT = 'everquest-companion/0.1 (+https://github.com/jmoyers/everquest-companion)'
+/** Who is calling and where to reach them: the fork runs these scrapes, so the fork is the contact. */
+export const USER_AGENT = 'everquest-companion/0.1 (+https://github.com/kaltinril/everquest-companion)'
 /** The least time between one response and the next request. */
 export const MIN_GAP_MS = 1000
 /** Tries per request, the first included. */
