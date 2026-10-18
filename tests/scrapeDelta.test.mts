@@ -325,3 +325,17 @@ test('the caches on disk: batches rewritten, a mob page file and its index title
     rmSync(root, { recursive: true, force: true })
   }
 })
+
+test('an edited `X (Item)` page keeps the plain key the full scrape files it under', () => {
+  const hole: ItemDbEntry = { page: 'Dimensional Hole (Item)', iconId: 3 }
+  const f = file([hole])
+  f.items['dimensional hole'] = hole
+  fold(f, new Map([[hole.page, page('|lucy_img_ID=4')]]))
+  assert.equal(f.items['dimensional hole']?.page, 'Dimensional Hole (Item)')
+  assert.equal(f.items['dimensional hole (item)']?.page, 'Dimensional Hole (Item)')
+  // A page titled with the plain name still owns it.
+  const titled: ItemDbEntry = { page: 'Dimensional Hole', iconId: 9 }
+  const g = file([titled, hole])
+  fold(g, new Map([[hole.page, page('|lucy_img_ID=4')]]))
+  assert.equal(g.items['dimensional hole']?.page, 'Dimensional Hole')
+})
