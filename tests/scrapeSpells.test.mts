@@ -60,3 +60,13 @@ test('an enumeration of zero pages, or under half the committed catalog, is refu
   assert.equal(shrinkProblem(1018, 2035), null)
   assert.equal(shrinkProblem(2040, 2035), null)
 })
+
+test("the page's era banner is kept as eraTag right after name, and absent when the page states none (Sloths Healing)", () => {
+  const body = '{{Spellpagesmart|\n| spellname = Sloths Healing\n| classes =\n* [[Shaman]] - Level 50+\n| mana = 200\n}}'
+  const kunark = `{{Kunark Era}}\n${body}`
+  const sloth = parseSpell('Sloths Healing', parseSpellpageFields(kunark), kunark)
+  assert.equal(sloth.eraTag, 'Kunark')
+  assert.deepEqual(Object.keys(sloth).slice(0, 2), ['name', 'eraTag'])
+  assert.equal('eraTag' in parseSpell('Sloths Healing', parseSpellpageFields(body), body), false)
+  assert.equal('eraTag' in parseSpell('Sloths Healing', parseSpellpageFields(kunark)), false)
+})

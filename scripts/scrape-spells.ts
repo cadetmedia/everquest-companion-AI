@@ -58,6 +58,8 @@ import type { SpellDbFile, SpellEntry } from '../src/shared/types'
 // The one reader of the wiki's duration strings, shared with the LOADER (JOS-189) so a form this
 // script cannot read at scrape time is still understood when the committed file is loaded.
 import { parseDurationMs } from '../src/shared/spellDuration'
+// The one reader of a non-item page's `{{X Era}}` banner, shared with the mob and set-page scrapes.
+import { parsePageEraTag } from '../src/main/itemLookupParse'
 import { isMain } from './sources/isMain'
 import { cachePath, indexedPages, readIndex, writeIndex } from './sources/spellCache'
 import type { CacheIndex, WikiPage } from './sources/spellCache'
@@ -373,7 +375,14 @@ export function spellName(title: string, spellname: string | undefined): { name:
   return { name: fromTitle, disagrees: true }
 }
 
-export function parseSpell(title: string, fields: Record<string, string>): SpellEntry {
+/** The page's `{{X Era}}` banner as a spreadable `{ eraTag }`; empty when the page states none. */
+function pageEra(wikitext: string | undefined): Pick<SpellEntry, 'eraTag'> {
+  const eraTag = wikitext === undefined ? undefined : parsePageEraTag(wikitext)
+  return eraTag === undefined ? {} : { eraTag }
+}
+
+/** One spell row from its page's fields; `wikitext`, when given, contributes the page's era banner. */
+export function parseSpell(title: string, fields: Record<string, string>, wikitext?: string): SpellEntry {
   const name = spellName(title, clean(fields.spellname)).name
   const durationText = clean(fields.duration)
   const castRaw = clean(fields.casting_time)
@@ -394,6 +403,8 @@ export function parseSpell(title: string, fields: Record<string, string>): Spell
 
   return {
     name,
+    // The page's `{{X Era}}` banner token, right after `name`; absent when the page states none.
+    ...pageEra(wikitext),
     durationText,
     durationMs: parseDurationMs(durationText),
     castTimeMs: Number.isFinite(castSec) ? Math.round(castSec * 1000) : undefined,
@@ -469,7 +480,7 @@ function parseCachedPages(pages: WikiPage[]): {
       continue
     }
     const fields = parseSpellpageFields(wikitext)
-    if (Object.keys(fields).length) out.spells.push(parseSpell(p.title, fields))
+    if (Object.keys(fields).length) out.spells.push(parseSpell(p.title, fields, wikitext))
     else if (wikitext.includes('{{Spellpage')) out.noFields.push(`${p.pageid} ${p.title}`)
     const stated = clean(fields.spellname)
     if (spellName(p.title, stated).disagrees) out.nameConflicts.push(`${p.pageid} '${p.title}' (spellname '${stated}')`)
