@@ -14,3 +14,4 @@ before 2026-10-10 were gathered that day from agent notes and the branch history
 | 2026-09-26 | owner | The route stops at level 50. | built (planHorizon.ts) |
 | 2026-09-26 | owner | Ranged STR and ATK score nothing (rangers fire at melee range through an AA). | built |
 | 2026-09-27 | owner | The equip advisory never suggests gear the character's classes cannot wear. | built |
+| 2026-10-17 | owner | Out-of-era wiki content is never offered as if it were in the game, across all wiki data, not only items (A Hatebone Drake, a `{{FearHateRevamp Era}}` mob, was listed under Achievements Where to go): every wiki record keeps its page's era banner, and every list applies the app's one era rule (recommending lists hide out-of-era entries, lookups tag them). | asked |
