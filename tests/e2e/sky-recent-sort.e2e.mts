@@ -59,6 +59,8 @@ const STAR = '[aria-label="Favorite this quest"]'
 /** The sort picker, reached through its own label so the "Count items from" select beside it
  *  cannot be hit by accident. MUI stamps `data-value` on each option. */
 const SORT = 'div.MuiFormControl-root:has(> label:text-is("Sort")) div[role="combobox"]'
+/** The Select's own value: what the control shows, stored or default. */
+const SORT_VALUE = 'div.MuiFormControl-root:has(> label:text-is("Sort")) input'
 const FAVORITES_KEY = 'eq.questFavorites'
 const SORT_KEY = 'eq.questSort'
 
@@ -142,8 +144,15 @@ async function starQuest(page: Page, name: string): Promise<boolean> {
  * by name. Returns what is on top, so the steps below can prove the star did or did not move it.
  */
 async function stepBefore(page: Page): Promise<string> {
-  const stored = await settle(() => storedValue(page, SORT_KEY), (v) => v !== null, { timeoutMs: 15_000 })
-  check(`a fresh install opens the Sky tab sorted by most recently looted`, stored === 'recent', String(stored))
+  // A preference is stored only when the user sets one (f12cea54), so a fresh install stores nothing
+  // and the control shows the default.
+  const shown = await settle(() => page.inputValue(SORT_VALUE).catch(() => ''), (v) => v !== '', { timeoutMs: 15_000 })
+  const stored = await storedValue(page, SORT_KEY)
+  check(
+    `a fresh install opens the Sky tab sorted by most recently looted`,
+    shown === 'recent' && stored === null,
+    `shown ${shown}, stored ${String(stored)}`
+  )
   const top = await settle(() => firstRow(page), (v) => v !== '', { timeoutMs: 30_000 })
   check('the quest list renders rows to read an order off', top !== '', top)
   check(
