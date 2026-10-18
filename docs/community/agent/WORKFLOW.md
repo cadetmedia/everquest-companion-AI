@@ -134,6 +134,14 @@ disagree, RULES.md wins; fix this file.
   `engine-absent`, `sky-achievements`, `sky-reward-inference` can flake under parallel load; run
   serially. `feedback.e2e.mts` is red on the TEST build by design (test-neutering disables the
   feedback controls).
+  Measured 2026-10-18 (full run on main_community, then serial, then the same specs on test.26):
+  58/68 green; the 10 reds were identical on test.26. By design on the TEST build: ,
+   (no analytics compiled in),  (UNRELEASED forced open). Fixed that night
+  (stale specs): , , . Still red, not yet investigated,
+  not regressions:  (footer gap 60.9px under the last link),  (nav order vs the
+  sidebar groups; Preferences row hit-test null with the update indicator hovered),  (map row
+  resizes when the map arrives),  (waits for a  voice option). Baseline a
+  red against the last release tag before calling it a regression.
 - **Headless look at an UNRELEASED tab:** temporarily set `UNRELEASED = true as boolean` in
   `devFlags.ts`, `electron-vite build --outDir=<worktree>/out-e2e`, `git checkout` the flag file,
   then a throwaway spec with `launchOnFixture(..., { env: { EQ_UNRELEASED: '1' } })`.
