@@ -84,6 +84,16 @@ file.
 - If either wiki has an image of a boss, use it (owner, 2026-10-18): a re-scrape never drops a portrait
   it cannot re-fetch (the P99 wiki failed every request on 2026-10-18). eqlwiki and P99 both name NPC
   portraits `Npc_*`; scrape-bosses prefers those over the page's first image (a map, for Phinigel).
+- On 2026-10-18 the P99 wiki's `action=parse` failed for every boss (about 35 s of retries each)
+  while its image files downloaded fine; the scraper then fell back to eqlwiki for all of them.
+  Compare a run's `bosses.json` with the committed one before landing it.
+
+## Where the caches are (after the 2026-10-18 re-baseline)
+
+- The fresh item and mob caches (gitignored) are in the main clone's `scripts/sources/cache/{items,mobs}`;
+  a delta run there keeps their text current. The pre-baseline copies are archived at
+  `.claude/worktrees/cache-backup-2026-10-18-items-mobs.tar.gz`.
+- Spell, quest, class and era-verdict caches are committed (local-data-refresh; quests on faction-tab).
 
 ## Other scrapers
 
@@ -174,6 +184,12 @@ equipped slots before suspecting data; the remedy is equip + `/outputfile invent
   design).
 
 ## Audits
+
+The app's Gaps tab merges the archived months with the live log, and an archive's rows are as the
+version that recorded it read them (refreshed automatically once per update since 2026-10-18). An
+audit of the live log alone misses them: on 2026-10-18 it said the pet rows were gone while the
+test.19 archive still served 140 of them. The archive lives where the app's Preferences card says
+(here `<EQ>/Logs/companion-archive`), not only `%APPDATA%/everquest-companion-dev/log-archive`.
 
 The whole Gaps list for a log, offline: concatenate the archived `.log.gz` and the live log into one
 file named `eqlog_<Name>_<server>.all.txt` (the harness wants a slice-shaped name), then from a

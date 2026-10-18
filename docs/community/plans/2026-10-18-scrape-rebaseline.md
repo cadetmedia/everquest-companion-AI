@@ -104,22 +104,55 @@ Requirement row: `requirements/scrape-delta-tool.md` 2026-10-18. Not started.
   mob row passes `mobOutOfEra` = false, every entered zone passes `zoneEra`, every looted item key
   is `wasMet('items', …)`.
 
-## Open owner items
+## Where it ended (2026-10-18, owner asleep)
 
-- Push is pending the owner's test of the merged build.
-- `wiki-scraper-fixes` has open upstream PR #84; pushing updates it.
-- Creator-code bugs found that RULES.md rule 20 says to file upstream: spell scraper wrote an
-  empty catalog on an error body; scrape-bosses paced 80/120 ms; release triage sorts `main.10`
-  before `main.9` (not fixed: `releaseNotes.ts` is the creator's).
-- Boss portraits: keep the committed P99 ones or take eqlwiki's (`.claude/worktrees/bosses-eqlwiki-2026-10-18.json`);
-  the owner looks at the four that differ in substance first.
+Everything is merged into `main_community` and pushed (the owner said to push it all); every recipe
+branch is level. No release since test.26: the owner validates the build first, then says release
+(test.27 by the `community-release` skill). Also landed after the re-baseline:
+
+- Archives recorded by an older app version are re-read automatically once per update
+  (`log-archive`, `refreshLackingHistories`): the test.19 archive still listed 140 "<mob> pet" rows
+  and AA casts (Heroic Leap) as unknown on Gaps under test.26. Limits: (1) the re-read runs after
+  the screens load, so an open screen keeps the old merge until the module's next push or a restart
+  (`moduleStore` holds one snapshot per module and refetches only on a new engine seq); a nudge to
+  refetch after a refresh was offered, not built. (2) The check is the version string, and every
+  dev build is the same test.N, so in dev the archive card's Refresh button is the re-read.
+- The Gaps empty list says "No unknown names match the search or the zone filter." when a filter
+  hid every row (`gaps-tab`).
+- All 32 boss portraits: eqlwiki `Npc_*` images for Sister of the Spire, Master of Spite, Phinigel
+  Autropos and Magi P`tasa (the roster now asks for `Magi P`Tasa`, the wiki's capital T), the rest P99;
+  `eqlImage` prefers an `Npc_*` image as the P99 path does (Phinigel's page shows a map first).
+
+## Open owner items (none started; each needs the owner's go)
+
+- Release test.27 after the owner validates.
+- Wiki redirects as mob aliases: "Hoptor Thaggelum" redirects to "The Ghoul Lord" (whose `|name`
+  is `the ghoul lord (Hoptor Thaggelum)`; Gaps strips a trailing parenthetical), so Gaps lists him
+  unknown. Collect the redirects to mob pages (about 20-40 requests, 500 per request), keep them as
+  the mob's other names in mobs.json, count them known on Gaps and in name lookups, and have the
+  delta catch new redirects (a page move makes one).
+- AA levels in Leveling, "New at this level": the Shadow Knight page (rev 198084, 2026-10-15)
+  dropped its footnoted Harm Touch skill row; Harm Touch is a 10-rank AA. The app still knows it
+  (abilities, AA table); read each AA's "Requirements: Level 1/6/11..." so AAs appear at their levels.
+- A table-driven item test (catch_all requirement row) and the delta covering every file (above).
+- `wiki-scraper-fixes` is open upstream as PR #84: keep fork-only lines off it (the fork User-Agent
+  moved to `scrape-delta-tool` for that reason).
+- Creator-code bugs RULES.md rule 20 says to file upstream, not filed (owner's call): the spell
+  scraper wrote an empty catalog on an error body; scrape-bosses paced 80/120 ms; release triage
+  sorts `main.10` before `main.9` (`releaseNotes.ts` is the creator's).
 - Wiki fixes for the owner to make: restore Sulgar (blanked 2026-09-26,
   https://eqlwiki.com/index.php?title=Sulgar&action=history); `Clockwork Merchant (LG-16)` has
   `|name = Clockwork Merchant (1105, -1030)`, should be `|name = Clockwork Merchant` like its 37 siblings.
-- Shadow Knight page (rev 198084, 2026-10-15, Mazirian) dropped its footnoted Harm Touch skill row;
-  Harm Touch is a 10-rank AA now. The app still knows it (abilities, AA table); only the Leveling
-  tab's "New at this level" loses "Harm Touch @1". Follow-up offered, not started: read each AA's
-  "Requirements: Level 1/6/11..." so AAs appear at their levels.
-- Follow-ups asked, not started: a table-driven item test (catch_all requirement row); the delta
-  covering every file (above). Owner, 2026-10-18: no release until the owner validates; perhaps
-  slowly break away from the creator's repo (no action without direction).
+- Owner, 2026-10-18: perhaps slowly break away from the creator's repo; no action without direction.
+
+## Decided against (do not re-propose)
+
+- A blanket "X, title is known when X is" rule for in-game titles (`Innoruuk, the Prince of Hate`):
+  the owner asked for proof it holds in all situations; it cannot be proven (the wiki's only other
+  comma name, `Clockwork Merchant (1105, -1030)`, is a coordinate). Innoruuk is covered by the raid
+  roster's alias.
+- Treating EverQuest's generated pet names (G/J/K/L/V/X/Z + syllables + er/ab/n/tik) as pets on
+  Gaps: offered, not chosen.
+- Merging the two one-line `questOutOfEra` (faction-tab, catch_all): 1-3 identical lines are fine.
+- The `rosterInZone` comment in `features/maps/mobPins.ts` on main_community is a merge resolution
+  of catch_all's comment with the map branches' code; it is correct on catch_all; left.
