@@ -14,8 +14,8 @@
 // several zones states locations nobody can assign to the map on screen, and a mob whose page
 // states none has nowhere to be drawn. Both still count in the Achievements tab's zone list.
 // A mob above the plan's level cap is left out here as the zone list leaves it out
-// (`keptMob`: the level cap, and the faction switch), so the list and the map never disagree about
-// where to go.
+// (`keptMob`: the level cap, the faction switch, and the out-of-era flag), so the list and the map
+// never disagree about where to go.
 
 import type { ZoneShort } from '@shared/maps'
 import { matchMob } from '../../../../shared/slayer/slayerMatch'
@@ -115,8 +115,8 @@ function areaOf(members: readonly Point[], order: ReadonlyMap<string, number>): 
   }
 }
 
-/** The areas of one map, the one with the most spawn points first. `cap` is the plan's level cap
- *  and faction switch; `NO_CAP` draws every mob. */
+/** The areas of one map, the one with the most spawn points first. `cap` is the plan's level cap,
+ *  faction switch and era switch; `NO_CAP` draws every mob. */
 export function slayerAreas(
   zone: ZoneShort,
   mobs: readonly SlayerMob[],

@@ -37,6 +37,7 @@ import {
   achievementKey,
   type SlayerCounter
 } from '../outputs/slayer'
+import { mobOutOfEra } from '../mobEra'
 import { counterId } from '../slayer/slayerPlan'
 import { zoneShortName, zoneShortNameFromCatalog } from '../zones'
 
@@ -227,18 +228,23 @@ export interface ZoneHere {
   /** the open counters with a mob in this zone, by `counterId`, as the Slayer plan places them */
   counters: ReadonlySet<string>
   mobs: MobIndex
+  /** the plan's "Zones not open yet" switch: a named mob flagged out of era counts only while it
+   *  is on, as the plan counts it (`keptMob`) */
+  outOfEra: boolean
 }
 
 /** An achievement that can be worked on in this zone: its own name is the zone, an open counter
- *  has a mob here, or an open line names a mob the catalog files here. */
+ *  has a mob here, or an open line names an in-era mob the catalog files here. */
 export function worksHere(group: BookGroup, a: BookAchievement, here: ZoneHere): boolean {
   if (namedZone(a.name) === here.zone) return true
   return a.components.some((c) => {
     if (c.done) return false
     const id = counterIdOf(group, a, c)
     if (id !== null && here.counters.has(id)) return true
-    return namedMobs(c, here.mobs).some((m) =>
-      (m.zones ?? []).some((z) => zoneShortNameFromCatalog(z) === here.zone)
+    return namedMobs(c, here.mobs).some(
+      (m) =>
+        (here.outOfEra || !mobOutOfEra(m)) &&
+        (m.zones ?? []).some((z) => zoneShortNameFromCatalog(z) === here.zone)
     )
   })
 }

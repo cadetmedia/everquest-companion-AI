@@ -214,18 +214,20 @@ function PlanControls(props: ZoneListBundle): JSX.Element {
         sx={{ width: 150 }}
         slotProps={{ htmlInput: { min: 1, max: 100, 'data-testid': 'slayer-max-level' } }}
       />
-      <FormControlLabel
-        control={
-          <Switch
-            size="small"
-            checked={props.outOfEra}
-            onChange={(e) => {
-              props.onOutOfEra(e.target.checked)
-            }}
-          />
-        }
-        label={<Typography variant="caption">Zones not open yet</Typography>}
-      />
+      <Tooltip title="Also list zones from expansions the server has not opened, and mobs the era rules place in content it has not opened (the Fear and Hate revamp).">
+        <FormControlLabel
+          control={
+            <Switch
+              size="small"
+              checked={props.outOfEra}
+              onChange={(e) => {
+                props.onOutOfEra(e.target.checked)
+              }}
+            />
+          }
+          label={<Typography variant="caption">Zones not open yet</Typography>}
+        />
+      </Tooltip>
       <Tooltip title="Leave out every mob the wiki says lowers a faction when killed. Mobs the wiki says nothing about stay.">
         <FormControlLabel
           control={
