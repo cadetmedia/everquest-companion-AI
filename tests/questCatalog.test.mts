@@ -188,6 +188,26 @@ test('Bone Chips Quests: a disambiguation hub parses to nothing and is flagged, 
   )
 })
 
+// "Dragon Scales Quest": the page head verbatim (cached corpus, page 15614) — a Kunark banner
+// on a quest that also quotes a classic faction, which is why the catalog must carry the era.
+const DRAGON_SCALES_HEAD = `{{Kunark Era}}
+[[File:npc_squire_fuzzmin.png|frame|Squire Fuzzmin]]
+{| class="questTopTable"
+! ''' Start Zone: '''
+|[[Firiona Vie]]
+|-
+! ''' Quest Giver: '''
+|[[Squire Fuzzmin]]
+|}`
+
+test('the era banner: {{Kunark Era}} reads Kunark, {{Classic Era}} reads Classic, none is absent', () => {
+  assert.equal(parseQuestPage('Dragon Scales Quest', DRAGON_SCALES_HEAD, isItem).eraTag, 'Kunark')
+  assert.equal(parseQuestPage('Ale for Beur', ALE_FOR_BEUR, isItem).eraTag, 'Classic')
+  const silent = parseQuestPage('Bone Chips Quests', BONE_CHIPS_HUB, isItem)
+  assert.equal(silent.eraTag, undefined)
+  assert.equal('eraTag' in silent, false) // absent, not an undefined-valued key
+})
+
 test('link/transclusion extraction: labels vs targets, namespaces skipped, dedupe', () => {
   assert.deepEqual(linkTargets('[[Freeport|East Freeport]] and [[Dwarven Ale]]'), ['Freeport', 'Dwarven Ale'])
   assert.deepEqual(linkTargets('[[File:x.png|frame|Cap]] [[Category:Quests]] [[Bone Chips]]'), ['Bone Chips'])

@@ -282,9 +282,16 @@ function nonQuestReason(parsed: ParsedQuestPage): string | null {
   return null
 }
 
+/** The page's era banner as a spreadable field — split from toQuestEntry at the complexity
+ *  ceiling (the ternary is a branch wherever it sits). */
+function eraOf(parsed: ParsedQuestPage): { eraTag?: string } {
+  return parsed.eraTag === undefined ? {} : { eraTag: parsed.eraTag }
+}
+
 /** Project a parsed page into a catalog entry — ONLY the fields the page actually stated. */
 function toQuestEntry(parsed: ParsedQuestPage): QuestEntry {
-  const entry: QuestEntry = { name: parsed.page, page: parsed.page }
+  // The era banner rides right behind `page` (the key order the committed catalog carries).
+  const entry: QuestEntry = { name: parsed.page, page: parsed.page, ...eraOf(parsed) }
   if (parsed.startZone) entry.startZone = parsed.startZone
   if (parsed.giver) entry.giver = parsed.giver
   if (parsed.minLevel != null) entry.minLevel = parsed.minLevel

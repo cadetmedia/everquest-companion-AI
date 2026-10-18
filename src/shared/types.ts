@@ -486,6 +486,8 @@ export interface QuestEntry {
   name: string
   /** wiki page title (linkable) */
   page: string
+  /** the page's era banner token (`Classic`, `FearHateRevamp`); absent when the page states none */
+  eraTag?: string
   /** "Start Zone" cell */
   startZone?: string
   /** "Quest Giver" NPC */
