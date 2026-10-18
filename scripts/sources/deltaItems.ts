@@ -34,9 +34,16 @@ function toEntry(title: string, wikitext: string): ItemDbEntry | null {
 
 // ------------------------------------------------------------------------------------------------
 
-/** The keys a record registers: its page title and, when it differs, its `|itemname`. */
+/** A disambiguated title's base name, `Dimensional Hole (Item)` → `Dimensional Hole`, which the full
+ *  scrape (scrape-items.ts `baseTitle`) files the page under too. */
+function baseTitle(page: string): string | undefined {
+  return /^(.+?)\s*\(Item\)$/i.exec(page)?.[1]
+}
+
+/** The keys a record registers: its page title, its `|itemname` and its `(Item)` base name. */
 function entryKeys(entry: ItemDbEntry): string[] {
-  const keys = [itemKey(entry.page), entry.name ? itemKey(entry.name) : null]
+  const base = baseTitle(entry.page)
+  const keys = [itemKey(entry.page), entry.name ? itemKey(entry.name) : null, base ? itemKey(base) : null]
   return keys.filter((k): k is string => !!k)
 }
 
