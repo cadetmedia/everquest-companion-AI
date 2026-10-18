@@ -179,7 +179,7 @@ export default function GapsView(): JSX.Element {
         {zone !== null ? `, seen in ${zone} or another tier of it` : ''}
         {held > served ? ` (the engine serves the ${served} most mentioned)` : ''}.
       </Typography>
-      <GapsTable rows={sorted} verdicts={verdicts} sort={sort} onSort={onSort} />
+      <GapsTable rows={sorted} verdicts={verdicts} sort={sort} onSort={onSort} hiddenByFilter={held > 0} />
     </Stack>
   )
 }

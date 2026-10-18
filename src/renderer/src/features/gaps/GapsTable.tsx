@@ -141,12 +141,15 @@ export default function GapsTable({
   rows,
   verdicts,
   sort,
-  onSort
+  onSort,
+  hiddenByFilter = false
 }: {
   rows: readonly GapRow[]
   verdicts: GapVerdicts
   sort: GapSort
   onSort: (key: GapSortKey) => void
+  /** the domain HAS unknown names, so an empty list means the search or zone filter hid them */
+  hiddenByFilter?: boolean
 }): JSX.Element {
   const [open, setOpen] = useState<string | null>(null)
   const onToggle = useCallback((name: string) => setOpen((cur) => (cur === name ? null : name)), [])
@@ -155,7 +158,9 @@ export default function GapsTable({
   if (rows.length === 0) {
     return (
       <Typography variant="body2" color="text.secondary" sx={{ py: 2 }} data-testid="gaps-empty">
-        Nothing here: every name the log mentioned in this domain is in the app's data.
+        {hiddenByFilter
+          ? 'No unknown names match the search or the zone filter.'
+          : "Nothing here: every name the log mentioned in this domain is in the app's data."}
       </Typography>
     )
   }
