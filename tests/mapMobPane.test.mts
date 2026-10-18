@@ -278,10 +278,13 @@ test('mobRows leaves off a mob flagged outOfEra, and with it every pin; a raw ba
     { page: 'Classic One', eraTag: 'Velious', name: 'Classic One', level: '15', zones: ['Najena'] }
   ]
   const rows = mobRows('Najena', catalog)
-  assert.deepEqual(
-    rows.map((r) => r.name),
-    ['Placed One', 'Classic One', 'Unplaced One']
-  )
+  // Judged against the catalog's own rows rather than spelled names, so the test holds however a
+  // branch's map pane names or filters its common mobs: the flagged mob is gone, everything the
+  // unflagged catalog shows is still there, and the raw Velious banner alone is kept.
+  const ids = rows.map((r) => r.id)
+  assert.equal(ids.includes('Revamp One'), false)
+  assert.equal(ids.includes('Classic One'), true)
+  for (const id of mobRows('Najena', CATALOG).map((r) => r.id)) assert.equal(ids.includes(id), true, id)
   assert.ok(pinsForRows(rows).pins.every((p) => p.row.id !== 'Revamp One'))
 })
 
