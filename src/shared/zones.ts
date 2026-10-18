@@ -91,18 +91,13 @@ export interface ZoneEntry {
 
 // ---- the fold ------------------------------------------------------------------------------
 //
-// THIS IS A MIRROR, ON PURPOSE. `src/renderer/src/features/mobs/mobZone.ts` shipped the identical
-// fold first (Task #64) for the "what lives in this zone" join, and its header carries the full
-// evidence for each rule. The two folds MUST NOT be able to disagree — a zone that resolves to a
-// map here but to zero mobs there (or vice versa) would be a silent, invisible inconsistency —
-// so the rules are duplicated verbatim and `tests/zones.test.mts` asserts parity against the real
-// mobZone implementation on real log zone names.
-//
-// It is a mirror rather than an import because the dependency direction only works one way:
-// `src/shared` may not import from `src/renderer`, and the renderer's copy is deliberately
-// standalone (mobZone.ts:20-24). If a rule ever changes, change BOTH files and the parity test
-// will catch it if you don't. The tier strips ultimately trace to `zoneTier()` in
-// `src/main/log/parseWorld.ts`, which stays where it is (map-viewer.md §5.3 blocker 1).
+// THE ONE COPY. `src/renderer/src/features/mobs/mobZone.ts` shipped this fold first (Task #64) for
+// the "what lives in this zone" join, and its header carries the full evidence for each rule. The
+// map viewer and the mobs tab MUST NOT be able to disagree — a zone that resolves to a map here but
+// to zero mobs there (or vice versa) would be a silent, invisible inconsistency — so mobZone.ts
+// imports and re-exports this function rather than keeping its own. The tier strips ultimately
+// trace to `zoneTier()` in `src/main/log/parseWorld.ts`, which stays where it is (map-viewer.md
+// §5.3 blocker 1).
 
 /** ` - Solo` / ` - Group 2` and everything after it — instance selection, never part of a name. */
 const SOLO_GROUP_RE = /\s*-\s*(Solo|Group)\b.*$/i
