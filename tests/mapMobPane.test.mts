@@ -274,13 +274,13 @@ test('a real zone yields a real pane: rows, pins, and an honest placed count', (
 test('mobRows leaves off a mob flagged outOfEra, and with it every pin; a raw banner alone is kept', () => {
   const catalog: MobEntry[] = [
     ...CATALOG,
-    { page: 'Revamp One', outOfEra: true, name: 'a revamp one', level: '1', zones: ['Najena'], loc: [{ ns: 7, ew: 7 }] },
-    { page: 'Classic One', eraTag: 'Velious', name: 'a classic one', level: '15', zones: ['Najena'] }
+    { page: 'Revamp One', outOfEra: true, name: 'Revamp One', level: '1', zones: ['Najena'], loc: [{ ns: 7, ew: 7 }] },
+    { page: 'Classic One', eraTag: 'Velious', name: 'Classic One', level: '15', zones: ['Najena'] }
   ]
   const rows = mobRows('Najena', catalog)
   assert.deepEqual(
     rows.map((r) => r.name),
-    ['a placed one', 'a classic one', 'an unplaced one']
+    ['Placed One', 'Classic One', 'Unplaced One']
   )
   assert.ok(pinsForRows(rows).pins.every((p) => p.row.id !== 'Revamp One'))
 })
