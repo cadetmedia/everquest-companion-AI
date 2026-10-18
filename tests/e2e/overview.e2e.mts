@@ -426,19 +426,19 @@ async function stepLevelingPanel(page: Page): Promise<void> {
 }
 
 /**
- * 12. THE NAV PUTS LOOT DIRECTLY AFTER MOBS (owner decision, 2026-08-04) and leaves the rest of
- *     the order alone. Read as ADJACENCY, not as a frozen list: the assertion survives a later
- *     tab being added anywhere else, which a hard-coded array would not.
+ * 12. THE NAV PUTS LOOT DIRECTLY AFTER COMBAT, under Stats/Data (fork owner, 2026-09-12; it sat
+ *     after Mobs by the 2026-08-04 decision before the nav was grouped). Read as ADJACENCY, not as
+ *     a frozen list: the assertion survives a later tab being added anywhere else.
  */
 async function stepNavOrder(page: Page): Promise<void> {
   const order = await page.evaluate(() =>
     [...document.querySelectorAll('[data-testid^="nav-"]')].map((el) => el.getAttribute('data-testid') ?? '')
   )
-  const mobs = order.indexOf('nav-mobs')
+  const combat = order.indexOf('nav-combat')
   const loot = order.indexOf('nav-loot')
   check(
-    'the nav puts Loot directly after Mobs',
-    mobs >= 0 && loot === mobs + 1,
+    'the nav puts Loot directly after Combat',
+    combat >= 0 && loot === combat + 1,
     order.join(' · ')
   )
 }
@@ -464,6 +464,8 @@ async function stepUpdateChipClearsPreferences(page: Page): Promise<void> {
   )
   if (!check('the update indicator is mounted under Preferences', chip !== '', chip || 'none found')) return
   const box = await page.evaluate((sel) => {
+    // The grouped nav can run past the window: bring the indicator (and Preferences above it) into view.
+    document.querySelector(sel)?.scrollIntoView({ block: 'center' })
     const r = document.querySelector(sel)?.getBoundingClientRect()
     return r ? { x: r.x + r.width / 2, y: r.y + r.height / 2 } : null
   }, `[data-testid="${chip}"]`)
