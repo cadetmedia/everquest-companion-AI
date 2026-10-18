@@ -55,10 +55,6 @@ export function annotateDrop(drop: MobDrop): MobDrop {
   const out: MobDrop = { ...drop }
   if (entry.eraTag !== undefined) out.eraTag = entry.eraTag
   if (zones.length > 0) out.eraZones = zones
-  // The page's drop rows ride beside its banner only: without one there is nothing for them to
-  // argue with (`era.ts bannerGivesWay`), and a drop row needs no mob half otherwise.
-  const sources = (entry.dropsFrom ?? []).filter((s) => s.zone !== undefined)
-  if (entry.eraTag !== undefined && sources.length > 0) out.eraSources = sources.map((s) => ({ ...s }))
   return out
 }
 

@@ -129,12 +129,6 @@ export interface MobDrop {
    * (`lib/itemSources.sourcesFor`), and the two halves omit different things.
    */
   eraZones?: string[]
-  /**
-   * The item page's `|dropsfrom` rows themselves (mob and zone heading), attached only beside an
-   * `eraTag`: they are what lets an EXPANSION banner give way to an in-era catalog dropper in an
-   * in-era zone (`shared/planner/era.ts bannerGivesWay`). Evidence, no verdict, like the two above.
-   */
-  eraSources?: { mob: string; zone?: string }[]
 }
 
 /** One item the CURRENT character has actually looted off this mob (own loot history). */

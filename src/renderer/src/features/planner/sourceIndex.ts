@@ -12,7 +12,6 @@
 
 export {
   buildSourceIndex,
-  catalogRowsNamed,
   sourceIndex,
   sourceItemKey,
   sourcesFor,

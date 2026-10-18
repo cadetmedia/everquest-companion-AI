@@ -209,15 +209,12 @@
 import { itemKey, type ItemDbEntry, type ItemDbFile } from '../itemsDb'
 import { pageEraKey, type PageEraFile } from '../pageEraDb'
 import { itemBaseName } from '../../shared/itemStats'
-import { mobKey } from '../../shared/mobKey'
 import {
-  bannerGivesWay,
   CURRENT_ERA,
   eraBadge,
   eraRank,
   layeredVerdict,
   zoneEra,
-  type DropEvidence,
   type Era,
   type EraDerivation,
   type EraDerivationBasis
@@ -257,12 +254,6 @@ export interface EraDeriveCatalogs {
   catalogDroppers: ReadonlyMap<string, readonly string[]>
   /** the committed verdicts for the pages and mobs the item corpus cannot hold (`pageEraDb.ts`) */
   pageEra: PageEraFile
-  /**
-   * The mob catalog's rows for a dropper NAME — what lets a TARGET's expansion banner give way to
-   * its own in-era drop list (`era.ts bannerGivesWay`), so a recipe is not walled by a component
-   * the app itself calls in era. Optional: a catalog set without it reads every banner as before.
-   */
-  catalogRows?: DropEvidence['catalogRows']
 }
 
 // ---- the two committed catalogs ---------------------------------------------------------------
@@ -344,22 +335,9 @@ export function committedCatalogs(): EraDeriveCatalogs {
     questByName: buildQuestIndex(questsJson),
     catalogZones: buildCatalogZones(mobsJson),
     catalogDroppers: buildCatalogDroppers(mobsJson),
-    pageEra: pageEraJson as PageEraFile,
-    catalogRows: catalogRowsByName(mobsJson)
+    pageEra: pageEraJson as PageEraFile
   }
   return COMMITTED
-}
-
-/** mobKey(name) → every catalog row of that name, as the expansion-banner rule's join reads it. */
-export function catalogRowsByName(catalog: MobData): NonNullable<EraDeriveCatalogs['catalogRows']> {
-  const m = new Map<string, MobData['mobs']>()
-  for (const mob of catalog.mobs) {
-    const key = mobKey(mob.name)
-    const rows = m.get(key)
-    if (rows) rows.push(mob)
-    else m.set(key, [mob])
-  }
-  return (name) => m.get(mobKey(name)) ?? []
 }
 
 // ---- resolving ONE edge target ----------------------------------------------------------------
@@ -372,18 +350,6 @@ function pageZones(entry: ItemDbEntry): string[] {
 /** Would the wiki draw the pill on a link to this page? The register, and nothing else. */
 function badgedOut(entry: ItemDbEntry | undefined): entry is ItemDbEntry & { eraTag: string } {
   return entry?.eraTag !== undefined && entry.eraTag !== '' && eraBadge(entry.eraTag) === 'out'
-}
-
-/**
- * The pill, as an EDGE TARGET: `badgedOut`, unless the target's banner names a later expansion its
- * own drop list contradicts (`era.ts bannerGivesWay`, owner ruling 2026-10-17) — the app calls that
- * target in era, so it cannot wall the item that needs it. Wasp Wing (Luclin banner, classic wasps).
- */
-function outTarget(entry: ItemDbEntry | undefined, catalogs: EraDeriveCatalogs): entry is ItemDbEntry & { eraTag: string } {
-  if (!badgedOut(entry)) return false
-  if (catalogs.catalogRows === undefined) return true
-  const drops: DropEvidence = { sources: entry.dropsFrom ?? [], catalogRows: catalogs.catalogRows }
-  return !bannerGivesWay(entry.eraTag, drops, CURRENT_ERA)
 }
 
 /** Is this expansion one the server has not opened? `null` (nothing resolved) is never a yes. */
@@ -420,15 +386,14 @@ function componentEdge(
   catalogs: EraDeriveCatalogs
 ): EraDerivation | null {
   const target = corpus.get(itemKey(ingredient.name))
-  if (outTarget(target, catalogs)) {
+  if (badgedOut(target)) {
     return { basis: 'component', verdict: 'out-of-era', target: ingredient.name, detail: target.eraTag }
   }
   if (target === undefined || !droppedOnly(ingredient.sources)) return null
   // The same three witnesses the app uses for the item itself: the catalog's zones for this
   // ingredient UNION the ones its own page names.
   const zones = [...new Set([...pageZones(target), ...(catalogs.catalogZones.get(itemKey(target.page)) ?? [])])]
-  const drops = catalogs.catalogRows && { sources: target.dropsFrom ?? [], catalogRows: catalogs.catalogRows }
-  if (layeredVerdict(zones, target.eraTag, drops) !== 'out-of-era') return null
+  if (layeredVerdict(zones, target.eraTag) !== 'out-of-era') return null
   return { basis: 'component-zone', verdict: 'out-of-era', target: ingredient.name, detail: zones.join(', ') }
 }
 
@@ -447,7 +412,7 @@ function recipeEdges(
     }
     if (recipe.yieldItem === undefined || itemKey(recipe.yieldItem) === selfKey) continue
     const yielded = corpus.get(itemKey(recipe.yieldItem))
-    if (outTarget(yielded, catalogs)) {
+    if (badgedOut(yielded)) {
       edges.push({ basis: 'yield', verdict: 'out-of-era', target: recipe.yieldItem, detail: yielded.eraTag })
     }
   }
@@ -479,7 +444,7 @@ function questEdges(
     const era = zoneEra(quest.startZone)
     if (unopened(era)) {
       edges.push({ basis: 'quest', verdict: 'out-of-era', target: quest.name, detail: quest.startZone })
-    } else if (era !== null && !(quest.requiredItems ?? []).some((name) => outTarget(corpus.get(itemKey(name)), catalogs))) {
+    } else if (era !== null && !(quest.requiredItems ?? []).some((name) => badgedOut(corpus.get(itemKey(name))))) {
       edges.push({ basis: 'quest', verdict: 'in-era', target: quest.name, detail: quest.startZone })
     }
   }

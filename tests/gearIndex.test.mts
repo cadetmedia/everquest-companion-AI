@@ -61,8 +61,7 @@ import type { ItemStatBlock } from '../src/shared/itemStats'
 // The SHIPPED era join, reached the way the Gear tab reaches it — `gearData` calls exactly these
 // two, so the test below asks the screen's own question instead of re-deriving a verdict.
 import { eraChip, eraHides } from '../src/renderer/src/features/planner/plannerData'
-import { bannerGivesWay, CURRENT_ERA, eraBadge } from '../src/shared/planner/era'
-import { catalogRowsNamed } from '../src/renderer/src/lib/itemSources'
+import { eraBadge } from '../src/shared/planner/era'
 
 const file = itemsJson as unknown as ItemDbFile
 const index = buildGearIndex(file)
@@ -515,14 +514,9 @@ test('CHEST by AC surfaces no wiki-badged out-of-era row (the JOS-298 report, as
 
   // THE PROPERTY, over the whole visible list and not just its head: nothing the wiki badges
   // `Out of Era` may be on screen while the filter is on. One assertion, and it names the row.
-  // ONE EXCEPTION since the owner ruling of 2026-10-17 (`era.ts bannerGivesWay`): a banner that
-  // names a later EXPANSION gives way when the page's own drop list puts an in-era catalog mob in an
-  // in-era zone (the Scaled Hierophant set: Velious banner, a spite golem in the Plane of Hate).
   for (const row of visible) {
-    const drops = { sources: row.wikiSources ?? [], catalogRows: catalogRowsNamed }
-    const yields = row.eraTag !== undefined && bannerGivesWay(row.eraTag, drops, CURRENT_ERA)
     assert.notEqual(
-      row.eraTag === undefined || yields ? 'in' : eraBadge(row.eraTag),
+      row.eraTag === undefined ? 'in' : eraBadge(row.eraTag),
       'out',
       `${row.name} (AC ${String(ac(row))}) is badged ${String(row.eraTag)} and still visible`
     )
