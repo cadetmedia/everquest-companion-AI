@@ -442,12 +442,60 @@ export function eraBadge(tag: string): EraBadge {
  * moves: a `{{Kunark Era}}` page stops being overridden the day the server opens Kunark, exactly
  * as the rank comparison always handled it, while the tokens that name no expansion —
  * `FearHateRevamp`, `HoleVP`, `WarrensFearHateRevamp`, `Unknown` — have only the register to speak
- * for them and it keeps speaking.
+ * for them and it keeps speaking. With `drops`, an EXPANSION banner the page's own drop list
+ * contradicts gives way (`bannerGivesWay`, below).
  */
-export function eraBadgeOverrides(tag: string | undefined, era: Era): boolean {
+export function eraBadgeOverrides(tag: string | undefined, era: Era, drops?: DropEvidence): boolean {
   if (tag === undefined || tag === '' || eraBadge(tag) !== 'out') return false
   const named = eraFromTag(tag)
-  return named === null || eraRank(named) > eraRank(era)
+  if (named !== null && eraRank(named) <= eraRank(era)) return false
+  return !bannerGivesWay(tag, drops, era)
+}
+
+// ---- when an EXPANSION banner gives way to the page's own drop list (owner ruling 2026-10-17) ---
+//
+// JOS-298 made an out badge outrank every zone, and for a REVAMP or a CHAIN that is still right: a
+// revamp replaces a zone's contents without adding a zone, and an epic piece is worth having only
+// at a Kunark turn-in. But a banner that names a later EXPANSION is a claim about WHEN content
+// shipped, and the item page sometimes contradicts it in the same breath. Wasp Wing is bannered
+// `{{Luclin Era}}` and its own `|dropsfrom` names only the classic wasps of Greater Faydark, Lesser
+// Faydark and Misty Thicket; Worn Weighted Gloves (Luclin) drop off classic orcs. Those mobs are in
+// era and stand in zones that are, so the drop is on this server whatever the heading says.
+//
+// THE BLANKET RULE (no per-name list): the banner gives way exactly when
+//   * its token NAMES a later expansion — the token IS an expansion's name (`Kunark`, `Velious`,
+//     `Luclin`), not merely mapped to one: `Epics`/`EpicQuests` map to Kunark in `TAG_ERA` because
+//     the chain ends there, and `Chardok` because the place is there, and neither is a release date;
+//     a token naming no expansion (`FearHateRevamp`, `HoleVP`, `Unknown`, ...) never gives way; and
+//   * one of the page's stated drop sources is a mob the MOB CATALOG holds and keeps in era
+//     (`shared/mobEra.ts mobOutOfEra` — the data build's flag, the player's log over it) and the
+//     zone heading it sits under is one `zoneEra` places in era. A dropper the catalog does not
+//     hold counts for nothing (law 1: no row, no verdict), and so does a source with no zone.
+// The caller supplies the evidence because the catalog is data this pure file cannot import.
+
+/** One stated drop source on an item page (`items.json dropsFrom`): the mob, and its zone heading. */
+export interface EraDropSource {
+  readonly mob: string
+  readonly zone?: string
+}
+
+/** What the expansion-banner rule weighs: the page's drop sources, and the mob catalog's rows for a
+ *  dropper NAME (every row of that name; `[]` when the catalog holds none). */
+export interface DropEvidence {
+  readonly sources: readonly EraDropSource[]
+  readonly catalogRows: (mob: string) => readonly MobEraRow[]
+}
+
+/** Does this banner give way to the drop list? See the block above; `false` without evidence. */
+export function bannerGivesWay(tag: string, drops: DropEvidence | undefined, era: Era): boolean {
+  if (drops === undefined) return false
+  const named = eraFromTag(tag)
+  if (named === null || registerKey(tag) !== named || eraRank(named) <= eraRank(era)) return false
+  return drops.sources.some((s) => {
+    const zone = s.zone === undefined ? null : zoneEra(s.zone)
+    if (zone === null || eraRank(zone) > eraRank(era)) return false
+    return drops.catalogRows(s.mob).some((row) => !mobOutOfEra(row))
+  })
 }
 
 /**
@@ -473,7 +521,9 @@ export function withoutOutOfEraMobs<T extends MobEraRow>(mobs: readonly T[]): T[
 /**
  * THE VERDICT THE UI ASKS FOR — three rules, in this order.
  *
- * 0. AN EXPLICIT OUT-OF-ERA BADGE OVERRULES THE ZONES (JOS-298, 2026-08-13). The wiki has drawn a
+ * 0. AN EXPLICIT OUT-OF-ERA BADGE OVERRULES THE ZONES (JOS-298, 2026-08-13) — unless it names a
+ *    later EXPANSION and the page's own drop list puts an in-era catalog mob in an in-era zone
+ *    (`bannerGivesWay`, owner ruling 2026-10-17; `drops` carries that evidence). The wiki has drawn a
  *    red `Out of Era` box on the page; if we then rank the item in-era off its drop zone we are
  *    contradicting the source we scraped, in the one direction that costs the player real time.
  *    THE ZONE-WINS DOCTRINE INVERTS FOR REVAMPS AND FOR CHAINS, and both were measured, not
@@ -507,9 +557,10 @@ export function withoutOutOfEraMobs<T extends MobEraRow>(mobs: readonly T[]): T[
 export function layeredVerdictAt(
   zoneNames: readonly string[],
   tag: string | undefined,
-  era: Era
+  era: Era,
+  drops?: DropEvidence
 ): EraVerdict {
-  if (eraBadgeOverrides(tag, era)) return 'out-of-era'
+  if (eraBadgeOverrides(tag, era, drops)) return 'out-of-era'
   const byZone = eraVerdictAt(zoneNames, era)
   if (byZone !== 'unknown') return byZone
   const tagged = tag === undefined || tag === '' ? null : eraFromTag(tag)
@@ -518,6 +569,10 @@ export function layeredVerdictAt(
 }
 
 /** `layeredVerdictAt` against what the server actually ships today. The call sites use this one. */
-export function layeredVerdict(zoneNames: readonly string[], tag: string | undefined): EraVerdict {
-  return layeredVerdictAt(zoneNames, tag, CURRENT_ERA)
+export function layeredVerdict(
+  zoneNames: readonly string[],
+  tag: string | undefined,
+  drops?: DropEvidence
+): EraVerdict {
+  return layeredVerdictAt(zoneNames, tag, CURRENT_ERA, drops)
 }
