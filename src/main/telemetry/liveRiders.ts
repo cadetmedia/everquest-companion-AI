@@ -33,6 +33,7 @@ import { takeLiveProbeReading } from '../livePerfProbe'
 import { takeGcTally, takeSeamTally } from '../perfAttribution'
 import { getCursorRing, getOverlayAutoHide, getOverlayConfig } from '../store'
 import { overlayStateMap } from '../windows'
+import { safely } from '../safely'
 import { gcStallStats, liveStallStats, seamStallStats, sessionStateStats, tailReadStats } from './liveFacts'
 
 /** The five optional groups, in the shape both session reports spread. */
@@ -46,16 +47,6 @@ type LiveRiders = Pick<EvSessionHeartbeat, 'live' | 'tail' | 'state' | 'gc' | 's
  * belong to THIS interval have to be selected by time. Everything else here is already a delta.
  */
 let since = 0
-
-/** Run a reading, or answer with the fallback. The lambda-per-group shape is what keeps one
- *  failing question from costing the other two their place on the report. */
-function safely<T>(read: () => T, fallback: T): T {
-  try {
-    return read()
-  } catch {
-    return fallback
-  }
-}
 
 /** The stall reading, drained. Absent when the probe has not observed a single tick — a session
  *  that never ran it has not observed a smooth interval, it has observed nothing. */
