@@ -1,13 +1,13 @@
 {
-  "generatedAt": "2026-10-14T07:27:26.102Z",
+  "generatedAt": "2026-10-18T09:58:47.263Z",
   "note": "Images shipped with the app so it never fetches art at runtime. Every file states the exact upstream URL it came from. Regenerate with `npm run fetch:images`.",
   "sources": [
     "https://eqlwiki.com/",
     "https://wiki.project1999.com/"
   ],
   "totals": {
-    "files": 805,
-    "bytes": 3971058
+    "files": 806,
+    "bytes": 4688754
   },
   "images": [
     {
@@ -1892,6 +1892,13 @@
       "kind": "item",
       "bytes": 1083,
       "sha256": "b2ded515f0f01b516631cd96d17b64899489c3113fa602fbee053739f5926e93"
+    },
+    {
+      "file": "item-2880.png",
+      "url": "https://eqlwiki.com/index.php?title=Special:Redirect/file/Item_2880.png",
+      "kind": "item",
+      "bytes": 1828,
+      "sha256": "9c5f8c24f394938d8f808e617507c577bbc56012743e69ff8cd7a81f4b45e4f3"
     },
     {
       "file": "item-3204.png",
@@ -5443,6 +5450,13 @@
       "sha256": "93c40dcf5306c01ccfe7da4572896cc53a0b4a1333f3b95a073f63537d970cd8"
     },
     {
+      "file": "url-0ad35e3866331f446792787c.png",
+      "url": "https://eqlwiki.com/images/thumb/3/37/Pic.png/900px-Pic.png",
+      "kind": "boss",
+      "bytes": 884084,
+      "sha256": "2b20abf2bcc73b668cfd1b9f863687e7d9325ec95df42f5b8974708c4ffa294e"
+    },
+    {
       "file": "url-1edc2fede2e4285994f810f9.png",
       "url": "https://wiki.project1999.com/images/thumb/Npc_lady_vox.png/200px-Npc_lady_vox.png",
       "kind": "boss",
@@ -5616,13 +5630,6 @@
       "kind": "boss",
       "bytes": 17007,
       "sha256": "dfa4b022c04c22376021c2be3f749ce709a7e0151458a3a60f2ad9f5c1005492"
-    },
-    {
-      "file": "url-d7e2552448561bffdd09043f.png",
-      "url": "https://wiki.project1999.com/images/thumb/Npc_sister_of_the_spire.png/200px-Npc_sister_of_the_spire.png",
-      "kind": "boss",
-      "bytes": 168216,
-      "sha256": "9ec8f740b2554c0060c7f677f46faf8466c39476f86384f5bb42747d82efc417"
     },
     {
       "file": "url-dae7cf3865ba0966864496ad.png",
