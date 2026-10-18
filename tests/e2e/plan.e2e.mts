@@ -253,10 +253,13 @@ async function stepRuns(page: Page): Promise<void> {
     placed.slice(0, 3).map((r) => `"${r.label}" vs "${r.zone}"`).join(' · ')
   )
   // The caps the fold states, asserted as bounds rather than as counts (the corpus grows).
+  // The bracket that reaches the level cap gets LAST_BRACKET_ROOM (4) times the room (8585588e).
+  const froms = [...new Set(runs.map((r) => r.from))]
+  const last = froms.reduce((a, b) => (Number(b) > Number(a) ? b : a), froms[0] ?? '')
   check(
-    'the run caps the fold states are the caps on screen - at most 3 items a run, 6 runs a bracket',
+    'the run caps the fold states are the caps on screen - at most 3 items a run, 6 runs a bracket (24 in the last)',
     runs.every((r) => r.keys.length <= 3) &&
-      [...new Set(runs.map((r) => r.from))].every((from) => runs.filter((r) => r.from === from).length <= 6)
+      froms.every((from) => runs.filter((r) => r.from === from).length <= (from === last ? 24 : 6))
   )
   // A tiered run is a DIFFERENT trip from its base zone, and the fold refuses to con it — so if this
   // corpus produced one, it must be saying so in words rather than printing a band it cannot know.
