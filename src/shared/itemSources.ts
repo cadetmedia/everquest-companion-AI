@@ -35,6 +35,8 @@ export interface ItemSource {
   levelText?: string
   /** home zone(s) from the page; `[]` when it stated none ("Various" is a real value, not a gap) */
   zones: string[]
+  /** the catalog row's data-build era verdict (`MobEntry.outOfEra`), copied when it is set */
+  outOfEra?: true
 }
 
 export type SourceIndex = ReadonlyMap<string, ItemSource[]>
@@ -65,6 +67,7 @@ export function buildSourceIndex(mobs: readonly MobEntry[]): Map<string, ItemSou
     const source: ItemSource = { mob: mob.name, zones: mob.zones ?? [] }
     if (mob.page) source.mobPage = mob.page
     if (mob.level) source.levelText = mob.level
+    if (mob.outOfEra === true) source.outOfEra = true
     for (const drop of mob.drops) {
       const key = sourceItemKey(drop)
       if (key === '') continue

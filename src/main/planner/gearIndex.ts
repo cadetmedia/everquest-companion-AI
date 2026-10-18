@@ -438,7 +438,9 @@ function addPage(acc: Acc, entry: ItemDbEntry, deps: BuildDeps): void {
 /** The committed catalog's inversion, built on the first index build and kept for the process. */
 let COMMITTED_SOURCES: SourceIndex | null = null
 function committedSources(): SourceIndex {
-  COMMITTED_SOURCES ??= buildSourceIndex((mobsJson as unknown as MobData).mobs)
+  // Read through `unknown`: the JSON's inferred type changes with the data (a refreshed catalog's rows infer as any[]), and this reads the same either way.
+  const mobsRaw: unknown = mobsJson
+  COMMITTED_SOURCES ??= buildSourceIndex((mobsRaw as MobData).mobs)
   return COMMITTED_SOURCES
 }
 
