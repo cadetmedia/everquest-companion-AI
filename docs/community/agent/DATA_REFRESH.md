@@ -65,15 +65,16 @@ New wiki content turns the creator's census tests red. Each failing test names i
 ## Plane of Sky quests (posky.json): not covered by the delta
 
 `npm run scrape:posky` reads the rendered `Plane of Sky` page plus one request per item/reward page
-(~209). Since `wiki-scraper-fixes` it spaces those 1 s apart itself, retries only a 429 or 5xx,
-names pages that ended without stats, and refuses to write when any class yields no quests.
+(~209). Since 2026-10-17 every scraper sends through `scripts/sources/wikiApi.ts` (1 s apart, maxlag,
+retries 429/5xx); posky names pages that ended without stats, and refuses to write when any class
+yields no quests.
 A posky rescrape trips two audits by design: rows in `skyQuestRewards.ts` the wiki has caught up to
 must be deleted, and `achievementInference` needs every reward to match the game's achievements
 file.
 
 ## Other scrapers
 
-`npm run scrape:quests|bosses|spells|page-era|mobs|classes` run only on the owner's word.
+`npm run scrape:quests|bosses|spells|page-era|mobs|classes` run only on the owner's word. A real `scrape:spells` refuses to write when the wiki lists no spell pages or under half the catalog (an error body or an outage); `--allow-shrink` overrides after a look.
 `npm run scrape:classes -- --offline` (since 2026-10-17) re-derives `classes.json` from the committed
 cache with zero requests and keeps `scrapedAt`; run it on `local-data-refresh` with the scraper files
 copied from the `wiki-scraper-fixes` worktree (it needs that branch's `revCache.ts` and `isMain.ts`).
