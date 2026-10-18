@@ -13,7 +13,7 @@ import {
 } from './deltaPages'
 
 const API = 'https://eqlwiki.com/api.php'
-const UA = 'eqcompanion-delta (fork of jmoyers/everquest-companion; one serialized req/s)'
+const UA = 'eqcompanion-delta (+https://github.com/kaltinril/everquest-companion; one serialized req/s)'
 const MAX_RETRIES = 5
 const BATCH = 50
 
