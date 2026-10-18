@@ -213,14 +213,16 @@ const IGNORES = [
   'engine/target/**',
 ]
 
-/** The factoring layer. Numbers argued in the header. */
+/** The factoring layer. Numbers argued in the header; since 2026-10-17 the three size bars carry
+ *  10% headroom (fork owner ruling: a hard line count was driving splits and comment cuts that
+ *  bought nothing). max-depth and max-params are too small for 10% to add a step. */
 export const FACTORING_RULES = {
-  complexity: ['error', { max: 12 }],
+  complexity: ['error', { max: 13 }],
   'max-depth': ['error', { max: 3 }],
-  'max-lines': ['error', { max: 400, skipBlankLines: true, skipComments: true }],
+  'max-lines': ['error', { max: 440, skipBlankLines: true, skipComments: true }],
   'max-lines-per-function': [
     'error',
-    { max: 100, skipBlankLines: true, skipComments: true },
+    { max: 110, skipBlankLines: true, skipComments: true },
   ],
   'max-params': ['error', { max: 4 }],
 }
