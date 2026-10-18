@@ -444,7 +444,7 @@ mod tests {
             // local-data-refresh's spells.json each pass the old counts alone and move them together;
             // pinned here because this branch merges after the data (the dataWeight precedent).
             vec![
-                ("Buff", 495),
+                ("Buff", 494),
                 ("CrowdControl", 90),
                 ("Debuff", 124),
                 ("DotHot", 196),
