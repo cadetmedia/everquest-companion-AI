@@ -67,9 +67,11 @@ test('the stale rows are known by SHAPE, so the repair holds whichever parser is
 
 test("the line's rows are replaced in place, and only on such a line", () => {
   const axe = entry('Kerasian Axe of Ire')
+  // A stat list is a set: the page listing its stats in another order states the same item (the
+  // in-place repair itself is pinned on the fixed block above).
   assert.deepEqual(
-    knowledgeFromDb(axe).stats?.stats.map((s) => `${s.key}=${s.value}`),
-    ['STR=+15', 'DEX=+15', 'STA=+20', 'HP=+125', 'ENDUR=+100', 'ATTACK=+40', 'HASTE=40%']
+    knowledgeFromDb(axe).stats?.stats.map((s) => `${s.key}=${s.value}`).sort(),
+    ['STR=+15', 'DEX=+15', 'STA=+20', 'HP=+125', 'ENDUR=+100', 'ATTACK=+40', 'HASTE=40%'].sort()
   )
   // New Sebilisian Bindings' one regen is ENDURANCE: the bare REGEN had folded it to HP regen.
   assert.deepEqual(knowledgeFromDb(entry('New Sebilisian Bindings')).stats?.stats, [{ key: 'END REGEN', value: '2' }])
