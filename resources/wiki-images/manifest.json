@@ -1,13 +1,13 @@
 {
-  "generatedAt": "2026-10-18T09:58:47.263Z",
+  "generatedAt": "2026-10-18T11:42:55.826Z",
   "note": "Images shipped with the app so it never fetches art at runtime. Every file states the exact upstream URL it came from. Regenerate with `npm run fetch:images`.",
   "sources": [
     "https://eqlwiki.com/",
     "https://wiki.project1999.com/"
   ],
   "totals": {
-    "files": 806,
-    "bytes": 4688754
+    "files": 809,
+    "bytes": 6241855
   },
   "images": [
     {
@@ -5450,6 +5450,13 @@
       "sha256": "93c40dcf5306c01ccfe7da4572896cc53a0b4a1333f3b95a073f63537d970cd8"
     },
     {
+      "file": "url-0a6c36dc791482688d33a5d6.png",
+      "url": "https://eqlwiki.com/images/1/11/Npc_phinigel_autropos.png",
+      "kind": "boss",
+      "bytes": 977907,
+      "sha256": "5fbf72b2a97a027ee698dfdaea120134ffb867e59b52b7a9d8bd81d544f48680"
+    },
+    {
       "file": "url-0ad35e3866331f446792787c.png",
       "url": "https://eqlwiki.com/images/thumb/3/37/Pic.png/900px-Pic.png",
       "kind": "boss",
@@ -5555,6 +5562,13 @@
       "sha256": "cd151db5d6b4ea32e617b4bdc9a59e0ae9df92d55211b9f123cca92c3dfdf2d8"
     },
     {
+      "file": "url-8dd9725892d4705dcc67f8cb.png",
+      "url": "https://eqlwiki.com/images/c/c4/Npc_magi_p%60tasa2.png",
+      "kind": "boss",
+      "bytes": 125228,
+      "sha256": "21bdc23199753f18163a5d2a1dad9ff65208309d49c7643b2081aebe0d9f92cb"
+    },
+    {
       "file": "url-90a7b271fce611b9976360e9.png",
       "url": "https://wiki.project1999.com/images/thumb/Npc_noble_dojorn.png/200px-Npc_noble_dojorn.png",
       "kind": "boss",
@@ -5574,6 +5588,13 @@
       "kind": "boss",
       "bytes": 56234,
       "sha256": "3676703325e6506a4f10f9abc04a2f4be92ba8e28c8542704238241652da2b3f"
+    },
+    {
+      "file": "url-a03ede1bb5fbe63b413f18e7.png",
+      "url": "https://eqlwiki.com/images/3/3b/Npc_master_of_spite.png",
+      "kind": "boss",
+      "bytes": 449966,
+      "sha256": "58ccfc5a4d070167c8ca6177491533549a2e6e70c0c74b6479043806298797a7"
     },
     {
       "file": "url-a83e48bcf90618e0bd4fe903.png",

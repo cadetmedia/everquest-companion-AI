@@ -34,7 +34,8 @@
       "match": [
         "Phinigel Autropos"
       ],
-      "zone": "Kedge Keep"
+      "zone": "Kedge Keep",
+      "image": "https://eqlwiki.com/images/1/11/Npc_phinigel_autropos.png"
     },
     {
       "name": "Cazic Thule",
@@ -126,7 +127,8 @@
       "match": [
         "Master of Spite"
       ],
-      "zone": "Plane of Hate"
+      "zone": "Plane of Hate",
+      "image": "https://eqlwiki.com/images/3/3b/Npc_master_of_spite.png"
     },
     {
       "name": "Mistress of Scorn",
@@ -152,7 +154,8 @@
       "match": [
         "Magi P`tasa"
       ],
-      "zone": "Plane of Hate"
+      "zone": "Plane of Hate",
+      "image": "https://eqlwiki.com/images/c/c4/Npc_magi_p%60tasa2.png"
     },
     {
       "name": "Coercer T`vala",
