@@ -121,6 +121,39 @@ export function respawnWithWatch(prefs: RespawnPrefs, key: string, display: stri
 }
 
 /**
+ * THE WHOLE-LIST REPLACE (`respawn:set`), held to the same promise as the key-shaped writes.
+ *
+ * Another surface (the Maps tab) still adds watches by sending the whole list, so the replace has
+ * to keep the kept numbers honest too rather than let the normalizer silently drop them:
+ *
+ *   * a name NEWLY watched by `incoming`, arriving with no `customSec`, gets its kept number back
+ *     (and leaves the kept list), exactly as `respawnWithWatch` does;
+ *   * a newly watched name arriving WITH its own `customSec` keeps its own, and its kept copy goes;
+ *   * a name that was already watched is taken as `incoming` states it, as the replace always did;
+ *   * a name `incoming` no longer watches sets its typed number aside, as `respawnWithoutWatch`
+ *     does — so an unwatch by replace keeps the number an unwatch by key keeps;
+ *   * every other kept number stays kept.
+ *
+ * `incoming` should be the normalized list (canonical keys); main passes it through
+ * `normalizeRespawnPrefs` first, which is also the door's validation.
+ */
+export function respawnWithWatchList(stored: RespawnPrefs, incoming: readonly RespawnWatchPref[]): RespawnPrefs {
+  const keptSec = new Map((stored.keptCustom ?? []).map((k) => [k.key, k.customSec]))
+  const before = new Set(stored.watches.map((w) => w.key))
+  const watches = incoming.map((w) => {
+    const sec = keptSec.get(w.key)
+    return before.has(w.key) || w.customSec !== undefined || sec === undefined ? w : { ...w, customSec: sec }
+  })
+  const now = new Set(watches.map((w) => w.key))
+  let kept = (stored.keptCustom ?? []).filter((k) => !now.has(k.key))
+  for (const w of stored.watches) {
+    if (now.has(w.key) || w.customSec === undefined) continue
+    kept = [...keptWithout(kept, w.key), { key: w.key, customSec: w.customSec }]
+  }
+  return withKept({ ...stored, watches }, kept)
+}
+
+/**
  * TYPE A MOB'S NUMBER, OR CLEAR IT — the edit modal's Save and its way back (round 9).
  *
  * With a number, the watch carries it (the entry is updated in place, or added when the row's watch

@@ -10,7 +10,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { useModule } from '../../lib/useModule'
-import { EMPTY_RESPAWN_SNAP, type RespawnSnap } from '@shared/respawn'
+import { EMPTY_RESPAWN_SNAP, type RespawnPrefs, type RespawnSnap } from '@shared/respawn'
 
 export function useRespawnSnap(): RespawnSnap {
   const snap = useModule<RespawnSnap>('respawn')
@@ -29,6 +29,16 @@ export function useSecondsClock(): number {
     }
   }, [])
   return now
+}
+
+/**
+ * Write the whole watch list over `respawn:set`. Unused on the Timers tab; other surfaces (the Maps tab) write through it.
+ * Main re-normalizes, restores a kept typed number onto a newly watched name, applies and pushes.
+ */
+export function useSetRespawnPrefs(): (next: RespawnPrefs) => void {
+  return useCallback((next: RespawnPrefs) => {
+    void window.eq.setRespawn(next)
+  }, [])
 }
 
 /**

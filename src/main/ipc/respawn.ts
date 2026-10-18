@@ -28,6 +28,7 @@ import { IPC } from '../../shared/ipc'
 import { normalizeCustomSec, normalizeRespawnPrefs, type RespawnPrefs } from '../../shared/respawn'
 import {
   isRespawnMobKey,
+  respawnWithWatchList,
   respawnClearKeys,
   respawnWithCustom,
   respawnWithWatch,
@@ -78,16 +79,15 @@ function commit(next: RespawnPrefs): void {
 export function registerRespawnIpc(): void {
   ipcMain.handle(IPC.respawnGet, () => getRespawnPrefs())
   /**
-   * THE WHOLE-LIST REPLACE. Nothing in the app calls it since 2026-10-17 — Watch and the edit modal
-   * have their own key-shaped doors below, for round 4's reason — and it stays because it is the
-   * bridge's oldest member. It replaces the WATCH LIST only: the kept typed numbers are main's (the
-   * renderer's snapshot never carries them), so they are carried over from the store untouched.
+   * THE WHOLE-LIST REPLACE. The Timers tab no longer calls it — Watch and the edit modal have their
+   * own key-shaped doors below, for round 4's reason — but other surfaces (the Maps tab) still add
+   * watches through it. It replaces the WATCH LIST only: the kept typed numbers are main's (the
+   * renderer's snapshot never carries them), so they come from the store, and
+   * `respawnWithWatchList` keeps the 2026-10-17 promise across the replace — a newly watched name
+   * gets its kept number back, an unwatched one sets its number aside.
    */
   ipcMain.handle(IPC.respawnSet, (_e, value: unknown) => {
-    const next = setRespawnPrefs({
-      watches: normalizeRespawnPrefs(value).watches,
-      keptCustom: getRespawnPrefs().keptCustom
-    })
+    const next = setRespawnPrefs(respawnWithWatchList(getRespawnPrefs(), normalizeRespawnPrefs(value).watches))
     pushAppKnowledge('respawn.define')
     return next
   })

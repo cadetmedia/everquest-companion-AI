@@ -32,6 +32,7 @@ import {
   respawnClearPlan,
   respawnWithCustom,
   respawnWithWatch,
+  respawnWithWatchList,
   respawnWithoutWatch,
   respawnWithoutWatches
 } from '../src/shared/respawnWatchList'
@@ -206,7 +207,79 @@ test('the dialog states the count and the scope, and the other zones when they a
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 4. THE STORE: BOUNDED LIKE customSec, AND AN OLD STORE LOADS UNCHANGED
+// 4. THE WHOLE-LIST REPLACE (`respawn:set`, which the Maps tab still writes through)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** What main does on `respawn:set`: normalize the incoming list, then replace against the store. */
+const replaceWith = (store: RespawnPrefs, incoming: unknown): RespawnPrefs =>
+  stored(respawnWithWatchList(store, normalizeRespawnPrefs(incoming).watches))
+
+const STORE: RespawnPrefs = {
+  watches: [{ key: 'a wan ghoul knight', display: 'a wan ghoul knight', customSec: 45 }],
+  keptCustom: [
+    { key: 'a frenzied ghoul', customSec: 600 },
+    { key: 'a gnoll', customSec: 90 },
+    { key: 'ghoul assassin', customSec: 30 }
+  ]
+}
+
+test('a replace that newly watches a name with a kept number restores it and takes it out of the kept list', () => {
+  const next = replaceWith(STORE, {
+    watches: [...STORE.watches, { key: 'A Frenzied Ghoul', display: 'a frenzied ghoul' }]
+  })
+  assert.deepEqual(next.watches.find((w) => w.key === 'a frenzied ghoul'), {
+    key: 'a frenzied ghoul',
+    display: 'a frenzied ghoul',
+    customSec: 600
+  })
+  assert.equal(next.keptCustom?.some((k) => k.key === 'a frenzied ghoul'), false)
+})
+
+test('a newly watched name that arrives with its own number keeps its own, and its kept copy goes', () => {
+  const next = replaceWith(STORE, {
+    watches: [...STORE.watches, { key: 'a gnoll', display: 'a gnoll', customSec: 120 }]
+  })
+  assert.equal(next.watches.find((w) => w.key === 'a gnoll')?.customSec, 120)
+  assert.equal(next.keptCustom?.some((k) => k.key === 'a gnoll'), false)
+})
+
+test('a name that was already watched is taken as the replace states it', () => {
+  const same = replaceWith(STORE, { watches: STORE.watches })
+  assert.deepEqual(same, STORE)
+  const edited = replaceWith(STORE, { watches: [{ key: 'a wan ghoul knight', display: 'a wan ghoul knight' }] })
+  assert.equal(edited.watches[0]?.customSec, undefined)
+})
+
+test('kept numbers for names the replace does not watch stay kept, in order', () => {
+  const next = replaceWith(STORE, {
+    watches: [...STORE.watches, { key: 'a frenzied ghoul', display: 'a frenzied ghoul' }]
+  })
+  assert.deepEqual(next.keptCustom, [
+    { key: 'a gnoll', customSec: 90 },
+    { key: 'ghoul assassin', customSec: 30 }
+  ])
+})
+
+test('a replace that drops a watch sets its typed number aside, as an unwatch by key does', () => {
+  const next = replaceWith(STORE, { watches: [] })
+  assert.deepEqual(next.watches, [])
+  assert.deepEqual(next.keptCustom?.at(-1), { key: 'a wan ghoul knight', customSec: 45 })
+  assert.equal(next.keptCustom?.length, 4)
+})
+
+test('the Maps-tab shape, the snapshot prefs plus one watch, round-trips with the restore', () => {
+  // The renderer's snapshot never carries `keptCustom`, so this is what such a surface sends.
+  const snapshot = { watches: STORE.watches }
+  const next = replaceWith(STORE, { ...snapshot, watches: [...snapshot.watches, { key: 'ghoul assassin', display: 'Ghoul Assassin' }] })
+  assert.equal(next.watches.find((w) => w.key === 'ghoul assassin')?.customSec, 30)
+  assert.deepEqual(next.keptCustom, [
+    { key: 'a frenzied ghoul', customSec: 600 },
+    { key: 'a gnoll', customSec: 90 }
+  ])
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 5. THE STORE: BOUNDED LIKE customSec, AND AN OLD STORE LOADS UNCHANGED
 // ─────────────────────────────────────────────────────────────────────────────
 
 test('an old store with no kept list loads exactly as it did, with no new field', () => {

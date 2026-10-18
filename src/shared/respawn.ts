@@ -343,7 +343,9 @@
 // THE KEPT LIST IS MAIN'S AND NOBODY ELSE'S. A kept number numbers no clock, so the engine is never
 // told it (`respawn.define` carries the watch list alone), the module snapshot never carries it,
 // and no renderer writes it: Watch, Save, clear and Unwatch each name a mob, and main does the move
-// on the stored list.
+// on the stored list. A surface that still sends the WHOLE list (`respawn:set`, which the Maps tab
+// writes through) gets the same promise: main restores a kept number onto a name the list newly
+// watches and sets aside the number of one it stopped watching (`respawnWithWatchList`).
 
 /** Which rung of the ladder produced the estimate on a row. `'none'` = no rung had anything. */
 export type RespawnSource = 'custom' | 'observed' | 'wiki' | 'none'
