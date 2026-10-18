@@ -133,9 +133,12 @@ function describe(p: Record<string, string>): string {
   return `${p.action ?? '?'} ${p.list ?? p.prop ?? ''} ${page.slice(0, 60)}`.replace(/\s+/g, ' ').trim()
 }
 
-/** One API GET against `api` (eqlwiki by default). */
-export async function wikiGet<T>(params: Record<string, string>, api: string = EQL_API): Promise<T> {
-  return call<T>(`${api}?${withDefaults(params).toString()}`, { headers: { 'User-Agent': USER_AGENT } }, describe(params))
+/**
+ * One API GET against `api` (eqlwiki by default). `userAgent` is for a caller whose wiki already
+ * knows it by another name (scrape-bosses on the P99 wiki); everyone else sends USER_AGENT.
+ */
+export async function wikiGet<T>(params: Record<string, string>, api: string = EQL_API, userAgent: string = USER_AGENT): Promise<T> {
+  return call<T>(`${api}?${withDefaults(params).toString()}`, { headers: { 'User-Agent': userAgent } }, describe(params))
 }
 
 /** One API POST, for an endpoint that takes no GET or a list too long for a query string. */

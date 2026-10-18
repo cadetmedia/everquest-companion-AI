@@ -18,6 +18,8 @@ import { wikiGet } from './sources/wikiApi'
 
 const EQL = 'https://eqlwiki.com'
 const P99 = 'https://wiki.project1999.com'
+/** The identity this scraper has always sent both wikis; the P99 wiki is not ours to re-test. */
+const UA = 'Mozilla/5.0 everquest-companion/0.2 (personal raid tracker)'
 
 interface Curated {
   name: string
@@ -98,7 +100,7 @@ const TARGETS: Curated[] = [
 async function pageHtml(apiBase: string, page: string): Promise<string | undefined> {
   try {
     const params = { action: 'parse', page, prop: 'text', redirects: '1' }
-    const json = await wikiGet<{ parse?: { text?: string | { '*'?: string } } }>(params, `${apiBase}/api.php`)
+    const json = await wikiGet<{ parse?: { text?: string | { '*'?: string } } }>(params, `${apiBase}/api.php`, UA)
     const t = json.parse?.text
     return typeof t === 'string' ? t : t?.['*']
   } catch {
