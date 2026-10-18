@@ -44,6 +44,7 @@ import type { MapSearchHit, ZoneShort } from '@shared/maps'
 import type { MobEntry } from '@shared/types'
 import { scoreQuery, tokenize } from '../../../../shared/fuzzy'
 import { zoneShortNameFromCatalog } from '../../../../shared/zones'
+import { mobOutOfEra } from '../../../../shared/planner/era'
 import { mobPins } from './mobPins'
 import { zoneLabel } from './zoneOptions'
 
@@ -73,6 +74,11 @@ export interface CrossZoneRow {
   at: { x: number; y: number } | null
   /** Why this row cannot open a map, or cannot point at a spot on it. Null when it can do both. */
   note: string | null
+  /**
+   * Set when the era rules put this mob out of era (`shared/planner/era.ts mobOutOfEra`, the
+   * record's data-build flag); absent otherwise. A search is a lookup, so the row is kept and chipped.
+   */
+  outOfEra?: true
   score: number
 }
 
@@ -159,6 +165,7 @@ function mobRow(entry: MobEntry, zoneRaw: string, score: number, installed: Read
     zoneName: stem == null ? zoneRaw : zoneLabel(stem),
     at: zone == null || !first ? null : { x: first.x, y: first.y },
     note: mobNote(entry, stem, zone, zoneCount),
+    ...(mobOutOfEra(entry) ? { outOfEra: true as const } : {}),
     score
   }
 }

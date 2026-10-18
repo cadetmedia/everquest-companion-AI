@@ -268,3 +268,26 @@ test('a real zone yields a real pane: rows, pins, and an honest placed count', (
   assert.ok(counts.located <= counts.mobs, 'placed can never exceed listed')
   for (const r of rows) assert.equal(isLocatable(r), r.pins.length > 0)
 })
+
+// ---- the era fold: the pane OFFERS a zone's mobs, so an out-of-era page is left off ----------
+
+test('mobRows leaves off a mob flagged outOfEra, and with it every pin; a raw banner alone is kept', () => {
+  const catalog: MobEntry[] = [
+    ...CATALOG,
+    { page: 'Revamp One', outOfEra: true, name: 'a revamp one', level: '1', zones: ['Najena'], loc: [{ ns: 7, ew: 7 }] },
+    { page: 'Classic One', eraTag: 'Velious', name: 'a classic one', level: '15', zones: ['Najena'] }
+  ]
+  const rows = mobRows('Najena', catalog)
+  assert.deepEqual(
+    rows.map((r) => r.name),
+    ['a placed one', 'a classic one', 'an unplaced one']
+  )
+  assert.ok(pinsForRows(rows).pins.every((p) => p.row.id !== 'Revamp One'))
+})
+
+test('mobRows over an unflagged catalog is unchanged by the era fold', () => {
+  assert.deepEqual(
+    mobRows('Najena', CATALOG).map((r) => r.id),
+    ['Placed One', 'Unplaced One']
+  )
+})

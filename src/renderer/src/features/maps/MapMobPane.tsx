@@ -66,6 +66,7 @@ import {
   type PaneCounts
 } from './mobPins'
 import { Tooltip } from '../../lib/Tooltip'
+import { MobEraChip } from '../planner/PlannerChips'
 
 /** The pane's width. Fixed and `flexShrink:0` so the map, not the list, absorbs a window resize. */
 export const PANE_WIDTH = 268
@@ -241,6 +242,8 @@ function HitRow({ row, onHit }: { row: CrossZoneRow; onHit: (to: JumpTarget) => 
           secondary: { variant: 'caption' }
         }}
       />
+      {/* A search is a lookup: an out-of-era mob stays in the list and says so (crossZone.ts). */}
+      <MobEraChip mob={row} />
       {row.level !== undefined && row.level !== '' && (
         <Typography variant="caption" color="text.disabled" sx={{ flexShrink: 0, pt: 0.25 }}>
           {row.level}

@@ -38,7 +38,7 @@ import type { MobEntry } from '@shared/types'
 // RELATIVE value imports, the repo-wide rule for node-tested pure modules (mobSearch.ts:33):
 // the `@shared/*` alias exists only inside the vite build, and tests/mapMobPane.test.mts drives
 // this module — against the REAL catalog — under plain `node --import tsx --test`.
-import { mobsInZone } from '../mobs/mobZone'
+import { rosterInZone } from '../mobs/mobZone'
 import { mapFromLoc } from './mapGeometry'
 
 /**
@@ -106,6 +106,10 @@ export function mobPins(entry: MobEntry): MobPin[] {
 /**
  * The zone's named mobs, in `mobsInZone` order (level ascending, unknown level last).
  *
+ * THE ROSTER, NOT THE RAW JOIN: `rosterInZone` leaves off a mob the era rules put out of era
+ * (`shared/planner/era.ts mobOutOfEra`, the record's data-build flag), because these rows and the
+ * pins drawn from them OFFER the zone's mobs. The cross-zone search (crossZone.ts) is a lookup and keeps them, chipped.
+ *
  * `zoneRaw` is a LONG zone name — the raw one the log printed, or the zone table's name for a
  * manually picked stem. Folding it is `mobsInZone`'s job; pass it unmodified.
  *
@@ -115,7 +119,7 @@ export function mobPins(entry: MobEntry): MobPin[] {
  * here — and the pane states why they carry no pin (world-model law 1).
  */
 export function mobRows(zoneRaw: string, catalog: MobEntry[]): MobPaneRow[] {
-  return mobsInZone(zoneRaw, catalog).map((m) => {
+  return rosterInZone(zoneRaw, catalog).map((m) => {
     const zoneCount = m.zones?.length ?? 0
     const ambiguous = zoneCount > 1
     return {
