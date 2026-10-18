@@ -86,16 +86,16 @@ export default function MapZoneAdvice({ onPick }: { onPick?: (zone: string) => v
   const level = Number.parseInt(query.level, 10)
 
   // The wish list is the one input that is the PLAYER's rather than the catalog's; the per-zone
-  // count is one walk of the bestiary, redone only when the list itself changes.
+  // count is one walk of the bestiary, redone only when the list or the era switch changes.
   const wishlist = useWishlist().list
   const wished = useMemo(
-    () => wishedByZone(new Set(wishlist.entries.map((e) => e.itemKey))),
-    [wishlist.entries]
+    () => wishedByZone(new Set(wishlist.entries.map((e) => e.itemKey)), query.eraOnly),
+    [wishlist.entries, query.eraOnly]
   )
 
   const rows = useMemo(() => {
     if (!Number.isFinite(level) || level <= 0) return []
-    const ranked = rankZones(zoneBands(), level, {
+    const ranked = rankZones(zoneBands(query.eraOnly), level, {
       goal: query.goal,
       min: MIN_EVIDENCE,
       wished,
