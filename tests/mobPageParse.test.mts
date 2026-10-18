@@ -52,3 +52,23 @@ test('zones separated by <br>, newlines or side-by-side links stay separate (A T
 test('a |name typed with underscores reads as the spaced name the game prints', () => {
   assert.equal(parseMobWikitext('{{Namedmobpage\n| name = a_minnow\n| level = 1\n}}').pageName, 'a minnow')
 })
+
+test('the page era banner is kept as eraTag, right after page, and absent when the page states none', () => {
+  const body = '{{Namedmobpage\n| name = A Hatebone Drake\n| zone = [[Plane of Hate]]\n| level = 52\n}}'
+  const drake = parseMobPage('A Hatebone Drake', `{{FearHateRevamp Era}}${body}`)
+  assert.equal(drake?.eraTag, 'FearHateRevamp')
+  assert.deepEqual(Object.keys(drake ?? {}).slice(0, 3), ['page', 'eraTag', 'name'])
+  const bare = parseMobPage('A Hatebone Drake', body)
+  assert.equal(bare?.eraTag, undefined)
+  assert.equal(bare !== null && 'eraTag' in bare, false)
+})
+
+test('the wiki era rule: the page banner decides, whatever zone the page names', () => {
+  const page = (era: string, zone: string): string => `{{${era} Era}}{{Namedmobpage\n| name = x\n| zone = [[${zone}]]\n| level = 10\n}}`
+  assert.equal(parseMobPage('A Hatebone Drake', page('FearHateRevamp', 'Plane of Hate'))?.outOfEra, true)
+  // A Kunark addition to a classic zone is out: the classic zone does not rescue it.
+  assert.equal(parseMobPage('Eejag', page('Kunark', 'Lavastorm Mountains'))?.outOfEra, true)
+  assert.equal(parseMobPage('A Kael Drakkel guard', page('Velious', 'Kael Drakkel'))?.outOfEra, true)
+  // In-era and unbannered mobs carry no flag at all.
+  assert.equal(parseMobPage('A rat', page('Classic', 'Befallen'))?.outOfEra, undefined)
+})

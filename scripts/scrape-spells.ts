@@ -6,6 +6,7 @@
  * SpellEntry, writing the committed catalog to src/main/data/spells.json.
  *
  *   npm run scrape:spells
+ *   npm run scrape:spells -- --allow-shrink   # write even when the listing is under half the catalog
  *
  * The catalog is the PRIOR/TRUTH for buff durations and — crucially — the source of
  * the exact chat messages a spell prints when it lands (msg_cast_on_you /
@@ -37,8 +38,9 @@
  *      are, and only pages whose revid MOVED are re-fetched. So a re-run against an unchanged
  *      wiki fetches no content at all and writes a byte-identical spells.json — the ticket's
  *      "a full re-scrape is a no-op diff" acceptance, enforced by mechanism rather than by luck.
- *   3. A THROTTLE AND AN HONEST NAME. `THROTTLE_MS` (750) between every request, sequential —
- *      never concurrent — and a `User-Agent` that says who we are and links the repo.
+ *   3. A THROTTLE AND AN HONEST NAME. Every request goes through sources/wikiApi.ts: sequential,
+ *      never concurrent, a second apart, maxlag=5, retried on 429/5xx, and a `User-Agent` that
+ *      says who we are and links the repo.
  *
  * RESUMABLE: the cache file and the index entry are written per BATCH, so a run killed halfway
  * resumes from what it already has. Nothing is ever written before a complete response, so a
@@ -56,49 +58,27 @@ import type { SpellDbFile, SpellEntry } from '../src/shared/types'
 // The one reader of the wiki's duration strings, shared with the LOADER (JOS-189) so a form this
 // script cannot read at scrape time is still understood when the committed file is loaded.
 import { parseDurationMs } from '../src/shared/spellDuration'
+// The one reader of a non-item page's `{{X Era}}` banner, shared with the mob and set-page scrapes.
+import { parsePageEraTag } from '../src/main/itemLookupParse'
 import { isMain } from './sources/isMain'
+import { cachePath, indexedPages, readIndex, writeIndex } from './sources/spellCache'
+import type { CacheIndex, WikiPage } from './sources/spellCache'
+import { wikiGet, wikiRequestCount } from './sources/wikiApi'
 
-const API = 'https://eqlwiki.com/api.php'
-const UA = 'everquest-companion/0.1 (+https://github.com/jmoyers/everquest-companion) spell catalog'
-
-/** Milliseconds between HTTP requests. Sequential, never concurrent. */
-const THROTTLE_MS = 1000
 /** Pageids per query. MEASURED ceiling — 51 returns 200 OK with zero pages (AGENTS.md). */
 const BATCH = 50
 /** The scrape schema this script writes (SpellDbFile.schema). */
 const SCHEMA = 3
 
 const HERE = dirname(fileURLToPath(import.meta.url))
-const CACHE_DIR = resolve(HERE, 'sources/cache/spells')
-const INDEX_PATH = resolve(CACHE_DIR, 'index.json')
 const OUT_PATH = resolve(HERE, '../src/main/data/spells.json')
-
-const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms))
-
-interface WikiPage {
-  pageid: number
-  title: string
-}
-
-/** How many HTTP requests this run made — reported at the end so the cost is never invisible. */
-let requests = 0
-
-/** ONE throttled, honestly-identified GET. Every request in this file goes through it. */
-async function api<T>(params: Record<string, string>): Promise<T> {
-  if (requests > 0) await sleep(THROTTLE_MS)
-  requests++
-  const q = new URLSearchParams({ format: 'json', formatversion: '2', ...params })
-  const res = await fetch(`${API}?${q}`, { headers: { 'User-Agent': UA } })
-  if (!res.ok) throw new Error(`${params.action ?? 'query'} failed: ${res.status}`)
-  return (await res.json()) as T
-}
 
 /** Enumerate all page titles embedding Template:Spellpage, following eicontinue. */
 async function listSpellPages(): Promise<WikiPage[]> {
   const out: WikiPage[] = []
   let eicontinue: string | undefined
   for (let page = 0; page < 200; page++) {
-    const json = await api<{
+    const json = await wikiGet<{
       query?: { embeddedin?: WikiPage[] }
       continue?: { eicontinue?: string }
     }>({
@@ -109,7 +89,8 @@ async function listSpellPages(): Promise<WikiPage[]> {
       eilimit: '500',
       ...(eicontinue ? { eicontinue } : {})
     })
-    for (const p of json.query?.embeddedin ?? []) out.push(p)
+    if (!json.query) throw new Error('embeddedin Template:Spellpage: the response carries no query block')
+    for (const p of json.query.embeddedin ?? []) out.push(p)
     eicontinue = json.continue?.eicontinue
     if (!eicontinue) break
   }
@@ -118,49 +99,7 @@ async function listSpellPages(): Promise<WikiPage[]> {
   return out.sort((a, b) => a.pageid - b.pageid)
 }
 
-// ---- the revision-keyed cache -----------------------------------------------------------------
-
-/**
- * `sources/cache/spells/index.json` — pageid → the revid of the wikitext sitting in
- * `<pageid>.wikitext`. This is the whole idempotence mechanism: without it "cached" means only
- * "we fetched this once, at some unknown point", and the only honest way to refresh would be to
- * re-fetch everything. With it, the question "has this page changed?" costs 1/50th of a request.
- */
-interface CacheIndex {
-  updatedAt: string
-  /** pageid (as a string key, JSON's only kind) → revid of the cached wikitext. */
-  revs: Record<string, number>
-  /** pageid → page title, the spell-name source (`spellName`); absent in an index from before it. */
-  titles?: Record<string, string>
-}
-
-function readIndex(): CacheIndex {
-  if (!existsSync(INDEX_PATH)) return { updatedAt: '', revs: {} }
-  try {
-    const j = JSON.parse(readFileSync(INDEX_PATH, 'utf8')) as CacheIndex
-    return { updatedAt: j.updatedAt ?? '', revs: j.revs ?? {}, ...(j.titles ? { titles: j.titles } : {}) }
-  } catch {
-    // A corrupt index costs a re-fetch, never a wrong answer.
-    return { updatedAt: '', revs: {} }
-  }
-}
-
-const byPageid = (a: string, b: string): number => Number(a) - Number(b)
-
-/** Written with SORTED keys so the committed file's diff shows only the revids that moved. */
-function writeIndex(idx: CacheIndex): void {
-  const revs: Record<string, number> = {}
-  for (const k of Object.keys(idx.revs).sort(byPageid)) revs[k] = idx.revs[k]
-  const titles = idx.titles
-    ? { titles: Object.fromEntries(Object.keys(idx.titles).sort(byPageid).map((k) => [k, idx.titles?.[k]])) }
-    : {}
-  mkdirSync(CACHE_DIR, { recursive: true })
-  writeFileSync(INDEX_PATH, JSON.stringify({ updatedAt: idx.updatedAt, revs, ...titles }, null, 2) + '\n')
-}
-
-function cachePath(pageid: number): string {
-  return resolve(CACHE_DIR, `${pageid}.wikitext`)
-}
+// ---- the revision-keyed cache: sources/spellCache.ts --------------------------------------------
 
 interface RevPage {
   pageid?: number
@@ -174,7 +113,7 @@ async function fetchRevIds(pages: WikiPage[]): Promise<Map<number, number>> {
   const out = new Map<number, number>()
   for (let i = 0; i < pages.length; i += BATCH) {
     const slice = pages.slice(i, i + BATCH)
-    const j = await api<{ query?: { pages?: RevPage[] } }>({
+    const j = await wikiGet<{ query?: { pages?: RevPage[] } }>({
       action: 'query',
       prop: 'revisions',
       rvprop: 'ids',
@@ -198,7 +137,7 @@ async function fetchStaleContent(stale: WikiPage[], idx: CacheIndex): Promise<nu
   const failures: number[] = []
   for (let i = 0; i < stale.length; i += BATCH) {
     const slice = stale.slice(i, i + BATCH)
-    const j = await api<{ query?: { pages?: RevPage[] } }>({
+    const j = await wikiGet<{ query?: { pages?: RevPage[] } }>({
       action: 'query',
       prop: 'revisions',
       rvprop: 'ids|content',
@@ -221,7 +160,7 @@ async function fetchStaleContent(stale: WikiPage[], idx: CacheIndex): Promise<nu
 /** Write one batch's wikitext to the cache and record its revids. Returns the pageids written. */
 function writeBatch(pages: RevPage[], idx: CacheIndex): Set<number> {
   const seen = new Set<number>()
-  mkdirSync(CACHE_DIR, { recursive: true })
+  mkdirSync(dirname(cachePath(0)), { recursive: true })
   for (const p of pages) {
     const rev = p.revisions?.[0]
     if (p.pageid == null || rev?.revid == null) continue
@@ -408,11 +347,12 @@ function splitTopLevel(interior: string): string[] {
 // caller ran at SCRAPE time. The loader now fills those nulls through the SAME function, so the two
 // can never disagree about what a wiki duration string means.
 
-/** A page-title disambiguator, never part of the spell's name: `Spell:`/`Effect:` prefixes, a
+/** A page-title disambiguator, never part of the spell's name: `Spell:`/`Effect:`/`Song:` prefixes
+ *  (the game names no song `Song: …`; the three such pages duplicate pages titled plainly), a
  *  `(Spell)`/`(Effect)` suffix, a glued `Test` (`Burst of FlameTest`). */
 export function stripTitleDecoration(title: string): string {
   return title
-    .replace(/^(Spell|Effect)\s*:\s*/i, '')
+    .replace(/^(Spell|Effect|Song)\s*:\s*/i, '')
     .replace(/\s*\((Spell|Effect)\)$/i, '')
     .replace(/(?<=[a-z])Test$/, '')
     .trim()
@@ -435,7 +375,14 @@ export function spellName(title: string, spellname: string | undefined): { name:
   return { name: fromTitle, disagrees: true }
 }
 
-export function parseSpell(title: string, fields: Record<string, string>): SpellEntry {
+/** The page's `{{X Era}}` banner as a spreadable `{ eraTag }`; empty when the page states none. */
+function pageEra(wikitext: string | undefined): Pick<SpellEntry, 'eraTag'> {
+  const eraTag = wikitext === undefined ? undefined : parsePageEraTag(wikitext)
+  return eraTag === undefined ? {} : { eraTag }
+}
+
+/** One spell row from its page's fields; `wikitext`, when given, contributes the page's era banner. */
+export function parseSpell(title: string, fields: Record<string, string>, wikitext?: string): SpellEntry {
   const name = spellName(title, clean(fields.spellname)).name
   const durationText = clean(fields.duration)
   const castRaw = clean(fields.casting_time)
@@ -456,6 +403,8 @@ export function parseSpell(title: string, fields: Record<string, string>): Spell
 
   return {
     name,
+    // The page's `{{X Era}}` banner token, right after `name`; absent when the page states none.
+    ...pageEra(wikitext),
     durationText,
     durationMs: parseDurationMs(durationText),
     castTimeMs: Number.isFinite(castSec) ? Math.round(castSec * 1000) : undefined,
@@ -498,15 +447,26 @@ function previousScrapedAt(spells: readonly SpellEntry[]): string | undefined {
   }
 }
 
-/** PHASE 3: every page parsed from the cache, with each page that yielded nothing, or whose
- *  title overrode a different `|spellname`, named for the run log. */
+/** A page the wiki has marked for deletion is not a spell, whatever template it embeds
+ *  (51190 `Kurrat's Magician Epic Guide` carries a Spellpage for Summon Orb). */
+const DELETE_MARK = /\{\{\s*Delete\b/i
+
+/** PHASE 3: every page parsed from the cache, with each page that yielded nothing, is marked for
+ *  deletion, or whose title overrode a different `|spellname`, named for the run log. */
 function parseCachedPages(pages: WikiPage[]): {
   spells: SpellEntry[]
   missing: number[]
   noFields: string[]
+  deleted: string[]
   nameConflicts: string[]
 } {
-  const out = { spells: [] as SpellEntry[], missing: [] as number[], noFields: [] as string[], nameConflicts: [] as string[] }
+  const out = {
+    spells: [] as SpellEntry[],
+    missing: [] as number[],
+    noFields: [] as string[],
+    deleted: [] as string[],
+    nameConflicts: [] as string[]
+  }
   let done = 0
   for (const p of pages) {
     const file = cachePath(p.pageid)
@@ -515,8 +475,12 @@ function parseCachedPages(pages: WikiPage[]): {
       continue
     }
     const wikitext = readFileSync(file, 'utf8')
+    if (DELETE_MARK.test(wikitext)) {
+      out.deleted.push(`${p.pageid} ${p.title}`)
+      continue
+    }
     const fields = parseSpellpageFields(wikitext)
-    if (Object.keys(fields).length) out.spells.push(parseSpell(p.title, fields))
+    if (Object.keys(fields).length) out.spells.push(parseSpell(p.title, fields, wikitext))
     else if (wikitext.includes('{{Spellpage')) out.noFields.push(`${p.pageid} ${p.title}`)
     const stated = clean(fields.spellname)
     if (spellName(p.title, stated).disagrees) out.nameConflicts.push(`${p.pageid} '${p.title}' (spellname '${stated}')`)
@@ -525,14 +489,9 @@ function parseCachedPages(pages: WikiPage[]): {
   return out
 }
 
-async function main(): Promise<void> {
-  const t0 = Date.now()
-  console.log('Enumerating Template:Spellpage pages…')
-  const pages = await listSpellPages()
-  console.log(`Found ${pages.length} spell pages.`)
-
+/** PHASES 1 and 2: which cached pages the wiki has moved past, and their fresh text. */
+async function refreshCache(pages: WikiPage[], idx: CacheIndex): Promise<{ hits: number; stale: WikiPage[]; failures: number[] }> {
   // PHASE 1 — what has changed? One cheap `rvprop=ids` question per 50 pages.
-  const idx = readIndex()
   console.log(`Checking revisions (${Math.ceil(pages.length / BATCH)} batches of ${BATCH})…`)
   const live = await fetchRevIds(pages)
   const stale = pages.filter((p) => {
@@ -547,10 +506,59 @@ async function main(): Promise<void> {
 
   // PHASE 2 — fetch only those, 50 at a time, writing per batch so a kill is resumable.
   const failures = stale.length ? await fetchStaleContent(stale, idx) : []
+  return { hits, stale, failures }
+}
+
+/** The flag that lets a run write a catalog far smaller than the committed one. */
+const ALLOW_SHRINK = '--allow-shrink'
+
+/** How many spell pages the committed run knew: the index's titles, or the catalog's count. */
+function knownPageCount(idx: CacheIndex): number {
+  const titles = Object.keys(idx.titles ?? {}).length
+  try {
+    return Math.max(titles, (JSON.parse(readFileSync(OUT_PATH, 'utf8')) as Partial<SpellDbFile>).count ?? 0)
+  } catch {
+    return titles
+  }
+}
+
+/**
+ * Why an enumeration of `found` pages must not replace a catalog of `known`, or null when it may.
+ * Zero, or under half, is a failed or truncated listing, never a wiki that lost its spells.
+ */
+export function shrinkProblem(found: number, known: number): string | null {
+  if (found === 0) return 'the enumeration found 0 spell pages'
+  return found < known / 2 ? `the enumeration found ${found} spell pages, under half of the ${known} committed` : null
+}
+
+/** The page list: the index's titles offline, else the live enumeration; null when it is refused. */
+async function enumerate(offline: boolean, idx: CacheIndex): Promise<WikiPage[] | null> {
+  console.log(offline ? 'Reading the cache index (offline, no requests)…' : 'Enumerating Template:Spellpage pages…')
+  const pages = offline ? indexedPages(idx) : await listSpellPages()
+  console.log(`Found ${pages.length} spell pages.`)
+  const shrunk = offline ? null : shrinkProblem(pages.length, knownPageCount(idx))
+  if (!shrunk || process.argv.includes(ALLOW_SHRINK)) return pages
+  console.error(`Refusing to write ${OUT_PATH} or the index titles: ${shrunk}. ${ALLOW_SHRINK} overrides.`)
+  process.exitCode = 1
+  return null
+}
+
+async function main(): Promise<void> {
+  const t0 = Date.now()
+  // `--offline` re-parses the committed cache and sends the wiki nothing: the way to re-derive
+  // spells.json after a parser change (owner, 2026-10-10). It needs the titles a real run records.
+  const offline = process.argv.includes('--offline')
+  const idx = readIndex()
+  const pages = await enumerate(offline, idx)
+  if (!pages) return
+
+  const { hits, stale, failures } = offline
+    ? { hits: pages.length, stale: [] as WikiPage[], failures: [] as number[] }
+    : await refreshCache(pages, idx)
 
   // PHASE 3 — parse every page from the cache. The wiki is not consulted here at all, so the
   // committed JSON is a pure function of the committed cache: same cache ⇒ byte-identical file.
-  const { spells, missing, noFields, nameConflicts } = parseCachedPages(pages)
+  const { spells, missing, noFields, deleted, nameConflicts } = parseCachedPages(pages)
   // Titles beside revids, so a later re-parse has the name source offline too.
   idx.titles = Object.fromEntries(pages.map((p) => [String(p.pageid), p.title]))
   writeIndex(idx)
@@ -590,12 +598,13 @@ async function main(): Promise<void> {
       `instrument-flag: ${withInstrument}`
   )
   console.log(
-    `  requests: ${requests}  cache hits: ${hits}  fetched: ${stale.length - failures.length}  ` +
+    `  requests: ${wikiRequestCount()}  cache hits: ${hits}  fetched: ${stale.length - failures.length}  ` +
       `wall: ${((Date.now() - t0) / 1000).toFixed(1)}s`
   )
   if (failures.length) console.log(`  FETCH FAILURES (no revision returned): ${failures.join(', ')}`)
   if (missing.length) console.log(`  NOT IN CACHE (skipped): ${missing.join(', ')}`)
   if (noFields.length) console.log(`  SPELLPAGE WITH NO FIELDS READ (skipped): ${noFields.join('; ')}`)
+  if (deleted.length) console.log(`  MARKED {{Delete}} (skipped): ${deleted.join('; ')}`)
   for (const c of nameConflicts) console.log(`  title wins over a different |spellname: ${c}`)
 }
 

@@ -2,7 +2,7 @@
 // cache. Fixtures are trimmed copies of the pages named; nothing touches the network.
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { parseSpell, parseSpellpageFields, spellName } from '../scripts/scrape-spells'
+import { parseSpell, parseSpellpageFields, shrinkProblem, spellName } from '../scripts/scrape-spells'
 
 test('a doubled-pipe field is its own field, not the tail of the one before (50178 Harmshield)', () => {
   const wt = '{{Spellpage\n| spellname = Harmshield\n| msg_wears_off = Your invulnerability fades.\n|| where_to_obtain = Necromancer Spell Vendors\n}}'
@@ -40,6 +40,7 @@ test('the page title names the spell unless it differs from |spellname only by a
   assert.deepEqual(spellName('Greenmist (Spell)', 'Greenmist'), { name: 'Greenmist', disagrees: false })
   assert.deepEqual(spellName('Spell:Tears of Prexus', 'Tears of Prexus'), { name: 'Tears of Prexus', disagrees: false })
   assert.deepEqual(spellName('Effect: Flamesong', 'Flamesong'), { name: 'Flamesong', disagrees: false })
+  assert.deepEqual(spellName('Song: Melody of Ervaj', 'Song: Melody of Ervaj'), { name: 'Melody of Ervaj', disagrees: false })
   assert.deepEqual(spellName('Burst of FlameTest', 'Burst of Flame'), { name: 'Burst of Flame', disagrees: false })
   assert.deepEqual(spellName("Tigir's Insects", 'Tigir`s Insects'), { name: 'Tigir`s Insects', disagrees: false })
   assert.deepEqual(spellName('Skin like Diamond', 'Skin Like Diamond'), { name: 'Skin Like Diamond', disagrees: false })
@@ -51,4 +52,21 @@ test('casting_time = Instant reads as a zero cast time, not an absent one', () =
   assert.equal(parseSpell('Brass Resonance 14', f).castTimeMs, 0)
   const g = parseSpellpageFields('{{Spellpage\n| spellname = Healing\n| casting_time = 2.5\n| mana = 10\n}}')
   assert.equal(parseSpell('Healing', g).castTimeMs, 2500)
+})
+
+test('an enumeration of zero pages, or under half the committed catalog, is refused', () => {
+  assert.match(shrinkProblem(0, 0) ?? '', /0 spell pages/)
+  assert.match(shrinkProblem(900, 2035) ?? '', /under half of the 2035/)
+  assert.equal(shrinkProblem(1018, 2035), null)
+  assert.equal(shrinkProblem(2040, 2035), null)
+})
+
+test("the page's era banner is kept as eraTag right after name, and absent when the page states none (Sloths Healing)", () => {
+  const body = '{{Spellpagesmart|\n| spellname = Sloths Healing\n| classes =\n* [[Shaman]] - Level 50+\n| mana = 200\n}}'
+  const kunark = `{{Kunark Era}}\n${body}`
+  const sloth = parseSpell('Sloths Healing', parseSpellpageFields(kunark), kunark)
+  assert.equal(sloth.eraTag, 'Kunark')
+  assert.deepEqual(Object.keys(sloth).slice(0, 2), ['name', 'eraTag'])
+  assert.equal('eraTag' in parseSpell('Sloths Healing', parseSpellpageFields(body), body), false)
+  assert.equal('eraTag' in parseSpell('Sloths Healing', parseSpellpageFields(kunark)), false)
 })

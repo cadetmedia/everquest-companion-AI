@@ -26,71 +26,26 @@
  *  4. Writes src/renderer/src/data/eqlegends/quests.json, sorted by page title
  *     (deterministic), consumed by src/main/itemLookup.ts as a local-first source.
  *
- * Scraper etiquette (AGENTS.md LAW): one serialized request at a time with a 1s delay
- * (owner ruling 2026-08-22 — fan-run servers; bulk API batching does the heavy lifting),
- * exponential backoff honouring Retry-After on 429/5xx, disk cache so a re-run is nearly
+ * Scraper etiquette (AGENTS.md LAW): every request goes through sources/wikiApi.ts — one
+ * serialized request at a time, a second apart (owner ruling 2026-08-22 — fan-run servers; bulk
+ * API batching does the heavy lifting), maxlag=5, exponential backoff honouring Retry-After on
+ * 429/5xx, an error body thrown rather than read as empty — disk cache so a re-run is nearly
  * free, and partial runs resume instead of duplicating work.
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
 import { dirname, resolve } from 'path'
 import { fileURLToPath } from 'url'
 import { isMain } from './sources/isMain'
+import { createCache } from './sources/diskCache'
 import { isEmptyParse, parseQuestPage, titleKey, type ParsedQuestPage } from './sources/questPage'
 import type { QuestData, QuestEntry } from '../src/shared/types'
-
-const API = 'https://eqlwiki.com/api.php'
-const UA = 'everquest-companion/0.1 (personal quest tracker)'
+import { WikiError, wikiGet } from './sources/wikiApi'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const CACHE_DIR = resolve(HERE, 'sources/cache/quests')
 const OUT_PATH = resolve(HERE, '../src/renderer/src/data/eqlegends/quests.json')
 
-const DELAY_MS = 1000
-const MAX_RETRIES = 5
-
-const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms))
-
 const refresh = process.argv.slice(2).includes('--refresh')
-
-// ---- polite API client ---------------------------------------------------------
-
-/** Wait before a retry: the server's Retry-After when it gave a usable one, else our backoff. */
-function retryDelayMs(res: Response, backoff: number): number {
-  const retryAfter = Number(res.headers.get('retry-after'))
-  return Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : backoff
-}
-
-/** Which request failed, for the thrown message — whichever identifying param it carried. */
-function describeRequest(params: Record<string, string>): string {
-  return `${params.action} ${params.cmtitle ?? params.eititle ?? params.pageid ?? params.pageids?.split('|')[0] ?? ''}`
-}
-
-/** One serialized GET with exponential backoff on 429/5xx (honours Retry-After). */
-async function api<T>(params: Record<string, string>): Promise<T> {
-  const url = `${API}?${new URLSearchParams({ format: 'json', formatversion: '2', ...params }).toString()}`
-  let wait = 1000
-  for (let attempt = 0; ; attempt++) {
-    let res: Response
-    try {
-      res = await fetch(url, { headers: { 'User-Agent': UA } })
-    } catch (err) {
-      if (attempt >= MAX_RETRIES) throw err
-      await sleep(wait)
-      wait *= 2
-      continue
-    }
-    if (res.ok) {
-      await sleep(DELAY_MS)
-      return (await res.json()) as T
-    }
-    if ((res.status === 429 || res.status >= 500) && attempt < MAX_RETRIES) {
-      await sleep(retryDelayMs(res, wait))
-      wait *= 2
-      continue
-    }
-    throw new Error(`${res.status} ${res.statusText} for ${describeRequest(params)}`)
-  }
-}
 
 interface Member {
   pageid: number
@@ -117,7 +72,7 @@ async function categoryMembers(title: string): Promise<Member[]> {
       cmlimit: '500'
     }
     if (cont) params.cmcontinue = cont
-    const j = await api<{
+    const j = await wikiGet<{
       query?: { categorymembers?: Member[] }
       error?: { code?: string; info?: string }
       continue?: { cmcontinue?: string }
@@ -136,7 +91,7 @@ async function allCategories(): Promise<string[]> {
   for (let page = 0; page < 100; page++) {
     const params: Record<string, string> = { action: 'query', list: 'allcategories', aclimit: '500' }
     if (cont) params.accontinue = cont
-    const j = await api<{
+    const j = await wikiGet<{
       query?: { allcategories?: { category: string }[] }
       error?: { code?: string; info?: string }
       continue?: { accontinue?: string }
@@ -148,40 +103,29 @@ async function allCategories(): Promise<string[]> {
   return out
 }
 
-// ---- disk cache ----------------------------------------------------------------
+// ---- disk cache: sources/diskCache.ts ------------------------------------------
 
-function cachePath(name: string): string {
-  return resolve(CACHE_DIR, name)
-}
-
-/** Cached JSON, or null when absent/unreadable/`--refresh`. The CALLER names the shape. */
-function readCache(name: string): unknown {
-  if (refresh) return null
-  const p = cachePath(name)
-  if (!existsSync(p)) return null
-  try {
-    return JSON.parse(readFileSync(p, 'utf8')) as unknown
-  } catch {
-    return null
-  }
-}
-
-function writeCache(name: string, data: unknown): void {
-  mkdirSync(CACHE_DIR, { recursive: true })
-  writeFileSync(cachePath(name), JSON.stringify(data), 'utf8')
-}
+const { path: cachePath, read: readCache, write: writeCache } = createCache(CACHE_DIR, { refresh })
 
 const pageFile = (pageid: number): string => cachePath(`page-${pageid}.wikitext`)
 
-/** Wikitext via action=parse, which follows a redirect (the batch read does not). */
+/**
+ * Wikitext via action=parse, which follows a redirect (the batch read does not). An API error body
+ * (a redirect to a missing page) is null, so the run lists the page as failed and writes nothing.
+ */
 async function fetchParsed(pageid: number): Promise<string | null> {
-  const j = await api<{ parse?: { wikitext?: string }; error?: { code?: string } }>({
-    action: 'parse',
-    pageid: String(pageid),
-    prop: 'wikitext',
-    redirects: '1'
-  })
-  return j.error ? null : (j.parse?.wikitext ?? null)
+  try {
+    const j = await wikiGet<{ parse?: { wikitext?: string } }>({
+      action: 'parse',
+      pageid: String(pageid),
+      prop: 'wikitext',
+      redirects: '1'
+    })
+    return j.parse?.wikitext ?? null
+  } catch (err) {
+    if (err instanceof WikiError && err.code !== undefined) return null
+    throw err
+  }
 }
 
 // ---- revision-keyed page cache --------------------------------------------------
@@ -218,7 +162,7 @@ async function revisionBatch(pages: Member[], rvprop: string): Promise<RevPage[]
   const params: Record<string, string> = { action: 'query', prop: 'revisions', rvprop }
   if (rvprop.includes('content')) params.rvslots = 'main'
   params.pageids = pages.map((p) => p.pageid).join('|')
-  return queryBlock(await api<RevResponse>(params), `revisions of ${pages[0]?.title}`).pages ?? []
+  return queryBlock(await wikiGet<RevResponse>(params), `revisions of ${pages[0]?.title}`).pages ?? []
 }
 
 /** Current revid per pageid, 50 pages per request. */
