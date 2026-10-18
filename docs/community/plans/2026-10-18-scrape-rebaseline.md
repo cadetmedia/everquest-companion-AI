@@ -75,9 +75,11 @@ duplication clean-up, Gaps work, Timers Clear all, size-limit headroom, and the 
   Every loss was checked against the old and new page text: renames, redirects and editors' edits,
   except Sulgar (page blanked 2026-09-26; owner: trust the wiki, he may restore it there).
 - bosses.json kept as committed: the P99 wiki failed every portrait request (each target ~35 s of
-  retries, then eqlwiki at 900px; Protector of Sky got a blank `Item_.png`, Sister of the Spire a
-  placeholder). Tonight's eqlwiki file is kept at `.claude/worktrees/bosses-eqlwiki-2026-10-18.json`
-  for the owner to decide on (it adds Phinigel Autropos and Master of Spite portraits).
+  retries of its `action=parse` API, then eqlwiki at 900px; P99 still served the image files
+  themselves). Looked at, not guessed: Protector of Sky got a blank 40x40 `Item_.png`; Sister of the
+  Spire a real full-body screenshot; Master of Spite (none before) a real screenshot; Phinigel
+  Autropos (none before) a MAP of Kedge Keep, not a portrait. Tonight's eqlwiki file is kept at
+  `.claude/worktrees/bosses-eqlwiki-2026-10-18.json` for the owner to decide on.
 - The scrapers' and the delta's User-Agent now name the fork (github.com/kaltinril/everquest-companion).
 - Owner dropped the planned revision-tracked caches: "after this run we only need to hit the changes
   endpoint". The wiki keeps ~90 days of changes, so the next delta must run before ~2027-01-16.
