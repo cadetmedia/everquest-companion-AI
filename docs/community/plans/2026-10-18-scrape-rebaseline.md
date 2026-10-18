@@ -116,3 +116,10 @@ Requirement row: `requirements/scrape-delta-tool.md` 2026-10-18. Not started.
 - Wiki fixes for the owner to make: restore Sulgar (blanked 2026-09-26,
   https://eqlwiki.com/index.php?title=Sulgar&action=history); `Clockwork Merchant (LG-16)` has
   `|name = Clockwork Merchant (1105, -1030)`, should be `|name = Clockwork Merchant` like its 37 siblings.
+- Shadow Knight page (rev 198084, 2026-10-15, Mazirian) dropped its footnoted Harm Touch skill row;
+  Harm Touch is a 10-rank AA now. The app still knows it (abilities, AA table); only the Leveling
+  tab's "New at this level" loses "Harm Touch @1". Follow-up offered, not started: read each AA's
+  "Requirements: Level 1/6/11..." so AAs appear at their levels.
+- Follow-ups asked, not started: a table-driven item test (catch_all requirement row); the delta
+  covering every file (above). Owner, 2026-10-18: no release until the owner validates; perhaps
+  slowly break away from the creator's repo (no action without direction).
