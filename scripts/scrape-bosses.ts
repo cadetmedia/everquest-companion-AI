@@ -124,11 +124,13 @@ async function p99Image(page: string): Promise<string | undefined> {
   return pick.startsWith('http') ? pick : P99 + pick
 }
 
-/** EQ Legends wiki fallback: first non-loot-icon image. */
+/** EQ Legends wiki fallback: the "Npc_*" portrait when the page has one, as on P99 (Phinigel
+ *  Autropos's page shows a Kedge Keep map first), else the first non-loot-icon image. */
 async function eqlImage(page: string): Promise<string | undefined> {
   const html = await pageHtml(EQL, page)
   if (!html) return undefined
-  const pick = imgSrcs(html).find((s) => !/Item_\d+/i.test(s))
+  const srcs = imgSrcs(html)
+  const pick = srcs.find((s) => /Npc_/i.test(s)) ?? srcs.find((s) => !/Item_\d+/i.test(s))
   if (!pick) return undefined
   return pick.startsWith('http') ? pick : EQL + pick
 }
