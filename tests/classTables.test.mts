@@ -236,7 +236,7 @@ test('the per-class counts reproduce the design measurement, per spell entry', (
   //     nothing.)
   // The run's renames (names now come from page titles) re-label rows this table already counted.
   const expected: Record<string, [number, number]> = {
-    BRD: [90, 90], BST: [77, 27], CLR: [207, 82], DRU: [268, 152],
+    BRD: [89, 89], BST: [77, 27], CLR: [207, 82], DRU: [268, 152],
     ENC: [238, 184], MAG: [200, 160], NEC: [192, 86], PAL: [91, 17],
     RNG: [92, 20], SHD: [91, 23], SHM: [210, 102], WIZ: [234, 193]
   }
@@ -292,7 +292,8 @@ test('the SHIPPED index is keyed by canon key, so rank variants collapse', () =>
   // and the log already had them. The page preference of the same day drops six ROWS but no KEY:
   // each of the six names keeps its Legends page.
   // 1410 -> 1419 (2026-10-10): the delta run's catalog, named by page title (2,006 -> 2,013 rows).
-  assert.equal(spellClassIndex().size, 1419)
+  // 1419 -> 1418 (2026-10-18): the full re-scrape; Magical Monologue (a BRD song page) is marked {{Delete}}.
+  assert.equal(spellClassIndex().size, 1418)
   assert.equal(CANON.get('ENC')?.excl, 178)
   assert.equal(RAW.get('ENC')?.excl, 184)
   assert.deepEqual(classesForSpell('Clarity II'), classesForSpell('Clarity'))

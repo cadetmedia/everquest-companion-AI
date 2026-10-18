@@ -244,7 +244,7 @@ test('the corpus is the one the header measured', () => {
   // beneficial, 2,066 -> 2,076 lines): the header's own numbers did not move - 702 of 727
   // shape-matches still read, and the unread-noun list below is unchanged. The ten new lines all
   // fall outside the stat shape.
-  assert.equal(SPELLS.length, 2013)
+  assert.equal(SPELLS.length, 2012)
   assert.equal(BENEFICIAL.length, 1083)
   assert.equal(BENEFICIAL_LINES.length, 2075)
 })

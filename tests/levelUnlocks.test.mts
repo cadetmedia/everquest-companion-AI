@@ -33,6 +33,7 @@ import {
 import { spellMetricsParts } from '../src/shared/spellMetrics'
 import type { SpellResistTable } from '../src/shared/resistTypes'
 import { buildLevelUnlocks, dedupeByName, type NamedRow } from '../src/main/data/levelUnlocks'
+import classes from '../src/main/data/classes.json'
 
 // ---- fixtures ---------------------------------------------------------------------------
 
@@ -306,7 +307,10 @@ test('the innates the structure derived are placed: PAL Lay on Hands @1, SHD Har
   const u = unlocksAtLevel(REAL, pal, 1)
   const innates = u.skills.filter((r) => r.kind === 'innate').map((r) => r.name)
   assert.ok(innates.includes('Lay on Hands'), innates.join(', '))
-  assert.ok(innates.includes('Harm Touch'), innates.join(', '))
+  // The Shadow Knight page dropped its footnoted Harm Touch skill row on 2026-10-15 (rev 198084; a
+  // ranked ability in the AA table now): it is placed exactly while the committed class data lists it.
+  const shdLists = classes.skillUnlocks.SHD.some((r: { name: string; kind: string }) => r.name === 'Harm Touch' && r.kind === 'innate')
+  assert.equal(innates.includes('Harm Touch'), shdLists, innates.join(', '))
 })
 
 /** Rows a player has confirmed in EQ Legends — `CONFIRMED_UNLOCKS` in src/main/data/levelUnlocks.ts. */
