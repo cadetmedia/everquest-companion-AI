@@ -193,9 +193,17 @@ export function templateField(wikitext: string, field: string): string | null {
   return m ? m[1].trim() : null
 }
 
-/** Parse the `* [[Page|Label]]` / `* [[Page]]` bullet links out of a relatedquests block. */
-export function parseQuestLinks(block: string): ItemQuestUse[] {
-  const uses: ItemQuestUse[] = []
+/**
+ * Every `[[Page|Label]]` / `[[Page]]` link in a bullet block, in page order, as `{ quest: label,
+ * page }` and de-duplicated by label. A link with an empty label is skipped, and so is any label
+ * `skip` rejects. The one walker behind `parseQuestLinks` below (an item's `|relatedquests`) and
+ * mobLookupParse.ts's `parseMobQuestLinks` (a mob's `|related_quests`, which skips `None`).
+ */
+export function questLinks(
+  block: string,
+  skip: (label: string) => boolean = () => false
+): { quest: string; page: string }[] {
+  const uses: { quest: string; page: string }[] = []
   const linkRe = /\[\[([^\]]+?)\]\]/g
   let m: RegExpExecArray | null
   while ((m = linkRe.exec(block)) !== null) {
@@ -203,10 +211,15 @@ export function parseQuestLinks(block: string): ItemQuestUse[] {
     const pipe = inner.indexOf('|')
     const page = (pipe >= 0 ? inner.slice(0, pipe) : inner).trim()
     const label = (pipe >= 0 ? inner.slice(pipe + 1) : inner).trim()
-    if (!label) continue
-    if (!uses.some((u) => u.quest === label)) uses.push({ quest: label, page, source: 'wiki' })
+    if (!label || skip(label)) continue
+    if (!uses.some((u) => u.quest === label)) uses.push({ quest: label, page })
   }
   return uses
+}
+
+/** Parse the `* [[Page|Label]]` / `* [[Page]]` bullet links out of a relatedquests block. */
+export function parseQuestLinks(block: string): ItemQuestUse[] {
+  return questLinks(block).map((u): ItemQuestUse => ({ ...u, source: 'wiki' }))
 }
 
 // ---- tradeskill fields (`|recipes` / `|playercrafted`) -------------------------

@@ -43,7 +43,7 @@
 // that as drops would claim a vendor's stock is loot, so nothing here looks at it — a merchant
 // simply comes back with no `dropsWiki`.
 
-import { templateField } from './itemLookupParse'
+import { questLinks, templateField } from './itemLookupParse'
 import type { MobDrop, MobLoc, MobQuestUse, MobSeenDrop } from '../shared/types'
 import { mobKey } from '../shared/mobKey'
 
@@ -117,18 +117,7 @@ export function parseMobLoot(block: string): MobDrop[] {
 
 /** `* [[Quest Page]]` bullets from `|related_quests`. The literal `* None` yields nothing. */
 export function parseMobQuestLinks(block: string): MobQuestUse[] {
-  const uses: MobQuestUse[] = []
-  const re = /\[\[([^\]]+?)\]\]/g
-  let m: RegExpExecArray | null
-  while ((m = re.exec(block)) !== null) {
-    const inner = m[1].trim()
-    const pipe = inner.indexOf('|')
-    const page = (pipe >= 0 ? inner.slice(0, pipe) : inner).trim()
-    const label = (pipe >= 0 ? inner.slice(pipe + 1) : inner).trim()
-    if (!label || /^none$/i.test(label)) continue
-    if (!uses.some((u) => u.quest === label)) uses.push({ quest: label, page })
-  }
-  return uses
+  return questLinks(block, (label) => /^none$/i.test(label))
 }
 
 /**
