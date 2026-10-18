@@ -8,7 +8,7 @@
 // rows in shared/gaps.ts; "Copy list" puts the visible rows on the clipboard as tab-separated text.
 
 import { type JSX, useCallback, useDeferredValue, useMemo, useState } from 'react'
-import { Button, Checkbox, CircularProgress, FormControlLabel, Stack, TextField, ToggleButton, ToggleButtonGroup, Tooltip, Typography } from '@mui/material'
+import { Button, Checkbox, CircularProgress, FormControlLabel, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import {
   DEFAULT_GAP_SORT,
@@ -27,6 +27,8 @@ import {
 } from '@shared/gaps'
 import type { CharacterSnap } from '@shared/types'
 import { useModule } from '../../lib/useModule'
+import { Tooltip } from '../../lib/Tooltip'
+import { useBoolPref } from '../combat/useCombatPrefs'
 import { copyText } from '../../lib/clipboard'
 import { useGapVerdicts } from '../../lib/gapVerdicts'
 import GapsTable from './GapsTable'
@@ -36,22 +38,6 @@ const EXPLANATION = 'Differences between what your log names and what the wiki d
 
 /** Where the "Zone I'm in" choice is remembered, per viewer, as the Achievements tab remembers its own. */
 const ZONE_HERE_KEY = 'eq.gaps.zoneHere'
-
-function loadZoneHere(): boolean {
-  try {
-    return localStorage.getItem(ZONE_HERE_KEY) === '1'
-  } catch {
-    return false
-  }
-}
-
-function saveZoneHere(on: boolean): void {
-  try {
-    localStorage.setItem(ZONE_HERE_KEY, on ? '1' : '0')
-  } catch {
-    // A blocked store only forgets the choice.
-  }
-}
 
 /** "Zone I'm in (<zone>)", the Achievements tab's control: only the rows seen in that place, any tier. */
 function ZoneHere({ zone, checked, onChange }: { zone: string | null; checked: boolean; onChange: (on: boolean) => void }): JSX.Element {
@@ -127,7 +113,7 @@ export default function GapsView(): JSX.Element {
   const [copied, setCopied] = useState<number | null>(null)
   // "Zone I'm in" (owner ask, 2026-10-17): only what was named where you stand, every tier of it,
   // so a zone can be worked through. With no zone known it filters nothing.
-  const [hereOnly, setHereOnly] = useState(loadZoneHere)
+  const [hereOnly, setHereOnly] = useBoolPref(ZONE_HERE_KEY, false)
   const current = useModule<CharacterSnap>('character')?.zone ?? null
   const zone = hereOnly ? current : null
   const rows = snap?.rows
@@ -176,7 +162,6 @@ export default function GapsView(): JSX.Element {
           checked={hereOnly}
           onChange={(on) => {
             setHereOnly(on)
-            saveZoneHere(on)
             setCopied(null)
           }}
         />

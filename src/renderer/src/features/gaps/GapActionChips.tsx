@@ -2,7 +2,8 @@
 // each with a tooltip saying why; a chip with somewhere to go is a link that opens in the browser.
 
 import type { JSX, MouseEvent } from 'react'
-import { Chip, Stack, Tooltip } from '@mui/material'
+import { Chip, Stack } from '@mui/material'
+import { Tooltip } from '../../lib/Tooltip'
 import { gapActions, type GapAction, type GapRow, type GapVerdict } from '@shared/gaps'
 
 function ActionChip({ a }: { a: GapAction }): JSX.Element {
