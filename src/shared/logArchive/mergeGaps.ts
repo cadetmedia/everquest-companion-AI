@@ -30,10 +30,19 @@ interface Row {
   details: Details
 }
 
+/** A kill and a faction its lines moved (gaps_trade.rs), how often, and the zone last seen in. */
+interface KillFaction {
+  mob: string
+  faction: string
+  n: number
+  zone: string
+}
+
 interface Snap {
   rows: Row[]
   totals: Record<string, number>
   seen: Record<string, number>
+  killFactions?: KillFaction[]
 }
 
 /** The fold's own caps (gaps.rs `CAP_PER_DOMAIN`, gaps_details.rs `LIST_CAP` and `SAMPLES`). */
@@ -139,6 +148,17 @@ function perDomain(older: Snap, newer: Snap, counted: Map<string, number>): Pick
   return { totals, seen }
 }
 
+/** Both sides' kill-faction pairs, one per case-folded (mob, faction), counts added, the newer zone kept. */
+function mergeKillFactions(older: Snap, newer: Snap): KillFaction[] {
+  const out = new Map<string, KillFaction>()
+  for (const p of [...(older.killFactions ?? []), ...(newer.killFactions ?? [])]) {
+    const k = `${p.mob.toLowerCase()}|${p.faction.toLowerCase()}`
+    const had = out.get(k)
+    out.set(k, had === undefined ? { ...p } : { ...had, n: had.n + p.n, zone: p.zone || had.zone })
+  }
+  return [...out.values()]
+}
+
 /** `older` then `newer`, a row on both sides added together; null when either is not a gaps state. */
 export function mergeGaps(older: unknown, newer: unknown): Snap | null {
   if (!isSnap(older) || !isSnap(newer)) return null
@@ -149,5 +169,5 @@ export function mergeGaps(older: unknown, newer: unknown): Snap | null {
     out.set(k, had === undefined ? { ...r } : mergeRow(had, r))
   }
   const { rows, counted } = served(out.values())
-  return { rows, ...perDomain(older, newer, counted) }
+  return { rows, ...perDomain(older, newer, counted), killFactions: mergeKillFactions(older, newer) }
 }
