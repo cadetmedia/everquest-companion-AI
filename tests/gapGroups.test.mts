@@ -49,3 +49,9 @@ test('mobs sit under the zones they were seen in; ungrouped is the rows as they 
   const keys = groupGaps(rows, []).map((e) => e.key)
   assert.equal(new Set(keys).size, keys.length, 'every entry has its own key')
 })
+
+test('a row under a mob sits one level deeper than a row directly under its zone', () => {
+  const loot: LootEvent[] = [{ ts: 1, item: 'Spider Fang', source: 'a jungle spider', zone: 'The Feerrott' }]
+  const entries = groupGaps([row('item', 'Spider Fang'), row('item', 'Bought Thing', ['The Feerrott'])], loot)
+  assert.deepEqual(entries.map((e) => (e.kind === 'row' ? `${e.row.name}:${String(e.depth)}` : e.kind)), ['zone', 'Bought Thing:1', 'mob', 'Spider Fang:2'])
+})

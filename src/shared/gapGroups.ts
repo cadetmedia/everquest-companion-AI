@@ -15,7 +15,8 @@ export const ZONE_NOT_SEEN = 'Zone not seen'
 export type GapEntry =
   | { kind: 'zone'; key: string; zone: string; n: number }
   | { kind: 'mob'; key: string; mob: string; n: number }
-  | { kind: 'row'; key: string; row: GapRow }
+  /** `depth` in the grouped list: 1 under a zone, 2 under a mob; absent ungrouped. */
+  | { kind: 'row'; key: string; row: GapRow; depth?: 1 | 2 }
 
 /** The flat list, as the table shows it ungrouped. */
 export function rowEntries(rows: readonly GapRow[]): GapEntry[] {
@@ -85,7 +86,8 @@ export function groupGaps(rows: readonly GapRow[], loot: readonly LootEvent[]): 
     out.push({ kind: 'zone', key: `zone|${z.zone}`, zone: z.zone, n })
     for (const m of mobs) {
       if (m.mob !== '') out.push({ kind: 'mob', key: `mob|${z.zone}|${m.mob}`, mob: m.mob, n: m.rows.length })
-      for (const row of m.rows) out.push({ kind: 'row', key: `row|${z.zone}|${m.mob}|${row.name}`, row })
+      const depth = m.mob === '' ? 1 : 2
+      for (const row of m.rows) out.push({ kind: 'row', key: `row|${z.zone}|${m.mob}|${row.name}`, row, depth })
     }
   }
   return out
