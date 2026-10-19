@@ -16,7 +16,7 @@
 import { CURRENT_ERA } from './planner/era'
 import type { KillMap } from './kills'
 import { killsFor } from './kills'
-import { derivedPrices, factionMob, factionOf, npcOnlySpell, type GapRow } from './gaps'
+import { derivedPrices, factionMob, factionOf, npcOnlySpell, type GapDomain, type GapRow } from './gaps'
 import type { LootEvent } from './types'
 
 // ---- the parts ---------------------------------------------------------------------------------
@@ -303,18 +303,29 @@ export function merchantPage(f: Pick<MobFacts, 'name' | 'zones' | 'levels' | 'po
 /** The page for one Gaps row; a faction row gives the bullet its mob's `|factions` takes. `kills`
  *  must be a `killIndex` result. */
 export function wikiPageText(row: GapRow, loot: readonly LootEvent[], kills: KillMap, seen: MobSightings = {}): string {
-  if (row.domain === 'item') return itemPage(itemFacts(row, loot))
-  if (row.domain === 'mob') return mobPage(mobFacts(row, loot, kills, seen))
-  if (row.domain === 'merchant') return merchantPage(mobFacts(row, [], kills, seen))
-  if (row.domain === 'spell') return spellPage({ name: row.name, npcOnly: npcOnlySpell(row) })
-  return mobPageLine(row, kills)
+  return PAGE_OF[row.domain](row, { loot, kills, seen })
 }
 
-/** A faction, image or drop row: the one line its mob's page lacks. */
-function mobPageLine(row: GapRow, kills: KillMap): string {
-  if (row.domain === 'faction') return `* ${wikiLink(factionOf(row))}\n`
-  if (row.domain === 'image') return `| ${'imagefilename'.padEnd(17)} = ${row.image ?? ''}\n`
+interface PageContext {
+  loot: readonly LootEvent[]
+  kills: KillMap
+  seen: MobSightings
+}
+
+/**
+ * Each domain's page, or the one line a mob's page lacks (a faction, image or drop row). A table,
+ * so a new domain is one entry, and a domain without one does not compile.
+ */
+const PAGE_OF: Record<GapDomain, (row: GapRow, c: PageContext) => string> = {
+  item: (row, c) => itemPage(itemFacts(row, c.loot)),
+  mob: (row, c) => mobPage(mobFacts(row, c.loot, c.kills, c.seen)),
+  merchant: (row, c) => merchantPage(mobFacts(row, [], c.kills, c.seen)),
+  spell: (row) => spellPage({ name: row.name, npcOnly: npcOnlySpell(row) }),
+  faction: (row) => `* ${wikiLink(factionOf(row))}\n`,
+  image: (row) => `| ${'imagefilename'.padEnd(17)} = ${row.image ?? ''}\n`,
   // A drop: its group's link (`<li> [[Rusty Weapons]] </li>`), else the item with the rate seen.
-  if (row.details.drops) return `<li> ${wikiLink(factionOf(row))} </li>\n`
-  return `${lootLine(factionOf(row), row.count, killsFor(kills, factionMob(row))?.count ?? 0)}\n`
+  drop: (row, c) =>
+    row.details.drops
+      ? `<li> ${wikiLink(factionOf(row))} </li>\n`
+      : `${lootLine(factionOf(row), row.count, killsFor(c.kills, factionMob(row))?.count ?? 0)}\n`
 }
