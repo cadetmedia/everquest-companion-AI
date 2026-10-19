@@ -1,5 +1,5 @@
 {
-  "scrapedAt": "2026-10-19T00:24:46.283Z",
+  "scrapedAt": "2026-10-19T04:40:07.422Z",
   "source": "eqlwiki.com — Category:NPCs/Named Mobs/Merchants/Raid Encounters ∪ embeddedin Template:Namedmobpage/MerchantPage, filtered to pages opening a mob template + recentchanges delta (scripts/scrape-delta.mts)",
   "mobs": [
     {
@@ -130467,6 +130467,21 @@
       ]
     },
     {
+      "page": "Kizrak the Tyrant",
+      "eraTag": "Classic",
+      "name": "Kizrak the Tyrant",
+      "level": "61",
+      "zones": [
+        "Oggok"
+      ],
+      "loc": [
+        {
+          "ns": 598,
+          "ew": -10
+        }
+      ]
+    },
+    {
       "page": "Kizya D`Dbth",
       "eraTag": "Classic",
       "name": "Kizya D`Dbth",
@@ -175594,6 +175609,22 @@
         {
           "ns": 296,
           "ew": 339
+        }
+      ]
+    },
+    {
+      "page": "Soulbinder Trurg",
+      "eraTag": "Classic",
+      "name": "Soulbinder Trurg",
+      "level": "1",
+      "zones": [
+        "Oggok"
+      ],
+      "loc": [
+        {
+          "ns": 500,
+          "ew": 655,
+          "pct": 100
         }
       ]
     },
