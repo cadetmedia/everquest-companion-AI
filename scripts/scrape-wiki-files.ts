@@ -89,7 +89,7 @@ async function main(): Promise<void> {
   }
   if (whole || fresh.length > 0) {
     mkdirSync(dirname(CACHE), { recursive: true })
-    writeFileSync(CACHE, JSON.stringify([...files].sort(), null, 0) + '\n')
+    writeFileSync(CACHE, JSON.stringify([...files].sort(), null, 1) + '\n')
   }
   const data = JSON.parse(readFileSync(MOBS, 'utf8')) as { mobs: { image?: string; noImage?: true }[] }
   const without = markNoImage(data.mobs, files)
