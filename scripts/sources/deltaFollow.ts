@@ -1,9 +1,10 @@
 // deltaFollow.ts — after the folds, every other wiki-derived file the change feed reaches, brought
 // up to date by the tool that already owns it: offline from the caches where they hold the text
 // (respawns, mob factions and races, the engine's spell overlay, the byte ledger), revid-checked or
-// re-asked for the changed pages only where they do not (classes, era verdicts), in full only for
-// Plane of Sky (one page plus its reward pages), and bundled images whose File: page changed are
-// fetched again. Boss portraits are hand-picked across two wikis: a changed boss page is named.
+// re-asked for the changed pages only where they do not (classes, era verdicts, drop groups, the
+// wiki's file list), and bundled images whose File: page changed are fetched again. Plane of Sky
+// and bosses read rendered pages through the render cache, which revid-checks them every run, and
+// render all again when a template changed (owner, 2026-10-18: every wiki text cached the same way).
 
 import { spawnSync } from 'child_process'
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs'
@@ -22,12 +23,15 @@ const POSKY = 'src/renderer/src/data/eqlegends/posky.json'
 const IMAGES = 'resources/wiki-images'
 /** The drop-group pages scrape-drop-groups.ts read: the Gaps tab's missing-drop check. */
 const DROP_GROUP_PAGES = 'scripts/sources/cache/drop-groups/pages.json'
+const DROP_GROUPS = 'src/renderer/src/data/eqlegends/dropGroups.json'
 
 /** The closing report's files this stage keeps current (refreshed, or nothing behind them changed). */
 export const FOLLOWED = [
   RESPAWNS,
   'src/main/data/classes.json',
   POSKY,
+  BOSSES,
+  DROP_GROUPS,
   'src/main/data/pageEra.json',
   'src/renderer/src/data/eqlegends/mobRaces.json',
   'src/renderer/src/data/eqlegends/mobFactions.json'
@@ -39,6 +43,13 @@ export interface Changed {
   items: boolean
   mobs: boolean
   spells: boolean
+}
+
+/** What the other namespaces' feeds said: a template changed (renderings move), the File: titles that changed. */
+export interface WikiFeeds {
+  templates: boolean
+  /** a JSON file of the changed File: titles, or null when none changed */
+  files: string | null
 }
 
 /** One file and the script, run from the repo root, that brings it up to date. */
@@ -54,14 +65,8 @@ export interface FollowUp {
 const readJson = (root: string, file: string, absent: unknown = null): unknown =>
   existsSync(join(root, file)) ? JSON.parse(readFileSync(join(root, file), 'utf8')) : absent
 
-/** The pages posky.json is built from: the Plane of Sky page and every reward and item page. */
-function poskyPages(root: string): string[] {
-  const { quests } = readJson(root, POSKY, { quests: [] }) as { quests: { rewardPage?: string; items?: { page?: string }[] }[] }
-  return ['Plane of Sky', ...quests.flatMap((q) => [q.rewardPage ?? '', ...(q.items ?? []).map((i) => i.page ?? '')])]
-}
-
 /** The scripts a run's changes call for, in the order they run. `fresh` lists the changed titles. */
-export function followUps(root: string, c: Changed, fresh: string): FollowUp[] {
+export function followUps(root: string, c: Changed, fresh: string, wiki: WikiFeeds = { templates: false, files: null }): FollowUp[] {
   const touched = (pages: Iterable<string>): boolean => [...pages].some((t) => c.titles.has(t))
   const out: FollowUp[] = []
   if (c.mobs) {
@@ -69,10 +74,14 @@ export function followUps(root: string, c: Changed, fresh: string): FollowUp[] {
     out.push({ file: 'src/renderer/src/data/eqlegends/mobRaces.json', script: 'scripts/gen-mob-races.mts' })
   }
   if (touched(CLASS_PAGES)) out.push({ file: 'src/main/data/classes.json', script: 'scripts/scrape-classes.ts' })
-  if (touched(poskyPages(root))) out.push({ file: POSKY, script: 'scripts/scrape-posky.ts' })
-  // A mob page can name a new group; a group page can change its members. Six requests, all of them.
+  // A mob page's image is re-read with it, so the noImage marks are redone after every fold.
+  out.push({ file: 'scripts/sources/cache/files/files.json', script: 'scripts/scrape-wiki-files.ts', args: wiki.files ? ['--fresh', wiki.files] : ['--offline'] })
+  const rendered = wiki.templates ? ['--refresh'] : []
+  out.push({ file: POSKY, script: 'scripts/scrape-posky.ts', args: rendered })
+  out.push({ file: BOSSES, script: 'scripts/scrape-bosses.ts', args: rendered })
+  // A mob page can name a new group (fetched as the cache lacks it); a group page can change its members.
   const groupPages = (readJson(root, DROP_GROUP_PAGES, []) as { title: string }[]).map((p) => p.title)
-  if (c.mobs || touched(groupPages)) out.push({ file: 'src/renderer/src/data/eqlegends/dropGroups.json', script: 'scripts/scrape-drop-groups.ts' })
+  if (c.mobs || touched(groupPages)) out.push({ file: DROP_GROUPS, script: 'scripts/scrape-drop-groups.ts', args: ['--fresh', fresh] })
   if (c.items || c.mobs || c.spells) {
     out.push({ file: 'src/main/data/pageEra.json', script: 'scripts/scrape-page-era.ts', args: ['--fresh', fresh] })
   }
@@ -156,15 +165,19 @@ export async function followDelta(root: string, c: Changed, since: string, mobs:
     if (left) stale.push(left)
   }
   const { feed } = await changedPages(since, since, '6')
-  const dropped = dropChangedImages(root, [...feed.pageTitle.values(), ...feed.titles])
+  const fileTitles = [...new Set([...feed.pageTitle.values(), ...feed.titles])]
+  const dropped = dropChangedImages(root, fileTitles)
   if (dropped.length) console.log(`Images whose File: page changed, fetched again: ${dropped.join(' | ')}`)
   const bosses = changedBosses(root, c.titles)
-  if (bosses.length) console.log(`Boss pages changed (bosses.json portraits are hand-picked; look at each): ${bosses.join(' | ')}`)
+  if (bosses.length) console.log(`Boss pages changed (bosses.json portraits are kept as they are; look at each): ${bosses.join(' | ')}`)
+  const templates = (await changedPages(since, since, '10')).feed.named.size > 0
   const dir = mkdtempSync(join(tmpdir(), 'scrape-delta-'))
   const fresh = join(dir, 'fresh.json')
   writeFileSync(fresh, JSON.stringify([...c.titles]))
+  const files = fileTitles.length > 0 ? join(dir, 'files.json') : null
+  if (files) writeFileSync(files, JSON.stringify(fileTitles))
   try {
-    return [...stale, ...runFollowUps(root, followUps(root, c, fresh))]
+    return [...stale, ...runFollowUps(root, followUps(root, c, fresh, { templates, files }))]
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }

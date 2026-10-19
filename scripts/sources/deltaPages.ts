@@ -218,6 +218,7 @@ const NOT_REFRESHED: [string, string][] = [
   ['src/renderer/src/data/eqlegends/bosses.json', 'npm run scrape:bosses'],
   ['src/main/data/pageEra.json', 'npm run scrape:page-era'],
   ['src/renderer/src/data/eqlegends/posky.json', 'npm run scrape:posky'],
+  ['src/renderer/src/data/eqlegends/dropGroups.json', 'npx tsx scripts/scrape-drop-groups.ts'],
   ['src/renderer/src/data/eqlegends/mobRaces.json', 'npx tsx scripts/gen-mob-races.mts'],
   ['src/renderer/src/data/eqlegends/mobFactions.json', 'npx tsx scripts/gen-mob-factions.mts']
 ]
