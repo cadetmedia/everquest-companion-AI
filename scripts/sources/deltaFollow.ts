@@ -44,6 +44,8 @@ export interface FollowUp {
   file: string
   script: string
   args?: string[]
+  /** node flags the script needs (the ledger measures with --expose-gc) */
+  node?: string[]
 }
 
 /** A committed file, or `absent` where this checkout does not carry it (the build then has nothing to refresh). */
@@ -71,7 +73,7 @@ export function followUps(root: string, c: Changed, fresh: string): FollowUp[] {
   }
   if (c.spells) out.push({ file: 'engine/crates/eqlog/data/spell-overlay.json', script: 'scripts/gen-engine-spell-overlay.mts' })
   out.push({ file: IMAGES, script: 'scripts/fetch-wiki-images.mts' })
-  out.push({ file: 'src/main/data/dataWeight.generated.json', script: 'scripts/gen-data-weight.mts' })
+  out.push({ file: 'src/main/data/dataWeight.generated.json', script: 'scripts/gen-data-weight.mts', node: ['--expose-gc'] })
   return out
 }
 
@@ -85,7 +87,7 @@ export function runFollowUps(root: string, list: readonly FollowUp[]): string[] 
       continue
     }
     console.log(`\n→ ${f.file}: ${[f.script, ...(f.args ?? [])].join(' ')}`)
-    const r = spawnSync(process.execPath, ['--import', 'tsx', f.script, ...(f.args ?? [])], { cwd: root, stdio: 'inherit' })
+    const r = spawnSync(process.execPath, [...(f.node ?? []), '--import', 'tsx', f.script, ...(f.args ?? [])], { cwd: root, stdio: 'inherit' })
     if (r.status !== 0) stale.push(f.file)
   }
   return stale
