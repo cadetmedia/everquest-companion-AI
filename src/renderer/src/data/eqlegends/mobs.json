@@ -1,6 +1,6 @@
 {
-  "scrapedAt": "2026-10-18T09:05:16.805Z",
-  "source": "eqlwiki.com — Category:NPCs/Named Mobs/Merchants/Raid Encounters ∪ embeddedin Template:Namedmobpage/MerchantPage, filtered to pages opening a mob template",
+  "scrapedAt": "2026-10-19T00:24:46.283Z",
+  "source": "eqlwiki.com — Category:NPCs/Named Mobs/Merchants/Raid Encounters ∪ embeddedin Template:Namedmobpage/MerchantPage, filtered to pages opening a mob template + recentchanges delta (scripts/scrape-delta.mts)",
   "mobs": [
     {
       "page": "A Alchemist`s Acolyte",
@@ -69060,7 +69060,7 @@
     },
     {
       "page": "Clockwork Merchant (LG-16)",
-      "name": "Clockwork Merchant (1105, -1030)",
+      "name": "Clockwork Merchant",
       "level": "40",
       "zones": [
         "Ak'Anon"
@@ -91207,6 +91207,10 @@
           "ns": 625,
           "ew": 90,
           "pct": 100
+        },
+        {
+          "ns": 665,
+          "ew": 83
         }
       ]
     },
@@ -106584,10 +106588,10 @@
         "Leatherfoot Sandals",
         "Pauldrons of Power",
         "Ring of Pureblood",
+        "Rod of Unbound Thought",
         "Shattered Emerald of Corruption",
         "Skinner's Belt",
-        "Triumphant Mask",
-        "Rod of Unbound Thought"
+        "Triumphant Mask"
       ],
       "loc": [
         {
@@ -152442,6 +152446,26 @@
         {
           "ns": -1893,
           "ew": 278,
+          "pct": 100
+        }
+      ]
+    },
+    {
+      "page": "Sulgar",
+      "eraTag": "Classic",
+      "name": "Sulgar",
+      "level": "50",
+      "zones": [
+        "Everfrost Peaks"
+      ],
+      "drops": [
+        "Robe of the Evoker",
+        "Human Blood"
+      ],
+      "loc": [
+        {
+          "ns": 3032,
+          "ew": -2395,
           "pct": 100
         }
       ]
