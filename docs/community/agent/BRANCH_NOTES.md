@@ -231,9 +231,15 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   faction lines printed in the 2.5 s before it (`killFactions`); `shared/gapFactions.ts` checks the
   pairs against mobs.json `factions` (both page lists; spelling folded: case, a trailing period, a
   leading "the"). mobs.json `merchant` and `factions` come from `mobPage.ts` (wiki-scraper-fixes).
-- Drops missing from a mob is not built: 265 drop names on 793 mob pages are not items (groups such
-  as `[[Rusty Weapons]]`, items the data lacks, notes), the owner wants the wiki's group pages
-  followed, and those pages are in no cache (~6 requests, owner's go first).
+- Drops missing from a mob (`shared/gapDrops.ts`): mob pages link groups (`[[Rusty Weapons]]`) instead
+  of their items; `scrape-drop-groups.ts` reads the 265 non-item drop-list pages and keeps the
+  members written as a `{{Gear Set|...}}`, bullets, `<li>` items or table cells (spell, item and mob
+  pages are no group): 52 groups on 2026-10-18. An item in a group is filed as the group (owner's
+  rule). Data and page cache live on gaps-tab, the reader.
+- Found by that fetch: 142 of those pages are full `{{Itempage}}` pages that items.json lacks (e.g.
+  A Shining Stone, A Piece of Rat Fur): the item scrape misses them; not yet looked into.
+- The wiki's Help page (Editing Standards > AI Generated Content): "All graphics and readable page
+  text should be crafted by real human contributors". Told the owner about Copy wiki page.
 - No generated merchant item list (owner, decided): vendor stock and player resells cannot be told
   apart, and quoted prices carry the player's faction and Charisma.
 - `event_feed.rs` is 431 code lines: red on this branch alone against the old 400 bar, green on
