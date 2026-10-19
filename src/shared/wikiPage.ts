@@ -4,7 +4,13 @@
 //
 // Built up from parts, the way the wiki's own pages are (`Fire Beetle Eye`): the era banner, the
 // template with only the fields the log can fill, the `dropsfrom` zone blocks, bullet lists and
-// categories. Drop rates go on the MOB's page, beside each item it dropped, as the wiki keeps them. A page holds no field the log has nothing for and no placeholder; the stats are the
+// categories. Drop rates go on the MOB's page, beside each item it dropped, as the wiki keeps them.
+//
+// The wiki's blueprints for each page (what a full page may hold; this fills only what the log saw):
+//   https://eqlwiki.com/Help:Contents#Item_Page_Blueprint
+//   https://eqlwiki.com/Help:Contents#NPC_Page_Blueprint
+//   https://eqlwiki.com/Help:Contents#Merchant_Page_Blueprint
+//   https://eqlwiki.com/Help:Contents#Spell_Page_Blueprint A page holds no field the log has nothing for and no placeholder; the stats are the
 // game's to show and the player's to type, so `statsblock` is left open.
 
 import { CURRENT_ERA } from './planner/era'
@@ -200,10 +206,11 @@ export function mobPage(f: MobFacts): string {
   return page(templateBlock('Namedmobpage', fields, false), f.zones)
 }
 
+/** The wiki's Spell Page Blueprint layout: `{{Spellpage|`, blank lines between, `| key = value`. */
 export function spellPage(f: SpellFacts): string {
-  const fields: [string, string][] = [['spellname', f.name]]
-  if (f.npcOnly) fields.push(['classes', '\n\nThis spell is cast by NPCs only.\n'])
-  return page(templateBlock('Spellpage', fields, false), f.npcOnly ? ['NPC Only Spells'] : [])
+  const fields = [`| spellname = ${f.name}`, ...(f.npcOnly ? ['| classes =\n\nThis spell is cast by NPCs only.'] : [])]
+  const body = `{{Spellpage|\n\n${fields.join('\n\n')}\n\n}}`
+  return page(`\n${body}`, f.npcOnly ? ['NPC Only Spells'] : [])
 }
 
 /** The page for one Gaps row. `kills` must be a `killIndex` result. */

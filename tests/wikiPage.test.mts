@@ -81,10 +81,12 @@ test('a mob page names its levels, zones and loot; an NPC-only spell says so', (
   assert.match(mob, /^\{\{Classic Era\}\}\n\{\{Namedmobpage\n\|name = Hoptor\n\|level = 45 - 47\n\|zone = \[\[Lower Guk\]\]\n\|known_loot = /)
   assert.match(mob, /<li> \{\{:Scalp\}\} <\/li>/)
   assert.match(mob, /\[\[Category:Lower Guk\]\]\n$/)
-  const spell = spellPage({ name: 'Flame Jet', npcOnly: true })
-  assert.match(spell, /\| ?spellname = Flame Jet/)
-  assert.match(spell, /This spell is cast by NPCs only\./)
-  assert.match(spell, /\[\[Category:NPC Only Spells\]\]/)
+  // The wiki's Spell Page Blueprint layout.
+  assert.equal(
+    spellPage({ name: 'Flame Jet', npcOnly: true }),
+    '{{Classic Era}}\n\n{{Spellpage|\n\n| spellname = Flame Jet\n\n| classes =\n\nThis spell is cast by NPCs only.\n\n}}\n\n[[Category:NPC Only Spells]]\n'
+  )
+  assert.equal(spellPage({ name: 'Spark', npcOnly: false }), '{{Classic Era}}\n\n{{Spellpage|\n\n| spellname = Spark\n\n}}\n')
 })
 
 test('a Gaps row picks its page by domain and takes the vendor value from a sale on loot', () => {
