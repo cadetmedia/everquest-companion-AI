@@ -67,16 +67,24 @@ const GapTableRow = memo(function GapTableRow({
   row,
   open,
   verdict,
-  onToggle
+  onToggle,
+  depth = 0
 }: {
   row: GapRow
   open: boolean
   verdict: GapVerdict
   onToggle: (name: string) => void
+  /** grouped: 1 under a zone, 2 under a mob, bulleted and indented below its heading */
+  depth?: number
 }): JSX.Element {
   return (
     <TableRow hover selected={open} onClick={() => onToggle(row.name)} sx={{ cursor: 'pointer', height: ROW_HEIGHT }} data-testid="gaps-row">
-      <TableCell sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}>
+      <TableCell sx={{ fontWeight: 600, whiteSpace: 'nowrap', pl: depth > 0 ? 3 + depth * 2 : undefined }}>
+        {depth > 0 && (
+          <Box component="span" sx={{ color: 'text.secondary', mr: 1 }}>
+            •
+          </Box>
+        )}
         {row.name}
         {row.suggest !== undefined && <SuggestCaption s={row.suggest} />}
       </TableCell>
@@ -195,7 +203,12 @@ function GroupRow({ entry }: { entry: Exclude<GapEntry, { kind: 'row' }> }): JSX
   const zone = entry.kind === 'zone'
   return (
     <TableRow sx={{ height: ROW_HEIGHT, bgcolor: zone ? 'action.selected' : 'action.hover' }} data-testid={`gaps-group-${entry.kind}`}>
-      <TableCell colSpan={COLUMNS} sx={{ fontWeight: zone ? 700 : 600, pl: zone ? 1 : 3, whiteSpace: 'nowrap' }}>
+      <TableCell colSpan={COLUMNS} sx={{ fontWeight: zone ? 700 : 600, pl: zone ? 1 : 4, whiteSpace: 'nowrap' }}>
+        {!zone && (
+          <Box component="span" sx={{ color: 'text.secondary', mr: 1 }}>
+            ▸
+          </Box>
+        )}
         {zone ? entry.zone : entry.mob}
         <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 1 }}>
           {entry.n} missing
@@ -248,7 +261,7 @@ export default function GapsTable({
             <PadRow height={win.topPad} />
             {entries.slice(win.start, win.end).map((e) =>
               e.kind === 'row' ? (
-                <GapTableRow key={e.key} row={e.row} open={open === e.row.name} verdict={verdicts[e.row.name] ?? 'unchecked'} onToggle={onToggle} />
+                <GapTableRow key={e.key} row={e.row} open={open === e.row.name} verdict={verdicts[e.row.name] ?? 'unchecked'} onToggle={onToggle} depth={e.depth} />
               ) : (
                 <GroupRow key={e.key} entry={e} />
               )
