@@ -19,6 +19,7 @@
 import { parsePageEraTag } from '../../src/main/itemLookupParse'
 import { CURRENT_ERA, eraBadgeOverrides } from '../../src/shared/planner/era'
 import { parseMobWikitext } from '../../src/main/mobLookupParse'
+import { factionNames } from './mobFaction'
 import type { MobEntry } from '../../src/shared/types'
 
 /**
@@ -62,6 +63,12 @@ export function splitZones(zone: string | undefined): string[] {
   return zones
 }
 
+/** For the Gaps tab (owner ask, 2026-10-18): whether the page is a vendor's, and the factions a kill moves. */
+function gapsFacts(wikitext: string): Pick<MobEntry, 'merchant' | 'factions'> {
+  const factions = factionNames(wikitext)
+  return { ...(/\{\{\s*MerchantPage\b/i.test(wikitext) ? { merchant: true } : {}), ...(factions.length ? { factions } : {}) }
+}
+
 /**
  * Project one mob page into a catalog entry, or null when the page is not a mob page.
  * `title` is the wiki page title; `wikitext` is its raw source.
@@ -90,7 +97,7 @@ export function parseMobPage(title: string, wikitext: string): MobEntry | null {
   // absent rather than acquiring a guessed one.
   if (facts.locations?.length) entry.loc = facts.locations
   if (mobOutOfEra(eraTag)) entry.outOfEra = true
-  return entry
+  return { ...entry, ...gapsFacts(wikitext) }
 }
 
 /**

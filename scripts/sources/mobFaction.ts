@@ -29,6 +29,22 @@ function bulletName(line: string): string {
   return NOT_A_FACTION.test(text) ? '' : text
 }
 
+/**
+ * Every faction the page says a kill moves, lowered or raised: the `|factions` and
+ * `|opposing_factions` bullets, as the page names them. The Gaps tab checks a kill's faction
+ * lines against these (owner ask, 2026-10-18).
+ */
+export function factionNames(wikitext: string): string[] {
+  const names: string[] = []
+  for (const field of ['factions', 'opposing_factions']) {
+    for (const line of (templateField(wikitext, field) ?? '').split('\n')) {
+      const name = bulletName(line)
+      if (name !== '' && !names.includes(name)) names.push(name)
+    }
+  }
+  return names
+}
+
 /** The factions a kill lowers, as the page names them; none when it states none or does not know. */
 export function factionHits(wikitext: string): string[] {
   const raw = templateField(wikitext, 'factions') ?? ''

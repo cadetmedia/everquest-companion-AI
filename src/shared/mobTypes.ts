@@ -77,6 +77,10 @@ export interface MobEntry {
    * — which is the honest answer for the ~20% that say "Various" or "?" (world-model law 1).
    */
   loc?: MobLoc[]
+  /** the page is a `{{MerchantPage}}`: a vendor NPC */
+  merchant?: true
+  /** every faction the page says a kill moves, lowered or raised (`|factions`, `|opposing_factions`) */
+  factions?: string[]
 }
 
 export interface MobData {
