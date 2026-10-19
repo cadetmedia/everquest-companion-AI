@@ -28,6 +28,7 @@ import {
   normalizeEqDirOverride,
   realOverrideProbes,
   tailSurvivesRootChange,
+  launchCharacter,
   type DiscoveryProbes
 } from '../src/main/log/discovery'
 
@@ -457,4 +458,19 @@ test('discoverEqRoot: end-to-end with the real rootHasLogs predicate over a temp
   } finally {
     rmSync(tmp, { recursive: true, force: true })
   }
+})
+
+// --- launchCharacter: the character last played wins at launch (2026-10-19) --
+
+test('launch: a log written after the saved pick wins; otherwise the pick holds', () => {
+  const drywrought = { logPath: 'L/eqlog_Drywrought_oggok.txt', lastPlayed: 1000 }
+  const kaltinril = { logPath: 'L/eqlog_Kaltinril_freeport.txt', lastPlayed: 2000 }
+  // Played Kaltinril after Drywrought was last picked: Kaltinril.
+  assert.equal(launchCharacter(drywrought, 1000, kaltinril), kaltinril)
+  // The pick was played last (the newest log is the pick itself, or older): the pick.
+  assert.equal(launchCharacter(kaltinril, 2000, kaltinril), kaltinril)
+  assert.equal(launchCharacter(kaltinril, 2000, drywrought), kaltinril)
+  // No list, or a row with no mtime: the pick.
+  assert.equal(launchCharacter(drywrought, 1000, null), drywrought)
+  assert.equal(launchCharacter(drywrought, 1000, { logPath: 'L/eqlog_X_y.txt' }), drywrought)
 })

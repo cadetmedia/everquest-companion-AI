@@ -291,6 +291,16 @@ export function tailSurvivesRootChange(
 }
 
 /**
+ * THE LAUNCH CHOICE, pure: the character last PLAYED, not the one last picked. The saved pick holds
+ * unless another log was written after it, which means another character was played since (2026-10-19:
+ * a new character on a new server stayed behind Drywrought at every launch). `savedWrittenAt` is the
+ * saved log's mtime; `newest` is the most recently written log, or null.
+ */
+export function launchCharacter<C extends { logPath: string; lastPlayed?: number }>(saved: C, savedWrittenAt: number, newest: C | null): C {
+  return newest !== null && newest.logPath !== saved.logPath && (newest.lastPlayed ?? 0) > savedWrittenAt ? newest : saved
+}
+
+/**
  * Pure ordered discovery: return the first candidate root whose `Logs` dir holds
  * an `eqlog_*.txt`, or null if none match. Candidates, in order:
  *   1. `extraCandidates()` (env override, then registry InstallLocations)
