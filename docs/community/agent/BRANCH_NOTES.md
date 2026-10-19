@@ -240,6 +240,12 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   is `noImage` in mobs.json. `noImage` is written by `scrape-wiki-files.ts` (wiki-scraper-fixes)
   against the cached file list (local-data-refresh); a re-parse of a mob page drops it, so the delta
   re-marks after every fold. 6,364 of 7,954 pages name a file nobody uploaded: only met mobs show.
+- Drops reads both sides of the wiki's tie: the mob page (mobs.json) in the renderer and the item
+  page's dropsfrom from main (`gaps:itemMobs`, `src/main/gapItemMobs.ts`; items.json is main-only).
+  The server-wide rule waits for main's answer, so a half answer never hides a real gap. Measured
+  2026-10-18 on the live log, 1,038 rows: 209 Motes and Treasures, 193 with the item page naming
+  the mob, 98 on mob pages listing no drops, 538 the wiki has nowhere. Tier instances add loot the
+  wiki's mob pages do not cover (Befallen 4 Refined), so many rows come from them.
 - Found by that fetch: 142 of those pages are full `{{Itempage}}` pages that items.json lacks (e.g.
   A Shining Stone, A Piece of Rat Fur): the item scrape misses them; not yet looked into.
 - The wiki's Help page (Editing Standards > AI Generated Content): "All graphics and readable page
