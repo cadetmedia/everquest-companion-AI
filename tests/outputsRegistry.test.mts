@@ -30,6 +30,7 @@ import {
   outputFileNames,
   outputFileStatus,
   outputKind,
+  ownsOutputFile,
   preferredOutputFile,
   OUTPUT_KINDS
 } from '../src/shared/outputs/kinds'
@@ -294,4 +295,15 @@ test('stale is the GAP between the two instants, and an unknown is never a warni
   assert.equal(outputIsStale(undefined, wrote), false)
   assert.equal(outputIsStale(wrote, undefined), false)
   assert.equal(outputIsStale(undefined, undefined), false)
+})
+
+test("a stored reader owns only this character's dump; the newest-anybody fallback is refused (2026-10-19)", () => {
+  const dir = 'C:/EverQuest Legends/'
+  // A new character on a new server, with only Drywrought's dump on disk.
+  assert.equal(ownsOutputFile(INVENTORY, `${dir}Drywrought_oggok-Inventory.txt`, 'Kaltinril', 'freeport'), false)
+  assert.equal(ownsOutputFile(INVENTORY, `${dir}Kaltinril_freeport-Inventory.txt`, 'Kaltinril', 'freeport'), true)
+  // Case-insensitive, and the bare name form the game wrote once.
+  assert.equal(ownsOutputFile(INVENTORY, `${dir}kaltinril-inventory.txt`, 'Kaltinril', 'freeport'), true)
+  // No character known: the one-character machine owns what was found.
+  assert.equal(ownsOutputFile(INVENTORY, `${dir}Drywrought_oggok-Inventory.txt`), true)
 })
