@@ -157,3 +157,22 @@ test('gaps: the zones list keeps every name across both sides, for the "this zon
   const bare = (mergeGaps(newer, newer) as Snap).rows[0].details.zones as Tally
   assert.equal(bare.all, undefined, 'neither side had one, so none is made up')
 })
+
+test('kill-faction pairs from both sides join case-folded, counts added, the newer zone kept', () => {
+  const older = { ...snap([]), killFactions: [{ mob: 'a gnoll', faction: 'Sabertooths of Blackburrow', n: 3, zone: 'Blackburrow' }] }
+  const newer = {
+    ...snap([]),
+    killFactions: [
+      { mob: 'A gnoll', faction: 'sabertooths of blackburrow', n: 2, zone: 'Qeynos Hills' },
+      { mob: 'a rat', faction: 'Pests', n: 1, zone: '' }
+    ]
+  }
+  const m = mergeGaps(older, newer) as Snap & { killFactions: { mob: string; n: number; zone: string }[] }
+  assert.deepEqual(
+    m.killFactions.map((p) => [p.mob, p.n, p.zone]),
+    [
+      ['a gnoll', 5, 'Qeynos Hills'],
+      ['a rat', 1, '']
+    ]
+  )
+})
