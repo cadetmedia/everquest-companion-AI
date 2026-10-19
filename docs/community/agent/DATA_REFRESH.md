@@ -26,12 +26,13 @@ nowhere, and closes with any wiki-derived file it left stale and the command tha
 | `mobFactions.json`, `mobRaces.json` | a mob page changed | `gen-mob-factions.mts`, `gen-mob-races.mts` over the cache |
 | `classes.json` | a class page changed | `scrape-classes.ts` (revid-checked) |
 | `pageEra.json` | items, mobs or spells changed | `scrape-page-era.ts --fresh <changed titles>`: only batches holding a changed or new name are asked |
-| `posky.json` | `Plane of Sky` or one of its reward/item pages changed | `scrape-posky.ts` in full (~209 requests) |
+| `posky.json` | always | `scrape-posky.ts` through the render cache: one revid request per 50 pages, only moved pages rendered again; `--refresh` (all ~209) when the template feed (ns10) shows a change |
 | `spell-overlay.json` | spells changed | `gen-engine-spell-overlay.mts` |
 | `resources/wiki-images` | always; a File: page changed | the bundled copy is dropped, then `fetch-wiki-images.mts` fetches what is missing |
 | `dataWeight.generated.json` | always | `gen-data-weight.mts` |
-| `dropGroups.json` (gaps-tab) | a mob page or a cached group page changed | `scrape-drop-groups.ts`: the 265 drop-list pages that are not items, 6 requests |
-| `bosses.json` | a boss page changed | named only: portraits are hand-picked across two wikis |
+| `dropGroups.json` (gaps-tab) | a mob page or a cached group page changed | `scrape-drop-groups.ts --fresh <changed titles>`: only a page its cache lacks or the feed names |
+| `bosses.json` | always | `scrape-bosses.ts`: every portrait it has is kept; only a target with none is looked up, through the render cache; a changed boss page is also named |
+| `cache/files/files.json`, `mobs.json` `noImage` | always | `scrape-wiki-files.ts --fresh <changed File: titles>` (50 a request), else `--offline`; re-marks every mob whose page names no image or one the wiki lacks |
 
 A script missing from the checkout it runs in (the generators live on slayer-tab) is named stale.
 
@@ -89,7 +90,10 @@ New wiki content turns the creator's census tests red. Each failing test names i
 ## Plane of Sky quests (posky.json)
 
 `npm run scrape:posky` reads the rendered `Plane of Sky` page plus one request per item/reward page
-(~209). Since 2026-10-17 every scraper sends through `scripts/sources/wikiApi.ts` (1 s apart, maxlag,
+(~209). Since 2026-10-18 the renderings are cached by revid (`sources/renderCache.ts`, gitignored
+`cache/rendered/<site>/`): a run asks one `rvprop=ids` request per 50 pages and renders only moved
+pages; `--offline` sends nothing, `--refresh` renders all (a template changed: the Itempage template
+adds `DMG Bonus` itself). A checkout without the cache renders all once. Since 2026-10-17 every scraper sends through `scripts/sources/wikiApi.ts` (1 s apart, maxlag,
 retries 429/5xx); posky names pages that ended without stats, and refuses to write when any class
 yields no quests.
 A posky rescrape trips two audits by design: rows in `skyQuestRewards.ts` the wiki has caught up to
@@ -98,9 +102,9 @@ file.
 
 ## Boss portraits
 
-- If either wiki has an image of a boss, use it (owner, 2026-10-18). scrape-bosses itself does not
-  keep a portrait it cannot re-fetch (the P99 wiki failed every request on 2026-10-18), so the delta
-  only names changed boss pages and a re-scrape is compared by hand. eqlwiki and P99 both name NPC
+- If either wiki has an image of a boss, use it (owner, 2026-10-18). Since 2026-10-18 scrape-bosses
+  keeps every portrait bosses.json has and looks up only a target with none, so a run cannot lose a
+  hand-picked one; the delta runs it every time and names changed boss pages for a look. eqlwiki and P99 both name NPC
   portraits `Npc_*`; scrape-bosses prefers those over the page's first image (a map, for Phinigel).
 - On 2026-10-18 the P99 wiki's `action=parse` failed for every boss (about 35 s of retries each)
   while its image files downloaded fine; the scraper then fell back to eqlwiki for all of them.
