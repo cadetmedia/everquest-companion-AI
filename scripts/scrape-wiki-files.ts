@@ -65,18 +65,27 @@ async function existing(titles: readonly string[]): Promise<Map<string, boolean>
   return out
 }
 
+/** The cached list brought up to date: the whole list on a first or `--refresh` run, else the fresh titles only. */
+async function updatedList(args: readonly string[], fresh: readonly string[]): Promise<{ files: Set<string>; whole: boolean }> {
+  const files = new Set(existsSync(CACHE) ? (JSON.parse(readFileSync(CACHE, 'utf8')) as string[]) : [])
+  if (args.includes('--offline')) return { files, whole: false }
+  if (files.size === 0 || args.includes('--refresh')) return { files: new Set(await allFiles()), whole: true }
+  for (const [name, here] of fresh.length > 0 ? await existing(fresh) : []) {
+    if (here) files.add(name)
+    else files.delete(name)
+  }
+  return { files, whole: false }
+}
+
 async function main(): Promise<void> {
   const args = process.argv.slice(2)
   const freshAt = args.indexOf('--fresh')
   const fresh = freshAt < 0 ? [] : (JSON.parse(readFileSync(args[freshAt + 1], 'utf8')) as string[]).filter((t) => /^File:/i.test(t))
-  let files = new Set(existsSync(CACHE) ? (JSON.parse(readFileSync(CACHE, 'utf8')) as string[]) : [])
-  const whole = !args.includes('--offline') && (files.size === 0 || args.includes('--refresh'))
-  if (whole) files = new Set(await allFiles())
-  else if (fresh.length > 0 && !args.includes('--offline')) {
-    for (const [name, here] of await existing(fresh)) {
-      if (here) files.add(name)
-      else files.delete(name)
-    }
+  const { files, whole } = await updatedList(args, args.includes('--offline') ? [] : fresh)
+  if (files.size === 0) {
+    // No list (an offline run in a checkout without the cache): marking would call every image missing.
+    console.log('no file list: run once without --offline to fetch it; mobs.json left as it is')
+    return
   }
   if (whole || fresh.length > 0) {
     mkdirSync(dirname(CACHE), { recursive: true })
