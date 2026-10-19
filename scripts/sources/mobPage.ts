@@ -64,9 +64,14 @@ export function splitZones(zone: string | undefined): string[] {
 }
 
 /** For the Gaps tab (owner ask, 2026-10-18): whether the page is a vendor's, and the factions a kill moves. */
-function gapsFacts(wikitext: string): Pick<MobEntry, 'merchant' | 'factions'> {
+function gapsFacts(wikitext: string): Pick<MobEntry, 'merchant' | 'factions' | 'image'> {
   const factions = factionNames(wikitext)
-  return { ...(/\{\{\s*MerchantPage\b/i.test(wikitext) ? { merchant: true } : {}), ...(factions.length ? { factions } : {}) }
+  const image = /\|\s*imagefilename\s*=\s*([^\n|}]*)/i.exec(wikitext)?.[1].trim() ?? ''
+  return {
+    ...(/\{\{\s*MerchantPage\b/i.test(wikitext) ? { merchant: true } : {}),
+    ...(factions.length ? { factions } : {}),
+    ...(image !== '' ? { image } : {})
+  }
 }
 
 /**
