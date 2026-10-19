@@ -449,7 +449,7 @@ function previousScrapedAt(spells: readonly SpellEntry[]): string | undefined {
 
 /** A page the wiki has marked for deletion is not a spell, whatever template it embeds
  *  (51190 `Kurrat's Magician Epic Guide` carries a Spellpage for Summon Orb). */
-const DELETE_MARK = /\{\{\s*Delete\b/i
+export const DELETE_MARK = /\{\{\s*Delete\b/i
 
 /** PHASE 3: every page parsed from the cache, with each page that yielded nothing, is marked for
  *  deletion, or whose title overrode a different `|spellname`, named for the run log. */

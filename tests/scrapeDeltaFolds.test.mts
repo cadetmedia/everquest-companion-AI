@@ -25,6 +25,16 @@ test('Healing Water (57458): a page whose |spellname is stale is named by its ti
   assert.deepEqual(spells.map((s) => s.name), ['Healing Water'])
 })
 
+test('spells are re-derived as scrape:spells parses them: the era banner kept, a {{Delete}} page left out', () => {
+  // 2026-10-18's first real run dropped 1,472 era tags and let Magical Monologue back in.
+  const texts: Record<number, string> = {
+    1: `{{Classic Era}}\n${spell('Kept')}`,
+    2: `{{Delete}}\n${spell('Magical Monologue')}`
+  }
+  const { spells } = deriveSpells({ 1: 'Kept', 2: 'Magical Monologue' }, (id) => texts[id] ?? null)
+  assert.deepEqual(spells.map((s) => [s.name, s.eraTag]), [['Kept', 'Classic']])
+})
+
 test('spells: a deleted page leaves, a moved page keeps its pageid under the new title', () => {
   const universe = { 100: 'Doomed Spell', 101: 'Old Name', 102: 'Stays' }
   const pages: PageTexts = new Map([

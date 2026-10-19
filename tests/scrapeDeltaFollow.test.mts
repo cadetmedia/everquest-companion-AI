@@ -57,6 +57,8 @@ test('each follow-up runs only when a change reaches it; images and the byte led
     assert.ok(of({ spells: true }).includes('scripts/gen-engine-spell-overlay.mts'))
     const era = followUps(root, { items: true, mobs: false, spells: false, titles: new Set() }, 'f.json').find((f) => f.script.includes('page-era'))
     assert.deepEqual(era?.args, ['--fresh', 'f.json'])
+    const ledger = followUps(root, { items: false, mobs: false, spells: false, titles: new Set() }, 'f.json').at(-1)
+    assert.deepEqual(ledger?.node, ['--expose-gc'])
   } finally {
     rmSync(root, { recursive: true, force: true })
   }

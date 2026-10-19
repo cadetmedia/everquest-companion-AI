@@ -6,7 +6,7 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import type { SpellDbFile, SpellEntry } from '../../src/shared/types'
-import { parseSpell, parseSpellpageFields } from '../scrape-spells'
+import { DELETE_MARK, parseSpell, parseSpellpageFields } from '../scrape-spells'
 import type { PageIds, PageTexts } from './deltaPages'
 
 /** scrape-spells.ts's `sources/cache/spells/index.json`. */
@@ -87,8 +87,10 @@ export function deriveSpells(
       missing.push(id)
       continue
     }
+    // As scrape-spells.ts: a page marked for deletion is no spell, and the page's banner is its era.
+    if (DELETE_MARK.test(wt)) continue
     const fields = parseSpellpageFields(wt)
-    if (Object.keys(fields).length) spells.push(parseSpell(titles[String(id)], fields))
+    if (Object.keys(fields).length) spells.push(parseSpell(titles[String(id)], fields, wt))
   }
   spells.sort((a, b) => a.name.localeCompare(b.name))
   return { spells, missing }
