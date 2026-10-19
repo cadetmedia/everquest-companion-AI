@@ -30,6 +30,8 @@ import type { CharacterSnap, LootSnap } from '@shared/types'
 import { killIndex, type KillsSnap } from '@shared/kills'
 import { wikiPageText } from '@shared/wikiPage'
 import { groupGaps, rowEntries } from '@shared/gapGroups'
+import { withFactionRows } from '@shared/gapFactions'
+import { MOB_CATALOG } from '../mobs/mobSearch'
 import { useModule } from '../../lib/useModule'
 import { Tooltip } from '../../lib/Tooltip'
 import { useBoolPref } from '../combat/useCombatPrefs'
@@ -113,7 +115,9 @@ function DomainToggle({
 }
 
 export default function GapsView(): JSX.Element {
-  const snap = useModule<GapsSnap>(GAPS_MODULE_ID)
+  const fromEngine = useModule<GapsSnap>(GAPS_MODULE_ID)
+  // Factions a kill moved that the mob's page lacks, checked against the catalog here.
+  const snap = useMemo(() => (fromEngine ? withFactionRows(fromEngine, MOB_CATALOG) : fromEngine), [fromEngine])
   const [domain, setDomain] = useState<GapDomain>('item')
   const [query, setQuery] = useState('')
   const [copied, setCopied] = useState<number | null>(null)

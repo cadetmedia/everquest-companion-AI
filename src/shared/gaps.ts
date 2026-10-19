@@ -7,17 +7,26 @@
 // and search box narrow those rows here rather than in the renderer, which never filters served
 // rows (owner ruling 4); the Copy list text is rendered here for the same reason.
 
+import type { KillFaction } from './gapFactions'
 import { wikiPageUrl } from './wiki'
 import { zoneKey } from './zones'
 
 export const GAPS_MODULE_ID = 'gaps'
 
-export type GapDomain = 'item' | 'mob' | 'spell'
-export const GAP_DOMAINS: readonly GapDomain[] = ['item', 'mob', 'spell']
-export const GAP_DOMAIN_LABELS: Record<GapDomain, string> = { item: 'Items', mob: 'Mobs', spell: 'Spells' }
+/** `merchant`: an NPC the log saw trading that the wiki lists as no merchant; `faction`: a faction a
+ *  kill moved that the mob's page does not name (owner asks, 2026-10-18; shared/gapFactions.ts). */
+export type GapDomain = 'item' | 'mob' | 'spell' | 'merchant' | 'faction'
+export const GAP_DOMAINS: readonly GapDomain[] = ['item', 'mob', 'spell', 'merchant', 'faction']
+export const GAP_DOMAIN_LABELS: Record<GapDomain, string> = {
+  item: 'Items',
+  mob: 'Mobs',
+  spell: 'Spells',
+  merchant: 'Merchants',
+  faction: 'Factions'
+}
 
 /** How the log named it. */
-export type GapKind = 'looted' | 'dropped-by' | 'received' | 'bought' | 'crafted' | 'killed' | 'considered' | 'cast'
+export type GapKind = 'looted' | 'dropped-by' | 'received' | 'bought' | 'crafted' | 'killed' | 'considered' | 'cast' | 'quoted' | 'sold'
 
 /** Distinct values with counts: the eight most frequent, and how many there were in all. */
 export interface GapTally {
@@ -87,6 +96,8 @@ export interface GapsSnap {
   totals: Record<GapDomain, number>
   /** Distinct names checked per domain, known or not. */
   seen: Record<GapDomain, number>
+  /** Each kill and the factions its lines moved (gaps_trade.rs), for shared/gapFactions.ts. */
+  killFactions?: KillFaction[]
 }
 
 /** The lists in display order, with the words the tab and the copy text use for them. */
@@ -242,6 +253,17 @@ export function wikiSearchUrl(name: string): string {
   return `https://eqlwiki.com/index.php?search=${encodeURIComponent(name.trim())}`
 }
 
+/** The wiki's editor on an existing page. */
+export function wikiEditUrl(page: string): string {
+  return `https://eqlwiki.com/index.php?title=${encodeURIComponent(page.trim().replace(/ /g, '_'))}&action=edit`
+}
+
+/** A faction row's mob (shared/gapFactions.ts): the page the missing faction goes on. */
+export const factionMob = (row: GapRow): string => row.details.sources?.entries[0]?.name ?? ''
+
+/** A faction row's faction: its name less the ` (mob)` it is filed under. */
+export const factionOf = (row: GapRow): string => row.name.slice(0, Math.max(0, row.name.length - factionMob(row).length - 3))
+
 /** The wiki's editor on a new page titled with the name, as its own red links open it (owner ask, 2026-10-18). */
 export function wikiCreateUrl(name: string): string {
   return `https://eqlwiki.com/index.php?title=${encodeURIComponent(name.trim().replace(/ /g, '_'))}&action=edit&redlink=1`
@@ -272,6 +294,10 @@ export function npcOnlySpell(row: GapRow): boolean {
  * a parser's leftover.
  */
 export function gapActions(row: GapRow, verdict: GapVerdict): GapAction[] {
+  if (row.domain === 'faction') {
+    const why = `The wiki page for ${factionMob(row)} does not name this faction among those a kill moves.`
+    return [{ kind: 'checkWiki', label: 'Edit mob page', why, href: wikiEditUrl(factionMob(row)) }]
+  }
   const actions: GapAction[] = []
   if (row.suggest !== undefined) {
     actions.push({

@@ -43,7 +43,8 @@ async function flush(): Promise<void> {
 
 /** Queue the names this store has not answered yet; one IPC per domain on the next tick. */
 export function requestGapVerdicts(domain: GapDomain, names: readonly string[]): void {
-  if (domain === 'spell') return
+  // Only items and mobs have a runtime cache to read.
+  if (domain !== 'item' && domain !== 'mob') return
   let queued = false
   for (const name of names) {
     if (verdicts.has(keyOf(domain, name)) || pending[domain].has(name)) continue
@@ -57,7 +58,7 @@ export function requestGapVerdicts(domain: GapDomain, names: readonly string[]):
 }
 
 export function readGapVerdict(domain: GapDomain, name: string): GapVerdict {
-  return domain === 'spell' ? 'unchecked' : (verdicts.get(keyOf(domain, name)) ?? 'unchecked')
+  return domain !== 'item' && domain !== 'mob' ? 'unchecked' : (verdicts.get(keyOf(domain, name)) ?? 'unchecked')
 }
 
 const subscribe = (l: () => void): (() => void) => {

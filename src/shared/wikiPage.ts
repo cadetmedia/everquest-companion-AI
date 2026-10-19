@@ -16,7 +16,7 @@
 import { CURRENT_ERA } from './planner/era'
 import type { KillMap } from './kills'
 import { killsFor } from './kills'
-import { derivedPrices, npcOnlySpell, type GapRow } from './gaps'
+import { derivedPrices, factionOf, npcOnlySpell, type GapRow } from './gaps'
 import type { LootEvent } from './types'
 
 // ---- the parts ---------------------------------------------------------------------------------
@@ -213,9 +213,22 @@ export function spellPage(f: SpellFacts): string {
   return page(`\n${body}`, f.npcOnly ? ['NPC Only Spells'] : [])
 }
 
-/** The page for one Gaps row. `kills` must be a `killIndex` result. */
+/**
+ * A trader the wiki lacks as a merchant: its name, class and zones. No `items_sold`: a merchant's
+ * stock mixes player resells the log cannot tell apart (owner, 2026-10-18).
+ */
+export function merchantPage(name: string, zones: readonly string[]): string {
+  const fields: [string, string][] = [['name', name], ['class', '[[Merchant]]']]
+  if (zones.length > 0) fields.push(['zone', zones.map(wikiLink).join(', ')])
+  return page(templateBlock('MerchantPage', fields, false), zones)
+}
+
+/** The page for one Gaps row; a faction row gives the bullet its mob's `|factions` takes. `kills`
+ *  must be a `killIndex` result. */
 export function wikiPageText(row: GapRow, loot: readonly LootEvent[], kills: KillMap): string {
   if (row.domain === 'item') return itemPage(itemFacts(row, loot))
   if (row.domain === 'mob') return mobPage(mobFacts(row, loot, kills))
+  if (row.domain === 'merchant') return merchantPage(row.name, rowZones(row))
+  if (row.domain === 'faction') return `* ${wikiLink(factionOf(row))}\n`
   return spellPage({ name: row.name, npcOnly: npcOnlySpell(row) })
 }
