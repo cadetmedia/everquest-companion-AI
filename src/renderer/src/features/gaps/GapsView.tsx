@@ -150,7 +150,7 @@ export default function GapsView(): JSX.Element {
   // A row's wiki page joins its loot (which mob, which zone) and the kills behind each drop.
   const killMobs = useModule<KillsSnap>('kills')?.mobs
   const kills = useMemo(() => killIndex(killMobs ?? {}), [killMobs])
-  const pageText = useCallback((row: GapRow) => wikiPageText(row, loot ?? [], kills), [loot, kills])
+  const pageText = useCallback((row: GapRow) => wikiPageText(row, loot ?? [], kills, fromEngine ?? {}), [loot, kills, fromEngine])
   // "Group by zone, then mob" (owner ask, 2026-10-18): where to go and what to kill.
   const [grouped, setGrouped] = useBoolPref(GROUPED_KEY, false)
   const entries = useMemo(() => (grouped ? groupGaps(sorted, loot ?? []) : rowEntries(sorted)), [grouped, sorted, loot])

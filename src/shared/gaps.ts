@@ -100,6 +100,8 @@ export interface GapsSnap {
   seen: Record<GapDomain, number>
   /** Each kill and the factions its lines moved (gaps_trade.rs), for shared/gapFactions.ts. */
   killFactions?: KillFaction[]
+  /** Where a con or hail beside a `/loc` placed each mob, `/loc` order (gaps_locs.rs). */
+  mobLocs?: { mob: string; zone: string; points: number[][] }[]
 }
 
 /** The lists in display order, with the words the tab and the copy text use for them. */

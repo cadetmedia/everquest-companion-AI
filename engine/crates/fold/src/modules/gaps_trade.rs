@@ -29,13 +29,18 @@ pub fn merchant_of<'a>(ev: &'a Event) -> Option<(&'a str, &'static str)> {
     }
 }
 
-/// `Your faction standing with X has been adjusted by -20.` (or `… could not possibly get any
-/// worse.`) → `X`.
-fn faction_of(text: &str) -> Option<&str> {
+/// `Your faction standing with X has been adjusted by -20.` → `(X, Some(-20))`; `… could not
+/// possibly get any worse.` → `(X, None)`, a capped standing that states no amount.
+fn faction_of(text: &str) -> Option<(&str, Option<i64>)> {
     let rest = text.strip_prefix("Your faction standing with ")?;
-    rest.split_once(" has been adjusted by ")
-        .or_else(|| rest.split_once(" could not possibly get any "))
-        .map(|(f, _)| f)
+    if let Some((f, by)) = rest.split_once(" has been adjusted by ") {
+        let n = by
+            .trim_end_matches('.')
+            .trim_matches(|c| c == '(' || c == ')' || c == ' ');
+        return Some((f, n.parse().ok()));
+    }
+    rest.split_once(" could not possibly get any ")
+        .map(|(f, _)| (f, None))
 }
 
 /// One (mob, faction) pair the log showed, how often, and the zone last seen in.
@@ -44,12 +49,14 @@ struct Pair {
     faction: String,
     n: u32,
     zone: String,
+    /// The last amount a line stated (`-30`): the number a mob page writes beside the faction.
+    adjust: Option<i64>,
 }
 
 #[derive(Default)]
 pub struct KillFactions {
     /// Faction lines not yet claimed by a death, with when they were read.
-    pending: Vec<(String, i64)>,
+    pending: Vec<(String, i64, Option<i64>)>,
     pairs: HashMap<(String, String), Pair>,
 }
 
@@ -61,15 +68,15 @@ impl KillFactions {
 
     /// A faction line, held for the death that follows it.
     pub fn line(&mut self, ev: &Event) {
-        if let Some(f) = faction_of(message_text_of(ev.raw())) {
-            self.pending.push((f.to_string(), ev.ts()));
+        if let Some((f, adjust)) = faction_of(message_text_of(ev.raw())) {
+            self.pending.push((f.to_string(), ev.ts(), adjust));
         }
     }
 
     /// A death: the faction lines just before it are its kill's. True when a pair was recorded.
     pub fn death(&mut self, mob: &str, ts: i64, zone: Option<&str>) -> bool {
         let mut any = false;
-        for (faction, at) in std::mem::take(&mut self.pending) {
+        for (faction, at, adjust) in std::mem::take(&mut self.pending) {
             if ts - at > KILL_FACTION_MS {
                 continue;
             }
@@ -79,21 +86,27 @@ impl KillFactions {
                 faction,
                 n: 0,
                 zone: String::new(),
+                adjust: None,
             });
             pair.n += 1;
             pair.zone = zone.unwrap_or_default().to_string();
+            pair.adjust = adjust.or(pair.adjust);
             any = true;
         }
         any
     }
 
-    /// `[{mob, faction, n, zone}]`, by mob then faction.
+    /// `[{mob, faction, n, zone, adjust?}]`, by mob then faction.
     pub fn serve(&self) -> Value {
         let mut pairs: Vec<&Pair> = self.pairs.values().collect();
         pairs.sort_by(|a, b| a.mob.cmp(&b.mob).then_with(|| a.faction.cmp(&b.faction)));
-        let rows = pairs
-            .iter()
-            .map(|p| json!({ "mob": p.mob, "faction": p.faction, "n": p.n, "zone": p.zone }));
+        let rows = pairs.iter().map(|p| {
+            let mut row = json!({ "mob": p.mob, "faction": p.faction, "n": p.n, "zone": p.zone });
+            if let Some(a) = p.adjust {
+                row["adjust"] = json!(a);
+            }
+            row
+        });
         Value::Array(rows.collect())
     }
 }
@@ -169,5 +182,7 @@ mod tests {
                 ("a zol ghoul knight", "Undead Frogloks of Guk")
             ]
         );
+        assert_eq!(served[1]["adjust"], -20, "the amount a line stated is kept");
+        assert!(served[0].get("adjust").is_none(), "a capped line states none");
     }
 }

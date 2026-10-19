@@ -17,6 +17,8 @@ export interface KillFaction {
   faction: string
   n: number
   zone: string
+  /** the last amount a line stated (`-30`); absent for a capped standing */
+  adjust?: number
 }
 
 /** The log and the wiki spell some factions apart: `Solusek Mining Co.` / `Solusek Mining Co`, `the Ebon Mask`. */
