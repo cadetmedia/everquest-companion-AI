@@ -16,9 +16,13 @@
 // height modestly so the list keeps room on a short screen.
 
 import { type JSX, memo, useCallback, useRef, useState } from 'react'
-import { Box, Chip, Paper, Stack, Table, TableBody, TableCell, TableHead, TableRow, TableSortLabel, Typography } from '@mui/material'
+import { Box, Button, Chip, Paper, Stack, Table, TableBody, TableCell, TableHead, TableRow, TableSortLabel, Typography } from '@mui/material'
+import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import { charactersOff, gapZone, type GapRow, type GapSort, type GapSortKey, type GapSuggest, type GapVerdict, type GapVerdicts } from '@shared/gaps'
+import type { GapEntry } from '@shared/gapGroups'
 import { wikiPageUrl } from '@shared/wiki'
+import { copyText } from '../../lib/clipboard'
+import { Tooltip } from '../../lib/Tooltip'
 import { useWindowedRows } from '../../lib/useWindowedRows'
 import GapActionChips from './GapActionChips'
 import GapDetailsPanel from './GapDetailsPanel'
@@ -92,11 +96,31 @@ const GapTableRow = memo(function GapTableRow({
   )
 })
 
+/** A new wiki page for the row, built from what the log saw (shared/wikiPage.ts), onto the clipboard. */
+function CopyPageButton({ text }: { text: () => string }): JSX.Element {
+  const [copied, setCopied] = useState(false)
+  return (
+    <Tooltip title="Wiki markup for a new page from what your log saw. Paste it into the wiki and add the stats from a screenshot.">
+      <Button
+        size="small"
+        startIcon={<ContentCopyIcon />}
+        onClick={() => void copyText(text()).then(setCopied)}
+        data-testid="gaps-copy-page"
+      >
+        {copied ? 'Copied' : 'Copy wiki page'}
+      </Button>
+    </Tooltip>
+  )
+}
+
 /** The open row's details, above the list: capped so the list keeps room on a short screen. */
-function DetailsPane({ row }: { row: GapRow }): JSX.Element {
+function DetailsPane({ row, pageText }: { row: GapRow; pageText: (row: GapRow) => string }): JSX.Element {
   return (
     <Paper variant="outlined" sx={{ px: 1.5, py: 0.5, flexShrink: 0, maxHeight: '40vh', overflow: 'auto' }} data-testid="gaps-details-pane">
-      <Typography variant="subtitle2">{row.name}</Typography>
+      <Stack direction="row" spacing={1} alignItems="center">
+        <Typography variant="subtitle2">{row.name}</Typography>
+        <CopyPageButton key={row.name} text={() => pageText(row)} />
+      </Stack>
       <GapDetailsPanel details={row.details} />
     </Paper>
   )
@@ -137,25 +161,44 @@ function SortHeader({ sort, onSort }: { sort: GapSort; onSort: (key: GapSortKey)
   )
 }
 
+/** A zone or mob heading of the grouped list (shared/gapGroups.ts), one row high like the rest. */
+function GroupRow({ entry }: { entry: Exclude<GapEntry, { kind: 'row' }> }): JSX.Element {
+  const zone = entry.kind === 'zone'
+  return (
+    <TableRow sx={{ height: ROW_HEIGHT, bgcolor: zone ? 'action.selected' : 'action.hover' }} data-testid={`gaps-group-${entry.kind}`}>
+      <TableCell colSpan={COLUMNS} sx={{ fontWeight: zone ? 700 : 600, pl: zone ? 1 : 3, whiteSpace: 'nowrap' }}>
+        {zone ? entry.zone : entry.mob}
+        <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+          {entry.n} missing
+        </Typography>
+      </TableCell>
+    </TableRow>
+  )
+}
+
 export default function GapsTable({
-  rows,
+  entries,
   verdicts,
   sort,
   onSort,
+  pageText,
   hiddenByFilter = false
 }: {
-  rows: readonly GapRow[]
+  /** the rows, or the grouped list with its zone and mob headings */
+  entries: readonly GapEntry[]
   verdicts: GapVerdicts
   sort: GapSort
   onSort: (key: GapSortKey) => void
+  /** the wiki page text for a row, for its Copy wiki page button */
+  pageText: (row: GapRow) => string
   /** the domain HAS unknown names, so an empty list means the search or zone filter hid them */
   hiddenByFilter?: boolean
 }): JSX.Element {
   const [open, setOpen] = useState<string | null>(null)
   const onToggle = useCallback((name: string) => setOpen((cur) => (cur === name ? null : name)), [])
   const scrollRef = useRef<HTMLDivElement>(null)
-  const win = useWindowedRows({ count: rows.length, rowHeight: ROW_HEIGHT, scrollRef })
-  if (rows.length === 0) {
+  const win = useWindowedRows({ count: entries.length, rowHeight: ROW_HEIGHT, scrollRef })
+  if (entries.length === 0) {
     return (
       <Typography variant="body2" color="text.secondary" sx={{ py: 2 }} data-testid="gaps-empty">
         {hiddenByFilter
@@ -164,18 +207,23 @@ export default function GapsTable({
       </Typography>
     )
   }
-  const opened = open === null ? undefined : rows.find((r) => r.name === open)
+  const opened = open === null ? undefined : entries.find((e) => e.kind === 'row' && e.row.name === open)
+  const openedRow = opened?.kind === 'row' ? opened.row : undefined
   return (
     <Stack spacing={1.5} sx={{ flexGrow: 1, minHeight: 0 }}>
-      {opened !== undefined && <DetailsPane row={opened} />}
+      {openedRow !== undefined && <DetailsPane row={openedRow} pageText={pageText} />}
       <Box ref={scrollRef} sx={{ flexGrow: 1, minHeight: 0, overflow: 'auto', overscrollBehavior: 'contain' }} data-testid="gaps-scroll">
         <Table size="small" stickyHeader data-testid="gaps-table">
           <SortHeader sort={sort} onSort={onSort} />
           <TableBody>
             <PadRow height={win.topPad} />
-            {rows.slice(win.start, win.end).map((r) => (
-              <GapTableRow key={r.name} row={r} open={open === r.name} verdict={verdicts[r.name] ?? 'unchecked'} onToggle={onToggle} />
-            ))}
+            {entries.slice(win.start, win.end).map((e) =>
+              e.kind === 'row' ? (
+                <GapTableRow key={e.key} row={e.row} open={open === e.row.name} verdict={verdicts[e.row.name] ?? 'unchecked'} onToggle={onToggle} />
+              ) : (
+                <GroupRow key={e.key} entry={e} />
+              )
+            )}
             <PadRow height={win.bottomPad} />
           </TableBody>
         </Table>
