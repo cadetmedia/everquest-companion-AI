@@ -204,7 +204,7 @@ export function gapDetailsText(row: GapRow, verdict: GapVerdict = 'unchecked'): 
     if (t === undefined) continue
     lines.push(`\t${label}: ${tallyText(t)}`)
     const prices = key === 'sales' ? derivedPrices(row.details) : null
-    if (prices !== null) lines.push(`\tvendor value: ${formatCoin(prices.vendorValue)} · base price: ${formatCoin(prices.base)}`)
+    if (prices !== null) lines.push(`\tvendor value: ${formatCoin(prices.vendorValue)}`)
   }
   for (const s of row.details.samples) lines.push(`\tsample: ${s}`)
   return lines.join('\n')

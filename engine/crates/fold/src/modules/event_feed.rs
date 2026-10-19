@@ -16,6 +16,7 @@
 
 use crate::event::Event;
 use crate::knowledge::Knowledge;
+use crate::modules::resist::world::is_player_shaped_name;
 use crate::EqModule;
 use serde::Serialize;
 use serde_json::{json, Value};
@@ -125,6 +126,10 @@ pub struct FeedEvent {
     /// The consider context, on a `con` row.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub con: Option<FeedConsider>,
+    /// The item or mob is in none of the app's data: a reminder to screenshot it for the wiki
+    /// (owner ask, 2026-10-18).
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub unknown: bool,
 }
 
 #[derive(Default)]
@@ -212,6 +217,9 @@ impl EventFeedModule {
         if rare {
             bits.push("rare".to_owned());
         }
+        // A player's name is no catalog miss (gaps.rs asks the same test before counting a con).
+        let unknown = !is_player_shaped_name(mob)
+            && self.knowledge.as_ref().is_some_and(|k| !k.known_mob(mob));
         self.append(FeedEvent {
             id: String::new(),
             kind: "con",
@@ -225,6 +233,7 @@ impl EventFeedModule {
                 rare,
                 difficulty,
             }),
+            unknown,
         });
     }
 
@@ -244,7 +253,9 @@ impl EventFeedModule {
         let destroyed = ev.str("disposition") == Some("destroyed");
         let source = ev.str("source");
         let answer = knowledge.item(item);
-        if !is_notable(&answer.record) {
+        // An item the data lacks is admitted too, flagged, so the player screenshots it for the wiki.
+        let unknown = !answer.found;
+        if !unknown && !is_notable(&answer.record) {
             return;
         }
         let title = answer
@@ -271,6 +282,7 @@ impl EventFeedModule {
                 .and_then(Value::as_str)
                 .map(str::to_owned),
             con: None,
+            unknown,
         });
     }
 }
@@ -374,9 +386,9 @@ mod tests {
                 found: true,
             }
         }
-        /// Nothing on the feed's path asks this.
-        fn known_mob(&self, _name: &str) -> bool {
-            true
+        /// A con row asks it: the table's names are the known mobs.
+        fn known_mob(&self, name: &str) -> bool {
+            self.0.iter().any(|(key, _)| *key == name)
         }
         fn take_misses(&self) -> Vec<Miss> {
             Vec::new()
@@ -416,12 +428,15 @@ mod tests {
     #[test]
     fn a_live_notable_pickup_is_admitted_and_an_ordinary_one_is_not() {
         let mut feed = EventFeedModule::new();
-        feed.install_knowledge(&(Arc::new(Table(vec![(
-            "Rune of Al'Kabor",
-            json!({ "name": "Rune of Al'Kabor", "lore": true, "quest": true, "questUses": [], "page": "Rune of Al'Kabor" }),
-        )])) as Arc<dyn Knowledge>));
+        feed.install_knowledge(&(Arc::new(Table(vec![
+            (
+                "Rune of Al'Kabor",
+                json!({ "name": "Rune of Al'Kabor", "lore": true, "quest": true, "questUses": [], "page": "Rune of Al'Kabor" }),
+            ),
+            ("Bone Chips", json!({ "name": "Bone Chips", "lore": false, "quest": false, "questUses": [] })),
+        ])) as Arc<dyn Knowledge>));
         feed.on_event(&ev(&loot(1, "Bone Chips")), true);
-        assert!(state(&feed).is_empty(), "vendor trash is not notable");
+        assert!(state(&feed).is_empty(), "known vendor trash is not notable");
         feed.on_event(&ev(&loot(2, "Rune of Al'Kabor")), true);
         let rows = state(&feed);
         assert_eq!(rows.len(), 1);
@@ -429,6 +444,46 @@ mod tests {
         assert_eq!(rows[0]["kind"], "loot");
         assert_eq!(rows[0]["detail"], "from a sand giant");
         assert_eq!(rows[0]["page"], "Rune of Al'Kabor");
+        assert!(
+            rows[0].get("unknown").is_none(),
+            "a known item is not flagged"
+        );
+    }
+
+    #[test]
+    fn an_item_or_mob_the_data_lacks_is_flagged_for_a_screenshot_but_a_player_is_not() {
+        let mut feed = EventFeedModule::new();
+        feed.install_knowledge(
+            &(Arc::new(Table(vec![("a gnoll", json!({}))])) as Arc<dyn Knowledge>),
+        );
+        feed.on_event(&ev(&loot(1, "Black Lizard Talon")), true);
+        let con = |seq: i64, mob: &str| {
+            format!(
+                r#"{{"kind":"consider","mob":"{mob}","level":12,"seq":{seq},"ts":{},"raw":"x"}}"#,
+                1_787_181_707_000 + seq * 60_000
+            )
+        };
+        for (seq, mob) in [(2, "a lizardman forager"), (3, "a gnoll"), (4, "Soandso")] {
+            feed.on_event(&ev(&con(seq, mob)), true);
+        }
+        let flagged: Vec<(Value, bool)> = state(&feed)
+            .iter()
+            .map(|r| {
+                (
+                    r["title"].clone(),
+                    r.get("unknown").is_some_and(|u| u == true),
+                )
+            })
+            .collect();
+        assert_eq!(
+            flagged,
+            vec![
+                (json!("Black Lizard Talon"), true),
+                (json!("a lizardman forager"), true),
+                (json!("a gnoll"), false),
+                (json!("Soandso"), false)
+            ]
+        );
     }
 
     #[test]

@@ -144,7 +144,7 @@ test('the sale-on-loot and paid lists print with the discount caveat in the word
       'Spider Legs\tlooted, bought\t3\t2026-10-06 18:12:26\t2026-10-10 17:48:36',
       '\taction: Check wiki',
       '\tsold on loot (discounted): 7 copper (2)',
-      '\tvendor value: 1 silver · base price: 1 silver',
+      '\tvendor value: 1 silver',
       '\tpaid: 5 platinum 2 gold (1)'
     ].join('\n')
   )
@@ -171,6 +171,8 @@ test('derivedPrices reads the real prices behind an instant sale, to the copper 
   const sold = (coin: string) => ({ samples: [], sales: { entries: [{ name: coin, n: 1 }], distinct: 1 } })
   // Gold Ring: sells instantly for 857c, the loot window's Value shows 1,143c, base 1,200c.
   assert.deepEqual(derivedPrices(sold('8 gold 5 silver 7 copper')), { sale: 857, base: 1200, vendorValue: 1143 })
+  // Black Lizard Talon (owner's screenshot, 2026-10-18): sold on loot for 3 silver, Value: 4 silver.
+  assert.equal(derivedPrices(sold('3 silver'))?.vendorValue, 40)
   // Jade Earring: 3,214c instantly, Value 4,286c, base 4,500c.
   assert.deepEqual(derivedPrices(sold('3 platinum 2 gold 1 silver 4 copper')), { sale: 3214, base: 4500, vendorValue: 4286 })
   assert.equal(derivedPrices({ samples: [] }), null, 'no sale, nothing derived')

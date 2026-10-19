@@ -21,11 +21,15 @@ import {
   sortGaps,
   visibleGaps,
   type GapDomain,
+  type GapRow,
   type GapSort,
   type GapSortKey,
   type GapsSnap
 } from '@shared/gaps'
-import type { CharacterSnap } from '@shared/types'
+import type { CharacterSnap, LootSnap } from '@shared/types'
+import { killIndex, type KillsSnap } from '@shared/kills'
+import { wikiPageText } from '@shared/wikiPage'
+import { groupGaps, rowEntries } from '@shared/gapGroups'
 import { useModule } from '../../lib/useModule'
 import { Tooltip } from '../../lib/Tooltip'
 import { useBoolPref } from '../combat/useCombatPrefs'
@@ -38,6 +42,8 @@ const EXPLANATION = 'Differences between what your log names and what the wiki d
 
 /** Where the "Zone I'm in" choice is remembered, per viewer, as the Achievements tab remembers its own. */
 const ZONE_HERE_KEY = 'eq.gaps.zoneHere'
+/** Where the grouped view is remembered. */
+const GROUPED_KEY = 'eq.gaps.grouped'
 
 /** "Zone I'm in (<zone>)", the Achievements tab's control: only the rows seen in that place, any tier. */
 function ZoneHere({ zone, checked, onChange }: { zone: string | null; checked: boolean; onChange: (on: boolean) => void }): JSX.Element {
@@ -128,6 +134,14 @@ export default function GapsView(): JSX.Element {
   }, [])
   // The table and Copy list read the same order, so a copied list matches what is on screen.
   const sorted = useMemo(() => sortGaps(visible, sort, verdicts), [visible, sort, verdicts])
+  // A row's wiki page joins its loot (which mob, which zone) and the kills behind each drop.
+  const loot = useModule<LootSnap>('loot')
+  const killMobs = useModule<KillsSnap>('kills')?.mobs
+  const kills = useMemo(() => killIndex(killMobs ?? {}), [killMobs])
+  const pageText = useCallback((row: GapRow) => wikiPageText(row, loot ?? [], kills), [loot, kills])
+  // "Group by zone, then mob" (owner ask, 2026-10-18): where to go and what to kill.
+  const [grouped, setGrouped] = useBoolPref(GROUPED_KEY, false)
+  const entries = useMemo(() => (grouped ? groupGaps(sorted, loot ?? []) : rowEntries(sorted)), [grouped, sorted, loot])
 
   if (!snap) return <CircularProgress size={20} />
 
@@ -165,6 +179,11 @@ export default function GapsView(): JSX.Element {
             setCopied(null)
           }}
         />
+        <FormControlLabel
+          sx={{ mr: 0 }}
+          control={<Checkbox size="small" checked={grouped} onChange={(e) => setGrouped(e.target.checked)} sx={{ p: 0.5 }} data-testid="gaps-grouped" />}
+          label={<Typography variant="caption">Group by zone, then mob</Typography>}
+        />
         <Button size="small" variant="outlined" startIcon={<ContentCopyIcon />} onClick={() => void copy()} disabled={visible.length === 0} data-testid="gaps-copy">
           Copy list
         </Button>
@@ -179,7 +198,7 @@ export default function GapsView(): JSX.Element {
         {zone !== null ? `, seen in ${zone} or another tier of it` : ''}
         {held > served ? ` (the engine serves the ${served} most mentioned)` : ''}.
       </Typography>
-      <GapsTable rows={sorted} verdicts={verdicts} sort={sort} onSort={onSort} hiddenByFilter={held > 0} />
+      <GapsTable entries={entries} verdicts={verdicts} sort={sort} onSort={onSort} pageText={pageText} hiddenByFilter={held > 0} />
     </Stack>
   )
 }
