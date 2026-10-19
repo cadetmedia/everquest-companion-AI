@@ -468,6 +468,9 @@ export default function App(): JSX.Element {
       setCharacter(c)
       setLive(false)
       setRebuild((n) => n + 1)
+      // A switch can land on a log created after the list was read (the switch card's new
+      // character, 2026-10-19), which would leave the picker showing "Select character".
+      void window.eq.listCharacters().then(setCharacters)
     })
     // The EQ install dir changed (Settings override applied/cleared): re-list the
     // characters so the TitleBar selector reflects the new folder. Main separately
@@ -512,6 +515,7 @@ export default function App(): JSX.Element {
         character={character}
         characters={characters}
         onSelectCharacter={(logPath) => void selectCharacter(logPath, onCharacterSwitched)}
+        onOpenPicker={() => void window.eq.listCharacters().then(setCharacters)}
       />
 
       {/* Everything below the bar: nav drawer + main content, side by side. The engine's launch
