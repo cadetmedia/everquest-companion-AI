@@ -195,3 +195,11 @@ SK, others).
 - Ally pet binds drop on every zone line by design (`ally.rs zone()`).
 - The engine has no checkpoint: it replays the whole log from byte 0 every start (the creator
   built one, JOS-208, and removed it, JOS-230).
+
+## /loc is in the log (EQ Legends, 2026-10-18)
+
+- `Your Location is -790.65, 173.39, -12.01` IS written to the log file on EQ Legends (6 lines in the
+  owner's live log on 2026-10-18), against `features/maps/locMarker.ts`'s header, which measured zero on
+  the creator's log. Order is /loc's (y, x, z), the same order the wiki's `|location` uses.
+- The faction line on Legends is `Your faction standing with X has been adjusted by -20.` (or `could not
+  possibly get any better/worse.`), printed just before the kill's death line, same second.

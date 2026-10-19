@@ -30,6 +30,7 @@ nowhere, and closes with any wiki-derived file it left stale and the command tha
 | `spell-overlay.json` | spells changed | `gen-engine-spell-overlay.mts` |
 | `resources/wiki-images` | always; a File: page changed | the bundled copy is dropped, then `fetch-wiki-images.mts` fetches what is missing |
 | `dataWeight.generated.json` | always | `gen-data-weight.mts` |
+| `dropGroups.json` (gaps-tab) | a mob page or a cached group page changed | `scrape-drop-groups.ts`: the 265 drop-list pages that are not items, 6 requests |
 | `bosses.json` | a boss page changed | named only: portraits are hand-picked across two wikis |
 
 A script missing from the checkout it runs in (the generators live on slayer-tab) is named stale.
