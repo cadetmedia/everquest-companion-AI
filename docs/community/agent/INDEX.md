@@ -16,6 +16,7 @@ into `main_community`, and push with the rest of the work.
 | [DATA_REFRESH.md](DATA_REFRESH.md) | Before any wiki scrape or data top-up. |
 | [../RELEASING.md](../RELEASING.md) | Before a release (on `community_release_rules`). |
 | [../plans/2026-10-18-scrape-rebaseline.md](../plans/2026-10-18-scrape-rebaseline.md) | Open: the era rules, the stale-scrape defect, the August catch-up (phases and status). |
+| [../plans/2026-10-19-gaps-all-characters.md](../plans/2026-10-19-gaps-all-characters.md) | Next: the Gaps tab across every character (planned, not built). |
 
 Write style for these files: terse bullets, commands and facts, the reason in one clause. No
 narrative, no session diaries, no commit hashes that only describe history. Record owner rulings
