@@ -83,3 +83,8 @@ test('a merchant page is marked, and a page names the factions a kill moves (Gap
   assert.equal(mob?.merchant, undefined)
   assert.deepEqual(mob?.factions, ['Undead Frogloks of Guk', 'Frogloks of Guk'])
 })
+
+test('a loot link with a leading colon is the page without it (2026-10-18: Gaps showed a group `:Raw-hide Armor`)', () => {
+  const block = '<ul>\n<li> [[:Raw-hide Armor]] (Common)\n</li><li> [[:Rat Tooth|Rat Tooth]]\n</li></ul>'
+  assert.deepEqual(parseMobLoot(block).map((d) => d.item), ['Raw-hide Armor', 'Rat Tooth'])
+})

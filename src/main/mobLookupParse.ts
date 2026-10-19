@@ -124,7 +124,8 @@ const LOOT_ANCHOR_RE = /\{\{:\s*([^}|]+?)\s*(?:\|[^}]*)?\}\}|\[\[([^\]|#]+)(?:#[
 function lootAnchorItem(block: string, m: RegExpMatchArray): string | null {
   const fold = (s: string): string => s.replace(/_/g, ' ').replace(/\s+/g, ' ').trim()
   if (m[1] !== undefined) return fold(m[1]) || null
-  const target = fold(m[2])
+  // `[[:Raw-hide Armor]]` is the page `Raw-hide Armor`: a leading colon only forces a plain link.
+  const target = fold(m[2]).replace(/^:\s*/, '')
   const label = fold(m[3] ?? '')
   const lead = block.slice(block.lastIndexOf('\n', m.index) + 1, m.index)
   if (!/^(\s|[*#:]|<[^>]*>)*$/.test(lead)) return null
