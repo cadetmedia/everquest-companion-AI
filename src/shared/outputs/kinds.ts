@@ -271,6 +271,17 @@ export function outputFileNames(
   return names
 }
 
+/**
+ * Whether a found dump is this character's own. Discovery falls back to ANYBODY's newest dump
+ * (`preferredOutputFile`), which suits a reader that only looks; a reader whose result is stored
+ * under this character refuses another's file. A character whose name is not known owns whatever
+ * was found: the one-character machine.
+ */
+export function ownsOutputFile(def: OutputKindDef, path: string, characterName?: string, server?: string): boolean {
+  const file = (path.split(/[\\/]/).pop() ?? '').toLowerCase()
+  return !characterName || outputFileNames(def, characterName, server).some((name) => name.toLowerCase() === file)
+}
+
 /** Does this filename belong to this kind? Case-insensitive, as the rest of the matching is. */
 export function isOutputFileName(def: OutputKindDef, file: string): boolean {
   return file.toLowerCase().endsWith(`-${def.fileKind}.txt`.toLowerCase())

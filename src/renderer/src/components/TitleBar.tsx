@@ -345,11 +345,13 @@ function OverlayMenu({ overlayState }: { overlayState: Record<OverlayKind, boole
 function CharacterPicker({
   character,
   characters,
-  onSelectCharacter
+  onSelectCharacter,
+  onOpen
 }: {
   character: CharacterRef | null
   characters: CharacterRef[]
   onSelectCharacter: (logPath: string) => void
+  onOpen?: () => void
 }): JSX.Element {
   return (
     <Box data-no-drag sx={{ WebkitAppRegion: 'no-drag', display: 'flex', alignItems: 'center', pr: 1 }}>
@@ -360,6 +362,7 @@ function CharacterPicker({
           disableUnderline
           value={character?.logPath ?? ''}
           onChange={(e) => onSelectCharacter(e.target.value)}
+          onOpen={onOpen}
           sx={{ minWidth: 200, fontSize: 14 }}
           renderValue={(v) => {
             const c = characters.find((x) => x.logPath === v)
@@ -409,13 +412,16 @@ export interface TitleBarProps {
   character: CharacterRef | null
   characters: CharacterRef[]
   onSelectCharacter: (logPath: string) => void
+  /** The picker opened: re-list the logs, so one created while the app runs is offered (2026-10-19). */
+  onOpenPicker?: () => void
 }
 
 export default function TitleBar({
   live,
   character,
   characters,
-  onSelectCharacter
+  onSelectCharacter,
+  onOpenPicker
 }: TitleBarProps): JSX.Element {
   const [maximized, setMaximized] = useState(false)
   // Per-kind overlay open-state (Task #52; kinds in Task #54/#59): reflected on the compact
@@ -489,6 +495,7 @@ export default function TitleBar({
         character={character}
         characters={characters}
         onSelectCharacter={onSelectCharacter}
+        onOpen={onOpenPicker}
       />
 
       <WindowControls maximized={maximized} />

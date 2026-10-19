@@ -31,7 +31,7 @@ import type { FactionStanding, FactionsSource } from '../../shared/outputs/facti
 import { isOwnOutputFile } from '../../shared/outputs/kinds'
 import type { OutputKindId } from '../../shared/outputs/kinds'
 import { logWarn } from '../errorLog'
-import { outputFileNames, outputKind, parseOutput, type OutputParseResult } from './kinds'
+import { outputKind, ownsOutputFile, parseOutput, type OutputParseResult } from './kinds'
 import { outputStatus, type OutputCharacter } from './registry'
 
 export { findOutputFile } from './discovery'
@@ -126,7 +126,9 @@ export function loadInventoryDump(
   server?: string
 ): LoadedInventoryDump | null {
   const loaded = loadOutput('inventory', characterName, server)
-  if (!loaded) return null
+  // Another character's dump is refused, as the achievements one is: its counts would be saved under
+  // this character (2026-10-19: a new character on a new server was shown Drywrought's inventory).
+  if (!loaded || !ownsOutputFile(outputKind('inventory'), loaded.path, characterName, server)) return null
   const { result } = loaded
   // The registry types this narrowing honestly: an unsupported kind never yields data.
   if (!result.ok || result.data.kind !== 'inventory') return null
@@ -164,13 +166,7 @@ export function loadAchievements(
   now: () => number = Date.now
 ): LoadedAchievements | null {
   const loaded = loadOutput('achievements', characterName, server)
-  if (!loaded) return null
-  // Discovery falls back to ANYBODY's newest dump (`preferredOutputFile`), which suits a reader
-  // that only looks; these claims are stored under this character, so another's file is refused.
-  // A character whose name is not known owns whatever was found: the one-character machine.
-  const file = (loaded.path.split(/[\\/]/).pop() ?? '').toLowerCase()
-  const own = outputFileNames(outputKind('achievements'), characterName, server)
-  if (characterName && !own.some((name) => name.toLowerCase() === file)) return null
+  if (!loaded || !ownsOutputFile(outputKind('achievements'), loaded.path, characterName, server)) return null
   const { result } = loaded
   if (!result.ok || result.data.kind !== 'achievements') return null
   return {

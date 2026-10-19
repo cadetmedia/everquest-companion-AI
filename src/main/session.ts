@@ -9,7 +9,7 @@
 //
 // pipeline.ts owns the world this feeds (bus, modules, combat engine); this module drives it.
 
-import { existsSync } from 'fs'
+import { existsSync, statSync } from 'fs'
 import { IPC } from '../shared/ipc'
 import { logConsoleError, logInfo, logWarn } from './errorLog'
 import {
@@ -22,6 +22,7 @@ import {
   resolveEqDir,
   tailSurvivesRootChange
 } from './log/config'
+import { launchCharacter } from './log/discovery'
 // THE SERVED ARM (JOS-496): `mirroredModuleState` answers the `/outputfile` baseline seam from the
 // engine when it is the world answering this app's reads, and `null` — no engine, not yet live, a
 // world just replaced — is every caller's cue to ask this process's own fold instead.
@@ -138,11 +139,11 @@ async function resolveMostRecentCharacter(): Promise<CharacterRef | null> {
 async function resolveInitialCharacter(): Promise<CharacterRef | null> {
   const savedPath = getActiveLogPath()
   // A saved log that has since been deleted falls through to the served arm, as the header says.
-  if (savedPath && existsSync(savedPath)) {
-    const ref = parseLogName(savedPath)
-    if (ref) return ref
-  }
-  return resolveMostRecentCharacter()
+  const saved = savedPath && existsSync(savedPath) ? parseLogName(savedPath) : null
+  if (!savedPath || !saved) return resolveMostRecentCharacter()
+  // Since 2026-10-19 the served list is asked on every launch too: a log written after the saved
+  // one is a character played since, and it wins (log/discovery.ts `launchCharacter`).
+  return launchCharacter(saved, statSync(savedPath).mtimeMs, await resolveMostRecentCharacter())
 }
 
 /** Build the EqConfig payload the Settings UI reads (effective dir + how it resolved). */

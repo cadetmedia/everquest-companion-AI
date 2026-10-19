@@ -37,15 +37,26 @@
 //   * THE THRESHOLD IS GENEROUS ON PURPOSE. Ordinary AFK and zoning gaps must never reach it; the
 //     characterization's own trap is that the reporter's log had minutes-long gaps during normal
 //     play. Five minutes of total silence, and only then do we even look at the directory.
+//   * ONE SHORTER PATH, FOR A CHARACTER THAT ENTERED THE WORLD (fork owner, 2026-10-19: a new
+//     character on a new server waited five minutes for the card). A sibling whose log carries the
+//     game's world-entry line ("Welcome to EverQuest") stamped AFTER the attached log's last line is
+//     a character that logged in once this one fell silent, which AFK never writes, so one minute
+//     of silence is enough for it. A second account that logged in earlier, while this one was
+//     live, still waits the five. Every guarantee above holds: growth is still required, and the
+//     ask is still once per log per session.
 //
 // No fs, no Electron, no clock: every instant arrives as an argument, so `tests/quietSwitch.test.mts`
 // drives the whole decision directly. The binding that samples the Logs dir and sends the IPC is
 // `src/main/switchNudge.ts`.
 
+import { parseEqTimestamp } from '../../shared/spellKey'
+
 /** One character log as this poll found it: where it is, and how big it is right now. */
 export interface SiblingSample {
   readonly path: string
   readonly size: number
+  /** When its newest world-entry line was stamped (`worldEntryAt` over its new bytes), if it has one. */
+  readonly enteredAt?: number
 }
 
 /** Everything one decision needs. The caller owns the clock and the directory read. */
@@ -89,6 +100,19 @@ export type QuietSwitchOutcome =
  */
 export const QUIET_MS = 5 * 60_000
 
+/** The silence that suffices when the growing sibling's character entered the world (see the header). */
+export const ENTERED_QUIET_MS = 60_000
+
+/** The game's world-entry line, as a new session's log opens with it ("Welcome to EverQuest Legends!"). */
+const WORLD_ENTRY_RE = /^\[([^\]]+)\] Welcome to EverQuest/gm
+
+/** The local epoch of the last world-entry line in a stretch of log text, or null when it has none. */
+export function worldEntryAt(text: string): number | null {
+  let at: number | null = null
+  for (const m of text.matchAll(WORLD_ENTRY_RE)) at = parseEqTimestamp(m[1]) || at
+  return at
+}
+
 /**
  * How often the binding polls once it has something to poll for. It is NOT a re-fire interval —
  * see the header: a candidate can only ever produce one nudge, so this only decides how quickly the
@@ -122,13 +146,14 @@ function pickGrowing(
   logs: readonly SiblingSample[],
   active: string,
   before: ReadonlyMap<string, number>,
-  spent: ReadonlySet<string>
+  /** not yet asked about, and allowed by the silence so far */
+  open: (k: string) => boolean
 ): { path: string; grewBy: number } | null {
   let best: { path: string; grewBy: number } | null = null
   for (const log of logs) {
     const k = key(log.path)
     const was = before.get(k)
-    if (k === active || spent.has(k) || was === undefined) continue
+    if (k === active || was === undefined || !open(k)) continue
     const grewBy = log.size - was
     if (grewBy > 0 && (best === null || grewBy > best.grewBy)) best = { path: log.path, grewBy }
   }
@@ -144,14 +169,23 @@ function pickGrowing(
  */
 export class QuietSwitchWatcher {
   private readonly quietMs: number
+  private readonly enteredQuietMs: number
   /** Candidate logs already asked about. WRITE-ONLY: nothing in this class ever removes a key. */
   private readonly spent = new Set<string>()
   private active: string | null = null
   /** Sizes as of the PREVIOUS poll of the current quiet stretch; null = no baseline yet. */
   private baseline: ReadonlyMap<string, number> | null = null
+  /** Siblings seen entering the world during the current quiet stretch. */
+  private entered = new Set<string>()
 
-  constructor(quietMs: number = QUIET_MS) {
+  constructor(quietMs: number = QUIET_MS, enteredQuietMs: number = Math.min(ENTERED_QUIET_MS, quietMs)) {
     this.quietMs = quietMs
+    this.enteredQuietMs = enteredQuietMs
+  }
+
+  /** The shortest silence that can lead anywhere: the binding samples the Logs dir from here on. */
+  get samplingQuietMs(): number {
+    return this.enteredQuietMs
   }
 
   /** Whether this session has already asked about a log (the e2e and the tests read it). */
@@ -173,16 +207,23 @@ export class QuietSwitchWatcher {
       this.active = active
       this.baseline = null
     }
-    if (!logIsQuiet(o.lastLineAt, o.now, this.quietMs)) {
+    if (!logIsQuiet(o.lastLineAt, o.now, this.enteredQuietMs)) {
       this.baseline = null
+      this.entered = new Set()
       return { kind: 'live' }
     }
     const before = this.baseline
     const sizes = new Map<string, number>()
-    for (const log of o.logs) sizes.set(key(log.path), log.size)
+    for (const log of o.logs) {
+      sizes.set(key(log.path), log.size)
+      // A login stamped after the attached log's last line (to the second the log is written in).
+      if (log.enteredAt !== undefined && log.enteredAt >= o.lastLineAt - 1000) this.entered.add(key(log.path))
+    }
     this.baseline = sizes
     if (before === null) return { kind: 'watching' }
-    const grown = pickGrowing(o.logs, active, before, this.spent)
+    // Five minutes of silence admits any growing sibling; one minute only one that entered the world.
+    const long = logIsQuiet(o.lastLineAt, o.now, this.quietMs)
+    const grown = pickGrowing(o.logs, active, before, (k) => !this.spent.has(k) && (long || this.entered.has(k)))
     if (grown === null) return { kind: 'watching' }
     // THE ONE STATEMENT THE WHOLE GUARANTEE RESTS ON: the memory is written HERE, beside the
     // return, so no later step — a dismissal, an IPC send, a renderer that never mounted — can be

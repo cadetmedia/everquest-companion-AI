@@ -23,6 +23,7 @@ export {
   isOutputFileName,
   outputFileNames,
   outputKind,
+  ownsOutputFile,
   preferredOutputFile,
   OUTPUT_KINDS,
   type OutputFileStatus,

@@ -9,13 +9,13 @@
 // read, so an app tailing a live log never stats a file for this feature — which matters while the
 // EQ-hitch program (JOS-363…372) is measuring what the main process does between frames.
 
-import { statSync } from 'fs'
+import { closeSync, openSync, readSync, statSync } from 'fs'
 import { IPC } from '../shared/ipc'
 import type { CharacterRef, LogSwitchNudge } from '../shared/types'
 import { E2E } from './e2e'
 import { logInfo } from './errorLog'
 import { listCharacters, parseLogName } from './log/config'
-import { POLL_MS, QUIET_MS, QuietSwitchWatcher, logIsQuiet, type SiblingSample } from './log/quietSwitch'
+import { ENTERED_QUIET_MS, POLL_MS, QUIET_MS, QuietSwitchWatcher, logIsQuiet, worldEntryAt, type SiblingSample } from './log/quietSwitch'
 import { sendToMain } from './windows'
 
 /**
@@ -31,13 +31,14 @@ function tuned(name: string, fallback: number): number {
 }
 
 const quietMs = tuned('EQ_QUIET_SWITCH_MS', QUIET_MS)
+const enteredQuietMs = tuned('EQ_QUIET_SWITCH_ENTERED_MS', Math.min(ENTERED_QUIET_MS, quietMs))
 const pollMs = tuned('EQ_QUIET_SWITCH_POLL_MS', POLL_MS)
 
 /**
  * ONE watcher for the whole app session. It outlives every character switch on purpose — that is
  * what bounds two-account alternation to one nudge per log (quietSwitch.ts's header).
  */
-const watcher = new QuietSwitchWatcher(quietMs)
+const watcher = new QuietSwitchWatcher(quietMs, enteredQuietMs)
 
 let attached: CharacterRef | null = null
 let lastLineAt = 0
@@ -53,12 +54,34 @@ export function noteTailLine(): void {
   lastLineAt = Date.now()
 }
 
+/** The most of a sibling's new bytes read for the world-entry line: a login writes it at the top. */
+const ENTRY_SCAN_BYTES = 64 * 1024
+/** Sizes as of this binding's previous sample, so only a sibling's NEW bytes are read. */
+const sampledSize = new Map<string, number>()
+
+/** When the bytes a log gained since the last sample (its tail, on first sight) last entered the world. */
+function enteredAt(path: string, size: number): number | null {
+  const from = Math.max(sampledSize.get(path) ?? 0, size - ENTRY_SCAN_BYTES)
+  if (size <= from) return null
+  const fd = openSync(path, 'r')
+  try {
+    const buf = Buffer.alloc(size - from)
+    readSync(fd, buf, 0, buf.length, from)
+    return worldEntryAt(buf.toString('latin1'))
+  } finally {
+    closeSync(fd)
+  }
+}
+
 /** Every character log in the effective Logs dir, with the size this poll found. */
 function sampleLogs(): SiblingSample[] {
   const out: SiblingSample[] = []
   for (const ref of listCharacters()) {
     try {
-      out.push({ path: ref.logPath, size: statSync(ref.logPath).size })
+      const size = statSync(ref.logPath).size
+      const at = ref.logPath === attached?.logPath ? null : enteredAt(ref.logPath, size)
+      sampledSize.set(ref.logPath, size)
+      out.push({ path: ref.logPath, size, ...(at === null ? {} : { enteredAt: at }) })
     } catch {
       // Deleted or locked between the listing and the stat — it simply is not a candidate.
     }
@@ -88,7 +111,7 @@ function poll(): void {
   if (!ref) return
   const now = Date.now()
   // The directory read is bought only by silence — see the header.
-  const logs = logIsQuiet(lastLineAt, now, quietMs) ? sampleLogs() : []
+  const logs = logIsQuiet(lastLineAt, now, watcher.samplingQuietMs) ? sampleLogs() : []
   const outcome = watcher.observe({ now, activeLogPath: ref.logPath, lastLineAt, logs })
   if (outcome.kind === 'nudge') offerSwitch(outcome.logPath, outcome.quietMs)
 }
