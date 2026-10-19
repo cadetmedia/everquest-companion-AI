@@ -20,6 +20,8 @@ const RESPAWNS = 'src/main/data/respawns.json'
 const BOSSES = 'src/renderer/src/data/eqlegends/bosses.json'
 const POSKY = 'src/renderer/src/data/eqlegends/posky.json'
 const IMAGES = 'resources/wiki-images'
+/** The drop-group pages scrape-drop-groups.ts read: the Gaps tab's missing-drop check. */
+const DROP_GROUP_PAGES = 'scripts/sources/cache/drop-groups/pages.json'
 
 /** The closing report's files this stage keeps current (refreshed, or nothing behind them changed). */
 export const FOLLOWED = [
@@ -68,6 +70,9 @@ export function followUps(root: string, c: Changed, fresh: string): FollowUp[] {
   }
   if (touched(CLASS_PAGES)) out.push({ file: 'src/main/data/classes.json', script: 'scripts/scrape-classes.ts' })
   if (touched(poskyPages(root))) out.push({ file: POSKY, script: 'scripts/scrape-posky.ts' })
+  // A mob page can name a new group; a group page can change its members. Six requests, all of them.
+  const groupPages = (readJson(root, DROP_GROUP_PAGES, []) as { title: string }[]).map((p) => p.title)
+  if (c.mobs || touched(groupPages)) out.push({ file: 'src/renderer/src/data/eqlegends/dropGroups.json', script: 'scripts/scrape-drop-groups.ts' })
   if (c.items || c.mobs || c.spells) {
     out.push({ file: 'src/main/data/pageEra.json', script: 'scripts/scrape-page-era.ts', args: ['--fresh', fresh] })
   }
