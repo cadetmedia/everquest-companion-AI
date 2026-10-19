@@ -92,3 +92,22 @@ export function groupGaps(rows: readonly GapRow[], loot: readonly LootEvent[]): 
   }
   return out
 }
+
+/**
+ * The grouped list less what folded headings hide (owner ask, 2026-10-18): a folded zone shows only
+ * its heading, a folded mob its heading and nothing under it. `folded` holds heading keys.
+ */
+export function unfoldedEntries(entries: readonly GapEntry[], folded: ReadonlySet<string>): GapEntry[] {
+  const out: GapEntry[] = []
+  let zoneFolded = false
+  let mobFolded = false
+  for (const e of entries) {
+    if (e.kind === 'zone') {
+      zoneFolded = folded.has(e.key)
+      mobFolded = false
+    } else if (e.kind === 'mob') mobFolded = folded.has(e.key)
+    const hidden = e.kind !== 'zone' && (zoneFolded || (e.kind === 'row' && e.depth === 2 && mobFolded))
+    if (!hidden) out.push(e)
+  }
+  return out
+}

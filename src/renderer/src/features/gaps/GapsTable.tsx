@@ -15,13 +15,13 @@
 // a viewport-arithmetic cap that left the page scrolling beside it. The pane above it caps its own
 // height modestly so the list keeps room on a short screen.
 
-import { type JSX, memo, useCallback, useRef, useState } from 'react'
+import { type JSX, memo, useCallback, useMemo, useRef, useState } from 'react'
 import { Box, Button, Chip, Paper, Stack, Table, TableBody, TableCell, TableHead, TableRow, TableSortLabel, Typography } from '@mui/material'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import NoteAddIcon from '@mui/icons-material/NoteAdd'
 import SearchIcon from '@mui/icons-material/Search'
 import { charactersOff, factionMob, gapZone, wikiCreateUrl, wikiEditUrl, wikiSearchUrl, type GapRow, type GapSort, type GapSortKey, type GapSuggest, type GapVerdict, type GapVerdicts } from '@shared/gaps'
-import type { GapEntry } from '@shared/gapGroups'
+import { unfoldedEntries, type GapEntry } from '@shared/gapGroups'
 import { wikiPageUrl } from '@shared/wiki'
 import { copyText } from '../../lib/clipboard'
 import { Tooltip } from '../../lib/Tooltip'
@@ -198,17 +198,28 @@ function SortHeader({ sort, onSort }: { sort: GapSort; onSort: (key: GapSortKey)
   )
 }
 
-/** A zone or mob heading of the grouped list (shared/gapGroups.ts), one row high like the rest. */
-function GroupRow({ entry }: { entry: Exclude<GapEntry, { kind: 'row' }> }): JSX.Element {
+/** A zone or mob heading of the grouped list (shared/gapGroups.ts), one row high like the rest; a
+ *  click folds what is under it (owner ask, 2026-10-18). */
+function GroupRow({
+  entry,
+  folded,
+  onFold
+}: {
+  entry: Exclude<GapEntry, { kind: 'row' }>
+  folded: boolean
+  onFold: (key: string) => void
+}): JSX.Element {
   const zone = entry.kind === 'zone'
   return (
-    <TableRow sx={{ height: ROW_HEIGHT, bgcolor: zone ? 'action.selected' : 'action.hover' }} data-testid={`gaps-group-${entry.kind}`}>
+    <TableRow
+      onClick={() => onFold(entry.key)}
+      sx={{ height: ROW_HEIGHT, cursor: 'pointer', bgcolor: zone ? 'action.selected' : 'action.hover' }}
+      data-testid={`gaps-group-${entry.kind}`}
+    >
       <TableCell colSpan={COLUMNS} sx={{ fontWeight: zone ? 700 : 600, pl: zone ? 1 : 4, whiteSpace: 'nowrap' }}>
-        {!zone && (
-          <Box component="span" sx={{ color: 'text.secondary', mr: 1 }}>
-            ▸
-          </Box>
-        )}
+        <Box component="span" sx={{ color: 'text.secondary', mr: 1 }}>
+          {folded ? '▸' : '▾'}
+        </Box>
         {zone ? entry.zone : entry.mob}
         <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 1 }}>
           {entry.n} missing
@@ -238,8 +249,19 @@ export default function GapsTable({
 }): JSX.Element {
   const [open, setOpen] = useState<string | null>(null)
   const onToggle = useCallback((name: string) => setOpen((cur) => (cur === name ? null : name)), [])
+  const [folded, setFolded] = useState<ReadonlySet<string>>(new Set())
+  const onFold = useCallback(
+    (key: string) =>
+      setFolded((cur) => {
+        const next = new Set(cur)
+        if (!next.delete(key)) next.add(key)
+        return next
+      }),
+    []
+  )
+  const shown = useMemo(() => unfoldedEntries(entries, folded), [entries, folded])
   const scrollRef = useRef<HTMLDivElement>(null)
-  const win = useWindowedRows({ count: entries.length, rowHeight: ROW_HEIGHT, scrollRef })
+  const win = useWindowedRows({ count: shown.length, rowHeight: ROW_HEIGHT, scrollRef })
   if (entries.length === 0) {
     return (
       <Typography variant="body2" color="text.secondary" sx={{ py: 2 }} data-testid="gaps-empty">
@@ -259,11 +281,11 @@ export default function GapsTable({
           <SortHeader sort={sort} onSort={onSort} />
           <TableBody>
             <PadRow height={win.topPad} />
-            {entries.slice(win.start, win.end).map((e) =>
+            {shown.slice(win.start, win.end).map((e) =>
               e.kind === 'row' ? (
                 <GapTableRow key={e.key} row={e.row} open={open === e.row.name} verdict={verdicts[e.row.name] ?? 'unchecked'} onToggle={onToggle} depth={e.depth} />
               ) : (
-                <GroupRow key={e.key} entry={e} />
+                <GroupRow key={e.key} entry={e} folded={folded.has(e.key)} onFold={onFold} />
               )
             )}
             <PadRow height={win.bottomPad} />
