@@ -2,6 +2,9 @@
 // the parsed main page, and a stubbed fetch.
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
+import { mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { attachItemStats, fetchParsedHtml, parseClasses, parseItemStats } from '../scripts/sources/eqlegends'
 
 const classBlock = (cls: string, quest: string): string =>
@@ -43,7 +46,9 @@ test('item pages are fetched a second apart and the ones left without stats are 
   t.mock.method(console, 'log', () => undefined)
   const quest = parseClasses(page(classBlock('Bard', 'Test of Voice')), ['Bard'])
   quest[0].items[0].page = 'Nebulous Sapphire'
-  await attachItemStats(quest)
+  const dir = mkdtempSync(join(tmpdir(), 'posky-render-'))
+  t.after(() => rmSync(dir, { recursive: true, force: true }))
+  await attachItemStats(quest, { dir })
   assert.ok(at[1] - at[0] >= 990, `gap ${String(at[1] - at[0])} ms`)
   assert.match(quest[0].rewardStats ?? '', /MAGIC ITEM/)
   assert.match(String(warn.mock.calls.at(-1)?.arguments[0]), /without stats.*Nebulous Sapphire/)
