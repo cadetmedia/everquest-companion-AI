@@ -3,25 +3,25 @@
     {
       "file": "src/main/data/items.json",
       "bytes": 8864775,
-      "parseMs": 54.7,
+      "parseMs": 46.3,
       "heapMb": 20.6
     },
     {
       "file": "src/main/data/messageOverlay.baseline.json",
       "bytes": 410455,
-      "parseMs": 1.5,
+      "parseMs": 1.4,
       "heapMb": 0.7
     },
     {
       "file": "src/main/data/pageEra.json",
       "bytes": 233694,
-      "parseMs": 1.7,
+      "parseMs": 2.6,
       "heapMb": 0.7
     },
     {
       "file": "src/main/data/resistBaseline.json",
       "bytes": 969398,
-      "parseMs": 3.2,
+      "parseMs": 2.8,
       "heapMb": 1.7
     },
     {
@@ -38,9 +38,9 @@
     },
     {
       "file": "src/renderer/src/data/eqlegends/mobs.json",
-      "bytes": 4103229,
-      "parseMs": 10.9,
-      "heapMb": 6
+      "bytes": 4575885,
+      "parseMs": 12.3,
+      "heapMb": 6.5
     }
   ],
   "rendererOnly": [
