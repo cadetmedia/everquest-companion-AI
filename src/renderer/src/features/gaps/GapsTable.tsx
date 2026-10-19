@@ -18,7 +18,9 @@
 import { type JSX, memo, useCallback, useRef, useState } from 'react'
 import { Box, Button, Chip, Paper, Stack, Table, TableBody, TableCell, TableHead, TableRow, TableSortLabel, Typography } from '@mui/material'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
-import { charactersOff, gapZone, type GapRow, type GapSort, type GapSortKey, type GapSuggest, type GapVerdict, type GapVerdicts } from '@shared/gaps'
+import NoteAddIcon from '@mui/icons-material/NoteAdd'
+import SearchIcon from '@mui/icons-material/Search'
+import { charactersOff, gapZone, wikiCreateUrl, wikiSearchUrl, type GapRow, type GapSort, type GapSortKey, type GapSuggest, type GapVerdict, type GapVerdicts } from '@shared/gaps'
 import type { GapEntry } from '@shared/gapGroups'
 import { wikiPageUrl } from '@shared/wiki'
 import { copyText } from '../../lib/clipboard'
@@ -120,6 +122,13 @@ function DetailsPane({ row, pageText }: { row: GapRow; pageText: (row: GapRow) =
       <Stack direction="row" spacing={1} alignItems="center">
         <Typography variant="subtitle2">{row.name}</Typography>
         <CopyPageButton key={row.name} text={() => pageText(row)} />
+        {/* Into the wiki in one click: its search, or its editor on a new page of this name. */}
+        <Button size="small" href={wikiSearchUrl(row.name)} target="_blank" rel="noreferrer" startIcon={<SearchIcon />} data-testid="gaps-wiki-search">
+          Search wiki
+        </Button>
+        <Button size="small" href={wikiCreateUrl(row.name)} target="_blank" rel="noreferrer" startIcon={<NoteAddIcon />} data-testid="gaps-wiki-create">
+          Create page
+        </Button>
       </Stack>
       <GapDetailsPanel details={row.details} />
     </Paper>

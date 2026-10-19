@@ -7,6 +7,7 @@ import {
   derivedPrices,
   gapActions,
   parserShape,
+  wikiCreateUrl,
   wikiSearchUrl,
   formatCoin,
   gapDetailsText,
@@ -129,6 +130,8 @@ test('gapActions says what to do: one chip for the verdict or the suggestion, pl
   }
   assert.equal(parserShape('Wooden Heart'), null)
   assert.equal(wikiSearchUrl(" Lyssa's Horn "), "https://eqlwiki.com/index.php?search=Lyssa's%20Horn")
+  // The wiki's own red-link editor URL (owner, 2026-10-18).
+  assert.equal(wikiCreateUrl('Pristine Lizard Talon'), 'https://eqlwiki.com/index.php?title=Pristine_Lizard_Talon&action=edit&redlink=1')
 })
 
 test('the sale-on-loot and paid lists print with the discount caveat in the word', () => {

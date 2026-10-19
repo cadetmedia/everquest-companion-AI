@@ -242,6 +242,11 @@ export function wikiSearchUrl(name: string): string {
   return `https://eqlwiki.com/index.php?search=${encodeURIComponent(name.trim())}`
 }
 
+/** The wiki's editor on a new page titled with the name, as its own red links open it (owner ask, 2026-10-18). */
+export function wikiCreateUrl(name: string): string {
+  return `https://eqlwiki.com/index.php?title=${encodeURIComponent(name.trim().replace(/ /g, '_'))}&action=edit&redlink=1`
+}
+
 /** A shape the app's own parsers leave in a name, or null: the words the Fix parser tooltip uses. */
 export function parserShape(name: string): string | null {
   if (name.endsWith(' from Reward Chest')) return 'a " from Reward Chest" tail the loot parser left in the item name'
