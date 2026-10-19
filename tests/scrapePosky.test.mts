@@ -2,7 +2,7 @@
 // the parsed main page, and a stubbed fetch.
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { attachItemStats, fetchParsedHtml, parseClasses } from '../scripts/sources/eqlegends'
+import { attachItemStats, fetchParsedHtml, parseClasses, parseItemStats } from '../scripts/sources/eqlegends'
 
 const classBlock = (cls: string, quest: string): string =>
   `<div class="mw-heading mw-heading3"><h3>${cls} Tests</h3></div>` +
@@ -47,4 +47,9 @@ test('item pages are fetched a second apart and the ones left without stats are 
   assert.ok(at[1] - at[0] >= 990, `gap ${String(at[1] - at[0])} ms`)
   assert.match(quest[0].rewardStats ?? '', /MAGIC ITEM/)
   assert.match(String(warn.mock.calls.at(-1)?.arguments[0]), /without stats.*Nebulous Sapphire/)
+})
+
+test('a stat block breaks at every <br>, so a line the template appends keeps its own line', () => {
+  const html = '<div class="mw-parser-output"><p>Efreeti Mace</p>\n<p>Class: WAR<br>\nRace: ALL<br><span>DMG Bonus: 15 @ lvl 50</span></p><h2>Drops From</h2></div>'
+  assert.equal(parseItemStats(html, 'Efreeti Mace'), 'Class: WAR\nRace: ALL\nDMG Bonus: 15 @ lvl 50')
 })

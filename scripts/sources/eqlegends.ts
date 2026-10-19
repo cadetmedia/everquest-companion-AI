@@ -317,10 +317,14 @@ function runeItems(runeText: string): PoskyItem[] {
  * Extract the EQ-style stat block from an item's wiki page: everything from the
  * item name down to the "Drops From" section (flags, slot, damage, stats, saves).
  */
-function parseItemStats(html: string, itemName: string): string | undefined {
+export function parseItemStats(html: string, itemName: string): string | undefined {
   const $ = cheerio.load(html)
   const root = $('.mw-parser-output').first()
   if (!root.length) return undefined
+  // A <br> is a line break whatever newline the HTML has after it: the Itempage template appends
+  // its own `DMG Bonus` line straight after the statsblock's last <br> (seen 2026-10-18 as
+  // `Race: ALLDMG Bonus: 15 @ lvl 50` on 25 Plane of Sky weapons).
+  root.find('br').replaceWith('\n')
   const before = root.text().split(/Drops From/i)[0] ?? ''
   const lines = before
     .split('\n')
