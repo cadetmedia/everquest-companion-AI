@@ -72,3 +72,14 @@ test('the wiki era rule: the page banner decides, whatever zone the page names',
   // In-era and unbannered mobs carry no flag at all.
   assert.equal(parseMobPage('A rat', page('Classic', 'Befallen'))?.outOfEra, undefined)
 })
+
+test('a merchant page is marked, and a page names the factions a kill moves (Gaps tab, 2026-10-18)', () => {
+  const merchant = parseMobPage('Murga', '{{MerchantPage\n| name = Murga\n| zone = [[The Feerrott]]\n| items_sold =\n}}')
+  assert.equal(merchant?.merchant, true)
+  const mob = parseMobPage(
+    'A zol ghoul knight',
+    '{{Namedmobpage\n| name = a zol ghoul knight\n| factions =\n* [[Undead Frogloks of Guk]] (-20)\n| opposing_factions =\n* [[Frogloks of Guk]] (+5)\n}}'
+  )
+  assert.equal(mob?.merchant, undefined)
+  assert.deepEqual(mob?.factions, ['Undead Frogloks of Guk', 'Frogloks of Guk'])
+})
