@@ -36,6 +36,15 @@ interface KillFaction {
   faction: string
   n: number
   zone: string
+  /** the last amount a line stated */
+  adjust?: number
+}
+
+/** Where a con or hail beside a `/loc` placed a mob (gaps_locs.rs), each point in `/loc` order. */
+interface MobLoc {
+  mob: string
+  zone: string
+  points: number[][]
 }
 
 interface Snap {
@@ -43,6 +52,7 @@ interface Snap {
   totals: Record<string, number>
   seen: Record<string, number>
   killFactions?: KillFaction[]
+  mobLocs?: MobLoc[]
 }
 
 /** The fold's own caps (gaps.rs `CAP_PER_DOMAIN`, gaps_details.rs `LIST_CAP` and `SAMPLES`). */
@@ -154,7 +164,19 @@ function mergeKillFactions(older: Snap, newer: Snap): KillFaction[] {
   for (const p of [...(older.killFactions ?? []), ...(newer.killFactions ?? [])]) {
     const k = `${p.mob.toLowerCase()}|${p.faction.toLowerCase()}`
     const had = out.get(k)
-    out.set(k, had === undefined ? { ...p } : { ...had, n: had.n + p.n, zone: p.zone || had.zone })
+    out.set(k, had === undefined ? { ...p } : { ...had, n: had.n + p.n, zone: p.zone || had.zone, adjust: p.adjust ?? had.adjust })
+  }
+  return [...out.values()]
+}
+
+/** Both sides' mob points, one entry per case-folded mob, each point once (gaps_locs.rs keeps them rounded). */
+function mergeMobLocs(older: Snap, newer: Snap): MobLoc[] {
+  const out = new Map<string, MobLoc>()
+  for (const m of [...(older.mobLocs ?? []), ...(newer.mobLocs ?? [])]) {
+    const had = out.get(m.mob.toLowerCase())
+    const points = [...(had?.points ?? []), ...m.points]
+    const unique = [...new Map(points.map((p) => [p.join(','), p])).values()]
+    out.set(m.mob.toLowerCase(), { mob: had?.mob ?? m.mob, zone: m.zone || (had?.zone ?? ''), points: unique })
   }
   return [...out.values()]
 }
@@ -169,5 +191,5 @@ export function mergeGaps(older: unknown, newer: unknown): Snap | null {
     out.set(k, had === undefined ? { ...r } : mergeRow(had, r))
   }
   const { rows, counted } = served(out.values())
-  return { rows, ...perDomain(older, newer, counted), killFactions: mergeKillFactions(older, newer) }
+  return { rows, ...perDomain(older, newer, counted), killFactions: mergeKillFactions(older, newer), mobLocs: mergeMobLocs(older, newer) }
 }
