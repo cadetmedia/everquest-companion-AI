@@ -233,6 +233,8 @@ export const IPC = {
   // each one's place and look (shared/overlayReset.ts). Returns the kinds that were open, for the
   // renderer to reopen.
   overlayReset: 'overlay:reset',
+  // renderer(main app) -> main: raise every open overlay above other windows (overlayReset.ts).
+  overlayRaise: 'overlay:raise',
   // main -> renderer(main app): a kind's open-state changed. Payload: {kind, open}. Keeps the
   // TitleBar overlay menu in sync (also fires when an overlay closes itself).
   onOverlayState: 'overlay:state',

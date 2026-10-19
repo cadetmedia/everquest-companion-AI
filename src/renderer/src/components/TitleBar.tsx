@@ -207,6 +207,21 @@ export function OverlayRow({
   )
 }
 
+/** After a screenshot tool the game can come back above the overlays (owner, 2026-10-18): one click raises them all. */
+function RaiseOverlaysItem(): JSX.Element {
+  return (
+    <MenuItem
+      dense
+      data-testid="overlay-menu-raise"
+      onClick={() => {
+        void window.eq.raiseOverlays()
+      }}
+    >
+      <ListItemText primary="Bring overlays to front" secondary="For overlays hidden behind the game after a screenshot or alt-tab" />
+    </MenuItem>
+  )
+}
+
 /**
  * Floating DPS overlay menu (Task #52; two kinds in Task #54). A compact menu toggles the
  * overlay windows independently; the button is active-tinted when ANY is open so the user
@@ -307,6 +322,7 @@ function OverlayMenu({ overlayState }: { overlayState: Record<OverlayKind, boole
           />
         </MenuItem>
         <Divider />
+        <RaiseOverlaysItem />
         <MenuItem
           dense
           data-testid="overlay-menu-reset"
