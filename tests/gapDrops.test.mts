@@ -4,6 +4,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { dropGaps } from '../src/shared/gapDrops'
 import { gapActions } from '../src/shared/gaps'
+import { groupGaps } from '../src/shared/gapGroups'
 import { killIndex, type KillMap } from '../src/shared/kills'
 import { wikiPageText } from '../src/shared/wikiPage'
 import type { LootEvent } from '../src/shared/types'
@@ -30,7 +31,8 @@ test('listed items and listed groups are no gap; a group the page lacks is filed
   )
   assert.deepEqual(rows.map((r) => [r.name, r.count, r.details.drops?.entries.map((e) => e.name)]), [
     ['Bronze Weapons (a gnoll)', 2, ['Bronze Axe']],
-    ['Hide Mask (a gnoll)', 2, undefined]
+    // One corpse with a stack of two is one drop.
+    ['Hide Mask (a gnoll)', 1, undefined]
   ])
 })
 
@@ -38,7 +40,7 @@ test('a drop row copies its known_loot line and points at the mob page', () => {
   const kills = killIndex({ 'a gnoll': { display: 'a gnoll', count: 8 } } as unknown as KillMap)
   const [group, item] = dropGaps([loot('Bronze Axe', 'a gnoll'), loot('Hide Mask', 'a gnoll'), loot('Hide Mask', 'a gnoll')], catalog, groups).sort((a, b) => a.name.localeCompare(b.name))
   assert.equal(wikiPageText(group, [], kills), '<li> [[Bronze Weapons]] </li>\n')
-  assert.equal(wikiPageText(item, [], kills), "<li> {{:Hide Mask}} <span class='ddb'>~25% (Drops: 2, Kills: 8)</span> </li>\n")
+  assert.equal(wikiPageText(item, [], kills), "<li> {{:Hide Mask}} <span class='drare'>(Uncommon)</span> <span class='ddb'>[Overall: ~25%]</span> </li>\n")
   assert.equal(gapActions(item, 'unchecked')[0].href, 'https://eqlwiki.com/index.php?title=a_gnoll&action=edit')
 })
 
@@ -67,4 +69,12 @@ test('a server-wide drop - looted from 10+ mobs, tied by the wiki to at most 2 -
   assert.deepEqual(names(itemMobs), ['Fire Opal'])
   // Before main answers, nothing is left out.
   assert.deepEqual(names().sort(), ['Fire Opal', 'Mote of Potential'])
+})
+
+test('grouped, a mob heading holds its drop rows, so one copy gives every line its page lacks', () => {
+  const rows = dropGaps([loot('Bronze Axe', 'a gnoll'), loot('Hide Mask', 'a gnoll')], catalog, groups)
+  const heading = groupGaps(rows, []).find((e) => e.kind === 'mob')
+  assert.equal(heading?.kind === 'mob' ? heading.mob : '', 'a gnoll')
+  const lines = heading?.kind === 'mob' ? heading.rows.map((r) => wikiPageText(r, [], {})).join('') : ''
+  assert.equal(lines, '<li> [[Bronze Weapons]] </li>\n<li> {{:Hide Mask}} </li>\n')
 })

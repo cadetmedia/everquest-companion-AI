@@ -81,9 +81,10 @@ export function dropGaps(loot: readonly LootEvent[], catalog: readonly CatalogMo
     if (filed === null || e.source === undefined) continue
     const key = `${mobKey(e.source)}|${sourceItemKey(filed.name)}`
     const m = missing.get(key) ?? { mob: e.source, name: filed.name, group: filed.group, zone: '', n: 0, seen: new Map<string, number>() }
-    m.n += e.count ?? 1
+    // Corpses, not stack sizes: the count feeds a drop rate (drops per kill).
+    m.n += 1
     m.zone = e.zone ?? m.zone
-    if (filed.group) m.seen.set(e.item, (m.seen.get(e.item) ?? 0) + (e.count ?? 1))
+    if (filed.group) m.seen.set(e.item, (m.seen.get(e.item) ?? 0) + 1)
     missing.set(key, m)
   }
   const kept = itemMobs === undefined ? [...missing.values()] : withoutServerWide([...missing.values()], catalog, groups, itemMobs)
