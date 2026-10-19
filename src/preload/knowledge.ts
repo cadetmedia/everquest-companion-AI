@@ -96,5 +96,7 @@ export const knowledgeBridge = {
    * never fetched (src/main/ipc/gapVerdicts.ts).
    */
   gapVerdicts: (domain: 'item' | 'mob', names: readonly string[]): Promise<GapVerdicts> =>
-    ipcRenderer.invoke(IPC.gapVerdicts, domain, [...names])
+    ipcRenderer.invoke(IPC.gapVerdicts, domain, [...names]),
+  /** The Drops domain's other side: the mobs each item page names (src/main/gapItemMobs.ts). */
+  gapItemMobs: (names: readonly string[]): Promise<Record<string, string[] | null>> => ipcRenderer.invoke(IPC.gapItemMobs, [...names])
 }

@@ -1141,6 +1141,9 @@ export const IPC = {
   // Names in, `{ [name]: 'noPage' | 'hasPage' | 'unchecked' }` out, read off the two knowledge
   // cache files and never fetched. Payload: (domain: 'item' | 'mob', names: string[]).
   gapVerdicts: 'gaps:verdicts',
+  // Item names in, `{ [name]: mobs its item page names | null }` out, off the committed corpus
+  // (src/main/gapItemMobs.ts), for the Drops domain. Payload: (names: string[]).
+  gapItemMobs: 'gaps:itemMobs',
 
   // ---- error harness (renderer -> main, fire-and-forget) ----
   // window.onerror / onunhandledrejection / React ErrorBoundary report here so

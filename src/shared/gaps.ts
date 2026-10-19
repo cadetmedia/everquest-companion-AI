@@ -29,6 +29,20 @@ export const GAP_DOMAIN_LABELS: Record<GapDomain, string> = {
   image: 'Images'
 }
 
+/** One line under the toggle saying what the chosen domain's rows are (owner ask, 2026-10-18). */
+export const GAP_DOMAIN_HELP: Record<GapDomain, string> = {
+  item: 'Items your log names that the wiki has no page for.',
+  mob: 'Mobs you looted, killed or considered that the wiki has no page for.',
+  spell: 'Spells cast near you that the wiki has no page for.',
+  merchant: 'NPCs who traded with you that the wiki does not list as a merchant.',
+  faction: "Factions a kill changed that the mob's wiki page does not list.",
+  drop: "Items you looted from a mob whose wiki page lists neither the item nor a group holding it. Drops that fall from almost any mob (the Motes) are left out.",
+  image: 'Mobs you met whose wiki page has no picture: take a screenshot and upload it.'
+}
+
+/** Item name → the mobs its own item page names under `|dropsfrom`; null when the wiki has no page. */
+export type ItemPageMobs = Record<string, string[] | null>
+
 /** How the log named it. */
 export type GapKind = 'looted' | 'dropped-by' | 'received' | 'bought' | 'crafted' | 'killed' | 'considered' | 'cast' | 'quoted' | 'sold'
 
@@ -92,6 +106,8 @@ export interface GapRow {
   details: GapDetails
   /** Absent when no known name is close enough to name with confidence. */
   suggest?: GapSuggest
+  /** A drop row of one item: whether that item's own page names the mob (shared/gapDrops.ts). */
+  itemPage?: 'namesMob' | 'lacksMob'
 }
 
 export interface GapsSnap {
@@ -301,6 +317,26 @@ export function npcOnlySpell(row: GapRow): boolean {
 }
 
 /**
+ * A drop's chips: which page to update. The wiki connects nothing itself (owner ask, 2026-10-18):
+ * the mob page's `|known_loot` and the item page's `|dropsfrom` are each typed by hand.
+ */
+function dropActions(row: GapRow): GapAction[] {
+  const mob = factionMob(row)
+  const item = factionOf(row)
+  const why =
+    row.details.drops !== undefined
+      ? `The wiki page for ${mob} lists neither ${item} nor any item in it.`
+      : row.itemPage === 'namesMob'
+        ? `The page for ${item} names ${mob} as a source, but ${mob}'s page does not list it.`
+        : `The wiki page for ${mob} does not list ${item}.`
+  const actions: GapAction[] = [{ kind: 'checkWiki', label: 'Add to mob page', why, href: wikiEditUrl(mob) }]
+  if (row.itemPage === 'lacksMob') {
+    actions.push({ kind: 'addToWiki', label: 'Add to item page', why: `The page for ${item} does not name ${mob} under dropsfrom.`, href: wikiEditUrl(item) })
+  }
+  return actions
+}
+
+/**
  * What someone must do to close the gap, one or two chips: the page exists under another
  * spelling (fix its title), the wiki was asked and had nothing (add the page), the wiki has it
  * and our data predates it (re-scrape), only mobs cast it (an NPC spell, which the wiki seldom
@@ -312,9 +348,9 @@ export function gapActions(row: GapRow, verdict: GapVerdict): GapAction[] {
     const why = `The wiki has no image for ${factionMob(row)}. Upload a screenshot as ${factionOf(row)}; if the page names no image, add its imagefilename line too.`
     return [{ kind: 'addToWiki', label: 'Upload image', why, href: wikiUploadUrl(factionOf(row)) }]
   }
+  if (row.domain === 'drop') return dropActions(row)
   if (onMobPage(row)) {
-    const what = row.domain === 'faction' ? 'this faction among those a kill moves' : 'this drop, nor a group holding it'
-    const why = `The wiki page for ${factionMob(row)} does not name ${what}.`
+    const why = `The wiki page for ${factionMob(row)} does not name this faction among those a kill moves.`
     return [{ kind: 'checkWiki', label: 'Edit mob page', why, href: wikiEditUrl(factionMob(row)) }]
   }
   const actions: GapAction[] = []
