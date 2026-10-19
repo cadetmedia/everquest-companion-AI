@@ -31,6 +31,8 @@ import { killIndex, type KillsSnap } from '@shared/kills'
 import { wikiPageText } from '@shared/wikiPage'
 import { groupGaps, rowEntries } from '@shared/gapGroups'
 import { withFactionRows } from '@shared/gapFactions'
+import { withDropRows, type DropGroups } from '@shared/gapDrops'
+import dropGroupsJson from '../../data/eqlegends/dropGroups.json'
 import { MOB_CATALOG } from '../mobs/mobSearch'
 import { useModule } from '../../lib/useModule'
 import { Tooltip } from '../../lib/Tooltip'
@@ -44,6 +46,9 @@ const EXPLANATION = 'Differences between what your log names and what the wiki d
 
 /** Where the "Zone I'm in" choice is remembered, per viewer, as the Achievements tab remembers its own. */
 const ZONE_HERE_KEY = 'eq.gaps.zoneHere'
+/** Each drop group's members (scrape-drop-groups.ts). */
+const DROP_GROUPS: DropGroups = (dropGroupsJson as { groups: DropGroups }).groups
+
 /** Where the grouped view is remembered. */
 const GROUPED_KEY = 'eq.gaps.grouped'
 
@@ -116,8 +121,12 @@ function DomainToggle({
 
 export default function GapsView(): JSX.Element {
   const fromEngine = useModule<GapsSnap>(GAPS_MODULE_ID)
-  // Factions a kill moved that the mob's page lacks, checked against the catalog here.
-  const snap = useMemo(() => (fromEngine ? withFactionRows(fromEngine, MOB_CATALOG) : fromEngine), [fromEngine])
+  const loot = useModule<LootSnap>('loot')
+  // Factions a kill moved and drops a mob's page lacks, checked against the catalog here.
+  const snap = useMemo(
+    () => (fromEngine ? withDropRows(withFactionRows(fromEngine, MOB_CATALOG), loot ?? [], MOB_CATALOG, DROP_GROUPS) : fromEngine),
+    [fromEngine, loot]
+  )
   const [domain, setDomain] = useState<GapDomain>('item')
   const [query, setQuery] = useState('')
   const [copied, setCopied] = useState<number | null>(null)
@@ -139,7 +148,6 @@ export default function GapsView(): JSX.Element {
   // The table and Copy list read the same order, so a copied list matches what is on screen.
   const sorted = useMemo(() => sortGaps(visible, sort, verdicts), [visible, sort, verdicts])
   // A row's wiki page joins its loot (which mob, which zone) and the kills behind each drop.
-  const loot = useModule<LootSnap>('loot')
   const killMobs = useModule<KillsSnap>('kills')?.mobs
   const kills = useMemo(() => killIndex(killMobs ?? {}), [killMobs])
   const pageText = useCallback((row: GapRow) => wikiPageText(row, loot ?? [], kills), [loot, kills])

@@ -14,15 +14,17 @@ import { zoneKey } from './zones'
 export const GAPS_MODULE_ID = 'gaps'
 
 /** `merchant`: an NPC the log saw trading that the wiki lists as no merchant; `faction`: a faction a
- *  kill moved that the mob's page does not name (owner asks, 2026-10-18; shared/gapFactions.ts). */
-export type GapDomain = 'item' | 'mob' | 'spell' | 'merchant' | 'faction'
-export const GAP_DOMAINS: readonly GapDomain[] = ['item', 'mob', 'spell', 'merchant', 'faction']
+ *  kill moved that the mob's page does not name (shared/gapFactions.ts); `drop`: an item looted from a
+ *  mob whose page lists neither it nor its group (shared/gapDrops.ts) (owner asks, 2026-10-18). */
+export type GapDomain = 'item' | 'mob' | 'spell' | 'merchant' | 'faction' | 'drop'
+export const GAP_DOMAINS: readonly GapDomain[] = ['item', 'mob', 'spell', 'merchant', 'faction', 'drop']
 export const GAP_DOMAIN_LABELS: Record<GapDomain, string> = {
   item: 'Items',
   mob: 'Mobs',
   spell: 'Spells',
   merchant: 'Merchants',
-  faction: 'Factions'
+  faction: 'Factions',
+  drop: 'Drops'
 }
 
 /** How the log named it. */
@@ -258,10 +260,13 @@ export function wikiEditUrl(page: string): string {
   return `https://eqlwiki.com/index.php?title=${encodeURIComponent(page.trim().replace(/ /g, '_'))}&action=edit`
 }
 
-/** A faction row's mob (shared/gapFactions.ts): the page the missing faction goes on. */
+/** A row about a mob's page (a missing faction or drop): its domain is one of these. */
+export const onMobPage = (row: GapRow): boolean => row.domain === 'faction' || row.domain === 'drop'
+
+/** A faction or drop row's mob: the page the missing faction or drop goes on. */
 export const factionMob = (row: GapRow): string => row.details.sources?.entries[0]?.name ?? ''
 
-/** A faction row's faction: its name less the ` (mob)` it is filed under. */
+/** A faction or drop row's subject: its name less the ` (mob)` it is filed under. */
 export const factionOf = (row: GapRow): string => row.name.slice(0, Math.max(0, row.name.length - factionMob(row).length - 3))
 
 /** The wiki's editor on a new page titled with the name, as its own red links open it (owner ask, 2026-10-18). */
@@ -294,8 +299,9 @@ export function npcOnlySpell(row: GapRow): boolean {
  * a parser's leftover.
  */
 export function gapActions(row: GapRow, verdict: GapVerdict): GapAction[] {
-  if (row.domain === 'faction') {
-    const why = `The wiki page for ${factionMob(row)} does not name this faction among those a kill moves.`
+  if (onMobPage(row)) {
+    const what = row.domain === 'faction' ? 'this faction among those a kill moves' : 'this drop, nor a group holding it'
+    const why = `The wiki page for ${factionMob(row)} does not name ${what}.`
     return [{ kind: 'checkWiki', label: 'Edit mob page', why, href: wikiEditUrl(factionMob(row)) }]
   }
   const actions: GapAction[] = []

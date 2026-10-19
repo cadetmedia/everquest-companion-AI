@@ -51,8 +51,8 @@ function lootPlaces(loot: readonly LootEvent[]): Map<string, Place[]> {
 
 /** The (zone, mob) pairs a row belongs under; `mob` is '' for none. */
 function placesOf(row: GapRow, looted: ReadonlyMap<string, Place[]>): Place[] {
-  // A faction row belongs to the mob whose kill moved it.
-  if (row.domain === 'faction') return [{ zone: zonesOf(row)[0] ?? '', mob: row.details.sources?.entries[0]?.name ?? '' }]
+  // A faction or drop row belongs to the mob whose page lacks it.
+  if (row.domain === 'faction' || row.domain === 'drop') return [{ zone: zonesOf(row)[0] ?? '', mob: row.details.sources?.entries[0]?.name ?? '' }]
   const fromLoot = row.domain === 'item' ? (looted.get(row.name.toLowerCase()) ?? []) : []
   const places = fromLoot.length > 0 ? fromLoot : zonesOf(row).map((zone) => ({ zone, mob: '' }))
   return places.length > 0 ? places : [{ zone: '', mob: '' }]

@@ -20,7 +20,7 @@ import { Box, Button, Chip, Paper, Stack, Table, TableBody, TableCell, TableHead
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import NoteAddIcon from '@mui/icons-material/NoteAdd'
 import SearchIcon from '@mui/icons-material/Search'
-import { charactersOff, factionMob, gapZone, wikiCreateUrl, wikiEditUrl, wikiSearchUrl, type GapRow, type GapSort, type GapSortKey, type GapSuggest, type GapVerdict, type GapVerdicts } from '@shared/gaps'
+import { charactersOff, factionMob, gapZone, onMobPage, wikiCreateUrl, wikiEditUrl, wikiSearchUrl, type GapRow, type GapSort, type GapSortKey, type GapSuggest, type GapVerdict, type GapVerdicts } from '@shared/gaps'
 import { unfoldedEntries, type GapEntry } from '@shared/gapGroups'
 import { wikiPageUrl } from '@shared/wiki'
 import { copyText } from '../../lib/clipboard'
@@ -128,7 +128,7 @@ function CopyPageButton({ text }: { text: () => string }): JSX.Element {
  * row, the editor on the mob page the faction belongs on.
  */
 function WikiLinks({ row }: { row: GapRow }): JSX.Element {
-  const faction = row.domain === 'faction'
+  const faction = onMobPage(row)
   const target = faction ? factionMob(row) : row.name
   return (
     <>

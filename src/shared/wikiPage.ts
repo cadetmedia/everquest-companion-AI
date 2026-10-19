@@ -16,7 +16,7 @@
 import { CURRENT_ERA } from './planner/era'
 import type { KillMap } from './kills'
 import { killsFor } from './kills'
-import { derivedPrices, factionOf, npcOnlySpell, type GapRow } from './gaps'
+import { derivedPrices, factionMob, factionOf, npcOnlySpell, type GapRow } from './gaps'
 import type { LootEvent } from './types'
 
 // ---- the parts ---------------------------------------------------------------------------------
@@ -230,5 +230,8 @@ export function wikiPageText(row: GapRow, loot: readonly LootEvent[], kills: Kil
   if (row.domain === 'mob') return mobPage(mobFacts(row, loot, kills))
   if (row.domain === 'merchant') return merchantPage(row.name, rowZones(row))
   if (row.domain === 'faction') return `* ${wikiLink(factionOf(row))}\n`
+  // A drop: its group's link (`<li> [[Rusty Weapons]] </li>`), else the item with the rate seen.
+  if (row.domain === 'drop' && row.details.drops) return `<li> ${wikiLink(factionOf(row))} </li>\n`
+  if (row.domain === 'drop') return `${lootLine(factionOf(row), row.count, killsFor(kills, factionMob(row))?.count ?? 0)}\n`
   return spellPage({ name: row.name, npcOnly: npcOnlySpell(row) })
 }
