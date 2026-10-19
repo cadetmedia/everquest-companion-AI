@@ -44,15 +44,25 @@ test('a redirect read this run lands on its mob; one re-read as no redirect leav
   assert.deepEqual(kept[0].otherNames, ['Old Alias'])
 })
 
-test('each follow-up runs only when a change reaches it; images and the byte ledger always', () => {
+test('each follow-up runs only when a change reaches it; the cached readers, images and the byte ledger always', () => {
   const root = tree({ 'src/renderer/src/data/eqlegends/posky.json': POSKY })
   try {
     const of = (c: Partial<Changed>, titles: string[] = []): string[] =>
       followUps(root, { items: false, mobs: false, spells: false, ...c, titles: new Set(titles) }, 'f.json').map((f) => f.script)
-    assert.deepEqual(of({}), ['scripts/fetch-wiki-images.mts', 'scripts/gen-data-weight.mts'])
+    const always = ['scrape-wiki-files.ts', 'scrape-posky.ts', 'scrape-bosses.ts', 'fetch-wiki-images.mts', 'gen-data-weight.mts']
+    assert.deepEqual(of({}), always.map((s) => `scripts/${s}`))
     assert.ok(of({}, ['Shadow Knight']).includes('scripts/scrape-classes.ts'))
-    assert.ok(of({}, ['Light Woolen Mask']).includes('scripts/scrape-posky.ts'))
     assert.ok(!of({}).includes('scripts/scrape-drop-groups.ts'))
+    // Nothing changed: the render cache revid-checks, the file list re-marks offline.
+    const quiet = followUps(root, { items: false, mobs: false, spells: false, titles: new Set() }, 'f.json')
+    assert.deepEqual(quiet.slice(0, 3).map((f) => f.args), [['--offline'], [], []])
+    // A template changed (renderings move with it) and a File: page did.
+    const loud = followUps(root, { items: false, mobs: true, spells: false, titles: new Set() }, 'f.json', { templates: true, files: 'files.json' })
+    const args = new Map(loud.map((f) => [f.script, f.args]))
+    assert.deepEqual(args.get('scripts/scrape-wiki-files.ts'), ['--fresh', 'files.json'])
+    assert.deepEqual(args.get('scripts/scrape-posky.ts'), ['--refresh'])
+    assert.deepEqual(args.get('scripts/scrape-bosses.ts'), ['--refresh'])
+    assert.deepEqual(args.get('scripts/scrape-drop-groups.ts'), ['--fresh', 'f.json'])
     const mobs = of({ mobs: true })
     for (const s of ['gen-mob-factions.mts', 'gen-mob-races.mts', 'scrape-page-era.ts', 'scrape-drop-groups.ts']) assert.ok(mobs.includes(`scripts/${s}`), s)
     assert.ok(of({ spells: true }).includes('scripts/gen-engine-spell-overlay.mts'))
