@@ -11,8 +11,7 @@ function SalesCaveat({ details }: { details: GapDetails }): JSX.Element | null {
   if (prices === null) return null
   return (
     <Typography variant="caption" color="warning.main" sx={{ pl: 8 }} data-testid="gaps-sales-caveat">
-      Instant sale pays base ÷ 1.4. Vendor value (the game&apos;s Value line) ≈ {formatCoin(prices.vendorValue)}, base price ≈{' '}
-      {formatCoin(prices.base)}.
+      Instant sale pays less than a vendor. Vendor value (the game&apos;s Value line) ≈ {formatCoin(prices.vendorValue)}.
     </Typography>
   )
 }
