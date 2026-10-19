@@ -91,11 +91,16 @@ async function fetchPages(titles: readonly string[]): Promise<CachedPage[]> {
 async function main(): Promise<void> {
   const itemKeys = new Set(Object.keys((JSON.parse(readFileSync(ITEMS, 'utf8')) as { items: object }).items))
   const titles = groupTitles((JSON.parse(readFileSync(MOBS, 'utf8')) as { mobs: { drops?: string[] }[] }).mobs, itemKeys)
-  let pages: CachedPage[]
-  if (process.argv.includes('--offline') && existsSync(CACHE)) pages = JSON.parse(readFileSync(CACHE, 'utf8')) as CachedPage[]
-  else {
-    console.log(`${String(titles.length)} drop names that are not items; fetching their pages…`)
-    pages = await fetchPages(titles)
+  // Cached like every other wiki text (owner, 2026-10-18): only a page the cache lacks, or one the
+  // delta saw change (`--fresh <titles.json>`), is fetched; offline fetches nothing.
+  const cached = new Map((existsSync(CACHE) ? (JSON.parse(readFileSync(CACHE, 'utf8')) as CachedPage[]) : []).map((p) => [p.title, p]))
+  const freshAt = process.argv.indexOf('--fresh')
+  const fresh = new Set(freshAt < 0 ? [] : (JSON.parse(readFileSync(process.argv[freshAt + 1], 'utf8')) as string[]))
+  const ask = process.argv.includes('--offline') ? [] : titles.filter((t) => !cached.has(t) || fresh.has(t))
+  console.log(`${String(titles.length)} drop names that are not items; ${String(ask.length)} to fetch`)
+  for (const p of ask.length > 0 ? await fetchPages(ask) : []) cached.set(p.title, p)
+  const pages = titles.flatMap((t) => cached.get(t) ?? [])
+  if (ask.length > 0) {
     mkdirSync(dirname(CACHE), { recursive: true })
     writeFileSync(CACHE, JSON.stringify(pages, null, 1) + '\n')
   }
