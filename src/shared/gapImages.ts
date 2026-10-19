@@ -50,7 +50,7 @@ function metMobs(kills: KillMap, loot: readonly LootEvent[]): Map<string, Met> {
   return out
 }
 
-/** The met mobs whose pages have no image, as Gaps rows filed under the page: `npc_marda.png (Marda)`. */
+/** The met mobs whose pages have no image, as Gaps rows named by the page, the file on the row. */
 export function imageGaps(kills: KillMap, loot: readonly LootEvent[], catalog: readonly CatalogMob[]): GapRow[] {
   const imageless = imagelessByMob(catalog)
   const rows: GapRow[] = []
@@ -60,7 +60,8 @@ export function imageGaps(kills: KillMap, loot: readonly LootEvent[], catalog: r
     const n = Math.max(met.kills, met.loots)
     rows.push({
       domain: 'image',
-      name: `${page.image ?? npcImageName(page.name)} (${page.page})`,
+      name: page.page,
+      image: page.image ?? npcImageName(page.name),
       kinds: met.kills > 0 ? ['killed'] : ['looted'],
       count: n,
       first: '',

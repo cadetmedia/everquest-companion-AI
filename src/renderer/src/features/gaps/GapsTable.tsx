@@ -20,7 +20,7 @@ import { Box, Button, Chip, Paper, Stack, Table, TableBody, TableCell, TableHead
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import NoteAddIcon from '@mui/icons-material/NoteAdd'
 import SearchIcon from '@mui/icons-material/Search'
-import { charactersOff, factionMob, gapZone, onMobPage, wikiCreateUrl, wikiEditUrl, wikiSearchUrl, type GapRow, type GapSort, type GapSortKey, type GapSuggest, type GapVerdict, type GapVerdicts } from '@shared/gaps'
+import { charactersOff, factionMob, factionOf, gapZone, onMobPage, wikiCreateUrl, wikiEditUrl, wikiSearchUrl, type GapRow, type GapSort, type GapSortKey, type GapSuggest, type GapVerdict, type GapVerdicts } from '@shared/gaps'
 import { unfoldedEntries, type GapEntry } from '@shared/gapGroups'
 import { wikiPageUrl } from '@shared/wiki'
 import { copyText } from '../../lib/clipboard'
@@ -85,7 +85,8 @@ const GapTableRow = memo(function GapTableRow({
             •
           </Box>
         )}
-        {row.name}
+        {/* Under its mob's heading a faction or drop row is the faction or item alone. */}
+        {depth === 2 && onMobPage(row) ? factionOf(row) : row.name}
         {row.suggest !== undefined && <SuggestCaption s={row.suggest} />}
       </TableCell>
       <TableCell>
@@ -198,18 +199,41 @@ function SortHeader({ sort, onSort }: { sort: GapSort; onSort: (key: GapSortKey)
   )
 }
 
+/** A mob heading's one copy of every missing line under it, for one edit of that page (owner ask, 2026-10-18). */
+function CopyLinesButton({ text }: { text: () => string }): JSX.Element {
+  const [copied, setCopied] = useState(false)
+  return (
+    <Button
+      size="small"
+      startIcon={<ContentCopyIcon />}
+      onClick={(e) => {
+        e.stopPropagation()
+        void copyText(text()).then(setCopied)
+      }}
+      sx={{ ml: 2, py: 0 }}
+      data-testid="gaps-copy-lines"
+    >
+      {copied ? 'Copied' : 'Copy lines'}
+    </Button>
+  )
+}
+
 /** A zone or mob heading of the grouped list (shared/gapGroups.ts), one row high like the rest; a
- *  click folds what is under it (owner ask, 2026-10-18). */
+ *  click folds what is under it (owner ask, 2026-10-18). A mob heading over a page's missing drops or
+ *  factions copies all their lines at once. */
 function GroupRow({
   entry,
   folded,
-  onFold
+  onFold,
+  pageText
 }: {
   entry: Exclude<GapEntry, { kind: 'row' }>
   folded: boolean
   onFold: (key: string) => void
+  pageText: (row: GapRow) => string
 }): JSX.Element {
   const zone = entry.kind === 'zone'
+  const lines = entry.kind === 'mob' && entry.rows.every(onMobPage) ? entry.rows : null
   return (
     <TableRow
       onClick={() => onFold(entry.key)}
@@ -224,6 +248,7 @@ function GroupRow({
         <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 1 }}>
           {entry.n} missing
         </Typography>
+        {lines !== null && <CopyLinesButton text={() => lines.map(pageText).join('')} />}
       </TableCell>
     </TableRow>
   )
@@ -285,7 +310,7 @@ export default function GapsTable({
               e.kind === 'row' ? (
                 <GapTableRow key={e.key} row={e.row} open={open === e.row.name} verdict={verdicts[e.row.name] ?? 'unchecked'} onToggle={onToggle} depth={e.depth} />
               ) : (
-                <GroupRow key={e.key} entry={e} folded={folded.has(e.key)} onFold={onFold} />
+                <GroupRow key={e.key} entry={e} folded={folded.has(e.key)} onFold={onFold} pageText={pageText} />
               )
             )}
             <PadRow height={win.bottomPad} />

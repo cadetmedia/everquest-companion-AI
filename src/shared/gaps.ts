@@ -108,6 +108,8 @@ export interface GapRow {
   suggest?: GapSuggest
   /** A drop row of one item: whether that item's own page names the mob (shared/gapDrops.ts). */
   itemPage?: 'namesMob' | 'lacksMob'
+  /** An image row: the file its page names, or the name it would take (shared/gapImages.ts). */
+  image?: string
 }
 
 export interface GapsSnap {
@@ -285,7 +287,7 @@ export function wikiUploadUrl(file: string): string {
   return `https://eqlwiki.com/index.php?title=Special:Upload&wpDestFile=${encodeURIComponent(file.trim())}`
 }
 
-/** A row about a mob's page (a missing faction, drop or image): its domain is one of these. */
+/** A row about a mob's page (a missing faction, drop or image): its domain is one of these. An image row is the mob itself. */
 export const onMobPage = (row: GapRow): boolean => row.domain === 'faction' || row.domain === 'drop' || row.domain === 'image'
 
 /** A faction, drop or image row's mob: the page the missing faction, drop or image goes on. */
@@ -345,8 +347,9 @@ function dropActions(row: GapRow): GapAction[] {
  */
 export function gapActions(row: GapRow, verdict: GapVerdict): GapAction[] {
   if (row.domain === 'image') {
-    const why = `The wiki has no image for ${factionMob(row)}. Upload a screenshot as ${factionOf(row)}; if the page names no image, add its imagefilename line too.`
-    return [{ kind: 'addToWiki', label: 'Upload image', why, href: wikiUploadUrl(factionOf(row)) }]
+    const file = row.image ?? ''
+    const why = `The wiki has no image for ${row.name}. Upload a screenshot as ${file}; if the page names no image, add its imagefilename line too.`
+    return [{ kind: 'addToWiki', label: 'Upload image', why, href: wikiUploadUrl(file) }]
   }
   if (row.domain === 'drop') return dropActions(row)
   if (onMobPage(row)) {

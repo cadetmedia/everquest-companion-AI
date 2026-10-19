@@ -14,7 +14,7 @@ export const ZONE_NOT_SEEN = 'Zone not seen'
 /** One line of the grouped list: a zone heading, a mob heading under it, or a row. */
 export type GapEntry =
   | { kind: 'zone'; key: string; zone: string; n: number }
-  | { kind: 'mob'; key: string; mob: string; n: number }
+  | { kind: 'mob'; key: string; mob: string; n: number; rows: readonly GapRow[] }
   /** `depth` in the grouped list: 1 under a zone, 2 under a mob; absent ungrouped. */
   | { kind: 'row'; key: string; row: GapRow; depth?: 1 | 2 }
 
@@ -51,7 +51,8 @@ function lootPlaces(loot: readonly LootEvent[]): Map<string, Place[]> {
 
 /** The (zone, mob) pairs a row belongs under; `mob` is '' for none. */
 function placesOf(row: GapRow, looted: ReadonlyMap<string, Place[]>): Place[] {
-  // A faction, drop or image row belongs to the mob whose page lacks it.
+  // A faction or drop row belongs under the mob whose page lacks it; an image row is that mob.
+  if (row.domain === 'image') return [{ zone: zonesOf(row)[0] ?? '', mob: '' }]
   if (onMobPage(row)) return [{ zone: zonesOf(row)[0] ?? '', mob: row.details.sources?.entries[0]?.name ?? '' }]
   const fromLoot = row.domain === 'item' ? (looted.get(row.name.toLowerCase()) ?? []) : []
   const places = fromLoot.length > 0 ? fromLoot : zonesOf(row).map((zone) => ({ zone, mob: '' }))
@@ -85,7 +86,7 @@ export function groupGaps(rows: readonly GapRow[], loot: readonly LootEvent[]): 
     const n = new Set(mobs.flatMap((m) => m.rows)).size
     out.push({ kind: 'zone', key: `zone|${z.zone}`, zone: z.zone, n })
     for (const m of mobs) {
-      if (m.mob !== '') out.push({ kind: 'mob', key: `mob|${z.zone}|${m.mob}`, mob: m.mob, n: m.rows.length })
+      if (m.mob !== '') out.push({ kind: 'mob', key: `mob|${z.zone}|${m.mob}`, mob: m.mob, n: m.rows.length, rows: m.rows })
       const depth = m.mob === '' ? 1 : 2
       for (const row of m.rows) out.push({ kind: 'row', key: `row|${z.zone}|${m.mob}|${row.name}`, row, depth })
     }

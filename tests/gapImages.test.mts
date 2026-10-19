@@ -17,13 +17,13 @@ const catalog = [
 ]
 const kill = (display: string, count: number): KillMap[string] => ({ display, count, bestTier: -1, firstTs: 0, lastTs: 0, credited: count, tiers: {} })
 
-test('a met mob whose every page lacks an image is a row, filed under its page; pictured, unmet and unknown mobs are not', () => {
+test('a met mob whose every page lacks an image is a row named by its page; pictured, unmet and unknown mobs are not', () => {
   const kills: KillMap = { marda: kill('Marda', 3), 'a goblin': kill('a goblin', 9), drizda: kill('Drizda Tunesinger', 1), nobody: kill('a mob the wiki lacks', 4) }
   const loot = [{ item: 'Rusty Axe', source: 'Clurg', zone: 'Oggok', ts: 0 }]
   const rows = imageGaps(kills, loot as never, catalog)
-  assert.deepEqual(rows.map((r) => [r.name, r.count, r.kinds[0]]), [
-    ['npc_marda.png (Marda)', 3, 'killed'],
-    ['npc_clurg.png (Clurg)', 1, 'looted']
+  assert.deepEqual(rows.map((r) => [r.name, r.image, r.count, r.kinds[0]]), [
+    ['Marda', 'npc_marda.png', 3, 'killed'],
+    ['Clurg', 'npc_clurg.png', 1, 'looted']
   ])
   const clurg = rows[1]
   assert.equal(wikiPageText(clurg, [], {}), '| imagefilename     = npc_clurg.png\n')
@@ -31,5 +31,6 @@ test('a met mob whose every page lacks an image is a row, filed under its page; 
   assert.equal(action.label, 'Upload image')
   assert.equal(action.href, 'https://eqlwiki.com/index.php?title=Special:Upload&wpDestFile=npc_clurg.png')
   const shape = groupGaps([clurg], []).map((e) => (e.kind === 'zone' ? e.zone : e.kind === 'mob' ? `  ${e.mob}` : `    ${e.row.name}`))
-  assert.deepEqual(shape, ['Oggok', '  Clurg', '    npc_clurg.png (Clurg)'])
+  // The row is the mob: it sits under its zone with no mob heading.
+  assert.deepEqual(shape, ['Oggok', '    Clurg'])
 })

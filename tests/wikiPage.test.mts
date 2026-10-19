@@ -57,7 +57,7 @@ test('prices are written the wiki way', () => {
   assert.deepEqual([wikiCoin(27), wikiCoin(40), wikiCoin(1143), wikiCoin(0)], ['2s 7c', '4s', '1p 1g 4s 3c', '0c'])
 })
 
-test('drops are counted per zone and mob from the loot ledger; a mob page rates each item by its kills', () => {
+test('drops are counted in corpses per zone and mob from the loot ledger; a mob page rates each item by its kills in the wiki shape', () => {
   const loot: LootEvent[] = [
     { ts: 1, item: 'Black Lizard Talon', source: 'a lizardman forager', zone: 'The Feerrott' },
     { ts: 2, item: 'black lizard talon', source: 'a lizardman forager', zone: 'The Feerrott', count: 2 },
@@ -66,14 +66,15 @@ test('drops are counted per zone and mob from the loot ledger; a mob page rates 
   ]
   const kills = killIndex({ 'a lizardman forager': { display: 'a lizardman forager', count: 10 } } as unknown as KillMap)
   assert.deepEqual(dropsSeen('Black Lizard Talon', loot), [
-    { zone: 'The Feerrott', mob: 'a lizardman forager', drops: 3 },
+    // A stack of 2 off one corpse is one drop: the rate is drops per kill.
+    { zone: 'The Feerrott', mob: 'a lizardman forager', drops: 2 },
     { zone: 'The Feerrott', mob: 'a hatchling', drops: 1 }
   ])
   // On the mob's page, as the wiki keeps drop chances (owner, 2026-10-18).
   const forager: GapRow = { domain: 'mob', name: 'a lizardman forager', kinds: [], count: 1, first: '', last: '', details: { samples: [] } }
-  assert.deepEqual(mobFacts(forager, loot, kills).loot, [{ item: 'Black Lizard Talon', drops: 3 }])
+  assert.deepEqual(mobFacts(forager, loot, kills).loot, [{ item: 'Black Lizard Talon', drops: 2 }])
   assert.equal(mobFacts(forager, loot, kills).kills, 10)
-  assert.match(wikiPageText(forager, loot, kills), /<li> \{\{:Black Lizard Talon\}\} <span class='ddb'>~30% \(Drops: 3, Kills: 10\)<\/span> <\/li>/)
+  assert.match(wikiPageText(forager, loot, kills), /<li> \{\{:Black Lizard Talon\}\} <span class='drare'>\(Rare\)<\/span> <span class='ddb'>\[Overall: ~20%\]<\/span> <\/li>/)
 })
 
 test('a mob page names its levels, zones and loot; an NPC-only spell says so', () => {

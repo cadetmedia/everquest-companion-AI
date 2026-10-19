@@ -132,7 +132,8 @@ export function dropsSeen(item: string, loot: readonly LootEvent[]): DropSeen[] 
     const zone = e.zone ?? ''
     const key = `${zone.toLowerCase()}|${e.source.toLowerCase()}`
     const seen = byPair.get(key) ?? { zone, mob: e.source, drops: 0 }
-    seen.drops += e.count ?? 1
+    // Corpses, not the stack's size: a rate is drops per kill.
+    seen.drops += 1
     byPair.set(key, seen)
   }
   return [...byPair.values()]
@@ -162,7 +163,7 @@ function mobLoot(row: GapRow, loot: readonly LootEvent[]): MobFacts['loot'] {
   for (const e of loot) {
     if (e.source === undefined || !same(e.source, row.name)) continue
     const seen = byItem.get(e.item.toLowerCase()) ?? { item: e.item, drops: 0 }
-    seen.drops += e.count ?? 1
+    seen.drops += 1
     byItem.set(e.item.toLowerCase(), seen)
   }
   // The row's own drop list names what the ledger may not hold.
@@ -189,14 +190,26 @@ export function mobFacts(row: GapRow, loot: readonly LootEvent[], kills: KillMap
 // ---- the pages ------------------------------------------------------------------------------------
 
 /**
- * One `known_loot` line, with the rate the player saw beside it in the wiki's `ddb` span (the
- * wiki keeps drop chances on the mob's page): `~55% (Drops: 11, Kills: 20)`. The wiki's own
- * `[1] 4x 55% (20%)` comes from the game's loot tables, which no log shows, so it is not imitated.
+ * The rarity word the wiki's own lines put beside a rate, from the bands they use (9,806 measured
+ * 2026-10-18; medians 1%, 10%, 27.5%, 56%, 100%).
+ */
+export function rarityWord(pct: number): string {
+  if (pct >= 100) return 'Always'
+  if (pct >= 50) return 'Common'
+  if (pct >= 25) return 'Uncommon'
+  if (pct >= 5) return 'Rare'
+  return 'Ultra Rare'
+}
+
+/**
+ * One `known_loot` line in the wiki's own shape (owner, 2026-10-18): the rarity word in its `drare`
+ * span and the rate in its `ddb` span, `[Overall: ~64%]`. The rate is the corpses that dropped it
+ * over the player's kills, `~` marking it as seen in one log rather than the server's loot table.
  */
 export function lootLine(item: string, drops: number, kills: number): string {
   if (kills <= 0) return `<li> {{:${item}}} </li>`
-  const pct = Math.round((Math.min(drops, kills) / kills) * 100)
-  return `<li> {{:${item}}} <span class='ddb'>~${String(pct)}% (Drops: ${String(drops)}, Kills: ${String(kills)})</span> </li>`
+  const pct = Math.min(100, Math.round((drops / kills) * 1000) / 10)
+  return `<li> {{:${item}}} <span class='drare'>(${rarityWord(pct)})</span> <span class='ddb'>[Overall: ~${String(pct)}%]</span> </li>`
 }
 
 export function itemPage(f: ItemFacts): string {
@@ -293,10 +306,15 @@ export function wikiPageText(row: GapRow, loot: readonly LootEvent[], kills: Kil
   if (row.domain === 'item') return itemPage(itemFacts(row, loot))
   if (row.domain === 'mob') return mobPage(mobFacts(row, loot, kills, seen))
   if (row.domain === 'merchant') return merchantPage(mobFacts(row, [], kills, seen))
+  if (row.domain === 'spell') return spellPage({ name: row.name, npcOnly: npcOnlySpell(row) })
+  return mobPageLine(row, kills)
+}
+
+/** A faction, image or drop row: the one line its mob's page lacks. */
+function mobPageLine(row: GapRow, kills: KillMap): string {
   if (row.domain === 'faction') return `* ${wikiLink(factionOf(row))}\n`
-  if (row.domain === 'image') return `| ${'imagefilename'.padEnd(17)} = ${factionOf(row)}\n`
+  if (row.domain === 'image') return `| ${'imagefilename'.padEnd(17)} = ${row.image ?? ''}\n`
   // A drop: its group's link (`<li> [[Rusty Weapons]] </li>`), else the item with the rate seen.
-  if (row.domain === 'drop' && row.details.drops) return `<li> ${wikiLink(factionOf(row))} </li>\n`
-  if (row.domain === 'drop') return `${lootLine(factionOf(row), row.count, killsFor(kills, factionMob(row))?.count ?? 0)}\n`
-  return spellPage({ name: row.name, npcOnly: npcOnlySpell(row) })
+  if (row.details.drops) return `<li> ${wikiLink(factionOf(row))} </li>\n`
+  return `${lootLine(factionOf(row), row.count, killsFor(kills, factionMob(row))?.count ?? 0)}\n`
 }
