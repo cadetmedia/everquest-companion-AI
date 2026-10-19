@@ -51,8 +51,8 @@ function lootPlaces(loot: readonly LootEvent[]): Map<string, Place[]> {
 
 /** The (zone, mob) pairs a row belongs under; `mob` is '' for none. */
 function placesOf(row: GapRow, looted: ReadonlyMap<string, Place[]>): Place[] {
-  // A faction row belongs to the mob whose kill moved it.
-  if (row.domain === 'faction') return [{ zone: zonesOf(row)[0] ?? '', mob: row.details.sources?.entries[0]?.name ?? '' }]
+  // A faction or drop row belongs to the mob whose page lacks it.
+  if (row.domain === 'faction' || row.domain === 'drop') return [{ zone: zonesOf(row)[0] ?? '', mob: row.details.sources?.entries[0]?.name ?? '' }]
   const fromLoot = row.domain === 'item' ? (looted.get(row.name.toLowerCase()) ?? []) : []
   const places = fromLoot.length > 0 ? fromLoot : zonesOf(row).map((zone) => ({ zone, mob: '' }))
   return places.length > 0 ? places : [{ zone: '', mob: '' }]
@@ -89,6 +89,25 @@ export function groupGaps(rows: readonly GapRow[], loot: readonly LootEvent[]): 
       const depth = m.mob === '' ? 1 : 2
       for (const row of m.rows) out.push({ kind: 'row', key: `row|${z.zone}|${m.mob}|${row.name}`, row, depth })
     }
+  }
+  return out
+}
+
+/**
+ * The grouped list less what folded headings hide (owner ask, 2026-10-18): a folded zone shows only
+ * its heading, a folded mob its heading and nothing under it. `folded` holds heading keys.
+ */
+export function unfoldedEntries(entries: readonly GapEntry[], folded: ReadonlySet<string>): GapEntry[] {
+  const out: GapEntry[] = []
+  let zoneFolded = false
+  let mobFolded = false
+  for (const e of entries) {
+    if (e.kind === 'zone') {
+      zoneFolded = folded.has(e.key)
+      mobFolded = false
+    } else if (e.kind === 'mob') mobFolded = folded.has(e.key)
+    const hidden = e.kind !== 'zone' && (zoneFolded || (e.kind === 'row' && e.depth === 2 && mobFolded))
+    if (!hidden) out.push(e)
   }
   return out
 }

@@ -29,6 +29,7 @@ use super::gaps_details::Details;
 use super::gaps_keys::{aa_known, item_gap_key, loose_key, scroll_known, spell_gap_key, spell_known};
 use super::gaps_names::{no_mob, owner_of_pet, MobNames};
 use super::gaps_suggest::{item_candidates, spell_candidates, suggest, Candidate, Suggest};
+use super::gaps_locs::MobLocs;
 use super::gaps_trade::{merchant_of, KillFactions};
 use crate::event::Event;
 use crate::jsfn::item_base_name;
@@ -109,6 +110,8 @@ pub struct GapsModule {
     zone: Option<String>,
     /// Which factions each kill moved, for the tab's check against the mob pages.
     kill_factions: KillFactions,
+    /// Where a con or hail beside a `/loc` placed each mob (`gaps_locs.rs`).
+    mob_locs: MobLocs,
     seq: i64,
     announce: crate::announce::Announce,
 }
@@ -123,6 +126,7 @@ impl GapsModule {
         self.seen.clear();
         self.players.clear();
         self.kill_factions.clear();
+        self.mob_locs.clear();
         if let Ok(mut cache) = self.suggests.lock() {
             cache.clear();
         }
@@ -138,7 +142,10 @@ impl GapsModule {
             "purchase" | "coin" | "unknown" => self.trade(ev),
             "death" => self.kill_factions_of(ev) | self.death(ev),
             "consider" => match ev.str("mob") {
-                Some(mob) if !is_player_shaped_name(mob) => self.mob(Some(mob), "considered", ev),
+                Some(mob) if !is_player_shaped_name(mob) => {
+                    let zone = self.zone.clone();
+                    self.mob_locs.target(mob, ev.ts(), zone.as_deref()) | self.mob(Some(mob), "considered", ev)
+                }
                 _ => false,
             },
             "castBegin" | "otherCastBegin" => self.spell(ev),
@@ -221,7 +228,8 @@ impl GapsModule {
             "purchase" => self.item_event(ev) | self.merchant(ev),
             "unknown" => {
                 self.kill_factions.line(ev);
-                self.merchant(ev)
+                let zone = self.zone.clone();
+                self.mob_locs.line(ev, zone.as_deref()) | self.merchant(ev)
             }
             _ => self.merchant(ev),
         }
@@ -410,7 +418,8 @@ impl EqModule for GapsModule {
             seen.insert(d.as_str().to_string(), json!(checked));
         }
         let kill_factions = self.kill_factions.serve();
-        json!({ "seq": self.seq, "state": { "rows": rows, "totals": totals, "seen": seen, "killFactions": kill_factions } })
+        let mob_locs = self.mob_locs.serve();
+        json!({ "seq": self.seq, "state": { "rows": rows, "totals": totals, "seen": seen, "killFactions": kill_factions, "mobLocs": mob_locs } })
     }
 
     fn install_knowledge(&mut self, k: &Arc<dyn Knowledge>) {

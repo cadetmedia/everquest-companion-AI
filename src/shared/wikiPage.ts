@@ -16,7 +16,7 @@
 import { CURRENT_ERA } from './planner/era'
 import type { KillMap } from './kills'
 import { killsFor } from './kills'
-import { derivedPrices, factionOf, npcOnlySpell, type GapRow } from './gaps'
+import { derivedPrices, factionMob, factionOf, npcOnlySpell, type GapRow } from './gaps'
 import type { LootEvent } from './types'
 
 // ---- the parts ---------------------------------------------------------------------------------
@@ -99,6 +99,16 @@ export interface MobFacts {
   loot: { item: string; drops: number }[]
   /** How many of it the player killed: the drop rates' denominator. */
   kills: number
+  /** Where a con or hail beside a `/loc` placed it, in `/loc`'s order (y, x, z). */
+  points: number[][]
+  /** The factions its kills moved, with the last amount a line stated. */
+  factions: { faction: string; adjust?: number }[]
+}
+
+/** What the log saw of mobs beyond the rows: each kill's factions and each mob's `/loc` points. */
+export interface MobSightings {
+  killFactions?: readonly { mob: string; faction: string; adjust?: number }[]
+  mobLocs?: readonly { mob: string; points: number[][] }[]
 }
 
 export interface SpellFacts {
@@ -163,8 +173,17 @@ function mobLoot(row: GapRow, loot: readonly LootEvent[]): MobFacts['loot'] {
 }
 
 /** `kills` must be a `killIndex` result, as `killsFor` asks. */
-export function mobFacts(row: GapRow, loot: readonly LootEvent[], kills: KillMap): MobFacts {
-  return { name: row.name, zones: rowZones(row), levels: conLevels(row), loot: mobLoot(row, loot), kills: killsFor(kills, row.name)?.count ?? 0 }
+export function mobFacts(row: GapRow, loot: readonly LootEvent[], kills: KillMap, seen: MobSightings = {}): MobFacts {
+  const mine = (m: { mob: string }): boolean => same(m.mob, row.name)
+  return {
+    name: row.name,
+    zones: rowZones(row),
+    levels: conLevels(row),
+    loot: mobLoot(row, loot),
+    kills: killsFor(kills, row.name)?.count ?? 0,
+    points: (seen.mobLocs ?? []).filter(mine).flatMap((m) => m.points),
+    factions: (seen.killFactions ?? []).filter(mine).map((f) => ({ faction: f.faction, ...(f.adjust === undefined ? {} : { adjust: f.adjust }) }))
+  }
 }
 
 // ---- the pages ------------------------------------------------------------------------------------
@@ -196,14 +215,61 @@ export function itemPage(f: ItemFacts): string {
   return page(templateBlock('Itempage', fields), cats)
 }
 
-export function mobPage(f: MobFacts): string {
+// ---- NPC and merchant pages: the blueprints' full layout ------------------------------------------
+//
+// Unlike an item page, an NPC page keeps every field of its template, filled or blank (owner,
+// 2026-10-18, with a real page): the blueprint's order and its `| key<padding> = value` alignment,
+// a blank line between the groups. What the log fills is filled; the rest waits for the screenshot.
+
+/** The NPC Page Blueprint's fields; '' is a blank line between groups. */
+const NPC_LAYOUT = ['imagefilename', '', 'name', 'race', 'class', 'level', 'agro_radius', 'run_speed', '', 'zone', 'location', 'respawn_time', '', 'AC', 'HP', 'HP_regen', 'mana_regen', '', 'attacks_per_round', 'attack_speed', 'damage_per_hit', 'special', '', 'description', '', 'known_loot', '', 'common_loot', '', 'factions', '', 'opposing_factions', '', 'related_quests', '']
+/** The Merchant Page Blueprint's: no loot, `items_sold` instead (left for the merchant window). */
+const MERCHANT_LAYOUT = ['imagefilename', '', 'name', 'race', 'class', 'level', 'agro_radius', 'run_speed', '', 'zone', 'location', '', 'AC', 'HP', 'HP_regen', 'mana_regen', '', 'attacks_per_round', 'attack_speed', 'damage_per_hit', 'special', 'description', '', 'items_sold', '', 'factions', '', 'opposing_factions', '', 'related_quests', '']
+/** The fields whose value is a block under the key, not a word beside it. */
+const BLOCK_FIELDS = new Set(['description', 'known_loot', 'common_loot', 'items_sold', 'factions', 'opposing_factions', 'related_quests'])
+
+/** `{{Namedmobpage` in its blueprint's layout, `values` filling what they name. */
+export function layoutBlock(template: string, layout: readonly string[], values: Readonly<Record<string, string>>): string {
+  const lines = layout.map((key) => {
+    if (key === '') return ''
+    const v = values[key] ?? ''
+    return BLOCK_FIELDS.has(key) ? `| ${key} = ${v === '' ? '' : `\n\n${v}`}` : `| ${key.padEnd(17)} = ${v}`
+  })
+  return `{{${template}\n\n${lines.join('\n')}\n}}`
+}
+
+/** The wiki's image name for an NPC: `npc_drizda_tunesinger.png`. */
+export const npcImageName = (name: string): string => `npc_${name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')}.png`
+
+/** `/loc` points as the wiki writes `|location`: `(-791, 173), (10, -21)`. */
+const locationText = (points: readonly number[][]): string => points.map((p) => `(${String(p[0])}, ${String(p[1])})`).join(', ')
+
+/** A kill's factions as the page lists them: lowered under `factions`, raised under `opposing_factions`. */
+function factionBlocks(factions: MobFacts['factions']): Record<string, string> {
+  const line = (f: MobFacts['factions'][number], css: string): string =>
+    `* ${wikiLink(f.faction)}${f.adjust === undefined ? '' : ` <span class='${css}'>(${String(f.adjust)})</span>`}`
+  const lowered = factions.filter((f) => (f.adjust ?? -1) < 0).map((f) => line(f, 'profac'))
+  const raised = factions.filter((f) => (f.adjust ?? -1) > 0).map((f) => line(f, 'oppfac'))
+  return { factions: lowered.join('\n'), opposing_factions: raised.join('\n') }
+}
+
+/** The values both NPC layouts share: image, name, level, zone, location, factions. */
+function npcValues(f: Pick<MobFacts, 'name' | 'zones' | 'levels' | 'points' | 'factions'>): Record<string, string> {
   const lo = f.levels[0]
   const hi = f.levels.at(-1)
-  const fields: [string, string][] = [['name', f.name]]
-  if (lo !== undefined && hi !== undefined) fields.push(['level', lo === hi ? String(lo) : `${String(lo)} - ${String(hi)}`])
-  if (f.zones.length > 0) fields.push(['zone', f.zones.map(wikiLink).join(', ')])
-  if (f.loot.length > 0) fields.push(['known_loot', `\n\n<ul>\n${f.loot.map((l) => lootLine(l.item, l.drops, f.kills)).join('\n')}\n</ul>\n`])
-  return page(templateBlock('Namedmobpage', fields, false), f.zones)
+  return {
+    imagefilename: npcImageName(f.name),
+    name: f.name,
+    level: lo === undefined || hi === undefined ? '' : lo === hi ? String(lo) : `${String(lo)} - ${String(hi)}`,
+    zone: f.zones.map(wikiLink).join(', '),
+    location: locationText(f.points),
+    ...factionBlocks(f.factions)
+  }
+}
+
+export function mobPage(f: MobFacts): string {
+  const loot = f.loot.length === 0 ? '' : `<ul>\n${f.loot.map((l) => lootLine(l.item, l.drops, f.kills)).join('\n')}\n</ul>`
+  return page(layoutBlock('Namedmobpage', NPC_LAYOUT, { ...npcValues(f), known_loot: loot }), f.zones)
 }
 
 /** The wiki's Spell Page Blueprint layout: `{{Spellpage|`, blank lines between, `| key = value`. */
@@ -214,21 +280,22 @@ export function spellPage(f: SpellFacts): string {
 }
 
 /**
- * A trader the wiki lacks as a merchant: its name, class and zones. No `items_sold`: a merchant's
- * stock mixes player resells the log cannot tell apart (owner, 2026-10-18).
+ * A trader the wiki lacks as a merchant, in the Merchant Page Blueprint's layout. `items_sold` is
+ * left open: a merchant's stock mixes player resells the log cannot tell apart (owner, 2026-10-18).
  */
-export function merchantPage(name: string, zones: readonly string[]): string {
-  const fields: [string, string][] = [['name', name], ['class', '[[Merchant]]']]
-  if (zones.length > 0) fields.push(['zone', zones.map(wikiLink).join(', ')])
-  return page(templateBlock('MerchantPage', fields, false), zones)
+export function merchantPage(f: Pick<MobFacts, 'name' | 'zones' | 'levels' | 'points' | 'factions'>): string {
+  return page(layoutBlock('MerchantPage', MERCHANT_LAYOUT, { ...npcValues(f), class: '[[Merchant]]' }), f.zones)
 }
 
 /** The page for one Gaps row; a faction row gives the bullet its mob's `|factions` takes. `kills`
  *  must be a `killIndex` result. */
-export function wikiPageText(row: GapRow, loot: readonly LootEvent[], kills: KillMap): string {
+export function wikiPageText(row: GapRow, loot: readonly LootEvent[], kills: KillMap, seen: MobSightings = {}): string {
   if (row.domain === 'item') return itemPage(itemFacts(row, loot))
-  if (row.domain === 'mob') return mobPage(mobFacts(row, loot, kills))
-  if (row.domain === 'merchant') return merchantPage(row.name, rowZones(row))
+  if (row.domain === 'mob') return mobPage(mobFacts(row, loot, kills, seen))
+  if (row.domain === 'merchant') return merchantPage(mobFacts(row, [], kills, seen))
   if (row.domain === 'faction') return `* ${wikiLink(factionOf(row))}\n`
+  // A drop: its group's link (`<li> [[Rusty Weapons]] </li>`), else the item with the rate seen.
+  if (row.domain === 'drop' && row.details.drops) return `<li> ${wikiLink(factionOf(row))} </li>\n`
+  if (row.domain === 'drop') return `${lootLine(factionOf(row), row.count, killsFor(kills, factionMob(row))?.count ?? 0)}\n`
   return spellPage({ name: row.name, npcOnly: npcOnlySpell(row) })
 }

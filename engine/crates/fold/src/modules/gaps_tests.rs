@@ -440,5 +440,5 @@ fn a_trader_the_wiki_lists_as_no_merchant_is_a_row_and_a_kill_keeps_its_faction_
     feed(&mut m, 4, line("Your faction standing with Undead Frogloks of Guk has been adjusted by -20."));
     feed(&mut m, 5, json!({ "kind": "death", "name": "a decaying skeleton", "killer": "You" }));
     let pairs = m.snapshot()["state"]["killFactions"].clone();
-    assert_eq!(pairs, json!([{ "mob": "a decaying skeleton", "faction": "Undead Frogloks of Guk", "n": 1, "zone": "" }]));
+    assert_eq!(pairs, json!([{ "mob": "a decaying skeleton", "faction": "Undead Frogloks of Guk", "n": 1, "zone": "", "adjust": -20 }]));
 }

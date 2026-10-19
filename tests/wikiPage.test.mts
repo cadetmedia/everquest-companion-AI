@@ -77,10 +77,36 @@ test('drops are counted per zone and mob from the loot ledger; a mob page rates 
 })
 
 test('a mob page names its levels, zones and loot; an NPC-only spell says so', () => {
-  const mob = mobPage({ name: 'Hoptor', zones: ['Lower Guk'], levels: [45, 47], loot: [{ item: 'Scalp', drops: 1 }], kills: 0 })
-  assert.match(mob, /^\{\{Classic Era\}\}\n\{\{Namedmobpage\n\|name = Hoptor\n\|level = 45 - 47\n\|zone = \[\[Lower Guk\]\]\n\|known_loot = /)
+  const mob = mobPage({
+    name: 'a scout from zanivar',
+    zones: ['The Feerrott'],
+    levels: [11, 13],
+    loot: [{ item: 'Scalp', drops: 1 }],
+    kills: 0,
+    points: [[-791, 173, -12]],
+    factions: [
+      { faction: 'Guards of Qeynos', adjust: -30 },
+      { faction: 'Ring of Scale', adjust: 10 }
+    ]
+  })
+  // The NPC Page Blueprint's whole layout, the log's values filled, the rest blank.
+  for (const line of [
+    '| imagefilename     = npc_a_scout_from_zanivar.png',
+    '| name              = a scout from zanivar',
+    '| race              = ',
+    '| level             = 11 - 13',
+    '| zone              = [[The Feerrott]]',
+    '| location          = (-791, 173)',
+    '| AC                = ',
+    '| attacks_per_round = ',
+    "| factions = \n\n* [[Guards of Qeynos]] <span class='profac'>(-30)</span>",
+    "| opposing_factions = \n\n* [[Ring of Scale]] <span class='oppfac'>(10)</span>",
+    '| related_quests = '
+  ]) {
+    assert.ok(mob.includes(line), line)
+  }
   assert.match(mob, /<li> \{\{:Scalp\}\} <\/li>/)
-  assert.match(mob, /\[\[Category:Lower Guk\]\]\n$/)
+  assert.match(mob, /\[\[Category:The Feerrott\]\]\n$/)
   // The wiki's Spell Page Blueprint layout.
   assert.equal(
     spellPage({ name: 'Flame Jet', npcOnly: true }),

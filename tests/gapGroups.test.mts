@@ -1,7 +1,7 @@
 // The Gaps list grouped as a hunting plan (owner ask, 2026-10-18): zone, then mob, then what is missing.
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { groupGaps, rowEntries, ZONE_NOT_SEEN, type GapEntry } from '../src/shared/gapGroups'
+import { groupGaps, rowEntries, unfoldedEntries, ZONE_NOT_SEEN, type GapEntry } from '../src/shared/gapGroups'
 import type { GapRow } from '../src/shared/gaps'
 import type { LootEvent } from '../src/shared/types'
 
@@ -54,4 +54,16 @@ test('a row under a mob sits one level deeper than a row directly under its zone
   const loot: LootEvent[] = [{ ts: 1, item: 'Spider Fang', source: 'a jungle spider', zone: 'The Feerrott' }]
   const entries = groupGaps([row('item', 'Spider Fang'), row('item', 'Bought Thing', ['The Feerrott'])], loot)
   assert.deepEqual(entries.map((e) => (e.kind === 'row' ? `${e.row.name}:${String(e.depth)}` : e.kind)), ['zone', 'Bought Thing:1', 'mob', 'Spider Fang:2'])
+})
+
+test('a folded zone shows only its heading; a folded mob hides its rows and nothing else', () => {
+  const loot: LootEvent[] = [
+    { ts: 1, item: 'Spider Fang', source: 'a jungle spider', zone: 'The Feerrott' },
+    { ts: 2, item: 'Bone Chips', source: 'a skeleton', zone: 'Befallen' }
+  ]
+  const all = groupGaps([row('item', 'Spider Fang'), row('item', 'Bought Thing', ['The Feerrott']), row('item', 'Bone Chips')], loot)
+  const names = (es: GapEntry[]): string[] => es.map((e) => (e.kind === 'row' ? e.row.name : e.kind === 'mob' ? e.mob : e.zone))
+  const key = (n: string): string => all.find((e) => (e.kind === 'zone' ? e.zone : e.kind === 'mob' ? e.mob : '') === n)?.key ?? ''
+  assert.deepEqual(names(unfoldedEntries(all, new Set([key('Befallen')]))), ['Befallen', 'The Feerrott', 'Bought Thing', 'a jungle spider', 'Spider Fang'])
+  assert.deepEqual(names(unfoldedEntries(all, new Set([key('a jungle spider')]))), ['Befallen', 'a skeleton', 'Bone Chips', 'The Feerrott', 'Bought Thing', 'a jungle spider'])
 })
