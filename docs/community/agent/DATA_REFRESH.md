@@ -172,6 +172,16 @@ a spell; a `Song:` title prefix is decoration. The client audit of the 2026-10-1
 (Largo's Absonant Binding, Rapacious Subversion, Selo's Assonant Strane, Wind of Tishani), the
 rest alias pages and NPC spells; before the re-derive, 118.
 
+## Whose edits a delta brought in
+
+- The owner edits eqlwiki as **Kaltinril**. Before calling a delta's changes the owner's, list them:
+  `api.php?action=query&list=usercontribs&ucuser=Kaltinril&uclimit=100&ucprop=title|timestamp|comment`
+  (one request). 2026-10-18 evening: the owner made the Oggok NPC pages, the portraits and Black
+  Lizard Talon; the 24 item stat re-reads and the Sky weapons' `DMG Bonus` change were other editors'
+  (the local-data-refresh commit of that run calls them all the owner's; it is not).
+- The Itempage template renders a weapon's `DMG Bonus: N @ lvl 50` itself, after the statsblock's
+  last `<br>`; scrape-posky turns every `<br>` into a line break so it keeps its own line.
+
 ## Wiki facts that matter to parsers (as of 2026-09-27)
 
 - `{{Sky Era}}` was retired: ~107 pages became `{{Classic Era}}`, ~45 have no banner. Pre-upgrade
