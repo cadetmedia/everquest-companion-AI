@@ -31,7 +31,7 @@ export default function GapActionChips({ row, verdict }: { row: GapRow; verdict:
   return (
     <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'nowrap' }}>
       {gapActions(row, verdict).map((a) => (
-        <ActionChip key={a.kind} a={a} />
+        <ActionChip key={`${a.kind}:${a.label}`} a={a} />
       ))}
     </Stack>
   )

@@ -11,6 +11,7 @@ import type { GapVerdicts } from '../../shared/gaps'
 import { itemTierKey } from '../../shared/itemStats'
 import { mobKey } from '../../shared/mobKey'
 import { verdictsFrom, type KnowledgeCacheFile } from '../gapVerdictsRead'
+import { itemPageMobs } from '../gapItemMobs'
 
 /** The cache files' versions, as `itemLookup.ts` / `mobLookup.ts` write them — a mismatched file
  *  answers `unchecked` for everything, as their own readers drop it. Audited against those two
@@ -44,4 +45,7 @@ export function gapVerdicts(domain: unknown, names: unknown): GapVerdicts {
 
 export function registerGapVerdictsIpc(): void {
   ipcMain.handle(IPC.gapVerdicts, (_e, domain: unknown, names: unknown) => gapVerdicts(domain, names))
+  ipcMain.handle(IPC.gapItemMobs, (_e, names: unknown) =>
+    Array.isArray(names) ? itemPageMobs(names.filter((n): n is string => typeof n === 'string').slice(0, MAX_NAMES)) : {}
+  )
 }

@@ -19,7 +19,7 @@ import type { ResistPrefs } from '../shared/resistPrefs'
 import type { LevelUnlockData } from '../shared/levelUnlocks'
 // The rich spell card's record (JOS-293) — one definition for main's join, this bridge and the card.
 import type { SpellDetail } from '../shared/spellDetail'
-import type { GapVerdicts } from '../shared/gaps'
+import type { GapVerdicts, ItemPageMobs } from '../shared/gaps'
 
 export const knowledgeBridge = {
   /** Suggested-alerts wizard (Task #38): the searchable spell catalog + live usage. */
@@ -82,5 +82,7 @@ export const knowledgeBridge = {
    * never fetched (src/main/ipc/gapVerdicts.ts).
    */
   gapVerdicts: (domain: 'item' | 'mob', names: readonly string[]): Promise<GapVerdicts> =>
-    ipcRenderer.invoke(IPC.gapVerdicts, domain, [...names])
+    ipcRenderer.invoke(IPC.gapVerdicts, domain, [...names]),
+  /** The Drops domain's other side: the mobs each item page names (src/main/gapItemMobs.ts). */
+  gapItemMobs: (names: readonly string[]): Promise<ItemPageMobs> => ipcRenderer.invoke(IPC.gapItemMobs, [...names])
 }

@@ -41,3 +41,30 @@ test('a drop row copies its known_loot line and points at the mob page', () => {
   assert.equal(wikiPageText(item, [], kills), "<li> {{:Hide Mask}} <span class='ddb'>~25% (Drops: 2, Kills: 8)</span> </li>\n")
   assert.equal(gapActions(item, 'unchecked')[0].href, 'https://eqlwiki.com/index.php?title=a_gnoll&action=edit')
 })
+
+test('a drop says which page lacks it: the mob page always, the item page when its dropsfrom does not name the mob', () => {
+  const itemMobs = new Map([['hide mask', ['a gnoll']], ['wolf pelt', ['a wolf']]])
+  const rows = dropGaps([loot('Hide Mask', 'a gnoll'), loot('Wolf Pelt +3', 'a gnoll'), loot('Bronze Axe', 'a gnoll')], catalog, groups, itemMobs)
+  const by = new Map(rows.map((r) => [r.name, r]))
+  // The +N is the same page: the row is filed under the base item.
+  assert.deepEqual([...by.keys()].sort(), ['Bronze Weapons (a gnoll)', 'Hide Mask (a gnoll)', 'Wolf Pelt (a gnoll)'])
+  assert.deepEqual(gapActions(by.get('Hide Mask (a gnoll)')!, 'unchecked').map((a) => a.label), ['Add to mob page'])
+  const pelt = gapActions(by.get('Wolf Pelt (a gnoll)')!, 'unchecked')
+  assert.deepEqual(pelt.map((a) => [a.label, a.href]), [
+    ['Add to mob page', 'https://eqlwiki.com/index.php?title=a_gnoll&action=edit'],
+    ['Add to item page', 'https://eqlwiki.com/index.php?title=Wolf_Pelt&action=edit']
+  ])
+  // A group has no single item page to point at.
+  assert.equal(by.get('Bronze Weapons (a gnoll)')!.itemPage, undefined)
+})
+
+test('a server-wide drop - looted from 10+ mobs, tied by the wiki to at most 2 - is left out; one the wiki ties widely stays', () => {
+  const mobs = Array.from({ length: 10 }, (_, i) => ({ page: `Mob ${String(i)}`, name: `mob ${String(i)}`, drops: ['Gnoll Fang'] }))
+  const both = [...mobs.map((m) => loot('Mote of Potential', m.name)), ...mobs.map((m) => loot('Fire Opal', m.name))]
+  // Fire Opal's item page names 3 mobs: tied to 3, so not server-wide.
+  const itemMobs = new Map([['mote of potential', []], ['fire opal', ['x', 'y', 'z']]])
+  const names = (im?: Map<string, string[]>): string[] => [...new Set(dropGaps(both, mobs, groups, im).map((r) => r.name.split(' (')[0]))]
+  assert.deepEqual(names(itemMobs), ['Fire Opal'])
+  // Before main answers, nothing is left out.
+  assert.deepEqual(names().sort(), ['Fire Opal', 'Mote of Potential'])
+})

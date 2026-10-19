@@ -14,6 +14,7 @@ import {
   DEFAULT_GAP_SORT,
   GAPS_MODULE_ID,
   GAP_DOMAINS,
+  GAP_DOMAIN_HELP,
   GAP_DOMAIN_LABELS,
   firstGapSortDir,
   gapsAsText,
@@ -31,7 +32,7 @@ import { killIndex, type KillsSnap } from '@shared/kills'
 import { wikiPageText } from '@shared/wikiPage'
 import { groupGaps, rowEntries } from '@shared/gapGroups'
 import { withFactionRows } from '@shared/gapFactions'
-import { withDropRows, type DropGroups } from '@shared/gapDrops'
+import { lootedItemNames, withDropRows, type DropGroups } from '@shared/gapDrops'
 import { withImageRows } from '@shared/gapImages'
 import dropGroupsJson from '../../data/eqlegends/dropGroups.json'
 import { MOB_CATALOG } from '../mobs/mobSearch'
@@ -40,10 +41,12 @@ import { Tooltip } from '../../lib/Tooltip'
 import { useBoolPref } from '../combat/useCombatPrefs'
 import { copyText } from '../../lib/clipboard'
 import { useGapVerdicts } from '../../lib/gapVerdicts'
+import { useItemMobs } from '../../lib/gapItemMobs'
 import GapsTable from './GapsTable'
 
-// One line (owner, 2026-10-11): the how is in the module header, not on the page.
-const EXPLANATION = 'Differences between what your log names and what the wiki data holds. Click a row for where it was seen.'
+// One line (owner, 2026-10-11): the how is in the module header, not on the page. Since 2026-10-18
+// the line says what the chosen domain's rows are (GAP_DOMAIN_HELP).
+const CLICK_HINT = 'Click a row for where it was seen.'
 
 /** Where the "Zone I'm in" choice is remembered, per viewer, as the Achievements tab remembers its own. */
 const ZONE_HERE_KEY = 'eq.gaps.zoneHere'
@@ -124,12 +127,15 @@ export default function GapsView(): JSX.Element {
   const fromEngine = useModule<GapsSnap>(GAPS_MODULE_ID)
   const loot = useModule<LootSnap>('loot')
   const killMobs = useModule<KillsSnap>('kills')?.mobs
+  // The item pages' side of each drop, asked of main (the corpus is main-only).
+  const looted = useMemo(() => lootedItemNames(loot ?? []), [loot])
+  const itemMobs = useItemMobs(looted)
   // Factions a kill moved, drops and images a mob's page lacks, checked against the catalog here.
   const snap = useMemo(() => {
     if (!fromEngine) return fromEngine
-    const derived = withDropRows(withFactionRows(fromEngine, MOB_CATALOG), loot ?? [], MOB_CATALOG, DROP_GROUPS)
+    const derived = withDropRows(withFactionRows(fromEngine, MOB_CATALOG), loot ?? [], { catalog: MOB_CATALOG, groups: DROP_GROUPS, itemMobs })
     return withImageRows(derived, killMobs ?? {}, loot ?? [], MOB_CATALOG)
-  }, [fromEngine, loot, killMobs])
+  }, [fromEngine, loot, killMobs, itemMobs])
   const [domain, setDomain] = useState<GapDomain>('item')
   const [query, setQuery] = useState('')
   const [copied, setCopied] = useState<number | null>(null)
@@ -170,7 +176,7 @@ export default function GapsView(): JSX.Element {
     // A full-height column whose last child, the table box, is the page's only scroller (GapsTable).
     <Stack spacing={2} data-testid="gaps-view" sx={{ height: '100%', minHeight: 0 }}>
       <Typography variant="body2" color="text.secondary">
-        {EXPLANATION}
+        {GAP_DOMAIN_HELP[domain]} {CLICK_HINT}
       </Typography>
       <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" useFlexGap>
         <DomainToggle snap={snap} domain={domain} zone={zone} onPick={setDomain} />
