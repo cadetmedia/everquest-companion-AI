@@ -205,6 +205,30 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
 - typescript-eslint >8.65 and onnxruntime-node 1.29 are pinned back on
   `community/pr-70-npm-minor-patch` (ADOPTIONS.md).
 
+## gaps-tab
+
+- The tab is UNRELEASED-gated (`unreleasedGaps.tsx`): dev builds only.
+- Copy wiki page (`shared/wikiPage.ts`): a page holds only fields the log fills, no placeholders, no
+  blueprint option lists (owner, 2026-10-18: "each item page has FAR less than that"); `statsblock`
+  stays open for the player's screenshot. Blueprints:
+  https://eqlwiki.com/Help:Contents#Item_Page_Blueprint, #NPC_Page_Blueprint,
+  #Merchant_Page_Blueprint, #Spell_Page_Blueprint. Model output on real cached pages (Fire Beetle
+  Eye), not on the blueprint.
+- Drop rates go on the MOB's page, per `known_loot` item, in the `ddb` span as the player's own
+  `~55% (Drops: 11, Kills: 20)`; never the wiki's `[1] 4x 55% (20%)` (loot tables, not in any
+  log) and no `(Uncommon)` label until the owner names the thresholds.
+- Not from the log: stats, slot, icon id, quest rewards, foraging, normal merchant sale price
+  (Gaps keeps only the sale-on-loot), a merchant's stock. A merchant page needs a purchase
+  tracker (asked, not built).
+- The sale-on-loot note shows only the vendor value (= the game's Value line); the derived base
+  price is not shown (owner read it as a wrong Value).
+- Group by zone, then mob (`shared/gapGroups.ts`): an item under every (zone, mob) the loot ledger
+  saw drop it; index the ledger once (a per-row scan over 500 rows is the lag shape).
+- Event log `unknown` flag (`event_feed.rs`): an unknown pickup is admitted, a player-shaped con is
+  never flagged, and the overlay never looks up an unknown item (that lookup asks the wiki).
+- `event_feed.rs` is 431 code lines: red on this branch alone against the old 400 bar, green on
+  `main_community` (catch_all's 440). The npm gate does not run the size check on the real tree.
+
 ## Unassigned open items (no branch yet)
 
 - The Recommended tab ignores layer-3 era derivations on purpose (`progressionPlan.ts`
