@@ -158,6 +158,13 @@ test('gaps: the zones list keeps every name across both sides, for the "this zon
   assert.equal(bare.all, undefined, 'neither side had one, so none is made up')
 })
 
+test('mob points from both sides join per mob, each point once', () => {
+  const older = { ...snap([]), mobLocs: [{ mob: 'a scout', zone: 'The Feerrott', points: [[-791, 173, -12]] }] }
+  const newer = { ...snap([]), mobLocs: [{ mob: 'A scout', zone: 'The Feerrott', points: [[-791, 173, -12], [10, -21, 1]] }] }
+  const m = mergeGaps(older, newer) as Snap & { mobLocs: { mob: string; points: number[][] }[] }
+  assert.deepEqual(m.mobLocs, [{ mob: 'a scout', zone: 'The Feerrott', points: [[-791, 173, -12], [10, -21, 1]] }])
+})
+
 test('kill-faction pairs from both sides join case-folded, counts added, the newer zone kept', () => {
   const older = { ...snap([]), killFactions: [{ mob: 'a gnoll', faction: 'Sabertooths of Blackburrow', n: 3, zone: 'Blackburrow' }] }
   const newer = {
