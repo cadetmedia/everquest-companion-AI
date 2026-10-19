@@ -226,6 +226,16 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   saw drop it; index the ledger once (a per-row scan over 500 rows is the lag shape).
 - Event log `unknown` flag (`event_feed.rs`): an unknown pickup is admitted, a player-shaped con is
   never flagged, and the overlay never looks up an unknown item (that lookup asks the wiki).
+- Merchants and Factions domains: the engine's `gaps_trade.rs` reads price quotes (`X told you,
+  'That'll be ...'`, kind `unknown`), purchases and vendor sales, and pairs each death with the
+  faction lines printed in the 2.5 s before it (`killFactions`); `shared/gapFactions.ts` checks the
+  pairs against mobs.json `factions` (both page lists; spelling folded: case, a trailing period, a
+  leading "the"). mobs.json `merchant` and `factions` come from `mobPage.ts` (wiki-scraper-fixes).
+- Drops missing from a mob is not built: 265 drop names on 793 mob pages are not items (groups such
+  as `[[Rusty Weapons]]`, items the data lacks, notes), the owner wants the wiki's group pages
+  followed, and those pages are in no cache (~6 requests, owner's go first).
+- No generated merchant item list (owner, decided): vendor stock and player resells cannot be told
+  apart, and quoted prices carry the player's faction and Charisma.
 - `event_feed.rs` is 431 code lines: red on this branch alone against the old 400 bar, green on
   `main_community` (catch_all's 440). The npm gate does not run the size check on the real tree.
 
