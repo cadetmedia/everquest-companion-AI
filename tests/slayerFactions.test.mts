@@ -4,7 +4,7 @@
 
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { factionHits } from '../scripts/sources/mobFaction'
+import { factionHits, factionNames } from '../scripts/sources/mobFaction'
 import type { MobEntry } from '../src/shared/mobTypes'
 import { countersIn, planZones, slayerMobs, slayerTarget } from '../src/shared/slayer/slayerPlan'
 import { slayerAreas } from '../src/renderer/src/features/slayer/slayerAreas'
@@ -38,6 +38,12 @@ test("a mob page's faction hits are the factions it links, less any the kill rai
   assert.deepEqual(factionHits(page('')), [])
   assert.deepEqual(factionHits(page("* [[Guards of Qeynos]] <span class='oppfac'>(5)</span>")), [])
   assert.deepEqual(factionHits(page('* [[Ebon Mask|the Ebon Mask]] (-?)')), ['the Ebon Mask'])
+})
+
+test('every faction a page names, lowered or raised, for the Gaps tab', () => {
+  const page = `{{Namedmobpage\n| factions =\n* [[Undead Frogloks of Guk]] (-20)\n* None\n| opposing_factions =\n* [[Frogloks of Guk]] (+5)\n* [[Undead Frogloks of Guk]]\n}}`
+  assert.deepEqual(factionNames(page), ['Undead Frogloks of Guk', 'Frogloks of Guk'])
+  assert.deepEqual(factionNames('{{Namedmobpage\n| factions =\n* Unknown\n}}'), [])
 })
 
 test('a faction bullet is a hit by the sign of its number, and an unlinked bullet names its faction', () => {
