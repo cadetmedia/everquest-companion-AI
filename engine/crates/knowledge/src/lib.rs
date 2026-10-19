@@ -360,6 +360,12 @@ impl Knowledge for Corpus {
         self.mob_index().entry(name.trim()).is_some()
     }
 
+    fn known_merchant(&self, name: &str) -> bool {
+        self.mob_index()
+            .entry(name.trim())
+            .is_some_and(|m| m["merchant"] == true)
+    }
+
     fn take_misses(&self) -> Vec<Miss> {
         self.pending
             .lock()

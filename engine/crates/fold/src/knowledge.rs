@@ -136,6 +136,12 @@ pub trait Knowledge: Send + Sync {
     /// means.
     fn known_mob(&self, name: &str) -> bool;
 
+    /// Does the committed catalog list this name as a merchant (a `{{MerchantPage}}`)? Read like
+    /// [`Knowledge::known_mob`], announcing nothing. Defaulted false, so a test corpus need list none.
+    fn known_merchant(&self, _name: &str) -> bool {
+        false
+    }
+
     /// Take the names this process could not answer, and forget them.
     ///
     /// A hand-back rather than a callback, like [`crate::EqModule::take_fires`]: a lookup called
