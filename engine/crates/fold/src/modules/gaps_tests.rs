@@ -28,6 +28,10 @@ impl Knowledge for Corpus {
     fn known_mob(&self, name: &str) -> bool {
         matches!(super::mob_key(name).as_str(), "a decaying skeleton" | "innoruuk")
     }
+    /// The corpus's one vendor, a `{{MerchantPage}}` on the wiki.
+    fn known_merchant(&self, name: &str) -> bool {
+        name == "Klok Koglin"
+    }
     fn take_misses(&self) -> Vec<Miss> {
         Vec::new()
     }
@@ -122,8 +126,8 @@ fn known_names_are_not_rows_and_unknown_ones_are_counted_per_kind() {
         ]
     );
     let state = m.snapshot()["state"].clone();
-    assert_eq!(state["totals"], json!({ "item": 1, "mob": 1, "spell": 1 }));
-    assert_eq!(state["seen"], json!({ "item": 2, "mob": 2, "spell": 2 }));
+    assert_eq!(state["totals"], json!({ "item": 1, "mob": 1, "spell": 1, "merchant": 0 }));
+    assert_eq!(state["seen"], json!({ "item": 2, "mob": 2, "spell": 2, "merchant": 0 }));
     assert_eq!(state["rows"][0]["first"], json!("2026-10-06 18:12:26"));
 }
 
@@ -166,7 +170,7 @@ fn nothing_is_checked_before_the_knowledge_is_installed_and_an_epoch_clears() {
     feed(&mut m, 1, json!({ "kind": "loot", "item": "Glowing Widget" }));
     feed(&mut m, 2, json!({ "kind": "epoch" }));
     assert!(rows(&m).is_empty());
-    assert_eq!(m.snapshot()["state"]["seen"], json!({ "item": 0, "mob": 0, "spell": 0 }));
+    assert_eq!(m.snapshot()["state"]["seen"], json!({ "item": 0, "mob": 0, "spell": 0, "merchant": 0 }));
 }
 
 #[test]
@@ -299,7 +303,7 @@ fn a_backtick_and_an_apostrophe_are_one_name_and_the_row_keeps_the_log_spelling(
     feed(&mut m, 1, json!({ "kind": "loot", "item": "10 Dose Ant`s Potion" }));
     feed(&mut m, 2, json!({ "kind": "castBegin", "spell": "Jaxan`s Jig o` Vigor V" }));
     assert!(rows(&m).is_empty(), "the corpus spells both with an apostrophe");
-    assert_eq!(m.snapshot()["state"]["seen"], json!({ "item": 1, "mob": 0, "spell": 1 }));
+    assert_eq!(m.snapshot()["state"]["seen"], json!({ "item": 1, "mob": 0, "spell": 1, "merchant": 0 }));
     feed(&mut m, 3, json!({ "kind": "loot", "item": "Teir`Dal Arcane Insignia" }));
     feed(&mut m, 4, json!({ "kind": "loot", "item": "Teir'Dal Arcane Insignia" }));
     assert_eq!(rows(&m), ["item Teir`Dal Arcane Insignia x2 [looted]"]);
@@ -424,3 +428,17 @@ fn one_substituted_letter_in_a_short_name_is_a_different_word_but_a_dropped_lett
 /// for the factoring bar, on this file's corpus.
 #[path = "gaps_spelling_tests.rs"]
 mod spelling;
+
+#[test]
+fn a_trader_the_wiki_lists_as_no_merchant_is_a_row_and_a_kill_keeps_its_faction_lines() {
+    let mut m = module();
+    let line = |text: &str| json!({ "kind": "unknown", "raw": format!("[Tue Oct 06 18:12:26 2026] {text}") });
+    feed(&mut m, 1, line("Murga told you, 'That'll be 5 silver 3 copper per Tunic Pattern.'"));
+    feed(&mut m, 2, line("Klok Koglin told you, 'That'll be 1 gold per Bread.'"));
+    feed(&mut m, 3, json!({ "kind": "coin", "source": "vendor", "npc": "Murga", "item": "Bone Chips" }));
+    assert_eq!(rows(&m), ["merchant Murga x2 [quoted,sold]"]);
+    feed(&mut m, 4, line("Your faction standing with Undead Frogloks of Guk has been adjusted by -20."));
+    feed(&mut m, 5, json!({ "kind": "death", "name": "a decaying skeleton", "killer": "You" }));
+    let pairs = m.snapshot()["state"]["killFactions"].clone();
+    assert_eq!(pairs, json!([{ "mob": "a decaying skeleton", "faction": "Undead Frogloks of Guk", "n": 1, "zone": "" }]));
+}

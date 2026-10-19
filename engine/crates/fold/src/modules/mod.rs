@@ -51,6 +51,7 @@ pub mod gaps_details;
 pub mod gaps_keys;
 pub mod gaps_names;
 pub mod gaps_suggest;
+pub mod gaps_trade;
 pub mod item_tiers;
 pub mod kills;
 pub mod leveling;

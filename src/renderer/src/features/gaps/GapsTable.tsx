@@ -20,7 +20,7 @@ import { Box, Button, Chip, Paper, Stack, Table, TableBody, TableCell, TableHead
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import NoteAddIcon from '@mui/icons-material/NoteAdd'
 import SearchIcon from '@mui/icons-material/Search'
-import { charactersOff, gapZone, wikiCreateUrl, wikiSearchUrl, type GapRow, type GapSort, type GapSortKey, type GapSuggest, type GapVerdict, type GapVerdicts } from '@shared/gaps'
+import { charactersOff, factionMob, gapZone, wikiCreateUrl, wikiEditUrl, wikiSearchUrl, type GapRow, type GapSort, type GapSortKey, type GapSuggest, type GapVerdict, type GapVerdicts } from '@shared/gaps'
 import type { GapEntry } from '@shared/gapGroups'
 import { wikiPageUrl } from '@shared/wiki'
 import { copyText } from '../../lib/clipboard'
@@ -115,6 +115,32 @@ function CopyPageButton({ text }: { text: () => string }): JSX.Element {
   )
 }
 
+/**
+ * Into the wiki in one click: its search, and its editor on a new page of this name; for a faction
+ * row, the editor on the mob page the faction belongs on.
+ */
+function WikiLinks({ row }: { row: GapRow }): JSX.Element {
+  const faction = row.domain === 'faction'
+  const target = faction ? factionMob(row) : row.name
+  return (
+    <>
+      <Button size="small" href={wikiSearchUrl(target)} target="_blank" rel="noreferrer" startIcon={<SearchIcon />} data-testid="gaps-wiki-search">
+        Search wiki
+      </Button>
+      <Button
+        size="small"
+        href={faction ? wikiEditUrl(target) : wikiCreateUrl(target)}
+        target="_blank"
+        rel="noreferrer"
+        startIcon={<NoteAddIcon />}
+        data-testid="gaps-wiki-create"
+      >
+        {faction ? 'Edit mob page' : 'Create page'}
+      </Button>
+    </>
+  )
+}
+
 /** The open row's details, above the list: capped so the list keeps room on a short screen. */
 function DetailsPane({ row, pageText }: { row: GapRow; pageText: (row: GapRow) => string }): JSX.Element {
   return (
@@ -122,13 +148,7 @@ function DetailsPane({ row, pageText }: { row: GapRow; pageText: (row: GapRow) =
       <Stack direction="row" spacing={1} alignItems="center">
         <Typography variant="subtitle2">{row.name}</Typography>
         <CopyPageButton key={row.name} text={() => pageText(row)} />
-        {/* Into the wiki in one click: its search, or its editor on a new page of this name. */}
-        <Button size="small" href={wikiSearchUrl(row.name)} target="_blank" rel="noreferrer" startIcon={<SearchIcon />} data-testid="gaps-wiki-search">
-          Search wiki
-        </Button>
-        <Button size="small" href={wikiCreateUrl(row.name)} target="_blank" rel="noreferrer" startIcon={<NoteAddIcon />} data-testid="gaps-wiki-create">
-          Create page
-        </Button>
+        <WikiLinks row={row} />
       </Stack>
       <GapDetailsPanel details={row.details} />
     </Paper>

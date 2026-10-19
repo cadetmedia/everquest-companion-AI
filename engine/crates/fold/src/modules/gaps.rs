@@ -29,6 +29,7 @@ use super::gaps_details::Details;
 use super::gaps_keys::{aa_known, item_gap_key, loose_key, scroll_known, spell_gap_key, spell_known};
 use super::gaps_names::{no_mob, owner_of_pet, MobNames};
 use super::gaps_suggest::{item_candidates, spell_candidates, suggest, Candidate, Suggest};
+use super::gaps_trade::{merchant_of, KillFactions};
 use crate::event::Event;
 use crate::jsfn::item_base_name;
 use crate::knowledge::Knowledge;
@@ -49,16 +50,19 @@ pub enum Domain {
     Item,
     Mob,
     Spell,
+    /// An NPC the log saw trading whom the wiki does not list as a merchant (`gaps_trade.rs`).
+    Merchant,
 }
 
 impl Domain {
-    const ALL: [Domain; 3] = [Domain::Item, Domain::Mob, Domain::Spell];
+    const ALL: [Domain; 4] = [Domain::Item, Domain::Mob, Domain::Spell, Domain::Merchant];
 
     fn as_str(self) -> &'static str {
         match self {
             Domain::Item => "item",
             Domain::Mob => "mob",
             Domain::Spell => "spell",
+            Domain::Merchant => "merchant",
         }
     }
 }
@@ -103,6 +107,8 @@ pub struct GapsModule {
     players: HashSet<String>,
     /// The last `zone` event: the label a mention is filed under.
     zone: Option<String>,
+    /// Which factions each kill moved, for the tab's check against the mob pages.
+    kill_factions: KillFactions,
     seq: i64,
     announce: crate::announce::Announce,
 }
@@ -116,6 +122,7 @@ impl GapsModule {
         self.rows.clear();
         self.seen.clear();
         self.players.clear();
+        self.kill_factions.clear();
         if let Ok(mut cache) = self.suggests.lock() {
             cache.clear();
         }
@@ -127,8 +134,9 @@ impl GapsModule {
                 self.zone = ev.str("zone").map(str::to_string);
                 false
             }
-            "loot" | "itemReceived" | "purchase" | "itemMerge" => self.item_event(ev),
-            "death" => self.death(ev),
+            "loot" | "itemReceived" | "itemMerge" => self.item_event(ev),
+            "purchase" | "coin" | "unknown" => self.trade(ev),
+            "death" => self.kill_factions_of(ev) | self.death(ev),
             "consider" => match ev.str("mob") {
                 Some(mob) if !is_player_shaped_name(mob) => self.mob(Some(mob), "considered", ev),
                 _ => false,
@@ -204,6 +212,34 @@ impl GapsModule {
         let known = (self.knowledge.as_ref()).is_some_and(|k| self.mob_names.known(k.as_ref(), name));
         let name = if known { name } else { owner_of_pet(name) };
         self.note(Domain::Mob, mob_key(name), name, known, kind, ev)
+    }
+
+    /// A purchase (an item and its merchant), a vendor sale, or an unparsed line (a price quote, or
+    /// a faction line held for the kill after it).
+    fn trade(&mut self, ev: &Event) -> bool {
+        match ev.kind() {
+            "purchase" => self.item_event(ev) | self.merchant(ev),
+            "unknown" => {
+                self.kill_factions.line(ev);
+                self.merchant(ev)
+            }
+            _ => self.merchant(ev),
+        }
+    }
+
+    /// An NPC the event shows trading, filed unless the wiki lists it as a merchant.
+    fn merchant(&mut self, ev: &Event) -> bool {
+        let Some((name, kind)) = merchant_of(ev) else {
+            return false;
+        };
+        let known = (self.knowledge.as_ref()).is_some_and(|k| k.known_merchant(name));
+        self.note(Domain::Merchant, mob_key(name), name, known, kind, ev)
+    }
+
+    /// A death claims the faction lines just before it (`gaps_trade.rs`).
+    fn kill_factions_of(&mut self, ev: &Event) -> bool {
+        let zone = self.zone.clone();
+        ev.str("name").is_some_and(|mob| self.kill_factions.death(mob, ev.ts(), zone.as_deref()))
     }
 
     /// The death rule from the module header: a player-shaped name that dies to a mob is a player
@@ -308,7 +344,7 @@ impl GapsModule {
         let candidates: &[Candidate] = match domain {
             Domain::Item => &self.item_candidates,
             Domain::Spell => spell_candidates(),
-            Domain::Mob => return None,
+            Domain::Mob | Domain::Merchant => return None,
         };
         let mut cache = self.suggests.lock().ok()?;
         cache
@@ -373,7 +409,8 @@ impl EqModule for GapsModule {
             let checked = self.seen.get(&d).map_or(0, HashSet::len);
             seen.insert(d.as_str().to_string(), json!(checked));
         }
-        json!({ "seq": self.seq, "state": { "rows": rows, "totals": totals, "seen": seen } })
+        let kill_factions = self.kill_factions.serve();
+        json!({ "seq": self.seq, "state": { "rows": rows, "totals": totals, "seen": seen, "killFactions": kill_factions } })
     }
 
     fn install_knowledge(&mut self, k: &Arc<dyn Knowledge>) {
