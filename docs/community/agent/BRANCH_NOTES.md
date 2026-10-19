@@ -236,6 +236,10 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   members written as a `{{Gear Set|...}}`, bullets, `<li>` items or table cells (spell, item and mob
   pages are no group): 52 groups on 2026-10-18. An item in a group is filed as the group (owner's
   rule). Data and page cache live on gaps-tab, the reader.
+- Images domain (`shared/gapImages.ts`): a met mob (kills ledger or a loot source) whose every page
+  is `noImage` in mobs.json. `noImage` is written by `scrape-wiki-files.ts` (wiki-scraper-fixes)
+  against the cached file list (local-data-refresh); a re-parse of a mob page drops it, so the delta
+  re-marks after every fold. 6,364 of 7,954 pages name a file nobody uploaded: only met mobs show.
 - Found by that fetch: 142 of those pages are full `{{Itempage}}` pages that items.json lacks (e.g.
   A Shining Stone, A Piece of Rat Fur): the item scrape misses them; not yet looked into.
 - The wiki's Help page (Editing Standards > AI Generated Content): "All graphics and readable page
