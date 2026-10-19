@@ -32,6 +32,7 @@ import { wikiPageText } from '@shared/wikiPage'
 import { groupGaps, rowEntries } from '@shared/gapGroups'
 import { withFactionRows } from '@shared/gapFactions'
 import { withDropRows, type DropGroups } from '@shared/gapDrops'
+import { withImageRows } from '@shared/gapImages'
 import dropGroupsJson from '../../data/eqlegends/dropGroups.json'
 import { MOB_CATALOG } from '../mobs/mobSearch'
 import { useModule } from '../../lib/useModule'
@@ -122,11 +123,13 @@ function DomainToggle({
 export default function GapsView(): JSX.Element {
   const fromEngine = useModule<GapsSnap>(GAPS_MODULE_ID)
   const loot = useModule<LootSnap>('loot')
-  // Factions a kill moved and drops a mob's page lacks, checked against the catalog here.
-  const snap = useMemo(
-    () => (fromEngine ? withDropRows(withFactionRows(fromEngine, MOB_CATALOG), loot ?? [], MOB_CATALOG, DROP_GROUPS) : fromEngine),
-    [fromEngine, loot]
-  )
+  const killMobs = useModule<KillsSnap>('kills')?.mobs
+  // Factions a kill moved, drops and images a mob's page lacks, checked against the catalog here.
+  const snap = useMemo(() => {
+    if (!fromEngine) return fromEngine
+    const derived = withDropRows(withFactionRows(fromEngine, MOB_CATALOG), loot ?? [], MOB_CATALOG, DROP_GROUPS)
+    return withImageRows(derived, killMobs ?? {}, loot ?? [], MOB_CATALOG)
+  }, [fromEngine, loot, killMobs])
   const [domain, setDomain] = useState<GapDomain>('item')
   const [query, setQuery] = useState('')
   const [copied, setCopied] = useState<number | null>(null)
@@ -148,7 +151,6 @@ export default function GapsView(): JSX.Element {
   // The table and Copy list read the same order, so a copied list matches what is on screen.
   const sorted = useMemo(() => sortGaps(visible, sort, verdicts), [visible, sort, verdicts])
   // A row's wiki page joins its loot (which mob, which zone) and the kills behind each drop.
-  const killMobs = useModule<KillsSnap>('kills')?.mobs
   const kills = useMemo(() => killIndex(killMobs ?? {}), [killMobs])
   const pageText = useCallback((row: GapRow) => wikiPageText(row, loot ?? [], kills, fromEngine ?? {}), [loot, kills, fromEngine])
   // "Group by zone, then mob" (owner ask, 2026-10-18): where to go and what to kill.

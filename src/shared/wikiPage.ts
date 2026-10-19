@@ -294,6 +294,7 @@ export function wikiPageText(row: GapRow, loot: readonly LootEvent[], kills: Kil
   if (row.domain === 'mob') return mobPage(mobFacts(row, loot, kills, seen))
   if (row.domain === 'merchant') return merchantPage(mobFacts(row, [], kills, seen))
   if (row.domain === 'faction') return `* ${wikiLink(factionOf(row))}\n`
+  if (row.domain === 'image') return `| ${'imagefilename'.padEnd(17)} = ${factionOf(row)}\n`
   // A drop: its group's link (`<li> [[Rusty Weapons]] </li>`), else the item with the rate seen.
   if (row.domain === 'drop' && row.details.drops) return `<li> ${wikiLink(factionOf(row))} </li>\n`
   if (row.domain === 'drop') return `${lootLine(factionOf(row), row.count, killsFor(kills, factionMob(row))?.count ?? 0)}\n`

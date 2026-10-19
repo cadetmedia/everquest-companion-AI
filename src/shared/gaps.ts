@@ -15,16 +15,18 @@ export const GAPS_MODULE_ID = 'gaps'
 
 /** `merchant`: an NPC the log saw trading that the wiki lists as no merchant; `faction`: a faction a
  *  kill moved that the mob's page does not name (shared/gapFactions.ts); `drop`: an item looted from a
- *  mob whose page lists neither it nor its group (shared/gapDrops.ts) (owner asks, 2026-10-18). */
-export type GapDomain = 'item' | 'mob' | 'spell' | 'merchant' | 'faction' | 'drop'
-export const GAP_DOMAINS: readonly GapDomain[] = ['item', 'mob', 'spell', 'merchant', 'faction', 'drop']
+ *  mob whose page lists neither it nor its group (shared/gapDrops.ts); `image`: a mob met whose page
+ *  has no image (shared/gapImages.ts) (owner asks, 2026-10-18). */
+export type GapDomain = 'item' | 'mob' | 'spell' | 'merchant' | 'faction' | 'drop' | 'image'
+export const GAP_DOMAINS: readonly GapDomain[] = ['item', 'mob', 'spell', 'merchant', 'faction', 'drop', 'image']
 export const GAP_DOMAIN_LABELS: Record<GapDomain, string> = {
   item: 'Items',
   mob: 'Mobs',
   spell: 'Spells',
   merchant: 'Merchants',
   faction: 'Factions',
-  drop: 'Drops'
+  drop: 'Drops',
+  image: 'Images'
 }
 
 /** How the log named it. */
@@ -262,13 +264,18 @@ export function wikiEditUrl(page: string): string {
   return `https://eqlwiki.com/index.php?title=${encodeURIComponent(page.trim().replace(/ /g, '_'))}&action=edit`
 }
 
-/** A row about a mob's page (a missing faction or drop): its domain is one of these. */
-export const onMobPage = (row: GapRow): boolean => row.domain === 'faction' || row.domain === 'drop'
+/** The wiki's upload form with the file name filled in. */
+export function wikiUploadUrl(file: string): string {
+  return `https://eqlwiki.com/index.php?title=Special:Upload&wpDestFile=${encodeURIComponent(file.trim())}`
+}
 
-/** A faction or drop row's mob: the page the missing faction or drop goes on. */
+/** A row about a mob's page (a missing faction, drop or image): its domain is one of these. */
+export const onMobPage = (row: GapRow): boolean => row.domain === 'faction' || row.domain === 'drop' || row.domain === 'image'
+
+/** A faction, drop or image row's mob: the page the missing faction, drop or image goes on. */
 export const factionMob = (row: GapRow): string => row.details.sources?.entries[0]?.name ?? ''
 
-/** A faction or drop row's subject: its name less the ` (mob)` it is filed under. */
+/** A faction, drop or image row's subject: its name less the ` (mob)` it is filed under. */
 export const factionOf = (row: GapRow): string => row.name.slice(0, Math.max(0, row.name.length - factionMob(row).length - 3))
 
 /** The wiki's editor on a new page titled with the name, as its own red links open it (owner ask, 2026-10-18). */
@@ -301,6 +308,10 @@ export function npcOnlySpell(row: GapRow): boolean {
  * a parser's leftover.
  */
 export function gapActions(row: GapRow, verdict: GapVerdict): GapAction[] {
+  if (row.domain === 'image') {
+    const why = `The wiki has no image for ${factionMob(row)}. Upload a screenshot as ${factionOf(row)}; if the page names no image, add its imagefilename line too.`
+    return [{ kind: 'addToWiki', label: 'Upload image', why, href: wikiUploadUrl(factionOf(row)) }]
+  }
   if (onMobPage(row)) {
     const what = row.domain === 'faction' ? 'this faction among those a kill moves' : 'this drop, nor a group holding it'
     const why = `The wiki page for ${factionMob(row)} does not name ${what}.`
