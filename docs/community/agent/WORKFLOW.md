@@ -90,7 +90,8 @@ disagree, RULES.md wins; fix this file.
   `src/main/telemetry/liveRiders.ts`, `setupSnapshot.ts` and `tests/zoneScope.test.mts` on
   map-waypoints (home) and sky-quest-overlay, where `src/shared/telemetryOverlays.ts` differs only
   in the kind its list names; `scripts/sources/mobRedirects.ts` on wiki-scraper-fixes (home) and
-  scrape-delta-tool; `scripts/sources/mobCache.ts` on slayer-tab (home) and scrape-delta-tool. Verify pairs with `git merge-tree --write-tree <a> <b>`.
+  scrape-delta-tool; `scripts/sources/mobCache.ts` on slayer-tab (home) and scrape-delta-tool; `scripts/sources/mobFaction.ts`
+  on slayer-tab (home) and wiki-scraper-fixes. Verify pairs with `git merge-tree --write-tree <a> <b>`.
 - **Branches with two UNRELEASED splices** in `appViews.ts`: `tests/telemetryContract.test.mts`
   on main reads only the first; take spell-upgrades' version of that test.
 
