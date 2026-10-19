@@ -21,10 +21,12 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
+  ENTERED_QUIET_MS,
   POLL_MS,
   QUIET_MS,
   QuietSwitchWatcher,
   logIsQuiet,
+  worldEntryAt,
   type QuietSwitchObservation,
   type QuietSwitchOutcome
 } from '../src/main/log/quietSwitch'
@@ -41,13 +43,15 @@ function poll(
     active?: string
     lastLineAt: number
     sizes: Readonly<Record<string, number>>
+    /** when a log's newest world-entry line was stamped */
+    entered?: Readonly<Record<string, number>>
   }
 ): QuietSwitchOutcome {
   const obs: QuietSwitchObservation = {
     now: o.now,
     activeLogPath: o.active ?? MINE,
     lastLineAt: o.lastLineAt,
-    logs: Object.entries(o.sizes).map(([path, size]) => ({ path, size }))
+    logs: Object.entries(o.sizes).map(([path, size]) => ({ path, size, ...(o.entered?.[path] === undefined ? {} : { enteredAt: o.entered[path] }) }))
   }
   return w.observe(obs)
 }
@@ -60,10 +64,12 @@ test('the threshold gates everything: before it elapses nothing is even consider
   const w = new QuietSwitchWatcher()
   // A sibling growing hand over fist, while our log has been silent for one second short of the
   // threshold. The whole mechanism must be asleep.
-  let outcome = poll(w, { now: T0 + QUIET_MS - 1, lastLineAt: T0, sizes: { [MINE]: 10, [THEIRS]: 10 } })
+  let outcome = poll(w, { now: T0 + ENTERED_QUIET_MS - 1, lastLineAt: T0, sizes: { [MINE]: 10, [THEIRS]: 10 } })
   assert.equal(outcome.kind, 'live')
+  // Past the one-minute mark but short of five, plain growth (no login on that log) is watched only.
+  outcome = poll(w, { now: T0 + QUIET_MS - 2, lastLineAt: T0, sizes: { [MINE]: 10, [THEIRS]: 10 } })
   outcome = poll(w, { now: T0 + QUIET_MS - 1, lastLineAt: T0, sizes: { [MINE]: 10, [THEIRS]: 9_999 } })
-  assert.equal(outcome.kind, 'live', 'growth below the quiet threshold is not this feature s business')
+  assert.equal(outcome.kind, 'watching', 'growth below the quiet threshold is not this feature s business')
 
   assert.equal(logIsQuiet(T0, T0 + QUIET_MS - 1), false)
   assert.equal(logIsQuiet(T0, T0 + QUIET_MS), true)
@@ -254,4 +260,29 @@ test('when several siblings grew at once, the busiest one is the offer — and o
   assert.equal(asked.kind, 'nudge')
   assert.equal(asked.kind === 'nudge' && asked.logPath, THIRD, 'no stacking: one card, the busiest log')
   assert.equal(w.asked(THEIRS), false, 'the runner-up was not silently spent')
+})
+
+test('a character that entered the world after this log fell silent is offered after one minute, not five (2026-10-19)', () => {
+  const w = new QuietSwitchWatcher()
+  const loginAt = T0 + 40_000
+  const at = T0 + ENTERED_QUIET_MS + 1
+  assert.equal(poll(w, { now: at, lastLineAt: T0, sizes: { [MINE]: 10, [THEIRS]: 100 }, entered: { [THEIRS]: loginAt } }).kind, 'watching')
+  const outcome = poll(w, { now: at + POLL_MS, lastLineAt: T0, sizes: { [MINE]: 10, [THEIRS]: 180 } })
+  assert.equal(outcome.kind, 'nudge')
+  // Still once per log per session.
+  assert.equal(w.asked(THEIRS), true)
+})
+
+test('a login from BEFORE this log fell silent (a second account) still waits the full five minutes', () => {
+  const w = new QuietSwitchWatcher()
+  const at = T0 + ENTERED_QUIET_MS + 1
+  poll(w, { now: at, lastLineAt: T0, sizes: { [MINE]: 10, [THEIRS]: 100 }, entered: { [THEIRS]: T0 - 60_000 } })
+  assert.equal(poll(w, { now: at + POLL_MS, lastLineAt: T0, sizes: { [MINE]: 10, [THEIRS]: 180 } }).kind, 'watching')
+})
+
+test('the world-entry line is read with its own timestamp; a log without one has none', () => {
+  const text = ['[Sun Oct 18 23:53:52 2026] Channels: 1=NewPlayers(32)', '[Sun Oct 18 23:53:54 2026] Welcome to EverQuest Legends!', ''].join('\n')
+  assert.equal(worldEntryAt(text), new Date(2026, 9, 18, 23, 53, 54).getTime())
+  // Someone SAYING it is not the game writing it.
+  assert.equal(worldEntryAt("[Sun Oct 18 20:37:44 2026] You say to your guild, 'Welcome to EverQuest'\n"), null)
 })
