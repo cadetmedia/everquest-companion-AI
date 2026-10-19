@@ -1242,7 +1242,7 @@ export function setCursorRingVisible(visible: boolean): void {
  * guarded version of this line would be a no-op forever and the circle would go back to sliding
  * behind an overlay on mouseover. It is one window per re-show against the five it saved.
  */
-function raiseCursorRing(): void {
+export function raiseCursorRing(): void {
   const w = cursorRingWindow
   if (!w || w.isDestroyed() || !w.isVisible()) return
   raiseTopmost(w)

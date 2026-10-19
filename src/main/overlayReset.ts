@@ -7,7 +7,8 @@ import type { OverlayKind } from '../shared/types'
 import { overlayResetPatch, resetKinds } from '../shared/overlayReset'
 import { logInfo } from './errorLog'
 import { DEFAULT_OVERLAY_CONFIG, setOverlayConfig } from './store'
-import { getOverlayWindow, isOverlayOpen } from './windows'
+import { raiseTopmost } from './topmost'
+import { getOverlayWindow, isOverlayOpen, overlaysParked, raiseCursorRing } from './windows'
 
 function closeAndWait(kind: OverlayKind): Promise<void> {
   const w = getOverlayWindow(kind)
@@ -18,6 +19,26 @@ function closeAndWait(kind: OverlayKind): Promise<void> {
     })
     w.destroy()
   })
+}
+
+/**
+ * Every open overlay back on top, then the cursor ring above them (owner ask, 2026-10-18: after a
+ * screenshot tool the game can come back above them, and toggling each one was the only cure).
+ * One unconditional raise per window, on demand only: the automatic un-park makes no z-order
+ * change on purpose (topmost.ts, windows.ts parkOverlays). Resolves to the kinds raised.
+ */
+export function raiseOverlays(): OverlayKind[] {
+  const raised = resetKinds(undefined).filter((k) => isOverlayOpen(k))
+  for (const kind of raised) {
+    const w = getOverlayWindow(kind)
+    if (w == null || w.isDestroyed()) continue
+    if (!w.isVisible()) w.showInactive()
+    if (!overlaysParked()) w.setOpacity(1)
+    raiseTopmost(w)
+  }
+  raiseCursorRing()
+  logInfo('[everquest-companion]', `overlays raised: ${raised.join(', ') || 'none open'}`)
+  return raised
 }
 
 /** Close the named overlays (every one when none is named) and reset each one's place and look.

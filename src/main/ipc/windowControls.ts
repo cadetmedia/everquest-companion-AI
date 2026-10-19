@@ -11,7 +11,7 @@ import { getFightSelection, setFightSelection } from '../fightSelection'
 import { getScopeSelection, setScopeSelection } from '../scopeSelection'
 import { getSessionMarks, pressNewSession } from '../sessionMarks'
 import { getOverlayConfig, setOverlayConfig } from '../store'
-import { resetOverlays } from '../overlayReset'
+import { raiseOverlays, resetOverlays } from '../overlayReset'
 import { getOverlaySnap, setOverlaySnap } from '../storeOverlaySnap'
 import { getOverlayTextSize, setOverlayTextSize } from '../storeOverlayTextSize'
 import type { OverlayTextSizePrefs } from '../../shared/overlayTextScale'
@@ -249,6 +249,7 @@ export function registerWindowIpc(): void {
     broadcastOverlayBgAlphas()
     return open
   })
+  ipcMain.handle(IPC.overlayRaise, () => raiseOverlays())
   ipcMain.handle(IPC.overlayGetConfig, (_e, kind: OverlayKind) => getOverlayConfig(kind))
   ipcMain.handle(IPC.overlaySetConfig, (_e, kind: OverlayKind, patch: Partial<OverlayConfig>) => {
     // TEXT SCALE AND BACKGROUND ALPHA ARE ROUTED, NOT FANNED OUT (JOS-405, JOS-407).
