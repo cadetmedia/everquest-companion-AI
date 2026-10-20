@@ -1,5 +1,5 @@
 {
-  "scrapedAt": "2026-10-19T04:40:07.422Z",
+  "scrapedAt": "2026-10-20T09:38:11.197Z",
   "source": "eqlwiki.com — Category:NPCs/Named Mobs/Merchants/Raid Encounters ∪ embeddedin Template:Namedmobpage/MerchantPage, filtered to pages opening a mob template + recentchanges delta (scripts/scrape-delta.mts)",
   "mobs": [
     {
@@ -1935,7 +1935,6 @@
         "1"
       ],
       "image": "npc_a_brigand.png",
-      "noImage": true,
       "commonDrops": [
         "Rusty Scimitar",
         "Rusty Rapier",
@@ -1952,7 +1951,8 @@
         "Words of Tyranny",
         "Rune of Fulguration",
         "Bandit Sash"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A bristleweb spider",
@@ -2015,10 +2015,10 @@
         "Diseased Bone Marrow"
       ],
       "image": "npc_a_brittle_skeleton.png",
-      "noImage": true,
       "commonDrops": [
         "Bone Chips"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A broken golem",
@@ -2368,8 +2368,7 @@
           "pct": 100
         }
       ],
-      "image": "npc_a_bull_alligator.png",
-      "noImage": true
+      "image": "npc_a_bull_alligator.png"
     },
     {
       "page": "A bull elephant",
@@ -2957,7 +2956,6 @@
         "-30"
       ],
       "image": "npc_a_carrion_ghoul.png",
-      "noImage": true,
       "commonDrops": [
         "Rune of Neglect",
         "Rune of Velious",
@@ -3016,7 +3014,8 @@
         "Ivory",
         "Steel Knuckles",
         "Weighted Gloves"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A carrion spider",
@@ -3086,7 +3085,6 @@
         "-30"
       ],
       "image": "npc_a_cauldron_hammerhead.png",
-      "noImage": true,
       "commonDrops": [
         "Shark Skin",
         "Shark Meat",
@@ -3098,7 +3096,8 @@
         "Nilitim's Grimoire Pg. 351",
         "Nilitim's Grimoire Pg. 352",
         "Words of Obligation"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A cauldron rat",
@@ -3473,10 +3472,10 @@
         "10"
       ],
       "image": "npc_a_chardoki_golem.png",
-      "noImage": true,
       "commonDrops": [
         "Fine Steel Morning Star"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A chasm crawler",
@@ -5192,7 +5191,6 @@
         "10"
       ],
       "image": "npc_a_cleric_of_vallon_zek.png",
-      "noImage": true,
       "commonDrops": [
         "Storm Giant Meat",
         "Rock Fern",
@@ -5212,7 +5210,8 @@
         "Giant Scalemail Boots",
         "Giant Scalemail Gauntlets",
         "Giant Scalemail Tunic"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A Clerk",
@@ -9597,7 +9596,6 @@
         }
       ],
       "image": "npc_a_decaying_gnome_skeleton.png",
-      "noImage": true,
       "commonDrops": [
         "Rusty Broad Sword",
         "Rusty Scimitar",
@@ -9617,7 +9615,8 @@
         "Small Cloth Sleeves",
         "Small Cloth Veil",
         "Small Cloth Wristband"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A Decaying Skeleton",
@@ -9821,7 +9820,6 @@
         "-30"
       ],
       "image": "npc_a_dervish_cutthroat.png",
-      "noImage": true,
       "commonDrops": [
         "Bandages",
         "Bottle of Kalish",
@@ -9836,7 +9834,8 @@
         "Rusty Weapons",
         "Short Beer",
         "Silver Amulet"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A Dervish Thug",
@@ -9856,7 +9855,6 @@
         "-30"
       ],
       "image": "npc_a_dervish_thug.png",
-      "noImage": true,
       "commonDrops": [
         "Bronze Weapons",
         "Cloth Armor",
@@ -9865,7 +9863,8 @@
         "Ration",
         "Rusty Weapons",
         "Small Bag"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A Desert Madman",
@@ -12612,7 +12611,6 @@
         }
       ],
       "image": "npc_a_dwarf_skeleton.png",
-      "noImage": true,
       "commonDrops": [
         "Small Cloth Sandals",
         "Small Cloth Choker",
@@ -12639,7 +12637,8 @@
         "Rusty Long Sword",
         "Rusty Spear",
         "Small Cloth Cap"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A Dwarven Bandit",
@@ -13459,6 +13458,24 @@
       "image": "npc_a_fallen_erudite.png"
     },
     {
+      "page": "A fallen froglok",
+      "eraTag": "Classic",
+      "name": "a fallen froglok",
+      "zones": [
+        "Innothule Swamp"
+      ],
+      "drops": [
+        "None"
+      ],
+      "loc": [
+        {
+          "ns": -1960,
+          "ew": 1022
+        }
+      ],
+      "image": "npc_a_fallen_froglok.png"
+    },
+    {
       "page": "A fallen iksar",
       "eraTag": "Kunark",
       "name": "A fallen iksar",
@@ -13665,8 +13682,7 @@
           "ew": 825
         }
       ],
-      "image": "npc_a_fat_alligator.png",
-      "noImage": true
+      "image": "npc_a_fat_alligator.png"
     },
     {
       "page": "A fatestealer drake",
@@ -15018,7 +15034,6 @@
         "-30"
       ],
       "image": "npc_a_forest_giant_evergreen.png",
-      "noImage": true,
       "commonDrops": [
         "A Faded Salil's Writ Page",
         "A Faded Velishoul's Tome Page",
@@ -15065,7 +15080,8 @@
         "Words of Resolve",
         "Words of Sight",
         "Words of the Incorporeal"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A Forest Giant Greenwood",
@@ -15110,7 +15126,6 @@
         "-30"
       ],
       "image": "npc_a_forest_giant_greenwood.png",
-      "noImage": true,
       "commonDrops": [
         "Amber",
         "Bloodstone",
@@ -15132,7 +15147,8 @@
         "Star Rose Quartz",
         "The Scent of Marr",
         "Turquoise"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A Forest Giant Sapling",
@@ -15336,10 +15352,10 @@
         "-30"
       ],
       "image": "npc_a_frenzied_bull_shark.jpg",
-      "noImage": true,
       "commonDrops": [
         "Shark Skin"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A frenzied cauldron shark",
@@ -15374,12 +15390,12 @@
         "-30"
       ],
       "image": "npc_a_frenzied_cauldron_shark.png",
-      "noImage": true,
       "commonDrops": [
         "Shark Skin",
         "Shark Meat",
         "Shark Bones"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A frenzied ghoul",
@@ -15714,10 +15730,9 @@
         "Frogloks of Guk"
       ],
       "factionAmounts": [
-        "-30"
+        "-2"
       ],
-      "image": "npc_a_froglok.png",
-      "noImage": true
+      "image": "Npc_a_froglok.png"
     },
     {
       "page": "A froglok (Lake Rathe)",
@@ -15738,8 +15753,7 @@
       "factionAmounts": [
         "-30"
       ],
-      "image": "npc_a_froglok.png",
-      "noImage": true
+      "image": "npc_a_froglok.png"
     },
     {
       "page": "A froglok (Qeynos Aqueducts)",
@@ -15774,8 +15788,7 @@
       "factionAmounts": [
         "-30"
       ],
-      "image": "npc_a_froglok.png",
-      "noImage": true
+      "image": "npc_a_froglok.png"
     },
     {
       "page": "A Froglok Apprentice",
@@ -15818,13 +15831,13 @@
         "-30"
       ],
       "image": "npc_a_froglok_apprentice.png",
-      "noImage": true,
       "commonDrops": [
         "Jasper",
         "Amber",
         "Jade",
         "Onyx"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A Froglok Bok Knight",
@@ -16065,10 +16078,9 @@
         "Frogloks of Guk"
       ],
       "factionAmounts": [
-        "-30"
+        "-3"
       ],
-      "image": "npc_a_froglok_fisherman.png",
-      "noImage": true
+      "image": "Npc_a_froglok_fisherman.png"
     },
     {
       "page": "A Froglok Forager",
@@ -16097,10 +16109,9 @@
         "Frogloks of Guk"
       ],
       "factionAmounts": [
-        "-30"
+        "-3"
       ],
-      "image": "npc_a_froglok_forager.png",
-      "noImage": true
+      "image": "npc_a_froglok_forager.png"
     },
     {
       "page": "A Froglok Gaz Knight",
@@ -16232,7 +16243,6 @@
         "-30"
       ],
       "image": "npc_a_froglok_gaz_warrior.png",
-      "noImage": true,
       "commonDrops": [
         "Mesh Helm",
         "Mesh Mask",
@@ -16251,7 +16261,8 @@
         "Onyx",
         "Words of Eradication",
         "Words of Possession"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A froglok ghoul",
@@ -17513,8 +17524,7 @@
       "factionAmounts": [
         "-1"
       ],
-      "image": "npc_a_froglok_tad.png",
-      "noImage": true
+      "image": "Npc_a_froglok_tad.png"
     },
     {
       "page": "A Froglok Tal Shaman",
@@ -18212,7 +18222,6 @@
         "-30"
       ],
       "image": "npc_a_froglok_yun_priest.png",
-      "noImage": true,
       "commonDrops": [
         "Froglok Meat",
         "Froglok Blood",
@@ -18221,7 +18230,8 @@
         "Mesh Tunic",
         "Mesh Mantle",
         "Mesh Leggings"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A froglok yun shaman",
@@ -18394,7 +18404,6 @@
         "5"
       ],
       "image": "npc_a_frost_giant.png",
-      "noImage": true,
       "commonDrops": [
         "Rune of the Catalyst",
         "Rune of Contortion",
@@ -18407,7 +18416,8 @@
         "Words of Duress",
         "Words of Quivering",
         "Words of Resolve"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A Frost Giant Berserker",
@@ -19371,8 +19381,7 @@
       "factionAmounts": [
         "-30"
       ],
-      "image": "npc_a_fungus_spore.png",
-      "noImage": true
+      "image": "Npc_a_fungus_spore.png"
     },
     {
       "page": "A Furious Guardian Wurm",
@@ -21222,8 +21231,7 @@
       "otherNames": [
         "Giant rat"
       ],
-      "image": "npc_a_giant_rat.png",
-      "noImage": true
+      "image": "npc_a_giant_rat.png"
     },
     {
       "page": "A Giant Rattlesnake",
@@ -21739,7 +21747,6 @@
         }
       ],
       "image": "npc_a_glacier_bear.png",
-      "noImage": true,
       "commonDrops": [
         "Chunk of Meat",
         "Low Quality Bear Skin",
@@ -21747,7 +21754,8 @@
         "High Quality Bear Skin",
         "Polar Bear Skin",
         "Ruined Bear Pelt"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A glacier mastodon",
@@ -22615,7 +22623,6 @@
         "10"
       ],
       "image": "npc_a_gnoll.png",
-      "noImage": true,
       "commonDrops": [
         "Rusty Mace",
         "Rusty Two Handed Sword",
@@ -22629,7 +22636,8 @@
         "Rusty Rapier",
         "Rusty Scythe",
         "Rusty Battle Axe"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A gnoll (Highpass Hold)",
@@ -22953,7 +22961,6 @@
         "10"
       ],
       "image": "npc_a_gnoll_guardsman.png",
-      "noImage": true,
       "commonDrops": [
         "Ale",
         "Water Flask",
@@ -22976,7 +22983,8 @@
         "Rusty Shortened Spear",
         "Short Beer",
         "Splintering Club"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A Gnoll High Shaman",
@@ -23060,7 +23068,6 @@
         "10"
       ],
       "image": "npc_a_gnoll_hunter.jpg",
-      "noImage": true,
       "commonDrops": [
         "Rusty Scythe",
         "Rusty Long Sword",
@@ -23075,7 +23082,8 @@
         "Blackburrow Gnoll Pelt",
         "Gnoll Fang",
         "High Quality Gnoll Fur"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A gnoll noble",
@@ -23648,7 +23656,6 @@
         "10"
       ],
       "image": "npc_a_goblin_adept.png",
-      "noImage": true,
       "commonDrops": [
         "Fine Steel Long Sword",
         "Fine Steel Two Handed Sword",
@@ -23661,7 +23668,8 @@
         "Fine Steel Spear",
         "Fine Steel Rapier",
         "Fine Steel Ulak"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A goblin agressor",
@@ -23970,7 +23978,6 @@
         "10"
       ],
       "image": "npc_a_goblin_battlemaster.png",
-      "noImage": true,
       "commonDrops": [
         "Amber",
         "Hematite",
@@ -23996,7 +24003,8 @@
         "Part of Tasarin's Grimoire Pg. 26 (Right)",
         "Pearl Shard",
         "Words of Cazic-Thule"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A goblin blightcaller",
@@ -26724,7 +26732,6 @@
         "10"
       ],
       "image": "npc_a_goblin_whipcracker.png",
-      "noImage": true,
       "commonDrops": [
         "Fine Steel Long Sword",
         "Fine Steel Two Handed Sword",
@@ -26737,7 +26744,8 @@
         "Fine Steel Spear",
         "Fine Steel Rapier",
         "Fine Steel Ulak"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A Goblin Witchdoctor",
@@ -32224,10 +32232,10 @@
         "-3?"
       ],
       "image": "npc_a_knight_of_innoruuk.png",
-      "noImage": true,
       "commonDrops": [
         "Classic Raid Tier Treasures"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A Koalindl",
@@ -32543,8 +32551,7 @@
           "pct": 100
         }
       ],
-      "image": "npc_a_kobold_hunter.png",
-      "noImage": true
+      "image": "npc_a_kobold_hunter.png"
     },
     {
       "page": "A kobold king",
@@ -34842,8 +34849,7 @@
       "zones": [
         "Innothule Swamp"
       ],
-      "image": "npc_a_lesser_kobold.png",
-      "noImage": true
+      "image": "npc_a_lesser_kobold.png"
     },
     {
       "page": "A lesser kobold shaman",
@@ -37938,7 +37944,6 @@
         "-30"
       ],
       "image": "npc_a_mountain_giant_hillock.png",
-      "noImage": true,
       "commonDrops": [
         "Crystallized Sulfur",
         "Golden Pendant",
@@ -37965,7 +37970,8 @@
         "Rune of Trauma",
         "Words of Cazic-Thule",
         "Words of Cloudburst"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A mountain giant patriarch",
@@ -38103,7 +38109,6 @@
         "-30"
       ],
       "image": "npc_a_mountain_giant_tump.png",
-      "noImage": true,
       "commonDrops": [
         "Mithril Earring",
         "Golden Pendant",
@@ -38118,7 +38123,8 @@
         "Flawless Aquamarine",
         "Black Pearl",
         "Peridot"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A Mountain Lion",
@@ -38498,7 +38504,6 @@
         "10"
       ],
       "image": "npc_a_necrosis_scarab.png",
-      "noImage": true,
       "commonDrops": [
         "Blue Diamond",
         "Black Sapphire",
@@ -38511,7 +38516,8 @@
         "Star Ruby Earring",
         "Fire Emerald Ring",
         "Ruby Crown"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A Negotiator",
@@ -38698,7 +38704,6 @@
         "-30"
       ],
       "image": "npc_a_neriad_weaver.png",
-      "noImage": true,
       "commonDrops": [
         "Netted Kelp Cap",
         "Netted Kelp Veil",
@@ -38713,7 +38718,8 @@
         "Pristine Emerald",
         "Flawless Diamond",
         "Runed Sea Shell"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A Nesting Rat",
@@ -40807,7 +40813,6 @@
         "-30"
       ],
       "image": "npc_a_pixie_trickster.png",
-      "noImage": true,
       "commonDrops": [
         "Amber",
         "Bloodstone",
@@ -40822,7 +40827,8 @@
         "Onyx",
         "Rusty Weapons",
         "Turquoise"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A plague rat",
@@ -46956,6 +46962,26 @@
       "noImage": true
     },
     {
+      "page": "A scout from zanivar",
+      "eraTag": "Classic",
+      "name": "a scout from zanivar",
+      "level": "11-13",
+      "zones": [
+        "The Feerrott"
+      ],
+      "loc": [
+        {
+          "ns": -1227,
+          "ew": 27
+        },
+        {
+          "ns": -791,
+          "ew": 173
+        }
+      ],
+      "image": "Npc_a_scout_from_zanivar.png"
+    },
+    {
       "page": "A scouting kobold",
       "eraTag": "Classic",
       "name": "a scouting kobold",
@@ -47010,7 +47036,6 @@
         "10"
       ],
       "image": "npc_a_scrawny_gnoll.png",
-      "noImage": true,
       "commonDrops": [
         "Rusty Warhammer",
         "Rusty Shortened Spear",
@@ -47035,7 +47060,8 @@
         "Large Cloth Wristband",
         "Rusty Long Sword",
         "Rusty Morning Star"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A scrawny gnoll guard",
@@ -54348,7 +54374,6 @@
       ],
       "outOfEra": true,
       "image": "npc_a_suit_of_sentient_armor.png",
-      "noImage": true,
       "commonDrops": [
         "Velium Dagger",
         "Velium Great Staff",
@@ -54419,7 +54444,8 @@
         "Crushed Lava Ruby",
         "Crushed Onyx Sapphire",
         "Crushed Diamond Dust"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A sullen slave",
@@ -54458,8 +54484,7 @@
         "Gator Meat",
         "Alligator Tooth"
       ],
-      "image": "npc_a_swamp_alligator.png",
-      "noImage": true
+      "image": "npc_a_swamp_alligator.png"
     },
     {
       "page": "A Swamp Leech",
@@ -54938,11 +54963,11 @@
       "factionAmounts": [
         "-2"
       ],
-      "noImage": true,
       "commonDrops": [
         "Fine Steel Warhammer",
         "Steel Knuckles"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A Teir`Dal priestess",
@@ -57178,6 +57203,22 @@
       "noImage": true
     },
     {
+      "page": "A troll raider",
+      "eraTag": "Classic",
+      "name": "a troll raider",
+      "level": "14",
+      "zones": [
+        "Innothule Swamp"
+      ],
+      "loc": [
+        {
+          "ns": 314,
+          "ew": -390
+        }
+      ],
+      "image": "npc_a_troll_raider.png"
+    },
+    {
       "page": "A Troll Slayer",
       "name": "a troll slayer",
       "level": "7-11",
@@ -57197,14 +57238,15 @@
       ],
       "factions": [
         "Da Bashers",
+        "Grobb Merchants",
         "Broken Skull Clan"
       ],
       "factionAmounts": [
-        "-30..-10?",
-        "10"
+        "-200",
+        "-100",
+        "30"
       ],
-      "image": "npc_a_troll_slayer.png",
-      "noImage": true
+      "image": "npc_a_troll_slayer.png"
     },
     {
       "page": "A trout",
@@ -58499,12 +58541,12 @@
         "5"
       ],
       "image": "a_wan_ghoul_knight.png",
-      "noImage": true,
       "commonDrops": [
         "Fine Steel Weapons",
         "Classic Mid-Tier Treasures",
         "Undead Froglok Tongue"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A wanderer",
@@ -58766,8 +58808,7 @@
       "zones": [
         "Innothule Swamp"
       ],
-      "image": "npc_a_water_moccasin.png",
-      "noImage": true
+      "image": "npc_a_water_moccasin.png"
     },
     {
       "page": "A water snake",
@@ -59702,7 +59743,6 @@
         "Wyvern"
       ],
       "image": "npc_a_wyvern_cobalt_scar.png",
-      "noImage": true,
       "commonDrops": [
         "Black Pearl",
         "Breath of Solusek",
@@ -59753,7 +59793,8 @@
         "Words of the Suffering",
         "Words of Quivering",
         "Words of Resolve"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A wyvern (Western Wastes)",
@@ -60233,8 +60274,7 @@
         "Snake Scales",
         "Snake Egg"
       ],
-      "image": "npc_a_young_water_moccasin.png",
-      "noImage": true
+      "image": "npc_a_young_water_moccasin.png"
     },
     {
       "page": "A yun ghoul wizard",
@@ -64729,7 +64769,7 @@
       "page": "An ancient cyclops (Ocean of Tears)",
       "eraTag": "Classic",
       "name": "an ancient cyclops",
-      "level": "41",
+      "level": "40-41",
       "zones": [
         "Ocean of Tears"
       ],
@@ -64741,6 +64781,10 @@
           "ns": 1008,
           "ew": -8022,
           "pct": 3
+        },
+        {
+          "ns": 1000,
+          "ew": -6000
         }
       ],
       "image": "npc_ancient_cyclops.png"
@@ -65246,7 +65290,7 @@
         "Mistmoore Castle"
       ],
       "drops": [
-        "A Dark Cauldron"
+        "Dark Cauldron"
       ],
       "loc": [
         {
@@ -65495,7 +65539,6 @@
         "10"
       ],
       "image": "npc_an_apprentice_herbalist.png",
-      "noImage": true,
       "commonDrops": [
         "Lucerne",
         "Sage Leaf",
@@ -65514,7 +65557,8 @@
         "Bladderwrack",
         "Sandalwood",
         "Mystic Ash"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "An apprentice kennelmaster",
@@ -66923,7 +66967,6 @@
         "-30"
       ],
       "image": "npc_an_elemental_deceiver.png",
-      "noImage": true,
       "commonDrops": [
         "Living Heart of a Brell Minion",
         "Holy Dirt of Brell",
@@ -66936,7 +66979,8 @@
         "Speckled Granite Pebble",
         "Classic High Tier Treasures",
         "Classic Raid Tier Treasures"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "An elemental harvester",
@@ -67234,7 +67278,6 @@
         "10"
       ],
       "image": "npc_an_elite_gnoll_guard.png",
-      "noImage": true,
       "commonDrops": [
         "Cat's Eye Agate",
         "Rusty Rapier",
@@ -67254,7 +67297,8 @@
         "Rusty Scythe",
         "Rusty Short Sword",
         "Splintering Club"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "An Elite Goblin Guard",
@@ -68269,7 +68313,6 @@
         "-30"
       ],
       "image": "npc_an_enthralled_ulthork.png",
-      "noImage": true,
       "commonDrops": [
         "Crushed Coral",
         "Crushed Topaz",
@@ -68281,7 +68324,8 @@
         "Crushed Lava Ruby",
         "Crushed Onyx Sapphire",
         "Netted Kelp Armor"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "An entoling culler",
@@ -68937,11 +68981,11 @@
         "-25"
       ],
       "image": "npc_an_evil_eye_lower_guk.jpg",
-      "noImage": true,
       "commonDrops": [
         "Bunch of Optic Nerves",
         "Pearl"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "An Evil Eye (Runnyeye)",
@@ -71146,10 +71190,10 @@
         "10"
       ],
       "image": "npc_an_iksar_trustee.png",
-      "noImage": true,
       "commonDrops": [
         "Tribal War Mask"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "An imp familiar",
@@ -73623,7 +73667,6 @@
         "-30"
       ],
       "image": "npc_an_othmir_shaman.png",
-      "noImage": true,
       "commonDrops": [
         "Coral Crescent",
         "Jasper",
@@ -73641,7 +73684,8 @@
         "Flawed Emerald",
         "Flawed Flame Opal",
         "Flawed Sea Sapphire"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "An Othmir Warrior",
@@ -73701,7 +73745,6 @@
         "10"
       ],
       "image": "npc_an_othmir_warrior.png",
-      "noImage": true,
       "commonDrops": [
         "Coral Crescent",
         "Flawed Chrysolite",
@@ -73719,7 +73762,8 @@
         "Flawed Flame Opal",
         "Flawed Sea Sapphire",
         "Words of Seizure"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "An outcast siren",
@@ -73876,7 +73920,6 @@
         "10"
       ],
       "image": "npc_a_ulthork_man_o_war.png",
-      "noImage": true,
       "commonDrops": [
         "Velium Long Sword",
         "Velium Two Handed Sword",
@@ -73888,7 +73931,8 @@
         "Velium Spear",
         "Velium Rapier",
         "Velium Short Sword"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "An Ulthork Warrior",
@@ -79406,6 +79450,32 @@
       "noImage": true
     },
     {
+      "page": "Basher Dreg",
+      "eraTag": "Classic",
+      "name": "Basher Dreg",
+      "level": "50",
+      "zones": [
+        "Innothule Swamp"
+      ],
+      "loc": [
+        {
+          "ns": -2615,
+          "ew": -501
+        }
+      ],
+      "factions": [
+        "Grobb Merchants",
+        "DaBashers",
+        "Broken Skull Clan"
+      ],
+      "factionAmounts": [
+        "-100",
+        "-200",
+        "30"
+      ],
+      "image": "npc_basher_dreg.png"
+    },
+    {
       "page": "Basher Gamuk",
       "eraTag": "Classic",
       "name": "Basher Gamuk",
@@ -79918,8 +79988,7 @@
         "-30",
         "10"
       ],
-      "image": "npc_basher_sklama.png",
-      "noImage": true
+      "image": "npc_basher_sklama.png"
     },
     {
       "page": "Basher Smag",
@@ -80069,8 +80138,7 @@
         "-200",
         "30"
       ],
-      "image": "npc_basher_trak.png",
-      "noImage": true
+      "image": "npc_basher_trak.png"
     },
     {
       "page": "Basher Uvgin",
@@ -80381,7 +80449,6 @@
         "10"
       ],
       "image": "npc_battle_master_ska`tu.png",
-      "noImage": true,
       "commonDrops": [
         "Sarnak Battlehammer",
         "Iksar Skin Gloves",
@@ -80390,7 +80457,8 @@
         "Withered Staff",
         "Sarnak Bracer of Honor",
         "Sarnak Arcane Fetish"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Battlelord Paluk",
@@ -87784,7 +87852,6 @@
         "-30"
       ],
       "image": "npc_burynai_excavator.png",
-      "noImage": true,
       "commonDrops": [
         "Malachite",
         "Rune of Falhalem",
@@ -87804,7 +87871,8 @@
         "Words of Materials",
         "Words of Reviviscence",
         "Words of the Element"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Burynai Forage",
@@ -96574,10 +96642,10 @@
         "-30"
       ],
       "image": "npc_construct_of_sathir.png",
-      "noImage": true,
       "commonDrops": [
         "Fire Emerald"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Constructed Potential",
@@ -96644,7 +96712,6 @@
         "-30"
       ],
       "image": "npc_coralyn_kelpmaiden.png",
-      "noImage": true,
       "commonDrops": [
         "Pearl Necklace",
         "Mithril Amulet",
@@ -96657,7 +96724,8 @@
         "Fresh Fish",
         "Deepwater Ink",
         "Mermaid Scale"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Corbin Blackwell",
@@ -101779,7 +101847,6 @@
         "Bone Chips"
       ],
       "image": "npc_decaying_skeleton.png",
-      "noImage": true,
       "commonDrops": [
         "Brittle Iksar Skull",
         "Rusty Fer`Esh",
@@ -101788,7 +101855,8 @@
         "Tarnished Sheer Blade",
         "Iksar Targ Shield",
         "Rusty Shan`Tok"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Decaying Swordsman",
@@ -107163,10 +107231,10 @@
         "10"
       ],
       "image": "npc_drill_master_dih`roul.png",
-      "noImage": true,
       "commonDrops": [
         "Silver Swiftblade"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Drill Master Kyg",
@@ -113560,14 +113628,14 @@
         "-30"
       ],
       "image": "npc_fellspine.png",
-      "noImage": true,
       "commonDrops": [
         "Ancient Fishing Pole",
         "Ancient Seahorse Hide Cloak",
         "Dragonbane Herb",
         "Seahorse Scales",
         "Seahorse Spine Bracelet"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Fellweni the Kraven",
@@ -115240,7 +115308,6 @@
         "10"
       ],
       "image": "npc_foodmaster_rargnar.png",
-      "noImage": true,
       "commonDrops": [
         "Soft Wicker Helm",
         "Soft Wicker Mask",
@@ -115266,7 +115333,8 @@
         "Fish Wine",
         "Kobold Meat",
         "Kobold Molar"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Footman Moglok",
@@ -115341,8 +115409,7 @@
       "factionAmounts": [
         "-3"
       ],
-      "image": "npc_forager_grikk.png",
-      "noImage": true
+      "image": "npc_forager_grikk.png"
     },
     {
       "page": "Foreman Felspar",
@@ -115444,10 +115511,10 @@
         "10"
       ],
       "image": "npc_foreman_mirt`akk.jpg",
-      "noImage": true,
       "commonDrops": [
         "Sarnak Bracer of Honor"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Foreman Rixact",
@@ -116215,7 +116282,6 @@
         "10"
       ],
       "image": "npc_froglok_armsman.png",
-      "noImage": true,
       "commonDrops": [
         "Sebilite Scale Bracelet",
         "Sebilite Scale Leggings",
@@ -116225,7 +116291,8 @@
         "Blue Diamond",
         "Froglok Blood",
         "Rune of The Astral"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Froglok Bartender",
@@ -116835,13 +116902,13 @@
         "10"
       ],
       "image": "npc_froglok_jin_shaman.png",
-      "noImage": true,
       "commonDrops": [
         "Froglok Meat",
         "Green Froglok Skin",
         "Froglok Blood",
         "Nodding Blue Lily"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Froglok Jin Wizard",
@@ -116865,13 +116932,13 @@
         "10"
       ],
       "image": "npc_froglok_jin_wizard.png",
-      "noImage": true,
       "commonDrops": [
         "Froglok Meat",
         "Green Froglok Skin",
         "Froglok Blood",
         "Nodding Blue Lily"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Froglok Kor Shaman",
@@ -118796,8 +118863,7 @@
       "factionAmounts": [
         "-"
       ],
-      "image": "npc_fungus_man_tracker.png",
-      "noImage": true
+      "image": "npc_fungus_man_tracker.png"
     },
     {
       "page": "Furball Miller",
@@ -121548,8 +121614,7 @@
           "pct": 100
         }
       ],
-      "image": "npc_giant_water_moccasin.png",
-      "noImage": true
+      "image": "npc_giant_water_moccasin.png"
     },
     {
       "page": "Giant wooly spider",
@@ -123638,7 +123703,6 @@
         "10"
       ],
       "image": "npc_goblin_spirit_caller.png",
-      "noImage": true,
       "commonDrops": [
         "Carnelian",
         "Bloodstone",
@@ -123650,7 +123714,8 @@
         "Onyx",
         "Jade Shard",
         "Flawless Aquamarine"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Goblin Warlord (Clan Runnyeye)",
@@ -124582,13 +124647,13 @@
         "10"
       ],
       "image": "npc_grachnist_the_destroyer.png",
-      "noImage": true,
       "commonDrops": [
         "Scaled Wolf Hide Leggings",
         "Scaled Wolf Hide Cap",
         "Scaled Wolf Hide Cloak",
         "Rune of Regeneration"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Gracie F`Liler",
@@ -130275,11 +130340,11 @@
         "10"
       ],
       "image": "npc_guard_dreikin.png",
-      "noImage": true,
       "commonDrops": [
         "Fine Steel Short Sword",
         "Fine Steel Rapier"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Guard Drugan",
@@ -133072,7 +133137,6 @@
         "10"
       ],
       "image": "npc_guard_hirazen.png",
-      "noImage": true,
       "commonDrops": [
         "Rusty Short Sword",
         "Rusty Long Sword",
@@ -133085,7 +133149,8 @@
         "Fine Steel Dagger",
         "Fine Steel Rapier",
         "Kite Shield"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Guard Hiron",
@@ -144426,10 +144491,10 @@
         "-"
       ],
       "image": "npc_hangnail.png",
-      "noImage": true,
       "commonDrops": [
         "Fine Steel Morning Star"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Hanlore Escaval",
@@ -150572,10 +150637,10 @@
         "-3?"
       ],
       "image": "npc_hateplane_1.0_-_innoruuk's_chosen.png",
-      "noImage": true,
       "commonDrops": [
         "Classic Raid Tier Treasures"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Innoruuk`s Chosen",
@@ -155483,7 +155548,6 @@
         "10"
       ],
       "image": "npc_kallis_stormcaller.png",
-      "noImage": true,
       "commonDrops": [
         "Corroded Breastplate",
         "Corroded Plate Greaves",
@@ -155513,7 +155577,8 @@
         "Torn Enchanted Silk Wristband",
         "Torn Enchanted Silk Turban",
         "Torn Enchanted Silk Gloves"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Kamzar",
@@ -157166,7 +157231,6 @@
         "10"
       ],
       "image": "npc_kennel_master_al`ele.png",
-      "noImage": true,
       "commonDrops": [
         "Sarnak Bracer of Honor",
         "Argent Defender",
@@ -157175,7 +157239,8 @@
         "Spell: Thrall of Bones",
         "Sarnak Arcane Fetish",
         "Iksar Skin Gloves"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Kerafyrm",
@@ -161130,10 +161195,10 @@
         "1"
       ],
       "image": "Korucust's Courier.jpg",
-      "noImage": true,
       "commonDrops": [
         "Sarnak Skullsplitter"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Korven Nisere",
@@ -168745,13 +168810,13 @@
       ],
       "outOfEra": true,
       "image": "npc_lithiniath.png",
-      "noImage": true,
       "commonDrops": [
         "Diamond",
         "Black Marble",
         "Pristine Emerald",
         "Flawless Diamond"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Lithiniath (White Version)",
@@ -168785,13 +168850,13 @@
       ],
       "outOfEra": true,
       "image": "npc_lithiniath_white.png",
-      "noImage": true,
       "commonDrops": [
         "Diamond",
         "Black Marble",
         "Pristine Emerald",
         "Flawless Diamond"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Lithriss Frizen",
@@ -169084,7 +169149,6 @@
         "Lodi"
       ],
       "image": "npc_lodizal.png",
-      "noImage": true,
       "commonDrops": [
         "Spell: Cannibalize IV",
         "Spell: Monster Summoning III",
@@ -169098,7 +169162,8 @@
         "Spell: Divine Strength",
         "Spell: Death Peace",
         "Spell: Call of the Predator"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Lodrand Dindlenod",
@@ -171606,7 +171671,7 @@
         "Solusek's Eye"
       ],
       "drops": [
-        "A 'Sparkle' Purse",
+        "Sparkle",
         "Damask Amice",
         "Soft Leather Shoes",
         "Dark Elf Parts"
@@ -182592,7 +182657,6 @@
         "10"
       ],
       "image": "npc_noble_helssen.png",
-      "noImage": true,
       "commonDrops": [
         "Corroded Breastplate",
         "Corroded Plate Greaves",
@@ -182622,7 +182686,8 @@
         "Torn Enchanted Silk Wristband",
         "Torn Enchanted Silk Turban",
         "Torn Enchanted Silk Gloves"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Noclin Saah",
@@ -183820,11 +183885,11 @@
         "10"
       ],
       "image": "npc_observer_aq`touz.png",
-      "noImage": true,
       "commonDrops": [
         "Shard of Darkness",
         "Crystallized Sulfur"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Obsolete model",
@@ -185540,11 +185605,11 @@
         "5"
       ],
       "image": "npc_orc_centurion.png",
-      "noImage": true,
       "commonDrops": [
         "Rusty Weapons",
         "Small Cloth Armor"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Orc Centurion (Deathfist)",
@@ -185719,7 +185784,6 @@
         "5"
       ],
       "image": "npc_orc_legionnaire_crushbone.png",
-      "noImage": true,
       "commonDrops": [
         "Raw-hide Leggings",
         "Raw-hide Cloak",
@@ -185742,7 +185806,8 @@
         "Rusty Rapier",
         "Rusty Two Handed Hammer",
         "Rusty Two Handed Sword"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Orc Legionnaire (Deathfist)",
@@ -186205,7 +186270,6 @@
         "5"
       ],
       "image": "npc_orc_slaver.png",
-      "noImage": true,
       "commonDrops": [
         "Cloth Shawl",
         "Cloth Cap",
@@ -186217,7 +186281,8 @@
         "Cloth Gloves",
         "Cloth Pants",
         "Cloth Sleeves"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Orc Taskmaster",
@@ -186984,7 +187049,6 @@
         "10"
       ],
       "image": "npc_overseer_dal`guur.jpg",
-      "noImage": true,
       "commonDrops": [
         "Symphonic Saber",
         "Silver Swiftblade",
@@ -186993,7 +187057,8 @@
         "Water Sprinkler of the Forgiven",
         "Sarnak Battle Shield",
         "Stave of Shielding"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Overseer Dlubish",
@@ -187133,7 +187198,6 @@
         "1"
       ],
       "image": "npc_Packmaster_Dledsh.png",
-      "noImage": true,
       "commonDrops": [
         "Bronze Wakizashi",
         "Bamboo Splint Neckguard",
@@ -187169,7 +187233,8 @@
         "Short Beer",
         "Fish Wine",
         "Kobold Parts"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Paeonia Purnn",
@@ -188253,6 +188318,37 @@
       "merchant": true,
       "image": "npc_pelshia_thuxpire.png",
       "noImage": true
+    },
+    {
+      "page": "Peltin Funter",
+      "eraTag": "Classic",
+      "name": "Peltin Funter",
+      "level": "13",
+      "zones": [
+        "Innothule Swamp"
+      ],
+      "drops": [
+        "Human Flesh"
+      ],
+      "loc": [
+        {
+          "ns": 145,
+          "ew": -437
+        }
+      ],
+      "factions": [
+        "Guards of Qeynos",
+        "Karana Residents",
+        "Knights of Thunder",
+        "Priests of Life"
+      ],
+      "factionAmounts": [
+        "-2",
+        "-10",
+        "-3",
+        "-1"
+      ],
+      "image": "npc_peltin_funter.png"
     },
     {
       "page": "Pendle Dashinger",
@@ -190791,7 +190887,6 @@
         "5"
       ],
       "image": "npc_prince_bragnar.png",
-      "noImage": true,
       "commonDrops": [
         "Bamboo Splint Neckguard",
         "Bamboo Splint Bracelet",
@@ -190827,7 +190922,8 @@
         "Short Beer",
         "Fish Wine",
         "Kobold Parts"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Prince Klaknak",
@@ -192353,10 +192449,10 @@
         "1"
       ],
       "image": "npc_queen_velazul_di`zok.png",
-      "noImage": true,
       "commonDrops": [
         "Shard of Darkness"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Quegin Hadder",
@@ -194907,7 +195003,6 @@
         "30"
       ],
       "image": "npc_reivaj_the_battlerager.png",
-      "noImage": true,
       "commonDrops": [
         "Corroded Breastplate",
         "Corroded Plate Greaves",
@@ -194937,7 +195032,8 @@
         "Torn Enchanted Silk Wristband",
         "Torn Enchanted Silk Turban",
         "Torn Enchanted Silk Gloves"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Reklon Gnallen",
@@ -199346,11 +199442,11 @@
         "10"
       ],
       "image": "npc_sarnak_collective_auditor.png",
-      "noImage": true,
       "commonDrops": [
         "Stave of Shielding",
         "Di`zok Begirding"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Sarnak crypt raider",
@@ -200287,7 +200383,6 @@
         "10"
       ],
       "image": "npc_sebilite_juggernaut.png",
-      "noImage": true,
       "commonDrops": [
         "Star Ruby",
         "Fire Emerald",
@@ -200297,7 +200392,8 @@
         "Diamond",
         "Jacinth",
         "Blue Diamond"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Sebilite protector",
@@ -212606,7 +212702,6 @@
         "10"
       ],
       "image": "npc_smithy_rrarrgin.png",
-      "noImage": true,
       "commonDrops": [
         "Soft Wicker Helm",
         "Soft Wicker Shoulderpads",
@@ -212621,7 +212716,8 @@
         "Kobold Meat",
         "Wrist Pouch",
         "Small Bag"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Smithy Vyx",
@@ -215070,16 +215166,17 @@
         {
           "ns": 85,
           "ew": -385
+        },
+        {
+          "ns": 238,
+          "ew": -567
+        },
+        {
+          "ns": 340,
+          "ew": -92
         }
       ],
-      "factions": [
-        "Fungus Man"
-      ],
-      "factionAmounts": [
-        "-30"
-      ],
-      "image": "npc_spore_guardian.png",
-      "noImage": true
+      "image": "npc_spore_guardian.png"
     },
     {
       "page": "Spowry",
@@ -216351,8 +216448,7 @@
       "factionAmounts": [
         "-30"
       ],
-      "image": "npc_stragak.png",
-      "noImage": true
+      "image": "npc_stragak.png"
     },
     {
       "page": "Stragen The Hewer",
@@ -218953,8 +219049,7 @@
         "-30",
         "-30"
       ],
-      "image": "npc_tann_cellus.png",
-      "noImage": true
+      "image": "npc_tann_cellus.png"
     },
     {
       "page": "Tanrak",
@@ -219111,7 +219206,6 @@
       ],
       "outOfEra": true,
       "image": "npc_fieldofbone_-_targishin.png",
-      "noImage": true,
       "commonDrops": [
         "Bone Chips",
         "Ruined Scaled Boots",
@@ -219119,7 +219213,8 @@
         "Ruined Scaled Pants",
         "Ruined Scaled Coat",
         "Ruined Scaled Skirt"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Taria Clayspinner",
@@ -221143,7 +221238,6 @@
         "-"
       ],
       "image": "npc_the_brood_master.png",
-      "noImage": true,
       "commonDrops": [
         "Black Marble",
         "Pristine Emerald",
@@ -221155,7 +221249,8 @@
         "Flawed Opal",
         "Flawed Flame Emerald",
         "Flawed Sea Sapphire"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "The Brood Mother",
@@ -221193,7 +221288,6 @@
         "-"
       ],
       "image": "npc_the_brood_mother.png",
-      "noImage": true,
       "commonDrops": [
         "Crystalline Silk",
         "Crystalline Silk Thread",
@@ -221206,7 +221300,8 @@
         "Flawed Emerald",
         "Flawed Sea Sapphire",
         "Chipped Onyx Sapphire"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "The Court Chronicler",
@@ -221760,12 +221855,12 @@
         "Oowomp"
       ],
       "image": "npc_the_great_oowomp.png",
-      "noImage": true,
       "commonDrops": [
         "Fine Steel Great Staff",
         "Brandy",
         "Ale"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "The guard captain",
@@ -231654,7 +231749,6 @@
         "-3000"
       ],
       "image": "npc_tunare.png",
-      "noImage": true,
       "commonDrops": [
         "Spirit Weaver's Breastplate",
         "Assassin's Chestguard",
@@ -231665,7 +231759,8 @@
         "Silver Moon Chest Wraps",
         "Berserker's Breastplate",
         "Spell: Gift of Brilliance"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Tunare Puppet",
@@ -232861,11 +232956,11 @@
       ],
       "outOfEra": true,
       "image": "npc_Ulth the Enraged.png",
-      "noImage": true,
       "commonDrops": [
         "Gold Ring",
         "Silver Earring"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Ulthork Raider",
@@ -239380,13 +239475,13 @@
         "10"
       ],
       "image": "npc_watch_sergeant_riz`oul.png",
-      "noImage": true,
       "commonDrops": [
         "Sarnak Battlehammer",
         "Symphonic Saber",
         "Withered Staff",
         "Sarnak Arcane Fetish"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Watch Sergeant Tlygrerion",
@@ -243307,10 +243402,10 @@
         "-30"
       ],
       "image": "Wraith.jpg",
-      "noImage": true,
       "commonDrops": [
         "Classic Raid Tier Treasures"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Wraith of Jaxion",
@@ -246246,7 +246341,9 @@
       "drops": [
         "A Noble's Crest",
         "Giant Snake Fang",
-        "Human Flesh"
+        "Human Flesh",
+        "Rusty Weapons",
+        "Tattered Parchment"
       ],
       "loc": [
         {
@@ -246269,8 +246366,7 @@
         "10",
         "10"
       ],
-      "image": "npc_zepin_winsle.png",
-      "noImage": true
+      "image": "npc_zepin_winsle.png"
     },
     {
       "page": "Zero",
@@ -246458,6 +246554,12 @@
       "drops": [
         "Zimbittle's Pouch"
       ],
+      "loc": [
+        {
+          "ns": -2644,
+          "ew": -520
+        }
+      ],
       "factions": [
         "DaBashers",
         "Broken Skull Clan",
@@ -246468,8 +246570,7 @@
         "7",
         "-25"
       ],
-      "image": "npc_zimbittle.png",
-      "noImage": true
+      "image": "npc_zimbittle.png"
     },
     {
       "page": "Zip Fendil",
