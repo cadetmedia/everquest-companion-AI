@@ -62,6 +62,22 @@ export function withoutPlayers(rows: readonly GapRow[], players: ReadonlySet<str
   return players.size === 0 ? [...rows] : rows.filter((r) => r.domain !== 'mob' || !players.has(r.name.toLowerCase()))
 }
 
+/**
+ * Whether the tab is unsure the row is a gap at all ("Hide uncertain", owner, 2026-10-19). Only a
+ * row whose EXISTENCE is in doubt: today a one-word name only hailed or conned that may be a player
+ * (`maybePlayer`). Not a near miss (`suggest`: the wiki lacks this exact spelling, so a redirect is
+ * still owed), not a faction whose direction no line stated, not a drop whose mob page the catalog
+ * could not pick, not a verdict of the runtime caches: those are real gaps with an unsure detail.
+ */
+export function uncertainGap(row: GapRow): boolean {
+  return row.maybePlayer === true
+}
+
+/** The rows the tab is sure of. */
+export function withoutUncertain(rows: readonly GapRow[]): GapRow[] {
+  return rows.filter((r) => !uncertainGap(r))
+}
+
 /** The rows not marked done. */
 export function withoutDone(rows: readonly GapRow[], done: ReadonlySet<string>): GapRow[] {
   return done.size === 0 ? [...rows] : rows.filter((r) => !done.has(doneKey(r)))

@@ -42,6 +42,7 @@ import GapsTable from './GapsTable'
 import { GAPS_DATA_DATE, PAGE_EXTRAS, useGapsData } from './useGapsData'
 import { useDoneMarks, usePlayerList } from './useDoneMarks'
 import { useHeld } from './useHeld'
+import { useHideUncertain, type HideUncertain } from './useHideUncertain'
 
 // One line (owner, 2026-10-11): the how is in the module header, not on the page. Since 2026-10-18
 // the line says what the chosen domain's rows are (GAP_DOMAIN_HELP).
@@ -75,6 +76,17 @@ function ZoneHere({ zone, checked, onChange }: { zone: string | null; checked: b
     <Tooltip title={zone === null ? 'The log has not named a zone yet. Zone once and this fills in.' : `Only what was seen in ${zone} or another tier of it.`}>
       <span>
         <Pref label={zone === null ? "Zone I'm in" : `Zone I'm in (${zone})`} checked={checked} onChange={onChange} disabled={zone === null} testId="gaps-zone-here" />
+      </span>
+    </Tooltip>
+  )
+}
+
+/** "Hide uncertain": the rows whose very existence as a gap is in doubt (shared/gaps.ts `uncertainGap`). */
+function HideUncertainBox({ state }: { state: HideUncertain }): JSX.Element {
+  return (
+    <Tooltip title="Hides the rows the tab is not sure are gaps at all: one-word names you only hailed or conned that may be players.">
+      <span>
+        <Pref label="Hide uncertain" checked={state.hide} onChange={state.setHide} testId="gaps-hide-uncertain" />
       </span>
     </Tooltip>
   )
@@ -124,7 +136,9 @@ export default function GapsView(): JSX.Element {
   // The list follows the query a beat behind the keystroke, so typing never waits on a filter.
   const deferredQuery = useDeferredValue(query)
   const inDomain = useMemo(() => visibleGaps(rows ?? [], domain, deferredQuery, zone), [rows, domain, deferredQuery, zone])
-  const visible = useMemo(() => (showDone ? inDomain : withoutDone(inDomain, marks.done)), [inDomain, showDone, marks.done])
+  // "Hide uncertain" (owner, 2026-10-19): rows the tab is not sure are gaps, hidden on request.
+  const sure = useHideUncertain(inDomain)
+  const visible = useMemo(() => (showDone ? [...sure.rows] : withoutDone(sure.rows, marks.done)), [sure.rows, showDone, marks.done])
   // What the caches already say about the rows on screen: `unchecked` until the answer lands.
   const verdicts = useGapVerdicts(domain, visible)
   const [sort, setSort] = useState<GapSort>(DEFAULT_GAP_SORT)
@@ -157,7 +171,7 @@ export default function GapsView(): JSX.Element {
   }
   const held = snap.totals[domain] ?? 0
   const served = visibleGaps(rows ?? [], domain, '').length
-  const hidden = inDomain.length - visible.length
+  const hidden = sure.rows.length - visible.length
 
   return (
     // A full-height column whose last child, the table box, is the page's only scroller (GapsTable).
@@ -188,6 +202,7 @@ export default function GapsView(): JSX.Element {
         />
         <Pref label="Group by zone, then mob" checked={grouped} onChange={setGrouped} testId="gaps-grouped" />
         <Pref label="Show done" checked={showDone} onChange={setShowDone} testId="gaps-show-done" />
+        <HideUncertainBox state={sure} />
         <Button size="small" variant="outlined" startIcon={<ContentCopyIcon />} onClick={() => void copy()} disabled={visible.length === 0} data-testid="gaps-copy">
           Copy list
         </Button>
@@ -201,6 +216,7 @@ export default function GapsView(): JSX.Element {
         {visible.length} of {held} unknown {GAP_DOMAIN_LABELS[domain].toLowerCase()} shown
         {zone !== null ? `, seen in ${zone} or another tier of it` : ''}
         {hidden > 0 ? `, ${hidden} marked done hidden` : ''}
+        {sure.hidden > 0 ? `, ${sure.hidden} uncertain hidden` : ''}
         {held > served ? ` (the engine serves the ${served} most mentioned)` : ''}. Wiki data from {GAPS_DATA_DATE}.
       </Typography>
       <GapsTable

@@ -9,7 +9,7 @@ import { factionGaps, factionKey } from '../src/shared/gapFactions'
 import { groupGaps } from '../src/shared/gapGroups'
 import { imageGaps } from '../src/shared/gapImages'
 import { pickPage } from '../src/shared/gapMobPage'
-import { doneKey, gapActions, npcOnlySpell, withoutDone, type GapRow } from '../src/shared/gaps'
+import { doneKey, gapActions, npcOnlySpell, uncertainGap, withoutDone, withoutUncertain, type GapRow } from '../src/shared/gaps'
 import { killIndex, type KillMap } from '../src/shared/kills'
 import type { LootEvent } from '../src/shared/types'
 
@@ -190,4 +190,14 @@ test('a spell page fills from the install spell files: classes, mana, range, tim
   assert.match(page, /\| classes =\n\n\* \[\[Shaman\]\] - Level 43/)
   assert.match(page, /\| mana = 409/)
   assert.doesNotMatch(page, /NPC Only/)
+})
+
+test('Hide uncertain drops only the rows whose very existence as a gap is in doubt: a name that may be a player', () => {
+  const maybe = row('mob', 'Grapok', {}, { maybePlayer: true })
+  const npc = row('mob', 'Rognok')
+  const nearMiss = row('item', 'Rusty Sowrd', {}, { suggest: { name: 'Rusty Sword', page: 'Rusty Sword', distance: 1 } })
+  const unsureFaction = row('faction', 'Guards of Qeynos (a guard)')
+  assert.equal(uncertainGap(maybe), true)
+  // A near miss still owes a redirect; a faction with no direction is a real gap with an unsure detail.
+  assert.deepEqual(withoutUncertain([maybe, npc, nearMiss, unsureFaction]).map((r) => r.name), ['Rognok', 'Rusty Sowrd', 'Guards of Qeynos (a guard)'])
 })
