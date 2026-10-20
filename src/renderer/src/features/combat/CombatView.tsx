@@ -302,16 +302,19 @@ function ScopeEmptyPane({ scope }: { scope: 'fight' | 'overall' }): React.JSX.El
  *                          already navigated away from the next time you came here.
  */
 export default function CombatView({
+  world,
   focus,
   focusNonce,
   onFocusConsumed
 }: {
+  /** App's `viewKey`: which log and rebuild this mount views, so a kept answer never crosses worlds */
+  world?: string
   focus?: CombatFocus | null
   focusNonce?: number
   onFocusConsumed?: () => void
 }): React.JSX.Element {
   const { snap, showUnparsed, setShowUnparsed, selection, scope, maxSegments, loadMore, ...combat } =
-    useCombat()
+    useCombat(world)
   const [mode, setModeState] = useState<MeterMode>('out')
   const [view, setView] = useState<'dash' | 'timeline'>('dash')
   // WHERE YOU HAD DRILLED TO — persisted, so a tab switch (which unmounts this whole view) no
