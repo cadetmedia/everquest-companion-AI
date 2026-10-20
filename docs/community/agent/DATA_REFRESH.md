@@ -47,8 +47,9 @@ full scrapers). A 3-week window was ~1,200 pages in ~25 batched requests.
    wiki, so it is part of the owner's run, never a development check (WORKFLOW.md).
 2. A scratch tree that has every script and the caches:
    `git worktree add --detach .claude/worktrees/delta-run main_community`, then junctions to the
-   main clone's `node_modules`, `scripts/sources/cache/items` and `scripts/sources/cache/mobs`
-   (gitignored, so the run keeps their text current where they live). The dev app can stay up.
+   main clone's `node_modules`, `scripts/sources/cache/items`, `scripts/sources/cache/mobs` and
+   `scripts/sources/cache/rendered` (gitignored, so the run keeps their text current where they
+   live; without `rendered`, posky and bosses render ~209 pages again). The dev app can stay up.
 3. `npx tsx scripts/scrape-delta.mts` there (`--spell-titles` the first time). It folds, writes the
    caches back, runs the follow-ups above and re-measures the byte ledger.
 4. `npx tsx scripts/data-diff.mts` and `npx tsx scripts/validate-data.mts`; cite the diff in the
@@ -59,8 +60,15 @@ full scrapers). A 3-week window was ~1,200 pages in ~25 batched requests.
    to local-data-refresh.
 6. Gate the merged result in a second scratch tree and compare `^✖` lines against
    `main_community`'s head; clear the census reds (next section).
-7. Remove the junctions first (`(Get-Item <wt>\node_modules).Delete()`, the same for the two cache
+7. Remove the junctions first (`(Get-Item <wt>\node_modules).Delete()`, the same for the three cache
    junctions), then `git worktree remove --force`.
+- Known gap (2026-10-20 run): the quest scraper tells items by `cache/quests/item-titles.json`, a
+  category listing cached once and never refreshed by the delta, so a quest linking a moved or new
+  item page loses that requirement (Armor of Ro Quests lost `A Dark Cauldron`, now `Dark Cauldron`).
+  Proposed: the delta adds the item pages it folds to that list and drops the ones it removes
+  (scrape-delta-tool), or the owner approves a re-list of the item categories. Owner to decide.
+- mobs.json `factionAmounts` (wiki-scraper-fixes, 2026-10-20) comes from the parser the delta folds
+  with; the first delta after it kept it 1:1 with `factions` on every record.
 - The delta follows moves (reads by pageid), removes a page that was deleted, became a redirect or
   is no longer an item or mob, re-reads restores, and re-decides every key a change touches. A page
   that came back unreadable holds `scrapedAt` back and is named.
