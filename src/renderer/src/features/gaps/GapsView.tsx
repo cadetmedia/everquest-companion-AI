@@ -20,6 +20,7 @@ import {
   firstGapSortDir,
   gapsAsText,
   gapsCaption,
+  hiddenBy,
   sortGaps,
   visibleGaps,
   withoutDone,
@@ -95,7 +96,20 @@ function HideUncertainBox({ state }: { state: HideUncertain }): JSX.Element {
   )
 }
 
-function DomainToggle({ snap, domain, zone, onPick }: { snap: GapsSnap; domain: GapDomain; zone: string | null; onPick: (d: GapDomain) => void }): JSX.Element {
+function DomainToggle({
+  snap,
+  domain,
+  zone,
+  onPick,
+  hidden
+}: {
+  snap: GapsSnap
+  domain: GapDomain
+  zone: string | null
+  onPick: (d: GapDomain) => void
+  /** rows the player hid, left out of each count */
+  hidden: (row: GapRow) => boolean
+}): JSX.Element {
   return (
     <ToggleButtonGroup
       exclusive
@@ -113,7 +127,7 @@ function DomainToggle({ snap, domain, zone, onPick }: { snap: GapsSnap; domain: 
               {GAP_DOMAIN_LABELS[d]}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              {gapsCaption(snap, d, zone)}
+              {gapsCaption(snap, d, zone, hidden)}
             </Typography>
           </Stack>
         </ToggleButton>
@@ -177,7 +191,7 @@ export default function GapsView(): JSX.Element {
   // Mobs rows the player marked as players are gone for good (owner, 2026-10-19).
   const playerList = usePlayerList()
   const rows = useMemo(() => (snap ? withoutPlayers(snap.rows, playerList.players) : undefined), [snap, playerList.players])
-  const marks = useDoneMarks(rows, new Date().toISOString().slice(0, 10), GAPS_DATA_DATE)
+  const marks = useDoneMarks(new Date().toISOString().slice(0, 10), GAPS_DATA_DATE)
   const [showDone, setShowDone] = useBoolPref(SHOW_DONE_KEY, false)
   // The list follows the query a beat behind the keystroke, so typing never waits on a filter.
   const deferredQuery = useDeferredValue(query)
@@ -185,6 +199,7 @@ export default function GapsView(): JSX.Element {
   // "Hide uncertain" (owner, 2026-10-19): rows the tab is not sure are gaps, hidden on request.
   const sure = useHideUncertain(inDomain)
   const visible = useMemo(() => (showDone ? [...sure.rows] : withoutDone(sure.rows, marks.done)), [sure.rows, showDone, marks.done])
+  const hiddenRow = useMemo(() => hiddenBy(marks.done, showDone, sure.hide), [marks.done, showDone, sure.hide])
   // What the caches already say about the rows on screen: `unchecked` until the answer lands.
   const verdicts = useGapVerdicts(domain, visible)
   const [sort, onSort] = useGapSort()
@@ -221,7 +236,7 @@ export default function GapsView(): JSX.Element {
         {GAP_DOMAIN_HELP[domain]} {CLICK_HINT}
       </Typography>
       <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" useFlexGap>
-        <DomainToggle snap={snap} domain={domain} zone={zone} onPick={setDomain} />
+        <DomainToggle snap={snap} domain={domain} zone={zone} onPick={setDomain} hidden={hiddenRow} />
         <TextField
           size="small"
           label="Search"
