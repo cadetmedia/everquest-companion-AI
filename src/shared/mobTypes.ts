@@ -72,6 +72,8 @@ export interface MobEntry {
   zones?: string[]
   /** item names from `|known_loot`. Absent when the page has no loot section at all. */
   drops?: string[]
+  /** item and group names from `|common_loot`: loot the page files as shared with other mobs. */
+  commonDrops?: string[]
   /**
    * Spawn points from `|location`, in page order. Absent when the page stated no numbers at all
    * — which is the honest answer for the ~20% that say "Various" or "?" (world-model law 1).

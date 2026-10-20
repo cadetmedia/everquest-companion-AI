@@ -2,6 +2,9 @@
 // wiki sends to a mob page (`Hoptor Thaggelum` -> `The Ghoul Lord`) is the same creature, so Gaps
 // counts it known and lookups find it. Shared by scrape-mob-redirects and the delta.
 
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
+import { dirname } from 'path'
+
 /** One redirect page and the page it sends to (the target's title, any `#section` dropped). */
 export interface Redirect {
   from: string
@@ -39,4 +42,37 @@ export function applyOtherNames(mobs: NamedMob[], redirects: readonly Redirect[]
 /** The redirects the records already carry, so a delta can change a few and apply them all again. */
 export function redirectsOf(mobs: readonly NamedMob[]): Redirect[] {
   return mobs.flatMap((m) => (m.otherNames ?? []).map((from) => ({ from, to: m.page })))
+}
+
+// ---- the cached list (owner, 2026-10-19: everything read from the wiki is cached) ----------------
+
+
+/** Every ns0 redirect a full run listed, kept current by the delta: mobs.json re-derives offline. */
+export interface RedirectCache {
+  updatedAt: string
+  redirects: Redirect[]
+}
+
+export function readRedirectCache(path: string): RedirectCache | null {
+  if (!existsSync(path)) return null
+  return JSON.parse(readFileSync(path, 'utf8')) as RedirectCache
+}
+
+export function writeRedirectCache(path: string, redirects: readonly Redirect[]): void {
+  mkdirSync(dirname(path), { recursive: true })
+  const sorted = [...redirects].sort((a, b) => a.from.localeCompare(b.from))
+  writeFileSync(path, JSON.stringify({ updatedAt: new Date().toISOString(), redirects: sorted }, null, 1))
+}
+
+/**
+ * The cached list after the pages a delta read: each read page's old entry dropped, and the page
+ * added again when it is a redirect now (`target` reads its text; null for none or no text).
+ */
+export function foldRedirectCache(cached: readonly Redirect[], pages: ReadonlyMap<string, string | null>): Redirect[] {
+  const kept = cached.filter((r) => !pages.has(r.from))
+  for (const [from, wt] of pages) {
+    const to = wt == null ? null : redirectTarget(wt)
+    if (to !== null) kept.push({ from, to })
+  }
+  return kept
 }

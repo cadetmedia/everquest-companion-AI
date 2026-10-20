@@ -88,3 +88,24 @@ test('a loot link with a leading colon is the page without it (2026-10-18: Gaps 
   const block = '<ul>\n<li> [[:Raw-hide Armor]] (Common)\n</li><li> [[:Rat Tooth|Rat Tooth]]\n</li></ul>'
   assert.deepEqual(parseMobLoot(block).map((d) => d.item), ['Raw-hide Armor', 'Rat Tooth'])
 })
+
+test('common_loot is read beside known_loot (owner, 2026-10-19: a drop listed there is listed)', () => {
+  const wt = [
+    '{{Namedmobpage',
+    '| name = a froglok forager',
+    '| known_loot = ',
+    '',
+    "<ul><li> {{:Froglok Meat}} <span class='drare'>(Common)</span>",
+    '</li></ul>',
+    '| common_loot = ',
+    '',
+    '<ul><li> [[Classic Raid Tier Treasures]] (Rare)',
+    '</li><li> {{:Jade Ring}}',
+    '</li></ul>',
+    '| factions = ',
+    '}}'
+  ].join('\n')
+  const entry = parseMobPage('A froglok forager', wt)
+  assert.deepEqual(entry?.drops, ['Froglok Meat'])
+  assert.deepEqual(entry?.commonDrops, ['Classic Raid Tier Treasures', 'Jade Ring'])
+})

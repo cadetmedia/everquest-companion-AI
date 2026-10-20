@@ -52,6 +52,17 @@ export function groupMembers(wikitext: string, itemKeys: ReadonlySet<string>): s
   return [...members.values()].sort((a, b) => a.localeCompare(b))
 }
 
+/**
+ * A drop-list link that is a redirect to an item page (`[[A Wooden Heart]]` -> Wooden Heart): the
+ * item its `|itemname` names, when items.json keys it; null for any other page. The mob page lists
+ * that item under another title, so the Gaps tab must not call it missing (review 2026-10-19).
+ */
+export function aliasedItem(wikitext: string, itemKeys: ReadonlySet<string>): string | null {
+  if (!/\{\{\s*Itempage/i.test(wikitext)) return null
+  const name = /\|\s*itemname\s*=\s*([^\n|}]+)/i.exec(wikitext)?.[1].trim() ?? ''
+  return name !== '' && itemKeys.has(name.toLowerCase()) ? name : null
+}
+
 interface RevPage {
   title: string
   revisions?: { slots?: { main?: { content?: string } } }[]
@@ -105,13 +116,17 @@ async function main(): Promise<void> {
     writeFileSync(CACHE, JSON.stringify(pages, null, 1) + '\n')
   }
   const groups: Record<string, string[]> = {}
+  const aliases: Record<string, string> = {}
   for (const p of pages) {
     const members = groupMembers(p.content, itemKeys)
     if (members.length > 0) groups[p.title] = members
+    const item = aliasedItem(p.content, itemKeys)
+    if (item !== null && item.toLowerCase() !== p.title.toLowerCase()) aliases[p.title] = item
   }
-  writeFileSync(OUT, JSON.stringify({ source: 'eqlwiki.com — the drop-list pages that are not items', groups }, null, 1) + '\n')
+  const out = { source: 'eqlwiki.com — the drop-list pages that are not items', groups, aliases }
+  writeFileSync(OUT, JSON.stringify(out, null, 1) + '\n')
   const missing = pages.filter((p) => p.content === '').length
-  console.log(`${String(pages.length)} pages: ${String(Object.keys(groups).length)} groups, ${String(missing)} with no page`)
+  console.log(`${String(pages.length)} pages: ${String(Object.keys(groups).length)} groups, ${String(Object.keys(aliases).length)} redirects to items, ${String(missing)} with no page`)
 }
 
 if (isMain(import.meta.url)) void main()

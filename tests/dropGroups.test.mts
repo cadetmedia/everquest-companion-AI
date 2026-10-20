@@ -2,7 +2,7 @@
 // the four shapes the wiki writes them. Fixtures only, no network.
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { groupMembers, groupTitles } from '../scripts/scrape-drop-groups'
+import { aliasedItem, groupMembers, groupTitles } from '../scripts/scrape-drop-groups'
 
 const items = new Set(['rusty axe', 'rusty dagger', 'cloth shirt', 'cloth cap', 'amber', 'bronze axe', 'gloves of earthcrafting'])
 
@@ -17,4 +17,11 @@ test('an item, mob or spell page is no group, and scrolls and items are never as
   assert.deepEqual(groupMembers('{{Spellpage|\n| items_with_effect =\n* [[Gloves of Earthcrafting]]\n}}', items), [])
   assert.deepEqual(groupMembers('{{Itempage\n|itemname = X\n}}\n*[[Rusty Axe]]', items), [])
   assert.deepEqual(groupTitles([{ drops: ['Rusty Axe', 'Rusty Weapons', 'Spell: Translocate', 'Cloth Armor'] }], items), ['Cloth Armor', 'Rusty Weapons'])
+})
+
+test('a drop-list link that redirects to an item page is that item (review 2026-10-19: A Wooden Heart)', () => {
+  const keys = new Set(['wooden heart'])
+  assert.equal(aliasedItem('{{Classic Era}}\n<onlyinclude>{{Itempage\n|itemname = Wooden Heart\n}}</onlyinclude>', keys), 'Wooden Heart')
+  assert.equal(aliasedItem('{{Itempage\n|itemname = Not Keyed\n}}', keys), null)
+  assert.equal(aliasedItem('* [[Rusty Axe]]', keys), null)
 })
