@@ -83,6 +83,8 @@ export interface MobEntry {
   merchant?: true
   /** every faction the page says a kill moves, lowered or raised (`|factions`, `|opposing_factions`) */
   factions?: string[]
+  /** what each `factions` bullet states about the hit, same order: "-30", "-30..-10?", "+" (mobFactionAmounts.ts) */
+  factionAmounts?: string[]
   /** the image file the page names (`|imagefilename`, `npc_marda.png`); absent when it names none */
   image?: string
   /** the page names no image, or one the wiki has no file for (scrape-wiki-files.ts) */

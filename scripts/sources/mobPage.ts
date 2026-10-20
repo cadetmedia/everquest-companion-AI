@@ -20,6 +20,7 @@ import { parsePageEraTag, templateField } from '../../src/main/itemLookupParse'
 import { CURRENT_ERA, eraBadgeOverrides } from '../../src/shared/planner/era'
 import { parseMobLoot, parseMobWikitext } from '../../src/main/mobLookupParse'
 import { factionNames } from './mobFaction'
+import { encodeFactionAmount, type MobFactionHit } from '../../src/shared/mobFactionAmounts'
 import type { MobEntry } from '../../src/shared/types'
 
 /**
@@ -63,8 +64,69 @@ export function splitZones(zone: string | undefined): string[] {
   return zones
 }
 
+/** A stated amount, `(-10)` or `(-5?)`; a `?` after the number marks a guess. */
+const AMOUNT_RE = /\(\s*([+-]?\d+)\s*(\?*)\s*\)/g
+/** An amount alone after the name without brackets: `<span class='profac'>-15</span>`, `+7`. */
+const BARE_AMOUNT_RE = /^\s*([+-]?\d+)\s*(\?*)\s*$/
+
+/** The faction one bullet names, exactly as `factionNames` names it (mobFaction.ts stays byte-identical with slayer-tab). */
+function bulletFaction(line: string): string | undefined {
+  return factionNames(`|factions=\n${line}\n}}`)[0]
+}
+
+/** What follows the faction's name on its bullet, comments, markup and bold dropped: `(-10) to (-30) (unconfirmed)`. */
+function afterName(line: string, faction: string): string {
+  const link = line.indexOf(']]')
+  const from = link >= 0 ? link + 2 : line.indexOf(faction) + faction.length
+  return line.slice(from).replace(/<!--.*?(?:-->|$)|<[^>]*>|'{2,}/g, ' ')
+}
+
+/** Lowered or raised: by the stated sign when there is one (an unsigned number raises), else by the field. */
+function hitSide(rest: string, field: string): MobFactionHit['side'] {
+  const amount = new RegExp(AMOUNT_RE.source).exec(rest) ?? BARE_AMOUNT_RE.exec(rest)
+  const sign = amount !== null ? (amount[1].startsWith('-') ? '-' : '+') : /\(\s*([+-])|([+-])\s*$/.exec(rest)?.slice(1).find(Boolean)
+  if (sign !== undefined) return sign === '-' ? 'lowers' : 'raises'
+  return field === 'factions' ? 'lowers' : 'raises'
+}
+
+/** One amount or an `(a) to (b)` range, signed as written; none for `(?)`, `(-0)`, `(~5)`, `(<5)` or a choice. */
+function hitAmount(rest: string): Pick<MobFactionHit, 'min' | 'max' | 'unconfirmed'> {
+  const bare = BARE_AMOUNT_RE.exec(rest)
+  const nums = bare !== null ? [bare] : [...rest.matchAll(AMOUNT_RE)]
+  if (!(nums.length === 1 || (nums.length === 2 && /\)\s*to\s*\(/i.test(rest)))) return {}
+  const values = nums.map((m) => Number(m[1]))
+  // `(-0)` is a listed hit of unstated size (owner, 2026-10-10).
+  if (values.includes(0)) return {}
+  const guess = nums.some((m) => m[2] !== '') || /unconfirmed|unverified|\)\s*\?/i.test(rest)
+  return { min: Math.min(...values), max: Math.max(...values), ...(guess ? { unconfirmed: true as const } : {}) }
+}
+
+/**
+ * What each faction `factionNames` lists says about the hit, in its order (owner, 2026-10-20: Gaps
+ * flags a listed faction whose amount the log contradicts). Stored encoded: `factionAmountList`.
+ */
+export function factionHitList(wikitext: string): MobFactionHit[] {
+  const named: string[] = []
+  const hits: MobFactionHit[] = []
+  for (const field of ['factions', 'opposing_factions']) {
+    for (const line of (templateField(wikitext, field) ?? '').split('\n')) {
+      const faction = bulletFaction(line)
+      if (faction === undefined || named.includes(faction)) continue
+      const rest = afterName(line, faction)
+      named.push(faction)
+      hits.push({ side: hitSide(rest, field), ...hitAmount(rest) })
+    }
+  }
+  return hits
+}
+
+/** `MobEntry.factionAmounts`: `factionHitList` as the short strings mobs.json stores. */
+export function factionAmountList(wikitext: string): string[] {
+  return factionHitList(wikitext).map(encodeFactionAmount)
+}
+
 /** For the Gaps tab (owner ask, 2026-10-18): whether the page is a vendor's, and the factions a kill moves. */
-function gapsFacts(wikitext: string): Pick<MobEntry, 'merchant' | 'factions' | 'image' | 'commonDrops'> {
+function gapsFacts(wikitext: string): Pick<MobEntry, 'merchant' | 'factions' | 'factionAmounts' | 'image' | 'commonDrops'> {
   const factions = factionNames(wikitext)
   // `|common_loot` lists drops as surely as `|known_loot`: on 195 pages, mostly shared tables (Classic
   // Raid Tier Treasures) and a zone's set loot (owner, 2026-10-19: Gaps read them as missing).
@@ -72,7 +134,7 @@ function gapsFacts(wikitext: string): Pick<MobEntry, 'merchant' | 'factions' | '
   const image = /\|\s*imagefilename\s*=\s*([^\n|}]*)/i.exec(wikitext)?.[1].trim() ?? ''
   return {
     ...(/\{\{\s*MerchantPage\b/i.test(wikitext) ? { merchant: true } : {}),
-    ...(factions.length ? { factions } : {}),
+    ...(factions.length ? { factions, factionAmounts: factionAmountList(wikitext) } : {}),
     ...(image !== '' ? { image } : {}),
     ...(common.length ? { commonDrops: common } : {})
   }
