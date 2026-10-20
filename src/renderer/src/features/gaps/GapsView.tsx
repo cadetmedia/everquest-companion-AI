@@ -41,6 +41,7 @@ import { useSpellFacts } from '../../lib/gapSpellFacts'
 import GapsTable from './GapsTable'
 import { GAPS_DATA_DATE, PAGE_EXTRAS, useGapsData } from './useGapsData'
 import { useDoneMarks, usePlayerList } from './useDoneMarks'
+import { useHeld } from './useHeld'
 
 // One line (owner, 2026-10-11): the how is in the module header, not on the page. Since 2026-10-18
 // the line says what the chosen domain's rows are (GAP_DOMAIN_HELP).
@@ -145,6 +146,8 @@ export default function GapsView(): JSX.Element {
   // "Group by zone, then mob" (owner ask, 2026-10-18): where to go and what to kill.
   const [grouped, setGrouped] = useBoolPref(GROUPED_KEY, false)
   const entries = useMemo(() => (grouped ? groupGaps(sorted, loot, PAGE_EXTRAS.zoneName) : rowEntries(sorted)), [grouped, sorted, loot])
+  // An item the player holds right now needs only a screenshot (review C6; owner, 2026-10-19).
+  const holding = useHeld(loot)
 
   if (!snap) return <CircularProgress size={20} />
 
@@ -210,6 +213,7 @@ export default function GapsView(): JSX.Element {
         done={marks.done}
         onDone={marks.toggle}
         onPlayer={playerList.mark}
+        holding={holding}
         chipContext={CHIP_CONTEXT}
         hiddenByFilter={held > 0}
       />
