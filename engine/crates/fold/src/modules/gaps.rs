@@ -283,7 +283,10 @@ impl GapsModule {
         if !is_player_shaped_name(name) {
             return self.mob(Some(name), kind, ev);
         }
-        if self.who.is_player(name) {
+        // A con above any player's level is an NPC outright (gaps_players.rs, PLAYER_LEVEL_CAP).
+        if !hail && self.who.conned_at(name, ev.int("level")) {
+            self.players.remove(&mob_key(name));
+        } else if self.who.is_player(name) {
             return false;
         }
         let zone = self.zone.clone();
