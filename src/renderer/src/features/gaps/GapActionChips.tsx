@@ -4,7 +4,7 @@
 import type { JSX, MouseEvent } from 'react'
 import { Chip, Stack } from '@mui/material'
 import { Tooltip } from '../../lib/Tooltip'
-import { gapActions, type GapAction, type GapRow, type GapVerdict } from '@shared/gaps'
+import { gapActions, type GapAction, type GapActionContext, type GapRow, type GapVerdict } from '@shared/gaps'
 
 function ActionChip({ a }: { a: GapAction }): JSX.Element {
   const chip =
@@ -27,10 +27,10 @@ function ActionChip({ a }: { a: GapAction }): JSX.Element {
   return <Tooltip title={a.why}>{chip}</Tooltip>
 }
 
-export default function GapActionChips({ row, verdict }: { row: GapRow; verdict: GapVerdict }): JSX.Element {
+export default function GapActionChips({ row, verdict, ctx }: { row: GapRow; verdict: GapVerdict; ctx?: GapActionContext }): JSX.Element {
   return (
     <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'nowrap' }}>
-      {gapActions(row, verdict).map((a) => (
+      {gapActions(row, verdict, ctx).map((a) => (
         <ActionChip key={`${a.kind}:${a.label}`} a={a} />
       ))}
     </Stack>

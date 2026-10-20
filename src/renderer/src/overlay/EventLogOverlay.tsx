@@ -161,7 +161,8 @@ function UnknownTag({ e }: { e: FeedEvent }): JSX.Element | null {
   if (!e.unknown) return null
   return (
     <span data-testid="feed-unknown" style={{ color: '#ffb74d', marginLeft: 5, fontWeight: 600 }}>
-      missing · screenshot it
+      {/* Sold on loot is already gone: the next one is the screenshot (review 2026-10-19). */}
+      {e.detail?.startsWith('auto-sold') === true ? 'missing · auto-sold, keep the next one' : 'missing · screenshot it'}
     </span>
   )
 }

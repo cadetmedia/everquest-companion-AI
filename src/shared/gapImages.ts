@@ -1,6 +1,7 @@
 // shared/gapImages.ts — mobs the player met whose wiki page has no image (owner ask, 2026-10-18:
 // "Marda didn't have one ... So the page existed, but no npc_marda.png existed"). A mob is met when
-// the kills ledger holds it or a loot line names it as the corpse; the catalog marks a page whose
+// the kills ledger holds it, a loot line names it as the corpse, or the player conned it (Marda was
+// conned and hailed, never killed: review 2026-10-19); the catalog marks a page whose
 // image is missing (mobs.json `noImage`, scrape-wiki-files.ts checks every named file against the
 // wiki's file list). A name any page of which has an image is not a row. A mob the catalog does not
 // have at all is a mob row already.
@@ -33,36 +34,51 @@ interface Met {
   name: string
   kills: number
   loots: number
+  cons: number
   zone: string
 }
 
-/** The mobs met, by key: kills from the ledger, loot sources with the zone last looted in. */
-function metMobs(kills: KillMap, loot: readonly LootEvent[]): Map<string, Met> {
+/** A /con as this reads it (the consider module's row): who, where, how often. */
+export interface ConMet {
+  mob: string
+  zone?: string
+  cons: number
+}
+
+/** The mobs met, by key: kills from the ledger, loot sources with the zone last looted in, cons with theirs. */
+function metMobs(kills: KillMap, loot: readonly LootEvent[], cons: readonly ConMet[]): Map<string, Met> {
   const out = new Map<string, Met>()
-  for (const k of Object.values(kills)) out.set(mobKey(k.display), { name: k.display, kills: k.count, loots: 0, zone: '' })
+  for (const k of Object.values(kills)) out.set(mobKey(k.display), { name: k.display, kills: k.count, loots: 0, cons: 0, zone: '' })
   for (const e of loot) {
     if (e.source === undefined) continue
-    const m = out.get(mobKey(e.source)) ?? { name: e.source, kills: 0, loots: 0, zone: '' }
+    const m = out.get(mobKey(e.source)) ?? { name: e.source, kills: 0, loots: 0, cons: 0, zone: '' }
     m.loots++
     m.zone = e.zone ?? m.zone
     out.set(mobKey(e.source), m)
+  }
+  // A con places a mob the player only killed (kills carry no zone) or only looked at.
+  for (const c of cons) {
+    const m = out.get(mobKey(c.mob)) ?? { name: c.mob, kills: 0, loots: 0, cons: 0, zone: '' }
+    m.cons += c.cons
+    if (m.zone === '') m.zone = c.zone ?? ''
+    out.set(mobKey(c.mob), m)
   }
   return out
 }
 
 /** The met mobs whose pages have no image, as Gaps rows named by the page, the file on the row. */
-export function imageGaps(kills: KillMap, loot: readonly LootEvent[], catalog: readonly CatalogMob[]): GapRow[] {
+export function imageGaps(kills: KillMap, loot: readonly LootEvent[], catalog: readonly CatalogMob[], cons: readonly ConMet[] = []): GapRow[] {
   const imageless = imagelessByMob(catalog)
   const rows: GapRow[] = []
-  for (const [key, met] of metMobs(kills, loot)) {
+  for (const [key, met] of metMobs(kills, loot, cons)) {
     const page = imageless.get(key)
     if (page === undefined) continue
-    const n = Math.max(met.kills, met.loots)
+    const n = Math.max(met.kills, met.loots, met.cons)
     rows.push({
       domain: 'image',
       name: page.page,
       image: page.image ?? npcImageName(page.name),
-      kinds: met.kills > 0 ? ['killed'] : ['looted'],
+      kinds: met.kills > 0 ? ['killed'] : met.loots > 0 ? ['looted'] : ['considered'],
       count: n,
       first: '',
       last: '',
@@ -79,10 +95,9 @@ export function imageGaps(kills: KillMap, loot: readonly LootEvent[], catalog: r
 /** The served snapshot with the image rows joined in and counted, so the tab treats them as a domain. */
 export function withImageRows<S extends { rows: GapRow[]; totals: Record<string, number> }>(
   snap: S,
-  kills: KillMap,
-  loot: readonly LootEvent[],
+  met: { kills: KillMap; loot: readonly LootEvent[]; cons?: readonly ConMet[] },
   catalog: readonly CatalogMob[]
 ): S {
-  const rows = imageGaps(kills, loot, catalog)
+  const rows = imageGaps(met.kills, met.loot, catalog, met.cons ?? [])
   return { ...snap, rows: [...snap.rows, ...rows], totals: { ...snap.totals, image: rows.length } }
 }
