@@ -73,12 +73,16 @@ if (-not (Test-Path (Join-Path $repo 'node_modules'))) {
 $engineExe = Join-Path $repo 'engine\target\release\engined.exe'
 $sources = Get-ChildItem (Join-Path $repo 'engine') -Recurse -File -Include *.rs, Cargo.toml, Cargo.lock |
   Where-Object { $_.FullName -notlike '*\engine\target\*' }
+# The engine also BUILDS IN the app's data (include_str! of items.json, mobs.json, spells.json,
+# quests and more): a wiki data refresh with no engine code change still needs a rebuild (2026-10-20:
+# the delta's mobs left the running engine on the old catalog until a by-hand build:engine).
+$sources = @($sources) + @(Get-ChildItem (Join-Path $repo 'src\main\data'), (Join-Path $repo 'src\renderer\src\data\eqlegends') -Recurse -File -Include *.json)
 $newest = ($sources | Measure-Object LastWriteTime -Maximum).Maximum
 $stale = -not (Test-Path $engineExe) -or ((Get-Item $engineExe).LastWriteTime -lt $newest)
 if ($stale) {
   $cargo = (Get-Command cargo -ErrorAction SilentlyContinue) -or (Test-Path (Join-Path $env:USERPROFILE '.cargo\bin\cargo.exe'))
   if ($cargo) {
-    Write-Host 'Engine sources are newer than engined.exe: running npm run build:engine'
+    Write-Host 'Engine sources or its built-in data are newer than engined.exe: running npm run build:engine'
     npm run build:engine
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
   } elseif (Test-Path $engineExe) {
