@@ -2,7 +2,7 @@
 
 Owner ask, 2026-10-19, with a second character (Kaltinril on freeport) beside Drywrought on oggok:
 "Is there a way the GAPS section, can come from ALL characters though? ... JUST the gaps
-information!" Planned only; nothing is built. Rules first: `docs/community/RULES.md`, then
+information!" Built 2026-10-19 on `gaps-all-characters` (BRANCHES.md row has the shape). Rules first: `docs/community/RULES.md`, then
 `agent/INDEX.md`. The requirement row goes in `requirements/gaps-tab.md` before any code (rule 19).
 
 ## Scope
@@ -72,8 +72,8 @@ Cost: moderate. No engine change; a store file, an IPC pair, the merge, the chec
   60 days but give them the ability to change that". One player setting (not per character): rows
   last seen, and archived segments that ended, more than N days ago are left out; N defaults to 60
   and the player can change it. This replaces the fixed-date proposal (rolling days, owner's
-  choice). Whether it also trims the single-character view is NOT decided (agent's suggestion: yes,
-  same reason); ask before building it there.
+  choice). Built for the All characters view only; whether it also trims the single-character view
+  is NOT decided (agent's suggestion: yes, same reason); ask before building it there.
 - **The 2-month flag and the 60-day window overlap:** a character not attached for two months has
   little or nothing inside a 60-day window. The flag then says so per character ("Drywrought: last
   seen <date>, outside the N-day window") rather than warning about rows that are already hidden.
