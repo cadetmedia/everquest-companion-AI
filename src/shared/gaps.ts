@@ -57,6 +57,11 @@ export const GAP_CAPTURE: Record<GapDomain, string> = {
 /** A row's key in the Done marks (owner ask, 2026-10-19). */
 export const doneKey = (row: GapRow): string => `${row.domain}:${row.name}`
 
+/** The rows less the Mobs rows the player marked as players (lower-cased names). */
+export function withoutPlayers(rows: readonly GapRow[], players: ReadonlySet<string>): GapRow[] {
+  return players.size === 0 ? [...rows] : rows.filter((r) => r.domain !== 'mob' || !players.has(r.name.toLowerCase()))
+}
+
 /** The rows not marked done. */
 export function withoutDone(rows: readonly GapRow[], done: ReadonlySet<string>): GapRow[] {
   return done.size === 0 ? [...rows] : rows.filter((r) => !done.has(doneKey(r)))
@@ -151,6 +156,8 @@ export interface GapRow {
   /** A faction row: the amount most kills stated, and whether the kill raised the faction. */
   adjust?: number
   raised?: boolean
+  /** A one-word name only hailed or conned that the log has not shown to be an NPC (gaps_players.rs). */
+  maybePlayer?: boolean
 }
 
 export interface GapsSnap {
@@ -163,6 +170,8 @@ export interface GapsSnap {
   killFactions?: KillFaction[]
   /** Where a con or hail beside a `/loc` placed each mob, `/loc` order (gaps_locs.rs). */
   mobLocs?: { mob: string; zone: string; points: number[][] }[]
+  /** What each mob was seen to do on its own attack lines, `Rampages` / `Flurries` (gaps_specials.rs). */
+  mobSpecials?: { mob: string; specials: string[] }[]
 }
 
 /** The lists in display order, with the words the tab and the copy text use for them. */

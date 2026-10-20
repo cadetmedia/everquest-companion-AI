@@ -57,3 +57,41 @@ export function useDoneMarks(rows: readonly GapRow[] | undefined, today: string)
   const done = useMemo(() => new Set(Object.keys(marks)), [marks])
   return { done, toggle }
 }
+
+const PLAYERS_KEY = 'eq.gaps.players'
+
+export interface PlayerList {
+  /** Lower-cased names the player marked as players: never a Mobs row again. */
+  players: ReadonlySet<string>
+  mark: (name: string) => void
+}
+
+/**
+ * Names the player marked as players (owner, 2026-10-19: "allow them to mark it as a player and we
+ * add it to the permanent player list"). Per viewer, kept until cleared; nothing drops a name.
+ */
+export function usePlayerList(): PlayerList {
+  const [names, setNames] = useState<string[]>(() => {
+    try {
+      const parsed: unknown = JSON.parse(localStorage.getItem(PLAYERS_KEY) ?? '[]')
+      return Array.isArray(parsed) ? parsed.filter((n): n is string => typeof n === 'string') : []
+    } catch {
+      return []
+    }
+  })
+  const mark = useCallback(
+    (name: string) =>
+      setNames((cur) => {
+        const next = cur.includes(name.toLowerCase()) ? cur : [...cur, name.toLowerCase()]
+        try {
+          localStorage.setItem(PLAYERS_KEY, JSON.stringify(next))
+        } catch {
+          // A blocked store keeps the list for this session only.
+        }
+        return next
+      }),
+    []
+  )
+  const players = useMemo(() => new Set(names), [names])
+  return { players, mark }
+}

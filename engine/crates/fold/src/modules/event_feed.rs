@@ -16,6 +16,7 @@
 
 use crate::event::Event;
 use crate::knowledge::Knowledge;
+use crate::modules::gaps_names::MobNames;
 use crate::modules::resist::world::is_player_shaped_name;
 use crate::EqModule;
 use serde::Serialize;
@@ -143,6 +144,8 @@ pub struct EventFeedModule {
     last_con: HashMap<String, i64>,
     /// `deps.lookupItem`, or `None` in every construction but the production one.
     knowledge: Option<Arc<dyn Knowledge>>,
+    /// The Gaps tab's names for a mob (wiki spellings, pets), so the mark agrees with the tab.
+    mob_names: MobNames,
     /// The announce cursor — see [`crate::announce`]. Every path into the ring goes through
     /// `append`, so that one function is the whole announce surface.
     announce: crate::announce::Announce,
@@ -219,7 +222,7 @@ impl EventFeedModule {
         }
         // A player's name is no catalog miss (gaps.rs asks the same test before counting a con).
         let unknown = !is_player_shaped_name(mob)
-            && self.knowledge.as_ref().is_some_and(|k| !k.known_mob(mob));
+            && self.knowledge.as_ref().is_some_and(|k| !self.mob_names.known(k.as_ref(), mob));
         self.append(FeedEvent {
             id: String::new(),
             kind: "con",
@@ -265,10 +268,12 @@ impl EventFeedModule {
             .filter(|n| !n.is_empty())
             .unwrap_or(item)
             .to_owned();
+        // Sold on loot: gone before a screenshot, so the mark says to keep the next one.
+        let sold = if ev.str("disposition") == Some("sold") { "auto-sold " } else { "" };
         let detail = if destroyed {
             Some("destroyed".to_owned())
         } else {
-            source.map(|mob| format!("from {mob}"))
+            source.map(|mob| format!("{sold}from {mob}"))
         };
         self.append(FeedEvent {
             id: String::new(),
@@ -347,6 +352,7 @@ impl EqModule for EventFeedModule {
     }
 
     fn install_knowledge(&mut self, k: &Arc<dyn Knowledge>) {
+        self.mob_names = MobNames::new(&k.gap_index().mob_names);
         self.knowledge = Some(Arc::clone(k));
     }
 }

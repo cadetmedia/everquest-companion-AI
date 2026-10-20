@@ -53,6 +53,7 @@ impl Knowledge for Corpus {
             ("rat meat", "Rat Meat"),
             ("giant scarab egg sack", "Giant Scarab Egg Sack"),
             ("desecrated kejaar totem", "Desecrated Kejaar Totem"),
+            ("a skeletal finger", "A skeletal finger"),
         ]
         .iter()
         .map(|(k, p)| (k.to_string(), p.to_string()))
@@ -285,7 +286,7 @@ fn a_later_destroy_line_adds_its_disposition_and_line_but_no_zone_no_count_no_ki
 }
 
 #[test]
-fn a_spell_rank_merged_is_no_item_and_an_unknown_merge_is_a_crafted_gap() {
+fn a_spell_rank_merged_is_no_item_and_an_unknown_merge_is_a_fused_gap() {
     let mut m = module();
     // Real spells, as the merge line prints them: a rank, and a backtick where the catalog has an
     // apostrophe.
@@ -294,7 +295,8 @@ fn a_spell_rank_merged_is_no_item_and_an_unknown_merge_is_a_crafted_gap() {
     assert!(rows(&m).is_empty());
     assert_eq!(m.snapshot()["state"]["seen"]["item"], json!(0), "a spell merged is not a name checked");
     feed(&mut m, 3, json!({ "kind": "itemMerge", "item": "Totally Made Up Thing +3", "tier": 3 }));
-    assert_eq!(rows(&m), ["item Totally Made Up Thing x1 [crafted]"]);
+    // A merge on Legends is a mote fusion, not a tradeskill (review 2026-10-19).
+    assert_eq!(rows(&m), ["item Totally Made Up Thing x1 [fused]"]);
 }
 
 #[test]
@@ -440,5 +442,9 @@ fn a_trader_the_wiki_lists_as_no_merchant_is_a_row_and_a_kill_keeps_its_faction_
     feed(&mut m, 4, line("Your faction standing with Undead Frogloks of Guk has been adjusted by -20."));
     feed(&mut m, 5, json!({ "kind": "death", "name": "a decaying skeleton", "killer": "You" }));
     let pairs = m.snapshot()["state"]["killFactions"].clone();
-    assert_eq!(pairs, json!([{ "mob": "a decaying skeleton", "faction": "Undead Frogloks of Guk", "n": 1, "zone": "", "adjust": -20 }]));
+    assert_eq!(pairs, json!([{ "mob": "a decaying skeleton", "faction": "Undead Frogloks of Guk", "n": 1, "zone": "", "adjust": -20, "raised": false }]));
 }
+
+/// The review's engine rules (2026-10-19): a file of their own for the factoring bar.
+#[path = "gaps_review_tests.rs"]
+mod review;

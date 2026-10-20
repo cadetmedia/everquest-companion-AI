@@ -53,7 +53,8 @@ impl MobNames {
 
 /// `Cazic-Thule (God)` → `cazic thule`, `a fire giant warrior` → `fire giant warrior`.
 fn mob_loose(name: &str) -> String {
-    let key = mob_key(name);
+    // The game stars some guards (`*Guard Willia`); no wiki title carries the star.
+    let key = mob_key(name.trim_start_matches('*'));
     let bare = match key.rfind(" (") {
         Some(i) if key.ends_with(')') => &key[..i],
         _ => key.as_str(),
@@ -69,6 +70,11 @@ fn mob_loose(name: &str) -> String {
 /// `a necro initiate pet` → `a necro initiate`: the name an unknown mob's pet is filed under.
 pub fn owner_of_pet(name: &str) -> &str {
     name.strip_suffix(" pet").unwrap_or(name)
+}
+
+/// The game's ability switch (`<player> begins casting Disable Ability.`): no spell, no page.
+pub fn no_spell(name: &str) -> bool {
+    matches!(name.trim(), "Use Ability" | "Enable Ability" | "Disable Ability")
 }
 
 /// The `Reward Chest`, and a player's mount or familiar (`Malkil`s Mount`, `Revilus`s familiar`).

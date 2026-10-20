@@ -22,6 +22,7 @@ import {
   sortGaps,
   visibleGaps,
   withoutDone,
+  withoutPlayers,
   type GapDomain,
   type GapRow,
   type GapSort,
@@ -38,7 +39,7 @@ import { copyText } from '../../lib/clipboard'
 import { useGapVerdicts } from '../../lib/gapVerdicts'
 import GapsTable from './GapsTable'
 import { GAPS_DATA_DATE, PAGE_EXTRAS, useGapsData } from './useGapsData'
-import { useDoneMarks } from './useDoneMarks'
+import { useDoneMarks, usePlayerList } from './useDoneMarks'
 
 // One line (owner, 2026-10-11): the how is in the module header, not on the page. Since 2026-10-18
 // the line says what the chosen domain's rows are (GAP_DOMAIN_HELP).
@@ -110,7 +111,9 @@ export default function GapsView(): JSX.Element {
   const [hereOnly, setHereOnly] = useBoolPref(ZONE_HERE_KEY, false)
   const current = useModule<CharacterSnap>('character')?.zone ?? null
   const zone = hereOnly ? current : null
-  const rows = snap?.rows
+  // Mobs rows the player marked as players are gone for good (owner, 2026-10-19).
+  const playerList = usePlayerList()
+  const rows = useMemo(() => (snap ? withoutPlayers(snap.rows, playerList.players) : undefined), [snap, playerList.players])
   const marks = useDoneMarks(rows, new Date().toISOString().slice(0, 10))
   const [showDone, setShowDone] = useBoolPref(SHOW_DONE_KEY, false)
   // The list follows the query a beat behind the keystroke, so typing never waits on a filter.
@@ -126,7 +129,7 @@ export default function GapsView(): JSX.Element {
   // The table and Copy list read the same order, so a copied list matches what is on screen.
   const sorted = useMemo(() => sortGaps(visible, sort, verdicts), [visible, sort, verdicts])
   // What the pages read beside the ledgers: each kill's factions, each mob's points, the wiki's spellings.
-  const sightings = useMemo(() => ({ killFactions: engine?.killFactions, mobLocs: engine?.mobLocs, ...PAGE_EXTRAS }), [engine])
+  const sightings = useMemo(() => ({ killFactions: engine?.killFactions, mobLocs: engine?.mobLocs, mobSpecials: engine?.mobSpecials, ...PAGE_EXTRAS }), [engine])
   const pageText = useCallback((row: GapRow) => wikiPageText(row, loot, kills, sightings), [loot, kills, sightings])
   const needed = useCallback((row: GapRow) => stillNeeded(row, loot, kills, sightings), [loot, kills, sightings])
   // "Group by zone, then mob" (owner ask, 2026-10-18): where to go and what to kill.
@@ -196,6 +199,7 @@ export default function GapsView(): JSX.Element {
         needed={needed}
         done={marks.done}
         onDone={marks.toggle}
+        onPlayer={playerList.mark}
         chipContext={CHIP_CONTEXT}
         hiddenByFilter={held > 0}
       />

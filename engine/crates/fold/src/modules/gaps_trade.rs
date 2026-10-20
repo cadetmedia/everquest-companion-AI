@@ -29,18 +29,24 @@ pub fn merchant_of<'a>(ev: &'a Event) -> Option<(&'a str, &'static str)> {
     }
 }
 
-/// `Your faction standing with X has been adjusted by -20.` → `(X, Some(-20))`; `… could not
-/// possibly get any worse.` → `(X, None)`, a capped standing that states no amount.
-fn faction_of(text: &str) -> Option<(&str, Option<i64>)> {
+/// One faction line: the faction, the amount it stated, and whether the kill raised it.
+type FactionLine<'a> = (&'a str, Option<i64>, Option<bool>);
+
+/// `Your faction standing with X has been adjusted by -20.` → `(X, Some(-20), Some(false))`; `…
+/// could not possibly get any better.` → `(X, None, Some(true))`: a capped standing states no amount
+/// but still says which way the kill pushed it (review 2026-10-19: a raise was filed as lowered).
+fn faction_of(text: &str) -> Option<FactionLine<'_>> {
     let rest = text.strip_prefix("Your faction standing with ")?;
     if let Some((f, by)) = rest.split_once(" has been adjusted by ") {
-        let n = by
+        let n: Option<i64> = by
             .trim_end_matches('.')
-            .trim_matches(|c| c == '(' || c == ')' || c == ' ');
-        return Some((f, n.parse().ok()));
+            .trim_matches(|c| c == '(' || c == ')' || c == ' ')
+            .parse()
+            .ok();
+        return Some((f, n, n.filter(|v| *v != 0).map(|v| v > 0)));
     }
-    rest.split_once(" could not possibly get any ")
-        .map(|(f, _)| (f, None))
+    let (f, way) = rest.split_once(" could not possibly get any ")?;
+    Some((f, None, Some(way.starts_with("better"))))
 }
 
 /// One (mob, faction) pair the log showed, how often, and the zone last seen in.
@@ -49,14 +55,24 @@ struct Pair {
     faction: String,
     n: u32,
     zone: String,
-    /// The last amount a line stated (`-30`): the number a mob page writes beside the faction.
-    adjust: Option<i64>,
+    /// Every amount a line stated, with how often: the page writes the most stated one, not a
+    /// one-off cap-clipped hit (`Gem Choppers` 5 x369, 4 x1).
+    adjusts: HashMap<i64, u32>,
+    /// Which way the kill pushed it, from an amount's sign or a capped line's word.
+    raised: Option<bool>,
+}
+
+impl Pair {
+    /// The amount most lines stated; a tie goes to the larger hit.
+    fn adjust(&self) -> Option<i64> {
+        self.adjusts.iter().max_by_key(|(a, n)| (**n, a.abs())).map(|(a, _)| *a)
+    }
 }
 
 #[derive(Default)]
 pub struct KillFactions {
     /// Faction lines not yet claimed by a death, with when they were read.
-    pending: Vec<(String, i64, Option<i64>)>,
+    pending: Vec<(String, i64, Option<i64>, Option<bool>)>,
     pairs: HashMap<(String, String), Pair>,
 }
 
@@ -68,15 +84,15 @@ impl KillFactions {
 
     /// A faction line, held for the death that follows it.
     pub fn line(&mut self, ev: &Event) {
-        if let Some((f, adjust)) = faction_of(message_text_of(ev.raw())) {
-            self.pending.push((f.to_string(), ev.ts(), adjust));
+        if let Some((f, adjust, raised)) = faction_of(message_text_of(ev.raw())) {
+            self.pending.push((f.to_string(), ev.ts(), adjust, raised));
         }
     }
 
     /// A death: the faction lines just before it are its kill's. True when a pair was recorded.
     pub fn death(&mut self, mob: &str, ts: i64, zone: Option<&str>) -> bool {
         let mut any = false;
-        for (faction, at, adjust) in std::mem::take(&mut self.pending) {
+        for (faction, at, adjust, raised) in std::mem::take(&mut self.pending) {
             if ts - at > KILL_FACTION_MS {
                 continue;
             }
@@ -86,24 +102,31 @@ impl KillFactions {
                 faction,
                 n: 0,
                 zone: String::new(),
-                adjust: None,
+                adjusts: HashMap::new(),
+                raised: None,
             });
             pair.n += 1;
             pair.zone = zone.unwrap_or_default().to_string();
-            pair.adjust = adjust.or(pair.adjust);
+            if let Some(a) = adjust {
+                *pair.adjusts.entry(a).or_default() += 1;
+            }
+            pair.raised = raised.or(pair.raised);
             any = true;
         }
         any
     }
 
-    /// `[{mob, faction, n, zone, adjust?}]`, by mob then faction.
+    /// `[{mob, faction, n, zone, adjust?, raised?}]`, by mob then faction.
     pub fn serve(&self) -> Value {
         let mut pairs: Vec<&Pair> = self.pairs.values().collect();
         pairs.sort_by(|a, b| a.mob.cmp(&b.mob).then_with(|| a.faction.cmp(&b.faction)));
         let rows = pairs.iter().map(|p| {
             let mut row = json!({ "mob": p.mob, "faction": p.faction, "n": p.n, "zone": p.zone });
-            if let Some(a) = p.adjust {
+            if let Some(a) = p.adjust() {
                 row["adjust"] = json!(a);
+                row["raised"] = json!(a > 0);
+            } else if let Some(r) = p.raised {
+                row["raised"] = json!(r);
             }
             row
         });
@@ -184,5 +207,7 @@ mod tests {
         );
         assert_eq!(served[1]["adjust"], -20, "the amount a line stated is kept");
         assert!(served[0].get("adjust").is_none(), "a capped line states none");
+        assert_eq!(served[0]["raised"], true, "but a capped better is a raise");
+        assert_eq!(served[1]["raised"], false);
     }
 }

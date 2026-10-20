@@ -113,6 +113,7 @@ const GapTableRow = memo(function GapTableRow({
         {/* Under its mob's heading a faction or drop row is the faction or item alone. */}
         {depth === 2 && onMobPage(row) ? factionOf(row) : row.name}
         {row.suggest !== undefined && <SuggestCaption s={row.suggest} />}
+        {row.maybePlayer === true && <Chip label="may be a player" size="small" color="warning" variant="outlined" sx={{ ml: 1 }} data-testid="gaps-maybe-player" />}
       </TableCell>
       <TableCell>
         <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'nowrap' }}>
@@ -186,6 +187,8 @@ interface PaneActions {
   needed: (row: GapRow) => string[]
   done: ReadonlySet<string>
   onDone: (row: GapRow) => void
+  /** add a "may be a player" name to the permanent players list */
+  onPlayer: (name: string) => void
 }
 
 /** The open row's details, above the list: capped so the list keeps room on a short screen. */
@@ -203,6 +206,13 @@ function DetailsPane({ row, actions }: { row: GapRow; actions: PaneActions }): J
             {isDone ? 'Not done' : 'Done'}
           </Button>
         </Tooltip>
+        {row.maybePlayer === true && (
+          <Tooltip title="A one-word name you only hailed or conned may be a player. Marking it hides it here for good.">
+            <Button size="small" color="warning" onClick={() => actions.onPlayer(row.name)} data-testid="gaps-mark-player">
+              Mark as player
+            </Button>
+          </Tooltip>
+        )}
       </Stack>
       {needed.length > 0 && (
         <Typography variant="caption" color="text.secondary" data-testid="gaps-needed">
@@ -313,6 +323,7 @@ export default function GapsTable({
   needed,
   done,
   onDone,
+  onPlayer,
   chipContext,
   hiddenByFilter = false
 }: {
@@ -328,6 +339,7 @@ export default function GapsTable({
   /** the rows marked done, and the mark's toggle */
   done: ReadonlySet<string>
   onDone: (row: GapRow) => void
+  onPlayer: (name: string) => void
   /** what the chips may say beyond the row (the data date, which names are mobs) */
   chipContext: GapActionContext
   /** the domain HAS unknown names, so an empty list means the search or zone filter hid them */
@@ -361,7 +373,7 @@ export default function GapsTable({
   const openedRow = opened?.kind === 'row' ? opened.row : undefined
   return (
     <Stack spacing={1.5} sx={{ flexGrow: 1, minHeight: 0 }}>
-      {openedRow !== undefined && <DetailsPane row={openedRow} actions={{ pageText, needed, done, onDone }} />}
+      {openedRow !== undefined && <DetailsPane row={openedRow} actions={{ pageText, needed, done, onDone, onPlayer }} />}
       <Box ref={scrollRef} sx={{ flexGrow: 1, minHeight: 0, overflow: 'auto', overscrollBehavior: 'contain' }} data-testid="gaps-scroll">
         <Table size="small" stickyHeader data-testid="gaps-table">
           <SortHeader sort={sort} onSort={onSort} />

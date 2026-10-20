@@ -24,6 +24,7 @@
 //! sold at a discount, so its amount is a floor, and the list is named so wherever it is shown.
 
 use crate::event::Event;
+use crate::jsfn::item_base_name;
 use regex::Regex;
 use serde::ser::{Serialize, Serializer};
 use serde_json::{json, Map, Value};
@@ -171,7 +172,8 @@ impl Details {
 
     fn mob(&mut self, ev: &Event) {
         match ev.kind() {
-            "loot" => self.drops.add(ev.str("item").unwrap_or_default()),
+            // An item at any tier is one item (owner, 2026-10-19).
+            "loot" => self.drops.add(&item_base_name(ev.str("item").unwrap_or_default())),
             "consider" => {
                 let level = ev.int("level").unwrap_or_default();
                 let faction = ev.str("faction").unwrap_or_default();

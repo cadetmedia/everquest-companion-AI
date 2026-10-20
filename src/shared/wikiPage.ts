@@ -117,12 +117,15 @@ export interface MobFacts {
   /** Where a con or hail beside a `/loc` placed it, in `/loc`'s order (y, x, z). */
   points: number[][]
   factions: FactionSeen[]
+  /** What its attack lines showed it doing (`Rampages`, `Flurries`): the page's `special`. */
+  specials: string[]
 }
 
 /** What the log saw of mobs beyond the rows: each kill's factions and each mob's `/loc` points. */
 export interface MobSightings {
   killFactions?: readonly ({ mob: string } & FactionSeen)[]
   mobLocs?: readonly { mob: string; points: number[][] }[]
+  mobSpecials?: readonly { mob: string; specials: readonly string[] }[]
 }
 
 export interface SpellFacts {
@@ -207,6 +210,7 @@ export function mobFacts(row: GapRow, loot: readonly LootEvent[], kills: KillMap
     kills: killed?.count ?? 0,
     credited: killed?.credited ?? 0,
     points: (seen.mobLocs ?? []).filter(mine).flatMap((m) => m.points),
+    specials: [...new Set((seen.mobSpecials ?? []).filter(mine).flatMap((m) => m.specials))],
     factions: (seen.killFactions ?? []).filter(mine).map(({ faction, adjust, raised }) => ({
       faction,
       ...(adjust === undefined ? {} : { adjust }),
@@ -308,7 +312,7 @@ function factionBlocks(factions: readonly FactionSeen[], credited: number): Reco
   }
 }
 
-type NpcFacts = Pick<MobFacts, 'name' | 'zones' | 'levels' | 'points' | 'factions' | 'credited'>
+type NpcFacts = Pick<MobFacts, 'name' | 'zones' | 'levels' | 'points' | 'factions' | 'credited' | 'specials'>
 
 /** The values both NPC layouts share: image, name, level, zone, location, factions. */
 function npcValues(f: NpcFacts): Record<string, string> {
@@ -321,6 +325,7 @@ function npcValues(f: NpcFacts): Record<string, string> {
     level: lo === undefined || hi === undefined ? '' : lo === hi ? String(lo) : `${String(lo)}-${String(hi)}`,
     zone: f.zones.map(wikiLink).join(', '),
     location: locationText(f.points),
+    special: f.specials.join(', '),
     ...factionBlocks(f.factions, f.credited)
   }
 }

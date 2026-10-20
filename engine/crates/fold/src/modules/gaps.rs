@@ -27,13 +27,16 @@
 
 use super::gaps_details::Details;
 use super::gaps_keys::{aa_known, item_gap_key, loose_key, scroll_known, spell_gap_key, spell_known};
-use super::gaps_names::{no_mob, owner_of_pet, MobNames};
+use super::gaps_names::{no_mob, no_spell, owner_of_pet, MobNames};
+use super::gaps_players::{hail_of, Players};
+use super::gaps_specials::MobSpecials;
 use super::gaps_suggest::{item_candidates, spell_candidates, suggest, Candidate, Suggest};
 use super::gaps_locs::MobLocs;
 use super::gaps_trade::{merchant_of, KillFactions};
 use crate::event::Event;
 use crate::jsfn::item_base_name;
 use crate::knowledge::Knowledge;
+use crate::message_overlay::message_text_of;
 use crate::modules::consider::mob_key;
 use crate::modules::resist::world::is_player_shaped_name;
 use crate::EqModule;
@@ -84,6 +87,10 @@ pub struct GapRow {
     last: String,
     /// Where, from whom, and the lines themselves — see [`super::gaps_details`].
     details: Details,
+    /// A one-word name only hailed or conned that the log has not yet shown to be an NPC — see
+    /// [`super::gaps_players`]. Set when served.
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    maybe_player: bool,
 }
 
 #[derive(Default)]
@@ -93,6 +100,9 @@ pub struct GapsModule {
     /// and the same under [`loose_key`], tried only when the exact key misses.
     items: HashSet<String>,
     items_loose: HashSet<String>,
+    /// The loose keys of the items the wiki titles with an article (`A skeletal finger`), without
+    /// it: the loot line strips its own article, so the game's `Skeletal Finger` is that page.
+    items_bare: HashSet<String>,
     /// The same keys with their pages, for a near-miss suggestion — see [`super::gaps_suggest`].
     item_candidates: Vec<Candidate>,
     /// Every effect an item states, under [`loose_key`]: a cast of one is a known spell.
@@ -112,6 +122,10 @@ pub struct GapsModule {
     kill_factions: KillFactions,
     /// Where a con or hail beside a `/loc` placed each mob (`gaps_locs.rs`).
     mob_locs: MobLocs,
+    /// Who chats (a player) and which hailed or conned one-word names are NPCs (`gaps_players.rs`).
+    who: Players,
+    /// What each mob was seen to do, Rampage or Flurry (`gaps_specials.rs`).
+    specials: MobSpecials,
     seq: i64,
     announce: crate::announce::Announce,
 }
@@ -127,6 +141,8 @@ impl GapsModule {
         self.players.clear();
         self.kill_factions.clear();
         self.mob_locs.clear();
+        self.who.clear();
+        self.specials.clear();
         if let Ok(mut cache) = self.suggests.lock() {
             cache.clear();
         }
@@ -142,12 +158,14 @@ impl GapsModule {
             "purchase" | "coin" | "unknown" => self.trade(ev),
             "death" => self.kill_factions_of(ev) | self.death(ev),
             "consider" => match ev.str("mob") {
-                Some(mob) if !is_player_shaped_name(mob) => {
+                Some(mob) => {
                     let zone = self.zone.clone();
-                    self.mob_locs.target(mob, ev.ts(), zone.as_deref()) | self.mob(Some(mob), "considered", ev)
+                    let placed = self.mob_locs.target(mob, ev.ts(), zone.as_deref());
+                    placed | self.met(mob, false, ev)
                 }
-                _ => false,
+                None => false,
             },
+            "damage" | "miss" => self.specials.event(ev),
             "castBegin" | "otherCastBegin" => self.spell(ev),
             "petClaim" | "petSay" => self.player_pet(ev.str("name")),
             "allyPetLeader" => self.player_pet(ev.str("pet")),
@@ -180,17 +198,24 @@ impl GapsModule {
     /// checked. Only a merge that is neither a known item nor a known spell is filed.
     fn merge(&mut self, ev: &Event) -> bool {
         let is_spell = ev.str("item").is_some_and(spell_known);
-        !is_spell && self.item(ev, "crafted")
+        // A merge on Legends is a mote fusion, not a tradeskill: no Player Crafted on its page.
+        !is_spell && self.item(ev, "fused")
     }
 
     fn item(&mut self, ev: &Event, kind: &'static str) -> bool {
-        let Some(name) = ev.str("item") else {
-            return false;
-        };
+        match ev.str("item") {
+            Some(name) => self.item_named(name, kind, ev),
+            None => false,
+        }
+    }
+
+    fn item_named(&mut self, name: &str, kind: &'static str, ev: &Event) -> bool {
         let key = item_gap_key(name);
         // A known scroll is an item the log named and we could place: checked, never a row.
+        let loose = loose_key(&key);
         let known = self.items.contains(&key)
-            || self.items_loose.contains(&loose_key(&key))
+            || self.items_loose.contains(&loose)
+            || self.items_bare.contains(&loose)
             || scroll_known(name);
         self.note(Domain::Item, key, &item_base_name(name), known, kind, ev)
     }
@@ -229,10 +254,41 @@ impl GapsModule {
             "unknown" => {
                 self.kill_factions.line(ev);
                 let zone = self.zone.clone();
-                self.mob_locs.line(ev, zone.as_deref()) | self.merchant(ev)
+                self.mob_locs.line(ev, zone.as_deref()) | self.unparsed(ev) | self.merchant(ev)
             }
             _ => self.merchant(ev),
         }
+    }
+
+    /// An unparsed line the parser has no family for: a forage, a hail, or a player's chat.
+    fn unparsed(&mut self, ev: &Event) -> bool {
+        let text = message_text_of(ev.raw());
+        if let Some(item) = forage_of(text) {
+            return self.item_named(item, "foraged", ev);
+        }
+        if let Some(name) = hail_of(text) {
+            return self.met(name, true, ev);
+        }
+        match self.who.line(text, ev.ts()) {
+            Some(player) => self.rows.remove(&(Domain::Mob, mob_key(&player))).is_some(),
+            None => false,
+        }
+    }
+
+    /// A mob hailed or conned. A mob-shaped name is filed as before; a one-word name is filed too
+    /// (owner, 2026-10-19) unless the log showed it to be a player, and served "may be a player"
+    /// until it shows an NPC.
+    fn met(&mut self, name: &str, hail: bool, ev: &Event) -> bool {
+        let kind = if hail { "hailed" } else { "considered" };
+        if !is_player_shaped_name(name) {
+            return self.mob(Some(name), kind, ev);
+        }
+        if self.who.is_player(name) {
+            return false;
+        }
+        let zone = self.zone.clone();
+        self.who.candidate(name, zone.as_deref(), ev.ts(), hail);
+        self.mob(Some(name), kind, ev)
     }
 
     /// An NPC the event shows trading, filed unless the wiki lists it as a merchant.
@@ -256,7 +312,9 @@ impl GapsModule {
         let Some(name) = ev.str("name") else {
             return false;
         };
-        let killer_is_mob = ev.str("killer").is_some_and(|k| !is_player_shaped_name(k));
+        // A one-word killer the catalog has (`Terror`) is a mob too, so its victim is a pet.
+        let known = |k: &str| self.knowledge.as_ref().is_some_and(|kn| kn.known_mob(k));
+        let killer_is_mob = ev.str("killer").is_some_and(|k| !is_player_shaped_name(k) || known(k));
         if is_player_shaped_name(name) && killer_is_mob {
             let key = mob_key(name);
             self.players.insert(key.clone());
@@ -275,7 +333,7 @@ impl GapsModule {
     }
 
     fn spell(&mut self, ev: &Event) -> bool {
-        let Some(name) = ev.str("spell") else {
+        let Some(name) = ev.str("spell").filter(|n| !no_spell(n)) else {
             return false;
         };
         let key = spell_gap_key(name);
@@ -308,6 +366,7 @@ impl GapsModule {
             first: at.clone(),
             last: String::new(),
             details: Details::default(),
+            maybe_player: false,
         });
         row.details.record(domain.as_str(), ev, self.zone.as_deref());
         row.count += 1;
@@ -341,6 +400,10 @@ impl GapsModule {
     /// The row as served: its fields, and `suggest` when one known name is within reach.
     fn serve_row(&self, domain: Domain, key: &str, row: &GapRow) -> Value {
         let mut v = serde_json::to_value(row).unwrap_or(Value::Null);
+        let only_met = row.kinds.iter().all(|k| *k == "hailed" || *k == "considered");
+        if domain == Domain::Mob && only_met && is_player_shaped_name(&row.name) && !self.who.is_npc(&row.name) {
+            v["maybePlayer"] = json!(true);
+        }
         if let Some(s) = self.suggestion(domain, key) {
             v["suggest"] = json!(s);
         }
@@ -360,6 +423,13 @@ impl GapsModule {
             .or_insert_with(|| suggest(&loose_key(key), candidates))
             .clone()
     }
+}
+
+/// `You have scrounged up a Tuft of Black Bear Fur.` → the item: a forage, which no parser family reads.
+fn forage_of(text: &str) -> Option<&str> {
+    let item = text.strip_prefix("You have scrounged up ")?.strip_suffix('.')?;
+    let item = ["a ", "an "].iter().find_map(|a| item.strip_prefix(a)).unwrap_or(item);
+    (!item.is_empty()).then_some(item)
 }
 
 /// `[Wed Sep 23 17:54:48 2026] …` → `2026-09-23 17:54:48`: the log's own clock, as the bazaar
@@ -419,13 +489,16 @@ impl EqModule for GapsModule {
         }
         let kill_factions = self.kill_factions.serve();
         let mob_locs = self.mob_locs.serve();
-        json!({ "seq": self.seq, "state": { "rows": rows, "totals": totals, "seen": seen, "killFactions": kill_factions, "mobLocs": mob_locs } })
+        let mob_specials = self.specials.serve();
+        json!({ "seq": self.seq, "state": { "rows": rows, "totals": totals, "seen": seen, "killFactions": kill_factions, "mobLocs": mob_locs, "mobSpecials": mob_specials } })
     }
 
     fn install_knowledge(&mut self, k: &Arc<dyn Knowledge>) {
         let index = k.gap_index();
         self.items = index.item_pages.iter().map(|(key, _)| item_gap_key(key)).collect();
         self.items_loose = self.items.iter().map(|k| loose_key(k)).collect();
+        let bare = |k: &String| ["a ", "an ", "the "].iter().find_map(|a| k.strip_prefix(a)).map(str::to_string);
+        self.items_bare = self.items_loose.iter().filter_map(bare).collect();
         self.item_candidates = item_candidates(&index.item_pages);
         let effect_key = |n: &String| loose_key(&spell_gap_key(n));
         self.item_effects = index.item_effects.iter().map(|(n, _)| effect_key(n)).collect();
