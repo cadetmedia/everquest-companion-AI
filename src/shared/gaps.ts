@@ -7,7 +7,8 @@
 // and search box narrow those rows here rather than in the renderer, which never filters served
 // rows (owner ruling 4); the Copy list text is rendered here for the same reason.
 
-import type { KillFaction } from './gapFactions'
+import type { FactionFix, KillFaction } from './gapFactions'
+import { decodeFactionAmount } from './mobFactionAmounts'
 import { wikiPageUrl } from './wiki'
 import { zoneKey } from './zones'
 
@@ -35,7 +36,7 @@ export const GAP_SHOWN_NOUN: Record<GapDomain, string> = {
   mob: 'mobs with no wiki page',
   spell: 'spells with no wiki page',
   merchant: 'merchants the wiki does not list',
-  faction: 'factions missing from mob pages',
+  faction: 'factions to add or fix on mob pages',
   drop: 'drops missing from mob pages',
   image: 'mobs missing a wiki picture'
 }
@@ -46,7 +47,7 @@ export const GAP_DOMAIN_HELP: Record<GapDomain, string> = {
   mob: 'Mobs you looted, killed or considered that the wiki has no page for.',
   spell: 'Spells cast near you that the wiki has no page for.',
   merchant: 'NPCs who traded with you that the wiki does not list as a merchant.',
-  faction: "Factions a kill changed that the mob's wiki page does not list.",
+  faction: "Factions a kill changed that the mob's wiki page does not list, or lists with another amount or side.",
   drop: "Items you looted from a mob whose wiki page lists neither the item nor a group holding it. Drops that fall from almost any mob (the Motes) are left out.",
   image: 'Mobs you met whose wiki page has no picture: take a screenshot and upload it.'
 }
@@ -218,6 +219,9 @@ export interface GapRow {
   lootField?: 'common_loot'
   /** A one-word name only hailed or conned that the log has not shown to be an NPC (gaps_players.rs). */
   maybePlayer?: boolean
+  /** A faction row for a faction the page LISTS: what to fix, and what the page says (`-30..-10?`). */
+  fix?: FactionFix
+  pageSays?: string
 }
 
 export interface GapsSnap {
@@ -407,6 +411,22 @@ export function wikiUploadUrl(file: string): string {
   return `https://eqlwiki.com/index.php?title=Special:Upload&wpDestFile=${encodeURIComponent(file.trim())}`
 }
 
+/** What a page's faction statement says, in words: `(-10) to (-30) (unconfirmed)`, `a lowering of no stated amount`. */
+export function pageSaysText(said: string): string {
+  const h = decodeFactionAmount(said)
+  const guess = h.unconfirmed === true ? ' (unconfirmed)' : ''
+  if (h.min === undefined || h.max === undefined) return `${h.side === 'lowers' ? 'a lowering' : 'a raise'} of no stated amount${guess}`
+  // The wiki writes the smaller hit first: `(-10) to (-30)`, `(10) to (30)`.
+  const [a, b] = Math.abs(h.min) <= Math.abs(h.max) ? [h.min, h.max] : [h.max, h.min]
+  return (h.min === h.max ? `(${String(h.min)})` : `(${String(a)}) to (${String(b)})`) + guess
+}
+
+/** What the log says of a faction row: its amount, or the side a capped line showed. */
+export function logSaysText(row: Pick<GapRow, 'adjust' | 'raised'>): string {
+  if (row.adjust !== undefined) return `(${String(row.adjust)})`
+  return row.raised === true ? 'a raise (at max standing, no amount)' : 'a lowering (at min standing, no amount)'
+}
+
 /** A row about a mob's page (a missing faction, drop or image): its domain is one of these. An image row is the mob itself. */
 export const onMobPage = (row: GapRow): boolean => row.domain === 'faction' || row.domain === 'drop' || row.domain === 'image'
 
@@ -476,6 +496,14 @@ function dropActions(row: GapRow): GapAction[] {
  * lacks it (check the wiki: a cache miss, not a verdict, owner 2026-10-19) — plus "fix parser"
  * when the name itself carries a parser's leftover.
  */
+/** A faction row's chip: add the faction to the mob page, or fix what the page says of it. */
+function factionAction(row: GapRow): GapAction {
+  const page = mobPageOf(row)
+  if (row.fix === undefined) return { kind: 'checkWiki', label: 'Edit mob page', why: `The wiki page for ${page} does not name this faction among those a kill moves.`, href: wikiEditUrl(page) }
+  const why = `The wiki page for ${page} lists this faction as ${pageSaysText(row.pageSays ?? '')}; your log: ${logSaysText(row)}.`
+  return { kind: 'checkWiki', label: 'Fix on mob page', why, href: wikiEditUrl(page) }
+}
+
 export function gapActions(row: GapRow, verdict: GapVerdict, ctx: GapActionContext = {}): GapAction[] {
   if (row.domain === 'image') {
     const file = row.image ?? ''
@@ -483,10 +511,7 @@ export function gapActions(row: GapRow, verdict: GapVerdict, ctx: GapActionConte
     return [{ kind: 'addToWiki', label: 'Upload image', why, href: wikiUploadUrl(file) }]
   }
   if (row.domain === 'drop') return dropActions(row)
-  if (onMobPage(row)) {
-    const why = `The wiki page for ${mobPageOf(row)} does not name this faction among those a kill moves.`
-    return [{ kind: 'checkWiki', label: 'Edit mob page', why, href: wikiEditUrl(mobPageOf(row)) }]
-  }
+  if (onMobPage(row)) return [factionAction(row)]
   const actions: GapAction[] = []
   const asOf = ctx.dataDate === undefined ? 'the app' : `the wiki data from ${ctx.dataDate}`
   if (row.suggest !== undefined) {

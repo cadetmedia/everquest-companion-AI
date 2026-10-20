@@ -23,6 +23,8 @@ import {
   doneKey,
   factionOf,
   gapZone,
+  logSaysText,
+  pageSaysText,
   onMobPage,
   type GapActionContext,
   type GapRow,
@@ -196,6 +198,11 @@ function DetailsPane({ row, actions }: { row: GapRow; actions: PaneActions }): J
           {heldLine(h)}
         </Typography>
       ))}
+      {row.fix !== undefined && (
+        <Typography variant="body2" color="warning.main" component="div" data-testid="gaps-fix-line">
+          The page lists it as {pageSaysText(row.pageSays ?? '')}; your log: {logSaysText(row)}.
+        </Typography>
+      )}
       {needed.length > 0 && (
         <Typography variant="caption" color="text.secondary" data-testid="gaps-needed">
           Still needed for the page: {needed.join(', ')}.
