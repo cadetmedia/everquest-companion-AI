@@ -307,10 +307,17 @@ export function groupLine(group: string, drops: number, kills: number): string {
   return rateLine(wikiLink(group), drops, kills)
 }
 
+/**
+ * Kills of a mob before its loot lines carry a rate and a rarity word (owner, 2026-10-20: "are we a
+ * bit overconfident ... I killed this guy 1 time and you have things listed as rare and always?").
+ * The same bar as `* None`: under it the line is the item alone.
+ */
+export const RATE_MIN_KILLS = 10
+
 /** `<li> link </li>`, with the rarity word and the rate only when the log gives one. */
 function rateLine(link: string, drops: number, kills: number): string {
   // More drops than kills means kills the log never showed (a groupmate's far kill): no rate beats a false "Always".
-  if (kills <= 0 || drops > kills) return `<li> ${link} </li>`
+  if (kills < RATE_MIN_KILLS || drops > kills) return `<li> ${link} </li>`
   const pct = Math.round((drops / kills) * 1000) / 10
   return `<li> ${link} <span class='drare'>(${rarityWord(pct)})</span> <span class='ddb'>[Overall: ~${String(pct)}%]</span> </li>`
 }
@@ -444,7 +451,7 @@ export function moneyBlock(c: MobCoin): string {
  * given even if i'm Feign Death and my pet kills"). Ten, so a rare drop is not called none after a
  * kill or two. Coin is apart: its MONEY DROPS block still follows when a kill paid.
  */
-export const LOOT_NONE_KILLS = 10
+export const LOOT_NONE_KILLS = RATE_MIN_KILLS
 
 /**
  * A mob's page. A drop the wiki files under `|common_loot` (shared loot, `commonLootNames`) goes
