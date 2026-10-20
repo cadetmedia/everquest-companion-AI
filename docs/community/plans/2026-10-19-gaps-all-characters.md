@@ -65,12 +65,13 @@ Cost: moderate. No engine change; a store file, an IPC pair, the merge, the chec
   same no-double-count rule as `eligible.ts`, applied per character.
 - **Stale warning: 2 months.** A character whose saved Gaps data is older than two months is flagged
   in the tab; rows still show, with "as of <date> for <character>" in the details.
-- **Old data after a patch (owner note, not yet a ruling):** "We may need to eventually work in a
-  process where we ignore data older than X days, what happens if they change functionality or
-  drops or names in a release". Proposed: an "Ignore anything seen before [date]" field on the Gaps
-  tab, empty by default; archived segments that end before it and live rows last seen before it are
-  left out. A fixed date (a patch day) rather than rolling days. Awaiting the owner's go.
-
-## Still open
-
-- Default of the "All characters" checkbox (proposed: on).
+- **Checkbox: on by default, with a warning.** "All characters", checked by default; its caption or
+  tooltip warns that it can hold a lot of data with several accounts, characters or servers.
+- **How far back: a setting, default 60 days.** "The time to go back could be per user, default to
+  60 days but give them the ability to change that". One player setting (not per character): rows
+  last seen, and archived segments that ended, more than N days ago are left out; N defaults to 60
+  and the player can change it. This replaces the fixed-date proposal (rolling days, owner's
+  choice). Applies to the single-character view too, since the same reason holds there.
+- **The 2-month flag and the 60-day window overlap:** a character not attached for two months has
+  little or nothing inside a 60-day window. The flag then says so per character ("Drywrought: last
+  seen <date>, outside the N-day window") rather than warning about rows that are already hidden.
