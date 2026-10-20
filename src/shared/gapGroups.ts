@@ -21,7 +21,22 @@ export type GapEntry =
 
 /** The flat list, as the table shows it ungrouped. */
 export function rowEntries(rows: readonly GapRow[]): GapEntry[] {
-  return rows.map((row) => ({ kind: 'row', key: row.name, row }))
+  return uniqueKeys(rows.map((row) => ({ kind: 'row', key: `${row.domain}|${row.name}`, row })))
+}
+
+/**
+ * Every entry's key made unique, a repeat taking `#2`, `#3`. The table keys its rows by these, and
+ * two rows under one key leave a stale copy behind each time the list changes (owner, 2026-10-19:
+ * toggling Zone I'm in stacked up "A cave bat" rows).
+ */
+export function uniqueKeys(entries: GapEntry[]): GapEntry[] {
+  const seen = new Map<string, number>()
+  for (const e of entries) {
+    const n = (seen.get(e.key) ?? 0) + 1
+    seen.set(e.key, n)
+    if (n > 1) e.key = `${e.key}#${String(n)}`
+  }
+  return entries
 }
 
 interface Place {
@@ -91,10 +106,10 @@ export function groupGaps(rows: readonly GapRow[], loot: readonly LootEvent[], z
     for (const m of mobs) {
       if (m.mob !== '') out.push({ kind: 'mob', key: `mob|${z.zone}|${m.mob}`, mob: m.mob, n: m.rows.length, rows: m.rows })
       const depth = m.mob === '' ? 1 : 2
-      for (const row of m.rows) out.push({ kind: 'row', key: `row|${z.zone}|${m.mob}|${row.name}`, row, depth })
+      for (const row of m.rows) out.push({ kind: 'row', key: `row|${z.zone}|${m.mob}|${row.domain}|${row.name}`, row, depth })
     }
   }
-  return out
+  return uniqueKeys(out)
 }
 
 /**
