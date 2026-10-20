@@ -18,11 +18,14 @@
 import { type JSX, memo, useCallback, useMemo, useRef, useState } from 'react'
 import { Box, Button, Chip, Paper, Stack, Table, TableBody, TableCell, TableHead, TableRow, TableSortLabel, Typography } from '@mui/material'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
+import NoteAddIcon from '@mui/icons-material/NoteAdd'
 import {
   charactersOff,
   doneKey,
   factionOf,
   gapZone,
+  mobPageOf,
+  wikiEditUrl,
   logSaysText,
   pageSaysText,
   onMobPage,
@@ -264,6 +267,26 @@ function CopyLinesButton({ text }: { text: () => string }): JSX.Element {
   )
 }
 
+/** Beside Copy lines: the wiki's editor on the mob's page, to paste them in (owner, 2026-10-20). */
+function EditPageButton({ page }: { page: string }): JSX.Element {
+  return (
+    <Tooltip title={`The wiki's editor on ${page}.`}>
+      <Button
+        size="small"
+        startIcon={<NoteAddIcon />}
+        href={wikiEditUrl(page)}
+        target="_blank"
+        rel="noreferrer"
+        onClick={(e) => e.stopPropagation()}
+        sx={{ ml: 1, py: 0 }}
+        data-testid="gaps-edit-mob-page"
+      >
+        Edit mob page
+      </Button>
+    </Tooltip>
+  )
+}
+
 /** A zone or mob heading of the grouped list (shared/gapGroups.ts), one row high like the rest; a
  *  click folds what is under it (owner ask, 2026-10-18). A mob heading over a page's missing drops or
  *  factions copies all their lines at once. */
@@ -295,6 +318,7 @@ function GroupRow({
           {entry.n} missing
         </Typography>
         {lines !== null && <CopyLinesButton text={() => lines.map(pageText).join('')} />}
+        {lines?.[0] !== undefined && <EditPageButton page={mobPageOf(lines[0])} />}
       </TableCell>
     </TableRow>
   )
