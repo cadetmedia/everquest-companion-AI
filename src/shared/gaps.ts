@@ -29,6 +29,17 @@ export const GAP_DOMAIN_LABELS: Record<GapDomain, string> = {
   image: 'Images'
 }
 
+/** What the shown-count line calls a domain's rows: "Showing 11 of 395 mobs missing a wiki picture" (owner, 2026-10-19: "unknown images" read oddly). */
+export const GAP_SHOWN_NOUN: Record<GapDomain, string> = {
+  item: 'items with no wiki page',
+  mob: 'mobs with no wiki page',
+  spell: 'spells with no wiki page',
+  merchant: 'merchants the wiki does not list',
+  faction: 'factions missing from mob pages',
+  drop: 'drops missing from mob pages',
+  image: 'mobs missing a wiki picture'
+}
+
 /** One line under the toggle saying what the chosen domain's rows are (owner ask, 2026-10-18). */
 export const GAP_DOMAIN_HELP: Record<GapDomain, string> = {
   item: 'Items your log names that the wiki has no page for.',

@@ -16,6 +16,7 @@ import {
   GAP_DOMAINS,
   GAP_DOMAIN_HELP,
   GAP_DOMAIN_LABELS,
+  GAP_SHOWN_NOUN,
   firstGapSortDir,
   gapsAsText,
   gapsCaption,
@@ -126,17 +127,17 @@ function ShownLine({
   counts,
   domain,
   zone,
-  tail
+  tail = ''
 }: {
   counts: { visible: number; held: number; served: number; hidden: number; uncertain: number }
   domain: GapDomain
   zone: string | null
-  tail: string
+  tail?: string
 }): JSX.Element {
   const { visible, held, served, hidden, uncertain } = counts
   return (
     <Typography variant="caption" color="text.secondary" data-testid="gaps-shown">
-      {visible} of {held} unknown {GAP_DOMAIN_LABELS[domain].toLowerCase()} shown
+      Showing {visible} of {held} {GAP_SHOWN_NOUN[domain]}
       {zone !== null ? `, seen in ${zone} or another tier of it` : ''}
       {hidden > 0 ? `, ${hidden} marked done hidden` : ''}
       {uncertain > 0 ? `, ${uncertain} uncertain hidden` : ''}
