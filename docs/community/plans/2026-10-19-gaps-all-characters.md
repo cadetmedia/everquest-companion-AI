@@ -7,6 +7,10 @@ information!" Planned only; nothing is built. Rules first: `docs/community/RULES
 
 ## Scope
 
+- Owner ruling, 2026-10-19: "it should not create a combined set of log files, it should just
+  aggregate the data together INTO a single source of gaps in the tab ... while maintaining the
+  isolation of the log files as is." No log, archive segment or per-character store is merged,
+  copied or rewritten; each character's data stays its own, and only the tab's view is a join.
 - Only the Gaps tab reads across characters. Kills, loot, the ledger, achievements, wish lists and
   every other view stay per character, exactly as now.
 - Every Gaps domain: Items, Mobs, Spells, Merchants (engine `gaps` module) and Factions, Drops,
