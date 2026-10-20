@@ -7,6 +7,7 @@
 // have at all is a mob row already.
 
 import type { GapRow } from './gaps'
+import { spanStamps, widen, type Span } from './gapTimes'
 import type { KillMap } from './kills'
 import { mobKey } from './mobKey'
 import type { MobEntry } from './mobTypes'
@@ -36,6 +37,8 @@ interface Met {
   loots: number
   cons: number
   zone: string
+  /** first and last met by a kill or a loot (a con carries no time here) */
+  span?: Span
 }
 
 /** A /con as this reads it (the consider module's row): who, where, how often. */
@@ -48,12 +51,13 @@ export interface ConMet {
 /** The mobs met, by key: kills from the ledger, loot sources with the zone last looted in, cons with theirs. */
 function metMobs(kills: KillMap, loot: readonly LootEvent[], cons: readonly ConMet[]): Map<string, Met> {
   const out = new Map<string, Met>()
-  for (const k of Object.values(kills)) out.set(mobKey(k.display), { name: k.display, kills: k.count, loots: 0, cons: 0, zone: '' })
+  for (const k of Object.values(kills)) out.set(mobKey(k.display), { name: k.display, kills: k.count, loots: 0, cons: 0, zone: '', span: widen(widen(undefined, k.firstTs), k.lastTs) })
   for (const e of loot) {
     if (e.source === undefined) continue
     const m = out.get(mobKey(e.source)) ?? { name: e.source, kills: 0, loots: 0, cons: 0, zone: '' }
     m.loots++
     m.zone = e.zone ?? m.zone
+    m.span = widen(m.span, e.ts)
     out.set(mobKey(e.source), m)
   }
   // A con places a mob the player only killed (kills carry no zone) or only looked at.
@@ -83,8 +87,7 @@ export function imageGaps(kills: KillMap, loot: readonly LootEvent[], catalog: r
       image: page.image ?? npcImageName(page.name),
       kinds: met.kills > 0 ? ['killed'] : met.loots > 0 ? ['looted'] : ['considered'],
       count: n,
-      first: '',
-      last: '',
+      ...spanStamps(met.span),
       details: {
         samples: [],
         sources: { entries: [{ name: page.page, n }], distinct: 1 },
