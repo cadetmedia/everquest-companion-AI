@@ -241,9 +241,25 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   https://eqlwiki.com/Help:Contents#Item_Page_Blueprint, #NPC_Page_Blueprint,
   #Merchant_Page_Blueprint, #Spell_Page_Blueprint. Model output on real cached pages (Fire Beetle
   Eye), not on the blueprint.
-- Drop rates go on the MOB's page, per `known_loot` item, in the `ddb` span as the player's own
-  `~55% (Drops: 11, Kills: 20)`; never the wiki's `[1] 4x 55% (20%)` (loot tables, not in any
-  log) and no `(Uncommon)` label until the owner names the thresholds.
+- Drop rates go on the MOB's page, per `known_loot` item and per group line, as the wiki's own
+  spans: `<span class='drare'>(Rare)</span> <span class='ddb'>[Overall: ~12.5%]</span>` (owner,
+  2026-10-18: the drare word from the bands the wiki's 9,806 lines use); never the wiki's
+  `[1] 4x 55% (20%)` (loot tables, not in any log). A group line's rate is the corpses that dropped
+  ANY member over the mob's kills; no kills or more drops than kills leaves it off.
+- Corpse coin (`gaps_coin.rs`, `mobCoin`): Legends pays at the kill, `You receive ... from the
+  corpse.` in the kill's second (5,576 of 5,689 lines claimed by a death within 2.5 s); a page gets
+  the wiki's `MONEY DROPS` block (min - max per coin, the 406 cached blocks' colors and words).
+  Never "NO MONEY DROPS" or "no loot": the game prints nothing for a coinless kill or an empty
+  corpse, and rare payers are real (a basilisk paid on 2 of 103 kills), so no count proves none.
+  `mergeGaps` joins it per mob (log-archive).
+- Zones the wiki titles differently: `ZONE_ALIASES` in `shared/gapWikiZone.ts`; Temple of
+  Cazic-Thule links `[[Cazic Thule (Zone)|Cazic Thule]]` (plain `Cazic Thule` is the god's
+  disambiguation page) and files `[[Category:Cazic Thule]]`. The owner is asking the wiki's editors.
+- `PLAYER_LEVEL_CAP = 50` (`gaps_players.rs`): a con above it makes a one-word name an NPC for good.
+  Raise it when an expansion opens levels.
+- Hide uncertain (`uncertainGap`, `eq.gaps.hideUncertain`, off by default): only "may be a player"
+  rows; a near miss, a faction with no direction, an unpicked drop page and a cache verdict are real
+  gaps with an unsure detail and stay.
 - Not from the log: stats, slot, icon id, quest rewards, foraging, normal merchant sale price
   (Gaps keeps only the sale-on-loot), a merchant's stock. A merchant page needs a purchase
   tracker (asked, not built).
