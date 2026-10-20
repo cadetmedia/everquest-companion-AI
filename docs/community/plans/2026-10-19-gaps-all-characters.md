@@ -58,9 +58,19 @@ Cost: moderate. No engine change; a store file, an IPC pair, the merge, the chec
 - **Archive history only.** Other characters' archived segments could be merged without a new
   store, but only what was archived would show; a character never archived would show nothing.
 
-## Open questions for the owner
+## Owner answers (2026-10-19)
 
-- Default of the checkbox: off (today's view) or on.
-- Whether "All characters" also merges each character's archived history, or only the live log's
-  snapshot.
-- How old a saved snapshot may be before the tab warns.
+- **Archived history: yes.** "all data including archived data". Every character's sealed archive
+  segments are merged too (they already keep their `gaps`, `loot` and `kills` snapshots), under the
+  same no-double-count rule as `eligible.ts`, applied per character.
+- **Stale warning: 2 months.** A character whose saved Gaps data is older than two months is flagged
+  in the tab; rows still show, with "as of <date> for <character>" in the details.
+- **Old data after a patch (owner note, not yet a ruling):** "We may need to eventually work in a
+  process where we ignore data older than X days, what happens if they change functionality or
+  drops or names in a release". Proposed: an "Ignore anything seen before [date]" field on the Gaps
+  tab, empty by default; archived segments that end before it and live rows last seen before it are
+  left out. A fixed date (a patch day) rather than rolling days. Awaiting the owner's go.
+
+## Still open
+
+- Default of the "All characters" checkbox (proposed: on).
