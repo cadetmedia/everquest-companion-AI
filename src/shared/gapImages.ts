@@ -69,12 +69,15 @@ function metMobs(kills: KillMap, loot: readonly LootEvent[], cons: readonly ConM
 /** The met mobs whose pages have no image, as Gaps rows named by the page, the file on the row. */
 export function imageGaps(kills: KillMap, loot: readonly LootEvent[], catalog: readonly CatalogMob[], cons: readonly ConMet[] = []): GapRow[] {
   const imageless = imagelessByMob(catalog)
-  const rows: GapRow[] = []
+  // One row per PAGE: two spellings met (a name and a redirect, say) can lead to one page, and two
+  // rows of one name broke the table (owner, 2026-10-19). The busiest spelling's tallies stand.
+  const byPage = new Map<string, GapRow>()
   for (const [key, met] of metMobs(kills, loot, cons)) {
     const page = imageless.get(key)
     if (page === undefined) continue
     const n = Math.max(met.kills, met.loots, met.cons)
-    rows.push({
+    if ((byPage.get(page.page)?.count ?? -1) >= n) continue
+    byPage.set(page.page, {
       domain: 'image',
       name: page.page,
       image: page.image ?? npcImageName(page.name),
@@ -89,7 +92,7 @@ export function imageGaps(kills: KillMap, loot: readonly LootEvent[], catalog: r
       }
     })
   }
-  return rows.sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+  return [...byPage.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
 }
 
 /** The served snapshot with the image rows joined in and counted, so the tab treats them as a domain. */

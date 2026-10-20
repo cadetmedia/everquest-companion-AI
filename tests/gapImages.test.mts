@@ -4,7 +4,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { imageGaps } from '../src/shared/gapImages'
 import { gapActions } from '../src/shared/gaps'
-import { groupGaps } from '../src/shared/gapGroups'
+import { groupGaps, rowEntries } from '../src/shared/gapGroups'
 import { wikiPageText } from '../src/shared/wikiPage'
 import type { KillMap } from '../src/shared/kills'
 
@@ -33,4 +33,16 @@ test('a met mob whose every page lacks an image is a row named by its page; pict
   const shape = groupGaps([clurg], []).map((e) => (e.kind === 'zone' ? e.zone : e.kind === 'mob' ? `  ${e.mob}` : `    ${e.row.name}`))
   // The row is the mob: it sits under its zone with no mob heading.
   assert.deepEqual(shape, ['Oggok', '    Clurg'])
+})
+
+test('two spellings met that lead to one page are one row, and the table keys never repeat', () => {
+  // `Marda` and `marda the bold` (a redirect spelling) both reach the page Marda.
+  const cat = [{ page: 'Marda', name: 'Marda', otherNames: ['Marda the Bold'], image: 'npc_marda.png', noImage: true as const }]
+  const kills: KillMap = { marda: kill('Marda', 3), 'marda the bold': kill('Marda the Bold', 9) }
+  const rows = imageGaps(kills, [], cat)
+  assert.deepEqual(rows.map((r) => [r.name, r.count]), [['Marda', 9]])
+  const twice = [...rows, ...rows]
+  assert.deepEqual(rowEntries(twice).map((e) => e.key), ['image|Marda', 'image|Marda#2'])
+  const grouped = groupGaps(twice, []).map((e) => e.key)
+  assert.equal(new Set(grouped).size, grouped.length)
 })
