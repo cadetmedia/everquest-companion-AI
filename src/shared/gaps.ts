@@ -92,7 +92,9 @@ export function withoutPlayers(rows: readonly GapRow[], players: ReadonlySet<str
  * could not pick, not a verdict of the runtime caches: those are real gaps with an unsure detail.
  */
 export function uncertainGap(row: GapRow): boolean {
-  return row.maybePlayer === true
+  // A faction row for a mob the data has no page for: its page may be newer and list it (owner,
+  // 2026-10-20: Peltin Funter's factions were already on the wiki).
+  return row.maybePlayer === true || row.noPage === true
 }
 
 /** The rows the tab is sure of. */
@@ -219,6 +221,8 @@ export interface GapRow {
   lootField?: 'common_loot'
   /** A one-word name only hailed or conned that the log has not shown to be an NPC (gaps_players.rs). */
   maybePlayer?: boolean
+  /** A faction row whose mob the wiki data has no page for: unchecked, since a newer page may list it. */
+  noPage?: true
   /** A faction row for a faction the page LISTS: what to fix, and what the page says (`-30..-10?`). */
   fix?: FactionFix
   pageSays?: string
@@ -499,6 +503,7 @@ function dropActions(row: GapRow): GapAction[] {
 /** A faction row's chip: add the faction to the mob page, or fix what the page says of it. */
 function factionAction(row: GapRow): GapAction {
   const page = mobPageOf(row)
+  if (row.noPage === true) return { kind: 'checkWiki', label: 'Check mob page', why: `The wiki data has no page for ${page}; a newer page may already list this faction. Check it before adding the line.`, href: wikiPageUrl(page) }
   if (row.fix === undefined) return { kind: 'checkWiki', label: 'Edit mob page', why: `The wiki page for ${page} does not name this faction among those a kill moves.`, href: wikiEditUrl(page) }
   const why = `The wiki page for ${page} lists this faction as ${pageSaysText(row.pageSays ?? '')}; your log: ${logSaysText(row)}.`
   return { kind: 'checkWiki', label: 'Fix on mob page', why, href: wikiEditUrl(page) }

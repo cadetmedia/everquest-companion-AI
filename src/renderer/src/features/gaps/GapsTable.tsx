@@ -201,6 +201,11 @@ function DetailsPane({ row, actions }: { row: GapRow; actions: PaneActions }): J
           {heldLine(h)}
         </Typography>
       ))}
+      {row.noPage === true && (
+        <Typography variant="body2" color="warning.main" component="div" data-testid="gaps-no-page-line">
+          The wiki data has no page for {mobPageOf(row)}: a newer page may already list this. Check it before adding the line.
+        </Typography>
+      )}
       {row.fix !== undefined && (
         <Typography variant="body2" color="warning.main" component="div" data-testid="gaps-fix-line">
           The page lists it as {pageSaysText(row.pageSays ?? '')}; your log: {logSaysText(row)}.
