@@ -138,3 +138,30 @@ fn a_kill_claims_the_corpse_coin_printed_just_before_it_and_the_snapshot_serves_
         json!([{ "mob": "a rabid kobold", "n": 2, "min": [0, 0, 0, 1], "max": [0, 2, 4, 9] }])
     );
 }
+
+#[test]
+fn an_npc_only_traded_with_or_heard_speaking_is_a_mobs_row_but_a_one_word_speaker_is_not() {
+    let mut m = module();
+    let line = |text: &str| json!({ "kind": "unknown", "raw": format!("[Mon Oct 19 22:54:28 2026] {text}") });
+    feed(&mut m, 1, json!({ "kind": "zone", "zone": "Innothule Swamp" }));
+    feed(&mut m, 2, json!({ "kind": "offer", "item": "Fruit", "npc": "a fallen froglok" }));
+    feed(&mut m, 3, line("A fallen froglok says, 'I have no need for this, Drywrought. You can have it back.'"));
+    feed(&mut m, 4, line("A swamp hermit says, 'Leave me be.'"));
+    // A player's /say and a one-word NPC's line are the same shape: never a row from speech alone.
+    feed(&mut m, 5, line("Xober says, 'heading to Grobb'"));
+    feed(&mut m, 6, line("You say, 'hello'"));
+    let served = m.snapshot()["state"]["rows"].clone();
+    let kinds = |name: &str| -> Vec<String> {
+        served
+            .as_array()
+            .expect("rows")
+            .iter()
+            .find(|r| r["domain"] == "mob" && r["name"].as_str().is_some_and(|n| n.eq_ignore_ascii_case(name)))
+            .map(|r| r["kinds"].as_array().expect("kinds").iter().map(|k| k.as_str().unwrap_or("").to_string()).collect())
+            .unwrap_or_default()
+    };
+    assert_eq!(kinds("a fallen froglok"), vec!["offered", "spoke"]);
+    assert_eq!(kinds("a swamp hermit"), vec!["spoke"]);
+    assert!(kinds("Xober").is_empty());
+    assert!(kinds("You").is_empty());
+}
