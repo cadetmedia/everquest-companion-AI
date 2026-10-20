@@ -47,12 +47,19 @@ interface MobLoc {
   points: number[][]
 }
 
+interface MobSpecial {
+  mob: string
+  specials: string[]
+}
+
 interface Snap {
   rows: Row[]
   totals: Record<string, number>
   seen: Record<string, number>
   killFactions?: KillFaction[]
   mobLocs?: MobLoc[]
+  /** What each mob was seen to do on its attack lines (gaps_specials.rs, 2026-10-19). */
+  mobSpecials?: MobSpecial[]
 }
 
 /** The fold's own caps (gaps.rs `CAP_PER_DOMAIN`, gaps_details.rs `LIST_CAP` and `SAMPLES`). */
@@ -169,6 +176,16 @@ function mergeKillFactions(older: Snap, newer: Snap): KillFaction[] {
   return [...out.values()]
 }
 
+/** Both sides' mob specials, one entry per case-folded mob, each special once. */
+function mergeMobSpecials(older: Snap, newer: Snap): MobSpecial[] {
+  const out = new Map<string, MobSpecial>()
+  for (const m of [...(older.mobSpecials ?? []), ...(newer.mobSpecials ?? [])]) {
+    const had = out.get(m.mob.toLowerCase())
+    out.set(m.mob.toLowerCase(), { mob: had?.mob ?? m.mob, specials: [...new Set([...(had?.specials ?? []), ...m.specials])].sort() })
+  }
+  return [...out.values()]
+}
+
 /** Both sides' mob points, one entry per case-folded mob, each point once (gaps_locs.rs keeps them rounded). */
 function mergeMobLocs(older: Snap, newer: Snap): MobLoc[] {
   const out = new Map<string, MobLoc>()
@@ -191,5 +208,5 @@ export function mergeGaps(older: unknown, newer: unknown): Snap | null {
     out.set(k, had === undefined ? { ...r } : mergeRow(had, r))
   }
   const { rows, counted } = served(out.values())
-  return { rows, ...perDomain(older, newer, counted), killFactions: mergeKillFactions(older, newer), mobLocs: mergeMobLocs(older, newer) }
+  return { rows, ...perDomain(older, newer, counted), killFactions: mergeKillFactions(older, newer), mobLocs: mergeMobLocs(older, newer), mobSpecials: mergeMobSpecials(older, newer) }
 }
