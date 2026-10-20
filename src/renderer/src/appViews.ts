@@ -82,7 +82,8 @@ export const VIEW_LABELS: Record<View, string> = {
   alerts: 'Alerts',
   leveling: 'Leveling',
   loot: 'Loot',
-  gaps: 'Gaps',
+  // "Wiki Gaps" (owner, 2026-10-19): what the tab lists is what the WIKI lacks. Label only; the view id stays `gaps`.
+  gaps: 'Wiki Gaps',
   // THE TAB IS CALLED EXALTATIONS (owner, 2026-08-06, JOS-42). "Planner" described what the
   // surface does for us; "Exaltations" names the game system the player came here about. The
   // `planner` view id, its route, its `eq.planner.*` keys and every `planner-*` testid are
