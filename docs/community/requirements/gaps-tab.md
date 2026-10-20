@@ -65,5 +65,5 @@ nothing listed here is removed or narrowed without the owner's word (RULES.md, r
 | 2026-10-19 | owner | The all-characters Gaps view includes every character's archived history too ("all data including archived data"). | planned (plans/2026-10-19-gaps-all-characters.md) |
 | 2026-10-19 | owner | A character whose saved Gaps data is older than 2 months is flagged in the tab. | planned (plans/2026-10-19-gaps-all-characters.md) |
 | 2026-10-19 | owner | (note) Gaps may need to ignore data older than some point, since a release can change drops, names or behaviour. | decided: a player setting, default 60 days, changeable (row below) |
-| 2026-10-19 | owner | The "All characters" checkbox is on by default and warns that it can hold a lot of data with several accounts, characters or servers. | planned (plans/2026-10-19-gaps-all-characters.md) |
+| 2026-10-19 | owner | The "All characters" checkbox is off by default ("start off") and warns that it can hold a lot of data with several accounts, characters or servers. | planned (plans/2026-10-19-gaps-all-characters.md) |
 | 2026-10-19 | owner | How far back Gaps reads is a player setting, default 60 days, which the player can change ("The time to go back could be per user, default to 60 days but give them the ability to change that"). | planned (plans/2026-10-19-gaps-all-characters.md) |

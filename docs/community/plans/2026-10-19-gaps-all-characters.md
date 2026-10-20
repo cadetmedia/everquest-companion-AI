@@ -65,13 +65,15 @@ Cost: moderate. No engine change; a store file, an IPC pair, the merge, the chec
   same no-double-count rule as `eligible.ts`, applied per character.
 - **Stale warning: 2 months.** A character whose saved Gaps data is older than two months is flagged
   in the tab; rows still show, with "as of <date> for <character>" in the details.
-- **Checkbox: on by default, with a warning.** "All characters", checked by default; its caption or
-  tooltip warns that it can hold a lot of data with several accounts, characters or servers.
+- **Checkbox: off by default, with a warning.** "All characters", unchecked by default (owner:
+  "start off"); its caption or tooltip warns that it can hold a lot of data with several accounts,
+  characters or servers.
 - **How far back: a setting, default 60 days.** "The time to go back could be per user, default to
   60 days but give them the ability to change that". One player setting (not per character): rows
   last seen, and archived segments that ended, more than N days ago are left out; N defaults to 60
   and the player can change it. This replaces the fixed-date proposal (rolling days, owner's
-  choice). Applies to the single-character view too, since the same reason holds there.
+  choice). Whether it also trims the single-character view is NOT decided (agent's suggestion: yes,
+  same reason); ask before building it there.
 - **The 2-month flag and the 60-day window overlap:** a character not attached for two months has
   little or nothing inside a 60-day window. The flag then says so per character ("Drywrought: last
   seen <date>, outside the N-day window") rather than warning about rows that are already hidden.
