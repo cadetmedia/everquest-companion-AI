@@ -183,3 +183,10 @@ test('kill-faction pairs from both sides join case-folded, counts added, the new
     ]
   )
 })
+
+test('mob specials join per mob across the archive and the live log, each once (2026-10-19)', () => {
+  const older = { ...snap([]), mobSpecials: [{ mob: 'Lord of Ire', specials: ['Flurries'] }] }
+  const newer = { ...snap([]), mobSpecials: [{ mob: 'lord of ire', specials: ['Flurries', 'Rampages'] }] }
+  const m = mergeGaps(older, newer) as Snap & { mobSpecials: { mob: string; specials: string[] }[] }
+  assert.deepEqual(m.mobSpecials, [{ mob: 'Lord of Ire', specials: ['Flurries', 'Rampages'] }])
+})
