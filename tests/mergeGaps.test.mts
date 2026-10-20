@@ -217,3 +217,11 @@ test('gaps: corpse coin joins per mob, the paying kills added and each coin wide
     { mob: 'a bat', n: 1, min: [0, 0, 1, 2], max: [0, 0, 1, 2] }
   ])
 })
+
+test('gaps: a kill-faction pair takes the newer side of its direction, as it takes the newer amount', () => {
+  const older = { ...snap([]), killFactions: [{ mob: 'a troll slayer', faction: 'Grobb Merchants', n: 1, zone: 'Innothule Swamp', raised: false }] }
+  const newer = { ...snap([]), killFactions: [{ mob: 'a troll slayer', faction: 'Grobb Merchants', n: 1, zone: 'Innothule Swamp', raised: true }] }
+  const m = mergeGaps(older, newer) as Snap & { killFactions: { n: number; raised?: boolean }[] }
+  assert.equal(m.killFactions[0]?.n, 2)
+  assert.equal(m.killFactions[0]?.raised, true)
+})

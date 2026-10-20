@@ -182,7 +182,7 @@ function perDomain(older: Snap, newer: Snap, counted: Map<string, number>): Pick
 /** One pair on both sides: counts added, the newer zone and amount kept, the proof lines joined newer last. */
 function joinKillFaction(had: KillFaction, p: KillFaction): KillFaction {
   const samples = [...(had.samples ?? []), ...(p.samples ?? [])].slice(-KILL_FACTION_SAMPLES)
-  return { ...had, n: had.n + p.n, zone: p.zone || had.zone, adjust: p.adjust ?? had.adjust, ...(samples.length > 0 ? { samples } : {}) }
+  return { ...had, n: had.n + p.n, zone: p.zone || had.zone, adjust: p.adjust ?? had.adjust, raised: p.raised ?? had.raised, ...(samples.length > 0 ? { samples } : {}) }
 }
 
 /** Both sides' kill-faction pairs, one per case-folded (mob, faction) (`joinKillFaction`). */
