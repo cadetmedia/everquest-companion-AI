@@ -136,7 +136,7 @@ export interface MobFacts {
   loot: { item: string; drops: number }[]
   /** How many of it the player killed: the drop rates' denominator. */
   kills: number
-  /** Kills that credited the player, whose faction lines the log prints: with none seen, the page can say none. */
+  /** Kills whose faction lines the log prints (credited, or the player's own killing blow): with none seen, the page can say none. */
   credited: number
   /** Where a con or hail beside a `/loc` placed it, in `/loc`'s order (y, x, z). */
   points: number[][]
@@ -237,6 +237,16 @@ function mobLoot(row: GapRow, loot: readonly LootEvent[]): MobFacts['loot'] {
   return [...out.values()].sort((a, b) => a.item.localeCompare(b.item))
 }
 
+/**
+ * The player's own killing blows on the row's mob (its `killed by` tally). A kill of your own prints
+ * its faction lines whether or not it pays experience (owner's log, 2026-10-19: 1,657 of 4,525 own
+ * kills with no experience line printed faction lines), so it proves none as a credited kill does;
+ * a gray mob never credits.
+ */
+function ownKills(row: GapRow): number {
+  return row.details.killers?.entries.find((e) => e.name.toLowerCase() === 'you')?.n ?? 0
+}
+
 /** `kills` must be a `killIndex` result, as `killsFor` asks. */
 export function mobFacts(row: GapRow, loot: readonly LootEvent[], kills: KillMap, seen: MobSightings & { zoneName?: ZoneNamer } = {}): MobFacts {
   const zoneName = seen.zoneName ?? asPrinted
@@ -248,7 +258,7 @@ export function mobFacts(row: GapRow, loot: readonly LootEvent[], kills: KillMap
     levels: conLevels(row),
     loot: mobLoot(row, loot),
     kills: killed?.count ?? 0,
-    credited: killed?.credited ?? 0,
+    credited: Math.max(killed?.credited ?? 0, ownKills(row)),
     points: (seen.mobLocs ?? []).filter(mine).flatMap((m) => m.points),
     specials: [...new Set((seen.mobSpecials ?? []).filter(mine).flatMap((m) => m.specials))],
     ...coinOf(seen.mobCoin, row.name),
