@@ -156,13 +156,23 @@ function previewItemOf(e: FeedEvent): string | undefined {
   return e.kind === 'loot' && !e.unknown ? e.title : undefined
 }
 
-/** Not in the app's data: the reminder to screenshot it for the wiki (owner ask, 2026-10-18). */
+/** The reminder to screenshot it for the wiki: not in the app's data (owner ask, 2026-10-18), or a
+ *  mob whose wiki pages have no picture (owner ask, 2026-10-20). The engine never sets both. */
+function screenshotLabel(e: FeedEvent): string | undefined {
+  // Sold on loot is already gone: the next one is the screenshot (review 2026-10-19).
+  if (e.unknown) return e.detail?.startsWith('auto-sold') === true ? 'missing · auto-sold, keep the next one' : 'missing · screenshot it'
+  return e.needsImage ? 'no picture · screenshot it' : undefined
+}
+
 function UnknownTag({ e }: { e: FeedEvent }): JSX.Element | null {
-  if (!e.unknown) return null
+  const label = screenshotLabel(e)
+  if (label === undefined) return null
   return (
-    <span data-testid="feed-unknown" style={{ color: '#ffb74d', marginLeft: 5, fontWeight: 600 }}>
-      {/* Sold on loot is already gone: the next one is the screenshot (review 2026-10-19). */}
-      {e.detail?.startsWith('auto-sold') === true ? 'missing · auto-sold, keep the next one' : 'missing · screenshot it'}
+    <span
+      data-testid={e.unknown ? 'feed-unknown' : 'feed-needs-image'}
+      style={{ color: '#ffb74d', marginLeft: 5, fontWeight: 600 }}
+    >
+      {label}
     </span>
   )
 }

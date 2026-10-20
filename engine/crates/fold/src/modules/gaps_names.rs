@@ -44,6 +44,17 @@ impl MobNames {
         self.spelled(k, name) || (name.ends_with(" pet") && self.spelled(k, owner_of_pet(name)))
     }
 
+    /// The event feed's two screenshot marks for a conned name: `(unknown, needs_image)`, the Gaps
+    /// tab's Mobs and Images domains. Neither for a player's name or with no lookup installed, and
+    /// never both: a mob the catalog lacks has no page to picture (owner, 2026-10-20).
+    pub fn marks(&self, k: Option<&dyn Knowledge>, name: &str) -> (bool, bool) {
+        let Some(k) = k.filter(|_| !is_player_shaped_name(name)) else {
+            return (false, false);
+        };
+        let unknown = !self.known(k, name);
+        (unknown, !unknown && k.imageless_mob(name))
+    }
+
     fn spelled(&self, k: &dyn Knowledge, name: &str) -> bool {
         k.known_mob(name)
             || k.identity_keys(name).iter().any(|key| k.known_mob(key))

@@ -17,7 +17,6 @@
 use crate::event::Event;
 use crate::knowledge::Knowledge;
 use crate::modules::gaps_names::MobNames;
-use crate::modules::resist::world::is_player_shaped_name;
 use crate::EqModule;
 use serde::Serialize;
 use serde_json::{json, Value};
@@ -131,6 +130,10 @@ pub struct FeedEvent {
     /// (owner ask, 2026-10-18).
     #[serde(skip_serializing_if = "std::ops::Not::not")]
     pub unknown: bool,
+    /// The mob's wiki pages exist but none has a picture (the Gaps tab's Images row): screenshot
+    /// it (owner, 2026-10-20). Never beside `unknown`, which wins.
+    #[serde(rename = "needsImage", skip_serializing_if = "std::ops::Not::not")]
+    pub needs_image: bool,
 }
 
 #[derive(Default)]
@@ -221,8 +224,7 @@ impl EventFeedModule {
             bits.push("rare".to_owned());
         }
         // A player's name is no catalog miss (gaps.rs asks the same test before counting a con).
-        let unknown = !is_player_shaped_name(mob)
-            && self.knowledge.as_ref().is_some_and(|k| !self.mob_names.known(k.as_ref(), mob));
+        let (unknown, needs_image) = self.mob_names.marks(self.knowledge.as_deref(), mob);
         self.append(FeedEvent {
             id: String::new(),
             kind: "con",
@@ -237,6 +239,7 @@ impl EventFeedModule {
                 difficulty,
             }),
             unknown,
+            needs_image,
         });
     }
 
@@ -288,6 +291,7 @@ impl EventFeedModule {
                 .map(str::to_owned),
             con: None,
             unknown,
+            needs_image: false,
         });
     }
 }
@@ -396,6 +400,10 @@ mod tests {
         fn known_mob(&self, name: &str) -> bool {
             self.0.iter().any(|(key, _)| *key == name)
         }
+        /// No page in the table has a picture.
+        fn imageless_mob(&self, _name: &str) -> bool {
+            true
+        }
         fn take_misses(&self) -> Vec<Miss> {
             Vec::new()
         }
@@ -457,7 +465,7 @@ mod tests {
     }
 
     #[test]
-    fn an_item_or_mob_the_data_lacks_is_flagged_for_a_screenshot_but_a_player_is_not() {
+    fn an_item_or_mob_the_data_lacks_or_a_mob_with_no_picture_is_flagged_but_a_player_is_not() {
         let mut feed = EventFeedModule::new();
         feed.install_knowledge(
             &(Arc::new(Table(vec![("a gnoll", json!({}))])) as Arc<dyn Knowledge>),
@@ -472,23 +480,20 @@ mod tests {
         for (seq, mob) in [(2, "a lizardman forager"), (3, "a gnoll"), (4, "Soandso")] {
             feed.on_event(&ev(&con(seq, mob)), true);
         }
-        let flagged: Vec<(Value, bool)> = state(&feed)
+        // [title, unknown, needsImage]: a mob the data lacks has no page to picture, so the
+        // unknown mark wins (owner, 2026-10-20), and an absent mark is absent rather than false.
+        let flagged: Vec<Value> = state(&feed)
             .iter()
-            .map(|r| {
-                (
-                    r["title"].clone(),
-                    r.get("unknown").is_some_and(|u| u == true),
-                )
-            })
+            .map(|r| json!([r["title"], r["unknown"], r["needsImage"]]))
             .collect();
         assert_eq!(
-            flagged,
-            vec![
-                (json!("Black Lizard Talon"), true),
-                (json!("a lizardman forager"), true),
-                (json!("a gnoll"), false),
-                (json!("Soandso"), false)
-            ]
+            Value::Array(flagged),
+            json!([
+                ["Black Lizard Talon", true, null],
+                ["a lizardman forager", true, null],
+                ["a gnoll", null, true],
+                ["Soandso", null, null]
+            ])
         );
     }
 
