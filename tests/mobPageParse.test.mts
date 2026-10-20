@@ -3,7 +3,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { parseMobLoot, parseMobWikitext } from '../src/main/mobLookupParse'
-import { factionHitList, parseMobPage } from '../scripts/sources/mobPage'
+import { factionAmountList, parseMobPage } from '../scripts/sources/mobPage'
 
 test('known_loot written as [[Item]] links is read as drops (A Blood Wolf, Gnawfang)', () => {
   const wolf = '* [[Chunk of Meat]]\n* [[Mist Wolf Pelt]]\n* [[Ruined Wolf Pelt]]\n* [[Wolf Meat]]'
@@ -110,7 +110,7 @@ test('common_loot is read beside known_loot (owner, 2026-10-19: a drop listed th
   assert.deepEqual(entry?.commonDrops, ['Classic Raid Tier Treasures', 'Jade Ring'])
 })
 
-test('factionHits: each listed faction with the amount its bullet states (owner, 2026-10-20; A Troll Slayer)', () => {
+test('factionAmounts: each listed faction with the amount its bullet states (owner, 2026-10-20; A Troll Slayer)', () => {
   const wt = [
     '{{Namedmobpage',
     '| name              = a troll slayer',
@@ -127,17 +127,14 @@ test('factionHits: each listed faction with the amount its bullet states (owner,
   ].join('\n')
   const entry = parseMobPage('A Troll Slayer', wt)
   assert.deepEqual(entry?.factions, ['Da Bashers', 'Broken Skull Clan'])
-  assert.deepEqual(entry?.factionHits, [
-    { faction: 'Da Bashers', side: 'lowers', min: -30, max: -10, unconfirmed: true },
-    { faction: 'Broken Skull Clan', side: 'raises', min: 10, max: 10 }
-  ])
-  assert.deepEqual(Object.keys(entry ?? {}).slice(-2), ['factions', 'factionHits'])
+  assert.deepEqual(entry?.factionAmounts, ['-30..-10?', '10'])
+  assert.deepEqual(Object.keys(entry ?? {}).slice(-2), ['factions', 'factionAmounts'])
 })
 
-test('factionHits read the shapes the cached pages write, and state no amount they do not give', () => {
+test('factionAmounts read the shapes the cached pages write, and state no amount they do not give', () => {
   const page = (factions: string[], opposing: string[]): string =>
     ['{{Namedmobpage', '| name = x', '| factions =', ...factions, '| opposing_factions =', ...opposing, '}}'].join('\n')
-  const hits = factionHitList(
+  const amounts = factionAmountList(
     page(
       [
         "* [[Merchants of Kaladim]] <span class='profac'>(-1)</span>",
@@ -154,21 +151,21 @@ test('factionHits read the shapes the cached pages write, and state no amount th
       ["* [[Guards of Qeynos]] <span class='oppfac'>(+)</span>", "* [[Allize Volew]] <span class='profac'>(-5)</span>", '* Meldrath', '* None']
     )
   )
-  assert.deepEqual(hits, [
-    { faction: 'Merchants of Kaladim', side: 'lowers', min: -1, max: -1 },
-    { faction: 'Emerald Warriors', side: 'lowers', min: -15, max: -15 },
-    { faction: 'Inhabitants of Hate', side: 'lowers', min: -10, max: -10, unconfirmed: true },
-    // `(-0)` is a listed hit of unstated size (owner, 2026-10-10).
-    { faction: 'Velketor', side: 'lowers' },
-    { faction: 'Clan Runnyeye', side: 'lowers' },
-    { faction: 'Clerics of Tunare', side: 'lowers' },
-    { faction: 'Heretics', side: 'lowers' },
-    { faction: 'EmeraldWarriors', side: 'lowers', min: -30, max: -30 },
+  assert.deepEqual(amounts, [
+    '-1',
+    '-15',
+    '-10?',
+    // `(-0)` is a listed hit of unstated size (owner, 2026-10-10); so are `(?)`, `(~-500)` and a commented-out amount.
+    '-',
+    '-',
+    '-',
+    '-',
+    '-30',
     // The stated sign outranks the field and the span class (Guard T`Aba, Mortificator Syythrak).
-    { faction: 'Dark Bargainers', side: 'raises', min: 10, max: 10 },
-    { faction: 'Guards of Qeynos', side: 'raises' },
-    { faction: 'Allize Volew', side: 'lowers', min: -5, max: -5 },
-    { faction: 'Meldrath', side: 'raises' }
+    '10',
+    '+',
+    '-5',
+    '+'
   ])
-  assert.equal(parseMobPage('x', page(['* None'], ['* None']))?.factionHits, undefined)
+  assert.equal(parseMobPage('x', page(['* None'], ['* None']))?.factionAmounts, undefined)
 })

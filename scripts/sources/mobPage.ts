@@ -20,7 +20,8 @@ import { parsePageEraTag, templateField } from '../../src/main/itemLookupParse'
 import { CURRENT_ERA, eraBadgeOverrides } from '../../src/shared/planner/era'
 import { parseMobLoot, parseMobWikitext } from '../../src/main/mobLookupParse'
 import { factionNames } from './mobFaction'
-import type { MobEntry, MobFactionHit } from '../../src/shared/types'
+import { encodeFactionAmount, type MobFactionHit } from '../../src/shared/mobFactionAmounts'
+import type { MobEntry } from '../../src/shared/types'
 
 /**
  * The page templates that MAKE a page a mob page, verified against the live wiki (2026-08-03):
@@ -101,24 +102,31 @@ function hitAmount(rest: string): Pick<MobFactionHit, 'min' | 'max' | 'unconfirm
 }
 
 /**
- * Every faction `factionNames` lists, in its order, with what its bullet says about the hit (owner,
- * 2026-10-20: Gaps flags a listed faction whose amount the log contradicts).
+ * What each faction `factionNames` lists says about the hit, in its order (owner, 2026-10-20: Gaps
+ * flags a listed faction whose amount the log contradicts). Stored encoded: `factionAmountList`.
  */
 export function factionHitList(wikitext: string): MobFactionHit[] {
+  const named: string[] = []
   const hits: MobFactionHit[] = []
   for (const field of ['factions', 'opposing_factions']) {
     for (const line of (templateField(wikitext, field) ?? '').split('\n')) {
       const faction = bulletFaction(line)
-      if (faction === undefined || hits.some((h) => h.faction === faction)) continue
+      if (faction === undefined || named.includes(faction)) continue
       const rest = afterName(line, faction)
-      hits.push({ faction, side: hitSide(rest, field), ...hitAmount(rest) })
+      named.push(faction)
+      hits.push({ side: hitSide(rest, field), ...hitAmount(rest) })
     }
   }
   return hits
 }
 
+/** `MobEntry.factionAmounts`: `factionHitList` as the short strings mobs.json stores. */
+export function factionAmountList(wikitext: string): string[] {
+  return factionHitList(wikitext).map(encodeFactionAmount)
+}
+
 /** For the Gaps tab (owner ask, 2026-10-18): whether the page is a vendor's, and the factions a kill moves. */
-function gapsFacts(wikitext: string): Pick<MobEntry, 'merchant' | 'factions' | 'factionHits' | 'image' | 'commonDrops'> {
+function gapsFacts(wikitext: string): Pick<MobEntry, 'merchant' | 'factions' | 'factionAmounts' | 'image' | 'commonDrops'> {
   const factions = factionNames(wikitext)
   // `|common_loot` lists drops as surely as `|known_loot`: on 195 pages, mostly shared tables (Classic
   // Raid Tier Treasures) and a zone's set loot (owner, 2026-10-19: Gaps read them as missing).
@@ -126,7 +134,7 @@ function gapsFacts(wikitext: string): Pick<MobEntry, 'merchant' | 'factions' | '
   const image = /\|\s*imagefilename\s*=\s*([^\n|}]*)/i.exec(wikitext)?.[1].trim() ?? ''
   return {
     ...(/\{\{\s*MerchantPage\b/i.test(wikitext) ? { merchant: true } : {}),
-    ...(factions.length ? { factions, factionHits: factionHitList(wikitext) } : {}),
+    ...(factions.length ? { factions, factionAmounts: factionAmountList(wikitext) } : {}),
     ...(image !== '' ? { image } : {}),
     ...(common.length ? { commonDrops: common } : {})
   }
