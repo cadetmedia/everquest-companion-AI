@@ -16,6 +16,7 @@ import {
   GAP_DOMAINS,
   GAP_DOMAIN_HELP,
   GAP_DOMAIN_LABELS,
+  GAP_SHOWN_NOUN,
   firstGapSortDir,
   gapsAsText,
   gapsCaption,
@@ -213,7 +214,7 @@ export default function GapsView(): JSX.Element {
         )}
       </Stack>
       <Typography variant="caption" color="text.secondary" data-testid="gaps-shown">
-        {visible.length} of {held} unknown {GAP_DOMAIN_LABELS[domain].toLowerCase()} shown
+        Showing {visible.length} of {held} {GAP_SHOWN_NOUN[domain]}
         {zone !== null ? `, seen in ${zone} or another tier of it` : ''}
         {hidden > 0 ? `, ${hidden} marked done hidden` : ''}
         {sure.hidden > 0 ? `, ${sure.hidden} uncertain hidden` : ''}
