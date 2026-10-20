@@ -44,7 +44,7 @@ import { GAPS_DATA_DATE, PAGE_EXTRAS, useGapsData } from './useGapsData'
 import { useDoneMarks, usePlayerList } from './useDoneMarks'
 import { useAllCharacters } from './useOtherCharacters'
 import { AllCharactersBox, CharactersLine } from './AllCharactersControls'
-import { useHeld } from './useHeld'
+import { useAllHeld } from './useAllHeld'
 import { useHideUncertain, type HideUncertain } from './useHideUncertain'
 
 // One line (owner, 2026-10-11): the how is in the module header, not on the page. Since 2026-10-18
@@ -147,6 +147,11 @@ function ShownLine({
   )
 }
 
+/** What the pages read beside the ledgers, from the engine's snapshot (useGapsData). */
+function sightingsOf(engine: GapsSnap | null | undefined, spellFacts: ReturnType<typeof useSpellFacts>) {
+  return { killFactions: engine?.killFactions, mobLocs: engine?.mobLocs, mobSpecials: engine?.mobSpecials, mobCoin: engine?.mobCoin, ...PAGE_EXTRAS, spellFacts }
+}
+
 /** The table's order: a header click picks the column, a second flips it. */
 function useGapSort(): [GapSort, (key: GapSortKey) => void] {
   const [sort, setSort] = useState<GapSort>(DEFAULT_GAP_SORT)
@@ -159,7 +164,8 @@ function useGapSort(): [GapSort, (key: GapSortKey) => void] {
 export default function GapsView(): JSX.Element {
   const charSnap = useModule<CharacterSnap>('character')
   // All characters (owner, 2026-10-19): every character's saved Gaps joined in, within a day window.
-  const allChars = useAllCharacters(charSnap?.character ?? null)
+  const me = charSnap?.character ?? null
+  const allChars = useAllCharacters(me)
   const { snap, engine, loot, ownLoot, kills, seenBy, joining } = useGapsData(allChars.all)
   const [domain, setDomain] = useState<GapDomain>('item')
   const [query, setQuery] = useState('')
@@ -188,18 +194,15 @@ export default function GapsView(): JSX.Element {
   // A spell page fills from the install's spell files (owner, 2026-10-19): asked for the spells on screen.
   const spellNames = useMemo(() => (domain === 'spell' ? spellNamesOf(visible) : NO_NAMES), [domain, visible])
   const spellFacts = useSpellFacts(spellNames)
-  const sightings = useMemo(
-    () => ({ killFactions: engine?.killFactions, mobLocs: engine?.mobLocs, mobSpecials: engine?.mobSpecials, mobCoin: engine?.mobCoin, ...PAGE_EXTRAS, spellFacts }),
-    [engine, spellFacts]
-  )
+  const sightings = useMemo(() => sightingsOf(engine, spellFacts), [engine, spellFacts])
   const pageText = useCallback((row: GapRow) => wikiPageText(row, loot, kills, sightings), [loot, kills, sightings])
   const needed = useCallback((row: GapRow) => stillNeeded(row, loot, kills, sightings), [loot, kills, sightings])
   // "Group by zone, then mob" (owner ask, 2026-10-18): where to go and what to kill.
   const [grouped, setGrouped] = useBoolPref(GROUPED_KEY, false)
   const entries = useMemo(() => (grouped ? groupGaps(sorted, loot, PAGE_EXTRAS.zoneName) : rowEntries(sorted)), [grouped, sorted, loot])
-  // An item the player holds right now needs only a screenshot (review C6; owner, 2026-10-19). Held
-  // is this character's export plus ITS loot since, so it reads the live loot even with All characters on.
-  const holding = useHeld(ownLoot)
+  // An item a character holds right now needs only a screenshot (review C6; owner, 2026-10-19): each
+  // character's own export plus ITS loot since, named per holder while All characters is on.
+  const holding = useAllHeld(ownLoot, me, allChars)
 
   if (!snap) return <CircularProgress size={20} />
 
