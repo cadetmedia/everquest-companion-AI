@@ -201,3 +201,15 @@ test('Hide uncertain drops only the rows whose very existence as a gap is in dou
   // A near miss still owes a redirect; a faction with no direction is a real gap with an unsure detail.
   assert.deepEqual(withoutUncertain([maybe, npc, nearMiss, unsureFaction]).map((r) => r.name), ['Rognok', 'Rusty Sowrd', 'Guards of Qeynos (a guard)'])
 })
+
+test('a gray kill of your own proves no factions: own killing blows count as credited kills do', () => {
+  // A scout from zanivar, 16 of the player's own kills, no experience (gray), no faction line.
+  const scout = row('mob', 'a scout from zanivar', { killers: { entries: [{ name: 'you', n: 16 }], distinct: 1 } })
+  const kills = killIndex({ 'a scout from zanivar': { display: 'a scout from zanivar', count: 16, credited: 0 } } as unknown as KillMap)
+  const page = mobPage(mobFacts(scout, [], kills))
+  assert.ok(page.includes('| factions = \n\n* None') && page.includes('| opposing_factions = \n\n* None'), page)
+  assert.ok(!stillNeeded(scout, [], kills).includes('factions (a kill of your own)'))
+  // Kills by someone else alone prove nothing.
+  const theirs = row('mob', 'a scout from zanivar', { killers: { entries: [{ name: 'Xober', n: 3 }], distinct: 1 } })
+  assert.ok(!mobPage(mobFacts(theirs, [], {})).includes('* None'))
+})
