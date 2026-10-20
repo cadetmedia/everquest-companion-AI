@@ -9,7 +9,7 @@ import { factionGaps, factionKey } from '../src/shared/gapFactions'
 import { groupGaps } from '../src/shared/gapGroups'
 import { imageGaps } from '../src/shared/gapImages'
 import { pickPage } from '../src/shared/gapMobPage'
-import { doneKey, gapActions, keptDoneMarks, npcOnlySpell, uncertainGap, withoutDone, withoutUncertain, type GapRow } from '../src/shared/gaps'
+import { doneKey, gapActions, gapsCaption, hiddenBy, keptDoneMarks, npcOnlySpell, uncertainGap, withoutDone, withoutUncertain, type GapRow } from '../src/shared/gaps'
 import { killIndex, type KillMap } from '../src/shared/kills'
 import type { LootEvent } from '../src/shared/types'
 
@@ -214,10 +214,19 @@ test('a gray kill of your own proves no factions: own killing blows count as cre
   assert.ok(!mobPage(mobFacts(theirs, [], {})).includes('* None'))
 })
 
-test('a Done mark survives a missing row until the wiki data is newer than the mark', () => {
+test('Done marks clear when the wiki data is newer than them, whatever rows are on the tab', () => {
   const marks = { 'item:Bat Wing': '2026-10-19', 'mob:a gnoll': '2026-10-01', 'drop:Rat Ear (a rat)': '2026-10-19' }
-  // Launch, a character switch, All characters: the row is missing, the data is the same: kept.
-  assert.deepEqual(Object.keys(keptDoneMarks(marks, new Set(), '2026-10-19')).sort(), ['drop:Rat Ear (a rat)', 'item:Bat Wing'])
-  // A refresh after the mark and the row gone: the wiki caught up, dropped. On the tab: kept.
-  assert.deepEqual(Object.keys(keptDoneMarks(marks, new Set(['item:Bat Wing']), '2026-11-02')), ['item:Bat Wing'])
+  // The same data as the marks (launch, a character switch, All characters): kept.
+  assert.deepEqual(Object.keys(keptDoneMarks(marks, '2026-10-19')).sort(), ['drop:Rat Ear (a rat)', 'item:Bat Wing'])
+  // After a scrape: every older mark is cleared, so a row the wiki still lacks comes back.
+  assert.deepEqual(Object.keys(keptDoneMarks(marks, '2026-11-02')), [])
+})
+
+test('the list buttons count only what the player sees: Done and, when hidden, uncertain rows are left out', () => {
+  const rows = [row('mob', 'a troll raider'), row('mob', 'Basher Dreg'), row('mob', 'a fallen froglok'), { ...row('mob', 'Kujanko'), maybePlayer: true }]
+  const snap = { rows, totals: { item: 0, mob: 4, spell: 0, merchant: 0, faction: 0, drop: 0, image: 0 }, seen: {} } as never
+  const done = new Set([doneKey(rows[2])])
+  assert.equal(gapsCaption(snap, 'mob', null, hiddenBy(done, false, false)), '3 unknown')
+  assert.equal(gapsCaption(snap, 'mob', null, hiddenBy(done, true, false)), '4 unknown')
+  assert.equal(gapsCaption(snap, 'mob', null, hiddenBy(done, false, true)), '2 unknown')
 })
