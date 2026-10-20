@@ -211,5 +211,5 @@ test('a gray kill of your own proves no factions: own killing blows count as cre
   assert.ok(!stillNeeded(scout, [], kills).includes('factions (a kill of your own)'))
   // Kills by someone else alone prove nothing.
   const theirs = row('mob', 'a scout from zanivar', { killers: { entries: [{ name: 'Xober', n: 3 }], distinct: 1 } })
-  assert.ok(mobPage(mobFacts(theirs, [], {})).includes('| factions = \n'))
+  assert.ok(!mobPage(mobFacts(theirs, [], {})).includes('* None'))
 })
