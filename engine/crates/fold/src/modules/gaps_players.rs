@@ -53,10 +53,14 @@ fn joined_or_listed(text: &str) -> Option<&str> {
     (!name.is_empty() && name.chars().all(char::is_alphabetic)).then_some(name)
 }
 
-/// `A fallen froglok says, 'I have no need for this...'` → `A fallen froglok`; never `You`.
+/// `A fallen froglok says, 'I have no need for this...'` → `A fallen froglok`; never `You`. A
+/// corpse's last words (`Basher Dreg's corpse says, 'Curse you!...'`) are the mob's own, so they name
+/// `Basher Dreg` (owner, 2026-10-20: "corpses are now mobs?"); any other `X's ...` speaker (a pet, a
+/// warder) is not a mob met.
 pub fn speaker_of(text: &str) -> Option<&str> {
     let (name, _) = text.split_once(" says, '")?;
-    (name != "You" && !name.is_empty()).then_some(name)
+    let name = name.strip_suffix("'s corpse").unwrap_or(name);
+    (name != "You" && !name.is_empty() && !name.contains("'s ")).then_some(name)
 }
 
 /// `You say, 'Hail, Grapok'` → `Grapok`.
