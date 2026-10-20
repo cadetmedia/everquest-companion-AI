@@ -41,9 +41,23 @@ test('listed items and listed groups are no gap; a group the page lacks is filed
 test('a drop row copies its known_loot line and points at the mob page', () => {
   const kills = killIndex({ 'a gnoll': { display: 'a gnoll', count: 8 } } as unknown as KillMap)
   const [group, item] = dropGaps([loot('Bronze Axe', 'a gnoll'), loot('Hide Mask', 'a gnoll'), loot('Hide Mask', 'a gnoll')], catalog, groups).sort((a, b) => a.name.localeCompare(b.name))
-  assert.equal(wikiPageText(group, [], kills), '<li> [[Bronze Weapons]] </li>\n')
+  // A group line carries its rate the way the wiki writes one (review D2): 1 corpse over 8 kills.
+  assert.equal(wikiPageText(group, [], kills), "<li> [[Bronze Weapons]] <span class='drare'>(Rare)</span> <span class='ddb'>[Overall: ~12.5%]</span> </li>\n")
   assert.equal(wikiPageText(item, [], kills), "<li> {{:Hide Mask}} <span class='drare'>(Uncommon)</span> <span class='ddb'>[Overall: ~25%]</span> </li>\n")
   assert.equal(gapActions(item, 'unchecked')[0].href, 'https://eqlwiki.com/index.php?title=A_gnoll&action=edit')
+})
+
+test('a group line rates the corpses that dropped ANY member over the mob kills; no kills, or more drops than kills, no rate', () => {
+  const set = { 'Bronze Weapons': ['Bronze Axe', 'Bronze Dagger'] }
+  const at = (ts: number, item: string): LootEvent => ({ ts, item, source: 'a gnoll', zone: 'Eastern Karana' })
+  // Two members off one corpse (one second) are one drop; a member off another corpse is a second.
+  const [row] = dropGaps([at(5000, 'Bronze Axe'), at(5000, 'Bronze Dagger'), at(9000, 'Bronze Dagger +1')], catalog, set)
+  assert.equal(row.count, 2)
+  const kills = (n: number): KillMap => killIndex({ 'a gnoll': { display: 'a gnoll', count: n } } as unknown as KillMap)
+  assert.equal(wikiPageText(row, [], kills(4)), "<li> [[Bronze Weapons]] <span class='drare'>(Common)</span> <span class='ddb'>[Overall: ~50%]</span> </li>\n")
+  // Anything the log has no answer for is left off (owner, 2026-10-19).
+  assert.equal(wikiPageText(row, [], {}), '<li> [[Bronze Weapons]] </li>\n')
+  assert.equal(wikiPageText(row, [], kills(1)), '<li> [[Bronze Weapons]] </li>\n')
 })
 
 test('a drop says which page lacks it: the mob page always, the item page when its dropsfrom does not name the mob', () => {

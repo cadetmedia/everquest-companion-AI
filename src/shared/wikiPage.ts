@@ -275,10 +275,25 @@ export function rarityWord(pct: number): string {
  * over the player's kills, `~` marking it as seen in one log rather than the server's loot table.
  */
 export function lootLine(item: string, drops: number, kills: number): string {
+  return rateLine(`{{:${item}}}`, drops, kills)
+}
+
+/**
+ * A group's line (`[[Rusty Weapons]]`), rated the same way (review D2): the corpses that dropped
+ * ANY member, over the mob's kills. The wiki writes a group line exactly as an item line, the
+ * `drare` and `ddb` spans after the link (measured 2026-10-19 on the cached mob pages, 468 group
+ * lines: `<li> [[Rusty Weapons]] <span class='drare'>(Rare)</span> <span class='ddb'>...`).
+ */
+export function groupLine(group: string, drops: number, kills: number): string {
+  return rateLine(wikiLink(group), drops, kills)
+}
+
+/** `<li> link </li>`, with the rarity word and the rate only when the log gives one. */
+function rateLine(link: string, drops: number, kills: number): string {
   // More drops than kills means kills the log never showed (a groupmate's far kill): no rate beats a false "Always".
-  if (kills <= 0 || drops > kills) return `<li> {{:${item}}} </li>`
+  if (kills <= 0 || drops > kills) return `<li> ${link} </li>`
   const pct = Math.round((drops / kills) * 1000) / 10
-  return `<li> {{:${item}}} <span class='drare'>(${rarityWord(pct)})</span> <span class='ddb'>[Overall: ~${String(pct)}%]</span> </li>`
+  return `<li> ${link} <span class='drare'>(${rarityWord(pct)})</span> <span class='ddb'>[Overall: ~${String(pct)}%]</span> </li>`
 }
 
 export function itemPage(f: ItemFacts): string {
@@ -466,11 +481,9 @@ const PAGE_OF: Record<GapDomain, (row: GapRow, c: PageContext) => string> = {
   spell: (row, c) => spellPage({ name: row.name, npcOnly: npcOnlySpell(row, c.isMob), client: c.spellFacts?.[row.name] }),
   faction: (row) => `${factionLine({ faction: factionOf(row), adjust: row.adjust, raised: row.raised })}\n`,
   image: (row) => `| ${'imagefilename'.padEnd(17)} = ${row.image ?? ''}\n`,
-  // A drop: its group's link (`<li> [[Rusty Weapons]] </li>`), else the item with the rate seen.
-  drop: (row, c) =>
-    row.details.drops
-      ? `<li> ${wikiLink(factionOf(row))} </li>\n`
-      : `${lootLine(factionOf(row), row.count, killsFor(c.kills, factionMob(row))?.count ?? 0)}\n`
+  // A drop: its group's link (`[[Rusty Weapons]]`), else the item; each with the rate seen, a
+  // group's being the corpses that dropped any member (the row's count) over the mob's kills.
+  drop: (row, c) => `${(row.details.drops ? groupLine : lootLine)(factionOf(row), row.count, killsFor(c.kills, factionMob(row))?.count ?? 0)}\n`
 }
 
 /** The domains whose page needs the same thing whatever the log saw; mobs and merchants are read below. */
