@@ -267,6 +267,14 @@ disagree, RULES.md wins; fix this file.
   upstream PR branch, 2026-10-18). Prefer a floor, or a fixture under `tests/fixtures/`, so the test
   holds on the branch and on the merged tree; `spell-upgrades` is the recorded exception.
 
+- **A scratch Playwright probe of the e2e app** (`tests/e2e/appWindow.mts` `mainWindow`,
+  `logFixture.mts` `stageFixture` + `appendAt` + `launchOnFixture`) is the way to watch a tab
+  without a window on the owner's screen. The window is hidden: `requestAnimationFrame` never
+  fires (an `evaluate` awaiting it hangs forever), `page.screenshot` times out, and scroll events
+  land late (wait ~1.5 s, not 300 ms, before reading a re-windowed list). An UNRELEASED tab
+  (Gaps, Factions) is absent from `out-e2e` on a feature branch; run the probe on
+  `main_community` (test-neutering forces the renderer half) with `env: { EQ_UNRELEASED: '1' }`.
+
 ## Bug hunts that worked
 
 - Read-only hunter agents by area, one independent validator per report (validators refuted
