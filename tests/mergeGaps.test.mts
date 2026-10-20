@@ -190,3 +190,13 @@ test('mob specials join per mob across the archive and the live log, each once (
   const m = mergeGaps(older, newer) as Snap & { mobSpecials: { mob: string; specials: string[] }[] }
   assert.deepEqual(m.mobSpecials, [{ mob: 'Lord of Ire', specials: ['Flurries', 'Rampages'] }])
 })
+
+test('gaps: corpse coin joins per mob, the paying kills added and each coin widened', () => {
+  const older = { ...snap([]), mobCoin: [{ mob: 'a hill giant', n: 3, min: [5, 0, 0, 0], max: [40, 9, 9, 9] }] }
+  const newer = { ...snap([]), mobCoin: [{ mob: 'A hill giant', n: 2, min: [2, 1, 0, 0], max: [51, 8, 9, 9] }, { mob: 'a bat', n: 1, min: [0, 0, 1, 2], max: [0, 0, 1, 2] }] }
+  const m = mergeGaps(older, newer) as Snap & { mobCoin: { mob: string; n: number; min: number[]; max: number[] }[] }
+  assert.deepEqual(m.mobCoin, [
+    { mob: 'a hill giant', n: 5, min: [2, 0, 0, 0], max: [51, 9, 9, 9] },
+    { mob: 'a bat', n: 1, min: [0, 0, 1, 2], max: [0, 0, 1, 2] }
+  ])
+})
