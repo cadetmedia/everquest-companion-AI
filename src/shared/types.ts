@@ -889,6 +889,9 @@ export interface FeedEvent {
   con?: FeedConsider
   /** the item or mob is in none of the app's data: screenshot it for the wiki (owner ask, 2026-10-18) */
   unknown?: true
+  /** the mob's wiki pages exist but none has a picture (the Gaps tab's Images row): screenshot it.
+   *  Never beside `unknown`, which wins (owner ask, 2026-10-20) */
+  needsImage?: true
 }
 
 /** eventFeed module. Delta = feed entries appended since the last flush. */

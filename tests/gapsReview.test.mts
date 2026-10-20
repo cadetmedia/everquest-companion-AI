@@ -230,3 +230,12 @@ test('the list buttons count only what the player sees: Done and, when hidden, u
   assert.equal(gapsCaption(snap, 'mob', null, hiddenBy(done, true, false)), '4 unknown')
   assert.equal(gapsCaption(snap, 'mob', null, hiddenBy(done, false, true)), '2 unknown')
 })
+
+test('ten kills of your own with nothing looted write * None under known_loot; fewer, or any loot, do not', () => {
+  const killedBy = (n: number) => row('mob', 'a fallen froglok', { killers: { entries: [{ name: 'you', n }], distinct: 1 } })
+  const kills = killIndex({ 'a fallen froglok': { display: 'a fallen froglok', count: 10, credited: 10 } } as unknown as KillMap)
+  assert.ok(mobPage(mobFacts(killedBy(10), [], kills)).includes('| known_loot = \n\n* None'))
+  assert.ok(!mobPage(mobFacts(killedBy(9), [], kills)).includes('| known_loot = \n\n* None'))
+  const loot = [{ item: 'Froglok Leg', source: 'a fallen froglok', ts: 1 }] as LootEvent[]
+  assert.ok(!mobPage(mobFacts(killedBy(10), loot, kills)).includes('* None\n\n| common_loot'))
+})

@@ -109,6 +109,7 @@ mod tests {
             page: Some("Coldain_Ring_War".to_owned()),
             con: None,
             unknown: false,
+            needs_image: false,
         }
     }
 
@@ -127,6 +128,7 @@ mod tests {
                 difficulty: "looks like quite a gamble".to_owned(),
             }),
             unknown: false,
+            needs_image: false,
         }
     }
 

@@ -20,6 +20,7 @@
 //! focus/level-dependent metrics: those need inputs this engine does not have, and half a card is a
 //! wrong answer wearing a right one's clothes. A named gap, stated in the schema beside the op.
 
+pub mod images;
 pub mod items;
 pub mod mobs;
 pub mod names;
@@ -71,6 +72,8 @@ pub struct Corpus {
     local_quests: OnceLock<LocalQuests>,
     mob_index: OnceLock<MobIndex>,
     mob_quests: OnceLock<MobQuestIndex>,
+    /// See [`mobs::imageless_keys`].
+    imageless_mobs: OnceLock<HashSet<String>>,
     /// domain → key → the record the app pushed. See [`Corpus::define`].
     overlay: RwLock<HashMap<&'static str, HashMap<String, Value>>>,
     /// Names this process could not answer, waiting to be announced.
@@ -364,6 +367,12 @@ impl Knowledge for Corpus {
         self.mob_index()
             .entry(name.trim())
             .is_some_and(|m| m["merchant"] == true)
+    }
+
+    /// The committed catalog's picture flags, keyed as `gapImages.ts` keys them (no loose fold).
+    fn imageless_mob(&self, name: &str) -> bool {
+        let keys = self.imageless_mobs.get_or_init(mobs::imageless_keys);
+        keys.contains(&mob_key(name))
     }
 
     fn take_misses(&self) -> Vec<Miss> {

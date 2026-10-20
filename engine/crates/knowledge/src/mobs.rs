@@ -198,6 +198,12 @@ pub fn quests_by_mob(quests: &[Value]) -> MobQuestIndex {
     by_mob
 }
 
+/// Every name the committed catalog states with no picture on any page — see [`crate::images`].
+#[must_use]
+pub fn imageless_keys() -> std::collections::HashSet<String> {
+    crate::images::imageless_keys_in(MOBS_JSON)
+}
+
 /// The quests the local catalog ties to this CREATURE, under every spelling the roster states for
 /// it. De-duped by quest name.
 fn identity_quests(index: &MobQuestIndex, id: &Identity) -> Vec<Value> {

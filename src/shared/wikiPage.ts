@@ -138,6 +138,8 @@ export interface MobFacts {
   kills: number
   /** Kills whose faction lines the log prints (credited, or the player's own killing blow): with none seen, the page can say none. */
   credited: number
+  /** The player's own killing blows: with LOOT_NONE_KILLS of them and nothing looted, the page says no loot. */
+  ownKills: number
   /** Where a con or hail beside a `/loc` placed it, in `/loc`'s order (y, x, z). */
   points: number[][]
   factions: FactionSeen[]
@@ -259,6 +261,7 @@ export function mobFacts(row: GapRow, loot: readonly LootEvent[], kills: KillMap
     loot: mobLoot(row, loot),
     kills: killed?.count ?? 0,
     credited: Math.max(killed?.credited ?? 0, ownKills(row)),
+    ownKills: ownKills(row),
     points: (seen.mobLocs ?? []).filter(mine).flatMap((m) => m.points),
     specials: [...new Set((seen.mobSpecials ?? []).filter(mine).flatMap((m) => m.specials))],
     ...coinOf(seen.mobCoin, row.name),
@@ -426,12 +429,19 @@ export function moneyBlock(c: MobCoin): string {
 }
 
 /**
+ * Own kills with nothing looted that prove a mob drops no items (owner, 2026-10-20: "Loot is always
+ * given even if i'm Feign Death and my pet kills"). Ten, so a rare drop is not called none after a
+ * kill or two. Coin is apart: its MONEY DROPS block still follows when a kill paid.
+ */
+export const LOOT_NONE_KILLS = 10
+
+/**
  * A mob's page. A drop the wiki files under `|common_loot` (shared loot, `commonLootNames`) goes
  * there; everything else is the mob's own `|known_loot` (owner, 2026-10-19).
  */
 export function mobPage(f: MobFacts, commonLoot: ReadonlySet<string> = new Set()): string {
   const isCommon = (l: MobFacts['loot'][number]): boolean => commonLoot.has(l.item.toLowerCase())
-  const loot = lootList(f.loot.filter((l) => !isCommon(l)), f.kills)
+  const loot = f.loot.length === 0 && f.ownKills >= LOOT_NONE_KILLS ? '* None' : lootList(f.loot.filter((l) => !isCommon(l)), f.kills)
   const own = [loot, f.coin === undefined ? '' : moneyBlock(f.coin)].filter((s) => s !== '').join('\n')
   const shared = lootList(f.loot.filter(isCommon), f.kills)
   return page(layoutBlock('Namedmobpage', NPC_LAYOUT, { ...npcValues(f), known_loot: own, common_loot: shared }), f.zones)
