@@ -62,6 +62,22 @@ export function withoutPlayers(rows: readonly GapRow[], players: ReadonlySet<str
   return players.size === 0 ? [...rows] : rows.filter((r) => r.domain !== 'mob' || !players.has(r.name.toLowerCase()))
 }
 
+/**
+ * Whether the tab is unsure the row is a gap at all ("Hide uncertain", owner, 2026-10-19). Only a
+ * row whose EXISTENCE is in doubt: today a one-word name only hailed or conned that may be a player
+ * (`maybePlayer`). Not a near miss (`suggest`: the wiki lacks this exact spelling, so a redirect is
+ * still owed), not a faction whose direction no line stated, not a drop whose mob page the catalog
+ * could not pick, not a verdict of the runtime caches: those are real gaps with an unsure detail.
+ */
+export function uncertainGap(row: GapRow): boolean {
+  return row.maybePlayer === true
+}
+
+/** The rows the tab is sure of. */
+export function withoutUncertain(rows: readonly GapRow[]): GapRow[] {
+  return rows.filter((r) => !uncertainGap(r))
+}
+
 /** The rows not marked done. */
 export function withoutDone(rows: readonly GapRow[], done: ReadonlySet<string>): GapRow[] {
   return done.size === 0 ? [...rows] : rows.filter((r) => !done.has(doneKey(r)))
@@ -191,6 +207,16 @@ export interface GapsSnap {
   mobLocs?: { mob: string; zone: string; points: number[][] }[]
   /** What each mob was seen to do on its own attack lines, `Rampages` / `Flurries` (gaps_specials.rs). */
   mobSpecials?: { mob: string; specials: string[] }[]
+  /** What each mob's corpse paid at the player's kills: how many paid, each coin's least and most (gaps_coin.rs). */
+  mobCoin?: MobCoin[]
+}
+
+/** One mob's corpse coin, `[platinum, gold, silver, copper]` (gaps_coin.rs). */
+export interface MobCoin {
+  mob: string
+  n: number
+  min: number[]
+  max: number[]
 }
 
 /** The lists in display order, with the words the tab and the copy text use for them. */

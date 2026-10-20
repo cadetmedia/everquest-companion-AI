@@ -10,7 +10,7 @@ import { killIndex, type KillMap, type KillsSnap } from '@shared/kills'
 import { withFactionRows } from '@shared/gapFactions'
 import { lootedItemNames, withDropRows, type DropAliases, type DropGroups } from '@shared/gapDrops'
 import { withImageRows } from '@shared/gapImages'
-import { catalogNameTest, commonLootNames } from '@shared/gapMobPage'
+import { catalogNameTest, commonLootNames, vendorFinder } from '@shared/gapMobPage'
 import { catalogZoneCounts, wikiZoneNamer } from '@shared/gapWikiZone'
 import type { PageExtras, ZoneNamer } from '@shared/wikiPage'
 import dropGroupsJson from '../../data/eqlegends/dropGroups.json'
@@ -26,7 +26,7 @@ export const GAPS_DATA_DATE = ((mobsJson as { scrapedAt?: string }).scrapedAt ??
 
 const ZONE_NAME: ZoneNamer = wikiZoneNamer(catalogZoneCounts(MOB_CATALOG))
 const IS_MOB = catalogNameTest(MOB_CATALOG)
-export const PAGE_EXTRAS: PageExtras = { zoneName: ZONE_NAME, isMob: IS_MOB, commonLoot: commonLootNames(MOB_CATALOG) }
+export const PAGE_EXTRAS: PageExtras = { zoneName: ZONE_NAME, isMob: IS_MOB, commonLoot: commonLootNames(MOB_CATALOG), vendorAt: vendorFinder(MOB_CATALOG) }
 
 export interface GapsData {
   /** The engine's snapshot with the derived domains joined in; undefined until it lands. */

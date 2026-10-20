@@ -18,21 +18,12 @@
 import { type JSX, memo, useCallback, useMemo, useRef, useState } from 'react'
 import { Box, Button, Chip, Paper, Stack, Table, TableBody, TableCell, TableHead, TableRow, TableSortLabel, Typography } from '@mui/material'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
-import DoneIcon from '@mui/icons-material/Done'
-import UndoIcon from '@mui/icons-material/Undo'
-import NoteAddIcon from '@mui/icons-material/NoteAdd'
-import SearchIcon from '@mui/icons-material/Search'
 import {
-  GAP_CAPTURE,
   charactersOff,
   doneKey,
   factionOf,
   gapZone,
-  mobPageOf,
   onMobPage,
-  wikiCreateUrl,
-  wikiEditUrl,
-  wikiSearchUrl,
   type GapActionContext,
   type GapRow,
   type GapSort,
@@ -42,16 +33,18 @@ import {
   type GapVerdicts
 } from '@shared/gaps'
 import { unfoldedEntries, type GapEntry } from '@shared/gapGroups'
+import { gapHeld, heldLine, heldTitle, type GapHeld, type HeldIndex } from '@shared/gapHeld'
 import { wikiPageUrl } from '@shared/wiki'
 import { copyText } from '../../lib/clipboard'
 import { Tooltip } from '../../lib/Tooltip'
 import { useWindowedRows } from '../../lib/useWindowedRows'
 import GapActionChips from './GapActionChips'
 import GapDetailsPanel from './GapDetailsPanel'
+import GapRowButtons from './GapRowButtons'
 
 /** One line of small cells with a small chip: 6px padding above and below a 24px chip, plus the border. */
 const ROW_HEIGHT = 37
-const COLUMNS = 7
+const COLUMNS = 8
 
 /** Beside the name: the one known name within reach, linked to its page so the owner can fix it. */
 function SuggestCaption({ s }: { s: GapSuggest }): JSX.Element {
@@ -83,6 +76,15 @@ function PadRow({ height }: { height: number }): JSX.Element | null {
   )
 }
 
+/** Beside an Items row's name: the player holds it right now (review C6), the count and places in the tooltip. */
+function HeldChip({ held }: { held: GapHeld }): JSX.Element {
+  return (
+    <Tooltip title={heldTitle(held)}>
+      <Chip label="held" size="small" color="success" variant="outlined" sx={{ ml: 1 }} data-testid="gaps-held" />
+    </Tooltip>
+  )
+}
+
 const GapTableRow = memo(function GapTableRow({
   row,
   open,
@@ -90,7 +92,9 @@ const GapTableRow = memo(function GapTableRow({
   onToggle,
   depth = 0,
   done = false,
-  chipContext
+  chipContext,
+  work,
+  held
 }: {
   row: GapRow
   open: boolean
@@ -99,6 +103,10 @@ const GapTableRow = memo(function GapTableRow({
   /** marked done: shown only under "Show done", dimmed */
   done?: boolean
   chipContext?: GapActionContext
+  /** the row's work buttons, as icons (GapRowButtons) */
+  work: RowWork
+  /** an Items row the player holds right now (shared/gapHeld.ts) */
+  held?: GapHeld
   /** grouped: 1 under a zone, 2 under a mob, bulleted and indented below its heading */
   depth?: number
 }): JSX.Element {
@@ -114,6 +122,7 @@ const GapTableRow = memo(function GapTableRow({
         {depth === 2 && onMobPage(row) ? factionOf(row) : row.name}
         {row.suggest !== undefined && <SuggestCaption s={row.suggest} />}
         {row.maybePlayer === true && <Chip label="may be a player" size="small" color="warning" variant="outlined" sx={{ ml: 1 }} data-testid="gaps-maybe-player" />}
+        {held !== undefined && <HeldChip held={held} />}
       </TableCell>
       <TableCell>
         <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'nowrap' }}>
@@ -129,56 +138,17 @@ const GapTableRow = memo(function GapTableRow({
       <TableCell>
         <GapActionChips row={row} verdict={verdict} ctx={chipContext} />
       </TableCell>
+      <TableCell sx={{ py: 0 }}>
+        <GapRowButtons row={row} pageText={work.pageText} isDone={done} onDone={work.onDone} compact />
+      </TableCell>
     </TableRow>
   )
 })
 
-/** A new wiki page for the row, built from what the log saw (shared/wikiPage.ts), onto the clipboard. */
-function CopyPageButton({ text, row }: { text: () => string; row: GapRow }): JSX.Element {
-  const [copied, setCopied] = useState(false)
-  const redirect = row.suggest !== undefined && (row.domain === 'item' || row.domain === 'spell')
-  const title = redirect
-    ? `A redirect from the game's spelling to ${row.suggest?.page ?? ''}, so both spellings reach one page.`
-    : `Wiki markup from what your log saw. ${GAP_CAPTURE[row.domain]}`
-  return (
-    <Tooltip title={title}>
-      <Button
-        size="small"
-        startIcon={<ContentCopyIcon />}
-        onClick={() => void copyText(text()).then(setCopied)}
-        data-testid="gaps-copy-page"
-      >
-        {copied ? 'Copied' : redirect ? 'Copy redirect' : 'Copy wiki page'}
-      </Button>
-    </Tooltip>
-  )
-}
-
-/**
- * Into the wiki in one click: its search, and its editor on a new page of this name; for a faction
- * row, the editor on the mob page the faction belongs on.
- */
-function WikiLinks({ row }: { row: GapRow }): JSX.Element {
-  const faction = onMobPage(row)
-  const target = faction ? mobPageOf(row) : row.name
-  const redirect = !faction && row.suggest !== undefined
-  return (
-    <>
-      <Button size="small" href={wikiSearchUrl(target)} target="_blank" rel="noreferrer" startIcon={<SearchIcon />} data-testid="gaps-wiki-search">
-        Search wiki
-      </Button>
-      <Button
-        size="small"
-        href={faction ? wikiEditUrl(target) : wikiCreateUrl(target)}
-        target="_blank"
-        rel="noreferrer"
-        startIcon={<NoteAddIcon />}
-        data-testid="gaps-wiki-create"
-      >
-        {faction ? 'Edit mob page' : redirect ? 'Create redirect' : 'Create page'}
-      </Button>
-    </>
-  )
+/** What a row's icon buttons need; one stable object, so the memoized rows stay memoized. */
+interface RowWork {
+  pageText: (row: GapRow) => string
+  onDone: (row: GapRow) => void
 }
 
 /** What the open row's pane does beyond showing it: its page text, what is still needed, its Done mark. */
@@ -189,23 +159,20 @@ interface PaneActions {
   onDone: (row: GapRow) => void
   /** add a "may be a player" name to the permanent players list */
   onPlayer: (name: string) => void
+  /** what the player holds right now, for an Items row's held line */
+  holding: HeldIndex
 }
 
 /** The open row's details, above the list: capped so the list keeps room on a short screen. */
 function DetailsPane({ row, actions }: { row: GapRow; actions: PaneActions }): JSX.Element {
   const isDone = actions.done.has(doneKey(row))
   const needed = actions.needed(row)
+  const held = gapHeld(row, actions.holding)
   return (
     <Paper variant="outlined" sx={{ px: 1.5, py: 0.5, flexShrink: 0, maxHeight: '40vh', overflow: 'auto' }} data-testid="gaps-details-pane">
       <Stack direction="row" spacing={1} alignItems="center">
         <Typography variant="subtitle2">{row.name}</Typography>
-        <CopyPageButton key={row.name} text={() => actions.pageText(row)} row={row} />
-        <WikiLinks row={row} />
-        <Tooltip title={isDone ? 'Show it with the open rows again.' : 'Hide it until the wiki data catches up; "Show done" brings it back.'}>
-          <Button size="small" startIcon={isDone ? <UndoIcon /> : <DoneIcon />} onClick={() => actions.onDone(row)} data-testid="gaps-done">
-            {isDone ? 'Not done' : 'Done'}
-          </Button>
-        </Tooltip>
+        <GapRowButtons row={row} pageText={actions.pageText} isDone={isDone} onDone={actions.onDone} />
         {row.maybePlayer === true && (
           <Tooltip title="A one-word name you only hailed or conned may be a player. Marking it hides it here for good.">
             <Button size="small" color="warning" onClick={() => actions.onPlayer(row.name)} data-testid="gaps-mark-player">
@@ -214,6 +181,11 @@ function DetailsPane({ row, actions }: { row: GapRow; actions: PaneActions }): J
           </Tooltip>
         )}
       </Stack>
+      {held !== undefined && (
+        <Typography variant="body2" color="success.main" component="div" data-testid="gaps-held-line">
+          {heldLine(held)}
+        </Typography>
+      )}
       {needed.length > 0 && (
         <Typography variant="caption" color="text.secondary" data-testid="gaps-needed">
           Still needed for the page: {needed.join(', ')}.
@@ -254,6 +226,7 @@ function SortHeader({ sort, onSort }: { sort: GapSort; onSort: (key: GapSortKey)
             </TableSortLabel>
           </TableCell>
         ))}
+        <TableCell sx={{ whiteSpace: 'nowrap' }}>Work</TableCell>
       </TableRow>
     </TableHead>
   )
@@ -324,6 +297,7 @@ export default function GapsTable({
   done,
   onDone,
   onPlayer,
+  holding,
   chipContext,
   hiddenByFilter = false
 }: {
@@ -340,6 +314,8 @@ export default function GapsTable({
   done: ReadonlySet<string>
   onDone: (row: GapRow) => void
   onPlayer: (name: string) => void
+  /** what the player holds right now (shared/gapHeld.ts): a chip on the row, a line in its details */
+  holding: HeldIndex
   /** what the chips may say beyond the row (the data date, which names are mobs) */
   chipContext: GapActionContext
   /** the domain HAS unknown names, so an empty list means the search or zone filter hid them */
@@ -358,6 +334,7 @@ export default function GapsTable({
     []
   )
   const shown = useMemo(() => unfoldedEntries(entries, folded), [entries, folded])
+  const work = useMemo<RowWork>(() => ({ pageText, onDone }), [pageText, onDone])
   const scrollRef = useRef<HTMLDivElement>(null)
   const win = useWindowedRows({ count: shown.length, rowHeight: ROW_HEIGHT, scrollRef })
   if (entries.length === 0) {
@@ -373,7 +350,7 @@ export default function GapsTable({
   const openedRow = opened?.kind === 'row' ? opened.row : undefined
   return (
     <Stack spacing={1.5} sx={{ flexGrow: 1, minHeight: 0 }}>
-      {openedRow !== undefined && <DetailsPane row={openedRow} actions={{ pageText, needed, done, onDone, onPlayer }} />}
+      {openedRow !== undefined && <DetailsPane row={openedRow} actions={{ pageText, needed, done, onDone, onPlayer, holding }} />}
       <Box ref={scrollRef} sx={{ flexGrow: 1, minHeight: 0, overflow: 'auto', overscrollBehavior: 'contain' }} data-testid="gaps-scroll">
         <Table size="small" stickyHeader data-testid="gaps-table">
           <SortHeader sort={sort} onSort={onSort} />
@@ -381,7 +358,7 @@ export default function GapsTable({
             <PadRow height={win.topPad} />
             {shown.slice(win.start, win.end).map((e) =>
               e.kind === 'row' ? (
-                <GapTableRow key={e.key} row={e.row} open={open === e.row.name} verdict={verdicts[e.row.name] ?? 'unchecked'} onToggle={onToggle} depth={e.depth} done={done.has(doneKey(e.row))} chipContext={chipContext} />
+                <GapTableRow key={e.key} row={e.row} open={open === e.row.name} verdict={verdicts[e.row.name] ?? 'unchecked'} onToggle={onToggle} depth={e.depth} done={done.has(doneKey(e.row))} chipContext={chipContext} work={work} held={gapHeld(e.row, holding)} />
               ) : (
                 <GroupRow key={e.key} entry={e} folded={folded.has(e.key)} onFold={onFold} pageText={pageText} />
               )

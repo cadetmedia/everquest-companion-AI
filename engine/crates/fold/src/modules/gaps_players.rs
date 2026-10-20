@@ -10,6 +10,8 @@
 //!     ANSWER_MS, or it was hailed or conned again in the same zone at least REVISIT_MS later
 //!     (players move; an NPC stands where it was). A name that later turns out to be a player
 //!     withdraws its row.
+//!   * BEYOND THE CAP: a con stating a level above any player's (`(Lvl: 70)` in a level-50 era) is
+//!     an NPC at once, and stays one: no later line makes it a player (owner, 2026-10-19).
 
 use std::collections::{HashMap, HashSet};
 
@@ -17,6 +19,9 @@ use std::collections::{HashMap, HashSet};
 const ANSWER_MS: i64 = 10_000;
 /// Seen again in the same zone this much later: it stands there, so it is an NPC.
 const REVISIT_MS: i64 = 10 * 60_000;
+/// The highest level a player can reach in the era the server is in. Raised as expansions open
+/// levels (Kunark 60, Velious 60, Luclin 60, ...); a con above it can only be an NPC.
+pub const PLAYER_LEVEL_CAP: i64 = 50;
 
 /// The clauses only a player's line opens with: `X tells you, '`, `X tells the guild, '`,
 /// `X tells General:1, '`, `X says out of character, '`, `X shouts, '`, `X auctions, '`.
@@ -63,6 +68,8 @@ pub struct Players {
     sightings: HashMap<String, Vec<(String, i64)>>,
     /// Lower-cased candidates the log has shown to be NPCs.
     npcs: HashSet<String>,
+    /// Lower-cased names conned above `PLAYER_LEVEL_CAP`: NPCs no chat line can undo.
+    beyond_cap: HashSet<String>,
 }
 
 impl Players {
@@ -79,6 +86,9 @@ impl Players {
     pub fn line(&mut self, text: &str, ts: i64) -> Option<String> {
         if let Some(name) = chatter(text).or_else(|| joined_or_listed(text)) {
             let key = name.to_lowercase();
+            if self.beyond_cap.contains(&key) {
+                return None;
+            }
             self.npcs.remove(&key);
             return self.known.insert(key).then(|| name.to_string());
         }
@@ -112,6 +122,18 @@ impl Players {
         }
         seen.push((zone, ts));
         !self.npcs.contains(&key)
+    }
+
+    /// A con's level: above the cap, the name is an NPC for good (true when it is).
+    pub fn conned_at(&mut self, name: &str, level: Option<i64>) -> bool {
+        if !level.is_some_and(|l| l > PLAYER_LEVEL_CAP) {
+            return false;
+        }
+        let key = name.to_lowercase();
+        self.known.remove(&key);
+        self.npcs.insert(key.clone());
+        self.beyond_cap.insert(key);
+        true
     }
 
     /// Whether the log has shown this candidate to be an NPC.
@@ -167,5 +189,19 @@ mod tests {
             Some("Kamas".to_string())
         );
         assert!(p.is_player("kamas"));
+    }
+
+    #[test]
+    fn a_con_above_the_player_cap_is_an_npc_at_once_and_for_good() {
+        let mut p = Players::default();
+        // `Bordag regards you indifferently -- ... (Lvl: 70)`, the owner's line of 2026-10-18.
+        assert!(p.conned_at("Bordag", Some(70)));
+        assert!(!p.candidate("Bordag", Some("Oggok"), 0, false), "never may be a player");
+        assert_eq!(p.line("Bordag tells you, 'hi'", 1_000), None, "no chat line undoes it");
+        assert!(p.is_npc("Bordag") && !p.is_player("Bordag"));
+        // At the cap or below, or with no level stated, a con proves nothing.
+        assert!(!p.conned_at("Rognok", Some(50)));
+        assert!(!p.conned_at("Rognok", None));
+        assert!(p.candidate("Rognok", Some("Oggok"), 0, false));
     }
 }

@@ -6,6 +6,7 @@
 // The wiki's spelling is read off the mob catalog, which holds every mob page's `|zone`: the spelling
 // most pages use for the place (`zoneKey` folds tiers and a leading "the"), else the most used of the
 // zone table's other names for it (`The Hole` for Old Paineel), else the log's name with the tier cut.
+// A place the two cannot join is in `ZONE_ALIASES`, with the page its link opens.
 
 import { zoneEntryFor, zoneKey } from './zones'
 
@@ -17,6 +18,28 @@ export function zoneBaseName(raw: string): string {
   let out = raw.trim()
   for (const re of TIER_TAILS) out = out.replace(re, '')
   return out.trim()
+}
+
+/**
+ * THE ALIASES: a zone the game names one way and the wiki another, where neither the catalog nor
+ * the zone table can join them. `zone` is the wiki's name for the place (its category,
+ * `[[Category:Cazic Thule]]` on 30 mob pages); `page` is the zone's own page when the plain title
+ * is something else (`Cazic Thule` is the god's mob page, a disambiguation); `log` are the game's
+ * names, matched by `zoneKey` (any tier, a leading "the"). Real pages link such a zone piped,
+ * `[[Cazic Thule (Zone)|Cazic Thule]]` (measured 2026-10-19 on the cached item and quest pages).
+ * The owner is asking the wiki's editors about these spellings (2026-10-19); one table, so a reply
+ * is one edit.
+ */
+export const ZONE_ALIASES: readonly { zone: string; page?: string; log: readonly string[] }[] = [
+  { zone: 'Cazic Thule', page: 'Cazic Thule (Zone)', log: ['Temple of Cazic-Thule'] }
+]
+const ALIAS_OF = new Map(ZONE_ALIASES.flatMap((a) => a.log.map((l) => [zoneKey(l), a.zone] as const)))
+const PAGE_OF = new Map(ZONE_ALIASES.flatMap((a) => (a.page === undefined ? [] : [[a.zone, a.page] as const])))
+
+/** A wiki zone name as a link: `[[Erudin]]`, or `[[Cazic Thule (Zone)|Cazic Thule]]` where the zone's page is titled apart. */
+export function wikiZoneLink(zone: string): string {
+  const page = PAGE_OF.get(zone)
+  return page === undefined ? `[[${zone}]]` : `[[${page}|${zone}]]`
 }
 
 /** A wiki abbreviation the catalog uses (`EC`, `WFP`): never a page title to link. */
@@ -40,7 +63,7 @@ export function wikiZoneNamer(counts: ReadonlyMap<string, number>): (raw: string
   }
   const memo = new Map<string, string>()
   return (raw) => {
-    const hit = memo.get(raw)
+    const hit = memo.get(raw) ?? ALIAS_OF.get(zoneKey(raw))
     if (hit !== undefined) return hit
     const entry = zoneEntryFor(raw)
     const others = entry ? [entry.name, ...(entry.aliases ?? []), ...(entry.mobCatalogNames ?? [])] : []

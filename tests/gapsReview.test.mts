@@ -3,13 +3,13 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { dropsSeen, lootLine, mobFacts, mobPage, stillNeeded, wikiPageText } from '../src/shared/wikiPage'
-import { catalogZoneCounts, wikiZoneNamer, zoneBaseName } from '../src/shared/gapWikiZone'
+import { catalogZoneCounts, wikiZoneLink, wikiZoneNamer, zoneBaseName } from '../src/shared/gapWikiZone'
 import { dropGaps } from '../src/shared/gapDrops'
 import { factionGaps, factionKey } from '../src/shared/gapFactions'
 import { groupGaps } from '../src/shared/gapGroups'
 import { imageGaps } from '../src/shared/gapImages'
 import { pickPage } from '../src/shared/gapMobPage'
-import { doneKey, gapActions, npcOnlySpell, withoutDone, type GapRow } from '../src/shared/gaps'
+import { doneKey, gapActions, npcOnlySpell, uncertainGap, withoutDone, withoutUncertain, type GapRow } from '../src/shared/gaps'
 import { killIndex, type KillMap } from '../src/shared/kills'
 import type { LootEvent } from '../src/shared/types'
 
@@ -43,6 +43,17 @@ test('a zone is written as the wiki spells it: tiers folded, the catalog spellin
   assert.equal(namer('The Plane of Hate - Group 4 (Refined)'), 'Plane of Hate')
   assert.equal(namer('The Plane of Hate 1 (Awakened)'), 'Plane of Hate')
   assert.equal(namer('Befallen 4 (Refined)'), 'Befallen')
+})
+
+test('the Temple of Cazic-Thule is the wiki zone Cazic Thule, linked to its (Zone) page and filed under its plain category', () => {
+  const namer = wikiZoneNamer(catalogZoneCounts([{ zones: ['Cazic Thule'] }]))
+  for (const raw of ['Temple of Cazic-Thule', 'The Temple of Cazic-Thule', 'Temple of Cazic-Thule - Group 4 (Refined)']) assert.equal(namer(raw), 'Cazic Thule', raw)
+  assert.equal(wikiZoneLink('Cazic Thule'), '[[Cazic Thule (Zone)|Cazic Thule]]')
+  assert.equal(wikiZoneLink('Erudin'), '[[Erudin]]')
+  const mob = row('mob', 'a lizard crusader', { zones: { entries: [{ name: 'Temple of Cazic-Thule', n: 1 }], distinct: 1 } })
+  const text = wikiPageText(mob, [], {}, { zoneName: namer })
+  assert.ok(text.includes('| zone              = [[Cazic Thule (Zone)|Cazic Thule]]'), text)
+  assert.match(text, /\[\[Category:Cazic Thule\]\]\n$/)
 })
 
 test('one corpse is one drop, and more drops than kills prints no rate rather than Always', () => {
@@ -179,4 +190,14 @@ test('a spell page fills from the install spell files: classes, mana, range, tim
   assert.match(page, /\| classes =\n\n\* \[\[Shaman\]\] - Level 43/)
   assert.match(page, /\| mana = 409/)
   assert.doesNotMatch(page, /NPC Only/)
+})
+
+test('Hide uncertain drops only the rows whose very existence as a gap is in doubt: a name that may be a player', () => {
+  const maybe = row('mob', 'Grapok', {}, { maybePlayer: true })
+  const npc = row('mob', 'Rognok')
+  const nearMiss = row('item', 'Rusty Sowrd', {}, { suggest: { name: 'Rusty Sword', page: 'Rusty Sword', distance: 1 } })
+  const unsureFaction = row('faction', 'Guards of Qeynos (a guard)')
+  assert.equal(uncertainGap(maybe), true)
+  // A near miss still owes a redirect; a faction with no direction is a real gap with an unsure detail.
+  assert.deepEqual(withoutUncertain([maybe, npc, nearMiss, unsureFaction]).map((r) => r.name), ['Rognok', 'Rusty Sowrd', 'Guards of Qeynos (a guard)'])
 })
