@@ -59,6 +59,8 @@ import DevTriageView from './devTriage'
 // keep the tree out of packaged bytes. The owner released the tab, so that file is gone and this is
 // an ordinary static import like the eleven views above it.
 import CharacterView from './features/character/CharacterView'
+// The GAPS tab, behind the review gate; its view check lives in the gate file.
+import UnreleasedGapsView from './unreleasedGaps'
 import { SpellDrill } from './features/spells/SpellPage'
 import { SpellLinkProvider } from './lib/spellLink'
 import { OWNER_TOOLS } from './devFlags'
@@ -159,6 +161,7 @@ function PlainView({
           to show it. Keyed like the rest — the sheet and its carry-all ledger are one character's,
           and the remount is how this app says that. */}
       {view === 'character' && <CharacterView key={viewKey} />}
+      <UnreleasedGapsView view={view} viewKey={viewKey} />
       {/* THE SPELL DRILLDOWN (JOS-508). Its view check and its payload check live in the feature
           file, not here: this switch is one branch per view and a branch needing both would have
           cost `PlainView` two points of the measured complexity ceiling. */}

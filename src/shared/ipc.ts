@@ -1058,6 +1058,17 @@ export const IPC = {
   // re-fire, no stacking and no re-show, so the renderer needs no rate limiting of its own.
   onLogSwitchNudge: 'log:switchNudge',
 
+  // ---- the Gaps tab's action chips (renderer -> main, src/main/ipc/gapVerdicts.ts) ----
+  // Names in, `{ [name]: 'noPage' | 'hasPage' | 'unchecked' }` out, read off the two knowledge
+  // cache files and never fetched. Payload: (domain: 'item' | 'mob', names: string[]).
+  gapVerdicts: 'gaps:verdicts',
+  // Item names in, `{ [name]: mobs its item page names | null }` out, off the committed corpus
+  // (src/main/gapItemMobs.ts), for the Drops domain. Payload: (names: string[]).
+  gapItemMobs: 'gaps:itemMobs',
+  // Spell names in, `{ [name]: what the install's spells_us.txt / spells_us_str.txt state }` out
+  // (src/main/gapSpellFacts.ts), for a copied spell page. Payload: (names: string[]).
+  gapSpellFacts: 'gaps:spellFacts',
+
   // ---- error harness (renderer -> main, fire-and-forget) ----
   // window.onerror / onunhandledrejection / React ErrorBoundary report here so
   // renderer crashes land in errors.log + dev stdout and never leave a blank window.

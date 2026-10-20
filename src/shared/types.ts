@@ -887,6 +887,8 @@ export interface FeedEvent {
   reward?: FeedReward
   /** for a 'con' row: the consider facts, structurally (Task #63). */
   con?: FeedConsider
+  /** the item or mob is in none of the app's data: screenshot it for the wiki (owner ask, 2026-10-18) */
+  unknown?: true
 }
 
 /** eventFeed module. Delta = feed entries appended since the last flush. */

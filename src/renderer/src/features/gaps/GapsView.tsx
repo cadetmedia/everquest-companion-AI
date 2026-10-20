@@ -1,0 +1,218 @@
+// THE GAPS TAB — names the log mentions that the app's wiki data has no record of (owner ask,
+// 2026-10-11): a diagnostics list, so the gaps can be fixed in the scrape or on the wiki.
+//
+// The engine's `gaps` module (engine/crates/fold/src/modules/gaps.rs) checks every item looted,
+// received, bought or crafted, every mob looted, killed, considered or hailed, and every spell cast
+// against the committed data, without ever asking the app to fetch. It serves one row per unknown
+// name, most mentioned first, 500 per domain at most; useGapsData joins the domains derived here.
+// The domain toggle and the search box narrow those rows in shared/gaps.ts; "Copy list" puts the
+// visible rows on the clipboard as tab-separated text.
+
+import { type JSX, useCallback, useDeferredValue, useMemo, useState } from 'react'
+import { Button, Checkbox, CircularProgress, FormControlLabel, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material'
+import ContentCopyIcon from '@mui/icons-material/ContentCopy'
+import {
+  DEFAULT_GAP_SORT,
+  GAP_DOMAINS,
+  GAP_DOMAIN_HELP,
+  GAP_DOMAIN_LABELS,
+  firstGapSortDir,
+  gapsAsText,
+  gapsCaption,
+  sortGaps,
+  visibleGaps,
+  withoutDone,
+  withoutPlayers,
+  type GapDomain,
+  type GapRow,
+  type GapSort,
+  type GapSortKey,
+  type GapsSnap
+} from '@shared/gaps'
+import type { CharacterSnap } from '@shared/types'
+import { stillNeeded, wikiPageText } from '@shared/wikiPage'
+import { groupGaps, rowEntries } from '@shared/gapGroups'
+import { useModule } from '../../lib/useModule'
+import { Tooltip } from '../../lib/Tooltip'
+import { useBoolPref } from '../combat/useCombatPrefs'
+import { copyText } from '../../lib/clipboard'
+import { useGapVerdicts } from '../../lib/gapVerdicts'
+import { useSpellFacts } from '../../lib/gapSpellFacts'
+import GapsTable from './GapsTable'
+import { GAPS_DATA_DATE, PAGE_EXTRAS, useGapsData } from './useGapsData'
+import { useDoneMarks, usePlayerList } from './useDoneMarks'
+
+// One line (owner, 2026-10-11): the how is in the module header, not on the page. Since 2026-10-18
+// the line says what the chosen domain's rows are (GAP_DOMAIN_HELP).
+const CLICK_HINT = 'Click a row for where it was seen.'
+
+/** Where the "Zone I'm in" choice is remembered, per viewer, as the Achievements tab remembers its own. */
+const ZONE_HERE_KEY = 'eq.gaps.zoneHere'
+/** Where the grouped view is remembered. */
+const GROUPED_KEY = 'eq.gaps.grouped'
+/** Where "Show done" is remembered. */
+const SHOW_DONE_KEY = 'eq.gaps.showDone'
+const CHIP_CONTEXT = { dataDate: GAPS_DATA_DATE, isMob: PAGE_EXTRAS.isMob }
+const NO_NAMES: readonly string[] = []
+/** The names of the rows on screen. */
+const spellNamesOf = (rows: readonly GapRow[]): string[] => rows.map((r) => r.name)
+
+/** A small checkbox with a caption, the tab's toolbar control. */
+function Pref({ label, checked, onChange, testId, disabled }: { label: string; checked: boolean; onChange: (on: boolean) => void; testId: string; disabled?: boolean }): JSX.Element {
+  return (
+    <FormControlLabel
+      sx={{ mr: 0 }}
+      control={<Checkbox size="small" checked={checked} disabled={disabled} onChange={(e) => onChange(e.target.checked)} sx={{ p: 0.5 }} data-testid={testId} />}
+      label={<Typography variant="caption">{label}</Typography>}
+    />
+  )
+}
+
+/** "Zone I'm in (<zone>)", the Achievements tab's control: only the rows seen in that place, any tier. */
+function ZoneHere({ zone, checked, onChange }: { zone: string | null; checked: boolean; onChange: (on: boolean) => void }): JSX.Element {
+  return (
+    <Tooltip title={zone === null ? 'The log has not named a zone yet. Zone once and this fills in.' : `Only what was seen in ${zone} or another tier of it.`}>
+      <span>
+        <Pref label={zone === null ? "Zone I'm in" : `Zone I'm in (${zone})`} checked={checked} onChange={onChange} disabled={zone === null} testId="gaps-zone-here" />
+      </span>
+    </Tooltip>
+  )
+}
+
+function DomainToggle({ snap, domain, zone, onPick }: { snap: GapsSnap; domain: GapDomain; zone: string | null; onPick: (d: GapDomain) => void }): JSX.Element {
+  return (
+    <ToggleButtonGroup
+      exclusive
+      size="small"
+      value={domain}
+      onChange={(_e, next: GapDomain | null) => {
+        if (next !== null) onPick(next)
+      }}
+      data-testid="gaps-domain"
+    >
+      {GAP_DOMAINS.map((d) => (
+        <ToggleButton key={d} value={d} sx={{ textTransform: 'none', px: 1.5 }}>
+          <Stack alignItems="flex-start">
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+              {GAP_DOMAIN_LABELS[d]}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {gapsCaption(snap, d, zone)}
+            </Typography>
+          </Stack>
+        </ToggleButton>
+      ))}
+    </ToggleButtonGroup>
+  )
+}
+
+export default function GapsView(): JSX.Element {
+  const { snap, engine, loot, kills } = useGapsData()
+  const [domain, setDomain] = useState<GapDomain>('item')
+  const [query, setQuery] = useState('')
+  const [copied, setCopied] = useState<number | null>(null)
+  // "Zone I'm in" (owner ask, 2026-10-17): only what was named where you stand, every tier of it.
+  const [hereOnly, setHereOnly] = useBoolPref(ZONE_HERE_KEY, false)
+  const current = useModule<CharacterSnap>('character')?.zone ?? null
+  const zone = hereOnly ? current : null
+  // Mobs rows the player marked as players are gone for good (owner, 2026-10-19).
+  const playerList = usePlayerList()
+  const rows = useMemo(() => (snap ? withoutPlayers(snap.rows, playerList.players) : undefined), [snap, playerList.players])
+  const marks = useDoneMarks(rows, new Date().toISOString().slice(0, 10))
+  const [showDone, setShowDone] = useBoolPref(SHOW_DONE_KEY, false)
+  // The list follows the query a beat behind the keystroke, so typing never waits on a filter.
+  const deferredQuery = useDeferredValue(query)
+  const inDomain = useMemo(() => visibleGaps(rows ?? [], domain, deferredQuery, zone), [rows, domain, deferredQuery, zone])
+  const visible = useMemo(() => (showDone ? inDomain : withoutDone(inDomain, marks.done)), [inDomain, showDone, marks.done])
+  // What the caches already say about the rows on screen: `unchecked` until the answer lands.
+  const verdicts = useGapVerdicts(domain, visible)
+  const [sort, setSort] = useState<GapSort>(DEFAULT_GAP_SORT)
+  const onSort = useCallback((key: GapSortKey) => {
+    setSort((cur) => (cur.key === key ? { key, dir: cur.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: firstGapSortDir(key) }))
+  }, [])
+  // The table and Copy list read the same order, so a copied list matches what is on screen.
+  const sorted = useMemo(() => sortGaps(visible, sort, verdicts), [visible, sort, verdicts])
+  // What the pages read beside the ledgers: each kill's factions, each mob's points, the wiki's spellings.
+  // A spell page fills from the install's spell files (owner, 2026-10-19): asked for the spells on screen.
+  const spellNames = useMemo(() => (domain === 'spell' ? spellNamesOf(visible) : NO_NAMES), [domain, visible])
+  const spellFacts = useSpellFacts(spellNames)
+  const sightings = useMemo(
+    () => ({ killFactions: engine?.killFactions, mobLocs: engine?.mobLocs, mobSpecials: engine?.mobSpecials, ...PAGE_EXTRAS, spellFacts }),
+    [engine, spellFacts]
+  )
+  const pageText = useCallback((row: GapRow) => wikiPageText(row, loot, kills, sightings), [loot, kills, sightings])
+  const needed = useCallback((row: GapRow) => stillNeeded(row, loot, kills, sightings), [loot, kills, sightings])
+  // "Group by zone, then mob" (owner ask, 2026-10-18): where to go and what to kill.
+  const [grouped, setGrouped] = useBoolPref(GROUPED_KEY, false)
+  const entries = useMemo(() => (grouped ? groupGaps(sorted, loot, PAGE_EXTRAS.zoneName) : rowEntries(sorted)), [grouped, sorted, loot])
+
+  if (!snap) return <CircularProgress size={20} />
+
+  const copy = async (): Promise<void> => {
+    const ok = await copyText(gapsAsText(sorted, verdicts))
+    setCopied(ok ? visible.length : null)
+  }
+  const held = snap.totals[domain] ?? 0
+  const served = visibleGaps(rows ?? [], domain, '').length
+  const hidden = inDomain.length - visible.length
+
+  return (
+    // A full-height column whose last child, the table box, is the page's only scroller (GapsTable).
+    <Stack spacing={2} data-testid="gaps-view" sx={{ height: '100%', minHeight: 0 }}>
+      <Typography variant="body2" color="text.secondary">
+        {GAP_DOMAIN_HELP[domain]} {CLICK_HINT}
+      </Typography>
+      <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" useFlexGap>
+        <DomainToggle snap={snap} domain={domain} zone={zone} onPick={setDomain} />
+        <TextField
+          size="small"
+          label="Search"
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value)
+            setCopied(null)
+          }}
+          sx={{ minWidth: 220 }}
+          slotProps={{ htmlInput: { 'data-testid': 'gaps-search' } }}
+        />
+        <ZoneHere
+          zone={current}
+          checked={hereOnly}
+          onChange={(on) => {
+            setHereOnly(on)
+            setCopied(null)
+          }}
+        />
+        <Pref label="Group by zone, then mob" checked={grouped} onChange={setGrouped} testId="gaps-grouped" />
+        <Pref label="Show done" checked={showDone} onChange={setShowDone} testId="gaps-show-done" />
+        <Button size="small" variant="outlined" startIcon={<ContentCopyIcon />} onClick={() => void copy()} disabled={visible.length === 0} data-testid="gaps-copy">
+          Copy list
+        </Button>
+        {copied !== null && (
+          <Typography variant="caption" color="success.main">
+            Copied {copied} rows
+          </Typography>
+        )}
+      </Stack>
+      <Typography variant="caption" color="text.secondary" data-testid="gaps-shown">
+        {visible.length} of {held} unknown {GAP_DOMAIN_LABELS[domain].toLowerCase()} shown
+        {zone !== null ? `, seen in ${zone} or another tier of it` : ''}
+        {hidden > 0 ? `, ${hidden} marked done hidden` : ''}
+        {held > served ? ` (the engine serves the ${served} most mentioned)` : ''}. Wiki data from {GAPS_DATA_DATE}.
+      </Typography>
+      <GapsTable
+        entries={entries}
+        verdicts={verdicts}
+        sort={sort}
+        onSort={onSort}
+        pageText={pageText}
+        needed={needed}
+        done={marks.done}
+        onDone={marks.toggle}
+        onPlayer={playerList.mark}
+        chipContext={CHIP_CONTEXT}
+        hiddenByFilter={held > 0}
+      />
+    </Stack>
+  )
+}

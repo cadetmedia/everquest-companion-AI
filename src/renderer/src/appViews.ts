@@ -2,7 +2,7 @@
 // persisted "which tab was I on" key all agree on. Lives outside App.tsx so the nav drawer
 // can import it without importing the app itself.
 
-import { OWNER_TOOLS } from './devFlags'
+import { OWNER_TOOLS, UNRELEASED } from './devFlags'
 
 export type View =
   | 'overview'
@@ -14,6 +14,10 @@ export type View =
   | 'alerts'
   | 'leveling'
   | 'loot'
+  // GAPS (2026-10-11): names the log mentions that the wiki data has no record of. UNRELEASED
+  // like every new tab: in `KNOWN_VIEWS` only behind the flag's splice, its nav row gated the
+  // same way, and absent from `TELEMETRY_VIEWS`.
+  | 'gaps'
   | 'planner'
   // The GEAR PLANNER's search surface (JOS-284) — the candidate index over every equippable item.
   // It was a top-level nav row of its own until JOS-324; it is now the FIRST TAB of the gear area
@@ -78,6 +82,7 @@ export const VIEW_LABELS: Record<View, string> = {
   alerts: 'Alerts',
   leveling: 'Leveling',
   loot: 'Loot',
+  gaps: 'Gaps',
   // THE TAB IS CALLED EXALTATIONS (owner, 2026-08-06, JOS-42). "Planner" described what the
   // surface does for us; "Exaltations" names the game system the player came here about. The
   // `planner` view id, its route, its `eq.planner.*` keys and every `planner-*` testid are
@@ -111,6 +116,9 @@ const KNOWN_VIEWS: View[] = [
   'alerts',
   'leveling',
   'loot',
+  // The review-gate splice: a dev server draws the Gaps tab, a packaged build bounces a persisted
+  // 'gaps' to the default view instead of routing to a tab it will not draw.
+  ...(UNRELEASED ? (['gaps'] as const) : []),
   'planner',
   'gear',
   'wishlist',

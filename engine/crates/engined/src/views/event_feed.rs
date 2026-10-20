@@ -108,6 +108,7 @@ mod tests {
             detail: Some("Handed in to Corflunk".to_owned()),
             page: Some("Coldain_Ring_War".to_owned()),
             con: None,
+            unknown: false,
         }
     }
 
@@ -125,6 +126,7 @@ mod tests {
                 rare: true,
                 difficulty: "looks like quite a gamble".to_owned(),
             }),
+            unknown: false,
         }
     }
 

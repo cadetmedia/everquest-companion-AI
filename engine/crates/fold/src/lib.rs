@@ -23,12 +23,15 @@ pub mod combat;
 pub mod dbstr;
 pub mod epoch;
 pub mod event;
+pub mod persisted_state;
+pub use persisted_state::PersistedState;
 pub mod jsfn;
 pub mod jsmap;
 pub mod knowledge;
 pub mod message_overlay;
 pub mod modules;
 pub mod overlay_file;
+mod registry_views;
 pub mod session;
 pub mod spell_facts;
 /// The client's spell table (`spells_us.txt`), parsed. Pure over a string; the file and the
@@ -37,7 +40,7 @@ pub mod spell_facts;
 pub mod spells_us;
 
 use event::Event;
-use serde_json::{json, Value};
+use serde_json::Value;
 use std::collections::HashSet;
 use std::sync::Arc;
 
@@ -286,6 +289,7 @@ pub const WIRING_ORDER: &[&str] = &[
     "buffTimers",
     "consider",
     "resist",
+    "gaps",
     "eventFeed",
 ];
 
@@ -551,29 +555,6 @@ impl Registry {
         }
         out
     }
-
-    /// Every id `WIRING_ORDER` names that nothing registered — the harness's skipped list.
-    pub fn missing(&self) -> Vec<&'static str> {
-        let have: HashSet<&str> = self.ids().into_iter().collect();
-        WIRING_ORDER
-            .iter()
-            .copied()
-            .filter(|id| !have.contains(id))
-            .collect()
-    }
-
-    /// `{ "modules": [ { "id": …, "snapshot": { "seq": …, "state": … } }, … ] }` — the same shape
-    /// the golden's `modules` array carries, in delivery order, so the comparator joins on `id`
-    /// and compares `snapshot` whole.
-    pub fn snapshots(&self) -> Value {
-        json!({
-            "modules": self.mods.iter().map(|m| json!({
-                "id": m.id(),
-                "snapshot": m.snapshot(),
-            })).collect::<Vec<_>>(),
-            "skipped": self.missing(),
-        })
-    }
 }
 
 /// The registry plus the derived-event producers that sit beside it on the bus.
@@ -795,25 +776,6 @@ pub struct FoldAttribution {
     pub reparse_ns: u64,
 }
 
-/// The app's persisted knowledge, already parsed — what [`Registry::seed_persisted`] puts back.
-///
-/// Deliberately not a field of [`ClusterDeps`]: `registered()` is what the parity runner, the bench
-/// arm and every test call, so a seed field there would be a door a file could walk through into
-/// the world the oracle records. The seed arrives after construction, from the one caller handed a
-/// `stateDir` — the same rule `install_knowledge` follows.
-///
-/// Both halves are default-empty, and an empty seed is not the same act as no seed: the
-/// `begin_source` half still runs, because naming this fold's own bucket is right either way.
-#[derive(Debug, Default)]
-pub struct PersistedState {
-    /// `<userData>/resist-ledger.json`'s buckets, the shipped baseline's already refused.
-    pub resist: Vec<modules::resist::ledger_file::LedgerSource>,
-    /// `<userData>/message-overlay.json`'s buckets, keyed by the source that produced them. The key
-    /// travels with the counts because merging two origins under one key would put the fold's own
-    /// output back in the pile it is seeded from, and the totals double.
-    pub overlay: Vec<(String, Vec<message_overlay::SeedMessage>)>,
-}
-
 /// Everything the cluster needs from outside itself — `wiring.ts ModuleWiringDeps`.
 ///
 /// A struct rather than a parameter list so a module with a new construction input adds a field and
@@ -907,6 +869,7 @@ pub fn registered(deps: ClusterDeps) -> Registry {
     r.register(Box::new(modules::buff_timers::BuffTimersModule::new(core)));
     r.register(Box::new(modules::consider::ConsiderModule::new()));
     r.register(Box::new(modules::resist::ResistModule::new()));
+    r.register(Box::new(modules::gaps::GapsModule::new()));
     r.register(Box::new(modules::event_feed::EventFeedModule::new()));
     r
 }
@@ -914,6 +877,7 @@ pub fn registered(deps: ClusterDeps) -> Registry {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde_json::json;
 
     fn fold_lines(lines: &[&str]) -> Value {
         let mut fold = Fold::new(registered(ClusterDeps::default()), i64::MAX);

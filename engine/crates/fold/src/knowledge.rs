@@ -83,6 +83,20 @@ pub struct Miss {
     pub name: String,
 }
 
+/// The committed names the gaps module checks the log against, handed over once at install.
+#[derive(Debug, Clone, Default)]
+pub struct GapIndex {
+    /// Every key the item database is keyed by, with the page title it answers with: `item_key`'s
+    /// fold of each page's name and aliases. A page TITLE is not a key when the page is
+    /// disambiguated — `Copper Ring (Ring of Opolla)` is keyed `copper ring` too.
+    pub item_pages: Vec<(String, String)>,
+    /// Every effect an item states (click, proc, worn, focus) with that item's page: a cast of one
+    /// is a known spell, `Summon Horse` off a bridle.
+    pub item_effects: Vec<(String, String)>,
+    /// Every name the mob catalog states, as its pages spell them.
+    pub mob_names: Vec<String>,
+}
+
 /// The engine-internal knowledge lookups — `main/itemLookup.ts lookupItem` and
 /// `main/mobLookup.ts lookupMob`, minus the network.
 ///
@@ -98,6 +112,12 @@ pub trait Knowledge: Send + Sync {
     /// answer is read from the fold, which has to be told which keys to gather before the join can
     /// be made. An unaliased name answers with its single key.
     fn identity_keys(&self, mob: &str) -> Vec<String>;
+
+    /// What the gaps module checks names against beyond the lookups — see [`GapIndex`]. Defaulted
+    /// empty, so a test corpus need not list any.
+    fn gap_index(&self) -> GapIndex {
+        GapIndex::default()
+    }
 
     /// "What does this thing drop", joined with what you have looted off it. Never fails.
     fn mob(&self, name: &str, loot: &dyn OwnLoot) -> Answer;
@@ -116,6 +136,12 @@ pub trait Knowledge: Send + Sync {
     /// means.
     fn known_mob(&self, name: &str) -> bool;
 
+    /// Does the committed catalog list this name as a merchant (a `{{MerchantPage}}`)? Read like
+    /// [`Knowledge::known_mob`], announcing nothing. Defaulted false, so a test corpus need list none.
+    fn known_merchant(&self, _name: &str) -> bool {
+        false
+    }
+
     /// Take the names this process could not answer, and forget them.
     ///
     /// A hand-back rather than a callback, like [`crate::EqModule::take_fires`]: a lookup called
@@ -124,4 +150,10 @@ pub trait Knowledge: Send + Sync {
     /// loot burst probes one name many times and the app must not be asked to fetch it many times.
     /// A `knowledge.define` makes the next lookup a hit, so nothing has to un-remember anything.
     fn take_misses(&self) -> Vec<Miss>;
+
+    /// Every item name the committed database states, as its page spells it. The bazaar module
+    /// matches trade chat against these. Defaulted empty, so a test corpus need not list any.
+    fn item_names(&self) -> Vec<String> {
+        Vec::new()
+    }
 }

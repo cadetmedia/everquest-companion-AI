@@ -110,7 +110,8 @@ function useTradeskillFilter(feed: FeedEvent[]): FeedEvent[] {
     let alive = true
     const todo: string[] = []
     for (const e of feed) {
-      if (e.kind !== 'loot') continue
+      // An unknown item is never looked up: the lookup would ask the wiki, and it is always shown.
+      if (e.kind !== 'loot' || e.unknown) continue
       const key = e.title.toLowerCase()
       if (asked.current.has(key)) continue
       asked.current.add(key)
@@ -132,7 +133,7 @@ function useTradeskillFilter(feed: FeedEvent[]): FeedEvent[] {
   }, [lootKeys])
 
   // eslint-disable-next-line eqc/no-domain-munging -- JOS-459 cutover ledger item 3: no served view source answers this yet, so the renderer still derives FeedEvent. Becomes a view descriptor when the source lands.
-  return feed.filter((e) => e.kind !== 'loot' || verdict[e.title.toLowerCase()] === false)
+  return feed.filter((e) => e.kind !== 'loot' || e.unknown === true || verdict[e.title.toLowerCase()] === false)
 }
 
 
@@ -149,11 +150,28 @@ interface RowAffordances {
   nameHover: boolean
 }
 
+/** The item a row's card shows: a quest's reward, or a loot row's item. An unknown item has no
+ *  card, and asking for one would send the app to the wiki. */
+function previewItemOf(e: FeedEvent): string | undefined {
+  if (e.reward) return e.reward.item
+  return e.kind === 'loot' && !e.unknown ? e.title : undefined
+}
+
+/** Not in the app's data: the reminder to screenshot it for the wiki (owner ask, 2026-10-18). */
+function UnknownTag({ e }: { e: FeedEvent }): JSX.Element | null {
+  if (!e.unknown) return null
+  return (
+    <span data-testid="feed-unknown" style={{ color: '#ffb74d', marginLeft: 5, fontWeight: 600 }}>
+      {/* Sold on loot is already gone: the next one is the screenshot (review 2026-10-19). */}
+      {e.detail?.startsWith('auto-sold') === true ? 'missing · auto-sold, keep the next one' : 'missing · screenshot it'}
+    </span>
+  )
+}
+
 function rowAffordances(e: FeedEvent, interactive: boolean): RowAffordances {
   const reward = e.reward
   const previewMob = interactive && e.kind === 'con' ? e.title : undefined
-  const previewItem =
-    interactive && !previewMob ? (reward?.item ?? (e.kind === 'loot' ? e.title : undefined)) : undefined
+  const previewItem = interactive && !previewMob ? previewItemOf(e) : undefined
   return {
     href: interactive ? wikiPageUrl(e.page) : undefined,
     previewMob,
@@ -282,6 +300,7 @@ function Row({ e, interactive }: { e: FeedEvent; interactive: boolean }): JSX.El
         {e.detail && (
           <span style={{ color: 'rgba(255,255,255,0.6)', marginLeft: 5 }}>{e.detail}</span>
         )}
+        <UnknownTag e={e} />
         {/* A quest that awards an item names it inline — the hover card is the detail view. */}
         {reward && (
           <span style={{ color: 'rgba(255,255,255,0.85)', marginLeft: 5 }}>

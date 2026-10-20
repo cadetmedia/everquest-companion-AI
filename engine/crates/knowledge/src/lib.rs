@@ -23,6 +23,7 @@
 pub mod items;
 pub mod mobs;
 pub mod names;
+mod overlay;
 
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex, OnceLock, RwLock};
@@ -37,6 +38,7 @@ use mobs::{
     MobQuestIndex,
 };
 use names::item_key;
+use overlay::{fetchable, key_for, overlay_found};
 
 /// The two corpora a `knowledge.define` may push into, and the two a miss may name.
 ///
@@ -54,6 +56,10 @@ pub const FETCHABLE_DOMAINS: &[&str] = &["item", "mob"];
 pub const SEARCH_DEFAULT_LIMIT: usize = 20;
 /// See [`SEARCH_DEFAULT_LIMIT`].
 pub const SEARCH_MAX_LIMIT: usize = 100;
+
+/// `Corpus::spell` and the gaps index, apart so this file stays under its recorded size.
+mod gap_index;
+mod spell_lookup;
 
 /// The process's one corpus: one instance shared by the ingest thread (the fold's own probes) and by
 /// every connection thread (the `knowledge.*` ops). One overlay, one miss ledger, and the loot index
@@ -174,55 +180,6 @@ impl Corpus {
         }
     }
 
-    /// One spell, from the effective catalog — `knowledge.spell`.
-    ///
-    /// Every field is copied across ONLY IF THE DB STATES IT (law 1), so an absent wiki field stays
-    /// absent and the card never has to decide what a missing duration looks like.
-    ///
-    /// EXACT NAME MATCH ONLY, a stated limit rather than a bug: answering `Rune III` with `Rune`'s
-    /// numbers needs the lineage block that would say out loud they are the line's, which is the
-    /// named gap in the crate header. Without it, `found: false` is the honest answer.
-    #[must_use]
-    pub fn spell(&self, name: &str) -> Answer {
-        let queried = name.trim();
-        let db = eqlog::spelldb::shared();
-        let wanted = queried.to_lowercase();
-        let Some(entry) = db
-            .spells
-            .iter()
-            .find(|s| s.name.trim().to_lowercase() == wanted)
-        else {
-            return Answer {
-                record: json!({ "queried": queried, "found": false, "illusion": false }),
-                found: false,
-            };
-        };
-        let mut record = json!({
-            "queried": queried,
-            "name": entry.name,
-            "found": true,
-            "illusion": entry.illusion,
-        });
-        let mut state = |key: &str, value: Value| {
-            if !value.is_null() {
-                record[key] = value;
-            }
-        };
-        state("durationText", json!(entry.duration_text));
-        state("durationMs", json!(entry.duration_ms));
-        state("targetType", json!(entry.target_type));
-        state("spellType", json!(entry.spell_type));
-        state("classes", json!(entry.classes));
-        state("msgCastOnYou", json!(entry.msg_cast_on_you));
-        state("msgCastOnOther", json!(entry.msg_cast_on_other));
-        state("msgWearsOff", json!(entry.msg_wears_off));
-        state("effects", json!(entry.effects));
-        Answer {
-            record,
-            found: true,
-        }
-    }
-
     /// Name search across every corpus this engine holds — `knowledge.search`.
     ///
     /// A lookup needs the exact name; a person types three letters. Hits rank EXACT, then PREFIX,
@@ -327,30 +284,6 @@ fn rank_of(name: &str, needle: &str) -> Option<u8> {
     None
 }
 
-/// The domain as a `'static` name, or `None` for one this engine does not take pushes for.
-fn fetchable(domain: &str) -> Option<&'static str> {
-    FETCHABLE_DOMAINS
-        .iter()
-        .find(|known| **known == domain)
-        .copied()
-}
-
-/// The overlay key for one domain — each domain's own canonical fold, never a shared one.
-fn key_for(domain: &str, name: &str) -> String {
-    if domain == "mob" {
-        mob_key(name)
-    } else {
-        item_key(name)
-    }
-}
-
-/// Did a pushed record claim a real negative? A `notFound` push is the app saying "I looked and the
-/// wiki has no page" — an ANSWER, which stops the engine announcing that name again, but not a
-/// `found`.
-fn overlay_found(entry: &Value) -> bool {
-    !entry["notFound"].as_bool().unwrap_or(false)
-}
-
 impl Knowledge for Corpus {
     /// The committed DB, then the overlay, then a miss. Local sources are merged into whichever
     /// answers, because they say something about the item's USES that no item page states.
@@ -388,6 +321,10 @@ impl Knowledge for Corpus {
         self.mob_index().identity(mob.trim()).keys
     }
 
+    fn gap_index(&self) -> fold::knowledge::GapIndex {
+        gap_index::build(self.items(), self.mob_index().names())
+    }
+
     /// The catalog, then the overlay, then a miss; the local half merged on top of whichever
     /// answered, and the era evidence attached at the one confluence all exits pass through.
     fn mob(&self, name: &str, loot: &dyn OwnLoot) -> Answer {
@@ -423,11 +360,21 @@ impl Knowledge for Corpus {
         self.mob_index().entry(name.trim()).is_some()
     }
 
+    fn known_merchant(&self, name: &str) -> bool {
+        self.mob_index()
+            .entry(name.trim())
+            .is_some_and(|m| m["merchant"] == true)
+    }
+
     fn take_misses(&self) -> Vec<Miss> {
         self.pending
             .lock()
             .map(|mut pending| std::mem::take(&mut *pending))
             .unwrap_or_default()
+    }
+
+    fn item_names(&self) -> Vec<String> {
+        items::item_names(self.items())
     }
 }
 
