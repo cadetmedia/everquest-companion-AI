@@ -1147,6 +1147,10 @@ export const IPC = {
   // Spell names in, `{ [name]: what the install's spells_us.txt / spells_us_str.txt state }` out
   // (src/main/gapSpellFacts.ts), for a copied spell page. Payload: (names: string[]).
   gapSpellFacts: 'gaps:spellFacts',
+  // Every OTHER character's Gaps inputs (src/main/gapsCharacters.ts): its saved gaps, loot and kills
+  // with its eligible archives folded in. Payload: (sinceStamp: string | null), the day window's
+  // cut-off as a log stamp key. Answers CharacterGaps[].
+  gapsAllCharacters: 'gaps:allCharacters',
 
   // ---- error harness (renderer -> main, fire-and-forget) ----
   // window.onerror / onunhandledrejection / React ErrorBoundary report here so

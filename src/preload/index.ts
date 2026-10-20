@@ -98,6 +98,7 @@ import { graphicsBridge } from './graphics'
 // and normalizer live together in shared/buffTrust.ts.
 import { buffTrustBridge } from './buffTrust'
 import { logArchiveBridge } from './logArchive'
+import { gapsCharactersBridge } from './gapsCharacters'
 import { presencePrefsBridge } from './presencePrefs'
 import { respawnBridge } from './respawn'
 import { updatesBridge } from './updates'
@@ -307,6 +308,7 @@ const api = {
   // …and the buff externals allowlist (./buffTrust.ts), likewise.
   ...buffTrustBridge,
   ...logArchiveBridge,
+  ...gapsCharactersBridge,
   ...respawnBridge,
   // …and the main window's text size (./uiScale.ts), likewise.
   ...uiScaleBridge,
