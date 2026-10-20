@@ -94,6 +94,30 @@ export function factionFix(saids: readonly string[], p: Pick<KillFaction, 'adjus
   return { fix: fixes[0] ?? 'amount', pageSays: saids[0] ?? '' }
 }
 
+/** One pair as its row: where it goes, when the mob was killed, what to fix, whether the data has its page. */
+function factionRow(
+  p: KillFaction,
+  on: { page: string | undefined; span: Span | undefined; fix: ReturnType<typeof factionFix> | undefined; noPage: boolean }
+): GapRow {
+  return {
+    domain: 'faction',
+    name: `${p.faction} (${p.mob})`,
+    kinds: ['killed'],
+    count: p.n,
+    ...spanStamps(on.span),
+    details: {
+      samples: p.samples ?? [],
+      sources: { entries: [{ name: p.mob, n: p.n }], distinct: 1 },
+      ...(p.zone === '' ? {} : { zones: { entries: [{ name: p.zone, n: p.n }], distinct: 1, all: [p.zone] } })
+    },
+    ...(on.page === undefined ? {} : { page: on.page }),
+    ...(on.fix ?? {}),
+    ...(on.noPage ? { noPage: true as const } : {}),
+    ...(p.adjust === undefined ? {} : { adjust: p.adjust }),
+    ...(p.raised === undefined ? {} : { raised: p.raised })
+  }
+}
+
 /** The pairs no page of the mob's name lists, or lists as the log contradicts, as Gaps rows: `Clurg (a goblin)`, most seen first. */
 export function factionGaps(pairs: readonly KillFaction[], catalog: readonly CatalogMob[], kills: KillMap = {}): GapRow[] {
   // First and Last are the mob's first and last kill: the faction moves on its kills.
@@ -102,26 +126,11 @@ export function factionGaps(pairs: readonly KillFaction[], catalog: readonly Cat
   const pages = pagesByMob(catalog)
   const rows: GapRow[] = []
   for (const p of pairs) {
-    const saids = listed.get(mobKey(p.mob))?.get(factionKey(p.faction))
+    const known = listed.get(mobKey(p.mob))
+    const saids = known?.get(factionKey(p.faction))
     const fix = saids === undefined ? undefined : factionFix(saids, p)
     if (fix === null) continue
-    const page = pickPage(pages.get(mobKey(p.mob)), p.zone)
-    rows.push({
-      domain: 'faction',
-      name: `${p.faction} (${p.mob})`,
-      kinds: ['killed'],
-      count: p.n,
-      ...spanStamps(spans.get(mobKey(p.mob))),
-      details: {
-        samples: p.samples ?? [],
-        sources: { entries: [{ name: p.mob, n: p.n }], distinct: 1 },
-        ...(p.zone === '' ? {} : { zones: { entries: [{ name: p.zone, n: p.n }], distinct: 1, all: [p.zone] } })
-      },
-      ...(page === undefined ? {} : { page }),
-      ...(fix ?? {}),
-      ...(p.adjust === undefined ? {} : { adjust: p.adjust }),
-      ...(p.raised === undefined ? {} : { raised: p.raised })
-    })
+    rows.push(factionRow(p, { page: pickPage(pages.get(mobKey(p.mob)), p.zone), span: spans.get(mobKey(p.mob)), fix, noPage: known === undefined }))
   }
   return rows.sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
 }
