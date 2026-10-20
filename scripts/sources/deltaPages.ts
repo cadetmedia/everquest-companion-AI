@@ -2,7 +2,7 @@
 // and the mob fold. No network, no files.
 
 import { isMobPage, parseMobPage } from './mobPage'
-import { applyOtherNames, redirectsOf, redirectTarget, type NamedMob } from './mobRedirects'
+import { applyOtherNames, foldRedirectCache, readRedirectCache, redirectsOf, redirectTarget, writeRedirectCache, type NamedMob } from './mobRedirects'
 
 /** A move or delete in ns0: listed for the record; its titles are re-read like any edit. */
 export interface PageLogEvent {
@@ -174,6 +174,13 @@ export function foldRedirects(before: readonly NamedMob[], after: NamedMob[], pa
   applyOtherNames(after, redirects)
   const landed = new Set(after.flatMap((m) => m.otherNames ?? []))
   return [...pages.keys()].filter((t) => landed.has(t))
+}
+
+/** The cached redirect list after the pages this delta read: everything read from the wiki is cached (owner, 2026-10-19). */
+export function keepRedirectCache(path: string, pages: PageTexts): void {
+  const cached = readRedirectCache(path)
+  if (cached === null) console.warn('No cached redirect list: run scrape-mob-redirects once to start it.')
+  else writeRedirectCache(path, foldRedirectCache(cached.redirects, pages))
 }
 
 /** The pages scrape-classes.ts reads. */
