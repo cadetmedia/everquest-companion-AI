@@ -1283,7 +1283,10 @@
         "Undead Frogloks of Guk",
         "Frogloks of Guk"
       ],
-      "image": "npc_a_bloodthirsty_ghoul.png"
+      "image": "npc_a_bloodthirsty_ghoul.png",
+      "commonDrops": [
+        "Undead Froglok Tongue"
+      ]
     },
     {
       "page": "A bloodthorned spectre",
@@ -1426,7 +1429,10 @@
           "ew": 415
         }
       ],
-      "image": "npc_a_boogeyman.png"
+      "image": "npc_a_boogeyman.png",
+      "commonDrops": [
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "A borer beetle",
@@ -1762,7 +1768,24 @@
         "Karana Residents"
       ],
       "image": "npc_a_brigand.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Rusty Scimitar",
+        "Rusty Rapier",
+        "Rusty Dagger",
+        "Bronze Two Handed Hammer",
+        "Bottle of Kalish",
+        "Water Flask",
+        "Ration",
+        "Loaf of Bread",
+        "Short Ale",
+        "Wrist Pouch",
+        "Small Bag",
+        "Words of Derivation",
+        "Words of Tyranny",
+        "Rune of Fulguration",
+        "Bandit Sash"
+      ]
     },
     {
       "page": "A bristleweb spider",
@@ -1825,7 +1848,10 @@
         "Diseased Bone Marrow"
       ],
       "image": "npc_a_brittle_skeleton.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Bone Chips"
+      ]
     },
     {
       "page": "A broken golem",
@@ -2706,7 +2732,66 @@
         "Unrest Inhabitants"
       ],
       "image": "npc_a_carrion_ghoul.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Rune of Neglect",
+        "Rune of Velious",
+        "Rune of Al'Kabor",
+        "Words of the Element",
+        "Ice of Velious",
+        "Words of Refuge",
+        "Words of Absorption",
+        "Words of Enlightenment",
+        "Words of Anthology",
+        "Words of Radiance",
+        "Words of the Extinct",
+        "Words of the Quickening",
+        "Words of Cazic-Thule",
+        "Part of Tasarin's Grimoire Pg. 30 (Left)",
+        "Part of Tasarin's Grimoire Pg. 30 (Right)",
+        "Part of Tasarin's Grimoire Pg. 312 (Left)",
+        "Part of Tasarin's Grimoire Pg. 312 (Right)",
+        "Part of Tasarin's Grimoire Pg. 375 (Left)",
+        "Part of Tasarin's Grimoire Pg. 375 (Right)",
+        "Grave Mold",
+        "Charred Pearl",
+        "Small Ringmail Coif",
+        "Small Iron Visor",
+        "Small Ringmail Neckguard",
+        "Small Ringmail Coat",
+        "Small Ringmail Mantle",
+        "Small Ringmail Cape",
+        "Small Ringmail Belt",
+        "Small Ringmail Sleeves",
+        "Small Ringmail Bracelet",
+        "Small Ringmail Gloves",
+        "Small Ringmail Pants",
+        "Small Ringmail Boots",
+        "Fine Steel Long Sword",
+        "Fine Steel Two Handed Sword",
+        "Fine Steel Scimitar",
+        "Fine Steel Warhammer",
+        "Fine Steel Morning Star",
+        "Fine Steel Great Staff",
+        "Fine Steel Dagger",
+        "Fine Steel Spear",
+        "Fine Steel Rapier",
+        "Charred Dagger",
+        "Gold Ring",
+        "Amber",
+        "Jade",
+        "Pearl",
+        "Topaz",
+        "Silver Amulet",
+        "Mithril Earring",
+        "Jade Earring",
+        "Flame Agate",
+        "Jade Shard",
+        "Pearl Shard",
+        "Ivory",
+        "Steel Knuckles",
+        "Weighted Gloves"
+      ]
     },
     {
       "page": "A carrion spider",
@@ -2770,7 +2855,19 @@
         "Phinigel Autropos"
       ],
       "image": "npc_a_cauldron_hammerhead.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Shark Skin",
+        "Shark Meat",
+        "Shark Bones",
+        "Tears of Prexus",
+        "Essence of Rathe",
+        "Nilitim's Grimoire Pg. 35",
+        "Nilitim's Grimoire Pg. 116",
+        "Nilitim's Grimoire Pg. 351",
+        "Nilitim's Grimoire Pg. 352",
+        "Words of Obligation"
+      ]
     },
     {
       "page": "A cauldron rat",
@@ -3102,7 +3199,10 @@
       "factions": [
         "Inhabitants of Hate"
       ],
-      "image": "npc_a_champion_of_innoruuk.png"
+      "image": "npc_a_champion_of_innoruuk.png",
+      "commonDrops": [
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "A Chardoki Golem",
@@ -3123,7 +3223,10 @@
         "Goblins of Mountain Death"
       ],
       "image": "npc_a_chardoki_golem.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Fine Steel Morning Star"
+      ]
     },
     {
       "page": "A chasm crawler",
@@ -4632,7 +4735,27 @@
         "Claws of Veeshan"
       ],
       "image": "npc_a_cleric_of_vallon_zek.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Storm Giant Meat",
+        "Rock Fern",
+        "Giant Warrior Helmet",
+        "Storm Giant Toes",
+        "Giant Militia Longsword",
+        "Giant Scalemail Helm",
+        "Giant Scalemail Mask",
+        "Giant Scalemail Gorget",
+        "Giant Scalemail Mantle",
+        "Giant Scalemail Cloak",
+        "Giant Scalemail Belt",
+        "Giant Scalemail Sleeves",
+        "Giant Scalemail Bracer",
+        "Giant Scalemail Gloves",
+        "Giant Scalemail Leggings",
+        "Giant Scalemail Boots",
+        "Giant Scalemail Gauntlets",
+        "Giant Scalemail Tunic"
+      ]
     },
     {
       "page": "A Clerk",
@@ -8568,7 +8691,27 @@
         }
       ],
       "image": "npc_a_decaying_gnome_skeleton.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Rusty Broad Sword",
+        "Rusty Scimitar",
+        "Rusty Battle Axe",
+        "Rusty Rapier",
+        "Rusty Shortened Spear",
+        "Rusty Warhammer",
+        "Small Cloth Cord",
+        "Small Cloth Shawl",
+        "Small Cloth Choker",
+        "Rusty Short Sword",
+        "Small Cloth Shirt",
+        "Small Cloth Cape",
+        "Small Cloth Cap",
+        "Small Cloth Gloves",
+        "Small Cloth Pants",
+        "Small Cloth Sleeves",
+        "Small Cloth Veil",
+        "Small Cloth Wristband"
+      ]
     },
     {
       "page": "A Decaying Skeleton",
@@ -8633,7 +8776,10 @@
         "Valorium Bracers",
         "Vermiculated Bracelet"
       ],
-      "image": "npc_a_decrepit_warder.png"
+      "image": "npc_a_decrepit_warder.png",
+      "commonDrops": [
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "A deepwater barracuda",
@@ -8756,7 +8902,22 @@
         "Dervish Cutthroats"
       ],
       "image": "npc_a_dervish_cutthroat.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Bandages",
+        "Bottle of Kalish",
+        "Bronze Weapons",
+        "Cloth Armor",
+        "Gold Ring",
+        "Iron Ration",
+        "Jade Earring",
+        "Mithril Earring",
+        "Onyx",
+        "Ration",
+        "Rusty Weapons",
+        "Short Beer",
+        "Silver Amulet"
+      ]
     },
     {
       "page": "A Dervish Thug",
@@ -8773,7 +8934,16 @@
         "Dervish Cutthroats"
       ],
       "image": "npc_a_dervish_thug.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Bronze Weapons",
+        "Cloth Armor",
+        "Gold Ring",
+        "Ivory",
+        "Ration",
+        "Rusty Weapons",
+        "Small Bag"
+      ]
     },
     {
       "page": "A Desert Madman",
@@ -9674,7 +9844,10 @@
       "factions": [
         "Inhabitants of Hate"
       ],
-      "image": "npc_a_disciple_of_innoruuk.png"
+      "image": "npc_a_disciple_of_innoruuk.png",
+      "commonDrops": [
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "A diseased brute",
@@ -11263,7 +11436,34 @@
         }
       ],
       "image": "npc_a_dwarf_skeleton.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Small Cloth Sandals",
+        "Small Cloth Choker",
+        "Small Cloth Gloves",
+        "Small Cloth Shirt",
+        "Cracked Staff",
+        "Rusty Bastard Sword",
+        "Rusty Rapier",
+        "Rusty Shortened Spear",
+        "Rusty Warhammer",
+        "Small Cloth Shawl",
+        "Small Cloth Sleeves",
+        "Small Cloth Veil",
+        "Splintering Club",
+        "Rusty Battle Axe",
+        "Rusty Broad Sword",
+        "Rusty Mace",
+        "Rusty Scimitar",
+        "Rusty Short Sword",
+        "Small Cloth Cord",
+        "Small Cloth Pants",
+        "Small Cloth Wristband",
+        "Rusty Axe",
+        "Rusty Long Sword",
+        "Rusty Spear",
+        "Small Cloth Cap"
+      ]
     },
     {
       "page": "A Dwarven Bandit",
@@ -12486,7 +12686,12 @@
       "factions": [
         "Phinigel Autropos"
       ],
-      "image": "npc_a_ferocious_hammerhead.png"
+      "image": "npc_a_ferocious_hammerhead.png",
+      "commonDrops": [
+        "Shark Meat",
+        "Shark Bones",
+        "Shark Skin"
+      ]
     },
     {
       "page": "A ferocious kobold",
@@ -12571,7 +12776,10 @@
         "Umbral Platemail Bracer",
         "Woven Shadow Bracer"
       ],
-      "image": "npc_a_fetid_fiend.png"
+      "image": "npc_a_fetid_fiend.png",
+      "commonDrops": [
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "A fierce impaler",
@@ -13109,7 +13317,16 @@
       "factions": [
         "Minions of Underfoot"
       ],
-      "image": "npc_a_flighty_fiend.png"
+      "image": "npc_a_flighty_fiend.png",
+      "commonDrops": [
+        "Living Heart of a Brell Minion",
+        "Holy Dirt of Brell",
+        "Crystallized Sulfur",
+        "Fiery Jewel of the Underfoot",
+        "Speckled Granite Pebble",
+        "Classic High Tier Treasures",
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "A Flouting Gargoyle",
@@ -13452,7 +13669,54 @@
         "The Kromdul"
       ],
       "image": "npc_a_forest_giant_evergreen.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "A Faded Salil's Writ Page",
+        "A Faded Velishoul's Tome Page",
+        "Amber",
+        "Bloodstone",
+        "Carnelian",
+        "Cat's Eye Agate",
+        "Copper Band",
+        "Glove of Rallos Zek",
+        "Golden Earring",
+        "Hematite",
+        "Jasper",
+        "Lapis Lazuli",
+        "Malachite",
+        "Onyx",
+        "Rune of Dismemberment",
+        "Rune of Howling",
+        "Rune of Rallos Zek",
+        "Rune of the Catalyst",
+        "Rune of the Combine",
+        "Rune of the Cyclone",
+        "Rune of Fulguration",
+        "Rune of Sorcery",
+        "Rune of Xegony",
+        "Silver Earring",
+        "Silver Stud",
+        "Star Rose Quartz",
+        "Salil's Writ Pg. 60 (Left)",
+        "Turquoise",
+        "Velishoul's Tome Pg. 44",
+        "Velishoul's Tome Pg. 109",
+        "Velishoul's Tome Pg. 68",
+        "Velishoul's Tome Pg. 76",
+        "Words of Cazic-Thule",
+        "Words of Coercion",
+        "Words of Dark Paths",
+        "Words of Dissemination",
+        "Words of Duration",
+        "Words of Neglect",
+        "Words of Parasitism",
+        "Words of Possession",
+        "Words of Purification",
+        "Words of Quivering",
+        "Words of Resolve",
+        "Words of Sight",
+        "Words of the Incorporeal"
+      ]
     },
     {
       "page": "A Forest Giant Greenwood",
@@ -13494,7 +13758,29 @@
         "The Kromdul"
       ],
       "image": "npc_a_forest_giant_greenwood.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Amber",
+        "Bloodstone",
+        "Breath of Solusek",
+        "Carnelian",
+        "Cat's Eye Agate",
+        "Copper Band",
+        "Eye of Serilis",
+        "Flame of Vox",
+        "Glove of Rallos Zek",
+        "Golden Earring",
+        "Hematite",
+        "Jasper",
+        "Lapis Lazuli",
+        "Malachite",
+        "Onyx",
+        "Silver Earring",
+        "Silver Stud",
+        "Star Rose Quartz",
+        "The Scent of Marr",
+        "Turquoise"
+      ]
     },
     {
       "page": "A Forest Giant Sapling",
@@ -13589,7 +13875,11 @@
       "factions": [
         "Inhabitants of Hate"
       ],
-      "image": "npc_a_forsaken_revenant.png"
+      "image": "npc_a_forsaken_revenant.png",
+      "commonDrops": [
+        "Classic Raid Tier Treasures",
+        "Essence of a Vampire"
+      ]
     },
     {
       "page": "A Forsaken Revenant Pet",
@@ -13679,7 +13969,10 @@
         "Phinigel Autropos"
       ],
       "image": "npc_a_frenzied_bull_shark.jpg",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Shark Skin"
+      ]
     },
     {
       "page": "A frenzied cauldron shark",
@@ -13711,7 +14004,12 @@
         "Phinigel Autropos"
       ],
       "image": "npc_a_frenzied_cauldron_shark.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Shark Skin",
+        "Shark Meat",
+        "Shark Bones"
+      ]
     },
     {
       "page": "A frenzied ghoul",
@@ -13996,7 +14294,10 @@
           "pct": 15
         }
       ],
-      "image": "npc_a_frightfinger.png"
+      "image": "npc_a_frightfinger.png",
+      "commonDrops": [
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "A Froglok",
@@ -14121,7 +14422,13 @@
         "Frogloks of Guk"
       ],
       "image": "npc_a_froglok_apprentice.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Jasper",
+        "Amber",
+        "Jade",
+        "Onyx"
+      ]
     },
     {
       "page": "A Froglok Bok Knight",
@@ -14494,7 +14801,26 @@
         "Frogloks of Guk"
       ],
       "image": "npc_a_froglok_gaz_warrior.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Mesh Helm",
+        "Mesh Mask",
+        "Mesh Gorget",
+        "Mesh Tunic",
+        "Mesh Mantle",
+        "Mesh Girth",
+        "Mesh Armbands",
+        "Mesh Gauntlets",
+        "Mesh Leggings",
+        "Rusty Short Sword",
+        "Rusty Bastard Sword",
+        "Jasper",
+        "Amber",
+        "Jade",
+        "Onyx",
+        "Words of Eradication",
+        "Words of Possession"
+      ]
     },
     {
       "page": "A froglok ghoul",
@@ -14999,7 +15325,19 @@
       "factions": [
         "Frogloks of Guk"
       ],
-      "image": "npc_a_froglok_priest.png"
+      "image": "npc_a_froglok_priest.png",
+      "commonDrops": [
+        "Jasper",
+        "Amber",
+        "Jade",
+        "Onyx",
+        "Froglok Meat",
+        "Froglok Blood",
+        "Mesh Helm",
+        "Mesh Gorget",
+        "Mesh Mantle",
+        "Mesh Leggings"
+      ]
     },
     {
       "page": "A froglok prisoner",
@@ -15117,7 +15455,19 @@
       "factions": [
         "Frogloks of Guk"
       ],
-      "image": "npc_a_froglok_scryer.jpg"
+      "image": "npc_a_froglok_scryer.jpg",
+      "commonDrops": [
+        "Mesh Helm",
+        "Mesh Gorget",
+        "Mesh Mantle",
+        "Mesh Leggings",
+        "Jasper",
+        "Amber",
+        "Jade",
+        "Onyx",
+        "Froglok Meat",
+        "Froglok Blood"
+      ]
     },
     {
       "page": "A Froglok Sentinel",
@@ -16289,7 +16639,16 @@
         "Frogloks of Guk"
       ],
       "image": "npc_a_froglok_yun_priest.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Froglok Meat",
+        "Froglok Blood",
+        "Mesh Helm",
+        "Mesh Gorget",
+        "Mesh Tunic",
+        "Mesh Mantle",
+        "Mesh Leggings"
+      ]
     },
     {
       "page": "A froglok yun shaman",
@@ -16446,7 +16805,20 @@
         "Coldain"
       ],
       "image": "npc_a_frost_giant.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Rune of the Catalyst",
+        "Rune of Contortion",
+        "Rune of the Cyclone",
+        "Salil's Writ Pg. 64 (Left)",
+        "The Scent of Marr",
+        "Velium Weapons",
+        "Words of Abatement",
+        "Words of Duration",
+        "Words of Duress",
+        "Words of Quivering",
+        "Words of Resolve"
+      ]
     },
     {
       "page": "A Frost Giant Berserker",
@@ -19552,7 +19924,15 @@
         }
       ],
       "image": "npc_a_glacier_bear.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Chunk of Meat",
+        "Low Quality Bear Skin",
+        "Medium Quality Bear Skin",
+        "High Quality Bear Skin",
+        "Polar Bear Skin",
+        "Ruined Bear Pelt"
+      ]
     },
     {
       "page": "A glacier mastodon",
@@ -19707,7 +20087,10 @@
       "factions": [
         "Denizens of Fear"
       ],
-      "image": "npc_a_glare_lord.png"
+      "image": "npc_a_glare_lord.png",
+      "commonDrops": [
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "A Gleaming Sphere of Light",
@@ -20177,7 +20560,24 @@
         "League of Antonican Bards",
         "Ring of Scale"
       ],
-      "image": "npc_a_glyphed_ghoul.jpg"
+      "image": "npc_a_glyphed_ghoul.jpg",
+      "commonDrops": [
+        "Fine Steel Scimitar",
+        "Fine Steel Two Handed Sword",
+        "Fine Steel Morning Star",
+        "Ringmail Coat",
+        "Ringmail Cape",
+        "Iron Visor",
+        "Fine Steel Spear",
+        "Fine Steel Warhammer",
+        "Fine Steel Dagger",
+        "Fine Steel Rapier",
+        "Fine Steel Long Sword",
+        "Fine Steel Great Staff",
+        "Ringmail Boots",
+        "Ringmail Skirt",
+        "Ringmail Gloves"
+      ]
     },
     {
       "page": "A Glyphed Guard",
@@ -20315,7 +20715,21 @@
         "Silent Fist Clan"
       ],
       "image": "npc_a_gnoll.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Rusty Mace",
+        "Rusty Two Handed Sword",
+        "Arrow",
+        "Rusty Spear",
+        "Worn Great Staff",
+        "Rusty Shortened Spear",
+        "Rusty Warhammer",
+        "Hunting Bow",
+        "Rusty Long Sword",
+        "Rusty Rapier",
+        "Rusty Scythe",
+        "Rusty Battle Axe"
+      ]
     },
     {
       "page": "A gnoll (Highpass Hold)",
@@ -20462,7 +20876,31 @@
         "Merchants of Qeynos",
         "Silent Fist Clan"
       ],
-      "image": "npc_a_gnoll_commander.png"
+      "image": "npc_a_gnoll_commander.png",
+      "commonDrops": [
+        "Raw-hide Skullcap",
+        "Raw-hide Shoulderpads",
+        "Raw-hide Cloak",
+        "Raw-hide Sleeves",
+        "Raw-hide Wristbands",
+        "Rusty Short Sword",
+        "Rusty Scythe",
+        "Rusty Broad Sword",
+        "Rusty Long Sword",
+        "Rusty Battle Axe",
+        "Rusty Two Handed Sword",
+        "Bronze Long Sword",
+        "Rusty Mace",
+        "Worn Great Staff",
+        "Rusty Warhammer",
+        "Rusty Rapier",
+        "Rusty Shortened Spear",
+        "Golden Earring",
+        "Bloodstone Ring",
+        "Bead Necklace",
+        "Malachite",
+        "Turquoise"
+      ]
     },
     {
       "page": "A Gnoll Embalmer",
@@ -20558,7 +20996,30 @@
         "Silent Fist Clan"
       ],
       "image": "npc_a_gnoll_guardsman.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Ale",
+        "Water Flask",
+        "Ration",
+        "Rusty Spear",
+        "Bandages",
+        "Rusty Scimitar",
+        "Rusty Long Sword",
+        "Rusty Warhammer",
+        "Bottle of Kalish",
+        "Loaf of Bread",
+        "Rusty Broad Sword",
+        "Small Bag",
+        "Cracked Staff",
+        "Rusty Axe",
+        "Rusty Bastard Sword",
+        "Rusty Battle Axe",
+        "Rusty Mace",
+        "Rusty Short Sword",
+        "Rusty Shortened Spear",
+        "Short Beer",
+        "Splintering Club"
+      ]
     },
     {
       "page": "A Gnoll High Shaman",
@@ -20629,7 +21090,22 @@
         "Silent Fist Clan"
       ],
       "image": "npc_a_gnoll_hunter.jpg",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Rusty Scythe",
+        "Rusty Long Sword",
+        "Rusty Battle Axe",
+        "Rusty Two Handed Sword",
+        "Rusty Mace",
+        "Worn Great Staff",
+        "Rusty Warhammer",
+        "Rusty Rapier",
+        "Rusty Shortened Spear",
+        "Patch of Gnoll Fur",
+        "Blackburrow Gnoll Pelt",
+        "Gnoll Fang",
+        "High Quality Gnoll Fur"
+      ]
     },
     {
       "page": "A gnoll noble",
@@ -21123,7 +21599,20 @@
         "Brood of Di`Zok"
       ],
       "image": "npc_a_goblin_adept.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Fine Steel Long Sword",
+        "Fine Steel Two Handed Sword",
+        "Fine Steel Short Sword",
+        "Fine Steel Scimitar",
+        "Fine Steel Warhammer",
+        "Fine Steel Morning Star",
+        "Fine Steel Great Staff",
+        "Fine Steel Dagger",
+        "Fine Steel Spear",
+        "Fine Steel Rapier",
+        "Fine Steel Ulak"
+      ]
     },
     {
       "page": "A goblin agressor",
@@ -21383,7 +21872,33 @@
         "Inhabitants of Firiona Vie"
       ],
       "image": "npc_a_goblin_battlemaster.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Amber",
+        "Hematite",
+        "Jasper",
+        "Rune of Neglect",
+        "Silver Earring",
+        "Silver Stud",
+        "Carnelian",
+        "Cat's Eye Agate",
+        "Golden Earring",
+        "Lapis Lazuli",
+        "Part of Tasarin's Grimoire Pg. 312 (Left)",
+        "Part of Tasarin's Grimoire Pg. 375 (Left)",
+        "Rune of Velious",
+        "Star Rose Quartz",
+        "Turquoise",
+        "Words of Absorption",
+        "Words of Enlightenment",
+        "Bloodstone",
+        "Malachite",
+        "Onyx",
+        "Part of Tasarin's Grimoire Pg. 26 (Left)",
+        "Part of Tasarin's Grimoire Pg. 26 (Right)",
+        "Pearl Shard",
+        "Words of Cazic-Thule"
+      ]
     },
     {
       "page": "A goblin blightcaller",
@@ -23581,7 +24096,30 @@
         "Storm Guard",
         "Storm Reapers"
       ],
-      "image": "npc_a_goblin_warrior.png"
+      "image": "npc_a_goblin_warrior.png",
+      "commonDrops": [
+        "Small Cloth Cape",
+        "Cracked Staff",
+        "Rusty Shortened Spear",
+        "Small Cloth Sandals",
+        "Small Cloth Shirt",
+        "Small Cloth Sleeves",
+        "Small Cloth Wristband",
+        "Rusty Axe",
+        "Rusty Bastard Sword",
+        "Small Cloth Choker",
+        "Small Cloth Gloves",
+        "Splintering Club",
+        "Rusty Broad Sword",
+        "Rusty Long Sword",
+        "Rusty Scimitar",
+        "Rusty Short Sword",
+        "Rusty Spear",
+        "Rusty Warhammer",
+        "Small Cloth Cord",
+        "Small Cloth Shawl",
+        "Small Cloth Veil"
+      ]
     },
     {
       "page": "A goblin warrior (Najena)",
@@ -23722,7 +24260,20 @@
         "Brood of Di`Zok"
       ],
       "image": "npc_a_goblin_whipcracker.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Fine Steel Long Sword",
+        "Fine Steel Two Handed Sword",
+        "Fine Steel Short Sword",
+        "Fine Steel Scimitar",
+        "Fine Steel Warhammer",
+        "Fine Steel Morning Star",
+        "Fine Steel Great Staff",
+        "Fine Steel Dagger",
+        "Fine Steel Spear",
+        "Fine Steel Rapier",
+        "Fine Steel Ulak"
+      ]
     },
     {
       "page": "A Goblin Witchdoctor",
@@ -24083,7 +24634,10 @@
           "pct": 13
         }
       ],
-      "image": "npc_a_gorgon.png"
+      "image": "npc_a_gorgon.png",
+      "commonDrops": [
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "A gorilla",
@@ -24453,7 +25007,18 @@
         "Heretics",
         "Kerra Isle"
       ],
-      "image": "npc_a_greater_kobold_shaman.png"
+      "image": "npc_a_greater_kobold_shaman.png",
+      "commonDrops": [
+        "Bamboo Splint Visor",
+        "Bamboo Splint Skirt",
+        "Bamboo Splint Sleeves",
+        "Blue Wicker Wristbands",
+        "Bamboo Tanto Bo",
+        "Copper Amulet",
+        "Lapis Lazuli",
+        "Kobold Hide",
+        "Kobold Meat"
+      ]
     },
     {
       "page": "A greater malevolent drake",
@@ -25698,7 +26263,10 @@
       "factions": [
         "Inhabitants of Hate"
       ],
-      "image": "npc_a_haunted_chest.png"
+      "image": "npc_a_haunted_chest.png",
+      "commonDrops": [
+        "Lustrous Russet Armor"
+      ]
     },
     {
       "page": "A Haunted Seachest",
@@ -28418,7 +28986,10 @@
       "factions": [
         "Inhabitants of Hate"
       ],
-      "image": "npc_a_kiraikuei.png"
+      "image": "npc_a_kiraikuei.png",
+      "commonDrops": [
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "A Klaknak drone",
@@ -28737,7 +29308,10 @@
         "Inhabitants of Hate"
       ],
       "image": "npc_a_knight_of_innoruuk.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "A Koalindl",
@@ -30775,7 +31349,17 @@
       "zones": [
         "Nagafen's Lair"
       ],
-      "image": "npc_a_lava_guardian.png"
+      "image": "npc_a_lava_guardian.png",
+      "commonDrops": [
+        "Essence of Fire",
+        "Jade",
+        "Topaz",
+        "Rune of Rathe",
+        "Iron Oxide",
+        "Charcoal",
+        "Flame Agate",
+        "Russet Oxide"
+      ]
     },
     {
       "page": "A lava keeper",
@@ -32203,7 +32787,10 @@
       "factions": [
         "Inhabitants of Hate"
       ],
-      "image": "npc_a_loathling_lich.png"
+      "image": "npc_a_loathling_lich.png",
+      "commonDrops": [
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "A lost gnome",
@@ -33417,7 +34004,23 @@
         "Gem Choppers",
         "King AkAnon"
       ],
-      "image": "npc_a_minotaur_slaver.png"
+      "image": "npc_a_minotaur_slaver.png",
+      "commonDrops": [
+        "Lapis Lazuli",
+        "Bloodstone",
+        "Cat's Eye Agate",
+        "Malachite",
+        "Onyx",
+        "Amber",
+        "Carnelian",
+        "Hematite",
+        "Silver Earring",
+        "Copper Band",
+        "Golden Earring",
+        "Jasper",
+        "Silver Stud",
+        "Star Rose Quartz"
+      ]
     },
     {
       "page": "A mire leech",
@@ -33966,7 +34569,34 @@
         "The Kromdek"
       ],
       "image": "npc_a_mountain_giant_hillock.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Crystallized Sulfur",
+        "Golden Pendant",
+        "Words of Detachment",
+        "Flame Agate",
+        "Jasper",
+        "Onyx",
+        "Part of Tasarin's Grimoire Pg. 390 (Left)",
+        "Rune of Karana",
+        "Words of Allure",
+        "Words of Eventide",
+        "Words of Possession",
+        "Words of the Sentient (Beza)",
+        "A Faded Velishoul's Tome Page",
+        "Emerald",
+        "Ice of Velious",
+        "Jade",
+        "Jade Earring",
+        "Jade Ring",
+        "Opal",
+        "Pearl",
+        "Peridot",
+        "Rune of Expulsion",
+        "Rune of Trauma",
+        "Words of Cazic-Thule",
+        "Words of Cloudburst"
+      ]
     },
     {
       "page": "A mountain giant patriarch",
@@ -34095,7 +34725,22 @@
         "The Kromdek"
       ],
       "image": "npc_a_mountain_giant_tump.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Mithril Earring",
+        "Golden Pendant",
+        "Jade Ring",
+        "Crystallized Sulfur",
+        "Emerald",
+        "Jasper",
+        "Opal",
+        "Pearl Earring",
+        "Flame Agate",
+        "Jade",
+        "Flawless Aquamarine",
+        "Black Pearl",
+        "Peridot"
+      ]
     },
     {
       "page": "A Mountain Lion",
@@ -34447,7 +35092,20 @@
         "Legion of Cabilis"
       ],
       "image": "npc_a_necrosis_scarab.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Blue Diamond",
+        "Black Sapphire",
+        "Diamond",
+        "Jacinth",
+        "Star Ruby",
+        "Fire Emerald",
+        "Sapphire",
+        "Ruby",
+        "Star Ruby Earring",
+        "Fire Emerald Ring",
+        "Ruby Crown"
+      ]
     },
     {
       "page": "A Negotiator",
@@ -34617,7 +35275,22 @@
         "Sirens of the Grotto"
       ],
       "image": "npc_a_neriad_weaver.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Netted Kelp Cap",
+        "Netted Kelp Veil",
+        "Netted Kelp Choker",
+        "Netted Kelp Tunic",
+        "Netted Kelp Sash",
+        "Netted Kelp Sleeves",
+        "Netted Kelp Bracelet",
+        "Netted Kelp Pantaloons",
+        "Netted Kelp Lined Shoes",
+        "Black Marble",
+        "Pristine Emerald",
+        "Flawless Diamond",
+        "Runed Sea Shell"
+      ]
     },
     {
       "page": "A Nesting Rat",
@@ -34668,7 +35341,10 @@
         "Wand of Darkness",
         "Woven Shadow Boots"
       ],
-      "image": "npc_a_nightmare.png"
+      "image": "npc_a_nightmare.png",
+      "commonDrops": [
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "A Nisch Mas Gnoll",
@@ -35303,7 +35979,10 @@
           "pct": 100
         }
       ],
-      "image": "npc_a_phantasm.png"
+      "image": "npc_a_phantasm.png",
+      "commonDrops": [
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "A phantom",
@@ -36469,7 +37148,22 @@
         "Pixie"
       ],
       "image": "npc_a_pixie_trickster.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Amber",
+        "Bloodstone",
+        "Carnelian",
+        "Cat's Eye Agate",
+        "Copper Amulet",
+        "Copper Band",
+        "Hematite",
+        "Jasper",
+        "Lapis Lazuli",
+        "Malachite",
+        "Onyx",
+        "Rusty Weapons",
+        "Turquoise"
+      ]
     },
     {
       "page": "A plague rat",
@@ -38344,7 +39038,13 @@
         "Withered Leather Tunic",
         "Paineel Steel Armor Set"
       ],
-      "image": "npc_a_revenant.png"
+      "image": "npc_a_revenant.png",
+      "commonDrops": [
+        "Ruined Heretic Longsword",
+        "Ruined Sword Hilt",
+        "Cracked Paineel Shield",
+        "Gold lined heretic cloak"
+      ]
     },
     {
       "page": "A revultant rat",
@@ -38369,7 +39069,10 @@
       "factions": [
         "Inhabitants of Hate"
       ],
-      "image": "npc_a_revultant_rat.png"
+      "image": "npc_a_revultant_rat.png",
+      "commonDrops": [
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "A ring leader",
@@ -38453,7 +39156,20 @@
       "factions": [
         "Minions of Underfoot"
       ],
-      "image": "Npc thehole 1.0 - a rock golem.png"
+      "image": "Npc thehole 1.0 - a rock golem.png",
+      "commonDrops": [
+        "Living Heart of a Brell Minion",
+        "Holy Dirt of Brell",
+        "Russet Oxide",
+        "Iron Oxide",
+        "Charcoal",
+        "Drop of Mercury",
+        "Crystallized Sulfur",
+        "Fiery Jewel of the Underfoot",
+        "Speckled Granite Pebble",
+        "Classic High Tier Treasures",
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "A rock snake",
@@ -39699,7 +40415,10 @@
       "factions": [
         "Inhabitants of Hate"
       ],
-      "image": "npc_a_sage_of_innoruuk_.png"
+      "image": "npc_a_sage_of_innoruuk_.png",
+      "commonDrops": [
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "A Saltwater Croc",
@@ -39761,7 +40480,12 @@
           "pct": 12
         }
       ],
-      "image": "npc_a_samhain.png"
+      "image": "npc_a_samhain.png",
+      "commonDrops": [
+        "Jack-O-Lantern Fungus",
+        "Scare Straw",
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "A Sand Giant",
@@ -41813,7 +42537,10 @@
         "Valorium Gauntlets",
         "Vermiculated Gloves"
       ],
-      "image": "npc_a_scareling.png"
+      "image": "npc_a_scareling.png",
+      "commonDrops": [
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "A Scarred Overseer",
@@ -41932,7 +42659,10 @@
       "factions": [
         "Inhabitants of Hate"
       ],
-      "image": "npc_a_scorn_banshee.png"
+      "image": "npc_a_scorn_banshee.png",
+      "commonDrops": [
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "A scorned shiphand",
@@ -42101,7 +42831,32 @@
         "Silent Fist Clan"
       ],
       "image": "npc_a_scrawny_gnoll.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Rusty Warhammer",
+        "Rusty Shortened Spear",
+        "Worn Great Staff",
+        "Large Cloth Cape",
+        "Large Cloth Sandals",
+        "Rusty Scythe",
+        "Rusty Spear",
+        "Rusty Battle Axe",
+        "Rusty Two Handed Sword",
+        "Large Cloth Cap",
+        "Large Cloth Pants",
+        "Large Cloth Shawl",
+        "Large Cloth Shirt",
+        "Large Cloth Veil",
+        "Rusty Mace",
+        "Rusty Rapier",
+        "Cracked Staff",
+        "Large Cloth Choker",
+        "Large Cloth Cord",
+        "Large Cloth Sleeves",
+        "Large Cloth Wristband",
+        "Rusty Long Sword",
+        "Rusty Morning Star"
+      ]
     },
     {
       "page": "A scrawny gnoll guard",
@@ -43732,7 +44487,12 @@
       "factions": [
         "Burning Dead"
       ],
-      "image": "npc_a_shadowknight_(Dark_Elf_Male).png"
+      "image": "npc_a_shadowknight_(Dark_Elf_Male).png",
+      "commonDrops": [
+        "Large Raw-Hide Armor",
+        "Rusty Weapons",
+        "Dark Elf Parts"
+      ]
     },
     {
       "page": "A shadowknight (Human)",
@@ -43812,7 +44572,11 @@
           "pct": 25
         }
       ],
-      "image": "npc_a_shadowknight_(Troll).png"
+      "image": "npc_a_shadowknight_(Troll).png",
+      "commonDrops": [
+        "Ringmail Armor",
+        "Bronze Weapons"
+      ]
     },
     {
       "page": "A Shadowy Sage",
@@ -44718,7 +45482,19 @@
         "Undead Frogloks of Guk",
         "Frogloks of Guk"
       ],
-      "image": "npc_a_shin_ghoul_knight.png"
+      "image": "npc_a_shin_ghoul_knight.png",
+      "commonDrops": [
+        "Fine Steel Weapons",
+        "Flame of Vox",
+        "Pearl Ring",
+        "Black Pearl",
+        "Amber",
+        "Topaz",
+        "Peridot",
+        "Emerald",
+        "Opal",
+        "Undead Froglok Tongue"
+      ]
     },
     {
       "page": "A Shin Ghoul Warrior",
@@ -44794,7 +45570,10 @@
         "Valorium Gauntlets",
         "Vermiculated Gloves"
       ],
-      "image": "npc_a_shiverback.png"
+      "image": "npc_a_shiverback.png",
+      "commonDrops": [
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "A shoal serpent",
@@ -44872,7 +45651,16 @@
           "ew": 614
         }
       ],
-      "image": "npc_a_shriveled_mummy.png"
+      "image": "npc_a_shriveled_mummy.png",
+      "commonDrops": [
+        "Bloodstone",
+        "Rawhide Armor",
+        "Rusty Weapons",
+        "Gold Ring",
+        "Golden Earring",
+        "Malachite",
+        "Turquoise"
+      ]
     },
     {
       "page": "A shrouded bat",
@@ -45670,7 +46458,30 @@
       "drops": [
         "Bone Chips"
       ],
-      "image": "npc_a_decaying_skeleton.png"
+      "image": "npc_a_decaying_skeleton.png",
+      "commonDrops": [
+        "Rusty Short Sword",
+        "Backpack",
+        "Cloth Cape",
+        "Cloth Wristband",
+        "Rusty Axe",
+        "Rusty Dagger",
+        "Rusty Scimitar",
+        "Rusty Warhammer",
+        "Splintering Club",
+        "Ale",
+        "Bottle of Kalish",
+        "Cloth Gloves",
+        "Cloth Pants",
+        "Cloth Shawl",
+        "Loaf of Bread",
+        "Ration",
+        "Rusty Battle Axe",
+        "Rusty Shortened Spear",
+        "Rusty Spear",
+        "Rusty Two Handed Battle Axe",
+        "Short Beer"
+      ]
     },
     {
       "page": "A skeleton (Iksar)",
@@ -45731,7 +46542,16 @@
       "factions": [
         "Najena (Faction)"
       ],
-      "image": "npc_a_decaying_skeleton.png"
+      "image": "npc_a_decaying_skeleton.png",
+      "commonDrops": [
+        "Small Ringmail Gloves",
+        "Small Ringmail Bracelet",
+        "Cloth Sandals",
+        "Bronze Dagger",
+        "Ale",
+        "Bottle of Kalish",
+        "Ration"
+      ]
     },
     {
       "page": "A skeleton monk",
@@ -46754,7 +47574,27 @@
           "ew": -1484
         }
       ],
-      "image": "npc_a_soul_carrier.png"
+      "image": "npc_a_soul_carrier.png",
+      "commonDrops": [
+        "Belt of Tranquility",
+        "Belt of Contention",
+        "Belt of Transience",
+        "Belt of Iniquity",
+        "Belt of Virtue",
+        "Belt of the Pine",
+        "Belt of Concordance",
+        "Bracelet of Distortion",
+        "Bracelet of Cessation",
+        "Bracelet of Exertion",
+        "Bracelet of Quiescence",
+        "Stein of Flowing Ichor",
+        "Treant Tear",
+        "Weight of the Gods",
+        "White Satin Gloves",
+        "Blade of Abrogation",
+        "Whitened Treant Fists",
+        "Symbol of Marr"
+      ]
     },
     {
       "page": "A Soul Devourer",
@@ -46820,7 +47660,27 @@
         "Imp Statuette",
         "Sphinx Hide"
       ],
-      "image": "npc_a_soul_harvester.png"
+      "image": "npc_a_soul_harvester.png",
+      "commonDrops": [
+        "Belt of Tranquility",
+        "Belt of Contention",
+        "Belt of Transience",
+        "Belt of Iniquity",
+        "Belt of Virtue",
+        "Belt of the Pine",
+        "Belt of Concordance",
+        "Bracelet of Distortion",
+        "Bracelet of Cessation",
+        "Bracelet of Exertion",
+        "Bracelet of Quiescence",
+        "Stein of Flowing Ichor",
+        "Treant Tear",
+        "Weight of the Gods",
+        "White Satin Gloves",
+        "Blade of Abrogation",
+        "Whitened Treant Fists",
+        "Symbol of Marr"
+      ]
     },
     {
       "page": "A Soul Inveigling",
@@ -47271,7 +48131,11 @@
         "Cryosilk Lined Shoes",
         "Cryosilk Webshield"
       ],
-      "image": "npc_a_spinechiller_spider.png"
+      "image": "npc_a_spinechiller_spider.png",
+      "commonDrops": [
+        "Classic Raid Tier Treasures",
+        "Swatch of Cryosilk"
+      ]
     },
     {
       "page": "A spinereef seahorse",
@@ -47779,7 +48643,10 @@
       "factions": [
         "Inhabitants of Hate"
       ],
-      "image": "npc_a_spite_golem.png"
+      "image": "npc_a_spite_golem.png",
+      "commonDrops": [
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "A Splitpaw assassin",
@@ -48759,7 +49626,78 @@
       ],
       "outOfEra": true,
       "image": "npc_a_suit_of_sentient_armor.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Velium Dagger",
+        "Velium Great Staff",
+        "Velium Short Sword",
+        "Velium Morning Star",
+        "Velium Rapier",
+        "Velium Spear",
+        "Velium Two Handed Sword",
+        "Velium Warhammer",
+        "Black Pearl",
+        "Crystallized Sulfur",
+        "Emerald",
+        "Flame Agate",
+        "Flame of Vox",
+        "Flawless Aquamarine",
+        "Golden Pendant",
+        "Glove of Rallos Zek",
+        "Jade",
+        "Jade Earring",
+        "Jade Ring",
+        "Jasper",
+        "Onyx",
+        "Opal",
+        "Peridot",
+        "Rune of Al'Kabor",
+        "Rune of Conception",
+        "Rune of the Combine",
+        "Rune of Embrace",
+        "Rune of the Helix",
+        "Rune of Infraction",
+        "Rune of Paralysis",
+        "Rune of Petrification",
+        "Rune of Tyranny",
+        "Words of Bidding",
+        "Words of Cazic-Thule",
+        "Words of Collection (Azia)",
+        "Words of Convocation",
+        "Words of Descrying",
+        "Words of Dissolution",
+        "Words of Projection",
+        "Words of the Suffering",
+        "Words of Seizure",
+        "Salil's Writ Pg. 153 (Right)",
+        "Salil's Writ Pg. 174 (Left)",
+        "Salil's Writ Pg. 282 (Left)",
+        "Salil's Writ Pg. 288 (Left)",
+        "Faded Salil's Writ Page",
+        "Jaundice Gem",
+        "Nephrite",
+        "Flawed Topaz",
+        "Flawed Emerald",
+        "Flawed Opal",
+        "Flawed Flame Opal",
+        "Flawed Flame Emerald",
+        "Flawed Sea Sapphire",
+        "Flawed Lava Ruby",
+        "Chipped Onyx Sapphire",
+        "Crushed Jaundice Gem",
+        "Crushed Nephrite",
+        "Crushed Coral",
+        "Crushed Topaz",
+        "Crushed Black Marble",
+        "Crushed Chrysolite",
+        "Crushed Emerald",
+        "Crushed Opal",
+        "Crushed Flame Opal",
+        "Crushed Flame Emerald",
+        "Crushed Lava Ruby",
+        "Crushed Onyx Sapphire",
+        "Crushed Diamond Dust"
+      ]
     },
     {
       "page": "A sullen slave",
@@ -49074,7 +50012,10 @@
         "Undead Frogloks of Guk",
         "Frogloks of Guk"
       ],
-      "image": "npc_a_tal_ghoul_wizard.png"
+      "image": "npc_a_tal_ghoul_wizard.png",
+      "commonDrops": [
+        "Undead Froglok Tongue"
+      ]
     },
     {
       "page": "A Tar Goo",
@@ -49237,7 +50178,11 @@
       "factions": [
         "Befallen Inhabitants"
       ],
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Fine Steel Warhammer",
+        "Steel Knuckles"
+      ]
     },
     {
       "page": "A Teir`Dal priestess",
@@ -49263,7 +50208,11 @@
       "factions": [
         "Befallen Inhabitants"
       ],
-      "image": "A Teir`Dal ranger - Befallen.png"
+      "image": "A Teir`Dal ranger - Befallen.png",
+      "commonDrops": [
+        "Fine Steel Weapons",
+        "Ringmail Armor"
+      ]
     },
     {
       "page": "A Teir`Dal rogue",
@@ -49276,7 +50225,11 @@
       "factions": [
         "Befallen Inhabitants"
       ],
-      "image": "A Teir`Dal rogue - Befallen.png"
+      "image": "A Teir`Dal rogue - Befallen.png",
+      "commonDrops": [
+        "Fine Steel Weapons",
+        "Ringmail Armor"
+      ]
     },
     {
       "page": "A Teir`Dal shadowknight",
@@ -49289,7 +50242,16 @@
       "factions": [
         "Befallen Inhabitants"
       ],
-      "image": "A Teir`Dal shadowknight - Befallen.png"
+      "image": "A Teir`Dal shadowknight - Befallen.png",
+      "commonDrops": [
+        "Fine Steel Dagger",
+        "Fine Steel Scimitar",
+        "Fine Steel Short Sword",
+        "Iron Visor",
+        "Jade",
+        "Ringmail Coat",
+        "Ringmail Coif"
+      ]
     },
     {
       "page": "A temple guardian",
@@ -49408,7 +50370,10 @@
           "z": 113
         }
       ],
-      "image": "npc_a_tentacle_tormentor.png"
+      "image": "npc_a_tentacle_tormentor.png",
+      "commonDrops": [
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "A terror carver",
@@ -51559,7 +52524,10 @@
       "otherNames": [
         "Turmoil toad"
       ],
-      "image": "npc_a_turmoil_toad.png"
+      "image": "npc_a_turmoil_toad.png",
+      "commonDrops": [
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "A unicorn",
@@ -52402,7 +53370,10 @@
         "Priests of Marr",
         "Primordial Malice"
       ],
-      "image": "npc_a_visiting_priestess.png"
+      "image": "npc_a_visiting_priestess.png",
+      "commonDrops": [
+        "Fine Steel Weapons"
+      ]
     },
     {
       "page": "A Vitrified Skeleton",
@@ -52533,7 +53504,12 @@
         "Frogloks of Guk"
       ],
       "image": "a_wan_ghoul_knight.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Fine Steel Weapons",
+        "Classic Mid-Tier Treasures",
+        "Undead Froglok Tongue"
+      ]
     },
     {
       "page": "A wanderer",
@@ -52549,7 +53525,13 @@
         "Withered Leather Shoulderpads",
         "Paineel Steel Armor Set"
       ],
-      "image": "npc_a_wanderer.png"
+      "image": "npc_a_wanderer.png",
+      "commonDrops": [
+        "Ruined Heretic Longsword",
+        "Ruined Sword Hilt",
+        "Cracked Paineel Shield",
+        "Gold lined heretic cloak"
+      ]
     },
     {
       "page": "A wandering spirit",
@@ -53466,7 +54448,11 @@
           "pct": 100
         }
       ],
-      "image": "npc_a_worry_wraith.png"
+      "image": "npc_a_worry_wraith.png",
+      "commonDrops": [
+        "Wraithstone",
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "A wounded storm giant",
@@ -53638,7 +54624,58 @@
         "Wyvern"
       ],
       "image": "npc_a_wyvern_cobalt_scar.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Black Pearl",
+        "Breath of Solusek",
+        "Chipped Onyx Sapphire",
+        "Chipped Black Marble",
+        "Coral Crescent",
+        "Crushed Onyx Sapphire",
+        "Crushed Flame Emerald",
+        "Emerald",
+        "A Faded Salil's Writ Page",
+        "Flame Agate",
+        "Flawed Chrysolite",
+        "Flawed Emerald",
+        "Flawed Opal",
+        "Flawed Flame Opal",
+        "Flawed Flame Emerald",
+        "Flawed Sea Sapphire",
+        "Flawed Topaz",
+        "Flawed Lava Ruby",
+        "Flawless Aquamarine",
+        "Golden Pendant",
+        "Imperfect Diamond",
+        "Jade",
+        "Jade Earring",
+        "Jade Ring",
+        "Jaundice Gem",
+        "Nephrite",
+        "Opal",
+        "Pearl",
+        "Peridot",
+        "Rune of Arrest",
+        "Rune of Banding",
+        "Rune of Conception",
+        "Rune of Contortion",
+        "Rune of Sorcery",
+        "Rune of the Cyclone",
+        "Rune of Concussion",
+        "Rune of Howling",
+        "Salil's Writ Pg. 60 (Left)",
+        "Salil's Writ Pg. 90 (Left)",
+        "Words of Cazic-Thule",
+        "Words of Detention",
+        "Words of Duress",
+        "Words of Duration",
+        "Words of Efficacy",
+        "Words of Endurance",
+        "Words of Neglect",
+        "Words of the Suffering",
+        "Words of Quivering",
+        "Words of Resolve"
+      ]
     },
     {
       "page": "A wyvern (Western Wastes)",
@@ -54144,7 +55181,12 @@
         "Undead Frogloks of Guk",
         "Frogloks of Guk"
       ],
-      "image": "npc_a_zol_ghoul_knight.png"
+      "image": "npc_a_zol_ghoul_knight.png",
+      "commonDrops": [
+        "Fine Steel Weapons",
+        "Classic High Tier Treasures",
+        "Undead Froglok Tongue"
+      ]
     },
     {
       "page": "A Zombie",
@@ -57766,7 +58808,10 @@
         "Woven Shadow Chestplate",
         "Amygdalan Tendril"
       ],
-      "image": "npc_amygdalan_knight.png"
+      "image": "npc_amygdalan_knight.png",
+      "commonDrops": [
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "Amygdalan Warrior",
@@ -57792,7 +58837,10 @@
       "factions": [
         "Denizens of Fear"
       ],
-      "image": "npc_amygdalan_warrior.png"
+      "image": "npc_amygdalan_warrior.png",
+      "commonDrops": [
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "An Abhorrent",
@@ -57817,7 +58865,10 @@
       "factions": [
         "Inhabitants of Hate"
       ],
-      "image": "npc_an_abhorrent.png"
+      "image": "npc_an_abhorrent.png",
+      "commonDrops": [
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "An abstruse phantasm",
@@ -57960,7 +59011,10 @@
       "factions": [
         "Inhabitants of Hate"
       ],
-      "image": "npc_an_Agent_of_Innoruuk.png"
+      "image": "npc_an_Agent_of_Innoruuk.png",
+      "commonDrops": [
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "An Agitated Snowfang",
@@ -58837,7 +59891,26 @@
         "Goblins of Mountain Death"
       ],
       "image": "npc_an_apprentice_herbalist.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Lucerne",
+        "Sage Leaf",
+        "Birthwort",
+        "Mullein",
+        "Mercury",
+        "Comfrey",
+        "Blue Vervain Bulb",
+        "Figwort",
+        "Clubmoss",
+        "Celandine Herb",
+        "Clover",
+        "Hydrangea",
+        "Heliotrope",
+        "Oakmoss",
+        "Bladderwrack",
+        "Sandalwood",
+        "Mystic Ash"
+      ]
     },
     {
       "page": "An apprentice kennelmaster",
@@ -59263,7 +60336,11 @@
       "factions": [
         "Inhabitants of Hate"
       ],
-      "image": "npc_an_ashenbone_drake.png"
+      "image": "npc_an_ashenbone_drake.png",
+      "commonDrops": [
+        "Decrepit Hide",
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "An Asp",
@@ -60064,7 +61141,20 @@
       "factions": [
         "Minions of Underfoot"
       ],
-      "image": "Npc_thehole_1.0_-_an_elemental_capturer.png"
+      "image": "Npc_thehole_1.0_-_an_elemental_capturer.png",
+      "commonDrops": [
+        "Living Heart of a Brell Minion",
+        "Holy Dirt of Brell",
+        "Russet Oxide",
+        "Iron Oxide",
+        "Charcoal",
+        "Drop of Mercury",
+        "Crystallized Sulfur",
+        "Fiery Jewel of the Underfoot",
+        "Speckled Granite Pebble",
+        "Classic High Tier Treasures",
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "An elemental channeler",
@@ -60084,7 +61174,20 @@
       "factions": [
         "Minions of Underfoot"
       ],
-      "image": "npc_an_elemental_channeler.png"
+      "image": "npc_an_elemental_channeler.png",
+      "commonDrops": [
+        "Living Heart of a Brell Minion",
+        "Holy Dirt of Brell",
+        "Russet Oxide",
+        "Iron Oxide",
+        "Charcoal",
+        "Drop of Mercury",
+        "Crystallized Sulfur",
+        "Fiery Jewel of the Underfoot",
+        "Speckled Granite Pebble",
+        "Classic High Tier Treasures",
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "An Elemental Crusader",
@@ -60104,7 +61207,20 @@
       "factions": [
         "Minions of Underfoot"
       ],
-      "image": "npc_an_elemental_crusader.png"
+      "image": "npc_an_elemental_crusader.png",
+      "commonDrops": [
+        "Living Heart of a Brell Minion",
+        "Holy Dirt of Brell",
+        "Russet Oxide",
+        "Iron Oxide",
+        "Charcoal",
+        "Drop of Mercury",
+        "Crystallized Sulfur",
+        "Fiery Jewel of the Underfoot",
+        "Speckled Granite Pebble",
+        "Classic High Tier Treasures",
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "An elemental deceiver",
@@ -60125,7 +61241,20 @@
         "Minions of Underfoot"
       ],
       "image": "npc_an_elemental_deceiver.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Living Heart of a Brell Minion",
+        "Holy Dirt of Brell",
+        "Russet Oxide",
+        "Iron Oxide",
+        "Charcoal",
+        "Drop of Mercury",
+        "Crystallized Sulfur",
+        "Fiery Jewel of the Underfoot",
+        "Speckled Granite Pebble",
+        "Classic High Tier Treasures",
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "An elemental harvester",
@@ -60145,7 +61274,20 @@
       "factions": [
         "Minions of Underfoot"
       ],
-      "image": "npc_an_elemental_harvester.png"
+      "image": "npc_an_elemental_harvester.png",
+      "commonDrops": [
+        "Living Heart of a Brell Minion",
+        "Holy Dirt of Brell",
+        "Russet Oxide",
+        "Iron Oxide",
+        "Charcoal",
+        "Drop of Mercury",
+        "Crystallized Sulfur",
+        "Fiery Jewel of the Underfoot",
+        "Speckled Granite Pebble",
+        "Classic High Tier Treasures",
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "An elemental visier",
@@ -60165,7 +61307,20 @@
       "factions": [
         "Minions of Underfoot"
       ],
-      "image": "npc_an_elemental_visier.png"
+      "image": "npc_an_elemental_visier.png",
+      "commonDrops": [
+        "Living Heart of a Brell Minion",
+        "Holy Dirt of Brell",
+        "Russet Oxide",
+        "Iron Oxide",
+        "Charcoal",
+        "Drop of Mercury",
+        "Crystallized Sulfur",
+        "Fiery Jewel of the Underfoot",
+        "Speckled Granite Pebble",
+        "Classic High Tier Treasures",
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "An Elemental Warrior",
@@ -60185,7 +61340,20 @@
       "factions": [
         "Minions of Underfoot"
       ],
-      "image": "npc_an_elemental_warrior.png"
+      "image": "npc_an_elemental_warrior.png",
+      "commonDrops": [
+        "Living Heart of a Brell Minion",
+        "Holy Dirt of Brell",
+        "Russet Oxide",
+        "Iron Oxide",
+        "Charcoal",
+        "Drop of Mercury",
+        "Crystallized Sulfur",
+        "Fiery Jewel of the Underfoot",
+        "Speckled Granite Pebble",
+        "Classic High Tier Treasures",
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "An elemental wizard",
@@ -60205,7 +61373,20 @@
       "factions": [
         "Minions of Underfoot"
       ],
-      "image": "npc_thehole_1.0_-_an_elemental_wizard.png"
+      "image": "npc_thehole_1.0_-_an_elemental_wizard.png",
+      "commonDrops": [
+        "Living Heart of a Brell Minion",
+        "Holy Dirt of Brell",
+        "Russet Oxide",
+        "Iron Oxide",
+        "Charcoal",
+        "Drop of Mercury",
+        "Crystallized Sulfur",
+        "Fiery Jewel of the Underfoot",
+        "Speckled Granite Pebble",
+        "Classic High Tier Treasures",
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "An elephant",
@@ -60321,7 +61502,10 @@
       "factions": [
         "Inhabitants of Hate"
       ],
-      "image": "npc_an_elite_dragoon.png"
+      "image": "npc_an_elite_dragoon.png",
+      "commonDrops": [
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "An Elite Gnoll Guard",
@@ -60346,7 +61530,27 @@
         "Silent Fist Clan"
       ],
       "image": "npc_an_elite_gnoll_guard.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Cat's Eye Agate",
+        "Rusty Rapier",
+        "Silver Earring",
+        "Lapis Lazuli",
+        "Rusty Halberd",
+        "Rusty Scimitar",
+        "Rusty Shortened Spear",
+        "Cracked Staff",
+        "Golden Earring",
+        "Hematite",
+        "Onyx",
+        "Onyx Earring",
+        "Rusty Bastard Sword",
+        "Rusty Dagger",
+        "Rusty Long Sword",
+        "Rusty Scythe",
+        "Rusty Short Sword",
+        "Splintering Club"
+      ]
     },
     {
       "page": "An Elite Goblin Guard",
@@ -61252,7 +62456,19 @@
         "Sirens of the Grotto"
       ],
       "image": "npc_an_enthralled_ulthork.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Crushed Coral",
+        "Crushed Topaz",
+        "Crushed Black Marble",
+        "Crushed Opal",
+        "Crushed Flame Opal",
+        "Crushed Flame Emerald",
+        "Crushed Sea Sapphire",
+        "Crushed Lava Ruby",
+        "Crushed Onyx Sapphire",
+        "Netted Kelp Armor"
+      ]
     },
     {
       "page": "An entoling culler",
@@ -61862,7 +63078,11 @@
         "Frogloks of Guk"
       ],
       "image": "npc_an_evil_eye_lower_guk.jpg",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Bunch of Optic Nerves",
+        "Pearl"
+      ]
     },
     {
       "page": "An Evil Eye (Runnyeye)",
@@ -61962,7 +63182,10 @@
       "factions": [
         "Inhabitants of Hate"
       ],
-      "image": "npc_an_evil_little_imp.png"
+      "image": "npc_an_evil_little_imp.png",
+      "commonDrops": [
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "An Exhausted Guard",
@@ -63859,7 +65082,10 @@
         "Goblins of Mountain Death"
       ],
       "image": "npc_an_iksar_trustee.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Tribal War Mask"
+      ]
     },
     {
       "page": "An imp familiar",
@@ -64438,7 +65664,10 @@
       "factions": [
         "Inhabitants of Hate"
       ],
-      "image": "npc_an_ire_ghast.png"
+      "image": "npc_an_ire_ghast.png",
+      "commonDrops": [
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "An Iron Guardian",
@@ -64953,7 +66182,11 @@
       "factions": [
         "Rallos Zek"
       ],
-      "image": "npc_an_ogre_priestess.png"
+      "image": "npc_an_ogre_priestess.png",
+      "commonDrops": [
+        "Bronze Armor",
+        "Fine Steel Weapons"
+      ]
     },
     {
       "page": "An Ogre Raider",
@@ -65026,7 +66259,11 @@
       "factions": [
         "Rallos Zek"
       ],
-      "image": "npc_an_ogre_shaman.png"
+      "image": "npc_an_ogre_shaman.png",
+      "commonDrops": [
+        "Bronze Armor",
+        "Fine Steel Weapons"
+      ]
     },
     {
       "page": "An Ogre Shamaness",
@@ -65837,7 +67074,18 @@
         "Ashen Order",
         "Commons Residents"
       ],
-      "image": "npc_an_orc_warrior.png"
+      "image": "npc_an_orc_warrior.png",
+      "commonDrops": [
+        "Bloodstone",
+        "Bronze Weapons",
+        "Onyx",
+        "Raw-Hide Armor Set",
+        "Rusty Weapons",
+        "Words of Enlightenment",
+        "Words of Eradication",
+        "Words of Refuge",
+        "Words of Tyranny"
+      ]
     },
     {
       "page": "An Orc Witchdoctor",
@@ -66001,7 +67249,25 @@
         "Othmir"
       ],
       "image": "npc_an_othmir_shaman.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Coral Crescent",
+        "Jasper",
+        "Flawed Chrysolite",
+        "Flawed Opal",
+        "Flawed Flame Emerald",
+        "Flawed Lava Ruby",
+        "Chipped Onyx Sapphire",
+        "Imperfect Diamond",
+        "Flawless Aquamarine",
+        "Jaundice Gem",
+        "Nephrite",
+        "Flawed Topaz",
+        "Chipped Black Marble",
+        "Flawed Emerald",
+        "Flawed Flame Opal",
+        "Flawed Sea Sapphire"
+      ]
     },
     {
       "page": "An Othmir Warrior",
@@ -66057,7 +67323,25 @@
         "Ulthork"
       ],
       "image": "npc_an_othmir_warrior.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Coral Crescent",
+        "Flawed Chrysolite",
+        "Flawed Opal",
+        "Flawed Flame Emerald",
+        "Flawed Lava Ruby",
+        "Chipped Onyx Sapphire",
+        "Imperfect Diamond",
+        "Flawless Aquamarine",
+        "Jaundice Gem",
+        "Nephrite",
+        "Flawed Topaz",
+        "Chipped Black Marble",
+        "Flawed Emerald",
+        "Flawed Flame Opal",
+        "Flawed Sea Sapphire",
+        "Words of Seizure"
+      ]
     },
     {
       "page": "An outcast siren",
@@ -66205,7 +67489,19 @@
         "Othmir"
       ],
       "image": "npc_a_ulthork_man_o_war.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Velium Long Sword",
+        "Velium Two Handed Sword",
+        "Velium Scimitar",
+        "Velium Warhammer",
+        "Velium Morning Star",
+        "Velium Great Staff",
+        "Velium Dagger",
+        "Velium Spear",
+        "Velium Rapier",
+        "Velium Short Sword"
+      ]
     },
     {
       "page": "An Ulthork Warrior",
@@ -68718,7 +70014,10 @@
       "factions": [
         "Inhabitants of Hate"
       ],
-      "image": "npc_ashenbone_broodmaster.png"
+      "image": "npc_ashenbone_broodmaster.png",
+      "commonDrops": [
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "Ashenpaw",
@@ -69208,7 +70507,10 @@
       "factions": [
         "Inhabitants of Hate"
       ],
-      "image": "npc_avatar_of_abhorrence.png"
+      "image": "npc_avatar_of_abhorrence.png",
+      "commonDrops": [
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "Avatar of Dread",
@@ -71925,7 +73227,16 @@
         "Goblins of Mountain Death"
       ],
       "image": "npc_battle_master_ska`tu.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Sarnak Battlehammer",
+        "Iksar Skin Gloves",
+        "Silver Swiftblade",
+        "Sarnak Skullsplitter",
+        "Withered Staff",
+        "Sarnak Bracer of Honor",
+        "Sarnak Arcane Fetish"
+      ]
     },
     {
       "page": "Battlelord Paluk",
@@ -72098,7 +73409,27 @@
         "Queen Bee",
         "Queen bee"
       ],
-      "image": "npc_bazzt_zzzt.png"
+      "image": "npc_bazzt_zzzt.png",
+      "commonDrops": [
+        "Belt of Concordance",
+        "Belt of Contention",
+        "Belt of Iniquity",
+        "Belt of the Pine",
+        "Belt of Tranquility",
+        "Belt of Transience",
+        "Belt of Virtue",
+        "Blade of Abrogation",
+        "Bracelet of Distortion",
+        "Bracelet of Cessation",
+        "Bracelet of Exertion",
+        "Bracelet of Quiescence",
+        "Stein of Flowing Ichor",
+        "Symbol of Marr",
+        "Treant Tear",
+        "Weight of the Gods",
+        "White Satin Gloves",
+        "Whitened Treant Fists"
+      ]
     },
     {
       "page": "Bazzzazzt",
@@ -78370,7 +79701,27 @@
         "Burynai Legion"
       ],
       "image": "npc_burynai_excavator.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Malachite",
+        "Rune of Falhalem",
+        "Star Rose Quartz",
+        "Bloodstone",
+        "Carnelian",
+        "Cat's Eye Agate",
+        "Golden Earring",
+        "Lapis Lazuli",
+        "Part of Tasarin's Grimoire Pg. 26 (Left)",
+        "Part of Tasarin's Grimoire Pg. 26 (Right)",
+        "Rune of Fulguration",
+        "Rune of Proximity",
+        "Silver Earring",
+        "Turquoise",
+        "Words of Derivation",
+        "Words of Materials",
+        "Words of Reviviscence",
+        "Words of the Element"
+      ]
     },
     {
       "page": "Burynai Forage",
@@ -81847,7 +83198,11 @@
         "Storm Guard",
         "Shadowknights of Night Keep"
       ],
-      "image": "npc_chief_goonda.png"
+      "image": "npc_chief_goonda.png",
+      "commonDrops": [
+        "Bronze Armor",
+        "Fine Steel Weapons"
+      ]
     },
     {
       "page": "Chief Kalan",
@@ -82773,7 +84128,10 @@
       "factions": [
         "Inhabitants of Hate"
       ],
-      "image": "npc_cleric_of_innoruuk.png"
+      "image": "npc_cleric_of_innoruuk.png",
+      "commonDrops": [
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "Cleric of Zek",
@@ -85433,7 +86791,10 @@
       "factions": [
         "Inhabitants of Hate"
       ],
-      "image": "npc_coercer_t`vala.png"
+      "image": "npc_coercer_t`vala.png",
+      "commonDrops": [
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "Cognoggin",
@@ -85849,7 +87210,10 @@
         "Venril Sathir"
       ],
       "image": "npc_construct_of_sathir.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Fire Emerald"
+      ]
     },
     {
       "page": "Constructed Potential",
@@ -85906,7 +87270,20 @@
         "Phinigel Autropos"
       ],
       "image": "npc_coralyn_kelpmaiden.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Pearl Necklace",
+        "Mithril Amulet",
+        "Star Ruby Earring",
+        "Fire Emerald Ring",
+        "Fire Opal",
+        "Star Ruby",
+        "Fire Emerald",
+        "Sapphire",
+        "Fresh Fish",
+        "Deepwater Ink",
+        "Mermaid Scale"
+      ]
     },
     {
       "page": "Corbin Blackwell",
@@ -90376,7 +91753,16 @@
         "Bone Chips"
       ],
       "image": "npc_decaying_skeleton.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Brittle Iksar Skull",
+        "Rusty Fer`Esh",
+        "Tarnished Shan`Tok",
+        "Tarnished Fer`Esh",
+        "Tarnished Sheer Blade",
+        "Iksar Targ Shield",
+        "Rusty Shan`Tok"
+      ]
     },
     {
       "page": "Decaying Swordsman",
@@ -93794,7 +95180,16 @@
         "Primordial Malice",
         "Steel Warriors"
       ],
-      "image": "npc_dorn_b`dynn.png"
+      "image": "npc_dorn_b`dynn.png",
+      "commonDrops": [
+        "Copper Band",
+        "Hermatite",
+        "Copper Amulet",
+        "Dark Elf Parts",
+        "Part of Tasarin's Grimoire Pg. 24 (Right)",
+        "Part of Tasarin's Grimoire Pg. 26 (Left)",
+        "Silver Stud"
+      ]
     },
     {
       "page": "Dovan Sires",
@@ -94814,7 +96209,11 @@
       "factions": [
         "Najena"
       ],
-      "image": "npc_drelzna.png"
+      "image": "npc_drelzna.png",
+      "commonDrops": [
+        "Dark Elf Parts",
+        "Bronze Greaves"
+      ]
     },
     {
       "page": "Dren Ironforge",
@@ -94982,7 +96381,10 @@
         "Goblins of Mountain Death"
       ],
       "image": "npc_drill_master_dih`roul.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Silver Swiftblade"
+      ]
     },
     {
       "page": "Drill Master Kyg",
@@ -99296,7 +100698,11 @@
       "factions": [
         "Phinigel Autropos"
       ],
-      "image": "npc_estrella_of_gloomwater.png"
+      "image": "npc_estrella_of_gloomwater.png",
+      "commonDrops": [
+        "Classic Raid Tier Treasures",
+        "Mermaid Scale"
+      ]
     },
     {
       "page": "Eternal Spirit",
@@ -99660,7 +101066,27 @@
           "z": 1250
         }
       ],
-      "image": "Npc_eye_of_veeshan.jpg"
+      "image": "Npc_eye_of_veeshan.jpg",
+      "commonDrops": [
+        "Belt of Concordance",
+        "Belt of Contention",
+        "Belt of Iniquity",
+        "Belt of the Pine",
+        "Belt of Tranquility",
+        "Belt of Transience",
+        "Belt of Virtue",
+        "Blade of Abrogation",
+        "Bracelet of Distortion",
+        "Bracelet of Cessation",
+        "Bracelet of Exertion",
+        "Bracelet of Quiescence",
+        "Stein of Flowing Ichor",
+        "Symbol of Marr",
+        "Treant Tear",
+        "Weight of the Gods",
+        "White Satin Gloves",
+        "Whitened Treant Fists"
+      ]
     },
     {
       "page": "Eysa Florawhisper",
@@ -100626,7 +102052,14 @@
         "Sirens of the Grotto"
       ],
       "image": "npc_fellspine.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Ancient Fishing Pole",
+        "Ancient Seahorse Hide Cloak",
+        "Dragonbane Herb",
+        "Seahorse Scales",
+        "Seahorse Spine Bracelet"
+      ]
     },
     {
       "page": "Fellweni the Kraven",
@@ -101227,7 +102660,11 @@
         "Vox",
         "Solusek Mining Co"
       ],
-      "image": "npc_fire_giant_warrior.png"
+      "image": "npc_fire_giant_warrior.png",
+      "commonDrops": [
+        "Fine Steel Weapons",
+        "Classic High Tier Treasures"
+      ]
     },
     {
       "page": "Fire Giant Wizard",
@@ -102113,7 +103550,33 @@
         "High Guard of Erudin"
       ],
       "image": "npc_foodmaster_rargnar.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Soft Wicker Helm",
+        "Soft Wicker Mask",
+        "Soft Wicker Gorget",
+        "Soft Wicker Tunic",
+        "Soft Wicker Shoulderpads",
+        "Soft Wicker Cloak",
+        "Soft Wicker Belt",
+        "Soft Wicker Sleeves",
+        "Soft Wicker Wristbands",
+        "Soft Wicker Gloves",
+        "Soft Wicker Leggings",
+        "Soft Wicker Boots",
+        "Bamboo Bokken",
+        "Bamboo Tanto Bo",
+        "Bead Necklace",
+        "Malachite",
+        "Hematite",
+        "Cat's Eye Agate",
+        "Ration",
+        "Mead",
+        "Ale",
+        "Fish Wine",
+        "Kobold Meat",
+        "Kobold Molar"
+      ]
     },
     {
       "page": "Footman Moglok",
@@ -102269,7 +103732,10 @@
         "Goblins of Mountain Death"
       ],
       "image": "npc_foreman_mirt`akk.jpg",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Sarnak Bracer of Honor"
+      ]
     },
     {
       "page": "Foreman Rixact",
@@ -102945,7 +104411,17 @@
         "Legion of Cabilis"
       ],
       "image": "npc_froglok_armsman.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Sebilite Scale Bracelet",
+        "Sebilite Scale Leggings",
+        "Diamond",
+        "Words of Odus",
+        "Froglok Meat",
+        "Blue Diamond",
+        "Froglok Blood",
+        "Rune of The Astral"
+      ]
     },
     {
       "page": "Froglok Bartender",
@@ -103485,7 +104961,13 @@
         "Legion of Cabilis"
       ],
       "image": "npc_froglok_jin_shaman.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Froglok Meat",
+        "Green Froglok Skin",
+        "Froglok Blood",
+        "Nodding Blue Lily"
+      ]
     },
     {
       "page": "Froglok Jin Wizard",
@@ -103505,7 +104987,13 @@
         "Legion of Cabilis"
       ],
       "image": "npc_froglok_jin_wizard.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Froglok Meat",
+        "Green Froglok Skin",
+        "Froglok Blood",
+        "Nodding Blue Lily"
+      ]
     },
     {
       "page": "Froglok Kor Shaman",
@@ -109486,7 +110974,19 @@
         "Inhabitants of Firiona Vie"
       ],
       "image": "npc_goblin_spirit_caller.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Carnelian",
+        "Bloodstone",
+        "Jasper",
+        "Amber",
+        "Jade",
+        "Topaz",
+        "Cat's Eye Agate",
+        "Onyx",
+        "Jade Shard",
+        "Flawless Aquamarine"
+      ]
     },
     {
       "page": "Goblin Warlord (Clan Runnyeye)",
@@ -109872,7 +111372,27 @@
       "otherNames": [
         "Gorgolosk"
       ],
-      "image": "npc_gorgalosk.png"
+      "image": "npc_gorgalosk.png",
+      "commonDrops": [
+        "Belt of Concordance",
+        "Belt of Contention",
+        "Belt of Iniquity",
+        "Belt of the Pine",
+        "Belt of Tranquility",
+        "Belt of Transience",
+        "Belt of Virtue",
+        "Blade of Abrogation",
+        "Bracelet of Distortion",
+        "Bracelet of Cessation",
+        "Bracelet of Exertion",
+        "Bracelet of Quiescence",
+        "Stein of Flowing Ichor",
+        "Symbol of Marr",
+        "Treant Tear",
+        "Weight of the Gods",
+        "White Satin Gloves",
+        "Whitened Treant Fists"
+      ]
     },
     {
       "page": "Gorge",
@@ -110286,7 +111806,13 @@
         "Inhabitants of Firiona Vie"
       ],
       "image": "npc_grachnist_the_destroyer.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Scaled Wolf Hide Leggings",
+        "Scaled Wolf Hide Cap",
+        "Scaled Wolf Hide Cloak",
+        "Rune of Regeneration"
+      ]
     },
     {
       "page": "Gracie F`Liler",
@@ -110884,7 +112410,10 @@
       "factions": [
         "Inhabitants of Hate"
       ],
-      "image": "npc_grandmaster_r`tal.png"
+      "image": "npc_grandmaster_r`tal.png",
+      "commonDrops": [
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "Granin O'Gill",
@@ -115183,7 +116712,11 @@
         "Priests of Marr"
       ],
       "image": "npc_guard_dreikin.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Fine Steel Short Sword",
+        "Fine Steel Rapier"
+      ]
     },
     {
       "page": "Guard Drugan",
@@ -117480,7 +119013,20 @@
         "Priests of Marr"
       ],
       "image": "npc_guard_hirazen.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Rusty Short Sword",
+        "Rusty Long Sword",
+        "Rusty Scimitar",
+        "Fine Steel Long Sword",
+        "Fine Steel Short Sword",
+        "Fine Steel Scimitar",
+        "Rusty Dagger",
+        "Rusty Rapier",
+        "Fine Steel Dagger",
+        "Fine Steel Rapier",
+        "Kite Shield"
+      ]
     },
     {
       "page": "Guard Hiron",
@@ -126445,7 +127991,25 @@
           "pct": 3
         }
       ],
-      "image": "npc_gynok_moltor.png"
+      "image": "npc_gynok_moltor.png",
+      "commonDrops": [
+        "Raw-hide Mask",
+        "Rusty Short Sword",
+        "Rusty Axe",
+        "Rusty Broad Sword",
+        "Rusty Long Sword",
+        "Rusty Battle Axe",
+        "Rusty Scimitar",
+        "Rusty Two Handed Sword",
+        "Rusty Two Handed Battle Axe",
+        "Rusty Mace",
+        "Rusty Warhammer",
+        "Rusty Morning Star",
+        "Splintering Club",
+        "Rusty Dagger",
+        "Rusty Rapier",
+        "Rusty Spear"
+      ]
     },
     {
       "page": "Gyrating goo",
@@ -127008,7 +128572,10 @@
         "Venril Sathir"
       ],
       "image": "npc_hangnail.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Fine Steel Morning Star"
+      ]
     },
     {
       "page": "Hanlore Escaval",
@@ -128329,7 +129896,10 @@
       "factions": [
         "Inhabitants of Hate"
       ],
-      "image": "npc_high_priest_mkari.png"
+      "image": "npc_high_priest_mkari.png",
+      "commonDrops": [
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "High Priest of Zek",
@@ -129719,7 +131289,10 @@
           "z": -214
         }
       ],
-      "image": "npc_ice_goblin_caster.png"
+      "image": "npc_ice_goblin_caster.png",
+      "commonDrops": [
+        "Torch"
+      ]
     },
     {
       "page": "Ice goblin diver",
@@ -132435,7 +134008,10 @@
         "Inhabitants of Hate"
       ],
       "image": "npc_hateplane_1.0_-_innoruuk's_chosen.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "Innoruuk`s Chosen",
@@ -132514,7 +134090,10 @@
         "Heretics",
         "Kerra Isle"
       ],
-      "image": "npc_inte_akera.png"
+      "image": "npc_inte_akera.png",
+      "commonDrops": [
+        "Wind Rune Heda"
+      ]
     },
     {
       "page": "Interrogator Gi`mok",
@@ -136763,7 +138342,37 @@
         "Claws of Veeshan"
       ],
       "image": "npc_kallis_stormcaller.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Corroded Breastplate",
+        "Corroded Plate Greaves",
+        "Corroded Plate Vambraces",
+        "Corroded Plate Boots",
+        "Corroded Plate Bracer",
+        "Corroded Plate Helmet",
+        "Corroded Plate Gauntlets",
+        "Corroded Chain Tunic",
+        "Corroded Chain Leggings",
+        "Corroded Chain Sleeves",
+        "Corroded Chain Boots",
+        "Corroded Chain Bracer",
+        "Corroded Chain Coif",
+        "Corroded Chain Gauntlets",
+        "Eroded Leather Tunic",
+        "Eroded Leather Leggings",
+        "Eroded Leather Sleeves",
+        "Eroded Leather Boots",
+        "Eroded Leather Bracelet",
+        "Eroded Leather Cap",
+        "Eroded Leather Gloves",
+        "Torn Enchanted Silk Robe",
+        "Torn Enchanted Silk Pantaloons",
+        "Torn Enchanted Silk Sleeves",
+        "Torn Enchanted Silk Boots",
+        "Torn Enchanted Silk Wristband",
+        "Torn Enchanted Silk Turban",
+        "Torn Enchanted Silk Gloves"
+      ]
     },
     {
       "page": "Kamzar",
@@ -137645,7 +139254,27 @@
         "Stone Amulet",
         "Woven Skull Cap"
       ],
-      "image": "keeper_of_souls.png"
+      "image": "keeper_of_souls.png",
+      "commonDrops": [
+        "Belt of Concordance",
+        "Belt of Contention",
+        "Belt of Iniquity",
+        "Belt of the Pine",
+        "Belt of Tranquility",
+        "Belt of Transience",
+        "Belt of Virtue",
+        "Blade of Abrogation",
+        "Bracelet of Distortion",
+        "Bracelet of Cessation",
+        "Bracelet of Exertion",
+        "Bracelet of Quiescence",
+        "Stein of Flowing Ichor",
+        "Symbol of Marr",
+        "Treant Tear",
+        "Weight of the Gods",
+        "White Satin Gloves",
+        "Whitened Treant Fists"
+      ]
     },
     {
       "page": "Keeper of the glades",
@@ -138213,7 +139842,16 @@
         "Goblins of Mountain Death"
       ],
       "image": "npc_kennel_master_al`ele.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Sarnak Bracer of Honor",
+        "Argent Defender",
+        "Jagged Blade of Mourning",
+        "Di`zok Begirding",
+        "Spell: Thrall of Bones",
+        "Sarnak Arcane Fetish",
+        "Iksar Skin Gloves"
+      ]
     },
     {
       "page": "Kerafyrm",
@@ -141784,7 +143422,10 @@
         "Goblins of Mountain Death"
       ],
       "image": "Korucust's Courier.jpg",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Sarnak Skullsplitter"
+      ]
     },
     {
       "page": "Korven Nisere",
@@ -143393,7 +145034,10 @@
         "Vox",
         "Ring of Scale"
       ],
-      "image": "npc_lady_vox.png"
+      "image": "npc_lady_vox.png",
+      "commonDrops": [
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "Lady Zleka",
@@ -148470,7 +150114,13 @@
       ],
       "outOfEra": true,
       "image": "npc_lithiniath.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Diamond",
+        "Black Marble",
+        "Pristine Emerald",
+        "Flawless Diamond"
+      ]
     },
     {
       "page": "Lithiniath (White Version)",
@@ -148504,7 +150154,13 @@
       ],
       "outOfEra": true,
       "image": "npc_lithiniath_white.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Diamond",
+        "Black Marble",
+        "Pristine Emerald",
+        "Flawless Diamond"
+      ]
     },
     {
       "page": "Lithriss Frizen",
@@ -148780,7 +150436,21 @@
         "Lodi"
       ],
       "image": "npc_lodizal.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Spell: Cannibalize IV",
+        "Spell: Monster Summoning III",
+        "Spell: Gift of Brilliance",
+        "Spell: Arch Lich",
+        "Spell: Ice Spear of Solist",
+        "Spell: Focus of Spirit",
+        "Spell: Protection of the Glades",
+        "Spell: Aegolism",
+        "Composition of Ervaj",
+        "Spell: Divine Strength",
+        "Spell: Death Peace",
+        "Spell: Call of the Predator"
+      ]
     },
     {
       "page": "Lodrand Dindlenod",
@@ -149501,7 +151171,10 @@
       "factions": [
         "Inhabitants of Hate"
       ],
-      "image": "Lord_Of_Ire.png"
+      "image": "Lord_Of_Ire.png",
+      "commonDrops": [
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "Lord of Loathing",
@@ -151562,7 +153235,10 @@
       "factions": [
         "Inhabitants of Hate"
       ],
-      "image": "npc_magi_p`tasa2.png"
+      "image": "npc_magi_p`tasa2.png",
+      "commonDrops": [
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "Magnus Boran",
@@ -152779,7 +154455,11 @@
         "Faydark's Champions",
         "Storm Guard"
       ],
-      "image": "npc_marrowbane.png"
+      "image": "npc_marrowbane.png",
+      "commonDrops": [
+        "Bronze Two Handed Sword",
+        "Raw-Hide Skullcap"
+      ]
     },
     {
       "page": "Marsa Folor",
@@ -153202,7 +154882,10 @@
       "factions": [
         "Inhabitants of Hate"
       ],
-      "image": "npc_master_of_spite.png"
+      "image": "npc_master_of_spite.png",
+      "commonDrops": [
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "Master of the Guard",
@@ -156601,7 +158284,10 @@
       "factions": [
         "Inhabitants of Hate"
       ],
-      "image": "mistress_of_scorn.jpg"
+      "image": "mistress_of_scorn.jpg",
+      "commonDrops": [
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "Misty Storyswapper",
@@ -160583,7 +162269,27 @@
         "Golden Efreeti Greaves",
         "Large Sky Pearl"
       ],
-      "image": "npc_noble_dojorn.png"
+      "image": "npc_noble_dojorn.png",
+      "commonDrops": [
+        "Belt of Concordance",
+        "Belt of Contention",
+        "Belt of Iniquity",
+        "Belt of the Pine",
+        "Belt of Tranquility",
+        "Belt of Transience",
+        "Belt of Virtue",
+        "Blade of Abrogation",
+        "Bracelet of Cessation",
+        "Bracelet of Distortion",
+        "Bracelet of Exertion",
+        "Bracelet of Quiescence",
+        "Stein of Flowing Ichor",
+        "Symbol of Marr",
+        "Treant Tear",
+        "Weight of the Gods",
+        "White Satin Gloves",
+        "Whitened Treant Fists"
+      ]
     },
     {
       "page": "Noble Helssen",
@@ -160613,7 +162319,37 @@
         "Claws of Veeshan"
       ],
       "image": "npc_noble_helssen.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Corroded Breastplate",
+        "Corroded Plate Greaves",
+        "Corroded Plate Vambraces",
+        "Corroded Plate Boots",
+        "Corroded Plate Bracer",
+        "Corroded Plate Helmet",
+        "Corroded Plate Gauntlets",
+        "Corroded Chain Tunic",
+        "Corroded Chain Leggings",
+        "Corroded Chain Sleeves",
+        "Corroded Chain Boots",
+        "Corroded Chain Bracer",
+        "Corroded Chain Coif",
+        "Corroded Chain Gauntlets",
+        "Eroded Leather Tunic",
+        "Eroded Leather Leggings",
+        "Eroded Leather Sleeves",
+        "Eroded Leather Boots",
+        "Eroded Leather Bracelet",
+        "Eroded Leather Cap",
+        "Eroded Leather Gloves",
+        "Torn Enchanted Silk Robe",
+        "Torn Enchanted Silk Pantaloons",
+        "Torn Enchanted Silk Sleeves",
+        "Torn Enchanted Silk Boots",
+        "Torn Enchanted Silk Wristband",
+        "Torn Enchanted Silk Turban",
+        "Torn Enchanted Silk Gloves"
+      ]
     },
     {
       "page": "Noclin Saah",
@@ -161655,7 +163391,11 @@
         "Goblins of Mountain Death"
       ],
       "image": "npc_observer_aq`touz.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Shard of Darkness",
+        "Crystallized Sulfur"
+      ]
     },
     {
       "page": "Obsolete model",
@@ -163190,7 +164930,11 @@
         "Emerald Warriors"
       ],
       "image": "npc_orc_centurion.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Rusty Weapons",
+        "Small Cloth Armor"
+      ]
     },
     {
       "page": "Orc Centurion (Deathfist)",
@@ -163332,7 +165076,30 @@
         "Emerald Warriors"
       ],
       "image": "npc_orc_legionnaire_crushbone.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Raw-hide Leggings",
+        "Raw-hide Cloak",
+        "Raw-hide Belt",
+        "Raw-hide Boots",
+        "Raw-hide Sleeves",
+        "Raw-hide Tunic",
+        "Rusty Axe",
+        "Rusty Long Sword",
+        "Rusty Mace",
+        "Rusty Scimitar",
+        "Splintering Club",
+        "Raw-hide Gloves",
+        "Raw-hide Shoulderpads",
+        "Raw-hide Skullcap",
+        "Raw-hide Wristbands",
+        "Rusty Bastard Sword",
+        "Rusty Dagger",
+        "Rusty Flail",
+        "Rusty Rapier",
+        "Rusty Two Handed Hammer",
+        "Rusty Two Handed Sword"
+      ]
     },
     {
       "page": "Orc Legionnaire (Deathfist)",
@@ -163482,7 +165249,19 @@
         "Faydark's Champions",
         "Emerald Warriors"
       ],
-      "image": "npc_orc_pawn.png"
+      "image": "npc_orc_pawn.png",
+      "commonDrops": [
+        "Ale",
+        "Bottle of Kalish",
+        "Iron Ration",
+        "Large Bag",
+        "Loaf of Bread",
+        "Ration",
+        "Short Beer",
+        "Water Flask",
+        "Rusty Weapons",
+        "Small Cloth Armor"
+      ]
     },
     {
       "page": "Orc Pawn (Deathfist)",
@@ -163589,7 +165368,19 @@
         "Faydark's Champions",
         "Emerald Warriors"
       ],
-      "image": "npc_orc_scoutsman_crushbone.png"
+      "image": "npc_orc_scoutsman_crushbone.png",
+      "commonDrops": [
+        "Ale",
+        "Bottle of Kalish",
+        "Iron Ration",
+        "Large Bag",
+        "Loaf of Bread",
+        "Ration",
+        "Short Beer",
+        "Water Flask",
+        "Rusty Weapons",
+        "Small Cloth Armor"
+      ]
     },
     {
       "page": "Orc shaman",
@@ -163697,7 +165488,19 @@
         "Emerald Warriors"
       ],
       "image": "npc_orc_slaver.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Cloth Shawl",
+        "Cloth Cap",
+        "Cloth Cape",
+        "Cloth Sandals",
+        "Cloth Veil",
+        "Cloth Wristband",
+        "Cloth Choker",
+        "Cloth Gloves",
+        "Cloth Pants",
+        "Cloth Sleeves"
+      ]
     },
     {
       "page": "Orc Taskmaster",
@@ -164359,7 +166162,16 @@
         "Goblins of Mountain Death"
       ],
       "image": "npc_overseer_dal`guur.jpg",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Symphonic Saber",
+        "Silver Swiftblade",
+        "Iksar Skin Gloves",
+        "Tribal War Boots",
+        "Water Sprinkler of the Forgiven",
+        "Sarnak Battle Shield",
+        "Stave of Shielding"
+      ]
     },
     {
       "page": "Overseer Dlubish",
@@ -164485,7 +166297,43 @@
         "High Guard of Erudin"
       ],
       "image": "npc_Packmaster_Dledsh.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Bronze Wakizashi",
+        "Bamboo Splint Neckguard",
+        "Bamboo Splint Bracelet",
+        "Bronze Katana",
+        "Bronze Kusarigama",
+        "Bronze Naginata",
+        "Bronze Tachi",
+        "Mead",
+        "Part of Tasarin's Grimoire Pg. 23 (Left)",
+        "Bamboo Splint Coat",
+        "Bamboo Splint Mantle",
+        "Bamboo Splint Skirt",
+        "Bamboo Splint Sleeves",
+        "Rune of Substance",
+        "Rune of Periphery",
+        "Rune of Proximity",
+        "Words of the Element",
+        "Words of Imitation",
+        "Words of Dissolution",
+        "Short Ale",
+        "Honey Mead",
+        "Brandy",
+        "Ale",
+        "Words of Derivation",
+        "Part of Tasarin's Grimoire Pg. 24 (Left)",
+        "Part of Tasarin's Grimoire Pg. 26 (Left)",
+        "Bamboo Splint Coif",
+        "Bamboo Splint Pants",
+        "Bamboo Splint Boots",
+        "Red Wine",
+        "White Wine",
+        "Short Beer",
+        "Fish Wine",
+        "Kobold Parts"
+      ]
     },
     {
       "page": "Paeonia Purnn",
@@ -165914,7 +167762,10 @@
       "factions": [
         "Phinigel Autropos"
       ],
-      "image": "npc_phinigel_autropos.png"
+      "image": "npc_phinigel_autropos.png",
+      "commonDrops": [
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "Phiz Frugrin",
@@ -165980,7 +167831,10 @@
           "pct": 7
         }
       ],
-      "image": "npc_phoboplasm.png"
+      "image": "npc_phoboplasm.png",
+      "commonDrops": [
+        "Midnight Clad Armor"
+      ]
     },
     {
       "page": "Phocaea Hapspenn",
@@ -167672,7 +169526,43 @@
         "High Guard of Erudin"
       ],
       "image": "npc_prince_bragnar.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Bamboo Splint Neckguard",
+        "Bamboo Splint Bracelet",
+        "Bamboo Splint Coat",
+        "Bamboo Splint Mantle",
+        "Bamboo Splint Skirt",
+        "Bamboo Splint Sleeves",
+        "Bamboo Splint Coif",
+        "Bamboo Splint Pants",
+        "Bamboo Splint Boots",
+        "Bronze Wakizashi",
+        "Bronze Katana",
+        "Bronze Kusarigama",
+        "Bronze Naginata",
+        "Bronze Tachi",
+        "Mead",
+        "Rune of Substance",
+        "Rune of Periphery",
+        "Rune of Proximity",
+        "Words of the Element",
+        "Words of Imitation",
+        "Words of Dissolution",
+        "Short Ale",
+        "Honey Mead",
+        "Brandy",
+        "Ale",
+        "Words of Derivation",
+        "Part of Tasarin's Grimoire Pg. 23 (Left)",
+        "Part of Tasarin's Grimoire Pg. 24 (Right)",
+        "Part of Tasarin's Grimoire Pg. 26 (Right)",
+        "Red Wine",
+        "White Wine",
+        "Short Beer",
+        "Fish Wine",
+        "Kobold Parts"
+      ]
     },
     {
       "page": "Prince Klaknak",
@@ -168116,7 +170006,27 @@
         "Sphinx Eye Opal",
         "Ysgaril Root"
       ],
-      "image": "npc_protector_of_sky.png"
+      "image": "npc_protector_of_sky.png",
+      "commonDrops": [
+        "Belt of Concordance",
+        "Belt of Contention",
+        "Belt of Iniquity",
+        "Belt of the Pine",
+        "Belt of Tranquility",
+        "Belt of Transience",
+        "Belt of Virtue",
+        "Blade of Abrogation",
+        "Bracelet of Distortion",
+        "Bracelet of Cessation",
+        "Bracelet of Exertion",
+        "Bracelet of Quiescence",
+        "Stein of Flowing Ichor",
+        "Symbol of Marr",
+        "Treant Tear",
+        "Weight of the Gods",
+        "White Satin Gloves",
+        "Whitened Treant Fists"
+      ]
     },
     {
       "page": "Protector of Zek",
@@ -169009,7 +170919,10 @@
         "Goblins of Mountain Death"
       ],
       "image": "npc_queen_velazul_di`zok.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Shard of Darkness"
+      ]
     },
     {
       "page": "Quegin Hadder",
@@ -171250,7 +173163,37 @@
         "Coldain"
       ],
       "image": "npc_reivaj_the_battlerager.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Corroded Breastplate",
+        "Corroded Plate Greaves",
+        "Corroded Plate Vambraces",
+        "Corroded Plate Boots",
+        "Corroded Plate Bracer",
+        "Corroded Plate Helmet",
+        "Corroded Plate Gauntlets",
+        "Corroded Chain Tunic",
+        "Corroded Chain Leggings",
+        "Corroded Chain Sleeves",
+        "Corroded Chain Boots",
+        "Corroded Chain Bracer",
+        "Corroded Chain Coif",
+        "Corroded Chain Gauntlets",
+        "Eroded Leather Tunic",
+        "Eroded Leather Leggings",
+        "Eroded Leather Sleeves",
+        "Eroded Leather Boots",
+        "Eroded Leather Bracelet",
+        "Eroded Leather Cap",
+        "Eroded Leather Gloves",
+        "Torn Enchanted Silk Robe",
+        "Torn Enchanted Silk Pantaloons",
+        "Torn Enchanted Silk Sleeves",
+        "Torn Enchanted Silk Boots",
+        "Torn Enchanted Silk Wristband",
+        "Torn Enchanted Silk Turban",
+        "Torn Enchanted Silk Gloves"
+      ]
     },
     {
       "page": "Reklon Gnallen",
@@ -175110,7 +177053,11 @@
         "Goblins of Mountain Death"
       ],
       "image": "npc_sarnak_collective_auditor.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Stave of Shielding",
+        "Di`zok Begirding"
+      ]
     },
     {
       "page": "Sarnak crypt raider",
@@ -175934,7 +177881,17 @@
         "Legion of Cabilis"
       ],
       "image": "npc_sebilite_juggernaut.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Star Ruby",
+        "Fire Emerald",
+        "Sapphire",
+        "Ruby",
+        "Black Sapphire",
+        "Diamond",
+        "Jacinth",
+        "Blue Diamond"
+      ]
     },
     {
       "page": "Sebilite protector",
@@ -185225,7 +187182,27 @@
         "Spiritualist`s Ring",
         "Veeshan's Key"
       ],
-      "image": "pic.png"
+      "image": "pic.png",
+      "commonDrops": [
+        "Belt of Concordance",
+        "Belt of Contention",
+        "Belt of Iniquity",
+        "Belt of the Pine",
+        "Belt of Tranquility",
+        "Belt of Transience",
+        "Belt of Virtue",
+        "Blade of Abrogation",
+        "Bracelet of Distortion",
+        "Bracelet of Cessation",
+        "Bracelet of Exertion",
+        "Bracelet of Quiescence",
+        "Stein of Flowing Ichor",
+        "Symbol of Marr",
+        "Treant Tear",
+        "Weight of the Gods",
+        "White Satin Gloves",
+        "Whitened Treant Fists"
+      ]
     },
     {
       "page": "Sithgok",
@@ -186724,7 +188701,22 @@
         "High Guard of Erudin"
       ],
       "image": "npc_smithy_rrarrgin.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Soft Wicker Helm",
+        "Soft Wicker Shoulderpads",
+        "Soft Wicker Belt",
+        "Soft Wicker Sleeves",
+        "Bronze Wakizashi",
+        "Bronze Kusarigama",
+        "Bamboo Bokken",
+        "Bronze Tonfa",
+        "Bead Necklace",
+        "Hematite",
+        "Kobold Meat",
+        "Wrist Pouch",
+        "Small Bag"
+      ]
     },
     {
       "page": "Smithy Vyx",
@@ -192591,7 +194583,15 @@
       ],
       "outOfEra": true,
       "image": "npc_fieldofbone_-_targishin.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Bone Chips",
+        "Ruined Scaled Boots",
+        "Ruined Scaled Bracelet",
+        "Ruined Scaled Pants",
+        "Ruined Scaled Coat",
+        "Ruined Scaled Skirt"
+      ]
     },
     {
       "page": "Taria Clayspinner",
@@ -194370,7 +196370,19 @@
         "Velketor"
       ],
       "image": "npc_the_brood_master.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Black Marble",
+        "Pristine Emerald",
+        "Flawless Diamond",
+        "Jaundice Gem",
+        "Nephrite",
+        "Flawed Topaz",
+        "Flawed Emerald",
+        "Flawed Opal",
+        "Flawed Flame Emerald",
+        "Flawed Sea Sapphire"
+      ]
     },
     {
       "page": "The Brood Mother",
@@ -194405,7 +196417,20 @@
         "Velketor"
       ],
       "image": "npc_the_brood_mother.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Crystalline Silk",
+        "Crystalline Silk Thread",
+        "Black Marble",
+        "Pristine Emerald",
+        "Flawless Diamond",
+        "Jaundice Gem",
+        "Nephrite",
+        "Flawed Topaz",
+        "Flawed Emerald",
+        "Flawed Sea Sapphire",
+        "Chipped Onyx Sapphire"
+      ]
     },
     {
       "page": "The Court Chronicler",
@@ -194572,7 +196597,14 @@
       "factions": [
         "Frogloks of Guk"
       ],
-      "image": "npc_the_froglok_king.png"
+      "image": "npc_the_froglok_king.png",
+      "commonDrops": [
+        "Froglok Meat",
+        "Flawless Aquamarine",
+        "Golden Pendant",
+        "Pearl Ring",
+        "Jade Ring"
+      ]
     },
     {
       "page": "The froglok shin lord",
@@ -194893,7 +196925,12 @@
         "Oowomp"
       ],
       "image": "npc_the_great_oowomp.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Fine Steel Great Staff",
+        "Brandy",
+        "Ale"
+      ]
     },
     {
       "page": "The guard captain",
@@ -195427,7 +197464,27 @@
       "otherNames": [
         "Spiroc Lord"
       ],
-      "image": "Pos_tsl1.png"
+      "image": "Pos_tsl1.png",
+      "commonDrops": [
+        "Belt of Concordance",
+        "Belt of Contention",
+        "Belt of Iniquity",
+        "Belt of the Pine",
+        "Belt of Tranquility",
+        "Belt of Transience",
+        "Belt of Virtue",
+        "Blade of Abrogation",
+        "Bracelet of Distortion",
+        "Bracelet of Cessation",
+        "Bracelet of Exertion",
+        "Bracelet of Quiescence",
+        "Stein of Flowing Ichor",
+        "Symbol of Marr",
+        "Treant Tear",
+        "Weight of the Gods",
+        "White Satin Gloves",
+        "Whitened Treant Fists"
+      ]
     },
     {
       "page": "The Sporali Moldmaster",
@@ -196314,7 +198371,27 @@
           "ew": 609
         }
       ],
-      "image": "npc_a_thunder_spirit_princess.png"
+      "image": "npc_a_thunder_spirit_princess.png",
+      "commonDrops": [
+        "Belt of Concordance",
+        "Belt of Contention",
+        "Belt of Iniquity",
+        "Belt of the Pine",
+        "Belt of Tranquility",
+        "Belt of Transience",
+        "Belt of Virtue",
+        "Blade of Abrogation",
+        "Bracelet of Distortion",
+        "Bracelet of Cessation",
+        "Bracelet of Exertion",
+        "Bracelet of Quiescence",
+        "Stein of Flowing Ichor",
+        "Symbol of Marr",
+        "Treant Tear",
+        "Weight of the Gods",
+        "White Satin Gloves",
+        "Whitened Treant Fists"
+      ]
     },
     {
       "page": "Thurgen Thunderhead",
@@ -203543,7 +205620,18 @@
         "Soldiers of Tunare"
       ],
       "image": "npc_tunare.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Spirit Weaver's Breastplate",
+        "Assassin's Chestguard",
+        "Chestplate of Stability",
+        "Sorcerer's Robe",
+        "Robe of the Bonecaster",
+        "Resplendent Robe",
+        "Silver Moon Chest Wraps",
+        "Berserker's Breastplate",
+        "Spell: Gift of Brilliance"
+      ]
     },
     {
       "page": "Tunare Puppet",
@@ -204615,7 +206703,11 @@
       ],
       "outOfEra": true,
       "image": "npc_Ulth the Enraged.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Gold Ring",
+        "Silver Earring"
+      ]
     },
     {
       "page": "Ulthork Raider",
@@ -210373,7 +212465,13 @@
         "Goblins of Mountain Death"
       ],
       "image": "npc_watch_sergeant_riz`oul.png",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Sarnak Battlehammer",
+        "Symphonic Saber",
+        "Withered Staff",
+        "Sarnak Arcane Fetish"
+      ]
     },
     {
       "page": "Watch Sergeant Tlygrerion",
@@ -213734,7 +215832,10 @@
         "Denizens of Fear"
       ],
       "image": "Wraith.jpg",
-      "noImage": true
+      "noImage": true,
+      "commonDrops": [
+        "Classic Raid Tier Treasures"
+      ]
     },
     {
       "page": "Wraith of Jaxion",
