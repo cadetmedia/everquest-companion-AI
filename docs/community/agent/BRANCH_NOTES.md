@@ -225,8 +225,16 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   "Someone" as it stands (`'s skin` or ` staggers`).
 - Rows: Done marks are per viewer (`eq.gaps.done`, dropped when the row leaves the snapshot); a
   faction, drop or image chip opens the catalog page title picked by zone (`shared/gapMobPage.ts`).
-- Still open from the review: held items in the details (C6), a map link (C7), soldby as an
-  ItemWhereTable (D1), the group rate on a group drop line (D2), corpse coin and turn-ins (E3, E4).
+- Held now (C6, `shared/gapHeld.ts`): the last `/outputfile inventory` export through
+  `useGearOwnership`, plus kept loot since (`computeHeldCountsAfter`), less destroys since; no
+  export, no claim (a loot line cannot tell a copy held from one sold). Items domain only.
+- Soldby (D1): `{{ItemWhereTable|` rows laid out byte-for-byte as the 1,247 cached pages write them
+  (`{{ItemWhereRow   | ` prefix, zone cell 34 wide, vendor 30, empty third cell 15, `(ns, ew)`, an
+  unknown loc `|  }}`); a vendor's loc only when its catalog page states one point (the wiki's row
+  matched a multi-point page's first point 113 of 426 times). `vendorFinder` in `gapMobPage.ts`.
+- Owner answers to the review leftovers (2026-10-19): C7 map link dropped (an unknown mob has no
+  location); E4 turn-ins not built (an offer is not an acceptance). The row's work buttons also sit
+  on each row as icons (`GapRowButtons.tsx`).
 - Copy wiki page (`shared/wikiPage.ts`): a page holds only fields the log fills, no placeholders, no
   blueprint option lists (owner, 2026-10-18: "each item page has FAR less than that"); `statsblock`
   stays open for the player's screenshot. Blueprints:
