@@ -9,7 +9,7 @@ import { factionGaps, factionKey } from '../src/shared/gapFactions'
 import { groupGaps } from '../src/shared/gapGroups'
 import { imageGaps } from '../src/shared/gapImages'
 import { pickPage } from '../src/shared/gapMobPage'
-import { doneKey, gapActions, npcOnlySpell, uncertainGap, withoutDone, withoutUncertain, type GapRow } from '../src/shared/gaps'
+import { doneKey, gapActions, keptDoneMarks, npcOnlySpell, uncertainGap, withoutDone, withoutUncertain, type GapRow } from '../src/shared/gaps'
 import { killIndex, type KillMap } from '../src/shared/kills'
 import type { LootEvent } from '../src/shared/types'
 
@@ -212,4 +212,12 @@ test('a gray kill of your own proves no factions: own killing blows count as cre
   // Kills by someone else alone prove nothing.
   const theirs = row('mob', 'a scout from zanivar', { killers: { entries: [{ name: 'Xober', n: 3 }], distinct: 1 } })
   assert.ok(!mobPage(mobFacts(theirs, [], {})).includes('* None'))
+})
+
+test('a Done mark survives a missing row until the wiki data is newer than the mark', () => {
+  const marks = { 'item:Bat Wing': '2026-10-19', 'mob:a gnoll': '2026-10-01', 'drop:Rat Ear (a rat)': '2026-10-19' }
+  // Launch, a character switch, All characters: the row is missing, the data is the same: kept.
+  assert.deepEqual(Object.keys(keptDoneMarks(marks, new Set(), '2026-10-19')).sort(), ['drop:Rat Ear (a rat)', 'item:Bat Wing'])
+  // A refresh after the mark and the row gone: the wiki caught up, dropped. On the tab: kept.
+  assert.deepEqual(Object.keys(keptDoneMarks(marks, new Set(['item:Bat Wing']), '2026-11-02')), ['item:Bat Wing'])
 })

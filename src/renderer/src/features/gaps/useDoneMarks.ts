@@ -1,10 +1,14 @@
 // useDoneMarks — the rows the player has marked done (owner ask, 2026-10-19): a page made or an image
 // uploaded leaves its row on the tab until the next data refresh, so a Done mark hides it here first.
-// Per viewer, in localStorage; a mark is dropped once its row is gone from the snapshot (the data
-// caught up). "Show done" brings them back, for a wrong click.
+// Per viewer, in localStorage. "Show done" brings them back, for a wrong click.
+//
+// A MARK IS DROPPED ONLY WHEN THE DATA CAUGHT UP: its row is gone AND the wiki data is newer than
+// the mark (owner, 2026-10-19: "it's not saving my DONE's"). Dropping on absence alone lost marks:
+// the list fills in stages at launch (the engine's rows, then the derived domains), a character
+// switch or the All characters box swaps the rows wholesale, and each looked like "the row is gone".
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { doneKey, type GapRow } from '@shared/gaps'
+import { doneKey, keptDoneMarks, type GapRow } from '@shared/gaps'
 
 const DONE_KEY = 'eq.gaps.done'
 
@@ -31,19 +35,22 @@ export interface DoneMarks {
   toggle: (row: GapRow) => void
 }
 
-/** `rows`: every row the tab holds, so marks for rows the data has since learned are dropped. */
-export function useDoneMarks(rows: readonly GapRow[] | undefined, today: string): DoneMarks {
+/**
+ * `rows`: every row the tab holds; `dataDate`: the wiki data's date (`2026-10-19`). A mark whose row
+ * is gone is dropped only when it was made before that date: the refresh learned the page.
+ */
+export function useDoneMarks(rows: readonly GapRow[] | undefined, today: string, dataDate: string): DoneMarks {
   const [marks, setMarks] = useState<Record<string, string>>(load)
   useEffect(() => {
-    if (rows === undefined || rows.length === 0) return
+    if (rows === undefined || rows.length === 0 || dataDate === '') return
     const live = new Set(rows.map(doneKey))
     setMarks((cur) => {
-      const kept = Object.fromEntries(Object.entries(cur).filter(([k]) => live.has(k)))
+      const kept = keptDoneMarks(cur, live, dataDate)
       if (Object.keys(kept).length === Object.keys(cur).length) return cur
       save(kept)
       return kept
     })
-  }, [rows])
+  }, [rows, dataDate])
   const toggle = useCallback(
     (row: GapRow) =>
       setMarks((cur) => {
