@@ -4,7 +4,7 @@
 use crate::event::{Ev, Key, Kind};
 use crate::jsstr::js_trim;
 use crate::names::{clean_mob, norm};
-use regex::Regex;
+use regex::{Captures, Regex};
 
 use super::acquire::{sale_price, AcquireRes};
 use super::data::CONSIDER_FACTION_RUNGS;
@@ -143,17 +143,40 @@ fn loot(
     }
 }
 
-/// The `You looted … from <source>` auto-dispositions: one capture layout, the disposition named.
-fn loot_routed(c: &Ctx, out: &mut Ev, m: &regex::Captures, disposition: &str) {
-    let source = clean_mob(m.get(3).map(|g| g.as_str()));
-    loot(
-        c,
-        out,
-        &m[2],
-        source,
-        Some(disposition),
-        m.get(1).map(|g| g.as_str()),
-    );
+/// One match of the loot regex family through [`loot`]: group 1 the count, 2 the item, 3 the
+/// source (with its `'s`).
+fn loot_match(c: &Ctx, out: &mut Ev, m: &Captures, disposition: Option<&str>) {
+    let (item, source) = item_and_source(c.text, m);
+    let count = m.get(1).map(|g| g.as_str());
+    loot(c, out, item, clean_mob(source), disposition, count);
+}
+
+/// Where the item ends and the source begins. Item names can hold " from " (`Note from Eichvul`,
+/// `Notes from the Greenmist Tome`: 11 in the item catalog) and so can mob names (`a scout from
+/// zanivar`, in a real log), so the regex's first " from " is not always the split. An item's own
+/// " from " is followed by a capital, after an optional `the `; a source's is followed by an
+/// article or a lowercase name, or is the last one. The source starts at the first " from " that
+/// is not item-shaped, else at the last. A line with one " from " splits there, as before.
+fn item_and_source<'t>(text: &'t str, m: &Captures<'t>) -> (&'t str, Option<&'t str>) {
+    const FROM: &str = " from ";
+    let item = m.get(2).expect("every loot regex captures the item");
+    // Group 3 is a corpse's owner, group 4 the Reward Chest a Dungeon Crawl pays from.
+    let Some(source) = m.get(3).or(m.get(4)) else {
+        return (item.as_str(), None);
+    };
+    let span = &text[item.start()..source.end()];
+    let item_shaped = |rest: &str| {
+        let rest = rest.strip_prefix("the ").unwrap_or(rest);
+        rest.starts_with(char::is_uppercase)
+    };
+    let froms: Vec<usize> = span.match_indices(FROM).map(|(i, _)| i).collect();
+    let cut = froms
+        .iter()
+        .copied()
+        .find(|&i| !item_shaped(&span[i + FROM.len()..]))
+        .or(froms.last().copied())
+        .expect("a matched source follows a \" from \"");
+    (&span[..cut], Some(&span[cut + FROM.len()..]))
 }
 
 pub fn classify_consider(r: &WorldRes, c: &Ctx, out: &mut Ev) -> bool {
@@ -287,22 +310,15 @@ pub fn classify_loot(r: &WorldRes, a: &AcquireRes, c: &Ctx, out: &mut Ev) -> boo
         .captures(text)
         .or_else(|| r.loot_plain.captures(text))
     {
-        loot(
-            c,
-            out,
-            &m[2],
-            clean_mob(m.get(3).or(m.get(4)).map(|g| g.as_str())),
-            None,
-            m.get(1).map(|g| g.as_str()),
-        );
+        loot_match(c, out, &m, None);
         return true;
     }
     if let Some(m) = r.loot_currency.captures(text) {
-        loot_routed(c, out, &m, "currency");
+        loot_match(c, out, &m, Some("currency"));
         return true;
     }
     if let Some(m) = r.loot_sold.captures(text) {
-        loot_routed(c, out, &m, "sold");
+        loot_match(c, out, &m, Some("sold"));
         // The sale is income, priced as a purchase is.
         if let Some(price) = sale_price(a, &m[4]) {
             out.coins(Key::Price, &price);
@@ -315,11 +331,11 @@ pub fn classify_loot(r: &WorldRes, a: &AcquireRes, c: &Ctx, out: &mut Ev) -> boo
         } else {
             "depot"
         };
-        loot_routed(c, out, &m, disposition);
+        loot_match(c, out, &m, Some(disposition));
         return true;
     }
     if let Some(m) = r.loot_combine.captures(text) {
-        loot_routed(c, out, &m, "combined");
+        loot_match(c, out, &m, Some("combined"));
         // The shared loot fields first, then the one added key.
         out.s(Key::Created, js_trim(&m[4]));
         return true;
