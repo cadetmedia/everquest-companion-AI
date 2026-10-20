@@ -125,6 +125,10 @@ const GapTableRow = memo(function GapTableRow({
         {row.maybePlayer === true && <Chip label="may be a player" size="small" color="warning" variant="outlined" sx={{ ml: 1 }} data-testid="gaps-maybe-player" />}
         {held !== undefined && held.length > 0 && <HeldChip held={held} />}
       </TableCell>
+      {/* Beside the name (owner, 2026-10-19): the work buttons where the eye already is. */}
+      <TableCell sx={{ py: 0 }}>
+        <GapRowButtons row={row} pageText={work.pageText} isDone={done} onDone={work.onDone} compact />
+      </TableCell>
       <TableCell>
         <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'nowrap' }}>
           {row.kinds.map((k) => (
@@ -138,9 +142,6 @@ const GapTableRow = memo(function GapTableRow({
       <TableCell sx={{ whiteSpace: 'nowrap', color: 'text.secondary' }}>{row.last}</TableCell>
       <TableCell>
         <GapActionChips row={row} verdict={verdict} ctx={chipContext} />
-      </TableCell>
-      <TableCell sx={{ py: 0 }}>
-        <GapRowButtons row={row} pageText={work.pageText} isDone={done} onDone={work.onDone} compact />
       </TableCell>
     </TableRow>
   )
@@ -221,7 +222,7 @@ function SortHeader({ sort, onSort }: { sort: GapSort; onSort: (key: GapSortKey)
   return (
     <TableHead>
       <TableRow>
-        {HEADERS.map(([label, key, align]) => (
+        {HEADERS.map(([label, key, align], i) => [
           <TableCell key={key} align={align} sortDirection={sort.key === key ? sort.dir : false}>
             <TableSortLabel
               active={sort.key === key}
@@ -233,9 +234,14 @@ function SortHeader({ sort, onSort }: { sort: GapSort; onSort: (key: GapSortKey)
             >
               {label}
             </TableSortLabel>
-          </TableCell>
-        ))}
-        <TableCell sx={{ whiteSpace: 'nowrap' }}>Work</TableCell>
+          </TableCell>,
+          // The Work column sits right after Name, as the row's buttons do.
+          i === 0 ? (
+            <TableCell key="work" sx={{ whiteSpace: 'nowrap' }}>
+              Work
+            </TableCell>
+          ) : null
+        ])}
       </TableRow>
     </TableHead>
   )
