@@ -16,7 +16,7 @@
 import { CURRENT_ERA } from './planner/era'
 import type { KillMap } from './kills'
 import { killsFor } from './kills'
-import { derivedPrices, factionMob, factionOf, npcOnlySpell, type GapDomain, type GapRow } from './gaps'
+import { derivedPrices, factionMob, factionOf, npcOnlySpell, type ClientSpellFacts, type GapDomain, type GapRow } from './gaps'
 import { itemBaseName } from './itemStats'
 import type { LootEvent } from './types'
 
@@ -132,6 +132,8 @@ export interface SpellFacts {
   name: string
   /** Only mobs were seen casting it. */
   npcOnly: boolean
+  /** What the install's spell files state (src/main/gapSpellFacts.ts); absent when not asked or not found. */
+  client?: ClientSpellFacts
 }
 
 const same = (a: string, b: string): boolean => a.toLowerCase() === b.toLowerCase()
@@ -345,11 +347,35 @@ export function mobPage(f: MobFacts, commonLoot: ReadonlySet<string> = new Set()
   return page(layoutBlock('Namedmobpage', NPC_LAYOUT, { ...npcValues(f), known_loot: own, common_loot: shared }), f.zones)
 }
 
+/** The client facts as Spell Page Blueprint fields, in its order; only what the files stated. */
+function clientFields(c: ClientSpellFacts | undefined): string[] {
+  if (c === undefined) return []
+  const one = (k: string, v: string | number | undefined): string[] => (v === undefined || v === '' ? [] : [`| ${k} = ${String(v)}`])
+  return [
+    ...one('mana', c.mana),
+    ...one('range', c.range),
+    ...one('casting_time', c.castTime),
+    ...one('recast_time', c.recastTime),
+    ...one('resist', c.resist),
+    ...one('msg_cast_on_you', c.msgOnYou),
+    ...one('msg_cast_on_other', c.msgOnOther),
+    ...one('msg_wears_off', c.msgWearsOff)
+  ]
+}
+
+/** `| classes =` with each class and level the files state, or the NPC-only line when none can scribe it. */
+function classesField(f: SpellFacts): string[] {
+  const classes = f.client?.classes ?? []
+  if (classes.length > 0) return [`| classes =\n\n${classes.map((c) => `* [[${c.cls}]] - Level ${String(c.level)}`).join('\n')}`]
+  return f.npcOnly ? ['| classes =\n\nThis spell is cast by NPCs only.'] : []
+}
+
 /** The wiki's Spell Page Blueprint layout: `{{Spellpage|`, blank lines between, `| key = value`. */
 export function spellPage(f: SpellFacts): string {
-  const fields = [`| spellname = ${f.name}`, ...(f.npcOnly ? ['| classes =\n\nThis spell is cast by NPCs only.'] : [])]
+  const fields = [`| spellname = ${f.name}`, ...classesField(f), ...clientFields(f.client)]
   const body = `{{Spellpage|\n\n${fields.join('\n\n')}\n\n}}`
-  return page(`\n${body}`, f.npcOnly ? ['NPC Only Spells'] : [])
+  const npcOnly = f.npcOnly && (f.client?.classes.length ?? 0) === 0
+  return page(`\n${body}`, npcOnly ? ['NPC Only Spells'] : [])
 }
 
 /**
@@ -367,6 +393,8 @@ export interface PageExtras {
   isMob?: (name: string) => boolean
   /** Drop names the wiki files under `|common_loot`, lower-cased (`commonLootNames`). */
   commonLoot?: ReadonlySet<string>
+  /** What the install's spell files state, by spell name. */
+  spellFacts?: Readonly<Record<string, ClientSpellFacts>>
 }
 
 /**
@@ -377,7 +405,7 @@ export interface PageExtras {
 export function wikiPageText(row: GapRow, loot: readonly LootEvent[], kills: KillMap, seen: MobSightings & PageExtras = {}): string {
   const extras = seen
   if (row.suggest !== undefined && (row.domain === 'item' || row.domain === 'spell')) return `#REDIRECT [[${row.suggest.page}]]\n`
-  return PAGE_OF[row.domain](row, { loot, kills, seen, zoneName: extras.zoneName ?? asPrinted, isMob: extras.isMob, commonLoot: extras.commonLoot })
+  return PAGE_OF[row.domain](row, { loot, kills, seen, zoneName: extras.zoneName ?? asPrinted, isMob: extras.isMob, commonLoot: extras.commonLoot, spellFacts: extras.spellFacts })
 }
 
 interface PageContext {
@@ -387,6 +415,7 @@ interface PageContext {
   zoneName: ZoneNamer
   isMob?: (name: string) => boolean
   commonLoot?: ReadonlySet<string>
+  spellFacts?: Readonly<Record<string, ClientSpellFacts>>
 }
 
 /**
@@ -397,7 +426,7 @@ const PAGE_OF: Record<GapDomain, (row: GapRow, c: PageContext) => string> = {
   item: (row, c) => itemPage(itemFacts(row, c.loot, c.zoneName)),
   mob: (row, c) => mobPage(mobFacts(row, c.loot, c.kills, { ...c.seen, zoneName: c.zoneName }), c.commonLoot),
   merchant: (row, c) => merchantPage(mobFacts(row, [], c.kills, { ...c.seen, zoneName: c.zoneName })),
-  spell: (row, c) => spellPage({ name: row.name, npcOnly: npcOnlySpell(row, c.isMob) }),
+  spell: (row, c) => spellPage({ name: row.name, npcOnly: npcOnlySpell(row, c.isMob), client: c.spellFacts?.[row.name] }),
   faction: (row) => `${factionLine({ faction: factionOf(row), adjust: row.adjust, raised: row.raised })}\n`,
   image: (row) => `| ${'imagefilename'.padEnd(17)} = ${row.image ?? ''}\n`,
   // A drop: its group's link (`<li> [[Rusty Weapons]] </li>`), else the item with the rate seen.

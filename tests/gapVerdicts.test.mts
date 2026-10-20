@@ -36,3 +36,9 @@ test('the handler versions match what the two lookups write', () => {
   assert.equal(/ITEM_CACHE_VERSION = (\d+)/.exec(ipc)?.[1], item)
   assert.equal(/MOB_CACHE_VERSION = (\d+)/.exec(ipc)?.[1], mob)
 })
+
+test('a lookup made while the wiki was unreachable is no answer: unchecked (review 2026-10-19)', async () => {
+  const { verdictsFrom } = await import('../src/main/gapVerdictsRead')
+  const file = { version: 4, entries: { 'shrubbery': { data: { offline: true } }, 'bat meat': { data: { notFound: true } } } }
+  assert.deepEqual(verdictsFrom(file, 4, ['Shrubbery', 'Bat Meat'], (n) => n.toLowerCase()), { Shrubbery: 'unchecked', 'Bat Meat': 'noPage' })
+})

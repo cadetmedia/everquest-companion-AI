@@ -153,3 +153,30 @@ test('a drop the wiki files as shared loot goes under common_loot; the mob own d
   assert.match(text, /\| known_loot = \n\n<ul>\n<li> \{\{:Boss Claw\}\}/)
   assert.match(text, /\| common_loot = \n\n<ul>\n<li> \{\{:Classic Raid Tier Treasures\}\}/)
 })
+
+test('a spell page fills from the install spell files: classes, mana, range, times, resist, messages', async () => {
+  const { spellFactsFrom } = await import('../src/main/gapSpellFacts')
+  const levels = Array.from({ length: 16 }, (_, i) => (i === 9 ? '43' : '255'))
+  const head = ['4093', 'Odium', '0', '', '200', '0', '0', '0', '3000', '1500', '6000', '7', '5', '0', '409']
+  const fields = [...head, ...Array.from({ length: 14 }, () => '0'), '1', ...Array.from({ length: 6 }, () => '0'), ...levels]
+  while (fields.length < 79) fields.push('0')
+  fields[78] = '-10'
+  const str = '4093^^^You stagger under a dark curse.^ staggers under a dark curse.^You are no longer cursed.^'
+  const facts = spellFactsFrom(fields.join('^'), str, ['Odium', 'Not There'])
+  assert.deepEqual(facts.Odium, {
+    classes: [{ cls: 'Shaman', level: 43 }],
+    mana: 409,
+    range: 200,
+    castTime: '3.00',
+    recastTime: '6.00',
+    resist: 'Magic (-10)',
+    msgOnYou: 'You stagger under a dark curse.',
+    msgOnOther: 'Someone staggers under a dark curse.',
+    msgWearsOff: 'You are no longer cursed.'
+  })
+  assert.equal(facts['Not There'], undefined)
+  const page = wikiPageText(row('spell', 'Odium'), [], {}, { spellFacts: facts })
+  assert.match(page, /\| classes =\n\n\* \[\[Shaman\]\] - Level 43/)
+  assert.match(page, /\| mana = 409/)
+  assert.doesNotMatch(page, /NPC Only/)
+})

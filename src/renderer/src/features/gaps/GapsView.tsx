@@ -37,6 +37,7 @@ import { Tooltip } from '../../lib/Tooltip'
 import { useBoolPref } from '../combat/useCombatPrefs'
 import { copyText } from '../../lib/clipboard'
 import { useGapVerdicts } from '../../lib/gapVerdicts'
+import { useSpellFacts } from '../../lib/gapSpellFacts'
 import GapsTable from './GapsTable'
 import { GAPS_DATA_DATE, PAGE_EXTRAS, useGapsData } from './useGapsData'
 import { useDoneMarks, usePlayerList } from './useDoneMarks'
@@ -52,6 +53,9 @@ const GROUPED_KEY = 'eq.gaps.grouped'
 /** Where "Show done" is remembered. */
 const SHOW_DONE_KEY = 'eq.gaps.showDone'
 const CHIP_CONTEXT = { dataDate: GAPS_DATA_DATE, isMob: PAGE_EXTRAS.isMob }
+const NO_NAMES: readonly string[] = []
+/** The names of the rows on screen. */
+const spellNamesOf = (rows: readonly GapRow[]): string[] => rows.map((r) => r.name)
 
 /** A small checkbox with a caption, the tab's toolbar control. */
 function Pref({ label, checked, onChange, testId, disabled }: { label: string; checked: boolean; onChange: (on: boolean) => void; testId: string; disabled?: boolean }): JSX.Element {
@@ -129,7 +133,13 @@ export default function GapsView(): JSX.Element {
   // The table and Copy list read the same order, so a copied list matches what is on screen.
   const sorted = useMemo(() => sortGaps(visible, sort, verdicts), [visible, sort, verdicts])
   // What the pages read beside the ledgers: each kill's factions, each mob's points, the wiki's spellings.
-  const sightings = useMemo(() => ({ killFactions: engine?.killFactions, mobLocs: engine?.mobLocs, mobSpecials: engine?.mobSpecials, ...PAGE_EXTRAS }), [engine])
+  // A spell page fills from the install's spell files (owner, 2026-10-19): asked for the spells on screen.
+  const spellNames = useMemo(() => (domain === 'spell' ? spellNamesOf(visible) : NO_NAMES), [domain, visible])
+  const spellFacts = useSpellFacts(spellNames)
+  const sightings = useMemo(
+    () => ({ killFactions: engine?.killFactions, mobLocs: engine?.mobLocs, mobSpecials: engine?.mobSpecials, ...PAGE_EXTRAS, spellFacts }),
+    [engine, spellFacts]
+  )
   const pageText = useCallback((row: GapRow) => wikiPageText(row, loot, kills, sightings), [loot, kills, sightings])
   const needed = useCallback((row: GapRow) => stillNeeded(row, loot, kills, sightings), [loot, kills, sightings])
   // "Group by zone, then mob" (owner ask, 2026-10-18): where to go and what to kill.

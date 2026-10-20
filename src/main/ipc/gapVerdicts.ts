@@ -12,6 +12,9 @@ import { itemTierKey } from '../../shared/itemStats'
 import { mobKey } from '../../shared/mobKey'
 import { verdictsFrom, type KnowledgeCacheFile } from '../gapVerdictsRead'
 import { itemPageMobs } from '../gapItemMobs'
+import { spellFactsFrom } from '../gapSpellFacts'
+import type { ClientSpellFacts } from '../../shared/gaps'
+import { effectiveEqRoot } from '../log/config'
 
 /** The cache files' versions, as `itemLookup.ts` / `mobLookup.ts` write them — a mismatched file
  *  answers `unchecked` for everything, as their own readers drop it. Audited against those two
@@ -43,8 +46,23 @@ export function gapVerdicts(domain: unknown, names: unknown): GapVerdicts {
   return verdictsFrom(readCache(source.file), source.version, asked, source.keyOf)
 }
 
+/** The install's spell files, read at rest when a spell page is asked for; none when they are missing. */
+function clientSpellFacts(names: readonly string[]): Record<string, ClientSpellFacts> {
+  try {
+    const root = effectiveEqRoot()
+    const us = readFileSync(join(root, 'spells_us.txt'), 'latin1')
+    const str = existsSync(join(root, 'spells_us_str.txt')) ? readFileSync(join(root, 'spells_us_str.txt'), 'latin1') : ''
+    return spellFactsFrom(us, str, names)
+  } catch {
+    return {}
+  }
+}
+
 export function registerGapVerdictsIpc(): void {
   ipcMain.handle(IPC.gapVerdicts, (_e, domain: unknown, names: unknown) => gapVerdicts(domain, names))
+  ipcMain.handle(IPC.gapSpellFacts, (_e, names: unknown) =>
+    Array.isArray(names) ? clientSpellFacts(names.filter((n): n is string => typeof n === 'string').slice(0, MAX_NAMES)) : {}
+  )
   ipcMain.handle(IPC.gapItemMobs, (_e, names: unknown) =>
     Array.isArray(names) ? itemPageMobs(names.filter((n): n is string => typeof n === 'string').slice(0, MAX_NAMES)) : {}
   )

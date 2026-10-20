@@ -16,7 +16,7 @@ import type { GapVerdict, GapVerdicts } from '../shared/gaps'
 /** The two cache files' shape, as much of it as a verdict needs. */
 export interface KnowledgeCacheFile {
   version?: number
-  entries?: Record<string, { data?: { notFound?: boolean } }>
+  entries?: Record<string, { data?: { notFound?: boolean; offline?: boolean } }>
 }
 
 /**
@@ -34,7 +34,8 @@ export function verdictsFrom(
   for (const name of names) {
     const entry = entries?.[keyOf(name)]
     let verdict: GapVerdict = 'unchecked'
-    if (entry !== undefined) verdict = entry.data?.notFound === true ? 'noPage' : 'hasPage'
+    // A lookup made while the wiki was unreachable is no answer at all (review 2026-10-19).
+    if (entry !== undefined && entry.data?.offline !== true) verdict = entry.data?.notFound === true ? 'noPage' : 'hasPage'
     out[name] = verdict
   }
   return out

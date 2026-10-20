@@ -67,6 +67,23 @@ export function withoutDone(rows: readonly GapRow[], done: ReadonlySet<string>):
   return done.size === 0 ? [...rows] : rows.filter((r) => !done.has(doneKey(r)))
 }
 
+/** One spell as the client files state it; absent fields were not stated (or are zero). */
+/** What the install's spells_us.txt / spells_us_str.txt state about a spell (src/main/gapSpellFacts.ts). */
+export interface ClientSpellFacts {
+  /** `[[Shaman]] - Level 43` order: the classes that can scribe it, with their level. */
+  classes: { cls: string; level: number }[]
+  mana?: number
+  range?: number
+  /** Seconds, as the wiki writes them (`1.50`). */
+  castTime?: string
+  recastTime?: string
+  /** `Magic (-10)`. */
+  resist?: string
+  msgOnYou?: string
+  msgOnOther?: string
+  msgWearsOff?: string
+}
+
 /** Item name → the mobs its own item page names under `|dropsfrom`; null when the wiki has no page. */
 export type ItemPageMobs = Record<string, string[] | null>
 
