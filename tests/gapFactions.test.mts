@@ -12,7 +12,7 @@ const catalog = [
   { page: 'Murga', name: 'Murga', factions: ['Solusek Mining Co'] }
 ]
 
-test('a kill faction no page of the mob lists is a row; spelling folds and unknown mobs are left out', () => {
+test('a kill faction no page of the mob lists is a row; spelling folds; a mob the data lacks keeps its faction rows', () => {
   assert.equal(factionKey(' Solusek Mining Co. '), factionKey('Solusek Mining Co'))
   assert.equal(factionKey('the Ebon Mask'), factionKey('Ebon Mask'))
   const rows = factionGaps(
@@ -24,7 +24,11 @@ test('a kill faction no page of the mob lists is a row; spelling folds and unkno
     ],
     catalog
   )
-  assert.deepEqual(rows.map((r) => [r.domain, r.name, r.count]), [['faction', 'Venril Sathir (a zol ghoul knight)', 2]])
+  // A mob the data lacks (its page newer than the scrape, owner 2026-10-20) keeps its lines to copy.
+  assert.deepEqual(rows.map((r) => [r.domain, r.name, r.count]), [
+    ['faction', 'Anyone (a mob the wiki lacks)', 9],
+    ['faction', 'Venril Sathir (a zol ghoul knight)', 2]
+  ])
   const snap: GapsSnap = { rows: [], totals: { item: 0, mob: 0, spell: 0, merchant: 0, faction: 0 }, seen: { item: 0, mob: 0, spell: 0, merchant: 0, faction: 0 }, killFactions: [{ mob: 'a zol ghoul knight', faction: 'Venril Sathir', n: 2, zone: 'Lower Guk' }] }
   assert.equal(withFactionRows(snap, catalog).totals.faction, 1)
 })
