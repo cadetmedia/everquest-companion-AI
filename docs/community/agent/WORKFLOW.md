@@ -239,6 +239,11 @@ disagree, RULES.md wins; fix this file.
 
 ## Agent tooling traps (Claude Code on Windows)
 
+- **Never fast-forward a never-closing branch to `main_community`.** `main_community_rules` is an
+  ancestor of `main_community`, so `git merge --ff-only main_community` in its worktree "succeeds"
+  and puts every branch's code on the rules branch (2026-10-19, caught before a push; undone with
+  `git reset --hard <its own tip>`). The rules branch only ever takes its own commits.
+
 - Bash heredocs and inline commands lose backslashes (`\b` became a backspace byte, `\s` became
   `s`). Write regex-bearing code with the Write/Edit tools or a script file.
 - An Edit-tool `replace_all` whose new string ends in a space dropped that space once; use sed for

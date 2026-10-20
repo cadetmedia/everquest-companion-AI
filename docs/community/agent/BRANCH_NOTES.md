@@ -208,6 +208,25 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
 ## gaps-tab
 
 - The tab is UNRELEASED-gated (`unreleasedGaps.tsx`): dev builds only.
+- Review and decisions: `audits/2026-10-19-gaps-review.md`. Laws from it (owner, 2026-10-19):
+  instance tiers are one place and one item (`+N` folds to the base everywhere; zones are written
+  as the wiki spells them, `shared/gapWikiZone.ts`); a rate is corpses over kills, no rate when
+  drops exceed kills; a capped "better" faction line is a raise; `* None` only where the log
+  proves none (credited kills, no faction line).
+- One-word NPCs (`gaps_players.rs`): a hailed or conned one-word name files a Mobs row unless the
+  log showed a player (chat, tells, group joins, `/who`); it is "may be a player" until an answered
+  hail or a revisit in the same zone 10+ min later; "Mark as player" is a per-viewer list
+  (`eq.gaps.players`). Measured: no catalog NPC sends tells on Legends (77 tellers, 0 in the catalog).
+- Loot fields: `mobs.json commonDrops` is the page's `|common_loot`; Drops counts both fields and
+  dropGroups.json `aliases` (redirect titles); Copy wiki page files a name under common_loot when the
+  wiki does on 3+ pages and more often than under known_loot (`commonLootNames`).
+- Spell pages fill from the install's spells_us.txt / spells_us_str.txt (`src/main/gapSpellFacts.ts`,
+  owner 2026-10-19). Level 254 (AA rows) and 255 mean no scroll; the other-person message is joined to
+  "Someone" as it stands (`'s skin` or ` staggers`).
+- Rows: Done marks are per viewer (`eq.gaps.done`, dropped when the row leaves the snapshot); a
+  faction, drop or image chip opens the catalog page title picked by zone (`shared/gapMobPage.ts`).
+- Still open from the review: held items in the details (C6), a map link (C7), soldby as an
+  ItemWhereTable (D1), the group rate on a group drop line (D2), corpse coin and turn-ins (E3, E4).
 - Copy wiki page (`shared/wikiPage.ts`): a page holds only fields the log fills, no placeholders, no
   blueprint option lists (owner, 2026-10-18: "each item page has FAR less than that"); `statsblock`
   stays open for the player's screenshot. Blueprints:

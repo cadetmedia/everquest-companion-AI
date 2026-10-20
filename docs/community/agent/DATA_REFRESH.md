@@ -66,7 +66,14 @@ full scrapers). A 3-week window was ~1,200 pages in ~25 batched requests.
   that came back unreadable holds `scrapedAt` back and is named.
 - Mob redirects after a full `scrape:mobs` (which writes records without them):
   `npx tsx scripts/scrape-mob-redirects.ts` (2026-10-18: 4,482 redirects in 19 requests, 516 on
-  463 mobs).
+  463 mobs). Since 2026-10-19 the list is cached at `cache/redirects/redirects.json` and
+  `--offline` re-applies it at zero requests; the delta keeps it current. The cache does not exist
+  yet: the first real run (about 19 requests) is the owner's call, after which mobs.json re-derives
+  fully offline.
+- A new field from an existing parser (2026-10-19, `commonDrops`): re-parse the cached pages with
+  the fixed parser and take the field into a record only where the re-parse reproduces the record's
+  other parser fields exactly; a full `scrape:mobs` would drop `otherNames` until the redirect
+  cache exists.
 
 ## Expect new reds, and clear them
 
