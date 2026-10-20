@@ -29,7 +29,7 @@ use super::gaps_coin::KillCoin;
 use super::gaps_details::Details;
 use super::gaps_keys::{aa_known, item_gap_key, loose_key, scroll_known, spell_gap_key, spell_known};
 use super::gaps_names::{no_mob, no_spell, owner_of_pet, MobNames};
-use super::gaps_players::{hail_of, Players};
+use super::gaps_players::{hail_of, speaker_of, Players};
 use super::gaps_specials::MobSpecials;
 use super::gaps_suggest::{item_candidates, spell_candidates, suggest, Candidate, Suggest};
 use super::gaps_locs::MobLocs;
@@ -172,6 +172,8 @@ impl GapsModule {
             "damage" | "miss" => self.specials.event(ev),
             "castBegin" | "otherCastBegin" => self.spell(ev),
             "petClaim" | "petSay" => self.player_pet(ev.str("name")),
+            // Handing an item to it is meeting it (owner, 2026-10-19: a fallen froglok, only traded with).
+            "offer" => self.npc_met(ev.str("npc"), "offered", ev),
             "allyPetLeader" => self.player_pet(ev.str("pet")),
             _ => false,
         }
@@ -277,9 +279,24 @@ impl GapsModule {
         if let Some(name) = hail_of(text) {
             return self.met(name, true, ev);
         }
+        // `A fallen froglok says, '...'` (owner, 2026-10-19): a mob-shaped name speaking is an NPC met.
+        if let Some(name) = speaker_of(text) {
+            if self.npc_met(Some(name), "spoke", ev) {
+                return true;
+            }
+        }
         match self.who.line(text, ev.ts()) {
             Some(player) => self.rows.remove(&(Domain::Mob, mob_key(&player))).is_some(),
             None => false,
+        }
+    }
+
+    /// An NPC met by giving it an item or hearing it speak. Only a mob-shaped name (`a fallen
+    /// froglok`): a one-word name says and trades as players do, so it takes the hail/con path.
+    fn npc_met(&mut self, name: Option<&str>, kind: &'static str, ev: &Event) -> bool {
+        match name {
+            Some(n) if !is_player_shaped_name(n) => self.mob(Some(n), kind, ev),
+            _ => false,
         }
     }
 

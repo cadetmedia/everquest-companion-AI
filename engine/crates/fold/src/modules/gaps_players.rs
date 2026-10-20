@@ -53,6 +53,12 @@ fn joined_or_listed(text: &str) -> Option<&str> {
     (!name.is_empty() && name.chars().all(char::is_alphabetic)).then_some(name)
 }
 
+/// `A fallen froglok says, 'I have no need for this...'` → `A fallen froglok`; never `You`.
+pub fn speaker_of(text: &str) -> Option<&str> {
+    let (name, _) = text.split_once(" says, '")?;
+    (name != "You" && !name.is_empty()).then_some(name)
+}
+
 /// `You say, 'Hail, Grapok'` → `Grapok`.
 pub fn hail_of(text: &str) -> Option<&str> {
     text.strip_prefix("You say, 'Hail, ")?.strip_suffix('\'')

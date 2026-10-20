@@ -136,6 +136,10 @@ export type GapKind =
   | 'killed'
   | 'considered'
   | 'hailed'
+  /** handed an item (`You offered 1 Fruit to a fallen froglok.`) */
+  | 'offered'
+  /** heard speaking (`A fallen froglok says, '...'`); mob-shaped names only */
+  | 'spoke'
   | 'cast'
   | 'quoted'
   | 'sold'
