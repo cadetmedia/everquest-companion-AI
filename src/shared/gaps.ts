@@ -69,12 +69,13 @@ export const GAP_CAPTURE: Record<GapDomain, string> = {
 export const doneKey = (row: GapRow): string => `${row.domain}:${row.name}`
 
 /**
- * The Done marks to keep (`key -> the day it was marked`): a mark stays while its row is on the tab,
- * and after that until the wiki data is newer than the mark, when the refresh has learned the page.
- * A row's absence alone is no proof: the list fills in stages and swaps with the character.
+ * The Done marks to keep (`key -> the day it was marked`): every mark made before the wiki data's
+ * date is cleared (owner, 2026-10-19: "after a scrape, wipe all DONE entries"), so a row the refresh
+ * still lacks comes back. A row's absence is never the test: the list fills in stages at launch and
+ * swaps with the character, and dropping on absence lost marks.
  */
-export function keptDoneMarks(marks: Readonly<Record<string, string>>, live: ReadonlySet<string>, dataDate: string): Record<string, string> {
-  return Object.fromEntries(Object.entries(marks).filter(([k, markedOn]) => live.has(k) || markedOn >= dataDate))
+export function keptDoneMarks(marks: Readonly<Record<string, string>>, dataDate: string): Record<string, string> {
+  return Object.fromEntries(Object.entries(marks).filter(([, markedOn]) => markedOn >= dataDate))
 }
 
 /** The rows less the Mobs rows the player marked as players (lower-cased names). */
@@ -513,9 +514,17 @@ export function gapActions(row: GapRow, verdict: GapVerdict, ctx: GapActionConte
  * `76 unknown` — the toggle's caption for one domain (owner, 2026-10-17: the checked total meant
  * nothing to a player); `3 here` while the "this zone" filter is on, counted off the served rows.
  */
-export function gapsCaption(snap: GapsSnap, domain: GapDomain, zone: string | null = null): string {
-  if (zone !== null) return `${visibleGaps(snap.rows, domain, '', zone).length.toLocaleString()} here`
-  return `${(snap.totals[domain] ?? 0).toLocaleString()} unknown`
+/** The rows the player has hidden: Done (unless Show done) and, with Hide uncertain, the uncertain ones. */
+export const hiddenBy =
+  (done: ReadonlySet<string>, showDone: boolean, hideUncertain: boolean) =>
+  (r: GapRow): boolean =>
+    (!showDone && done.has(doneKey(r))) || (hideUncertain && uncertainGap(r))
+
+export function gapsCaption(snap: GapsSnap, domain: GapDomain, zone: string | null = null, hidden: (row: GapRow) => boolean = () => false): string {
+  // Rows the player hid (Done, Hide uncertain) are not counted (owner, 2026-10-19: "3 here" over 2 rows).
+  if (zone !== null) return `${visibleGaps(snap.rows, domain, '', zone).filter((r) => !hidden(r)).length.toLocaleString()} here`
+  const off = snap.rows.filter((r) => r.domain === domain && hidden(r)).length
+  return `${Math.max(0, (snap.totals[domain] ?? 0) - off).toLocaleString()} unknown`
 }
 
 /** Where the row was named most, and how many other zones: `Befallen 4 (Refined) +2`; '' for none. */
