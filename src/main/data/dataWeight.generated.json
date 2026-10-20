@@ -3,44 +3,44 @@
     {
       "file": "src/main/data/items.json",
       "bytes": 8864775,
-      "parseMs": 113.4,
+      "parseMs": 51,
       "heapMb": 20.6
     },
     {
       "file": "src/main/data/messageOverlay.baseline.json",
       "bytes": 410455,
-      "parseMs": 5.9,
+      "parseMs": 1.4,
       "heapMb": 0.7
     },
     {
       "file": "src/main/data/pageEra.json",
       "bytes": 233694,
-      "parseMs": 3.8,
+      "parseMs": 1.6,
       "heapMb": 0.7
     },
     {
       "file": "src/main/data/resistBaseline.json",
       "bytes": 969398,
-      "parseMs": 6.3,
+      "parseMs": 2.8,
       "heapMb": 1.7
     },
     {
       "file": "src/main/data/spellLines.json",
       "bytes": 191765,
-      "parseMs": 1.1,
+      "parseMs": 0.9,
       "heapMb": 0.2
     },
     {
       "file": "src/main/data/spells.json",
       "bytes": 1117274,
-      "parseMs": 4.7,
+      "parseMs": 2.2,
       "heapMb": 1.1
     },
     {
       "file": "src/renderer/src/data/eqlegends/mobs.json",
-      "bytes": 4575883,
-      "parseMs": 50.8,
-      "heapMb": 6.5
+      "bytes": 4630882,
+      "parseMs": 12.8,
+      "heapMb": 6.6
     }
   ],
   "rendererOnly": [
