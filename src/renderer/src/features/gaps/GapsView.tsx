@@ -120,6 +120,31 @@ function DomainToggle({ snap, domain, zone, onPick }: { snap: GapsSnap; domain: 
   )
 }
 
+/** How many rows are shown of how many, and what narrows them. */
+function ShownLine({
+  counts,
+  domain,
+  zone,
+  tail = ''
+}: {
+  counts: { visible: number; held: number; served: number; hidden: number; uncertain: number }
+  domain: GapDomain
+  zone: string | null
+  tail?: string
+}): JSX.Element {
+  const { visible, held, served, hidden, uncertain } = counts
+  return (
+    <Typography variant="caption" color="text.secondary" data-testid="gaps-shown">
+      Showing {visible} of {held} {GAP_SHOWN_NOUN[domain]}
+      {zone !== null ? `, seen in ${zone} or another tier of it` : ''}
+      {hidden > 0 ? `, ${hidden} marked done hidden` : ''}
+      {uncertain > 0 ? `, ${uncertain} uncertain hidden` : ''}
+      {held > served ? ` (the engine serves the ${served} most mentioned)` : ''}
+      {tail}. Wiki data from {GAPS_DATA_DATE}.
+    </Typography>
+  )
+}
+
 export default function GapsView(): JSX.Element {
   const { snap, engine, loot, kills } = useGapsData()
   const [domain, setDomain] = useState<GapDomain>('item')
@@ -213,13 +238,7 @@ export default function GapsView(): JSX.Element {
           </Typography>
         )}
       </Stack>
-      <Typography variant="caption" color="text.secondary" data-testid="gaps-shown">
-        Showing {visible.length} of {held} {GAP_SHOWN_NOUN[domain]}
-        {zone !== null ? `, seen in ${zone} or another tier of it` : ''}
-        {hidden > 0 ? `, ${hidden} marked done hidden` : ''}
-        {sure.hidden > 0 ? `, ${sure.hidden} uncertain hidden` : ''}
-        {held > served ? ` (the engine serves the ${served} most mentioned)` : ''}. Wiki data from {GAPS_DATA_DATE}.
-      </Typography>
+      <ShownLine counts={{ visible: visible.length, held, served, hidden, uncertain: sure.hidden }} domain={domain} zone={zone} />
       <GapsTable
         entries={entries}
         verdicts={verdicts}
