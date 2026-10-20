@@ -3,7 +3,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { dropsSeen, lootLine, mobFacts, mobPage, stillNeeded, wikiPageText } from '../src/shared/wikiPage'
-import { catalogZoneCounts, wikiZoneNamer, zoneBaseName } from '../src/shared/gapWikiZone'
+import { catalogZoneCounts, wikiZoneLink, wikiZoneNamer, zoneBaseName } from '../src/shared/gapWikiZone'
 import { dropGaps } from '../src/shared/gapDrops'
 import { factionGaps, factionKey } from '../src/shared/gapFactions'
 import { groupGaps } from '../src/shared/gapGroups'
@@ -43,6 +43,17 @@ test('a zone is written as the wiki spells it: tiers folded, the catalog spellin
   assert.equal(namer('The Plane of Hate - Group 4 (Refined)'), 'Plane of Hate')
   assert.equal(namer('The Plane of Hate 1 (Awakened)'), 'Plane of Hate')
   assert.equal(namer('Befallen 4 (Refined)'), 'Befallen')
+})
+
+test('the Temple of Cazic-Thule is the wiki zone Cazic Thule, linked to its (Zone) page and filed under its plain category', () => {
+  const namer = wikiZoneNamer(catalogZoneCounts([{ zones: ['Cazic Thule'] }]))
+  for (const raw of ['Temple of Cazic-Thule', 'The Temple of Cazic-Thule', 'Temple of Cazic-Thule - Group 4 (Refined)']) assert.equal(namer(raw), 'Cazic Thule', raw)
+  assert.equal(wikiZoneLink('Cazic Thule'), '[[Cazic Thule (Zone)|Cazic Thule]]')
+  assert.equal(wikiZoneLink('Erudin'), '[[Erudin]]')
+  const mob = row('mob', 'a lizard crusader', { zones: { entries: [{ name: 'Temple of Cazic-Thule', n: 1 }], distinct: 1 } })
+  const text = wikiPageText(mob, [], {}, { zoneName: namer })
+  assert.ok(text.includes('| zone              = [[Cazic Thule (Zone)|Cazic Thule]]'), text)
+  assert.match(text, /\[\[Category:Cazic Thule\]\]\n$/)
 })
 
 test('one corpse is one drop, and more drops than kills prints no rate rather than Always', () => {

@@ -18,6 +18,7 @@ import type { KillMap } from './kills'
 import { killsFor } from './kills'
 import { derivedPrices, factionMob, factionOf, npcOnlySpell, type ClientSpellFacts, type GapDomain, type GapRow } from './gaps'
 import { itemBaseName } from './itemStats'
+import { wikiZoneLink } from './gapWikiZone'
 import type { VendorFinder } from './gapMobPage'
 import type { LootEvent } from './types'
 
@@ -51,7 +52,7 @@ export function zoneBlocks(byZone: ReadonlyMap<string, readonly string[]>): stri
   const zones = [...byZone].sort((a, b) => a[0].localeCompare(b[0]))
   const blocks = zones.map(([zone, mobs]) => {
     const list = [...mobs].sort((a, b) => a.localeCompare(b)).map((m) => `* ${wikiLink(m)}`).join('\n')
-    return zone === '' ? list : `${wikiLink(zone)}\n\n${list}`
+    return zone === '' ? list : `${wikiZoneLink(zone)}\n\n${list}`
   })
   return `\n\n${blocks.join('\n\n')}\n`
 }
@@ -76,7 +77,7 @@ export function itemWhereTable(vendors: readonly VendorSeen[]): string {
   const unplaced = (v: VendorSeen): number => Number(v.zone === '')
   const sorted = [...vendors].sort((a, b) => unplaced(a) - unplaced(b) || a.zone.localeCompare(b.zone) || a.vendor.localeCompare(b.vendor))
   const rows = sorted.map((v) => {
-    const zone = v.zone === '' ? '' : wikiLink(v.zone)
+    const zone = v.zone === '' ? '' : wikiZoneLink(v.zone)
     const loc = v.loc === undefined ? '' : `(${String(v.loc[0])}, ${String(v.loc[1])})`
     return `{{ItemWhereRow   | ${cell(zone, 34)}| ${cell(wikiLink(v.vendor), 30)}|${' '.repeat(15)}| ${loc} }}`
   })
@@ -374,7 +375,7 @@ function npcValues(f: NpcFacts): Record<string, string> {
     name: f.name,
     // The wiki writes a range unspaced, `11-13`, four times in five.
     level: lo === undefined || hi === undefined ? '' : lo === hi ? String(lo) : `${String(lo)}-${String(hi)}`,
-    zone: f.zones.map(wikiLink).join(', '),
+    zone: f.zones.map(wikiZoneLink).join(', '),
     location: locationText(f.points),
     special: f.specials.join(', '),
     ...factionBlocks(f.factions, f.credited)
