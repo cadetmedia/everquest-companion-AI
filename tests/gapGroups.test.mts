@@ -67,3 +67,19 @@ test('a folded zone shows only its heading; a folded mob hides its rows and noth
   assert.deepEqual(names(unfoldedEntries(all, new Set([key('Befallen')]))), ['Befallen', 'The Feerrott', 'Bought Thing', 'a jungle spider', 'Spider Fang'])
   assert.deepEqual(names(unfoldedEntries(all, new Set([key('a jungle spider')]))), ['Befallen', 'a skeleton', 'Bone Chips', 'The Feerrott', 'Bought Thing', 'a jungle spider'])
 })
+
+test("a mob's page lines read A to Z under its heading, whatever the table's order (Copy lines copies them so)", () => {
+  const drop = (item: string, n: number): GapRow => ({
+    domain: 'drop',
+    name: `${item} (a lesser kobold)`,
+    kinds: ['looted'],
+    count: n,
+    first: '',
+    last: '',
+    details: { samples: [], sources: { entries: [{ name: 'a lesser kobold', n }], distinct: 1 }, zones: { entries: [{ name: 'Innothule Swamp', n }], distinct: 1, all: ['Innothule Swamp'] } }
+  })
+  const rows = [drop('Rusty Weapons', 2), drop('Small Box', 2), drop('Bandages', 1), drop('Belt Pouch', 1)]
+  const mob = groupGaps(rows, []).find((e) => e.kind === 'mob')
+  assert.ok(mob?.kind === 'mob')
+  assert.deepEqual(mob.rows.map((r) => r.name), ['Bandages (a lesser kobold)', 'Belt Pouch (a lesser kobold)', 'Rusty Weapons (a lesser kobold)', 'Small Box (a lesser kobold)'])
+})

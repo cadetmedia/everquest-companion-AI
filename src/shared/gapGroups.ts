@@ -6,7 +6,7 @@
 // more than once; one never looted from a mob sits under its zones alone. A mob or a spell sits
 // under the zones it was named in. A row seen in no zone is filed under ZONE_NOT_SEEN, last.
 
-import { onMobPage, type GapRow } from './gaps'
+import { factionOf, onMobPage, type GapRow } from './gaps'
 import { itemBaseName } from './itemStats'
 import type { LootEvent } from './types'
 
@@ -92,7 +92,7 @@ function addTo(tree: Tree, p: Place, row: GapRow, zoneName: (raw: string) => str
   if (!m.rows.includes(row)) m.rows.push(row)
 }
 
-/** Zones A to Z (ZONE_NOT_SEEN last), then mobs A to Z after the rows with no mob; rows in the given order. */
+/** Zones A to Z (ZONE_NOT_SEEN last), then mobs A to Z after the rows with no mob; rows in the given order, except a mob page's lines, A to Z. */
 export function groupGaps(rows: readonly GapRow[], loot: readonly LootEvent[], zoneName: (raw: string) => string = (z) => z): GapEntry[] {
   const tree: Tree = new Map()
   const looted = lootPlaces(loot)
@@ -104,6 +104,9 @@ export function groupGaps(rows: readonly GapRow[], loot: readonly LootEvent[], z
     const n = new Set(mobs.flatMap((m) => m.rows)).size
     out.push({ kind: 'zone', key: `zone|${z.zone}`, zone: z.zone, n })
     for (const m of mobs) {
+      // Under a mob, the lines for its page read A to Z, as the page lists them and Copy lines copies
+      // them (owner, 2026-10-20: "make sure the items are sorted by name").
+      if (m.mob !== '' && m.rows.every(onMobPage)) m.rows.sort((a, b) => factionOf(a).localeCompare(factionOf(b)))
       if (m.mob !== '') out.push({ kind: 'mob', key: `mob|${z.zone}|${m.mob}`, mob: m.mob, n: m.rows.length, rows: m.rows })
       const depth = m.mob === '' ? 1 : 2
       for (const row of m.rows) out.push({ kind: 'row', key: `row|${z.zone}|${m.mob}|${row.domain}|${row.name}`, row, depth })
