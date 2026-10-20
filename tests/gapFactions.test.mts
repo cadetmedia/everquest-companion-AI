@@ -39,6 +39,19 @@ test('a faction row copies the bullet for its mob page and points at that page; 
   assert.deepEqual(shape, ['Lower Guk', '  a zol ghoul knight', '    Venril Sathir (a zol ghoul knight)'])
 })
 
+test('the details of a faction row carry the log lines that prove it: the faction line then the kill line (owner, 2026-10-20)', () => {
+  const proof = [
+    '[Mon Oct 19 23:56:47 2026] Your faction standing with Grobb Merchants has been adjusted by 1.',
+    '[Mon Oct 19 23:56:47 2026] You have slain a troll slayer!'
+  ]
+  const trolls = [{ page: 'A troll slayer', name: 'a troll slayer', factions: ['Da Bashers'] }]
+  const [row] = factionGaps([{ mob: 'a troll slayer', faction: 'Grobb Merchants', n: 1, zone: 'Grobb', samples: proof }], trolls)
+  assert.equal(row.name, 'Grobb Merchants (a troll slayer)')
+  assert.deepEqual(row.details.samples, proof)
+  const [bare] = factionGaps([{ mob: 'a troll slayer', faction: 'Grobb Merchants', n: 1, zone: 'Grobb' }], trolls)
+  assert.deepEqual(bare.details.samples, [], 'an older engine serves none')
+})
+
 test('a merchant the wiki lacks copies a bare MerchantPage: name, class and zone, no items', () => {
   const text = merchantPage({ name: 'Murga', zones: ['The Feerrott'], levels: [40], points: [[-791, 173, -12]], factions: [], credited: 0, specials: [] })
   assert.ok(text.startsWith('{{Classic Era}}\n{{MerchantPage\n\n| imagefilename     = npc_murga.png\n'), text)

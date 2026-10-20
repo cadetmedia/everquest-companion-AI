@@ -16,6 +16,9 @@ use std::collections::HashMap;
 
 /// The window the kills module also joins a kill's exp line by (`KILL_EXP_JOIN_MS`).
 const KILL_FACTION_MS: i64 = 2_500;
+/// The proof a pair keeps: its last three kills, each the faction line then the death line,
+/// verbatim with their stamps (owner, 2026-10-20: "how do I know it has Grobb Merchants?").
+const KILL_FACTION_SAMPLES: usize = 6;
 
 /// The merchant an event shows trading, and how: `quoted`, `bought` (from it), `sold` (to it).
 pub fn merchant_of<'a>(ev: &'a Event) -> Option<(&'a str, &'static str)> {
@@ -60,6 +63,8 @@ struct Pair {
     adjusts: HashMap<i64, u32>,
     /// Which way the kill pushed it, from an amount's sign or a capped line's word.
     raised: Option<bool>,
+    /// The last kills' raw lines, oldest first (`KILL_FACTION_SAMPLES`).
+    samples: Vec<String>,
 }
 
 impl Pair {
@@ -71,8 +76,8 @@ impl Pair {
 
 #[derive(Default)]
 pub struct KillFactions {
-    /// Faction lines not yet claimed by a death, with when they were read.
-    pending: Vec<(String, i64, Option<i64>, Option<bool>)>,
+    /// Faction lines not yet claimed by a death, with when they were read and the raw line.
+    pending: Vec<(String, i64, Option<i64>, Option<bool>, String)>,
     pairs: HashMap<(String, String), Pair>,
 }
 
@@ -85,15 +90,17 @@ impl KillFactions {
     /// A faction line, held for the death that follows it.
     pub fn line(&mut self, ev: &Event) {
         if let Some((f, adjust, raised)) = faction_of(message_text_of(ev.raw())) {
-            self.pending.push((f.to_string(), ev.ts(), adjust, raised));
+            let (f, raw) = (f.to_string(), ev.raw().to_string());
+            self.pending.push((f, ev.ts(), adjust, raised, raw));
         }
     }
 
-    /// A death: the faction lines just before it are its kill's. True when a pair was recorded.
-    pub fn death(&mut self, mob: &str, ts: i64, zone: Option<&str>) -> bool {
+    /// A death (`ev`, of `mob`): the faction lines just before it are its kill's. True when a pair
+    /// was recorded.
+    pub fn death(&mut self, ev: &Event, mob: &str, zone: Option<&str>) -> bool {
         let mut any = false;
-        for (faction, at, adjust, raised) in std::mem::take(&mut self.pending) {
-            if ts - at > KILL_FACTION_MS {
+        for (faction, at, adjust, raised, line) in std::mem::take(&mut self.pending) {
+            if ev.ts() - at > KILL_FACTION_MS {
                 continue;
             }
             let key = (mob.to_lowercase(), faction.to_lowercase());
@@ -104,6 +111,7 @@ impl KillFactions {
                 zone: String::new(),
                 adjusts: HashMap::new(),
                 raised: None,
+                samples: Vec::new(),
             });
             pair.n += 1;
             pair.zone = zone.unwrap_or_default().to_string();
@@ -111,12 +119,15 @@ impl KillFactions {
                 *pair.adjusts.entry(a).or_default() += 1;
             }
             pair.raised = raised.or(pair.raised);
+            pair.samples.extend([line, ev.raw().to_string()]);
+            let over = pair.samples.len().saturating_sub(KILL_FACTION_SAMPLES);
+            pair.samples.drain(..over);
             any = true;
         }
         any
     }
 
-    /// `[{mob, faction, n, zone, adjust?, raised?}]`, by mob then faction.
+    /// `[{mob, faction, n, zone, adjust?, raised?, samples?}]`, by mob then faction.
     pub fn serve(&self) -> Value {
         let mut pairs: Vec<&Pair> = self.pairs.values().collect();
         pairs.sort_by(|a, b| a.mob.cmp(&b.mob).then_with(|| a.faction.cmp(&b.faction)));
@@ -127,6 +138,9 @@ impl KillFactions {
                 row["raised"] = json!(a > 0);
             } else if let Some(r) = p.raised {
                 row["raised"] = json!(r);
+            }
+            if !p.samples.is_empty() {
+                row["samples"] = json!(p.samples);
             }
             row
         });
@@ -147,6 +161,41 @@ mod tests {
         ev(&format!(
             r#"{{"kind":"unknown","ts":{ts},"seq":1,"raw":"[Wed Jul 29 01:23:12 2026] {text}"}}"#
         ))
+    }
+
+    fn death(text: &str, ts: i64) -> Event<'static> {
+        ev(&format!(
+            r#"{{"kind":"death","ts":{ts},"seq":2,"raw":"[Mon Oct 19 23:56:47 2026] {text}"}}"#
+        ))
+    }
+
+    #[test]
+    fn a_kill_serves_its_faction_line_and_death_line_as_proof_and_keeps_the_last_three() {
+        let mut k = KillFactions::default();
+        for i in 0..4 {
+            let at = i * 10_000;
+            let by = format!("with Grobb Merchants has been adjusted by {}.", i + 1);
+            k.line(&line(&format!("Your faction standing {by}"), at));
+            let slain = death("You have slain a troll slayer!", at);
+            k.death(&slain, "a troll slayer", None);
+        }
+        let served = k.serve();
+        let samples: Vec<&str> = served[0]["samples"]
+            .as_array()
+            .expect("the proof lines")
+            .iter()
+            .map(|s| s.as_str().unwrap_or(""))
+            .collect();
+        assert_eq!(samples.len(), 6, "three kills, two lines each");
+        assert_eq!(
+            samples[4..],
+            [
+                "[Wed Jul 29 01:23:12 2026] Your faction standing with Grobb Merchants has been adjusted by 4.",
+                "[Mon Oct 19 23:56:47 2026] You have slain a troll slayer!"
+            ],
+            "the newest kill last, verbatim with its stamps"
+        );
+        assert!(samples[0].ends_with("by 2."), "the oldest kill dropped");
     }
 
     #[test]
@@ -177,13 +226,14 @@ mod tests {
             "Your faction standing with Frogloks of Guk could not possibly get any better.",
             1_000,
         ));
-        assert!(k.death("a zol ghoul knight", 1_500, Some("Lower Guk")));
+        let knight = death("A zol ghoul knight has been slain by Rykkerr!", 1_500);
+        assert!(k.death(&knight, "a zol ghoul knight", Some("Lower Guk")));
         k.line(&line(
             "Your faction standing with Turn-in Faction has been adjusted by 10.",
             2_000,
         ));
         assert!(
-            !k.death("a rat", 60_000, None),
+            !k.death(&death("You have slain a rat!", 60_000), "a rat", None),
             "a faction line a minute old is no kill's"
         );
         let served = k.serve();
