@@ -17,7 +17,7 @@ into `main_community`, and push with the rest of the work.
 | [WIKI.md](WIKI.md) | Before parsing wiki pages or writing pages for the wiki: links, page templates, conventions, caches, what the log can give a page. |
 | [../RELEASING.md](../RELEASING.md) | Before a release (on `community_release_rules`). |
 | [../plans/2026-10-18-scrape-rebaseline.md](../plans/2026-10-18-scrape-rebaseline.md) | Open: the era rules, the stale-scrape defect, the August catch-up (phases and status). |
-| [../plans/2026-10-19-gaps-all-characters.md](../plans/2026-10-19-gaps-all-characters.md) | Next: the Gaps tab across every character (planned, not built). |
+| [../plans/2026-10-19-gaps-all-characters.md](../plans/2026-10-19-gaps-all-characters.md) | The Gaps tab across every character: the owner's answers (built on `gaps-all-characters`). |
 | [../audits/2026-10-19-gaps-review.md](../audits/2026-10-19-gaps-review.md) | Before changing the Gaps tab: the review, the owner's eight decisions, what is left. |
 
 Write style for these files: terse bullets, commands and facts, the reason in one clause. No

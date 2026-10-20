@@ -225,17 +225,41 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   "Someone" as it stands (`'s skin` or ` staggers`).
 - Rows: Done marks are per viewer (`eq.gaps.done`, dropped when the row leaves the snapshot); a
   faction, drop or image chip opens the catalog page title picked by zone (`shared/gapMobPage.ts`).
-- Still open from the review: held items in the details (C6), a map link (C7), soldby as an
-  ItemWhereTable (D1), the group rate on a group drop line (D2), corpse coin and turn-ins (E3, E4).
+- Held now (C6, `shared/gapHeld.ts`): the last `/outputfile inventory` export through
+  `useGearOwnership`, plus kept loot since (`computeHeldCountsAfter`), less destroys since; no
+  export, no claim (a loot line cannot tell a copy held from one sold). Items domain only.
+- Soldby (D1): `{{ItemWhereTable|` rows laid out byte-for-byte as the 1,247 cached pages write them
+  (`{{ItemWhereRow   | ` prefix, zone cell 34 wide, vendor 30, empty third cell 15, `(ns, ew)`, an
+  unknown loc `|  }}`); a vendor's loc only when its catalog page states one point (the wiki's row
+  matched a multi-point page's first point 113 of 426 times). `vendorFinder` in `gapMobPage.ts`.
+- Owner answers to the review leftovers (2026-10-19): C7 map link dropped (an unknown mob has no
+  location); E4 turn-ins not built (an offer is not an acceptance). The row's work buttons also sit
+  on each row as icons (`GapRowButtons.tsx`).
 - Copy wiki page (`shared/wikiPage.ts`): a page holds only fields the log fills, no placeholders, no
   blueprint option lists (owner, 2026-10-18: "each item page has FAR less than that"); `statsblock`
   stays open for the player's screenshot. Blueprints:
   https://eqlwiki.com/Help:Contents#Item_Page_Blueprint, #NPC_Page_Blueprint,
   #Merchant_Page_Blueprint, #Spell_Page_Blueprint. Model output on real cached pages (Fire Beetle
   Eye), not on the blueprint.
-- Drop rates go on the MOB's page, per `known_loot` item, in the `ddb` span as the player's own
-  `~55% (Drops: 11, Kills: 20)`; never the wiki's `[1] 4x 55% (20%)` (loot tables, not in any
-  log) and no `(Uncommon)` label until the owner names the thresholds.
+- Drop rates go on the MOB's page, per `known_loot` item and per group line, as the wiki's own
+  spans: `<span class='drare'>(Rare)</span> <span class='ddb'>[Overall: ~12.5%]</span>` (owner,
+  2026-10-18: the drare word from the bands the wiki's 9,806 lines use); never the wiki's
+  `[1] 4x 55% (20%)` (loot tables, not in any log). A group line's rate is the corpses that dropped
+  ANY member over the mob's kills; no kills or more drops than kills leaves it off.
+- Corpse coin (`gaps_coin.rs`, `mobCoin`): Legends pays at the kill, `You receive ... from the
+  corpse.` in the kill's second (5,576 of 5,689 lines claimed by a death within 2.5 s); a page gets
+  the wiki's `MONEY DROPS` block (min - max per coin, the 406 cached blocks' colors and words).
+  Never "NO MONEY DROPS" or "no loot": the game prints nothing for a coinless kill or an empty
+  corpse, and rare payers are real (a basilisk paid on 2 of 103 kills), so no count proves none.
+  `mergeGaps` joins it per mob (log-archive).
+- Zones the wiki titles differently: `ZONE_ALIASES` in `shared/gapWikiZone.ts`; Temple of
+  Cazic-Thule links `[[Cazic Thule (Zone)|Cazic Thule]]` (plain `Cazic Thule` is the god's
+  disambiguation page) and files `[[Category:Cazic Thule]]`. The owner is asking the wiki's editors.
+- `PLAYER_LEVEL_CAP = 50` (`gaps_players.rs`): a con above it makes a one-word name an NPC for good.
+  Raise it when an expansion opens levels.
+- Hide uncertain (`uncertainGap`, `eq.gaps.hideUncertain`, off by default): only "may be a player"
+  rows; a near miss, a faction with no direction, an unpicked drop page and a cache verdict are real
+  gaps with an unsure detail and stay.
 - Not from the log: stats, slot, icon id, quest rewards, foraging, normal merchant sale price
   (Gaps keeps only the sale-on-loot), a merchant's stock. A merchant page needs a purchase
   tracker (asked, not built).

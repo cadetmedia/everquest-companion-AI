@@ -2,11 +2,15 @@
 
 Owner ask, 2026-10-19, with a second character (Kaltinril on freeport) beside Drywrought on oggok:
 "Is there a way the GAPS section, can come from ALL characters though? ... JUST the gaps
-information!" Planned only; nothing is built. Rules first: `docs/community/RULES.md`, then
+information!" Built 2026-10-19 on `gaps-all-characters` (BRANCHES.md row has the shape). Rules first: `docs/community/RULES.md`, then
 `agent/INDEX.md`. The requirement row goes in `requirements/gaps-tab.md` before any code (rule 19).
 
 ## Scope
 
+- Owner ruling, 2026-10-19: "it should not create a combined set of log files, it should just
+  aggregate the data together INTO a single source of gaps in the tab ... while maintaining the
+  isolation of the log files as is." No log, archive segment or per-character store is merged,
+  copied or rewritten; each character's data stays its own, and only the tab's view is a join.
 - Only the Gaps tab reads across characters. Kills, loot, the ledger, achievements, wish lists and
   every other view stay per character, exactly as now.
 - Every Gaps domain: Items, Mobs, Spells, Merchants (engine `gaps` module) and Factions, Drops,
@@ -54,9 +58,22 @@ Cost: moderate. No engine change; a store file, an IPC pair, the merge, the chec
 - **Archive history only.** Other characters' archived segments could be merged without a new
   store, but only what was archived would show; a character never archived would show nothing.
 
-## Open questions for the owner
+## Owner answers (2026-10-19)
 
-- Default of the checkbox: off (today's view) or on.
-- Whether "All characters" also merges each character's archived history, or only the live log's
-  snapshot.
-- How old a saved snapshot may be before the tab warns.
+- **Archived history: yes.** "all data including archived data". Every character's sealed archive
+  segments are merged too (they already keep their `gaps`, `loot` and `kills` snapshots), under the
+  same no-double-count rule as `eligible.ts`, applied per character.
+- **Stale warning: 2 months.** A character whose saved Gaps data is older than two months is flagged
+  in the tab; rows still show, with "as of <date> for <character>" in the details.
+- **Checkbox: off by default, with a warning.** "All characters", unchecked by default (owner:
+  "start off"); its caption or tooltip warns that it can hold a lot of data with several accounts,
+  characters or servers.
+- **How far back: a setting, default 60 days.** "The time to go back could be per user, default to
+  60 days but give them the ability to change that". One player setting (not per character): rows
+  last seen, and archived segments that ended, more than N days ago are left out; N defaults to 60
+  and the player can change it. This replaces the fixed-date proposal (rolling days, owner's
+  choice). Built for the All characters view only; whether it also trims the single-character view
+  is NOT decided (agent's suggestion: yes, same reason); ask before building it there.
+- **The 2-month flag and the 60-day window overlap:** a character not attached for two months has
+  little or nothing inside a 60-day window. The flag then says so per character ("Drywrought: last
+  seen <date>, outside the N-day window") rather than warning about rows that are already hidden.
