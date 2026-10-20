@@ -5,6 +5,8 @@
 // does not have at all is a mob row already, so its pairs are not repeated here.
 
 import type { GapRow, GapsSnap } from './gaps'
+import type { KillMap } from './kills'
+import { spanStamps, widen, type Span } from './gapTimes'
 import { pagesByMob, pickPage } from './gapMobPage'
 import { mobKey } from './mobKey'
 import type { MobEntry } from './mobTypes'
@@ -52,7 +54,9 @@ function factionsByMob(catalog: readonly CatalogMob[]): Map<string, Set<string>>
 }
 
 /** The pairs no page of the mob's name lists, as Gaps rows: `Clurg (a goblin)`, most seen first. */
-export function factionGaps(pairs: readonly KillFaction[], catalog: readonly CatalogMob[]): GapRow[] {
+export function factionGaps(pairs: readonly KillFaction[], catalog: readonly CatalogMob[], kills: KillMap = {}): GapRow[] {
+  // First and Last are the mob's first and last kill: the faction moves on its kills.
+  const spans = new Map<string, Span | undefined>(Object.values(kills).map((k) => [mobKey(k.display), widen(widen(undefined, k.firstTs), k.lastTs)]))
   const listed = factionsByMob(catalog)
   const pages = pagesByMob(catalog)
   const rows: GapRow[] = []
@@ -65,8 +69,7 @@ export function factionGaps(pairs: readonly KillFaction[], catalog: readonly Cat
       name: `${p.faction} (${p.mob})`,
       kinds: ['killed'],
       count: p.n,
-      first: '',
-      last: '',
+      ...spanStamps(spans.get(mobKey(p.mob))),
       details: {
         samples: [],
         sources: { entries: [{ name: p.mob, n: p.n }], distinct: 1 },
@@ -81,7 +84,7 @@ export function factionGaps(pairs: readonly KillFaction[], catalog: readonly Cat
 }
 
 /** The served snapshot with the faction rows joined in and counted, so the tab treats them as a domain. */
-export function withFactionRows(snap: GapsSnap, catalog: readonly CatalogMob[]): GapsSnap {
-  const rows = factionGaps(snap.killFactions ?? [], catalog)
+export function withFactionRows(snap: GapsSnap, catalog: readonly CatalogMob[], kills: KillMap = {}): GapsSnap {
+  const rows = factionGaps(snap.killFactions ?? [], catalog, kills)
   return { ...snap, rows: [...snap.rows, ...rows], totals: { ...snap.totals, faction: rows.length } }
 }

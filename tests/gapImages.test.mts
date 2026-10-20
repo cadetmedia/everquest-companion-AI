@@ -3,6 +3,8 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { imageGaps } from '../src/shared/gapImages'
+import { dropGaps } from '../src/shared/gapDrops'
+import { factionGaps } from '../src/shared/gapFactions'
 import { gapActions } from '../src/shared/gaps'
 import { groupGaps, rowEntries } from '../src/shared/gapGroups'
 import { wikiPageText } from '../src/shared/wikiPage'
@@ -45,4 +47,18 @@ test('two spellings met that lead to one page are one row, and the table keys ne
   assert.deepEqual(rowEntries(twice).map((e) => e.key), ['image|Marda', 'image|Marda#2'])
   const grouped = groupGaps(twice, []).map((e) => e.key)
   assert.equal(new Set(grouped).size, grouped.length)
+})
+
+test('rows the tab builds carry First and Last, in the log stamp shape, from the ledgers', () => {
+  const t1 = new Date(2026, 9, 6, 23, 9, 1).getTime()
+  const t2 = new Date(2026, 9, 19, 18, 34, 20).getTime()
+  const kills: KillMap = { marda: { ...kill('Marda', 2), firstTs: t1, lastTs: t2 } }
+  const [img] = imageGaps(kills, [], catalog)
+  assert.deepEqual([img?.first, img?.last], ['2026-10-06 23:09:01', '2026-10-19 18:34:20'])
+  const [drop] = dropGaps([{ item: 'Rusty Axe', source: 'Clurg', zone: 'Oggok', ts: t2 }, { item: 'Rusty Axe', source: 'Clurg', zone: 'Oggok', ts: t1 }] as never, [{ page: 'Clurg', name: 'Clurg', drops: [] }], {})
+  assert.deepEqual([drop?.first, drop?.last], ['2026-10-06 23:09:01', '2026-10-19 18:34:20'])
+  const [fac] = factionGaps([{ mob: 'Marda', faction: 'Clan Kolbok', n: 2, zone: 'Oggok' }], [{ page: 'Marda', name: 'Marda', factions: [] }], kills)
+  assert.deepEqual([fac?.first, fac?.last], ['2026-10-06 23:09:01', '2026-10-19 18:34:20'])
+  // No time known: blank, as before.
+  assert.equal(imageGaps({ marda: kill('Marda', 1) }, [], catalog)[0]?.first, '')
 })
