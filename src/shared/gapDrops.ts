@@ -14,6 +14,7 @@
 // mobs it would also hide Rat Eye (6 mobs, tied to 2), a real gap.
 
 import type { GapRow } from './gaps'
+import { pagesByMob, pickPage } from './gapMobPage'
 import { itemBaseName } from './itemStats'
 import { mobKey } from './mobKey'
 import type { LootEvent } from './types'
@@ -29,22 +30,34 @@ interface CatalogMob {
   name: string
   page: string
   otherNames?: string[]
+  zones?: string[]
   drops?: string[]
+  /** the page's `|common_loot`, which lists a drop as surely as `|known_loot` (owner, 2026-10-19) */
+  commonDrops?: string[]
 }
 
 /** Group name → its member items, as dropGroups.json states them. */
 export type DropGroups = Readonly<Record<string, readonly string[]>>
 
+/** A drop-list link that redirects to an item page → that item (`A Wooden Heart` → `Wooden Heart`), from dropGroups.json. */
+export type DropAliases = Readonly<Record<string, string>>
+
 /** Item key → the mobs its item page names; null for no page. Absent until main has answered. */
 export type ItemMobs = ReadonlyMap<string, readonly string[] | null>
 
+/** Every drop a page lists, in both loot fields, with the item a redirect title stands for. */
+function listedDrops(m: CatalogMob, aliases: DropAliases): string[] {
+  const named = [...(m.drops ?? []), ...(m.commonDrops ?? [])]
+  return [...named, ...named.flatMap((d) => (aliases[d] === undefined ? [] : [aliases[d]]))]
+}
+
 /** Every catalog name → the drop names (item keys) its pages list. */
-function dropsByMob(catalog: readonly CatalogMob[]): Map<string, Set<string>> {
+function dropsByMob(catalog: readonly CatalogMob[], aliases: DropAliases = {}): Map<string, Set<string>> {
   const out = new Map<string, Set<string>>()
   for (const m of catalog) {
     for (const name of [m.name, m.page, ...(m.otherNames ?? [])]) {
       const set = out.get(mobKey(name)) ?? new Set<string>()
-      for (const d of m.drops ?? []) set.add(sourceItemKey(d))
+      for (const d of listedDrops(m, aliases)) set.add(sourceItemKey(d))
       out.set(mobKey(name), set)
     }
   }
@@ -65,30 +78,49 @@ interface Missing {
   /** the group it is filed as, or the item itself */
   name: string
   group: boolean
+  /** the zone last looted in, and every zone it dropped in with its corpses */
   zone: string
+  zones: Map<string, number>
   n: number
   /** the members seen, for a group */
   seen: Map<string, number>
+  /** each corpse once: a line per copy of an item prints from one corpse in one second */
+  corpses: Set<string>
 }
 
 /** The (mob, item or group) pairs no page of the mob lists, as Gaps rows, most looted first. */
-export function dropGaps(loot: readonly LootEvent[], catalog: readonly CatalogMob[], groups: DropGroups, itemMobs?: ItemMobs): GapRow[] {
-  const listed = dropsByMob(catalog)
+/** What the wiki says beside the mob pages: each item page's mobs (main's answer) and the redirect titles. */
+export interface DropSide {
+  itemMobs?: ItemMobs
+  aliases?: DropAliases
+}
+
+/** One loot line into its (mob, item or group) pair: each corpse once, every zone, the members seen. */
+function addDrop(missing: Map<string, Missing>, e: LootEvent, mob: string, filed: { name: string; group: boolean }): void {
+  const key = `${mobKey(mob)}|${sourceItemKey(filed.name)}`
+  const m = missing.get(key) ?? { mob, name: filed.name, group: filed.group, zone: '', zones: new Map<string, number>(), n: 0, seen: new Map<string, number>(), corpses: new Set<string>() }
+  // Corpses, not stack sizes or lines: the count feeds a drop rate (drops per kill).
+  m.corpses.add(`${String(e.ts)}|${mobKey(mob)}`)
+  m.n = m.corpses.size
+  m.zone = e.zone ?? m.zone
+  if (e.zone !== undefined) m.zones.set(e.zone, (m.zones.get(e.zone) ?? 0) + 1)
+  if (filed.group) m.seen.set(e.item, (m.seen.get(e.item) ?? 0) + 1)
+  missing.set(key, m)
+}
+
+export function dropGaps(loot: readonly LootEvent[], catalog: readonly CatalogMob[], groups: DropGroups, side: DropSide = {}): GapRow[] {
+  const { itemMobs, aliases = {} } = side
+  const listed = dropsByMob(catalog, aliases)
+  const pages = pagesByMob(catalog)
   const inGroups = groupsByItem(groups)
   const missing = new Map<string, Missing>()
   for (const e of loot) {
     const filed = filedAs(e, listed, inGroups)
     if (filed === null || e.source === undefined) continue
-    const key = `${mobKey(e.source)}|${sourceItemKey(filed.name)}`
-    const m = missing.get(key) ?? { mob: e.source, name: filed.name, group: filed.group, zone: '', n: 0, seen: new Map<string, number>() }
-    // Corpses, not stack sizes: the count feeds a drop rate (drops per kill).
-    m.n += 1
-    m.zone = e.zone ?? m.zone
-    if (filed.group) m.seen.set(e.item, (m.seen.get(e.item) ?? 0) + 1)
-    missing.set(key, m)
+    addDrop(missing, e, e.source, filed)
   }
   const kept = itemMobs === undefined ? [...missing.values()] : withoutServerWide([...missing.values()], catalog, groups, itemMobs)
-  return kept.map((m) => rowOf(m, itemMobs)).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+  return kept.map((m) => rowOf(m, itemMobs, pickPage(pages.get(mobKey(m.mob)), m.zone))).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
 }
 
 /** What a looted item is filed as when its mob's page lists neither it nor a group holding it; null when listed or the mob is unknown. */
@@ -118,7 +150,7 @@ function ties(subject: string, catalog: readonly CatalogMob[], groups: DropGroup
   const names = new Set([subject, ...(entries.find(([g]) => g === subject)?.[1] ?? [])])
   for (const [g, ms] of entries) if (ms.some((m) => names.has(m))) names.add(g)
   const out = new Set<string>()
-  for (const m of catalog) if ((m.drops ?? []).some((d) => names.has(sourceItemKey(d)))) out.add(mobKey(m.name))
+  for (const m of catalog) if ([...(m.drops ?? []), ...(m.commonDrops ?? [])].some((d) => names.has(sourceItemKey(d)))) out.add(mobKey(m.name))
   for (const n of names) for (const mob of itemMobs.get(n) ?? []) out.add(mobKey(mob))
   return out
 }
@@ -127,9 +159,9 @@ function ties(subject: string, catalog: readonly CatalogMob[], groups: DropGroup
 export function withDropRows<S extends { rows: GapRow[]; totals: Record<string, number> }>(
   snap: S,
   loot: readonly LootEvent[],
-  wiki: { catalog: readonly CatalogMob[]; groups: DropGroups; itemMobs?: ItemMobs }
+  wiki: { catalog: readonly CatalogMob[]; groups: DropGroups; itemMobs?: ItemMobs; aliases?: DropAliases }
 ): S {
-  const rows = dropGaps(loot, wiki.catalog, wiki.groups, wiki.itemMobs)
+  const rows = dropGaps(loot, wiki.catalog, wiki.groups, { itemMobs: wiki.itemMobs, aliases: wiki.aliases })
   return { ...snap, rows: [...snap.rows, ...rows], totals: { ...snap.totals, drop: rows.length } }
 }
 
@@ -140,7 +172,13 @@ function itemPageSide(m: Missing, itemMobs: ItemMobs | undefined): GapRow['itemP
   return mobs.some((x) => mobKey(x) === mobKey(m.mob)) ? 'namesMob' : 'lacksMob'
 }
 
-function rowOf(m: Missing, itemMobs: ItemMobs | undefined): GapRow {
+/** Every zone it dropped in, most first: the Zone I'm in filter finds it in any of them. */
+function zoneTally(zones: ReadonlyMap<string, number>): NonNullable<GapRow['details']['zones']> {
+  const entries = [...zones].map(([name, n]) => ({ name, n })).sort((a, b) => b.n - a.n || a.name.localeCompare(b.name))
+  return { entries: entries.slice(0, 8), distinct: entries.length, all: entries.map((e) => e.name) }
+}
+
+function rowOf(m: Missing, itemMobs: ItemMobs | undefined, page: string | undefined): GapRow {
   const seen = [...m.seen].map(([name, n]) => ({ name, n }))
   const itemPage = itemPageSide(m, itemMobs)
   return {
@@ -153,10 +191,11 @@ function rowOf(m: Missing, itemMobs: ItemMobs | undefined): GapRow {
     details: {
       samples: [],
       sources: { entries: [{ name: m.mob, n: m.n }], distinct: 1 },
-      ...(m.zone === '' ? {} : { zones: { entries: [{ name: m.zone, n: m.n }], distinct: 1, all: [m.zone] } }),
+      ...(m.zones.size === 0 ? {} : { zones: zoneTally(m.zones) }),
       ...(seen.length > 0 ? { drops: { entries: seen, distinct: seen.length } } : {})
     },
-    ...(itemPage === undefined ? {} : { itemPage })
+    ...(itemPage === undefined ? {} : { itemPage }),
+    ...(page === undefined ? {} : { page })
   }
 }
 

@@ -7,6 +7,7 @@
 // under the zones it was named in. A row seen in no zone is filed under ZONE_NOT_SEEN, last.
 
 import { onMobPage, type GapRow } from './gaps'
+import { itemBaseName } from './itemStats'
 import type { LootEvent } from './types'
 
 export const ZONE_NOT_SEEN = 'Zone not seen'
@@ -38,7 +39,8 @@ function lootPlaces(loot: readonly LootEvent[]): Map<string, Place[]> {
   const seen = new Set<string>()
   for (const e of loot) {
     if (e.source === undefined) continue
-    const key = e.item.toLowerCase()
+    // An item at any tier is one item (owner, 2026-10-19).
+    const key = itemBaseName(e.item).toLowerCase()
     const pair = `${key}|${(e.zone ?? '').toLowerCase()}|${e.source.toLowerCase()}`
     if (seen.has(pair)) continue
     seen.add(pair)
@@ -65,8 +67,9 @@ interface MobGroup {
 }
 type Tree = Map<string, { zone: string; mobs: Map<string, MobGroup> }>
 
-function addTo(tree: Tree, p: Place, row: GapRow): void {
-  const zone = p.zone === '' ? ZONE_NOT_SEEN : p.zone
+function addTo(tree: Tree, p: Place, row: GapRow, zoneName: (raw: string) => string): void {
+  // Tiers are one place (owner, 2026-10-19): `Befallen 4 (Refined)` files under the wiki's `Befallen`.
+  const zone = p.zone === '' ? ZONE_NOT_SEEN : zoneName(p.zone) || p.zone
   const z = tree.get(zone.toLowerCase()) ?? { zone, mobs: new Map<string, MobGroup>() }
   tree.set(zone.toLowerCase(), z)
   const m = z.mobs.get(p.mob.toLowerCase()) ?? { mob: p.mob, rows: [] }
@@ -75,10 +78,10 @@ function addTo(tree: Tree, p: Place, row: GapRow): void {
 }
 
 /** Zones A to Z (ZONE_NOT_SEEN last), then mobs A to Z after the rows with no mob; rows in the given order. */
-export function groupGaps(rows: readonly GapRow[], loot: readonly LootEvent[]): GapEntry[] {
+export function groupGaps(rows: readonly GapRow[], loot: readonly LootEvent[], zoneName: (raw: string) => string = (z) => z): GapEntry[] {
   const tree: Tree = new Map()
   const looted = lootPlaces(loot)
-  for (const row of rows) for (const p of placesOf(row, looted)) addTo(tree, p, row)
+  for (const row of rows) for (const p of placesOf(row, looted)) addTo(tree, p, row, zoneName)
   const zones = [...tree.values()].sort((a, b) => Number(a.zone === ZONE_NOT_SEEN) - Number(b.zone === ZONE_NOT_SEEN) || a.zone.localeCompare(b.zone))
   const out: GapEntry[] = []
   for (const z of zones) {

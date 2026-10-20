@@ -2,17 +2,17 @@
 // 2026-10-11): a diagnostics list, so the gaps can be fixed in the scrape or on the wiki.
 //
 // The engine's `gaps` module (engine/crates/fold/src/modules/gaps.rs) checks every item looted,
-// received, bought or crafted, every mob looted, killed or considered, and every spell cast against
-// the committed data, without ever asking the app to fetch. It serves one row per unknown name,
-// most mentioned first, 500 per domain at most. The domain toggle and the search box narrow those
-// rows in shared/gaps.ts; "Copy list" puts the visible rows on the clipboard as tab-separated text.
+// received, bought or crafted, every mob looted, killed, considered or hailed, and every spell cast
+// against the committed data, without ever asking the app to fetch. It serves one row per unknown
+// name, most mentioned first, 500 per domain at most; useGapsData joins the domains derived here.
+// The domain toggle and the search box narrow those rows in shared/gaps.ts; "Copy list" puts the
+// visible rows on the clipboard as tab-separated text.
 
 import { type JSX, useCallback, useDeferredValue, useMemo, useState } from 'react'
 import { Button, Checkbox, CircularProgress, FormControlLabel, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import {
   DEFAULT_GAP_SORT,
-  GAPS_MODULE_ID,
   GAP_DOMAINS,
   GAP_DOMAIN_HELP,
   GAP_DOMAIN_LABELS,
@@ -21,28 +21,24 @@ import {
   gapsCaption,
   sortGaps,
   visibleGaps,
+  withoutDone,
   type GapDomain,
   type GapRow,
   type GapSort,
   type GapSortKey,
   type GapsSnap
 } from '@shared/gaps'
-import type { CharacterSnap, LootSnap } from '@shared/types'
-import { killIndex, type KillsSnap } from '@shared/kills'
-import { wikiPageText } from '@shared/wikiPage'
+import type { CharacterSnap } from '@shared/types'
+import { stillNeeded, wikiPageText } from '@shared/wikiPage'
 import { groupGaps, rowEntries } from '@shared/gapGroups'
-import { withFactionRows } from '@shared/gapFactions'
-import { lootedItemNames, withDropRows, type DropGroups } from '@shared/gapDrops'
-import { withImageRows } from '@shared/gapImages'
-import dropGroupsJson from '../../data/eqlegends/dropGroups.json'
-import { MOB_CATALOG } from '../mobs/mobSearch'
 import { useModule } from '../../lib/useModule'
 import { Tooltip } from '../../lib/Tooltip'
 import { useBoolPref } from '../combat/useCombatPrefs'
 import { copyText } from '../../lib/clipboard'
 import { useGapVerdicts } from '../../lib/gapVerdicts'
-import { useItemMobs } from '../../lib/gapItemMobs'
 import GapsTable from './GapsTable'
+import { GAPS_DATA_DATE, PAGE_EXTRAS, useGapsData } from './useGapsData'
+import { useDoneMarks } from './useDoneMarks'
 
 // One line (owner, 2026-10-11): the how is in the module header, not on the page. Since 2026-10-18
 // the line says what the chosen domain's rows are (GAP_DOMAIN_HELP).
@@ -50,53 +46,35 @@ const CLICK_HINT = 'Click a row for where it was seen.'
 
 /** Where the "Zone I'm in" choice is remembered, per viewer, as the Achievements tab remembers its own. */
 const ZONE_HERE_KEY = 'eq.gaps.zoneHere'
-/** Each drop group's members (scrape-drop-groups.ts). */
-const DROP_GROUPS: DropGroups = (dropGroupsJson as { groups: DropGroups }).groups
-
 /** Where the grouped view is remembered. */
 const GROUPED_KEY = 'eq.gaps.grouped'
+/** Where "Show done" is remembered. */
+const SHOW_DONE_KEY = 'eq.gaps.showDone'
+const CHIP_CONTEXT = { dataDate: GAPS_DATA_DATE, isMob: PAGE_EXTRAS.isMob }
+
+/** A small checkbox with a caption, the tab's toolbar control. */
+function Pref({ label, checked, onChange, testId, disabled }: { label: string; checked: boolean; onChange: (on: boolean) => void; testId: string; disabled?: boolean }): JSX.Element {
+  return (
+    <FormControlLabel
+      sx={{ mr: 0 }}
+      control={<Checkbox size="small" checked={checked} disabled={disabled} onChange={(e) => onChange(e.target.checked)} sx={{ p: 0.5 }} data-testid={testId} />}
+      label={<Typography variant="caption">{label}</Typography>}
+    />
+  )
+}
 
 /** "Zone I'm in (<zone>)", the Achievements tab's control: only the rows seen in that place, any tier. */
 function ZoneHere({ zone, checked, onChange }: { zone: string | null; checked: boolean; onChange: (on: boolean) => void }): JSX.Element {
   return (
-    <Tooltip
-      title={
-        zone === null
-          ? 'The log has not named a zone yet. Zone once and this fills in.'
-          : `Only what was seen in ${zone} or another tier of it.`
-      }
-    >
-      <FormControlLabel
-        sx={{ mr: 0 }}
-        control={
-          <Checkbox
-            size="small"
-            checked={checked}
-            disabled={zone === null}
-            data-testid="gaps-zone-here"
-            onChange={(e) => {
-              onChange(e.target.checked)
-            }}
-            sx={{ p: 0.5 }}
-          />
-        }
-        label={<Typography variant="caption">{zone === null ? "Zone I'm in" : `Zone I'm in (${zone})`}</Typography>}
-      />
+    <Tooltip title={zone === null ? 'The log has not named a zone yet. Zone once and this fills in.' : `Only what was seen in ${zone} or another tier of it.`}>
+      <span>
+        <Pref label={zone === null ? "Zone I'm in" : `Zone I'm in (${zone})`} checked={checked} onChange={onChange} disabled={zone === null} testId="gaps-zone-here" />
+      </span>
     </Tooltip>
   )
 }
 
-function DomainToggle({
-  snap,
-  domain,
-  zone,
-  onPick
-}: {
-  snap: GapsSnap
-  domain: GapDomain
-  zone: string | null
-  onPick: (d: GapDomain) => void
-}): JSX.Element {
+function DomainToggle({ snap, domain, zone, onPick }: { snap: GapsSnap; domain: GapDomain; zone: string | null; onPick: (d: GapDomain) => void }): JSX.Element {
   return (
     <ToggleButtonGroup
       exclusive
@@ -124,30 +102,21 @@ function DomainToggle({
 }
 
 export default function GapsView(): JSX.Element {
-  const fromEngine = useModule<GapsSnap>(GAPS_MODULE_ID)
-  const loot = useModule<LootSnap>('loot')
-  const killMobs = useModule<KillsSnap>('kills')?.mobs
-  // The item pages' side of each drop, asked of main (the corpus is main-only).
-  const looted = useMemo(() => lootedItemNames(loot ?? []), [loot])
-  const itemMobs = useItemMobs(looted)
-  // Factions a kill moved, drops and images a mob's page lacks, checked against the catalog here.
-  const snap = useMemo(() => {
-    if (!fromEngine) return fromEngine
-    const derived = withDropRows(withFactionRows(fromEngine, MOB_CATALOG), loot ?? [], { catalog: MOB_CATALOG, groups: DROP_GROUPS, itemMobs })
-    return withImageRows(derived, killMobs ?? {}, loot ?? [], MOB_CATALOG)
-  }, [fromEngine, loot, killMobs, itemMobs])
+  const { snap, engine, loot, kills } = useGapsData()
   const [domain, setDomain] = useState<GapDomain>('item')
   const [query, setQuery] = useState('')
   const [copied, setCopied] = useState<number | null>(null)
-  // "Zone I'm in" (owner ask, 2026-10-17): only what was named where you stand, every tier of it,
-  // so a zone can be worked through. With no zone known it filters nothing.
+  // "Zone I'm in" (owner ask, 2026-10-17): only what was named where you stand, every tier of it.
   const [hereOnly, setHereOnly] = useBoolPref(ZONE_HERE_KEY, false)
   const current = useModule<CharacterSnap>('character')?.zone ?? null
   const zone = hereOnly ? current : null
   const rows = snap?.rows
+  const marks = useDoneMarks(rows, new Date().toISOString().slice(0, 10))
+  const [showDone, setShowDone] = useBoolPref(SHOW_DONE_KEY, false)
   // The list follows the query a beat behind the keystroke, so typing never waits on a filter.
   const deferredQuery = useDeferredValue(query)
-  const visible = useMemo(() => visibleGaps(rows ?? [], domain, deferredQuery, zone), [rows, domain, deferredQuery, zone])
+  const inDomain = useMemo(() => visibleGaps(rows ?? [], domain, deferredQuery, zone), [rows, domain, deferredQuery, zone])
+  const visible = useMemo(() => (showDone ? inDomain : withoutDone(inDomain, marks.done)), [inDomain, showDone, marks.done])
   // What the caches already say about the rows on screen: `unchecked` until the answer lands.
   const verdicts = useGapVerdicts(domain, visible)
   const [sort, setSort] = useState<GapSort>(DEFAULT_GAP_SORT)
@@ -156,12 +125,13 @@ export default function GapsView(): JSX.Element {
   }, [])
   // The table and Copy list read the same order, so a copied list matches what is on screen.
   const sorted = useMemo(() => sortGaps(visible, sort, verdicts), [visible, sort, verdicts])
-  // A row's wiki page joins its loot (which mob, which zone) and the kills behind each drop.
-  const kills = useMemo(() => killIndex(killMobs ?? {}), [killMobs])
-  const pageText = useCallback((row: GapRow) => wikiPageText(row, loot ?? [], kills, fromEngine ?? {}), [loot, kills, fromEngine])
+  // What the pages read beside the ledgers: each kill's factions, each mob's points, the wiki's spellings.
+  const sightings = useMemo(() => ({ killFactions: engine?.killFactions, mobLocs: engine?.mobLocs, ...PAGE_EXTRAS }), [engine])
+  const pageText = useCallback((row: GapRow) => wikiPageText(row, loot, kills, sightings), [loot, kills, sightings])
+  const needed = useCallback((row: GapRow) => stillNeeded(row, loot, kills, sightings), [loot, kills, sightings])
   // "Group by zone, then mob" (owner ask, 2026-10-18): where to go and what to kill.
   const [grouped, setGrouped] = useBoolPref(GROUPED_KEY, false)
-  const entries = useMemo(() => (grouped ? groupGaps(sorted, loot ?? []) : rowEntries(sorted)), [grouped, sorted, loot])
+  const entries = useMemo(() => (grouped ? groupGaps(sorted, loot, PAGE_EXTRAS.zoneName) : rowEntries(sorted)), [grouped, sorted, loot])
 
   if (!snap) return <CircularProgress size={20} />
 
@@ -171,6 +141,7 @@ export default function GapsView(): JSX.Element {
   }
   const held = snap.totals[domain] ?? 0
   const served = visibleGaps(rows ?? [], domain, '').length
+  const hidden = inDomain.length - visible.length
 
   return (
     // A full-height column whose last child, the table box, is the page's only scroller (GapsTable).
@@ -199,11 +170,8 @@ export default function GapsView(): JSX.Element {
             setCopied(null)
           }}
         />
-        <FormControlLabel
-          sx={{ mr: 0 }}
-          control={<Checkbox size="small" checked={grouped} onChange={(e) => setGrouped(e.target.checked)} sx={{ p: 0.5 }} data-testid="gaps-grouped" />}
-          label={<Typography variant="caption">Group by zone, then mob</Typography>}
-        />
+        <Pref label="Group by zone, then mob" checked={grouped} onChange={setGrouped} testId="gaps-grouped" />
+        <Pref label="Show done" checked={showDone} onChange={setShowDone} testId="gaps-show-done" />
         <Button size="small" variant="outlined" startIcon={<ContentCopyIcon />} onClick={() => void copy()} disabled={visible.length === 0} data-testid="gaps-copy">
           Copy list
         </Button>
@@ -213,12 +181,24 @@ export default function GapsView(): JSX.Element {
           </Typography>
         )}
       </Stack>
-      <Typography variant="caption" color="text.secondary">
+      <Typography variant="caption" color="text.secondary" data-testid="gaps-shown">
         {visible.length} of {held} unknown {GAP_DOMAIN_LABELS[domain].toLowerCase()} shown
         {zone !== null ? `, seen in ${zone} or another tier of it` : ''}
-        {held > served ? ` (the engine serves the ${served} most mentioned)` : ''}.
+        {hidden > 0 ? `, ${hidden} marked done hidden` : ''}
+        {held > served ? ` (the engine serves the ${served} most mentioned)` : ''}. Wiki data from {GAPS_DATA_DATE}.
       </Typography>
-      <GapsTable entries={entries} verdicts={verdicts} sort={sort} onSort={onSort} pageText={pageText} hiddenByFilter={held > 0} />
+      <GapsTable
+        entries={entries}
+        verdicts={verdicts}
+        sort={sort}
+        onSort={onSort}
+        pageText={pageText}
+        needed={needed}
+        done={marks.done}
+        onDone={marks.toggle}
+        chipContext={CHIP_CONTEXT}
+        hiddenByFilter={held > 0}
+      />
     </Stack>
   )
 }

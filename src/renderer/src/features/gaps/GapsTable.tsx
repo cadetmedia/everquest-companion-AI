@@ -18,9 +18,29 @@
 import { type JSX, memo, useCallback, useMemo, useRef, useState } from 'react'
 import { Box, Button, Chip, Paper, Stack, Table, TableBody, TableCell, TableHead, TableRow, TableSortLabel, Typography } from '@mui/material'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
+import DoneIcon from '@mui/icons-material/Done'
+import UndoIcon from '@mui/icons-material/Undo'
 import NoteAddIcon from '@mui/icons-material/NoteAdd'
 import SearchIcon from '@mui/icons-material/Search'
-import { charactersOff, factionMob, factionOf, gapZone, onMobPage, wikiCreateUrl, wikiEditUrl, wikiSearchUrl, type GapRow, type GapSort, type GapSortKey, type GapSuggest, type GapVerdict, type GapVerdicts } from '@shared/gaps'
+import {
+  GAP_CAPTURE,
+  charactersOff,
+  doneKey,
+  factionOf,
+  gapZone,
+  mobPageOf,
+  onMobPage,
+  wikiCreateUrl,
+  wikiEditUrl,
+  wikiSearchUrl,
+  type GapActionContext,
+  type GapRow,
+  type GapSort,
+  type GapSortKey,
+  type GapSuggest,
+  type GapVerdict,
+  type GapVerdicts
+} from '@shared/gaps'
 import { unfoldedEntries, type GapEntry } from '@shared/gapGroups'
 import { wikiPageUrl } from '@shared/wiki'
 import { copyText } from '../../lib/clipboard'
@@ -68,17 +88,22 @@ const GapTableRow = memo(function GapTableRow({
   open,
   verdict,
   onToggle,
-  depth = 0
+  depth = 0,
+  done = false,
+  chipContext
 }: {
   row: GapRow
   open: boolean
   verdict: GapVerdict
   onToggle: (name: string) => void
+  /** marked done: shown only under "Show done", dimmed */
+  done?: boolean
+  chipContext?: GapActionContext
   /** grouped: 1 under a zone, 2 under a mob, bulleted and indented below its heading */
   depth?: number
 }): JSX.Element {
   return (
-    <TableRow hover selected={open} onClick={() => onToggle(row.name)} sx={{ cursor: 'pointer', height: ROW_HEIGHT }} data-testid="gaps-row">
+    <TableRow hover selected={open} onClick={() => onToggle(row.name)} sx={{ cursor: 'pointer', height: ROW_HEIGHT, opacity: done ? 0.5 : 1 }} data-testid="gaps-row">
       <TableCell sx={{ fontWeight: 600, whiteSpace: 'nowrap', pl: depth > 0 ? 3 + depth * 2 : undefined }}>
         {depth > 0 && (
           <Box component="span" sx={{ color: 'text.secondary', mr: 1 }}>
@@ -101,24 +126,28 @@ const GapTableRow = memo(function GapTableRow({
       <TableCell sx={{ whiteSpace: 'nowrap', color: 'text.secondary' }}>{row.first}</TableCell>
       <TableCell sx={{ whiteSpace: 'nowrap', color: 'text.secondary' }}>{row.last}</TableCell>
       <TableCell>
-        <GapActionChips row={row} verdict={verdict} />
+        <GapActionChips row={row} verdict={verdict} ctx={chipContext} />
       </TableCell>
     </TableRow>
   )
 })
 
 /** A new wiki page for the row, built from what the log saw (shared/wikiPage.ts), onto the clipboard. */
-function CopyPageButton({ text }: { text: () => string }): JSX.Element {
+function CopyPageButton({ text, row }: { text: () => string; row: GapRow }): JSX.Element {
   const [copied, setCopied] = useState(false)
+  const redirect = row.suggest !== undefined && (row.domain === 'item' || row.domain === 'spell')
+  const title = redirect
+    ? `A redirect from the game's spelling to ${row.suggest?.page ?? ''}, so both spellings reach one page.`
+    : `Wiki markup from what your log saw. ${GAP_CAPTURE[row.domain]}`
   return (
-    <Tooltip title="Wiki markup for a new page from what your log saw. Paste it into the wiki and add the stats from a screenshot.">
+    <Tooltip title={title}>
       <Button
         size="small"
         startIcon={<ContentCopyIcon />}
         onClick={() => void copyText(text()).then(setCopied)}
         data-testid="gaps-copy-page"
       >
-        {copied ? 'Copied' : 'Copy wiki page'}
+        {copied ? 'Copied' : redirect ? 'Copy redirect' : 'Copy wiki page'}
       </Button>
     </Tooltip>
   )
@@ -130,7 +159,8 @@ function CopyPageButton({ text }: { text: () => string }): JSX.Element {
  */
 function WikiLinks({ row }: { row: GapRow }): JSX.Element {
   const faction = onMobPage(row)
-  const target = faction ? factionMob(row) : row.name
+  const target = faction ? mobPageOf(row) : row.name
+  const redirect = !faction && row.suggest !== undefined
   return (
     <>
       <Button size="small" href={wikiSearchUrl(target)} target="_blank" rel="noreferrer" startIcon={<SearchIcon />} data-testid="gaps-wiki-search">
@@ -144,21 +174,41 @@ function WikiLinks({ row }: { row: GapRow }): JSX.Element {
         startIcon={<NoteAddIcon />}
         data-testid="gaps-wiki-create"
       >
-        {faction ? 'Edit mob page' : 'Create page'}
+        {faction ? 'Edit mob page' : redirect ? 'Create redirect' : 'Create page'}
       </Button>
     </>
   )
 }
 
+/** What the open row's pane does beyond showing it: its page text, what is still needed, its Done mark. */
+interface PaneActions {
+  pageText: (row: GapRow) => string
+  needed: (row: GapRow) => string[]
+  done: ReadonlySet<string>
+  onDone: (row: GapRow) => void
+}
+
 /** The open row's details, above the list: capped so the list keeps room on a short screen. */
-function DetailsPane({ row, pageText }: { row: GapRow; pageText: (row: GapRow) => string }): JSX.Element {
+function DetailsPane({ row, actions }: { row: GapRow; actions: PaneActions }): JSX.Element {
+  const isDone = actions.done.has(doneKey(row))
+  const needed = actions.needed(row)
   return (
     <Paper variant="outlined" sx={{ px: 1.5, py: 0.5, flexShrink: 0, maxHeight: '40vh', overflow: 'auto' }} data-testid="gaps-details-pane">
       <Stack direction="row" spacing={1} alignItems="center">
         <Typography variant="subtitle2">{row.name}</Typography>
-        <CopyPageButton key={row.name} text={() => pageText(row)} />
+        <CopyPageButton key={row.name} text={() => actions.pageText(row)} row={row} />
         <WikiLinks row={row} />
+        <Tooltip title={isDone ? 'Show it with the open rows again.' : 'Hide it until the wiki data catches up; "Show done" brings it back.'}>
+          <Button size="small" startIcon={isDone ? <UndoIcon /> : <DoneIcon />} onClick={() => actions.onDone(row)} data-testid="gaps-done">
+            {isDone ? 'Not done' : 'Done'}
+          </Button>
+        </Tooltip>
       </Stack>
+      {needed.length > 0 && (
+        <Typography variant="caption" color="text.secondary" data-testid="gaps-needed">
+          Still needed for the page: {needed.join(', ')}.
+        </Typography>
+      )}
       <GapDetailsPanel details={row.details} />
     </Paper>
   )
@@ -260,6 +310,10 @@ export default function GapsTable({
   sort,
   onSort,
   pageText,
+  needed,
+  done,
+  onDone,
+  chipContext,
   hiddenByFilter = false
 }: {
   /** the rows, or the grouped list with its zone and mob headings */
@@ -269,6 +323,13 @@ export default function GapsTable({
   onSort: (key: GapSortKey) => void
   /** the wiki page text for a row, for its Copy wiki page button */
   pageText: (row: GapRow) => string
+  /** the page fields the log left blank for a row */
+  needed: (row: GapRow) => string[]
+  /** the rows marked done, and the mark's toggle */
+  done: ReadonlySet<string>
+  onDone: (row: GapRow) => void
+  /** what the chips may say beyond the row (the data date, which names are mobs) */
+  chipContext: GapActionContext
   /** the domain HAS unknown names, so an empty list means the search or zone filter hid them */
   hiddenByFilter?: boolean
 }): JSX.Element {
@@ -300,7 +361,7 @@ export default function GapsTable({
   const openedRow = opened?.kind === 'row' ? opened.row : undefined
   return (
     <Stack spacing={1.5} sx={{ flexGrow: 1, minHeight: 0 }}>
-      {openedRow !== undefined && <DetailsPane row={openedRow} pageText={pageText} />}
+      {openedRow !== undefined && <DetailsPane row={openedRow} actions={{ pageText, needed, done, onDone }} />}
       <Box ref={scrollRef} sx={{ flexGrow: 1, minHeight: 0, overflow: 'auto', overscrollBehavior: 'contain' }} data-testid="gaps-scroll">
         <Table size="small" stickyHeader data-testid="gaps-table">
           <SortHeader sort={sort} onSort={onSort} />
@@ -308,7 +369,7 @@ export default function GapsTable({
             <PadRow height={win.topPad} />
             {shown.slice(win.start, win.end).map((e) =>
               e.kind === 'row' ? (
-                <GapTableRow key={e.key} row={e.row} open={open === e.row.name} verdict={verdicts[e.row.name] ?? 'unchecked'} onToggle={onToggle} depth={e.depth} />
+                <GapTableRow key={e.key} row={e.row} open={open === e.row.name} verdict={verdicts[e.row.name] ?? 'unchecked'} onToggle={onToggle} depth={e.depth} done={done.has(doneKey(e.row))} chipContext={chipContext} />
               ) : (
                 <GroupRow key={e.key} entry={e} folded={folded.has(e.key)} onFold={onFold} pageText={pageText} />
               )

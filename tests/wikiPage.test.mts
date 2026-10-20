@@ -95,7 +95,7 @@ test('a mob page names its levels, zones and loot; an NPC-only spell says so', (
     '| imagefilename     = npc_a_scout_from_zanivar.png',
     '| name              = a scout from zanivar',
     '| race              = ',
-    '| level             = 11 - 13',
+    '| level             = 11-13',
     '| zone              = [[The Feerrott]]',
     '| location          = (-791, 173)',
     '| AC                = ',

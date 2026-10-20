@@ -34,7 +34,7 @@ test('a faction row copies the bullet for its mob page and points at that page; 
   assert.equal(wikiPageText(row, [], {}), '* [[Venril Sathir]]\n')
   const [action] = gapActions(row, 'unchecked')
   assert.equal(action.label, 'Edit mob page')
-  assert.equal(action.href, 'https://eqlwiki.com/index.php?title=a_zol_ghoul_knight&action=edit')
+  assert.equal(action.href, 'https://eqlwiki.com/index.php?title=A_zol_ghoul_knight&action=edit')
   const shape = groupGaps([row], []).map((e) => (e.kind === 'zone' ? e.zone : e.kind === 'mob' ? `  ${e.mob}` : `    ${e.row.name}`))
   assert.deepEqual(shape, ['Lower Guk', '  a zol ghoul knight', '    Venril Sathir (a zol ghoul knight)'])
 })

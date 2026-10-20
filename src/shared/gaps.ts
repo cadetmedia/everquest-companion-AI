@@ -40,11 +40,47 @@ export const GAP_DOMAIN_HELP: Record<GapDomain, string> = {
   image: 'Mobs you met whose wiki page has no picture: take a screenshot and upload it.'
 }
 
+/**
+ * What to collect in game for each domain's page (review 2026-10-19): the Copy wiki page tooltip
+ * says it, since a page the log could not fill needs a second trip otherwise.
+ */
+export const GAP_CAPTURE: Record<GapDomain, string> = {
+  item: 'Screenshot the item window while you still hold it (its stats, slot and icon), then paste this and type the stats.',
+  mob: '/con it (level), /loc then hail or /con it within 10 s (location), kill it (loot and factions), and screenshot it for its image.',
+  merchant: '/con it (level), /loc then hail it within 10 s (location), and screenshot it for its image.',
+  spell: "Screenshot the spell's description window (classes, mana, timings).",
+  faction: "Kill the mob once more if the amount is missing; paste the line into the mob page's faction list.",
+  drop: "Paste the line into the mob page's known_loot list.",
+  image: 'Screenshot the mob, then upload it under the file name shown.'
+}
+
+/** A row's key in the Done marks (owner ask, 2026-10-19). */
+export const doneKey = (row: GapRow): string => `${row.domain}:${row.name}`
+
+/** The rows not marked done. */
+export function withoutDone(rows: readonly GapRow[], done: ReadonlySet<string>): GapRow[] {
+  return done.size === 0 ? [...rows] : rows.filter((r) => !done.has(doneKey(r)))
+}
+
 /** Item name → the mobs its own item page names under `|dropsfrom`; null when the wiki has no page. */
 export type ItemPageMobs = Record<string, string[] | null>
 
 /** How the log named it. */
-export type GapKind = 'looted' | 'dropped-by' | 'received' | 'bought' | 'crafted' | 'killed' | 'considered' | 'cast' | 'quoted' | 'sold'
+export type GapKind =
+  | 'looted'
+  | 'dropped-by'
+  | 'received'
+  | 'bought'
+  | 'crafted'
+  /** a mote fusion's result (`merged two items together`): not a tradeskill, so no Player Crafted */
+  | 'fused'
+  | 'foraged'
+  | 'killed'
+  | 'considered'
+  | 'hailed'
+  | 'cast'
+  | 'quoted'
+  | 'sold'
 
 /** Distinct values with counts: the eight most frequent, and how many there were in all. */
 export interface GapTally {
@@ -110,6 +146,11 @@ export interface GapRow {
   itemPage?: 'namesMob' | 'lacksMob'
   /** An image row: the file its page names, or the name it would take (shared/gapImages.ts). */
   image?: string
+  /** A faction, drop or image row: the wiki page of its mob, when the catalog could pick one. */
+  page?: string
+  /** A faction row: the amount most kills stated, and whether the kill raised the faction. */
+  adjust?: number
+  raised?: boolean
 }
 
 export interface GapsSnap {
@@ -310,12 +351,22 @@ export function parserShape(name: string): string | null {
 }
 
 /**
- * A spell only mobs were seen casting: no caster is you or a single-word name (a player, or a
- * named mob the rule cannot tell from one, which keeps the row a plain "Check wiki").
+ * A spell only mobs were seen casting: no caster is you or a player. A one-word caster is a player
+ * unless the mob catalog has the name (`Zazamoukh`), when `isMob` is given.
  */
-export function npcOnlySpell(row: GapRow): boolean {
+export function npcOnlySpell(row: GapRow, isMob?: (name: string) => boolean): boolean {
   const casters = row.details.casters?.entries ?? []
-  return row.domain === 'spell' && casters.length > 0 && !casters.some((c) => c.name === 'you' || /^[A-Z][a-z]+$/.test(c.name))
+  const player = (n: string): boolean => n === 'you' || (/^[A-Z][a-z]+$/.test(n) && isMob?.(n) !== true)
+  return row.domain === 'spell' && casters.length > 0 && !casters.some((c) => player(c.name))
+}
+
+/** A faction, drop or image row's mob page: the catalog's title when it picked one, else the log's name. */
+export const mobPageOf = (row: GapRow): string => row.page ?? factionMob(row)
+
+/** What the chips may say beyond the row: the wiki data's date, and which names are catalog mobs. */
+export interface GapActionContext {
+  dataDate?: string
+  isMob?: (name: string) => boolean
 }
 
 /**
@@ -323,7 +374,7 @@ export function npcOnlySpell(row: GapRow): boolean {
  * the mob page's `|known_loot` and the item page's `|dropsfrom` are each typed by hand.
  */
 function dropActions(row: GapRow): GapAction[] {
-  const mob = factionMob(row)
+  const mob = mobPageOf(row)
   const item = factionOf(row)
   const why =
     row.details.drops !== undefined
@@ -341,11 +392,11 @@ function dropActions(row: GapRow): GapAction[] {
 /**
  * What someone must do to close the gap, one or two chips: the page exists under another
  * spelling (fix its title), the wiki was asked and had nothing (add the page), the wiki has it
- * and our data predates it (re-scrape), only mobs cast it (an NPC spell, which the wiki seldom
- * pages), or nobody has looked (check the wiki) — plus "fix parser" when the name itself carries
- * a parser's leftover.
+ * and our data predates it (re-scrape), only mobs cast it (an NPC spell), or the committed data
+ * lacks it (check the wiki: a cache miss, not a verdict, owner 2026-10-19) — plus "fix parser"
+ * when the name itself carries a parser's leftover.
  */
-export function gapActions(row: GapRow, verdict: GapVerdict): GapAction[] {
+export function gapActions(row: GapRow, verdict: GapVerdict, ctx: GapActionContext = {}): GapAction[] {
   if (row.domain === 'image') {
     const file = row.image ?? ''
     const why = `The wiki has no image for ${row.name}. Upload a screenshot as ${file}; if the page names no image, add its imagefilename line too.`
@@ -353,30 +404,26 @@ export function gapActions(row: GapRow, verdict: GapVerdict): GapAction[] {
   }
   if (row.domain === 'drop') return dropActions(row)
   if (onMobPage(row)) {
-    const why = `The wiki page for ${factionMob(row)} does not name this faction among those a kill moves.`
-    return [{ kind: 'checkWiki', label: 'Edit mob page', why, href: wikiEditUrl(factionMob(row)) }]
+    const why = `The wiki page for ${mobPageOf(row)} does not name this faction among those a kill moves.`
+    return [{ kind: 'checkWiki', label: 'Edit mob page', why, href: wikiEditUrl(mobPageOf(row)) }]
   }
   const actions: GapAction[] = []
+  const asOf = ctx.dataDate === undefined ? 'the app' : `the wiki data from ${ctx.dataDate}`
   if (row.suggest !== undefined) {
     actions.push({
       kind: 'fixTitle',
       label: 'Fix wiki title',
-      why: `The wiki has this page under another spelling: ${row.suggest.name}.`,
+      why: `The wiki has this page under another spelling: ${row.suggest.name}. Copy wiki page gives a redirect from the game's spelling.`,
       href: wikiPageUrl(row.suggest.page)
     })
   } else if (verdict === 'noPage') {
     actions.push({ kind: 'addToWiki', label: 'Add to wiki', why: 'The app asked the wiki for this name and it had no page.' })
   } else if (verdict === 'hasPage') {
-    actions.push({ kind: 'rescrape', label: 'Re-scrape', why: 'The wiki has this page; the next data scrape picks it up.' })
-  } else if (npcOnlySpell(row)) {
-    actions.push({
-      kind: 'npcSpell',
-      label: 'NPC spell',
-      why: 'Only mobs were seen casting it. The wiki pages few NPC-only spells, so this may need no fix.',
-      href: wikiSearchUrl(row.name)
-    })
+    actions.push({ kind: 'rescrape', label: 'Re-scrape', why: `The wiki has this page; ${asOf} predates it, and the next data refresh picks it up.` })
+  } else if (npcOnlySpell(row, ctx.isMob)) {
+    actions.push({ kind: 'npcSpell', label: 'NPC spell', why: `Only mobs were seen casting it, and ${asOf} has no page for it: an NPC Only Spells page.`, href: wikiSearchUrl(row.name) })
   } else {
-    actions.push({ kind: 'checkWiki', label: 'Check wiki', why: 'Nobody has looked this name up yet: search the wiki for it.', href: wikiSearchUrl(row.name) })
+    actions.push({ kind: 'checkWiki', label: 'Check wiki', why: `Not in ${asOf}: search the wiki before creating the page.`, href: wikiSearchUrl(row.name) })
   }
   const shape = parserShape(row.name)
   if (shape !== null) actions.push({ kind: 'fixParser', label: 'Fix parser', why: `The name carries ${shape}.` })

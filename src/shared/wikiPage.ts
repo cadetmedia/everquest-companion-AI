@@ -17,7 +17,12 @@ import { CURRENT_ERA } from './planner/era'
 import type { KillMap } from './kills'
 import { killsFor } from './kills'
 import { derivedPrices, factionMob, factionOf, npcOnlySpell, type GapDomain, type GapRow } from './gaps'
+import { itemBaseName } from './itemStats'
 import type { LootEvent } from './types'
+
+/** A log zone name as the wiki spells it (shared/gapWikiZone.ts); as printed when none is given. */
+export type ZoneNamer = (raw: string) => string
+const asPrinted: ZoneNamer = (z) => z
 
 // ---- the parts ---------------------------------------------------------------------------------
 
@@ -86,8 +91,16 @@ export interface ItemFacts {
   merchantValue?: number
   /** Merchants the player bought it from. */
   soldBy: string[]
-  /** The player made it in a combine. */
+  /** The player made it in a combine (a mote fusion is not one). */
   crafted: boolean
+}
+
+/** A faction a kill moved: the amount most lines stated, and whether the kill raised it. */
+export interface FactionSeen {
+  faction: string
+  adjust?: number
+  /** From the amount's sign or a capped line's "better" / "worse"; absent when neither said. */
+  raised?: boolean
 }
 
 export interface MobFacts {
@@ -95,19 +108,20 @@ export interface MobFacts {
   zones: string[]
   /** The levels its /con lines stated. */
   levels: number[]
-  /** Items looted from it, and how many times. */
+  /** Items looted from it, and on how many corpses. */
   loot: { item: string; drops: number }[]
   /** How many of it the player killed: the drop rates' denominator. */
   kills: number
+  /** Kills that credited the player, whose faction lines the log prints: with none seen, the page can say none. */
+  credited: number
   /** Where a con or hail beside a `/loc` placed it, in `/loc`'s order (y, x, z). */
   points: number[][]
-  /** The factions its kills moved, with the last amount a line stated. */
-  factions: { faction: string; adjust?: number }[]
+  factions: FactionSeen[]
 }
 
 /** What the log saw of mobs beyond the rows: each kill's factions and each mob's `/loc` points. */
 export interface MobSightings {
-  killFactions?: readonly { mob: string; faction: string; adjust?: number }[]
+  killFactions?: readonly ({ mob: string } & FactionSeen)[]
   mobLocs?: readonly { mob: string; points: number[][] }[]
 }
 
@@ -118,29 +132,34 @@ export interface SpellFacts {
 }
 
 const same = (a: string, b: string): boolean => a.toLowerCase() === b.toLowerCase()
+/** An item at any tier is one item (owner, 2026-10-19): `Rusty Sword +4` is `Rusty Sword`. */
+const itemKey = (name: string): string => itemBaseName(name).toLowerCase()
+/** One corpse: a loot line per copy of an item prints the same second from the same corpse. */
+const corpseOf = (e: LootEvent): string => `${String(e.ts)}|${(e.source ?? '').toLowerCase()}`
 
-/** The row's zones, every one when the engine kept the full list. */
-function rowZones(row: GapRow): string[] {
-  return row.details.zones?.all ?? row.details.zones?.entries.map((e) => e.name) ?? []
+/** The row's zones as the wiki spells them, each once. */
+function rowZones(row: GapRow, zoneName: ZoneNamer): string[] {
+  const raw = row.details.zones?.all ?? row.details.zones?.entries.map((e) => e.name) ?? []
+  return [...new Set(raw.map(zoneName).filter((z) => z !== ''))]
 }
 
-/** Every (zone, mob) the ledger looted the item from, with the drop count. */
-export function dropsSeen(item: string, loot: readonly LootEvent[]): DropSeen[] {
-  const byPair = new Map<string, DropSeen>()
+/** Every (zone, mob) the ledger looted the item from, at any tier, with the corpses that dropped it. */
+export function dropsSeen(item: string, loot: readonly LootEvent[], zoneName: ZoneNamer = asPrinted): DropSeen[] {
+  const byPair = new Map<string, DropSeen & { corpses: Set<string> }>()
   for (const e of loot) {
-    if (e.source === undefined || !same(e.item, item)) continue
-    const zone = e.zone ?? ''
+    if (e.source === undefined || itemKey(e.item) !== itemKey(item)) continue
+    const zone = zoneName(e.zone ?? '')
     const key = `${zone.toLowerCase()}|${e.source.toLowerCase()}`
-    const seen = byPair.get(key) ?? { zone, mob: e.source, drops: 0 }
-    // Corpses, not the stack's size: a rate is drops per kill.
-    seen.drops += 1
+    const seen = byPair.get(key) ?? { zone, mob: e.source, drops: 0, corpses: new Set<string>() }
+    seen.corpses.add(corpseOf(e))
+    seen.drops = seen.corpses.size
     byPair.set(key, seen)
   }
-  return [...byPair.values()]
+  return [...byPair.values()].map(({ zone, mob, drops }) => ({ zone, mob, drops }))
 }
 
-export function itemFacts(row: GapRow, loot: readonly LootEvent[]): ItemFacts {
-  const drops = dropsSeen(row.name, loot)
+export function itemFacts(row: GapRow, loot: readonly LootEvent[], zoneName: ZoneNamer = asPrinted): ItemFacts {
+  const drops = dropsSeen(row.name, loot, zoneName)
   const mobs = new Set(drops.map((d) => d.mob.toLowerCase()))
   const bought = row.kinds.includes('bought')
   const soldBy = bought ? (row.details.sources?.entries ?? []).map((e) => e.name).filter((n) => !mobs.has(n.toLowerCase())) : []
@@ -157,33 +176,42 @@ function conLevels(row: GapRow): number[] {
   return [...new Set(levels)].sort((a, b) => a - b)
 }
 
-/** What the ledger looted from the mob, by item, A to Z. */
+/** What the ledger looted from the mob, by base item, on how many corpses, A to Z. */
 function mobLoot(row: GapRow, loot: readonly LootEvent[]): MobFacts['loot'] {
-  const byItem = new Map<string, { item: string; drops: number }>()
+  const byItem = new Map<string, { item: string; corpses: Set<string> }>()
   for (const e of loot) {
     if (e.source === undefined || !same(e.source, row.name)) continue
-    const seen = byItem.get(e.item.toLowerCase()) ?? { item: e.item, drops: 0 }
-    seen.drops += 1
-    byItem.set(e.item.toLowerCase(), seen)
+    const seen = byItem.get(itemKey(e.item)) ?? { item: itemBaseName(e.item), corpses: new Set<string>() }
+    seen.corpses.add(corpseOf(e))
+    byItem.set(itemKey(e.item), seen)
   }
-  // The row's own drop list names what the ledger may not hold.
+  const out = new Map([...byItem].map(([k, v]) => [k, { item: v.item, drops: v.corpses.size }]))
+  // The row's own drop list names what the ledger may not hold (lines, not corpses: no better count).
   for (const d of row.details.drops?.entries ?? []) {
-    if (!byItem.has(d.name.toLowerCase())) byItem.set(d.name.toLowerCase(), { item: d.name, drops: d.n })
+    const had = out.get(itemKey(d.name))
+    if (!byItem.has(itemKey(d.name))) out.set(itemKey(d.name), { item: itemBaseName(d.name), drops: (had?.drops ?? 0) + d.n })
   }
-  return [...byItem.values()].sort((a, b) => a.item.localeCompare(b.item))
+  return [...out.values()].sort((a, b) => a.item.localeCompare(b.item))
 }
 
 /** `kills` must be a `killIndex` result, as `killsFor` asks. */
-export function mobFacts(row: GapRow, loot: readonly LootEvent[], kills: KillMap, seen: MobSightings = {}): MobFacts {
+export function mobFacts(row: GapRow, loot: readonly LootEvent[], kills: KillMap, seen: MobSightings & { zoneName?: ZoneNamer } = {}): MobFacts {
+  const zoneName = seen.zoneName ?? asPrinted
   const mine = (m: { mob: string }): boolean => same(m.mob, row.name)
+  const killed = killsFor(kills, row.name)
   return {
     name: row.name,
-    zones: rowZones(row),
+    zones: rowZones(row, zoneName),
     levels: conLevels(row),
     loot: mobLoot(row, loot),
-    kills: killsFor(kills, row.name)?.count ?? 0,
+    kills: killed?.count ?? 0,
+    credited: killed?.credited ?? 0,
     points: (seen.mobLocs ?? []).filter(mine).flatMap((m) => m.points),
-    factions: (seen.killFactions ?? []).filter(mine).map((f) => ({ faction: f.faction, ...(f.adjust === undefined ? {} : { adjust: f.adjust }) }))
+    factions: (seen.killFactions ?? []).filter(mine).map(({ faction, adjust, raised }) => ({
+      faction,
+      ...(adjust === undefined ? {} : { adjust }),
+      ...(raised === undefined ? {} : { raised })
+    }))
   }
 }
 
@@ -207,8 +235,9 @@ export function rarityWord(pct: number): string {
  * over the player's kills, `~` marking it as seen in one log rather than the server's loot table.
  */
 export function lootLine(item: string, drops: number, kills: number): string {
-  if (kills <= 0) return `<li> {{:${item}}} </li>`
-  const pct = Math.min(100, Math.round((drops / kills) * 1000) / 10)
+  // More drops than kills means kills the log never showed (a groupmate's far kill): no rate beats a false "Always".
+  if (kills <= 0 || drops > kills) return `<li> {{:${item}}} </li>`
+  const pct = Math.round((drops / kills) * 1000) / 10
   return `<li> {{:${item}}} <span class='drare'>(${rarityWord(pct)})</span> <span class='ddb'>[Overall: ~${String(pct)}%]</span> </li>`
 }
 
@@ -257,26 +286,42 @@ export const npcImageName = (name: string): string => `npc_${name.trim().toLower
 /** `/loc` points as the wiki writes `|location`: `(-791, 173), (10, -21)`. */
 const locationText = (points: readonly number[][]): string => points.map((p) => `(${String(p[0])}, ${String(p[1])})`).join(', ')
 
-/** A kill's factions as the page lists them: lowered under `factions`, raised under `opposing_factions`. */
-function factionBlocks(factions: MobFacts['factions']): Record<string, string> {
-  const line = (f: MobFacts['factions'][number], css: string): string =>
-    `* ${wikiLink(f.faction)}${f.adjust === undefined ? '' : ` <span class='${css}'>(${String(f.adjust)})</span>`}`
-  const lowered = factions.filter((f) => (f.adjust ?? -1) < 0).map((f) => line(f, 'profac'))
-  const raised = factions.filter((f) => (f.adjust ?? -1) > 0).map((f) => line(f, 'oppfac'))
-  return { factions: lowered.join('\n'), opposing_factions: raised.join('\n') }
+/** A faction a kill raised: by its amount's sign, else a capped line's word. */
+const raises = (f: FactionSeen): boolean | undefined => (f.adjust !== undefined && f.adjust !== 0 ? f.adjust > 0 : f.raised)
+
+/** One faction bullet as a mob page lists it; the amount in its span when a line stated one. */
+export function factionLine(f: FactionSeen): string {
+  const css = raises(f) === true ? 'oppfac' : 'profac'
+  return `* ${wikiLink(f.faction)}${f.adjust === undefined ? '' : ` <span class='${css}'>(${String(f.adjust)})</span>`}`
 }
 
+/**
+ * A kill's factions as the page lists them: lowered under `factions`, raised under
+ * `opposing_factions`; one whose direction no line stated is left out. With kills that credited
+ * the player and no faction line in that list, the log has shown there are none (owner, 2026-10-19).
+ */
+function factionBlocks(factions: readonly FactionSeen[], credited: number): Record<string, string> {
+  const block = (lines: string[]): string => (lines.length > 0 ? lines.join('\n') : credited > 0 ? '* None' : '')
+  return {
+    factions: block(factions.filter((f) => raises(f) === false).map(factionLine)),
+    opposing_factions: block(factions.filter((f) => raises(f) === true).map(factionLine))
+  }
+}
+
+type NpcFacts = Pick<MobFacts, 'name' | 'zones' | 'levels' | 'points' | 'factions' | 'credited'>
+
 /** The values both NPC layouts share: image, name, level, zone, location, factions. */
-function npcValues(f: Pick<MobFacts, 'name' | 'zones' | 'levels' | 'points' | 'factions'>): Record<string, string> {
+function npcValues(f: NpcFacts): Record<string, string> {
   const lo = f.levels[0]
   const hi = f.levels.at(-1)
   return {
     imagefilename: npcImageName(f.name),
     name: f.name,
-    level: lo === undefined || hi === undefined ? '' : lo === hi ? String(lo) : `${String(lo)} - ${String(hi)}`,
+    // The wiki writes a range unspaced, `11-13`, four times in five.
+    level: lo === undefined || hi === undefined ? '' : lo === hi ? String(lo) : `${String(lo)}-${String(hi)}`,
     zone: f.zones.map(wikiLink).join(', '),
     location: locationText(f.points),
-    ...factionBlocks(f.factions)
+    ...factionBlocks(f.factions, f.credited)
   }
 }
 
@@ -296,20 +341,34 @@ export function spellPage(f: SpellFacts): string {
  * A trader the wiki lacks as a merchant, in the Merchant Page Blueprint's layout. `items_sold` is
  * left open: a merchant's stock mixes player resells the log cannot tell apart (owner, 2026-10-18).
  */
-export function merchantPage(f: Pick<MobFacts, 'name' | 'zones' | 'levels' | 'points' | 'factions'>): string {
+export function merchantPage(f: NpcFacts): string {
   return page(layoutBlock('MerchantPage', MERCHANT_LAYOUT, { ...npcValues(f), class: '[[Merchant]]' }), f.zones)
 }
 
-/** The page for one Gaps row; a faction row gives the bullet its mob's `|factions` takes. `kills`
- *  must be a `killIndex` result. */
-export function wikiPageText(row: GapRow, loot: readonly LootEvent[], kills: KillMap, seen: MobSightings = {}): string {
-  return PAGE_OF[row.domain](row, { loot, kills, seen })
+/** What the tab knows beside the row and the ledgers: the wiki's zone spellings and its mobs. */
+export interface PageExtras {
+  zoneName?: ZoneNamer
+  /** A name the mob catalog has: a one-word caster that is a mob, not a player. */
+  isMob?: (name: string) => boolean
+}
+
+/**
+ * The page for one Gaps row; a faction row gives the bullet its mob's `|factions` takes. A row the
+ * wiki has under another spelling (`suggest`) gets a redirect from the game's spelling instead of a
+ * second page (owner, 2026-10-11). `kills` must be a `killIndex` result.
+ */
+export function wikiPageText(row: GapRow, loot: readonly LootEvent[], kills: KillMap, seen: MobSightings & PageExtras = {}): string {
+  const extras = seen
+  if (row.suggest !== undefined && (row.domain === 'item' || row.domain === 'spell')) return `#REDIRECT [[${row.suggest.page}]]\n`
+  return PAGE_OF[row.domain](row, { loot, kills, seen, zoneName: extras.zoneName ?? asPrinted, isMob: extras.isMob })
 }
 
 interface PageContext {
   loot: readonly LootEvent[]
   kills: KillMap
   seen: MobSightings
+  zoneName: ZoneNamer
+  isMob?: (name: string) => boolean
 }
 
 /**
@@ -317,15 +376,40 @@ interface PageContext {
  * so a new domain is one entry, and a domain without one does not compile.
  */
 const PAGE_OF: Record<GapDomain, (row: GapRow, c: PageContext) => string> = {
-  item: (row, c) => itemPage(itemFacts(row, c.loot)),
-  mob: (row, c) => mobPage(mobFacts(row, c.loot, c.kills, c.seen)),
-  merchant: (row, c) => merchantPage(mobFacts(row, [], c.kills, c.seen)),
-  spell: (row) => spellPage({ name: row.name, npcOnly: npcOnlySpell(row) }),
-  faction: (row) => `* ${wikiLink(factionOf(row))}\n`,
+  item: (row, c) => itemPage(itemFacts(row, c.loot, c.zoneName)),
+  mob: (row, c) => mobPage(mobFacts(row, c.loot, c.kills, { ...c.seen, zoneName: c.zoneName })),
+  merchant: (row, c) => merchantPage(mobFacts(row, [], c.kills, { ...c.seen, zoneName: c.zoneName })),
+  spell: (row, c) => spellPage({ name: row.name, npcOnly: npcOnlySpell(row, c.isMob) }),
+  faction: (row) => `${factionLine({ faction: factionOf(row), adjust: row.adjust, raised: row.raised })}\n`,
   image: (row) => `| ${'imagefilename'.padEnd(17)} = ${row.image ?? ''}\n`,
   // A drop: its group's link (`<li> [[Rusty Weapons]] </li>`), else the item with the rate seen.
   drop: (row, c) =>
     row.details.drops
       ? `<li> ${wikiLink(factionOf(row))} </li>\n`
       : `${lootLine(factionOf(row), row.count, killsFor(c.kills, factionMob(row))?.count ?? 0)}\n`
+}
+
+/** The domains whose page needs the same thing whatever the log saw; mobs and merchants are read below. */
+const NEEDED_OF: Partial<Record<GapDomain, (row: GapRow) => string[]>> = {
+  item: () => ['stats (the item window)'],
+  spell: () => ['spell details (its description window)'],
+  faction: (row) => (row.adjust === undefined ? ['the amount (a kill that is not capped)'] : []),
+  drop: () => [],
+  image: () => []
+}
+
+/**
+ * The page fields the log left blank for this row, in the player's words, so the details can say
+ * what to collect before the trip ends (review 2026-10-19). `kills` must be a `killIndex` result.
+ */
+export function stillNeeded(row: GapRow, loot: readonly LootEvent[], kills: KillMap, seen: MobSightings = {}): string[] {
+  const fixed = NEEDED_OF[row.domain]
+  if (fixed !== undefined) return fixed(row)
+  const f = mobFacts(row, row.domain === 'mob' ? loot : [], kills, seen)
+  return [
+    ...(f.levels.length === 0 ? ['level (/con)'] : []),
+    ...(f.points.length === 0 ? ['location (/loc beside a hail or /con)'] : []),
+    ...(row.domain === 'mob' && f.credited === 0 ? ['factions (a kill of your own)'] : []),
+    'image (a screenshot)'
+  ]
 }
