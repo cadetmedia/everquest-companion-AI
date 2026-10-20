@@ -68,6 +68,15 @@ export const GAP_CAPTURE: Record<GapDomain, string> = {
 /** A row's key in the Done marks (owner ask, 2026-10-19). */
 export const doneKey = (row: GapRow): string => `${row.domain}:${row.name}`
 
+/**
+ * The Done marks to keep (`key -> the day it was marked`): a mark stays while its row is on the tab,
+ * and after that until the wiki data is newer than the mark, when the refresh has learned the page.
+ * A row's absence alone is no proof: the list fills in stages and swaps with the character.
+ */
+export function keptDoneMarks(marks: Readonly<Record<string, string>>, live: ReadonlySet<string>, dataDate: string): Record<string, string> {
+  return Object.fromEntries(Object.entries(marks).filter(([k, markedOn]) => live.has(k) || markedOn >= dataDate))
+}
+
 /** The rows less the Mobs rows the player marked as players (lower-cased names). */
 export function withoutPlayers(rows: readonly GapRow[], players: ReadonlySet<string>): GapRow[] {
   return players.size === 0 ? [...rows] : rows.filter((r) => r.domain !== 'mob' || !players.has(r.name.toLowerCase()))
