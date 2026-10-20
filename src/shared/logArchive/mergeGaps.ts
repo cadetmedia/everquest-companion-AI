@@ -38,6 +38,8 @@ interface KillFaction {
   zone: string
   /** the last amount a line stated */
   adjust?: number
+  /** the last direction a line stated: true raised, false lowered (a capped line has no amount) */
+  raised?: boolean
   /** the proof: the last kills' raw lines, oldest first, each the faction line then the death line */
   samples?: string[]
 }
