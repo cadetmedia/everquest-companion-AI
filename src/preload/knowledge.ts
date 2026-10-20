@@ -19,7 +19,7 @@ import type { ResistPrefs } from '../shared/resistPrefs'
 import type { LevelUnlockData } from '../shared/levelUnlocks'
 // The rich spell card's record (JOS-293) — one definition for main's join, this bridge and the card.
 import type { SpellDetail } from '../shared/spellDetail'
-import type { ClientSpellFacts, GapVerdicts } from '../shared/gaps'
+import type { GapVerdicts } from '../shared/gaps'
 
 export const knowledgeBridge = {
   /** Suggested-alerts wizard (Task #38): the searchable spell catalog + live usage. */
@@ -86,5 +86,7 @@ export const knowledgeBridge = {
   /** The Drops domain's other side: the mobs each item page names (src/main/gapItemMobs.ts). */
   gapItemMobs: (names: readonly string[]): Promise<Record<string, string[] | null>> => ipcRenderer.invoke(IPC.gapItemMobs, [...names]),
   /** A copied spell page's fill: what the install's spell files state (src/main/gapSpellFacts.ts). */
-  gapSpellFacts: (names: readonly string[]): Promise<Record<string, ClientSpellFacts>> => ipcRenderer.invoke(IPC.gapSpellFacts, [...names])
+  // The type is named inline so the import line spell-upgrades also edits stays untouched.
+  gapSpellFacts: (names: readonly string[]): Promise<Record<string, import('../shared/gaps').ClientSpellFacts>> =>
+    ipcRenderer.invoke(IPC.gapSpellFacts, [...names])
 }
