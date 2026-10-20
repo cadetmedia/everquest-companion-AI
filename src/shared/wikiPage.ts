@@ -18,6 +18,7 @@ import type { KillMap } from './kills'
 import { killsFor } from './kills'
 import { derivedPrices, factionMob, factionOf, npcOnlySpell, type ClientSpellFacts, type GapDomain, type GapRow } from './gaps'
 import { itemBaseName } from './itemStats'
+import type { VendorFinder } from './gapMobPage'
 import type { LootEvent } from './types'
 
 /** A log zone name as the wiki spells it (shared/gapWikiZone.ts); as printed when none is given. */
@@ -45,11 +46,6 @@ export function wikiCoin(copper: number): string {
   return parts.length > 0 ? parts.join(' ') : '0c'
 }
 
-/** A list value: a blank line, then `* [[page]]` per page. */
-export function bulletLinks(pages: readonly string[]): string {
-  return `\n\n${pages.map((p) => `* ${wikiLink(p)}`).join('\n')}\n`
-}
-
 /** `dropsfrom`: `[[Zone]]`, a blank line and its mobs, per zone, zones and mobs A to Z. */
 export function zoneBlocks(byZone: ReadonlyMap<string, readonly string[]>): string {
   const zones = [...byZone].sort((a, b) => a[0].localeCompare(b[0]))
@@ -58,6 +54,33 @@ export function zoneBlocks(byZone: ReadonlyMap<string, readonly string[]>): stri
     return zone === '' ? list : `${wikiLink(zone)}\n\n${list}`
   })
   return `\n\n${blocks.join('\n\n')}\n`
+}
+
+/** One vendor an item was bought from: its page, the zone it stands in, its `/loc` (ns, ew). */
+export interface VendorSeen {
+  vendor: string
+  /** As the wiki spells it; '' when neither the catalog nor the log names one place. */
+  zone: string
+  loc?: readonly [number, number]
+}
+
+/**
+ * `soldby` as the wiki writes it on 1,243 of the 1,278 item pages that fill it (review D1, measured
+ * on the cached pages 2026-10-19): `{{ItemWhereTable|`, one `{{ItemWhereRow   | [[Zone]] | [[Vendor]]
+ * |  | (ns, ew) }}` per vendor, the zone cell padded to 34 and the vendor cell to 30 (one space past a
+ * longer link), the third cell (directions) 15 spaces, the table closed on its own line. A vendor
+ * whose spot is unknown leaves the loc cell empty, `|  }}`, as real pages do. Zones then vendors A to Z, an unplaced vendor last.
+ */
+export function itemWhereTable(vendors: readonly VendorSeen[]): string {
+  const cell = (link: string, width: number): string => `${link.padEnd(width - 1)} `
+  const unplaced = (v: VendorSeen): number => Number(v.zone === '')
+  const sorted = [...vendors].sort((a, b) => unplaced(a) - unplaced(b) || a.zone.localeCompare(b.zone) || a.vendor.localeCompare(b.vendor))
+  const rows = sorted.map((v) => {
+    const zone = v.zone === '' ? '' : wikiLink(v.zone)
+    const loc = v.loc === undefined ? '' : `(${String(v.loc[0])}, ${String(v.loc[1])})`
+    return `{{ItemWhereRow   | ${cell(zone, 34)}| ${cell(wikiLink(v.vendor), 30)}|${' '.repeat(15)}| ${loc} }}`
+  })
+  return `\n\n{{ItemWhereTable|\n${rows.join('\n')}\n}}\n`
 }
 
 /** `<onlyinclude>{{Itempage` and one `|key = value` line per field, only the fields given. */
@@ -90,7 +113,7 @@ export interface ItemFacts {
   /** What a vendor pays at best standing, in copper (`derivedPrices`). */
   merchantValue?: number
   /** Merchants the player bought it from. */
-  soldBy: string[]
+  soldBy: VendorSeen[]
   /** The player made it in a combine (a mote fusion is not one). */
   crafted: boolean
 }
@@ -163,11 +186,22 @@ export function dropsSeen(item: string, loot: readonly LootEvent[], zoneName: Zo
   return [...byPair.values()].map(({ zone, mob, drops }) => ({ zone, mob, drops }))
 }
 
-export function itemFacts(row: GapRow, loot: readonly LootEvent[], zoneName: ZoneNamer = asPrinted): ItemFacts {
+/**
+ * A vendor's row: its catalog page, zone and single spawn point when the catalog can tell which page
+ * (`vendorFinder`), else its name as printed and the item's one zone, if it was seen in only one.
+ */
+function vendorSeen(vendor: string, zones: readonly string[], zoneName: ZoneNamer, vendorAt?: VendorFinder): VendorSeen {
+  const at = vendorAt?.(vendor, zones)
+  const zone = at?.zone !== undefined ? zoneName(at.zone) : zones.length === 1 ? (zones[0] ?? '') : ''
+  return { vendor: at?.page ?? vendor, zone, ...(at?.loc === undefined ? {} : { loc: at.loc }) }
+}
+
+export function itemFacts(row: GapRow, loot: readonly LootEvent[], zoneName: ZoneNamer = asPrinted, vendorAt?: VendorFinder): ItemFacts {
   const drops = dropsSeen(row.name, loot, zoneName)
   const mobs = new Set(drops.map((d) => d.mob.toLowerCase()))
   const bought = row.kinds.includes('bought')
-  const soldBy = bought ? (row.details.sources?.entries ?? []).map((e) => e.name).filter((n) => !mobs.has(n.toLowerCase())) : []
+  const vendors = bought ? (row.details.sources?.entries ?? []).map((e) => e.name).filter((n) => !mobs.has(n.toLowerCase())) : []
+  const soldBy = vendors.map((v) => vendorSeen(v, rowZones(row, zoneName), zoneName, vendorAt))
   const merchantValue = derivedPrices(row.details)?.vendorValue
   return { name: row.name, drops, soldBy, crafted: row.kinds.includes('crafted'), ...(merchantValue === undefined ? {} : { merchantValue }) }
 }
@@ -254,7 +288,7 @@ export function itemPage(f: ItemFacts): string {
   if (f.merchantValue !== undefined) fields.push(['merchant_value', wikiCoin(f.merchantValue)])
   fields.push(['statsblock', ''])
   if (byZone.size > 0) fields.push(['dropsfrom', zoneBlocks(byZone)])
-  if (f.soldBy.length > 0) fields.push(['soldby', bulletLinks(f.soldBy)])
+  if (f.soldBy.length > 0) fields.push(['soldby', itemWhereTable(f.soldBy)])
   const cats = [
     ...(f.soldBy.length > 0 ? ['Vendor Sold'] : []),
     ...(f.crafted ? ['Player Crafted'] : []),
@@ -395,6 +429,8 @@ export interface PageExtras {
   commonLoot?: ReadonlySet<string>
   /** What the install's spell files state, by spell name. */
   spellFacts?: Readonly<Record<string, ClientSpellFacts>>
+  /** Where a vendor stands, by the catalog (`vendorFinder`): an item page's `|soldby` rows. */
+  vendorAt?: VendorFinder
 }
 
 /**
@@ -405,7 +441,7 @@ export interface PageExtras {
 export function wikiPageText(row: GapRow, loot: readonly LootEvent[], kills: KillMap, seen: MobSightings & PageExtras = {}): string {
   const extras = seen
   if (row.suggest !== undefined && (row.domain === 'item' || row.domain === 'spell')) return `#REDIRECT [[${row.suggest.page}]]\n`
-  return PAGE_OF[row.domain](row, { loot, kills, seen, zoneName: extras.zoneName ?? asPrinted, isMob: extras.isMob, commonLoot: extras.commonLoot, spellFacts: extras.spellFacts })
+  return PAGE_OF[row.domain](row, { loot, kills, seen, zoneName: extras.zoneName ?? asPrinted, isMob: extras.isMob, commonLoot: extras.commonLoot, spellFacts: extras.spellFacts, vendorAt: extras.vendorAt })
 }
 
 interface PageContext {
@@ -416,6 +452,7 @@ interface PageContext {
   isMob?: (name: string) => boolean
   commonLoot?: ReadonlySet<string>
   spellFacts?: Readonly<Record<string, ClientSpellFacts>>
+  vendorAt?: VendorFinder
 }
 
 /**
@@ -423,7 +460,7 @@ interface PageContext {
  * so a new domain is one entry, and a domain without one does not compile.
  */
 const PAGE_OF: Record<GapDomain, (row: GapRow, c: PageContext) => string> = {
-  item: (row, c) => itemPage(itemFacts(row, c.loot, c.zoneName)),
+  item: (row, c) => itemPage(itemFacts(row, c.loot, c.zoneName, c.vendorAt)),
   mob: (row, c) => mobPage(mobFacts(row, c.loot, c.kills, { ...c.seen, zoneName: c.zoneName }), c.commonLoot),
   merchant: (row, c) => merchantPage(mobFacts(row, [], c.kills, { ...c.seen, zoneName: c.zoneName })),
   spell: (row, c) => spellPage({ name: row.name, npcOnly: npcOnlySpell(row, c.isMob), client: c.spellFacts?.[row.name] }),
