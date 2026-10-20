@@ -23,6 +23,14 @@ import type { LootEvent } from './types'
 /** An item name as the catalog keys its drops: `+N` stripped, case folded (itemSources.ts `sourceItemKey`). */
 const sourceItemKey = (name: string): string => itemBaseName(name).toLowerCase()
 
+/**
+ * The key with a leading article folded away, for matching a loot line to a page's list only (owner,
+ * 2026-10-20): the game prints `an Alligator Tooth`, the loot reader drops the `an`, and the wiki's
+ * page is `An Alligator Tooth`, while `Alligator Tooth` there is a disambiguation page whose
+ * transclusion puts a list inside the mob's loot list.
+ */
+const bareItemKey = (name: string): string => sourceItemKey(name).replace(/^(a|an|the) /, '')
+
 const GLOBAL_MOBS = 10
 const GLOBAL_TIES = 2
 
@@ -67,7 +75,7 @@ function dropsByMob(catalog: readonly CatalogMob[], aliases: DropAliases = {}): 
   for (const m of catalog) {
     for (const name of [m.name, m.page, ...(m.otherNames ?? [])]) {
       const set = out.get(mobKey(name)) ?? new Set<string>()
-      for (const d of listedDrops(m, aliases)) set.add(sourceItemKey(d))
+      for (const d of listedDrops(m, aliases)) set.add(sourceItemKey(d)).add(bareItemKey(d))
       out.set(mobKey(name), set)
     }
   }
@@ -141,7 +149,7 @@ export function dropGaps(loot: readonly LootEvent[], catalog: readonly CatalogMo
 /** What a looted item is filed as when its mob's page lists neither it nor a group holding it; null when listed or the mob is unknown. */
 function filedAs(e: LootEvent, listed: ReadonlyMap<string, Set<string>>, inGroups: ReadonlyMap<string, string[]>): { name: string; group: boolean } | null {
   const page = e.source === undefined ? undefined : listed.get(mobKey(e.source))
-  if (page === undefined || page.has(sourceItemKey(e.item))) return null
+  if (page === undefined || page.has(sourceItemKey(e.item)) || page.has(bareItemKey(e.item))) return null
   const its = inGroups.get(sourceItemKey(e.item)) ?? []
   if (its.some((g) => page.has(sourceItemKey(g)))) return null
   // The item's own page is the base item's: `Barbed Legplates +4` is filed as `Barbed Legplates`.
