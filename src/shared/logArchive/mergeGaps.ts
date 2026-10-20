@@ -38,6 +38,8 @@ interface KillFaction {
   zone: string
   /** the last amount a line stated */
   adjust?: number
+  /** the proof: the last kills' raw lines, oldest first, each the faction line then the death line */
+  samples?: string[]
 }
 
 /** Where a con or hail beside a `/loc` placed a mob (gaps_locs.rs), each point in `/loc` order. */
@@ -76,6 +78,8 @@ interface Snap {
 const CAP_PER_DOMAIN = 500
 const LIST_CAP = 8
 const SAMPLES = 3
+/** gaps_trade.rs `KILL_FACTION_SAMPLES`: three kills, two lines each (owner, 2026-10-20). */
+const KILL_FACTION_SAMPLES = 6
 
 /** The fold serves the domains in this order. */
 const DOMAINS = ['item', 'mob', 'spell']
@@ -175,13 +179,19 @@ function perDomain(older: Snap, newer: Snap, counted: Map<string, number>): Pick
   return { totals, seen }
 }
 
-/** Both sides' kill-faction pairs, one per case-folded (mob, faction), counts added, the newer zone kept. */
+/** One pair on both sides: counts added, the newer zone and amount kept, the proof lines joined newer last. */
+function joinKillFaction(had: KillFaction, p: KillFaction): KillFaction {
+  const samples = [...(had.samples ?? []), ...(p.samples ?? [])].slice(-KILL_FACTION_SAMPLES)
+  return { ...had, n: had.n + p.n, zone: p.zone || had.zone, adjust: p.adjust ?? had.adjust, ...(samples.length > 0 ? { samples } : {}) }
+}
+
+/** Both sides' kill-faction pairs, one per case-folded (mob, faction) (`joinKillFaction`). */
 function mergeKillFactions(older: Snap, newer: Snap): KillFaction[] {
   const out = new Map<string, KillFaction>()
   for (const p of [...(older.killFactions ?? []), ...(newer.killFactions ?? [])]) {
     const k = `${p.mob.toLowerCase()}|${p.faction.toLowerCase()}`
     const had = out.get(k)
-    out.set(k, had === undefined ? { ...p } : { ...had, n: had.n + p.n, zone: p.zone || had.zone, adjust: p.adjust ?? had.adjust })
+    out.set(k, had === undefined ? { ...p } : joinKillFaction(had, p))
   }
   return [...out.values()]
 }

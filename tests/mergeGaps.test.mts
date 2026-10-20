@@ -184,6 +184,23 @@ test('kill-faction pairs from both sides join case-folded, counts added, the new
   )
 })
 
+test('the proof lines of a kill-faction pair join across the archive and the live log, newer last, the last three kills kept (owner, 2026-10-20)', () => {
+  const kill = (stamp: string, by: number): string[] => [
+    `[${stamp}] Your faction standing with Grobb Merchants has been adjusted by ${String(by)}.`,
+    `[${stamp}] You have slain a troll slayer!`
+  ]
+  const pair = { mob: 'a troll slayer', faction: 'Grobb Merchants', zone: 'Grobb' }
+  const older = { ...snap([]), killFactions: [{ ...pair, n: 2, samples: [...kill('Sat Oct 17 20:00:00 2026', 1), ...kill('Sat Oct 17 21:00:00 2026', 2)] }] }
+  const newer = { ...snap([]), killFactions: [{ ...pair, n: 2, samples: [...kill('Mon Oct 19 23:56:00 2026', 3), ...kill('Mon Oct 19 23:56:47 2026', 4)] }] }
+  const m = mergeGaps(older, newer) as Snap & { killFactions: { n: number; samples?: string[] }[] }
+  assert.equal(m.killFactions[0].n, 4)
+  assert.deepEqual(m.killFactions[0].samples, [...kill('Sat Oct 17 21:00:00 2026', 2), ...kill('Mon Oct 19 23:56:00 2026', 3), ...kill('Mon Oct 19 23:56:47 2026', 4)])
+  const bare = mergeGaps({ ...snap([]), killFactions: [{ ...pair, n: 1 }] }, { ...snap([]), killFactions: [{ ...pair, n: 1 }] }) as Snap & {
+    killFactions: { samples?: string[] }[]
+  }
+  assert.equal(bare.killFactions[0].samples, undefined, 'an older engine serves none, and none is made up')
+})
+
 test('mob specials join per mob across the archive and the live log, each once (2026-10-19)', () => {
   const older = { ...snap([]), mobSpecials: [{ mob: 'Lord of Ire', specials: ['Flurries'] }] }
   const newer = { ...snap([]), mobSpecials: [{ mob: 'lord of ire', specials: ['Flurries', 'Rampages'] }] }
