@@ -27,6 +27,9 @@ test('an item page holds the banner, only the filled fields, the zone blocks and
       '|itemname = Fire Beetle Eye',
       '|merchant_value = 2s 7c',
       '|statsblock = ',
+      'Size:   WT: <br>',
+      'Class: <br>',
+      'Race: <br>',
       '|dropsfrom = ',
       '',
       '[[East Commonlands]]',
@@ -51,7 +54,7 @@ test('a bought or crafted item says so; nothing seen leaves only the name and th
   assert.match(text, /\|soldby = \n\n\{\{ItemWhereTable\|\n/)
   assert.match(text, /\[\[Category:Vendor Sold\]\]\n\[\[Category:Player Crafted\]\]/)
   const bare = itemPage({ name: 'X', drops: [], soldBy: [], crafted: false })
-  assert.equal(bare, '{{Classic Era}}\n<onlyinclude>{{Itempage\n|itemname = X\n|statsblock = \n}}</onlyinclude>\n')
+  assert.equal(bare, '{{Classic Era}}\n<onlyinclude>{{Itempage\n|itemname = X\n|statsblock = \nSize:   WT: <br>\nClass: <br>\nRace: <br>\n}}</onlyinclude>\n')
 })
 
 // Review D1: the wiki's own `|soldby` on 1,243 of 1,278 pages. The rows below are copied byte for
