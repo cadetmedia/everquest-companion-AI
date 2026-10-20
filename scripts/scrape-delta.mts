@@ -42,6 +42,7 @@ import { foldItems, isItemPage, type ItemFold } from './sources/deltaItems'
 import {
   foldMobs,
   foldRedirects,
+  keepRedirectCache,
   nextScrapedAt,
   QUESTS_FILE,
   SPELLS_FILE,
@@ -102,6 +103,8 @@ export interface DeltaPaths {
   itemCache: string
   mobCache: string
   spellCache: string
+  /** Every ns0 redirect, as scrape-mob-redirects listed it; the delta keeps it current. */
+  redirectCache: string
   questCache: string
 }
 
@@ -116,6 +119,7 @@ export function deltaPaths(root: string): DeltaPaths {
     itemCache: resolve(root, 'scripts/sources/cache/items'),
     mobCache: resolve(root, 'scripts/sources/cache/mobs'),
     spellCache: resolve(root, 'scripts/sources/cache/spells'),
+    redirectCache: resolve(root, 'scripts/sources/cache/redirects/redirects.json'),
     questCache: resolve(root, 'scripts/sources/cache/quests')
   }
 }
@@ -338,6 +342,7 @@ async function applyDelta(ctx: DeltaCtx): Promise<void> {
   }))
   const mobs = ([...mobFold.byPage.values()] as NamedMob[]).sort((a, b) => a.page.localeCompare(b.page))
   const redirected = foldRedirects(db.mobs.mobs, mobs, mobPages)
+  keepRedirectCache(paths.redirectCache, mobPages)
   writeAtomic(paths.mobs, JSON.stringify({
     scrapedAt: stamp(db.mobs.scrapedAt),
     source: deltaSource(db.mobs.source),
