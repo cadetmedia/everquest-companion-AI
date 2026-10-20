@@ -46,6 +46,8 @@ export interface ConMet {
   mob: string
   zone?: string
   cons: number
+  /** the most recent con, epoch ms (the consider module's row) */
+  ts?: number
 }
 
 /** The mobs met, by key: kills from the ledger, loot sources with the zone last looted in, cons with theirs. */
@@ -64,6 +66,7 @@ function metMobs(kills: KillMap, loot: readonly LootEvent[], cons: readonly ConM
   for (const c of cons) {
     const m = out.get(mobKey(c.mob)) ?? { name: c.mob, kills: 0, loots: 0, cons: 0, zone: '' }
     m.cons += c.cons
+    m.span = widen(m.span, c.ts)
     if (m.zone === '') m.zone = c.zone ?? ''
     out.set(mobKey(c.mob), m)
   }
@@ -83,7 +86,10 @@ export function imageGaps(kills: KillMap, loot: readonly LootEvent[], catalog: r
     if ((byPage.get(page.page)?.count ?? -1) >= n) continue
     byPage.set(page.page, {
       domain: 'image',
-      name: page.page,
+      // The game's spelling (owner, 2026-10-19: "a lesser kobold", not the title's forced capital
+      // "A lesser kobold"); the page's own title when it is another name (`A goblin (Feerrott)`).
+      name: met.name.toLowerCase() === page.page.toLowerCase() ? met.name : page.page,
+      page: page.page,
       image: page.image ?? npcImageName(page.name),
       kinds: met.kills > 0 ? ['killed'] : met.loots > 0 ? ['looted'] : ['considered'],
       count: n,

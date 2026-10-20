@@ -46,10 +46,19 @@ export type DropAliases = Readonly<Record<string, string>>
 /** Item key → the mobs its item page names; null for no page. Absent until main has answered. */
 export type ItemMobs = ReadonlyMap<string, readonly string[] | null>
 
-/** Every drop a page lists, in both loot fields, with the item a redirect title stands for. */
+/** A link to a qualified page, `Large Ruby (Eye of Toque)`, read also as the item it shows, `Large Ruby`. */
+const QUALIFIED = /^(.+?)\s+\([^()]+\)$/
+
+/**
+ * Every drop a page lists, in both loot fields, with the item a redirect title stands for, and each
+ * qualified link also without its qualifier (owner, 2026-10-19: Lynuga's page lists `[[Large Ruby
+ * (Eye of Toque)|Large Ruby]]` and the tab still asked for Large Ruby). Both spellings count, since a
+ * bracket is often the game's own name (`Salil's Writ Pg. 60 (Left)`, `Words of Collection (Azia)`).
+ */
 function listedDrops(m: CatalogMob, aliases: DropAliases): string[] {
   const named = [...(m.drops ?? []), ...(m.commonDrops ?? [])]
-  return [...named, ...named.flatMap((d) => (aliases[d] === undefined ? [] : [aliases[d]]))]
+  const bare = named.flatMap((d) => QUALIFIED.exec(d)?.[1] ?? [])
+  return [...named, ...bare, ...named.flatMap((d) => (aliases[d] === undefined ? [] : [aliases[d]]))]
 }
 
 /** Every catalog name → the drop names (item keys) its pages list. */

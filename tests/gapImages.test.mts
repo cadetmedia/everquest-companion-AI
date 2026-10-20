@@ -62,3 +62,22 @@ test('rows the tab builds carry First and Last, in the log stamp shape, from the
   // No time known: blank, as before.
   assert.equal(imageGaps({ marda: kill('Marda', 1) }, [], catalog)[0]?.first, '')
 })
+
+test("an image row is named as the game spells the mob, its page kept; a con's time counts", () => {
+  const cat = [{ page: 'A lesser kobold', name: 'a lesser kobold', noImage: true as const }]
+  const conTs = new Date(2026, 9, 19, 22, 1, 2).getTime()
+  const [r] = imageGaps({ 'a lesser kobold': kill('a lesser kobold', 3) }, [], cat, [{ mob: 'a lesser kobold', zone: 'Innothule Swamp', cons: 1, ts: conTs }])
+  assert.equal(r?.name, 'a lesser kobold')
+  assert.equal(r?.page, 'A lesser kobold')
+  assert.deepEqual([r?.first, r?.last], ['2026-10-19 22:01:02', '2026-10-19 22:01:02'])
+})
+
+test("a drop the page links under a qualified title (Large Ruby (Eye of Toque)) is listed; the bracketed game name still matches", () => {
+  const cat = [{ page: 'Lynuga', name: 'Lynuga', drops: ['Club', 'Large Ruby (Eye of Toque)', "Salil's Writ Pg. 60 (Left)"] }]
+  const loot = [
+    { item: 'Large Ruby', source: 'Lynuga', zone: 'Innothule Swamp', ts: 1 },
+    { item: "Salil's Writ Pg. 60 (Left)", source: 'Lynuga', zone: 'Innothule Swamp', ts: 2 },
+    { item: 'Rusty Dagger', source: 'Lynuga', zone: 'Innothule Swamp', ts: 3 }
+  ]
+  assert.deepEqual(dropGaps(loot as never, cat, {}).map((r) => r.name), ['Rusty Dagger (Lynuga)'])
+})
