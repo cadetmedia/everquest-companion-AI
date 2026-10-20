@@ -1,7 +1,7 @@
 // The Gaps list grouped as a hunting plan (owner ask, 2026-10-18): zone, then mob, then what is missing.
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { groupGaps, rowEntries, unfoldedEntries, ZONE_NOT_SEEN, type GapEntry } from '../src/shared/gapGroups'
+import { gapGroupOrderOf, groupGaps, headingKeys, rowEntries, unfoldedEntries, ZONE_NOT_SEEN, type GapEntry } from '../src/shared/gapGroups'
 import type { GapRow } from '../src/shared/gaps'
 import type { LootEvent } from '../src/shared/types'
 
@@ -82,4 +82,53 @@ test("a mob's page lines read A to Z under its heading, whatever the table's ord
   const mob = groupGaps(rows, []).find((e) => e.kind === 'mob')
   assert.ok(mob?.kind === 'mob')
   assert.deepEqual(mob.rows.map((r) => r.name), ['Bandages (a lesser kobold)', 'Belt Pouch (a lesser kobold)', 'Rusty Weapons (a lesser kobold)', 'Small Box (a lesser kobold)'])
+})
+
+test('the groups sort by how many are missing, most or fewest first, ties A to Z, the zone-less still last', () => {
+  const loot: LootEvent[] = [
+    { ts: 1, item: 'Fang', source: 'a spider', zone: 'The Feerrott' },
+    { ts: 2, item: 'Claw', source: 'a lizard', zone: 'The Feerrott' },
+    { ts: 3, item: 'Scale', source: 'a lizard', zone: 'The Feerrott' },
+    { ts: 4, item: 'Bone', source: 'a skeleton', zone: 'Befallen' },
+    { ts: 5, item: 'Fur', source: 'a gnoll', zone: 'Blackburrow' },
+    { ts: 6, item: 'Ear', source: 'a gnoll', zone: 'Blackburrow' }
+  ]
+  const rows = ['Fang', 'Claw', 'Scale', 'Bone', 'Fur', 'Ear'].map((n) => row('item', n)).concat(row('item', 'Nowhere'))
+  const heads = (es: GapEntry[]): string[] => shape(es).filter((l) => !l.startsWith('    '))
+  assert.deepEqual(heads(groupGaps(rows, loot, undefined, 'most')), [
+    '# The Feerrott (3)',
+    '  a lizard (2)',
+    '  a spider (1)',
+    '# Blackburrow (2)',
+    '  a gnoll (2)',
+    '# Befallen (1)',
+    '  a skeleton (1)',
+    `# ${ZONE_NOT_SEEN} (1)`
+  ])
+  assert.deepEqual(heads(groupGaps(rows, loot, undefined, 'fewest')), [
+    '# Befallen (1)',
+    '  a skeleton (1)',
+    '# Blackburrow (2)',
+    '  a gnoll (2)',
+    '# The Feerrott (3)',
+    '  a spider (1)',
+    '  a lizard (2)',
+    `# ${ZONE_NOT_SEEN} (1)`
+  ])
+  assert.deepEqual(heads(groupGaps(rows, loot)), heads(groupGaps(rows, loot, undefined, 'name')), 'A to Z is the default')
+  assert.equal(gapGroupOrderOf('most'), 'most')
+  assert.equal(gapGroupOrderOf('garbage'), 'name')
+  assert.equal(gapGroupOrderOf(null), 'name')
+})
+
+test('collapse all folds every heading, leaving the zones alone on screen', () => {
+  const loot: LootEvent[] = [
+    { ts: 1, item: 'Spider Fang', source: 'a jungle spider', zone: 'The Feerrott' },
+    { ts: 2, item: 'Bone Chips', source: 'a skeleton', zone: 'Befallen' }
+  ]
+  const all = groupGaps([row('item', 'Spider Fang'), row('item', 'Bought Thing', ['The Feerrott']), row('item', 'Bone Chips')], loot)
+  const keys = headingKeys(all)
+  assert.equal(keys.length, 4)
+  assert.deepEqual(unfoldedEntries(all, new Set(keys)).map((e) => e.kind), ['zone', 'zone'])
+  assert.deepEqual(headingKeys(rowEntries([row('item', 'x')])), [], 'ungrouped has no headings')
 })
