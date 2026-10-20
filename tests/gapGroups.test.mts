@@ -45,7 +45,7 @@ test('items sit under each zone and mob that dropped them; zones and mobs A to Z
 test('mobs sit under the zones they were seen in; ungrouped is the rows as they are', () => {
   const rows = [row('mob', 'Hoptor', ['Lower Guk']), row('mob', 'a gnoll', ['Blackburrow', 'Qeynos Hills'])]
   assert.deepEqual(shape(groupGaps(rows, [])), ['# Blackburrow (1)', '    a gnoll', '# Lower Guk (1)', '    Hoptor', '# Qeynos Hills (1)', '    a gnoll'])
-  assert.deepEqual(rowEntries(rows).map((e) => e.key), ['Hoptor', 'a gnoll'])
+  assert.deepEqual(rowEntries(rows).map((e) => e.key), ['mob|Hoptor', 'mob|a gnoll'])
   const keys = groupGaps(rows, []).map((e) => e.key)
   assert.equal(new Set(keys).size, keys.length, 'every entry has its own key')
 })
