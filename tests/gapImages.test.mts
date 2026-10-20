@@ -81,3 +81,12 @@ test("a drop the page links under a qualified title (Large Ruby (Eye of Toque)) 
   ]
   assert.deepEqual(dropGaps(loot as never, cat, {}).map((r) => r.name), ['Rusty Dagger (Lynuga)'])
 })
+
+test('a looted item matches the page drop that differs only by a leading article (An Alligator Tooth)', () => {
+  const cat = [{ page: 'A Bull Alligator', name: 'a bull alligator', drops: ['An Alligator Tooth', 'Gator Meat'] }]
+  const loot = [
+    { item: 'Alligator Tooth', source: 'a bull alligator', zone: 'Innothule Swamp', ts: 1 },
+    { item: 'Bull Alligator Tooth', source: 'a bull alligator', zone: 'Innothule Swamp', ts: 2 }
+  ]
+  assert.deepEqual(dropGaps(loot as never, cat, {}).map((r) => r.name), ['Bull Alligator Tooth (a bull alligator)'])
+})
