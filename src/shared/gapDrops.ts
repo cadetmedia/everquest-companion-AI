@@ -14,6 +14,7 @@
 // mobs it would also hide Rat Eye (6 mobs, tied to 2), a real gap.
 
 import type { GapRow } from './gaps'
+import { spanStamps, widen, type Span } from './gapTimes'
 import { commonLootNames, pagesByMob, pickPage } from './gapMobPage'
 import { itemBaseName } from './itemStats'
 import { mobKey } from './mobKey'
@@ -86,6 +87,8 @@ interface Missing {
   seen: Map<string, number>
   /** each corpse once: a line per copy of an item prints from one corpse in one second */
   corpses: Set<string>
+  /** first and last looted, for the row's First and Last */
+  span?: Span
 }
 
 /** The (mob, item or group) pairs no page of the mob lists, as Gaps rows, most looted first. */
@@ -103,6 +106,7 @@ function addDrop(missing: Map<string, Missing>, e: LootEvent, mob: string, filed
   m.corpses.add(`${String(e.ts)}|${mobKey(mob)}`)
   m.n = m.corpses.size
   m.zone = e.zone ?? m.zone
+  m.span = widen(m.span, e.ts)
   if (e.zone !== undefined) m.zones.set(e.zone, (m.zones.get(e.zone) ?? 0) + 1)
   if (filed.group) m.seen.set(e.item, (m.seen.get(e.item) ?? 0) + 1)
   missing.set(key, m)
@@ -188,8 +192,7 @@ function rowOf(m: Missing, itemMobs: ItemMobs | undefined, page: string | undefi
     name: `${m.name} (${m.mob})`,
     kinds: ['looted'],
     count: m.n,
-    first: '',
-    last: '',
+    ...spanStamps(m.span),
     details: {
       samples: [],
       sources: { entries: [{ name: m.mob, n: m.n }], distinct: 1 },

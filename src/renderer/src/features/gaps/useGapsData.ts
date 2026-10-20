@@ -48,7 +48,7 @@ export function useGapsData(): GapsData {
   const snap = useMemo(() => {
     if (!engine) return engine
     const wiki = { catalog: MOB_CATALOG, groups: DROPS.groups, itemMobs, aliases: DROPS.aliases ?? {} }
-    const derived = withDropRows(withFactionRows(engine, MOB_CATALOG), loot ?? [], wiki)
+    const derived = withDropRows(withFactionRows(engine, MOB_CATALOG, killMobs ?? {}), loot ?? [], wiki)
     return withImageRows(derived, { kills: killMobs ?? {}, loot: loot ?? [], cons: cons ?? [] }, MOB_CATALOG)
   }, [engine, loot, killMobs, itemMobs, cons])
   const kills = useMemo(() => killIndex(killMobs ?? {}), [killMobs])
