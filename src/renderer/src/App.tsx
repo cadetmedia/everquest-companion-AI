@@ -314,6 +314,7 @@ function ViewContent({
       {view === 'combat' && (
         <CombatView
           key={viewKey}
+          world={viewKey}
           focus={routing.combatFocus}
           focusNonce={routing.combatNonce}
           onFocusConsumed={routing.clearCombatFocus}

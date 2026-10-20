@@ -3,6 +3,7 @@ import type { CombatSnapshot } from '@shared/combat'
 import { LIVE_SELECTION, type CombatScope } from './dashboardData'
 import { useGlobalFight } from './useGlobalFight'
 import type { CombatFocus } from './combatFocus'
+import { coalesced, createFeed, keptSnapshot } from './combatFeed'
 
 /** Re-export: the sentinel lives with the scope helpers (dashboardData) so the overlay entry —
  *  which never imports this hook — can share one definition. */
@@ -67,7 +68,10 @@ export interface UseCombat {
  * meter updates during a fight. A slow 1s fallback poll remains for timer-driven UI
  * (the "active" state decay) and to cover any missed event.
  */
-export function useCombat(): UseCombat {
+export function useCombat(
+  /** which world this mount views (App's `viewKey`): the kept answer is only reused for the same one */
+  world = ''
+): UseCombat {
   const [showUnparsed, setShowUnparsed] = useState(false)
   const [scope, setScopeState] = useState<CombatScope>(loadScope)
   /**
@@ -85,7 +89,8 @@ export function useCombat(): UseCombat {
   const [zoneSelection, setZoneSelection] = useState<string>('zone')
   const [maxSegments, setMaxSegments] = useState(DEFAULT_MAX_SEGMENTS)
   const [wantTimeline, setWantTimeline] = useState(true)
-  const [snap, setSnap] = useState<CombatSnapshot | null>(null)
+  // A revisit paints the last real answer at once instead of "Reading log…" (combatFeed.ts).
+  const [snap, setSnap] = useState<CombatSnapshot | null>(() => keptSnapshot(world))
 
   /** What this surface is showing — the scope picks which of the two selections is in force. */
   const selection = scope === 'fight' ? fightId : zoneSelection
@@ -97,7 +102,11 @@ export function useCombat(): UseCombat {
 
   useEffect(() => {
     let alive = true
-    const tick = async (): Promise<void> => {
+    // Slow answers neither blank the tab nor pile up behind each other (combatFeed.ts).
+    const accept = createFeed(world, (s) => {
+      if (alive) setSnap(s)
+    })
+    const tick = coalesced(async (): Promise<void> => {
       // The engine-side pet fold is GONE (not "off"): pet presentation is the renderer's nesting
       // pref (eq.combat.petRow) applied by petRows.meterPanel, and the snapshot always carries
       // the separate, authoritative sources — for this view and for the overlays alike.
@@ -110,17 +119,17 @@ export function useCombat(): UseCombat {
         // Summarize and archive log is on and an archive is eligible.
         archived: true
       })
-      if (alive) setSnap(s)
-    }
-    void tick()
-    const off = window.eq.onCombatActivity(() => void tick())
-    const iv = setInterval(() => void tick(), 1000)
+      accept(s)
+    })
+    tick()
+    const off = window.eq.onCombatActivity(tick)
+    const iv = setInterval(tick, 1000)
     return () => {
       alive = false
       off()
       clearInterval(iv)
     }
-  }, [selection, showUnparsed, maxSegments, wantTimeline])
+  }, [world, selection, showUnparsed, maxSegments, wantTimeline])
 
   const loadMore = (): void => setMaxSegments((n) => n + DEFAULT_MAX_SEGMENTS)
 
