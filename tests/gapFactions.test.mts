@@ -3,7 +3,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { factionFix, factionGaps, factionKey, withFactionRows } from '../src/shared/gapFactions'
-import { gapActions, logSaysText, pageSaysText, type GapRow, type GapsSnap } from '../src/shared/gaps'
+import { gapActions, logSaysText, pageSaysText, uncertainGap, type GapRow, type GapsSnap } from '../src/shared/gaps'
 import { groupGaps } from '../src/shared/gapGroups'
 import { merchantPage, wikiPageText } from '../src/shared/wikiPage'
 
@@ -109,4 +109,12 @@ test('a capped line on the other side is a side fix; a guess the log matches is 
   assert.equal(factionFix(['-30', '-10'], { adjust: -10, raised: false }), null, 'any page agreeing is enough')
   assert.equal(factionFix([], { adjust: -10 }), null)
   assert.deepEqual(factionFix(['-'], { adjust: -10, raised: false }), { fix: 'amount', pageSays: '-' })
+})
+
+test("a faction row for a mob the data has no page for is uncertain and says to check the page", () => {
+  const [r] = factionGaps([{ mob: 'Peltin Funter', faction: 'Guards of Qeynos', n: 1, zone: 'Innothule Swamp', adjust: -10 }], catalog)
+  assert.equal(r?.noPage, true)
+  assert.equal(uncertainGap(r ?? assert.fail()), true)
+  const chip = gapActions(r, 'unchecked')[0]
+  assert.equal(chip?.label, 'Check mob page')
 })
