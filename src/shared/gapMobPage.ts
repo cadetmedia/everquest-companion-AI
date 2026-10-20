@@ -2,7 +2,8 @@
 // B2). The rows are matched to the catalog through every name a page goes by, but a link built from
 // the log's name opens a page that does not exist (`a shadowknight` for `A shadowknight (Human)`) or
 // a redirect. Several pages can share a name (`Orc Centurion (Crushbone)` / `(Deathfist)`): the one
-// whose `|zone` is where the player met the mob wins; with no way to choose, none is picked.
+// whose `|zone` is where the player met the mob wins; with no way to choose, none is picked. An item
+// page's `|soldby` row finds its vendor the same way (`vendorFinder`, review D1).
 
 import { mobKey } from './mobKey'
 import { zoneKey } from './zones'
@@ -52,4 +53,37 @@ export function commonLootNames(catalog: readonly { drops?: string[]; commonDrop
     for (const d of m.drops ?? []) known.set(d.toLowerCase(), (known.get(d.toLowerCase()) ?? 0) + 1)
   }
   return new Set([...common].filter(([name, n]) => n >= 3 && n > (known.get(name) ?? 0)).map(([name]) => name))
+}
+
+/** A vendor as an item page's `|soldby` row names it (review D1): its page, its zone, its one spawn point. */
+export interface VendorPlace {
+  page: string
+  /** The page's zone, as the page spells it; absent when it names none or several and the log cannot choose. */
+  zone?: string
+  /** `/loc` order (ns, ew); absent unless the page states exactly one point (a vendor with several is not placed). */
+  loc?: readonly [number, number]
+}
+
+export type VendorFinder = (vendor: string, zones: readonly string[]) => VendorPlace | undefined
+
+type Placed = Paged & { loc?: readonly { ns: number; ew: number }[] }
+
+/**
+ * Where a vendor the player bought from stands, by the catalog: the only page of that name, else
+ * the one page whose `|zone` is among the zones the item was seen in; none when that cannot tell.
+ * Build it once per catalog.
+ */
+export function vendorFinder(catalog: readonly Placed[]): VendorFinder {
+  const pages = pagesByMob(catalog)
+  return (vendor, zones) => {
+    const all = pages.get(mobKey(vendor)) ?? []
+    const keys = new Set(zones.map(zoneKey).filter((k) => k !== ''))
+    const inZone = (p: Placed): boolean => (p.zones ?? []).some((z) => keys.has(zoneKey(z)))
+    const page = all.length === 1 ? all[0] : all.filter(inZone).length === 1 ? all.find(inZone) : undefined
+    if (page === undefined) return undefined
+    const named = (page.zones ?? []).filter((z) => z !== 'Various')
+    const zone = named.find((z) => keys.has(zoneKey(z))) ?? (named.length === 1 ? named[0] : undefined)
+    const one = page.loc?.length === 1 ? page.loc[0] : undefined
+    return { page: page.page, ...(zone === undefined ? {} : { zone }), ...(one === undefined ? {} : { loc: [one.ns, one.ew] as const }) }
+  }
 }

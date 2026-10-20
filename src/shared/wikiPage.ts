@@ -16,8 +16,10 @@
 import { CURRENT_ERA } from './planner/era'
 import type { KillMap } from './kills'
 import { killsFor } from './kills'
-import { derivedPrices, factionMob, factionOf, npcOnlySpell, type ClientSpellFacts, type GapDomain, type GapRow } from './gaps'
+import { derivedPrices, factionMob, factionOf, npcOnlySpell, type ClientSpellFacts, type GapDomain, type GapRow, type MobCoin } from './gaps'
 import { itemBaseName } from './itemStats'
+import { wikiZoneLink } from './gapWikiZone'
+import type { VendorFinder } from './gapMobPage'
 import type { LootEvent } from './types'
 
 /** A log zone name as the wiki spells it (shared/gapWikiZone.ts); as printed when none is given. */
@@ -45,19 +47,41 @@ export function wikiCoin(copper: number): string {
   return parts.length > 0 ? parts.join(' ') : '0c'
 }
 
-/** A list value: a blank line, then `* [[page]]` per page. */
-export function bulletLinks(pages: readonly string[]): string {
-  return `\n\n${pages.map((p) => `* ${wikiLink(p)}`).join('\n')}\n`
-}
-
 /** `dropsfrom`: `[[Zone]]`, a blank line and its mobs, per zone, zones and mobs A to Z. */
 export function zoneBlocks(byZone: ReadonlyMap<string, readonly string[]>): string {
   const zones = [...byZone].sort((a, b) => a[0].localeCompare(b[0]))
   const blocks = zones.map(([zone, mobs]) => {
     const list = [...mobs].sort((a, b) => a.localeCompare(b)).map((m) => `* ${wikiLink(m)}`).join('\n')
-    return zone === '' ? list : `${wikiLink(zone)}\n\n${list}`
+    return zone === '' ? list : `${wikiZoneLink(zone)}\n\n${list}`
   })
   return `\n\n${blocks.join('\n\n')}\n`
+}
+
+/** One vendor an item was bought from: its page, the zone it stands in, its `/loc` (ns, ew). */
+export interface VendorSeen {
+  vendor: string
+  /** As the wiki spells it; '' when neither the catalog nor the log names one place. */
+  zone: string
+  loc?: readonly [number, number]
+}
+
+/**
+ * `soldby` as the wiki writes it on 1,243 of the 1,278 item pages that fill it (review D1, measured
+ * on the cached pages 2026-10-19): `{{ItemWhereTable|`, one `{{ItemWhereRow   | [[Zone]] | [[Vendor]]
+ * |  | (ns, ew) }}` per vendor, the zone cell padded to 34 and the vendor cell to 30 (one space past a
+ * longer link), the third cell (directions) 15 spaces, the table closed on its own line. A vendor
+ * whose spot is unknown leaves the loc cell empty, `|  }}`, as real pages do. Zones then vendors A to Z, an unplaced vendor last.
+ */
+export function itemWhereTable(vendors: readonly VendorSeen[]): string {
+  const cell = (link: string, width: number): string => `${link.padEnd(width - 1)} `
+  const unplaced = (v: VendorSeen): number => Number(v.zone === '')
+  const sorted = [...vendors].sort((a, b) => unplaced(a) - unplaced(b) || a.zone.localeCompare(b.zone) || a.vendor.localeCompare(b.vendor))
+  const rows = sorted.map((v) => {
+    const zone = v.zone === '' ? '' : wikiZoneLink(v.zone)
+    const loc = v.loc === undefined ? '' : `(${String(v.loc[0])}, ${String(v.loc[1])})`
+    return `{{ItemWhereRow   | ${cell(zone, 34)}| ${cell(wikiLink(v.vendor), 30)}|${' '.repeat(15)}| ${loc} }}`
+  })
+  return `\n\n{{ItemWhereTable|\n${rows.join('\n')}\n}}\n`
 }
 
 /** `<onlyinclude>{{Itempage` and one `|key = value` line per field, only the fields given. */
@@ -90,7 +114,7 @@ export interface ItemFacts {
   /** What a vendor pays at best standing, in copper (`derivedPrices`). */
   merchantValue?: number
   /** Merchants the player bought it from. */
-  soldBy: string[]
+  soldBy: VendorSeen[]
   /** The player made it in a combine (a mote fusion is not one). */
   crafted: boolean
 }
@@ -119,6 +143,8 @@ export interface MobFacts {
   factions: FactionSeen[]
   /** What its attack lines showed it doing (`Rampages`, `Flurries`): the page's `special`. */
   specials: string[]
+  /** What its corpse paid at the player's kills; absent when no kill paid (never "none", gaps_coin.rs). */
+  coin?: MobCoin
 }
 
 /** What the log saw of mobs beyond the rows: each kill's factions and each mob's `/loc` points. */
@@ -126,6 +152,7 @@ export interface MobSightings {
   killFactions?: readonly ({ mob: string } & FactionSeen)[]
   mobLocs?: readonly { mob: string; points: number[][] }[]
   mobSpecials?: readonly { mob: string; specials: readonly string[] }[]
+  mobCoin?: readonly MobCoin[]
 }
 
 export interface SpellFacts {
@@ -163,11 +190,22 @@ export function dropsSeen(item: string, loot: readonly LootEvent[], zoneName: Zo
   return [...byPair.values()].map(({ zone, mob, drops }) => ({ zone, mob, drops }))
 }
 
-export function itemFacts(row: GapRow, loot: readonly LootEvent[], zoneName: ZoneNamer = asPrinted): ItemFacts {
+/**
+ * A vendor's row: its catalog page, zone and single spawn point when the catalog can tell which page
+ * (`vendorFinder`), else its name as printed and the item's one zone, if it was seen in only one.
+ */
+function vendorSeen(vendor: string, zones: readonly string[], zoneName: ZoneNamer, vendorAt?: VendorFinder): VendorSeen {
+  const at = vendorAt?.(vendor, zones)
+  const zone = at?.zone !== undefined ? zoneName(at.zone) : zones.length === 1 ? (zones[0] ?? '') : ''
+  return { vendor: at?.page ?? vendor, zone, ...(at?.loc === undefined ? {} : { loc: at.loc }) }
+}
+
+export function itemFacts(row: GapRow, loot: readonly LootEvent[], zoneName: ZoneNamer = asPrinted, vendorAt?: VendorFinder): ItemFacts {
   const drops = dropsSeen(row.name, loot, zoneName)
   const mobs = new Set(drops.map((d) => d.mob.toLowerCase()))
   const bought = row.kinds.includes('bought')
-  const soldBy = bought ? (row.details.sources?.entries ?? []).map((e) => e.name).filter((n) => !mobs.has(n.toLowerCase())) : []
+  const vendors = bought ? (row.details.sources?.entries ?? []).map((e) => e.name).filter((n) => !mobs.has(n.toLowerCase())) : []
+  const soldBy = vendors.map((v) => vendorSeen(v, rowZones(row, zoneName), zoneName, vendorAt))
   const merchantValue = derivedPrices(row.details)?.vendorValue
   return { name: row.name, drops, soldBy, crafted: row.kinds.includes('crafted'), ...(merchantValue === undefined ? {} : { merchantValue }) }
 }
@@ -213,6 +251,7 @@ export function mobFacts(row: GapRow, loot: readonly LootEvent[], kills: KillMap
     credited: killed?.credited ?? 0,
     points: (seen.mobLocs ?? []).filter(mine).flatMap((m) => m.points),
     specials: [...new Set((seen.mobSpecials ?? []).filter(mine).flatMap((m) => m.specials))],
+    ...coinOf(seen.mobCoin, row.name),
     factions: (seen.killFactions ?? []).filter(mine).map(({ faction, adjust, raised }) => ({
       faction,
       ...(adjust === undefined ? {} : { adjust }),
@@ -241,10 +280,25 @@ export function rarityWord(pct: number): string {
  * over the player's kills, `~` marking it as seen in one log rather than the server's loot table.
  */
 export function lootLine(item: string, drops: number, kills: number): string {
+  return rateLine(`{{:${item}}}`, drops, kills)
+}
+
+/**
+ * A group's line (`[[Rusty Weapons]]`), rated the same way (review D2): the corpses that dropped
+ * ANY member, over the mob's kills. The wiki writes a group line exactly as an item line, the
+ * `drare` and `ddb` spans after the link (measured 2026-10-19 on the cached mob pages, 468 group
+ * lines: `<li> [[Rusty Weapons]] <span class='drare'>(Rare)</span> <span class='ddb'>...`).
+ */
+export function groupLine(group: string, drops: number, kills: number): string {
+  return rateLine(wikiLink(group), drops, kills)
+}
+
+/** `<li> link </li>`, with the rarity word and the rate only when the log gives one. */
+function rateLine(link: string, drops: number, kills: number): string {
   // More drops than kills means kills the log never showed (a groupmate's far kill): no rate beats a false "Always".
-  if (kills <= 0 || drops > kills) return `<li> {{:${item}}} </li>`
+  if (kills <= 0 || drops > kills) return `<li> ${link} </li>`
   const pct = Math.round((drops / kills) * 1000) / 10
-  return `<li> {{:${item}}} <span class='drare'>(${rarityWord(pct)})</span> <span class='ddb'>[Overall: ~${String(pct)}%]</span> </li>`
+  return `<li> ${link} <span class='drare'>(${rarityWord(pct)})</span> <span class='ddb'>[Overall: ~${String(pct)}%]</span> </li>`
 }
 
 export function itemPage(f: ItemFacts): string {
@@ -254,7 +308,7 @@ export function itemPage(f: ItemFacts): string {
   if (f.merchantValue !== undefined) fields.push(['merchant_value', wikiCoin(f.merchantValue)])
   fields.push(['statsblock', ''])
   if (byZone.size > 0) fields.push(['dropsfrom', zoneBlocks(byZone)])
-  if (f.soldBy.length > 0) fields.push(['soldby', bulletLinks(f.soldBy)])
+  if (f.soldBy.length > 0) fields.push(['soldby', itemWhereTable(f.soldBy)])
   const cats = [
     ...(f.soldBy.length > 0 ? ['Vendor Sold'] : []),
     ...(f.crafted ? ['Player Crafted'] : []),
@@ -325,7 +379,7 @@ function npcValues(f: NpcFacts): Record<string, string> {
     name: f.name,
     // The wiki writes a range unspaced, `11-13`, four times in five.
     level: lo === undefined || hi === undefined ? '' : lo === hi ? String(lo) : `${String(lo)}-${String(hi)}`,
-    zone: f.zones.map(wikiLink).join(', '),
+    zone: f.zones.map(wikiZoneLink).join(', '),
     location: locationText(f.points),
     special: f.specials.join(', '),
     ...factionBlocks(f.factions, f.credited)
@@ -336,13 +390,39 @@ function npcValues(f: NpcFacts): Record<string, string> {
 const lootList = (loot: MobFacts['loot'], kills: number): string =>
   loot.length === 0 ? '' : `<ul>\n${loot.map((l) => lootLine(l.item, l.drops, kills)).join('\n')}\n</ul>`
 
+/** The mob's coin, when its kills paid any. */
+function coinOf(all: readonly MobCoin[] | undefined, mob: string): { coin?: MobCoin } {
+  const hit = all?.find((c) => same(c.mob, mob))
+  return hit === undefined || hit.n === 0 ? {} : { coin: hit }
+}
+
+/** The page's coins, in its order, with the colour each line's span carries. */
+const COINS: readonly (readonly [string, string])[] = [
+  ['Platinums', '#e5e4e2'],
+  ['Golds', 'gold'],
+  ['Silvers', 'silver'],
+  ['Coppers', '#CD7F32']
+]
+
+/**
+ * `MONEY DROPS` as the wiki writes it at the end of `|known_loot` (review E3; measured 2026-10-19 on
+ * the cached mob pages, 406 blocks): each coin's least and most over the kills that paid,
+ * `<li> 9 - 16 <span style="color:silver"><b>Silvers</b></span></li>`, every coin listed. The log
+ * cannot prove a mob pays nothing (gaps_coin.rs), so `NO MONEY DROPS` is never written.
+ */
+export function moneyBlock(c: MobCoin): string {
+  const lines = COINS.map(([word, color], i) => `<li> ${String(c.min[i] ?? 0)} - ${String(c.max[i] ?? 0)} <span style="color:${color}"><b>${word}</b></span></li>`)
+  return ['<p><b>MONEY DROPS</b></p>', '<ul>', ...lines, '</ul>'].join('\n')
+}
+
 /**
  * A mob's page. A drop the wiki files under `|common_loot` (shared loot, `commonLootNames`) goes
  * there; everything else is the mob's own `|known_loot` (owner, 2026-10-19).
  */
 export function mobPage(f: MobFacts, commonLoot: ReadonlySet<string> = new Set()): string {
   const isCommon = (l: MobFacts['loot'][number]): boolean => commonLoot.has(l.item.toLowerCase())
-  const own = lootList(f.loot.filter((l) => !isCommon(l)), f.kills)
+  const loot = lootList(f.loot.filter((l) => !isCommon(l)), f.kills)
+  const own = [loot, f.coin === undefined ? '' : moneyBlock(f.coin)].filter((s) => s !== '').join('\n')
   const shared = lootList(f.loot.filter(isCommon), f.kills)
   return page(layoutBlock('Namedmobpage', NPC_LAYOUT, { ...npcValues(f), known_loot: own, common_loot: shared }), f.zones)
 }
@@ -395,6 +475,8 @@ export interface PageExtras {
   commonLoot?: ReadonlySet<string>
   /** What the install's spell files state, by spell name. */
   spellFacts?: Readonly<Record<string, ClientSpellFacts>>
+  /** Where a vendor stands, by the catalog (`vendorFinder`): an item page's `|soldby` rows. */
+  vendorAt?: VendorFinder
 }
 
 /**
@@ -405,7 +487,7 @@ export interface PageExtras {
 export function wikiPageText(row: GapRow, loot: readonly LootEvent[], kills: KillMap, seen: MobSightings & PageExtras = {}): string {
   const extras = seen
   if (row.suggest !== undefined && (row.domain === 'item' || row.domain === 'spell')) return `#REDIRECT [[${row.suggest.page}]]\n`
-  return PAGE_OF[row.domain](row, { loot, kills, seen, zoneName: extras.zoneName ?? asPrinted, isMob: extras.isMob, commonLoot: extras.commonLoot, spellFacts: extras.spellFacts })
+  return PAGE_OF[row.domain](row, { loot, kills, seen, zoneName: extras.zoneName ?? asPrinted, isMob: extras.isMob, commonLoot: extras.commonLoot, spellFacts: extras.spellFacts, vendorAt: extras.vendorAt })
 }
 
 interface PageContext {
@@ -416,6 +498,7 @@ interface PageContext {
   isMob?: (name: string) => boolean
   commonLoot?: ReadonlySet<string>
   spellFacts?: Readonly<Record<string, ClientSpellFacts>>
+  vendorAt?: VendorFinder
 }
 
 /**
@@ -423,17 +506,15 @@ interface PageContext {
  * so a new domain is one entry, and a domain without one does not compile.
  */
 const PAGE_OF: Record<GapDomain, (row: GapRow, c: PageContext) => string> = {
-  item: (row, c) => itemPage(itemFacts(row, c.loot, c.zoneName)),
+  item: (row, c) => itemPage(itemFacts(row, c.loot, c.zoneName, c.vendorAt)),
   mob: (row, c) => mobPage(mobFacts(row, c.loot, c.kills, { ...c.seen, zoneName: c.zoneName }), c.commonLoot),
   merchant: (row, c) => merchantPage(mobFacts(row, [], c.kills, { ...c.seen, zoneName: c.zoneName })),
   spell: (row, c) => spellPage({ name: row.name, npcOnly: npcOnlySpell(row, c.isMob), client: c.spellFacts?.[row.name] }),
   faction: (row) => `${factionLine({ faction: factionOf(row), adjust: row.adjust, raised: row.raised })}\n`,
   image: (row) => `| ${'imagefilename'.padEnd(17)} = ${row.image ?? ''}\n`,
-  // A drop: its group's link (`<li> [[Rusty Weapons]] </li>`), else the item with the rate seen.
-  drop: (row, c) =>
-    row.details.drops
-      ? `<li> ${wikiLink(factionOf(row))} </li>\n`
-      : `${lootLine(factionOf(row), row.count, killsFor(c.kills, factionMob(row))?.count ?? 0)}\n`
+  // A drop: its group's link (`[[Rusty Weapons]]`), else the item; each with the rate seen, a
+  // group's being the corpses that dropped any member (the row's count) over the mob's kills.
+  drop: (row, c) => `${(row.details.drops ? groupLine : lootLine)(factionOf(row), row.count, killsFor(c.kills, factionMob(row))?.count ?? 0)}\n`
 }
 
 /** The domains whose page needs the same thing whatever the log saw; mobs and merchants are read below. */

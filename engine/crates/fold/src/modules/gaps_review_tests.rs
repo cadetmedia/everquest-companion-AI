@@ -105,3 +105,36 @@ fn a_mob_rampaging_is_served_for_its_page() {
         json!([{ "mob": "Lord of Ire", "specials": ["Flurries"] }])
     );
 }
+
+#[test]
+fn a_one_word_name_conned_above_the_player_cap_is_an_npc_row_never_a_maybe_player() {
+    let mut m = module();
+    feed(&mut m, 1, json!({ "kind": "zone", "zone": "Oggok" }));
+    // `Bordag regards you indifferently -- what would you like your tombstone to say? (Lvl: 70)`
+    feed(&mut m, 2, json!({ "kind": "consider", "mob": "Bordag", "level": 70 }));
+    let line = |text: &str| json!({ "kind": "unknown", "raw": format!("[Sun Oct 18 20:26:58 2026] {text}") });
+    feed(&mut m, 3, line("Bordag tells you, 'not a player'"));
+    let served = m.snapshot()["state"]["rows"].clone();
+    let bordag = served
+        .as_array()
+        .expect("rows")
+        .iter()
+        .find(|r| r["name"] == "Bordag")
+        .expect("Bordag stays a row");
+    assert!(bordag.get("maybePlayer").is_none(), "level 70 is no player's level");
+}
+
+#[test]
+fn a_kill_claims_the_corpse_coin_printed_just_before_it_and_the_snapshot_serves_each_mob_range() {
+    let mut m = module();
+    let coin = |text: &str| json!({ "kind": "coin", "source": "corpse", "raw": format!("[Tue Oct 06 18:20:21 2026] {text}") });
+    feed(&mut m, 1, coin("You receive 4 silver and 1 copper from the corpse."));
+    feed(&mut m, 2, json!({ "kind": "death", "name": "a rabid kobold", "bySelf": true }));
+    feed(&mut m, 3, coin("You receive 2 gold and 9 copper from the corpse."));
+    feed(&mut m, 4, json!({ "kind": "death", "name": "a rabid kobold", "bySelf": true }));
+    let coin = m.snapshot()["state"]["mobCoin"].clone();
+    assert_eq!(
+        coin,
+        json!([{ "mob": "a rabid kobold", "n": 2, "min": [0, 0, 0, 1], "max": [0, 2, 4, 9] }])
+    );
+}

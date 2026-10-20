@@ -2,7 +2,8 @@
 // `Fire Beetle Eye` page: the era banner, only the fields the log fills, `dropsfrom` by zone.
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { dropsSeen, itemPage, mobFacts, mobPage, spellPage, wikiCoin, wikiPageText } from '../src/shared/wikiPage'
+import { dropsSeen, itemPage, itemWhereTable, mobFacts, mobPage, spellPage, wikiCoin, wikiPageText } from '../src/shared/wikiPage'
+import { vendorFinder } from '../src/shared/gapMobPage'
 import { killIndex, type KillMap } from '../src/shared/kills'
 import type { GapRow } from '../src/shared/gaps'
 import type { LootEvent } from '../src/shared/types'
@@ -46,11 +47,71 @@ test('an item page holds the banner, only the filled fields, the zone blocks and
 })
 
 test('a bought or crafted item says so; nothing seen leaves only the name and the open stats', () => {
-  const text = itemPage({ name: 'Bread', drops: [], soldBy: ['Baker Ian'], crafted: true })
-  assert.match(text, /\|soldby = \n\n\* \[\[Baker Ian\]\]\n/)
+  const text = itemPage({ name: 'Bread', drops: [], soldBy: [{ vendor: 'Baker Ian', zone: 'Qeynos Hills' }], crafted: true })
+  assert.match(text, /\|soldby = \n\n\{\{ItemWhereTable\|\n/)
   assert.match(text, /\[\[Category:Vendor Sold\]\]\n\[\[Category:Player Crafted\]\]/)
   const bare = itemPage({ name: 'X', drops: [], soldBy: [], crafted: false })
   assert.equal(bare, '{{Classic Era}}\n<onlyinclude>{{Itempage\n|itemname = X\n|statsblock = \n}}</onlyinclude>\n')
+})
+
+// Review D1: the wiki's own `|soldby` on 1,243 of 1,278 pages. The rows below are copied byte for
+// byte from cached pages (Fishing Grubs, Kael Drakkel's Bjorak Stonefist, Qeynos Aqueducts).
+test('soldby is the wiki ItemWhereTable: padded cells, an empty directions cell, the loc in /loc order, closed on its own line', () => {
+  const text = itemPage({
+    name: 'Fishing Grubs',
+    drops: [],
+    soldBy: [
+      { vendor: 'Kubder Restona', zone: 'Qeynos Aqueducts|Qeynos Catacombs', loc: [277, -384] },
+      { vendor: 'Dansie McVicker', zone: 'Everfrost Peaks', loc: [3638, 697] },
+      { vendor: 'Daria Smith', zone: 'Freeport|East Freeport', loc: [46, -226] }
+    ],
+    crafted: false
+  })
+  assert.ok(
+    text.includes(
+      [
+        '|soldby = ',
+        '',
+        '{{ItemWhereTable|',
+        '{{ItemWhereRow   | [[Everfrost Peaks]]               | [[Dansie McVicker]]           |               | (3638, 697) }}',
+        '{{ItemWhereRow   | [[Freeport|East Freeport]]        | [[Daria Smith]]               |               | (46, -226) }}',
+        '{{ItemWhereRow   | [[Qeynos Aqueducts|Qeynos Catacombs]] | [[Kubder Restona]]            |               | (277, -384) }}',
+        '}}',
+        '',
+        '}}</onlyinclude>'
+      ].join('\n')
+    ),
+    text
+  )
+  // A vendor whose spot is unknown leaves the cell empty, as the wiki's own rows do.
+  assert.ok(itemWhereTable([{ vendor: 'Baker Ian', zone: 'Qeynos Hills' }]).includes('| [[Baker Ian]]                 |               |  }}\n}}\n'))
+})
+
+test('a soldby row places its vendor by the catalog: the page picked by zone, one spawn point or none', () => {
+  const catalog = [
+    { page: 'Dansie McVicker', name: 'Dansie McVicker', zones: ['Everfrost Peaks'], loc: [{ ns: 3638, ew: 697 }] },
+    { page: 'Merchant Tyslin (South Felwithe)', name: 'Merchant Tyslin', zones: ['South Felwithe'], loc: [{ ns: 450, ew: -775 }] },
+    { page: 'Merchant Tyslin (Rivervale)', name: 'Merchant Tyslin', zones: ['Rivervale'], loc: [{ ns: 1, ew: 2 }] },
+    { page: 'Two Spot', name: 'Two Spot', zones: ['Halas'], loc: [{ ns: 1, ew: 2 }, { ns: 3, ew: 4 }] }
+  ]
+  const vendorAt = vendorFinder(catalog)
+  assert.deepEqual(vendorAt('dansie mcvicker', []), { page: 'Dansie McVicker', zone: 'Everfrost Peaks', loc: [3638, 697] })
+  assert.deepEqual(vendorAt('Merchant Tyslin', ['South Felwithe']), { page: 'Merchant Tyslin (South Felwithe)', zone: 'South Felwithe', loc: [450, -775] })
+  assert.equal(vendorAt('Merchant Tyslin', ['Halas']), undefined, 'two pages and no zone to choose: none')
+  assert.deepEqual(vendorAt('Two Spot', []), { page: 'Two Spot', zone: 'Halas' }, 'several spawn points: not placed')
+  const row = (sources: string[], zones: string[]): GapRow => ({
+    domain: 'item',
+    name: 'Tyslin Tea',
+    kinds: ['bought'],
+    count: 1,
+    first: '',
+    last: '',
+    details: { samples: [], sources: { entries: sources.map((name) => ({ name, n: 1 })), distinct: sources.length }, zones: { entries: zones.map((name) => ({ name, n: 1 })), distinct: zones.length } }
+  })
+  const page = wikiPageText(row(['Merchant Tyslin'], ['South Felwithe']), [], {}, { vendorAt })
+  assert.match(page, /\{\{ItemWhereRow {3}\| \[\[South Felwithe\]\] +\| \[\[Merchant Tyslin \(South Felwithe\)\]\] \| {15}\| \(450, -775\) \}\}/)
+  // A vendor the catalog lacks: its name as printed, the item's one zone, no loc.
+  assert.match(wikiPageText(row(['Gnomish Peddler'], ['Ak`Anon']), [], {}, { vendorAt }), /\| \[\[Ak`Anon\]\] +\| \[\[Gnomish Peddler\]\] +\| {15}\| {2}\}\}/)
 })
 
 test('prices are written the wiki way', () => {
@@ -130,4 +191,37 @@ test('a Gaps row picks its page by domain and takes the vendor value from a sale
     details: { samples: [], sales: { entries: [{ name: '3 silver', n: 2 }], distinct: 1 } }
   }
   assert.match(wikiPageText(row, [], {}), /\|merchant_value = 4s\n/)
+})
+
+// Review E3: a mob page's MONEY DROPS, in the layout of the wiki's 406 blocks, at the end of known_loot.
+test('a mob page ends known_loot with MONEY DROPS, each coin least to most over the kills that paid; none seen writes none', () => {
+  const coin = { mob: 'A rabid kobold', n: 2, min: [0, 0, 0, 1], max: [0, 2, 4, 9] }
+  const kobold: GapRow = { domain: 'mob', name: 'a rabid kobold', kinds: [], count: 1, first: '', last: '', details: { samples: [] } }
+  const loot: LootEvent[] = [{ ts: 1, item: 'Rabid Kobold Fang', source: 'a rabid kobold' }]
+  const text = wikiPageText(kobold, loot, {}, { mobCoin: [coin] })
+  assert.ok(
+    text.includes(
+      [
+        '| known_loot = ',
+        '',
+        '<ul>',
+        '<li> {{:Rabid Kobold Fang}} </li>',
+        '</ul>',
+        '<p><b>MONEY DROPS</b></p>',
+        '<ul>',
+        '<li> 0 - 0 <span style="color:#e5e4e2"><b>Platinums</b></span></li>',
+        '<li> 0 - 2 <span style="color:gold"><b>Golds</b></span></li>',
+        '<li> 0 - 4 <span style="color:silver"><b>Silvers</b></span></li>',
+        '<li> 1 - 9 <span style="color:#CD7F32"><b>Coppers</b></span></li>',
+        '</ul>',
+        ''
+      ].join('\n')
+    ),
+    text
+  )
+  // No coin seen: the log cannot prove "NO MONEY DROPS", so the page says nothing about money.
+  const none = wikiPageText(kobold, loot, {}, {})
+  assert.ok(!none.includes('MONEY'), none)
+  // Coin and no loot: the block alone.
+  assert.match(wikiPageText(kobold, [], {}, { mobCoin: [coin] }), /\| known_loot = \n\n<p><b>MONEY DROPS<\/b><\/p>\n<ul>\n/)
 })

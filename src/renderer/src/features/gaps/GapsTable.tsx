@@ -34,6 +34,7 @@ import {
 } from '@shared/gaps'
 import { unfoldedEntries, type GapEntry } from '@shared/gapGroups'
 import { seenByKey } from '@shared/gapsAllCharacters'
+import { gapHeld, heldLine, heldTitle, type GapHeld, type HeldIndex } from '@shared/gapHeld'
 import { wikiPageUrl } from '@shared/wiki'
 import { copyText } from '../../lib/clipboard'
 import { Tooltip } from '../../lib/Tooltip'
@@ -76,6 +77,15 @@ function PadRow({ height }: { height: number }): JSX.Element | null {
   )
 }
 
+/** Beside an Items row's name: the player holds it right now (review C6), the count and places in the tooltip. */
+function HeldChip({ held }: { held: GapHeld }): JSX.Element {
+  return (
+    <Tooltip title={heldTitle(held)}>
+      <Chip label="held" size="small" color="success" variant="outlined" sx={{ ml: 1 }} data-testid="gaps-held" />
+    </Tooltip>
+  )
+}
+
 const GapTableRow = memo(function GapTableRow({
   row,
   open,
@@ -84,7 +94,8 @@ const GapTableRow = memo(function GapTableRow({
   depth = 0,
   done = false,
   chipContext,
-  work
+  work,
+  held
 }: {
   row: GapRow
   open: boolean
@@ -95,6 +106,8 @@ const GapTableRow = memo(function GapTableRow({
   chipContext?: GapActionContext
   /** the row's work buttons, as icons (GapRowButtons) */
   work: RowWork
+  /** an Items row the player holds right now (shared/gapHeld.ts) */
+  held?: GapHeld
   /** grouped: 1 under a zone, 2 under a mob, bulleted and indented below its heading */
   depth?: number
 }): JSX.Element {
@@ -110,6 +123,7 @@ const GapTableRow = memo(function GapTableRow({
         {depth === 2 && onMobPage(row) ? factionOf(row) : row.name}
         {row.suggest !== undefined && <SuggestCaption s={row.suggest} />}
         {row.maybePlayer === true && <Chip label="may be a player" size="small" color="warning" variant="outlined" sx={{ ml: 1 }} data-testid="gaps-maybe-player" />}
+        {held !== undefined && <HeldChip held={held} />}
       </TableCell>
       <TableCell>
         <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'nowrap' }}>
@@ -148,6 +162,8 @@ interface PaneActions {
   onPlayer: (name: string) => void
   /** All characters: who saw each row */
   seenBy?: ReadonlyMap<string, readonly string[]>
+  /** what the player holds right now, for an Items row's held line */
+  holding: HeldIndex
 }
 
 /** The open row's details, above the list: capped so the list keeps room on a short screen. */
@@ -155,6 +171,7 @@ function DetailsPane({ row, actions }: { row: GapRow; actions: PaneActions }): J
   const isDone = actions.done.has(doneKey(row))
   const needed = actions.needed(row)
   const seen = actions.seenBy?.get(seenByKey(row))
+  const held = gapHeld(row, actions.holding)
   return (
     <Paper variant="outlined" sx={{ px: 1.5, py: 0.5, flexShrink: 0, maxHeight: '40vh', overflow: 'auto' }} data-testid="gaps-details-pane">
       <Stack direction="row" spacing={1} alignItems="center">
@@ -171,6 +188,11 @@ function DetailsPane({ row, actions }: { row: GapRow; actions: PaneActions }): J
       {seen !== undefined && (
         <Typography variant="caption" color="text.secondary" component="div" data-testid="gaps-seen-by">
           Seen by: {seen.join(', ')}.
+        </Typography>
+      )}
+      {held !== undefined && (
+        <Typography variant="body2" color="success.main" component="div" data-testid="gaps-held-line">
+          {heldLine(held)}
         </Typography>
       )}
       {needed.length > 0 && (
@@ -284,6 +306,7 @@ export default function GapsTable({
   done,
   onDone,
   onPlayer,
+  holding,
   chipContext,
   seenBy,
   hiddenByFilter = false
@@ -301,6 +324,8 @@ export default function GapsTable({
   done: ReadonlySet<string>
   onDone: (row: GapRow) => void
   onPlayer: (name: string) => void
+  /** what the player holds right now (shared/gapHeld.ts): a chip on the row, a line in its details */
+  holding: HeldIndex
   /** what the chips may say beyond the row (the data date, which names are mobs) */
   chipContext: GapActionContext
   /** the domain HAS unknown names, so an empty list means the search or zone filter hid them */
@@ -337,7 +362,7 @@ export default function GapsTable({
   const openedRow = opened?.kind === 'row' ? opened.row : undefined
   return (
     <Stack spacing={1.5} sx={{ flexGrow: 1, minHeight: 0 }}>
-      {openedRow !== undefined && <DetailsPane row={openedRow} actions={{ pageText, needed, done, onDone, onPlayer, seenBy }} />}
+      {openedRow !== undefined && <DetailsPane row={openedRow} actions={{ pageText, needed, done, onDone, onPlayer, seenBy, holding }} />}
       <Box ref={scrollRef} sx={{ flexGrow: 1, minHeight: 0, overflow: 'auto', overscrollBehavior: 'contain' }} data-testid="gaps-scroll">
         <Table size="small" stickyHeader data-testid="gaps-table">
           <SortHeader sort={sort} onSort={onSort} />
@@ -345,7 +370,7 @@ export default function GapsTable({
             <PadRow height={win.topPad} />
             {shown.slice(win.start, win.end).map((e) =>
               e.kind === 'row' ? (
-                <GapTableRow key={e.key} row={e.row} open={open === e.row.name} verdict={verdicts[e.row.name] ?? 'unchecked'} onToggle={onToggle} depth={e.depth} done={done.has(doneKey(e.row))} chipContext={chipContext} work={work} />
+                <GapTableRow key={e.key} row={e.row} open={open === e.row.name} verdict={verdicts[e.row.name] ?? 'unchecked'} onToggle={onToggle} depth={e.depth} done={done.has(doneKey(e.row))} chipContext={chipContext} work={work} held={gapHeld(e.row, holding)} />
               ) : (
                 <GroupRow key={e.key} entry={e} folded={folded.has(e.key)} onFold={onFold} pageText={pageText} />
               )

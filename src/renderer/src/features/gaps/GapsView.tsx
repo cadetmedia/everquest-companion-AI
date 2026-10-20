@@ -43,6 +43,8 @@ import { GAPS_DATA_DATE, PAGE_EXTRAS, useGapsData } from './useGapsData'
 import { useDoneMarks, usePlayerList } from './useDoneMarks'
 import { useAllCharacters } from './useOtherCharacters'
 import { AllCharactersBox, CharactersLine } from './AllCharactersControls'
+import { useHeld } from './useHeld'
+import { useHideUncertain, type HideUncertain } from './useHideUncertain'
 
 // One line (owner, 2026-10-11): the how is in the module header, not on the page. Since 2026-10-18
 // the line says what the chosen domain's rows are (GAP_DOMAIN_HELP).
@@ -76,6 +78,17 @@ function ZoneHere({ zone, checked, onChange }: { zone: string | null; checked: b
     <Tooltip title={zone === null ? 'The log has not named a zone yet. Zone once and this fills in.' : `Only what was seen in ${zone} or another tier of it.`}>
       <span>
         <Pref label={zone === null ? "Zone I'm in" : `Zone I'm in (${zone})`} checked={checked} onChange={onChange} disabled={zone === null} testId="gaps-zone-here" />
+      </span>
+    </Tooltip>
+  )
+}
+
+/** "Hide uncertain": the rows whose very existence as a gap is in doubt (shared/gaps.ts `uncertainGap`). */
+function HideUncertainBox({ state }: { state: HideUncertain }): JSX.Element {
+  return (
+    <Tooltip title="Hides the rows the tab is not sure are gaps at all: one-word names you only hailed or conned that may be players.">
+      <span>
+        <Pref label="Hide uncertain" checked={state.hide} onChange={state.setHide} testId="gaps-hide-uncertain" />
       </span>
     </Tooltip>
   )
@@ -115,28 +128,38 @@ function ShownLine({
   zone,
   tail
 }: {
-  counts: { visible: number; held: number; served: number; hidden: number }
+  counts: { visible: number; held: number; served: number; hidden: number; uncertain: number }
   domain: GapDomain
   zone: string | null
   tail: string
 }): JSX.Element {
-  const { visible, held, served, hidden } = counts
+  const { visible, held, served, hidden, uncertain } = counts
   return (
     <Typography variant="caption" color="text.secondary" data-testid="gaps-shown">
       {visible} of {held} unknown {GAP_DOMAIN_LABELS[domain].toLowerCase()} shown
       {zone !== null ? `, seen in ${zone} or another tier of it` : ''}
       {hidden > 0 ? `, ${hidden} marked done hidden` : ''}
+      {uncertain > 0 ? `, ${uncertain} uncertain hidden` : ''}
       {held > served ? ` (the engine serves the ${served} most mentioned)` : ''}
       {tail}. Wiki data from {GAPS_DATA_DATE}.
     </Typography>
   )
 }
 
+/** The table's order: a header click picks the column, a second flips it. */
+function useGapSort(): [GapSort, (key: GapSortKey) => void] {
+  const [sort, setSort] = useState<GapSort>(DEFAULT_GAP_SORT)
+  const onSort = useCallback((key: GapSortKey) => {
+    setSort((cur) => (cur.key === key ? { key, dir: cur.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: firstGapSortDir(key) }))
+  }, [])
+  return [sort, onSort]
+}
+
 export default function GapsView(): JSX.Element {
   const charSnap = useModule<CharacterSnap>('character')
   // All characters (owner, 2026-10-19): every character's saved Gaps joined in, within a day window.
   const allChars = useAllCharacters(charSnap?.character ?? null)
-  const { snap, engine, loot, kills, seenBy } = useGapsData(allChars.all)
+  const { snap, engine, loot, ownLoot, kills, seenBy } = useGapsData(allChars.all)
   const [domain, setDomain] = useState<GapDomain>('item')
   const [query, setQuery] = useState('')
   const [copied, setCopied] = useState<number | null>(null)
@@ -152,13 +175,12 @@ export default function GapsView(): JSX.Element {
   // The list follows the query a beat behind the keystroke, so typing never waits on a filter.
   const deferredQuery = useDeferredValue(query)
   const inDomain = useMemo(() => visibleGaps(rows ?? [], domain, deferredQuery, zone), [rows, domain, deferredQuery, zone])
-  const visible = useMemo(() => (showDone ? inDomain : withoutDone(inDomain, marks.done)), [inDomain, showDone, marks.done])
+  // "Hide uncertain" (owner, 2026-10-19): rows the tab is not sure are gaps, hidden on request.
+  const sure = useHideUncertain(inDomain)
+  const visible = useMemo(() => (showDone ? [...sure.rows] : withoutDone(sure.rows, marks.done)), [sure.rows, showDone, marks.done])
   // What the caches already say about the rows on screen: `unchecked` until the answer lands.
   const verdicts = useGapVerdicts(domain, visible)
-  const [sort, setSort] = useState<GapSort>(DEFAULT_GAP_SORT)
-  const onSort = useCallback((key: GapSortKey) => {
-    setSort((cur) => (cur.key === key ? { key, dir: cur.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: firstGapSortDir(key) }))
-  }, [])
+  const [sort, onSort] = useGapSort()
   // The table and Copy list read the same order, so a copied list matches what is on screen.
   const sorted = useMemo(() => sortGaps(visible, sort, verdicts), [visible, sort, verdicts])
   // What the pages read beside the ledgers: each kill's factions, each mob's points, the wiki's spellings.
@@ -166,7 +188,7 @@ export default function GapsView(): JSX.Element {
   const spellNames = useMemo(() => (domain === 'spell' ? spellNamesOf(visible) : NO_NAMES), [domain, visible])
   const spellFacts = useSpellFacts(spellNames)
   const sightings = useMemo(
-    () => ({ killFactions: engine?.killFactions, mobLocs: engine?.mobLocs, mobSpecials: engine?.mobSpecials, ...PAGE_EXTRAS, spellFacts }),
+    () => ({ killFactions: engine?.killFactions, mobLocs: engine?.mobLocs, mobSpecials: engine?.mobSpecials, mobCoin: engine?.mobCoin, ...PAGE_EXTRAS, spellFacts }),
     [engine, spellFacts]
   )
   const pageText = useCallback((row: GapRow) => wikiPageText(row, loot, kills, sightings), [loot, kills, sightings])
@@ -174,6 +196,9 @@ export default function GapsView(): JSX.Element {
   // "Group by zone, then mob" (owner ask, 2026-10-18): where to go and what to kill.
   const [grouped, setGrouped] = useBoolPref(GROUPED_KEY, false)
   const entries = useMemo(() => (grouped ? groupGaps(sorted, loot, PAGE_EXTRAS.zoneName) : rowEntries(sorted)), [grouped, sorted, loot])
+  // An item the player holds right now needs only a screenshot (review C6; owner, 2026-10-19). Held
+  // is this character's export plus ITS loot since, so it reads the live loot even with All characters on.
+  const holding = useHeld(ownLoot)
 
   if (!snap) return <CircularProgress size={20} />
 
@@ -183,7 +208,7 @@ export default function GapsView(): JSX.Element {
   }
   const held = snap.totals[domain] ?? 0
   const served = visibleGaps(rows ?? [], domain, '').length
-  const hidden = inDomain.length - visible.length
+  const hidden = sure.rows.length - visible.length
 
   return (
     // A full-height column whose last child, the table box, is the page's only scroller (GapsTable).
@@ -214,6 +239,7 @@ export default function GapsView(): JSX.Element {
         />
         <Pref label="Group by zone, then mob" checked={grouped} onChange={setGrouped} testId="gaps-grouped" />
         <Pref label="Show done" checked={showDone} onChange={setShowDone} testId="gaps-show-done" />
+        <HideUncertainBox state={sure} />
         <AllCharactersBox on={allChars.on} onChange={allChars.setOn} days={allChars.days} onDays={allChars.setDays} />
         <Button size="small" variant="outlined" startIcon={<ContentCopyIcon />} onClick={() => void copy()} disabled={visible.length === 0} data-testid="gaps-copy">
           Copy list
@@ -224,7 +250,7 @@ export default function GapsView(): JSX.Element {
           </Typography>
         )}
       </Stack>
-      <ShownLine counts={{ visible: visible.length, held, served, hidden }} domain={domain} zone={zone} tail={allChars.caption} />
+      <ShownLine counts={{ visible: visible.length, held, served, hidden, uncertain: sure.hidden }} domain={domain} zone={zone} tail={allChars.caption} />
       {allChars.on && <CharactersLine live={allChars.liveLabel} others={allChars.others} />}
       <GapsTable
         entries={entries}
@@ -236,6 +262,7 @@ export default function GapsView(): JSX.Element {
         done={marks.done}
         onDone={marks.toggle}
         onPlayer={playerList.mark}
+        holding={holding}
         chipContext={CHIP_CONTEXT}
         seenBy={seenBy}
         hiddenByFilter={held > 0}
