@@ -34,7 +34,7 @@ import {
 } from '@shared/gaps'
 import { unfoldedEntries, type GapEntry } from '@shared/gapGroups'
 import { seenByKey } from '@shared/gapsAllCharacters'
-import { gapHeld, heldLine, heldTitle, type GapHeld, type HeldIndex } from '@shared/gapHeld'
+import { gapHeld, heldChipLabel, heldLine, heldTitle, type GapHeld, type HeldIndex } from '@shared/gapHeld'
 import { wikiPageUrl } from '@shared/wiki'
 import { copyText } from '../../lib/clipboard'
 import { Tooltip } from '../../lib/Tooltip'
@@ -77,11 +77,11 @@ function PadRow({ height }: { height: number }): JSX.Element | null {
   )
 }
 
-/** Beside an Items row's name: the player holds it right now (review C6), the count and places in the tooltip. */
-function HeldChip({ held }: { held: GapHeld }): JSX.Element {
+/** Beside an Items row's name: who holds it right now (review C6), the counts and places in the tooltip. */
+function HeldChip({ held }: { held: readonly GapHeld[] }): JSX.Element {
   return (
     <Tooltip title={heldTitle(held)}>
-      <Chip label="held" size="small" color="success" variant="outlined" sx={{ ml: 1 }} data-testid="gaps-held" />
+      <Chip label={heldChipLabel(held)} size="small" color="success" variant="outlined" sx={{ ml: 1 }} data-testid="gaps-held" />
     </Tooltip>
   )
 }
@@ -107,7 +107,7 @@ const GapTableRow = memo(function GapTableRow({
   /** the row's work buttons, as icons (GapRowButtons) */
   work: RowWork
   /** an Items row the player holds right now (shared/gapHeld.ts) */
-  held?: GapHeld
+  held?: readonly GapHeld[]
   /** grouped: 1 under a zone, 2 under a mob, bulleted and indented below its heading */
   depth?: number
 }): JSX.Element {
@@ -123,7 +123,7 @@ const GapTableRow = memo(function GapTableRow({
         {depth === 2 && onMobPage(row) ? factionOf(row) : row.name}
         {row.suggest !== undefined && <SuggestCaption s={row.suggest} />}
         {row.maybePlayer === true && <Chip label="may be a player" size="small" color="warning" variant="outlined" sx={{ ml: 1 }} data-testid="gaps-maybe-player" />}
-        {held !== undefined && <HeldChip held={held} />}
+        {held !== undefined && held.length > 0 && <HeldChip held={held} />}
       </TableCell>
       <TableCell>
         <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'nowrap' }}>
@@ -190,11 +190,11 @@ function DetailsPane({ row, actions }: { row: GapRow; actions: PaneActions }): J
           Seen by: {seen.join(', ')}.
         </Typography>
       )}
-      {held !== undefined && (
-        <Typography variant="body2" color="success.main" component="div" data-testid="gaps-held-line">
-          {heldLine(held)}
+      {held.map((h) => (
+        <Typography key={h.who ?? ''} variant="body2" color="success.main" component="div" data-testid="gaps-held-line">
+          {heldLine(h)}
         </Typography>
-      )}
+      ))}
       {needed.length > 0 && (
         <Typography variant="caption" color="text.secondary" data-testid="gaps-needed">
           Still needed for the page: {needed.join(', ')}.

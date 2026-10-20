@@ -11,6 +11,11 @@
 // One item at any tier (`+N` folds to the base, case folded): the key is `itemTierKey`, which IS the
 // ownership index's key and the loot counting key (ownership.ts pins the three together). An
 // `(Exaltation)` row is the gem socketed into another item, not a copy (gearOwnership.ts rule 2).
+//
+// ONLY A CHARACTER'S OWN EXPORT (owner, 2026-10-19). The Gear tab's read falls back to the newest
+// export of ANY character when this one has none, so a fresh character showed another's items as
+// held; `isOwnExport` refuses that file here. With All characters on, each holder is named ("held
+// by Drywrought"), each from that character's own export and loot.
 
 import { itemTierKey } from './itemStats'
 import type { GapRow } from './gaps'
@@ -22,15 +27,24 @@ export interface HeldPart {
   count: number
 }
 
-/** What the player holds of one item: in all, and by place. */
+/** What one character holds of one item: in all, and by place. */
 export interface GapHeld {
   total: number
   parts: HeldPart[]
   /** The export's own instant (ISO), for the chip's tooltip. */
   exportedAt: string
+  /** The holder's name; absent for the attached character in the one-character view ("You"). */
+  who?: string
 }
 
-export type HeldIndex = ReadonlyMap<string, GapHeld>
+/** Every holder of each item, keyed by `itemTierKey`. */
+export type HeldIndex = ReadonlyMap<string, readonly GapHeld[]>
+
+/** Is the export at `path` this character's own (`Name_server-Inventory.txt`), not another's fallback? */
+export function isOwnExport(path: string | null, name: string, server: string): boolean {
+  const file = (path ?? '').split(/[\\/]/).pop()?.toLowerCase() ?? ''
+  return file.startsWith(`${name}_${server}-`.toLowerCase())
+}
 
 /** The words for a place, in the order a player looks (on you, your bags, then the stores). */
 const PLACE_WORD: Record<OwnershipPlace, string> = {
@@ -73,9 +87,10 @@ function takeOff(by: Counts, n: number): void {
 export function heldIndex(
   dump: { entries: readonly OwnershipEntry[]; loadedAt: string | null },
   lootSince: Readonly<Record<string, number>>,
-  destroyedSince: Readonly<Record<string, number>> = {}
+  destroyedSince: Readonly<Record<string, number>> = {},
+  who?: string
 ): HeldIndex {
-  const out = new Map<string, GapHeld>()
+  const out = new Map<string, GapHeld[]>()
   if (dump.loadedAt === null) return out
   const byKey = new Map<string, Counts>(dump.entries.map(([key, rows]) => [itemTierKey(key), dumpCounts(rows)]))
   for (const [raw, n] of Object.entries(lootSince)) {
@@ -88,27 +103,46 @@ export function heldIndex(
     takeOff(by, destroyedSince[key] ?? 0)
     const parts = PLACE_ORDER.flatMap((p) => ((by.get(p) ?? 0) > 0 ? [{ label: PLACE_WORD[p], count: by.get(p) ?? 0 }] : []))
     const total = parts.reduce((s, p) => s + p.count, 0)
-    if (total > 0) out.set(key, { total, parts, exportedAt: dump.loadedAt })
+    if (total > 0) out.set(key, [{ total, parts, exportedAt: dump.loadedAt, ...(who === undefined ? {} : { who }) }])
   }
   return out
 }
 
-/** An Items row's holding, at any tier and any case; undefined for another domain or none held. */
-export function gapHeld(row: GapRow, index: HeldIndex): GapHeld | undefined {
-  return row.domain === 'item' ? index.get(itemTierKey(row.name)) : undefined
+/** Several characters' indexes as one: every holder of each item, in the order given. */
+export function joinHeld(indexes: readonly HeldIndex[]): HeldIndex {
+  const out = new Map<string, GapHeld[]>()
+  for (const index of indexes) for (const [key, holders] of index) out.set(key, [...(out.get(key) ?? []), ...holders])
+  return out
 }
+
+const NOBODY: readonly GapHeld[] = []
+
+/** An Items row's holders, at any tier and any case; none for another domain or none held. */
+export function gapHeld(row: GapRow, index: HeldIndex): readonly GapHeld[] {
+  return row.domain === 'item' ? (index.get(itemTierKey(row.name)) ?? NOBODY) : NOBODY
+}
+
+/** The row chip: `held`, or `held by Drywrought, Kaltinril` when the holders are named. */
+export function heldChipLabel(holders: readonly GapHeld[]): string {
+  const named = holders.flatMap((h) => (h.who === undefined ? [] : [h.who]))
+  return named.length === 0 ? 'held' : `held by ${named.join(', ')}`
+}
+
+const holder = (h: GapHeld): string => (h.who === undefined ? 'You hold' : `${h.who} holds`)
 
 /** `bags`, or `2 bags, 1 bank` when the copies are in more than one place. */
 function placesText(h: GapHeld): string {
   return h.parts.length === 1 ? (h.parts[0]?.label ?? '') : h.parts.map((p) => `${String(p.count)} ${p.label}`).join(', ')
 }
 
-/** The details pane's line: `You hold 2 (bags): screenshot it for the wiki now.` */
+/** The details pane's line: `You hold 2 (bags): screenshot it for the wiki now.`, or `Drywrought holds 2 (bags): ...`. */
 export function heldLine(h: GapHeld): string {
-  return `You hold ${String(h.total)} (${placesText(h)}): screenshot it for the wiki now.`
+  return `${holder(h)} ${String(h.total)} (${placesText(h)}): screenshot it for the wiki now.`
 }
 
-/** The row chip's tooltip: where the count comes from. */
-export function heldTitle(h: GapHeld): string {
-  return `You hold ${String(h.total)} (${placesText(h)}): your inventory export of ${h.exportedAt.slice(0, 10)}, plus what the log saw you loot since, less destroys.`
+/** The row chip's tooltip, a line per holder: where each count comes from. */
+export function heldTitle(holders: readonly GapHeld[]): string {
+  return holders
+    .map((h) => `${holder(h)} ${String(h.total)} (${placesText(h)}): the inventory export of ${h.exportedAt.slice(0, 10)}, plus what the log saw looted since, less destroys.`)
+    .join(' ')
 }

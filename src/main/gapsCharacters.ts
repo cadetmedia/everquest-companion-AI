@@ -37,6 +37,9 @@ import { engineRequest, engineServeReadiness } from './dataServer/engineClientHo
 import { readHeadBytes } from './logArchive/history'
 import { logArchiveDir } from './logArchive/liveHistory'
 import { logArchiveOn } from './storeLogArchive'
+import { loadInventoryDump } from './outputs'
+import { ownershipPayload, type OwnershipPayload } from '../shared/planner/ownership'
+import { isOwnExport } from '../shared/gapHeld'
 import { writeFileDurable } from './telemetry/durableWrite'
 import { logInfo } from './errorLog'
 
@@ -149,13 +152,27 @@ function folderMark(dir: string): string {
 
 let cache: { key: string; value: CharacterGaps[] } | null = null
 
+/**
+ * The character's OWN inventory export folded as the Gear tab folds it, for "held by" (owner,
+ * 2026-10-19). The loader falls back to another character's newest export; that one is refused.
+ * Read on every ask: a file the player rewrites is picked up, and it is one small text file each.
+ */
+function ownInventory(c: CharacterGaps): OwnershipPayload | null {
+  try {
+    const payload = ownershipPayload(loadInventoryDump(c.name, c.server))
+    return isOwnExport(payload.path, c.name, c.server) ? payload : null
+  } catch {
+    return null
+  }
+}
+
 /** Every other character's Gaps inputs, archives folded in when the archive is on, cut at `sinceStamp`. */
 export async function allCharacterGaps(sinceStamp: string | null): Promise<CharacterGaps[]> {
   const active = getActiveCharacter()
   const except = active === null ? null : characterId(active)
   const archiveOn = logArchiveOn()
   const key = [sinceStamp, except, archiveOn, folderMark(savedDir()), archiveOn ? folderMark(logArchiveDir()) : ''].join('\n')
-  if (cache?.key === key) return cache.value
+  if (cache?.key === key) return cache.value.map((c) => ({ ...c, inventory: ownInventory(c) }))
   const [saved, segments] = await Promise.all([readSaved(), archiveOn ? readSegments() : Promise.resolve([])])
   const value: CharacterGaps[] = []
   for (const id of otherCharacters(saved, segments, except)) {
@@ -163,7 +180,7 @@ export async function allCharacterGaps(sinceStamp: string | null): Promise<Chara
     if (one !== null) value.push(one)
   }
   cache = { key, value }
-  return value
+  return value.map((c) => ({ ...c, inventory: ownInventory(c) }))
 }
 
 /** Called once at launch, after the session has started tailing. */
