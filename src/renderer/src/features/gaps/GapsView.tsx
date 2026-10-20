@@ -9,8 +9,10 @@
 // visible rows on the clipboard as tab-separated text.
 
 import { type JSX, useCallback, useDeferredValue, useMemo, useState } from 'react'
-import { Button, Checkbox, CircularProgress, FormControlLabel, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material'
+import { Button, Checkbox, CircularProgress, FormControlLabel, MenuItem, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
+import UnfoldLessIcon from '@mui/icons-material/UnfoldLess'
+import UnfoldMoreIcon from '@mui/icons-material/UnfoldMore'
 import {
   DEFAULT_GAP_SORT,
   GAP_DOMAINS,
@@ -33,7 +35,7 @@ import {
 } from '@shared/gaps'
 import type { CharacterSnap } from '@shared/types'
 import { stillNeeded, wikiPageText } from '@shared/wikiPage'
-import { groupGaps, rowEntries } from '@shared/gapGroups'
+import { GAP_GROUP_ORDERS, GAP_GROUP_ORDER_LABELS, gapGroupOrderOf } from '@shared/gapGroups'
 import { useModule } from '../../lib/useModule'
 import { Tooltip } from '../../lib/Tooltip'
 import { useBoolPref } from '../combat/useCombatPrefs'
@@ -47,6 +49,7 @@ import { useAllCharacters } from './useOtherCharacters'
 import { AllCharactersBox, CharactersLine } from './AllCharactersControls'
 import { useAllHeld } from './useAllHeld'
 import { useHideUncertain, type HideUncertain } from './useHideUncertain'
+import { useGrouping, type Grouping } from './useGrouping'
 
 // One line (owner, 2026-10-11): the how is in the module header, not on the page. Since 2026-10-18
 // the line says what the chosen domain's rows are (GAP_DOMAIN_HELP).
@@ -54,8 +57,6 @@ const CLICK_HINT = 'Click a row for where it was seen.'
 
 /** Where the "Zone I'm in" choice is remembered, per viewer, as the Achievements tab remembers its own. */
 const ZONE_HERE_KEY = 'eq.gaps.zoneHere'
-/** Where the grouped view is remembered. */
-const GROUPED_KEY = 'eq.gaps.grouped'
 /** Where "Show done" is remembered. */
 const SHOW_DONE_KEY = 'eq.gaps.showDone'
 const CHIP_CONTEXT = { dataDate: GAPS_DATA_DATE, isMob: PAGE_EXTRAS.isMob }
@@ -93,6 +94,39 @@ function HideUncertainBox({ state }: { state: HideUncertain }): JSX.Element {
         <Pref label="Hide uncertain" checked={state.hide} onChange={state.setHide} testId="gaps-hide-uncertain" />
       </span>
     </Tooltip>
+  )
+}
+
+/**
+ * Grouped only (owner asks, 2026-10-20): the order of the headings themselves, and Collapse all /
+ * Expand all. The toolbar is shared by every domain, so each domain has them.
+ */
+function GroupControls({ group }: { group: Grouping }): JSX.Element | null {
+  if (!group.grouped) return null
+  return (
+    <Stack direction="row" spacing={1} alignItems="center">
+      <TextField
+        select
+        size="small"
+        label="Groups"
+        value={group.order}
+        onChange={(e) => group.setOrder(gapGroupOrderOf(e.target.value))}
+        sx={{ minWidth: 150 }}
+        slotProps={{ htmlInput: { 'data-testid': 'gaps-group-order' } }}
+      >
+        {GAP_GROUP_ORDERS.map((o) => (
+          <MenuItem key={o} value={o}>
+            {GAP_GROUP_ORDER_LABELS[o]}
+          </MenuItem>
+        ))}
+      </TextField>
+      <Button size="small" startIcon={<UnfoldLessIcon />} onClick={group.collapseAll} data-testid="gaps-collapse-all">
+        Collapse all
+      </Button>
+      <Button size="small" startIcon={<UnfoldMoreIcon />} onClick={group.expandAll} data-testid="gaps-expand-all">
+        Expand all
+      </Button>
+    </Stack>
   )
 }
 
@@ -212,9 +246,8 @@ export default function GapsView(): JSX.Element {
   const sightings = useMemo(() => sightingsOf(engine, spellFacts), [engine, spellFacts])
   const pageText = useCallback((row: GapRow) => wikiPageText(row, loot, kills, sightings), [loot, kills, sightings])
   const needed = useCallback((row: GapRow) => stillNeeded(row, loot, kills, sightings), [loot, kills, sightings])
-  // "Group by zone, then mob" (owner ask, 2026-10-18): where to go and what to kill.
-  const [grouped, setGrouped] = useBoolPref(GROUPED_KEY, false)
-  const entries = useMemo(() => (grouped ? groupGaps(sorted, loot, PAGE_EXTRAS.zoneName) : rowEntries(sorted)), [grouped, sorted, loot])
+  // "Group by zone, then mob" (owner ask, 2026-10-18), its heading order and its folds (useGrouping).
+  const group = useGrouping(sorted, loot)
   // An item a character holds right now needs only a screenshot (review C6; owner, 2026-10-19): each
   // character's own export plus ITS loot since, named per holder while All characters is on.
   const holding = useAllHeld(ownLoot, me, allChars)
@@ -256,7 +289,8 @@ export default function GapsView(): JSX.Element {
             setCopied(null)
           }}
         />
-        <Pref label="Group by zone, then mob" checked={grouped} onChange={setGrouped} testId="gaps-grouped" />
+        <Pref label="Group by zone, then mob" checked={group.grouped} onChange={group.setGrouped} testId="gaps-grouped" />
+        <GroupControls group={group} />
         <Pref label="Show done" checked={showDone} onChange={setShowDone} testId="gaps-show-done" />
         <HideUncertainBox state={sure} />
         <AllCharactersBox on={allChars.on} onChange={allChars.setOn} days={allChars.days} onDays={allChars.setDays} working={allChars.others === undefined || joining} />
@@ -272,7 +306,7 @@ export default function GapsView(): JSX.Element {
       <ShownLine counts={{ visible: visible.length, held, served, hidden, uncertain: sure.hidden }} domain={domain} zone={zone} tail={allChars.caption} />
       {allChars.on && <CharactersLine live={allChars.liveLabel} others={allChars.others} />}
       <GapsTable
-        entries={entries}
+        entries={group.entries}
         verdicts={verdicts}
         sort={sort}
         onSort={onSort}
@@ -285,6 +319,7 @@ export default function GapsView(): JSX.Element {
         chipContext={CHIP_CONTEXT}
         seenBy={seenBy}
         hiddenByFilter={held > 0}
+        {...group.folds}
       />
     </Stack>
   )

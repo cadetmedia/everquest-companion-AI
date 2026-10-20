@@ -12,6 +12,27 @@ import type { LootEvent } from './types'
 
 export const ZONE_NOT_SEEN = 'Zone not seen'
 
+/**
+ * How the headings themselves are ordered (owner ask, 2026-10-20: "sort by how many are missing
+ * fewest to most, or most to least, this way I could either work on the ones almost done, or, if I
+ * have a lot of time, start on the ones with the most"). Zones and the mobs under each zone both
+ * follow it; a tie reads A to Z, and ZONE_NOT_SEEN stays last whatever the order.
+ */
+export type GapGroupOrder = 'name' | 'most' | 'fewest'
+export const GAP_GROUP_ORDERS: readonly GapGroupOrder[] = ['name', 'most', 'fewest']
+export const GAP_GROUP_ORDER_LABELS: Record<GapGroupOrder, string> = { name: 'A to Z', most: 'Most missing', fewest: 'Fewest missing' }
+
+/** A remembered order, or A to Z for anything unknown. */
+export function gapGroupOrderOf(raw: string | null): GapGroupOrder {
+  return GAP_GROUP_ORDERS.find((o) => o === raw) ?? 'name'
+}
+
+/** `order` between two headings: by how many are missing, then A to Z. */
+function byOrder(order: GapGroupOrder, a: { name: string; n: number }, b: { name: string; n: number }): number {
+  const byCount = order === 'most' ? b.n - a.n : order === 'fewest' ? a.n - b.n : 0
+  return byCount || a.name.localeCompare(b.name)
+}
+
 /** One line of the grouped list: a zone heading, a mob heading under it, or a row. */
 export type GapEntry =
   | { kind: 'zone'; key: string; zone: string; n: number }
@@ -92,16 +113,29 @@ function addTo(tree: Tree, p: Place, row: GapRow, zoneName: (raw: string) => str
   if (!m.rows.includes(row)) m.rows.push(row)
 }
 
-/** Zones A to Z (ZONE_NOT_SEEN last), then mobs A to Z after the rows with no mob; rows in the given order, except a mob page's lines, A to Z. */
-export function groupGaps(rows: readonly GapRow[], loot: readonly LootEvent[], zoneName: (raw: string) => string = (z) => z): GapEntry[] {
+/**
+ * Zones in `order` (ZONE_NOT_SEEN last), then under each the rows with no mob, then its mobs in
+ * `order`; rows in the given order, except a mob page's lines, A to Z.
+ */
+export function groupGaps(
+  rows: readonly GapRow[],
+  loot: readonly LootEvent[],
+  zoneName: (raw: string) => string = (z) => z,
+  order: GapGroupOrder = 'name'
+): GapEntry[] {
   const tree: Tree = new Map()
   const looted = lootPlaces(loot)
   for (const row of rows) for (const p of placesOf(row, looted)) addTo(tree, p, row, zoneName)
-  const zones = [...tree.values()].sort((a, b) => Number(a.zone === ZONE_NOT_SEEN) - Number(b.zone === ZONE_NOT_SEEN) || a.zone.localeCompare(b.zone))
+  // A zone's count is its distinct rows: an item two of its mobs drop is one thing missing there.
+  const zones = [...tree.values()]
+    .map((z) => ({ ...z, n: new Set([...z.mobs.values()].flatMap((m) => m.rows)).size }))
+    .sort((a, b) => Number(a.zone === ZONE_NOT_SEEN) - Number(b.zone === ZONE_NOT_SEEN) || byOrder(order, { name: a.zone, n: a.n }, { name: b.zone, n: b.n }))
   const out: GapEntry[] = []
   for (const z of zones) {
-    const mobs = [...z.mobs.values()].sort((a, b) => Number(a.mob !== '') - Number(b.mob !== '') || a.mob.localeCompare(b.mob))
-    const n = new Set(mobs.flatMap((m) => m.rows)).size
+    const mobs = [...z.mobs.values()].sort(
+      (a, b) => Number(a.mob !== '') - Number(b.mob !== '') || byOrder(order, { name: a.mob, n: a.rows.length }, { name: b.mob, n: b.rows.length })
+    )
+    const n = z.n
     out.push({ kind: 'zone', key: `zone|${z.zone}`, zone: z.zone, n })
     for (const m of mobs) {
       // Under a mob, the lines for its page read A to Z, as the page lists them and Copy lines copies
@@ -113,6 +147,11 @@ export function groupGaps(rows: readonly GapRow[], loot: readonly LootEvent[], z
     }
   }
   return uniqueKeys(out)
+}
+
+/** Every heading's key: what "Collapse all" folds (owner ask, 2026-10-20). */
+export function headingKeys(entries: readonly GapEntry[]): string[] {
+  return entries.filter((e) => e.kind !== 'row').map((e) => e.key)
 }
 
 /**

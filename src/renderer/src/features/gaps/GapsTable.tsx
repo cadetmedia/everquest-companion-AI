@@ -9,6 +9,15 @@
 // on stable props: the row, whether it is the open one, its verdict, and one `onToggle(name)`
 // callback. The details pane lives OUTSIDE the window, so an open row never changes a row's height.
 //
+// FIXED LAYOUT (Malkil, 2026-10-20: the list "rapidly flashes between two spots on the scrollbar").
+// An auto-layout table sizes its columns from the widest cell it can SEE, and a windowed table only
+// sees a screenful. Scrolling a row with a long name cell (a "Probably ..." caption) into the
+// overscan widened the table past its box, the horizontal scrollbar that appeared shortened the
+// viewport, the shorter window dropped that row again, the scrollbar went, and the two layouts
+// swapped every frame. `tableLayout: fixed` takes the widths from the header alone (`HEADERS`), as
+// the Loot ledger and Gear tables do, every cell clips to one line, and a narrow window scrolls
+// sideways against a stated `minWidth` that no row can change.
+//
 // ONE SCROLLER (owner feedback, 2026-10-12: "no scroll bar inside scroll bar"). The scroll box is
 // the page's only scroller: it grows to the room the view's column leaves (`flexGrow: 1`) and may
 // shrink below its content (`minHeight: 0`), exactly as the Loot ledger bounds its box, instead of
@@ -51,6 +60,10 @@ import GapRowButtons from './GapRowButtons'
 /** One line of small cells with a small chip: 6px padding above and below a 24px chip, plus the border. */
 const ROW_HEIGHT = 37
 const COLUMNS = 8
+/** Below this the table scrolls sideways instead of squeezing Name to nothing; no row moves it. */
+const TABLE_MIN_WIDTH = 1100
+/** Every body cell: one line, clipped at its column's edge, so a cell can never widen the table. */
+const CLIP = { whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } as const
 
 /** Beside the name: the one known name within reach, linked to its page so the owner can fix it. */
 function SuggestCaption({ s }: { s: GapSuggest }): JSX.Element {
@@ -118,7 +131,7 @@ const GapTableRow = memo(function GapTableRow({
 }): JSX.Element {
   return (
     <TableRow hover selected={open} onClick={() => onToggle(row.name)} sx={{ cursor: 'pointer', height: ROW_HEIGHT, opacity: done ? 0.5 : 1 }} data-testid="gaps-row">
-      <TableCell sx={{ fontWeight: 600, whiteSpace: 'nowrap', pl: depth > 0 ? 3 + depth * 2 : undefined }}>
+      <TableCell sx={{ ...CLIP, fontWeight: 600, pl: depth > 0 ? 3 + depth * 2 : undefined }}>
         {depth > 0 && (
           <Box component="span" sx={{ color: 'text.secondary', mr: 1 }}>
             •
@@ -131,21 +144,21 @@ const GapTableRow = memo(function GapTableRow({
         {held !== undefined && held.length > 0 && <HeldChip held={held} />}
       </TableCell>
       {/* Beside the name (owner, 2026-10-19): the work buttons where the eye already is. */}
-      <TableCell sx={{ py: 0 }}>
+      <TableCell sx={{ ...CLIP, py: 0 }}>
         <GapRowButtons row={row} pageText={work.pageText} isDone={done} onDone={work.onDone} compact />
       </TableCell>
-      <TableCell>
+      <TableCell sx={CLIP}>
         <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'nowrap' }}>
           {row.kinds.map((k) => (
             <Chip key={k} label={k} size="small" variant="outlined" />
           ))}
         </Stack>
       </TableCell>
-      <TableCell sx={{ whiteSpace: 'nowrap', color: 'text.secondary' }}>{gapZone(row)}</TableCell>
-      <TableCell align="right">{row.count.toLocaleString()}</TableCell>
-      <TableCell sx={{ whiteSpace: 'nowrap', color: 'text.secondary' }}>{row.first}</TableCell>
-      <TableCell sx={{ whiteSpace: 'nowrap', color: 'text.secondary' }}>{row.last}</TableCell>
-      <TableCell>
+      <TableCell sx={{ ...CLIP, color: 'text.secondary' }}>{gapZone(row)}</TableCell>
+      <TableCell align="right" sx={CLIP}>{row.count.toLocaleString()}</TableCell>
+      <TableCell sx={{ ...CLIP, color: 'text.secondary' }}>{row.first}</TableCell>
+      <TableCell sx={{ ...CLIP, color: 'text.secondary' }}>{row.last}</TableCell>
+      <TableCell sx={CLIP}>
         <GapActionChips row={row} verdict={verdict} ctx={chipContext} />
       </TableCell>
     </TableRow>
@@ -201,6 +214,11 @@ function DetailsPane({ row, actions }: { row: GapRow; actions: PaneActions }): J
           {heldLine(h)}
         </Typography>
       ))}
+      {row.suggest !== undefined && (
+        <Typography variant="body2" color="text.secondary" component="div" data-testid="gaps-suggest-line">
+          <SuggestCaption s={row.suggest} />
+        </Typography>
+      )}
       {row.noPage === true && (
         <Typography variant="body2" color="warning.main" component="div" data-testid="gaps-no-page-line">
           The wiki data has no page for {mobPageOf(row)}: a newer page may already list this. Check it before adding the line.
@@ -221,24 +239,30 @@ function DetailsPane({ row, actions }: { row: GapRow; actions: PaneActions }): J
   )
 }
 
-/** The table's columns: header text, the sort key, and which side the cell aligns to. */
-const HEADERS: readonly (readonly [string, GapSortKey, 'left' | 'right'])[] = [
-  ['Name', 'name', 'left'],
-  ['Seen as', 'kinds', 'left'],
-  ['Zone', 'zone', 'left'],
-  ['Times', 'count', 'right'],
-  ['First', 'first', 'left'],
-  ['Last', 'last', 'left'],
-  ['To do', 'todo', 'left']
+/**
+ * The table's columns: header text, the sort key, which side the cell aligns to, and its width (see
+ * FIXED LAYOUT above). Pixels where the content is a known size (the dates, the count), percentages
+ * where it varies; Name states none and takes what is left.
+ */
+const HEADERS: readonly (readonly [string, GapSortKey, 'left' | 'right', number | string | undefined])[] = [
+  ['Name', 'name', 'left', undefined],
+  ['Seen as', 'kinds', 'left', '10%'],
+  ['Zone', 'zone', 'left', '20%'],
+  ['Times', 'count', 'right', 80],
+  ['First', 'first', 'left', 175],
+  ['Last', 'last', 'left', 175],
+  ['To do', 'todo', 'left', '15%']
 ]
+/** Four 24 px icon buttons and the cell's padding. */
+const WORK_WIDTH = 136
 
 /** Every header sorts (owner asks, 2026-10-13 and, for Zone, 2026-10-17): a click picks the column, a second flips it. */
 function SortHeader({ sort, onSort }: { sort: GapSort; onSort: (key: GapSortKey) => void }): JSX.Element {
   return (
     <TableHead>
       <TableRow>
-        {HEADERS.map(([label, key, align], i) => [
-          <TableCell key={key} align={align} sortDirection={sort.key === key ? sort.dir : false}>
+        {HEADERS.map(([label, key, align, width], i) => [
+          <TableCell key={key} align={align} sortDirection={sort.key === key ? sort.dir : false} sx={{ width, whiteSpace: 'nowrap' }}>
             <TableSortLabel
               active={sort.key === key}
               direction={sort.key === key ? sort.dir : 'asc'}
@@ -252,7 +276,7 @@ function SortHeader({ sort, onSort }: { sort: GapSort; onSort: (key: GapSortKey)
           </TableCell>,
           // The Work column sits right after Name, as the row's buttons do.
           i === 0 ? (
-            <TableCell key="work" sx={{ whiteSpace: 'nowrap' }}>
+            <TableCell key="work" sx={{ width: WORK_WIDTH, whiteSpace: 'nowrap' }}>
               Work
             </TableCell>
           ) : null
@@ -323,7 +347,7 @@ function GroupRow({
       sx={{ height: ROW_HEIGHT, cursor: 'pointer', bgcolor: zone ? 'action.selected' : 'action.hover' }}
       data-testid={`gaps-group-${entry.kind}`}
     >
-      <TableCell colSpan={COLUMNS} sx={{ fontWeight: zone ? 700 : 600, pl: zone ? 1 : 4, whiteSpace: 'nowrap' }}>
+      <TableCell colSpan={COLUMNS} sx={{ ...CLIP, fontWeight: zone ? 700 : 600, pl: zone ? 1 : 4 }}>
         <Box component="span" sx={{ color: 'text.secondary', mr: 1 }}>
           {folded ? '▸' : '▾'}
         </Box>
@@ -351,7 +375,9 @@ export default function GapsTable({
   holding,
   chipContext,
   seenBy,
-  hiddenByFilter = false
+  hiddenByFilter = false,
+  folded,
+  onFold
 }: {
   /** the rows, or the grouped list with its zone and mob headings */
   entries: readonly GapEntry[]
@@ -374,19 +400,12 @@ export default function GapsTable({
   hiddenByFilter?: boolean
   /** All characters: who saw each row, named in its details */
   seenBy?: ReadonlyMap<string, readonly string[]>
+  /** the folded headings' keys, held by the view so its Collapse all and Expand all reach them */
+  folded: ReadonlySet<string>
+  onFold: (key: string) => void
 }): JSX.Element {
   const [open, setOpen] = useState<string | null>(null)
   const onToggle = useCallback((name: string) => setOpen((cur) => (cur === name ? null : name)), [])
-  const [folded, setFolded] = useState<ReadonlySet<string>>(new Set())
-  const onFold = useCallback(
-    (key: string) =>
-      setFolded((cur) => {
-        const next = new Set(cur)
-        if (!next.delete(key)) next.add(key)
-        return next
-      }),
-    []
-  )
   const shown = useMemo(() => unfoldedEntries(entries, folded), [entries, folded])
   const work = useMemo<RowWork>(() => ({ pageText, onDone }), [pageText, onDone])
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -406,7 +425,7 @@ export default function GapsTable({
     <Stack spacing={1.5} sx={{ flexGrow: 1, minHeight: 0 }}>
       {openedRow !== undefined && <DetailsPane row={openedRow} actions={{ pageText, needed, done, onDone, onPlayer, seenBy, holding }} />}
       <Box ref={scrollRef} sx={{ flexGrow: 1, minHeight: 0, overflow: 'auto', overscrollBehavior: 'contain' }} data-testid="gaps-scroll">
-        <Table size="small" stickyHeader data-testid="gaps-table">
+        <Table size="small" stickyHeader sx={{ tableLayout: 'fixed', minWidth: TABLE_MIN_WIDTH }} data-testid="gaps-table">
           <SortHeader sort={sort} onSort={onSort} />
           <TableBody>
             <PadRow height={win.topPad} />
