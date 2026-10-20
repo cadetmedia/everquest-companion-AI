@@ -24,6 +24,7 @@ import { mergeModule } from './logArchive/mergeRules'
 import type { Segment } from './logArchive/segment'
 import type { GapDomain, GapRow, GapsSnap } from './gaps'
 import type { KillMap, KillsSnap } from './kills'
+import type { OwnershipPayload } from './planner/ownership'
 import type { LootSnap } from './types'
 
 /** The engine modules one character's Gaps are built from (useGapsData). */
@@ -73,6 +74,8 @@ export interface CharacterGaps {
   gaps: unknown
   loot: unknown
   kills: unknown
+  /** Its OWN latest inventory export (`Name_server-Inventory.txt`), for "held by"; null when it has none. */
+  inventory?: OwnershipPayload | null
 }
 
 /** A saved file as read back, or null when it is not one this build understands. */

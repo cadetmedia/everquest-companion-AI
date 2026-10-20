@@ -32,8 +32,7 @@ export async function heldCheck(v: TabView, eqRoot: string): Promise<Outcome> {
   if (held === null) return skip(`no /outputfile inventory export in ${eqRoot}`)
   const items = v.snap.rows.filter((r) => r.domain === 'item')
   const holding = items.flatMap((r) => {
-    const h = gapHeld(r, held.index)
-    return h === undefined ? [] : [`${r.name}: ${heldLine(h)}`]
+    return gapHeld(r, held.index).map((h) => `${r.name}: ${heldLine(h)}`)
   })
   return outcome(true, [`export ${basename(held.exportPath)}; ${String(holding.length)} of ${String(items.length)} Items rows held`, ...holding])
 }
