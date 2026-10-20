@@ -24,6 +24,11 @@ export interface KillFaction {
   adjust?: number
   /** whether the kill raised it: the amount's sign, or a capped line's "better" (true) / "worse" (false) */
   raised?: boolean
+  /**
+   * The proof (owner, 2026-10-20: "how do I know it has Grobb Merchants?"): the last kills' raw log
+   * lines, oldest first, each kill its faction line then its death line, stamps kept. Absent when none.
+   */
+  samples?: string[]
 }
 
 /**
@@ -71,7 +76,7 @@ export function factionGaps(pairs: readonly KillFaction[], catalog: readonly Cat
       count: p.n,
       ...spanStamps(spans.get(mobKey(p.mob))),
       details: {
-        samples: [],
+        samples: p.samples ?? [],
         sources: { entries: [{ name: p.mob, n: p.n }], distinct: 1 },
         ...(p.zone === '' ? {} : { zones: { entries: [{ name: p.zone, n: p.n }], distinct: 1, all: [p.zone] } })
       },

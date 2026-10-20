@@ -332,7 +332,7 @@ impl GapsModule {
     /// `gaps_coin.rs`).
     fn kill_factions_of(&mut self, ev: &Event) -> bool {
         let zone = self.zone.clone();
-        ev.str("name").is_some_and(|mob| self.kill_factions.death(mob, ev.ts(), zone.as_deref()) | self.kill_coin.death(mob, ev.ts()))
+        ev.str("name").is_some_and(|mob| self.kill_factions.death(ev, mob, zone.as_deref()) | self.kill_coin.death(mob, ev.ts()))
     }
 
     /// The death rule from the module header: a player-shaped name that dies to a mob is a player
