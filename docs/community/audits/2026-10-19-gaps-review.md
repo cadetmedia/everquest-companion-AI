@@ -278,3 +278,17 @@ E6. Not allowed by the zero-guess law, measured and left out: respawn_time (deat
 4. E1-E5.
 
 Every change needs its requirements row first (rule 19); gaps-tab's recipe line is unchanged.
+
+## Status (end of 2026-10-19)
+
+- Built and merged into `main_community` (local only, NOT PUSHED): the eight decisions and the A, B
+  and most C findings, on gaps-tab, wiki-scraper-fixes, scrape-delta-tool, log-archive,
+  local-data-refresh and main_community_rules. Gate green on the merged tree (typecheck, lint, unit
+  suite with only the known reds, `cargo test --workspace`, rust factoring); release engine rebuilt.
+- Waiting on the owner: test in the dev app (restart it first), then push every branch above to
+  `origin`.
+- Owner decision pending: the redirect cache's first real run (`scrape-mob-redirects.ts`, about 19
+  requests); default, with the next delta.
+- Not built (open): C6 held items in the details, C7 map link, D1 soldby as an ItemWhereTable, D2 the
+  rate on a group drop line, E3 corpse coin, E4 turn-ins, a Temple of Cazic-Thule zone alias, the loot
+  regex splitting an item named "X from Y" (creator's parser, catch_all).
