@@ -2,8 +2,8 @@
 // (owner asks, 2026-10-18).
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { factionGaps, factionKey, withFactionRows } from '../src/shared/gapFactions'
-import { gapActions, type GapRow, type GapsSnap } from '../src/shared/gaps'
+import { factionFix, factionGaps, factionKey, withFactionRows } from '../src/shared/gapFactions'
+import { gapActions, logSaysText, pageSaysText, type GapRow, type GapsSnap } from '../src/shared/gaps'
 import { groupGaps } from '../src/shared/gapGroups'
 import { merchantPage, wikiPageText } from '../src/shared/wikiPage'
 
@@ -69,4 +69,40 @@ test('a merchant the wiki lacks copies a bare MerchantPage: name, class and zone
     details: { samples: [], zones: { entries: [{ name: 'The Feerrott', n: 1 }], distinct: 1 } }
   }
   assert.match(wikiPageText(row, [], {}), /\{\{MerchantPage/)
+})
+
+test('a listed faction whose amount or side the log contradicts is a fix row; a capped line only checks the side', () => {
+  // A Troll Slayer's page: Da Bashers (-10) to (-30) (unconfirmed), Broken Skull Clan (10).
+  const cat = [{ page: 'A Troll Slayer', name: 'a troll slayer', factions: ['Da Bashers', 'Broken Skull Clan', 'Grobb Merchants', 'Ogguk Residents'], factionAmounts: ['-30..-10?', '10', '-100', '-50'] }]
+  const pair = (faction: string, extra: object) => ({ mob: 'a troll slayer', faction, n: 1, zone: 'Innothule Swamp', ...extra })
+  const rows = factionGaps(
+    [
+      pair('DaBashers', { adjust: -200, raised: false }),
+      pair('Broken Skull Clan', { adjust: 30, raised: true }),
+      pair('Grobb Merchants', { adjust: -100, raised: false }),
+      // At min standing: no amount, side agrees: nothing to fix.
+      pair('Ogguk Residents', { raised: false })
+    ],
+    cat
+  )
+  assert.deepEqual(
+    rows.map((r) => [r.name, r.fix, r.pageSays]),
+    [
+      ['Broken Skull Clan (a troll slayer)', 'amount', '10'],
+      ['DaBashers (a troll slayer)', 'amount', '-30..-10?']
+    ]
+  )
+  assert.equal(pageSaysText('-30..-10?'), '(-10) to (-30) (unconfirmed)')
+  assert.equal(logSaysText({ adjust: -200 }), '(-200)')
+  const chip = gapActions(rows[1] ?? assert.fail(), 'unchecked')[0]
+  assert.equal(chip?.label, 'Fix on mob page')
+  assert.match(chip?.why ?? '', /lists this faction as \(-10\) to \(-30\) \(unconfirmed\); your log: \(-200\)/)
+})
+
+test('a capped line on the other side is a side fix; a guess the log matches is a confirm; no data is no fix', () => {
+  assert.deepEqual(factionFix(['-50'], { raised: true }), { fix: 'side', pageSays: '-50' })
+  assert.deepEqual(factionFix(['-10?'], { adjust: -10, raised: false }), { fix: 'confirm', pageSays: '-10?' })
+  assert.equal(factionFix(['-30', '-10'], { adjust: -10, raised: false }), null, 'any page agreeing is enough')
+  assert.equal(factionFix([], { adjust: -10 }), null)
+  assert.deepEqual(factionFix(['-'], { adjust: -10, raised: false }), { fix: 'amount', pageSays: '-' })
 })
