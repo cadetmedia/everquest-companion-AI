@@ -2,7 +2,8 @@
 // 2026-10-18). The engine pairs each kill with the faction lines printed just before it
 // (gaps_trade.rs, `killFactions`); this checks each pair against the `factions` every catalog page
 // of that mob's name lists (mobs.json, `|factions` and `|opposing_factions`). A mob the catalog
-// does not have at all is a mob row already, so its pairs are not repeated here.
+// does not have at all gets its pairs here too (owner, 2026-10-20: Basher Dreg, a page newer than the
+// data, "i dont' want to type them"): its mob heading's Copy lines gives every faction line at once.
 //
 // A LISTED FACTION IS A ROW TOO WHEN THE LOG CONTRADICTS IT (owner, 2026-10-20: "we need to fix
 // factions too, not just add missing ones"): the page's amount (mobs.json `factionAmounts`,
@@ -101,9 +102,7 @@ export function factionGaps(pairs: readonly KillFaction[], catalog: readonly Cat
   const pages = pagesByMob(catalog)
   const rows: GapRow[] = []
   for (const p of pairs) {
-    const known = listed.get(mobKey(p.mob))
-    if (known === undefined) continue
-    const saids = known.get(factionKey(p.faction))
+    const saids = listed.get(mobKey(p.mob))?.get(factionKey(p.faction))
     const fix = saids === undefined ? undefined : factionFix(saids, p)
     if (fix === null) continue
     const page = pickPage(pages.get(mobKey(p.mob)), p.zone)
