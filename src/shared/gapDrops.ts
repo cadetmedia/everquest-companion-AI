@@ -14,7 +14,7 @@
 // mobs it would also hide Rat Eye (6 mobs, tied to 2), a real gap.
 
 import type { GapRow } from './gaps'
-import { pagesByMob, pickPage } from './gapMobPage'
+import { commonLootNames, pagesByMob, pickPage } from './gapMobPage'
 import { itemBaseName } from './itemStats'
 import { mobKey } from './mobKey'
 import type { LootEvent } from './types'
@@ -112,6 +112,7 @@ export function dropGaps(loot: readonly LootEvent[], catalog: readonly CatalogMo
   const { itemMobs, aliases = {} } = side
   const listed = dropsByMob(catalog, aliases)
   const pages = pagesByMob(catalog)
+  const common = commonLootNames(catalog)
   const inGroups = groupsByItem(groups)
   const missing = new Map<string, Missing>()
   for (const e of loot) {
@@ -120,7 +121,8 @@ export function dropGaps(loot: readonly LootEvent[], catalog: readonly CatalogMo
     addDrop(missing, e, e.source, filed)
   }
   const kept = itemMobs === undefined ? [...missing.values()] : withoutServerWide([...missing.values()], catalog, groups, itemMobs)
-  return kept.map((m) => rowOf(m, itemMobs, pickPage(pages.get(mobKey(m.mob)), m.zone))).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+  const field = (m: Missing): Partial<GapRow> => (common.has(m.name.toLowerCase()) ? { lootField: 'common_loot' } : {})
+  return kept.map((m) => ({ ...rowOf(m, itemMobs, pickPage(pages.get(mobKey(m.mob)), m.zone)), ...field(m) })).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
 }
 
 /** What a looted item is filed as when its mob's page lists neither it nor a group holding it; null when listed or the mob is unknown. */

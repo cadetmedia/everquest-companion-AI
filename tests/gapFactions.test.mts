@@ -40,7 +40,7 @@ test('a faction row copies the bullet for its mob page and points at that page; 
 })
 
 test('a merchant the wiki lacks copies a bare MerchantPage: name, class and zone, no items', () => {
-  const text = merchantPage({ name: 'Murga', zones: ['The Feerrott'], levels: [40], points: [[-791, 173, -12]], factions: [] })
+  const text = merchantPage({ name: 'Murga', zones: ['The Feerrott'], levels: [40], points: [[-791, 173, -12]], factions: [], credited: 0, specials: [] })
   assert.ok(text.startsWith('{{Classic Era}}\n{{MerchantPage\n\n| imagefilename     = npc_murga.png\n'), text)
   for (const line of ['| class             = [[Merchant]]\n', '| location          = (-791, 173)\n', '| items_sold = \n']) {
     assert.ok(text.includes(line), line)

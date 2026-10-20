@@ -84,6 +84,8 @@ test('a mob page names its levels, zones and loot; an NPC-only spell says so', (
     levels: [11, 13],
     loot: [{ item: 'Scalp', drops: 1 }],
     kills: 0,
+    credited: 0,
+    specials: ['Rampages'],
     points: [[-791, 173, -12]],
     factions: [
       { faction: 'Guards of Qeynos', adjust: -30 },
@@ -99,6 +101,7 @@ test('a mob page names its levels, zones and loot; an NPC-only spell says so', (
     '| zone              = [[The Feerrott]]',
     '| location          = (-791, 173)',
     '| AC                = ',
+    '| special           = Rampages',
     '| attacks_per_round = ',
     "| factions = \n\n* [[Guards of Qeynos]] <span class='profac'>(-30)</span>",
     "| opposing_factions = \n\n* [[Ring of Scale]] <span class='oppfac'>(10)</span>",

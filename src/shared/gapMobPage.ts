@@ -37,3 +37,19 @@ export function pickPage(pages: readonly Paged[] | undefined, zone: string): str
   const inZone = here === '' ? [] : pages.filter((p) => (p.zones ?? []).some((z) => zoneKey(z) === here))
   return inZone.length === 1 ? inZone[0].page : undefined
 }
+
+/**
+ * The drop names the wiki files under a mob page's `|common_loot` (review 2026-10-19): on 195 of
+ * 7,954 pages that field holds loot shared across mobs (Classic Raid Tier Treasures on 58 pages,
+ * a plane's set loot), and `|known_loot` the mob's own. A name counts as common loot when at least
+ * three pages list it there and more pages list it there than under `|known_loot`. Lower-cased.
+ */
+export function commonLootNames(catalog: readonly { drops?: string[]; commonDrops?: string[] }[]): Set<string> {
+  const common = new Map<string, number>()
+  const known = new Map<string, number>()
+  for (const m of catalog) {
+    for (const d of m.commonDrops ?? []) common.set(d.toLowerCase(), (common.get(d.toLowerCase()) ?? 0) + 1)
+    for (const d of m.drops ?? []) known.set(d.toLowerCase(), (known.get(d.toLowerCase()) ?? 0) + 1)
+  }
+  return new Set([...common].filter(([name, n]) => n >= 3 && n > (known.get(name) ?? 0)).map(([name]) => name))
+}

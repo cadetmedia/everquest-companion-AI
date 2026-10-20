@@ -156,6 +156,8 @@ export interface GapRow {
   /** A faction row: the amount most kills stated, and whether the kill raised the faction. */
   adjust?: number
   raised?: boolean
+  /** A drop row whose item or group the wiki files under a mob page's `|common_loot`, not `|known_loot`. */
+  lootField?: 'common_loot'
   /** A one-word name only hailed or conned that the log has not shown to be an NPC (gaps_players.rs). */
   maybePlayer?: boolean
 }
@@ -391,7 +393,8 @@ function dropActions(row: GapRow): GapAction[] {
       : row.itemPage === 'namesMob'
         ? `The page for ${item} names ${mob} as a source, but ${mob}'s page does not list it.`
         : `The wiki page for ${mob} does not list ${item}.`
-  const actions: GapAction[] = [{ kind: 'checkWiki', label: 'Add to mob page', why, href: wikiEditUrl(mob) }]
+  const field = row.lootField === 'common_loot' ? ' It belongs under common_loot: the wiki files it as loot shared across mobs.' : ''
+  const actions: GapAction[] = [{ kind: 'checkWiki', label: 'Add to mob page', why: why + field, href: wikiEditUrl(mob) }]
   if (row.itemPage === 'lacksMob') {
     actions.push({ kind: 'addToWiki', label: 'Add to item page', why: `The page for ${item} does not name ${mob} under dropsfrom.`, href: wikiEditUrl(item) })
   }

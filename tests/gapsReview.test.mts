@@ -138,3 +138,18 @@ test('Check wiki names the data date and calls it a miss in the data, not a verd
   assert.equal(chip.label, 'Check wiki')
   assert.match(chip.why, /wiki data from 2026-10-19/)
 })
+
+test('a drop the wiki files as shared loot goes under common_loot; the mob own drops under known_loot', async () => {
+  const { commonLootNames } = await import('../src/shared/gapMobPage')
+  const catalog = [1, 2, 3].map((n) => ({ name: `raid boss ${n}`, page: `Raid boss ${n}`, commonDrops: ['Classic Raid Tier Treasures'] }))
+  const common = commonLootNames(catalog)
+  assert.ok(common.has('classic raid tier treasures'))
+  const kills = killIndex({ 'a new boss': { display: 'a new boss', count: 2, credited: 2 } } as unknown as KillMap)
+  const loot: LootEvent[] = [
+    { ts: 1, item: 'Classic Raid Tier Treasures', source: 'a new boss' },
+    { ts: 2, item: 'Boss Claw', source: 'a new boss' }
+  ]
+  const text = mobPage(mobFacts(row('mob', 'a new boss'), loot, kills), common)
+  assert.match(text, /\| known_loot = \n\n<ul>\n<li> \{\{:Boss Claw\}\}/)
+  assert.match(text, /\| common_loot = \n\n<ul>\n<li> \{\{:Classic Raid Tier Treasures\}\}/)
+})

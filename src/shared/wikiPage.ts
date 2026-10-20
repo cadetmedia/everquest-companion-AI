@@ -330,9 +330,19 @@ function npcValues(f: NpcFacts): Record<string, string> {
   }
 }
 
-export function mobPage(f: MobFacts): string {
-  const loot = f.loot.length === 0 ? '' : `<ul>\n${f.loot.map((l) => lootLine(l.item, l.drops, f.kills)).join('\n')}\n</ul>`
-  return page(layoutBlock('Namedmobpage', NPC_LAYOUT, { ...npcValues(f), known_loot: loot }), f.zones)
+/** Loot lines in the wiki's list; '' for none. */
+const lootList = (loot: MobFacts['loot'], kills: number): string =>
+  loot.length === 0 ? '' : `<ul>\n${loot.map((l) => lootLine(l.item, l.drops, kills)).join('\n')}\n</ul>`
+
+/**
+ * A mob's page. A drop the wiki files under `|common_loot` (shared loot, `commonLootNames`) goes
+ * there; everything else is the mob's own `|known_loot` (owner, 2026-10-19).
+ */
+export function mobPage(f: MobFacts, commonLoot: ReadonlySet<string> = new Set()): string {
+  const isCommon = (l: MobFacts['loot'][number]): boolean => commonLoot.has(l.item.toLowerCase())
+  const own = lootList(f.loot.filter((l) => !isCommon(l)), f.kills)
+  const shared = lootList(f.loot.filter(isCommon), f.kills)
+  return page(layoutBlock('Namedmobpage', NPC_LAYOUT, { ...npcValues(f), known_loot: own, common_loot: shared }), f.zones)
 }
 
 /** The wiki's Spell Page Blueprint layout: `{{Spellpage|`, blank lines between, `| key = value`. */
@@ -355,6 +365,8 @@ export interface PageExtras {
   zoneName?: ZoneNamer
   /** A name the mob catalog has: a one-word caster that is a mob, not a player. */
   isMob?: (name: string) => boolean
+  /** Drop names the wiki files under `|common_loot`, lower-cased (`commonLootNames`). */
+  commonLoot?: ReadonlySet<string>
 }
 
 /**
@@ -365,7 +377,7 @@ export interface PageExtras {
 export function wikiPageText(row: GapRow, loot: readonly LootEvent[], kills: KillMap, seen: MobSightings & PageExtras = {}): string {
   const extras = seen
   if (row.suggest !== undefined && (row.domain === 'item' || row.domain === 'spell')) return `#REDIRECT [[${row.suggest.page}]]\n`
-  return PAGE_OF[row.domain](row, { loot, kills, seen, zoneName: extras.zoneName ?? asPrinted, isMob: extras.isMob })
+  return PAGE_OF[row.domain](row, { loot, kills, seen, zoneName: extras.zoneName ?? asPrinted, isMob: extras.isMob, commonLoot: extras.commonLoot })
 }
 
 interface PageContext {
@@ -374,6 +386,7 @@ interface PageContext {
   seen: MobSightings
   zoneName: ZoneNamer
   isMob?: (name: string) => boolean
+  commonLoot?: ReadonlySet<string>
 }
 
 /**
@@ -382,7 +395,7 @@ interface PageContext {
  */
 const PAGE_OF: Record<GapDomain, (row: GapRow, c: PageContext) => string> = {
   item: (row, c) => itemPage(itemFacts(row, c.loot, c.zoneName)),
-  mob: (row, c) => mobPage(mobFacts(row, c.loot, c.kills, { ...c.seen, zoneName: c.zoneName })),
+  mob: (row, c) => mobPage(mobFacts(row, c.loot, c.kills, { ...c.seen, zoneName: c.zoneName }), c.commonLoot),
   merchant: (row, c) => merchantPage(mobFacts(row, [], c.kills, { ...c.seen, zoneName: c.zoneName })),
   spell: (row, c) => spellPage({ name: row.name, npcOnly: npcOnlySpell(row, c.isMob) }),
   faction: (row) => `${factionLine({ faction: factionOf(row), adjust: row.adjust, raised: row.raised })}\n`,
