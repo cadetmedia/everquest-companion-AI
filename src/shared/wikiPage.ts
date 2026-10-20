@@ -11,7 +11,8 @@
 //   https://eqlwiki.com/Help:Contents#NPC_Page_Blueprint
 //   https://eqlwiki.com/Help:Contents#Merchant_Page_Blueprint
 //   https://eqlwiki.com/Help:Contents#Spell_Page_Blueprint A page holds no field the log has nothing for and no placeholder; the stats are the
-// game's to show and the player's to type, so `statsblock` is left open.
+// game's to show and the player's to type, so `statsblock` opens with the blueprint's last lines,
+// empty, to type into (STATS_SKELETON; owner, 2026-10-20).
 
 import { CURRENT_ERA } from './planner/era'
 import type { KillMap } from './kills'
@@ -314,12 +315,22 @@ function rateLine(link: string, drops: number, kills: number): string {
   return `<li> ${link} <span class='drare'>(${rarityWord(pct)})</span> <span class='ddb'>[Overall: ~${String(pct)}%]</span> </li>`
 }
 
+/**
+ * The Item Page Blueprint's closing `statsblock` lines, empty, for the player to type from the
+ * item's window (owner, 2026-10-20: "items need the WT stat so i can fill it in", "use the template
+ * data"). Read from https://eqlwiki.com/Help:Contents#Item_Page_Blueprint on 2026-10-20: `Size: ...
+ * WT: 0.0<br>`, `Class: ...<br>`, `Race: ALL<br>`, in that order. Only these: the owner ruled
+ * (2026-10-18) that a page carries no blueprint option lists; a flags line (`Quest<br>`) and gear
+ * lines (Slot, AC, stats) go above them when the item has them.
+ */
+export const STATS_SKELETON = '\nSize:   WT: <br>\nClass: <br>\nRace: <br>'
+
 export function itemPage(f: ItemFacts): string {
   const byZone = new Map<string, string[]>()
   for (const d of f.drops) byZone.set(d.zone, [...(byZone.get(d.zone) ?? []), d.mob])
   const fields: [string, string][] = [['itemname', f.name]]
   if (f.merchantValue !== undefined) fields.push(['merchant_value', wikiCoin(f.merchantValue)])
-  fields.push(['statsblock', ''])
+  fields.push(['statsblock', STATS_SKELETON])
   if (byZone.size > 0) fields.push(['dropsfrom', zoneBlocks(byZone)])
   if (f.soldBy.length > 0) fields.push(['soldby', itemWhereTable(f.soldBy)])
   const cats = [
