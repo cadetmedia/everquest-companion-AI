@@ -54,6 +54,23 @@ export interface MobLoc {
   pct?: number
 }
 
+/**
+ * One faction bullet of a mob page (`* [[DaBashers|Da Bashers]] <span class='profac'>(-10) to (-30)
+ * (unconfirmed)</span>`), so the Gaps tab can hold a kill's faction lines against the stated amount
+ * (owner, 2026-10-20). `min`/`max` are signed as the page writes them and come together; both are
+ * absent when the bullet states no single amount or range (`(?)`, `(-0)`, `(~5)`, a bare name).
+ */
+export interface MobFactionHit {
+  /** the faction as `MobEntry.factions` names it (the link's label) */
+  faction: string
+  /** the stated amount's sign when it has one (the span class and field disagree on ~60 bullets), else the field */
+  side: 'lowers' | 'raises'
+  min?: number
+  max?: number
+  /** the page marks the amount a guess: `(-10?)`, `(unconfirmed)`, `unverified` */
+  unconfirmed?: true
+}
+
 /** One mob/NPC page from the wiki, reduced to what a consider card needs. */
 export interface MobEntry {
   /** wiki page title (linkable, and the resolve key for the live fallback) */
@@ -81,6 +98,8 @@ export interface MobEntry {
   merchant?: true
   /** every faction the page says a kill moves, lowered or raised (`|factions`, `|opposing_factions`) */
   factions?: string[]
+  /** `factions` with what each bullet states about the hit, one per name, in the same order */
+  factionHits?: MobFactionHit[]
   /** the image file the page names (`|imagefilename`, `npc_marda.png`); absent when it names none */
   image?: string
   /** the page names no image, or one the wiki has no file for (scrape-wiki-files.ts) */
