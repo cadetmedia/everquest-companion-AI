@@ -150,6 +150,9 @@ fn an_npc_only_traded_with_or_heard_speaking_is_a_mobs_row_but_a_one_word_speake
     // A player's /say and a one-word NPC's line are the same shape: never a row from speech alone.
     feed(&mut m, 5, line("Xober says, 'heading to Grobb'"));
     feed(&mut m, 6, line("You say, 'hello'"));
+    // A corpse's last words are the mob's; another `X's ...` speaker is nobody met.
+    feed(&mut m, 7, line("A swamp hermit's corpse says, 'Curse you! Da bashers will have yer head.'"));
+    feed(&mut m, 8, line("Xober's warder says, 'Grr'"));
     let served = m.snapshot()["state"]["rows"].clone();
     let kinds = |name: &str| -> Vec<String> {
         served
@@ -164,4 +167,6 @@ fn an_npc_only_traded_with_or_heard_speaking_is_a_mobs_row_but_a_one_word_speake
     assert_eq!(kinds("a swamp hermit"), vec!["spoke"]);
     assert!(kinds("Xober").is_empty());
     assert!(kinds("You").is_empty());
+    assert!(kinds("A swamp hermit's corpse").is_empty());
+    assert!(kinds("Xober's warder").is_empty());
 }
