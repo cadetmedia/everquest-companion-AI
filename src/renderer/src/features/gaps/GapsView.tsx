@@ -152,7 +152,8 @@ export default function GapsView(): JSX.Element {
   const [copied, setCopied] = useState<number | null>(null)
   // "Zone I'm in" (owner ask, 2026-10-17): only what was named where you stand, every tier of it.
   const [hereOnly, setHereOnly] = useBoolPref(ZONE_HERE_KEY, false)
-  const current = useModule<CharacterSnap>('character')?.zone ?? null
+  const charSnap = useModule<CharacterSnap>('character')
+  const current = charSnap?.zone ?? null
   const zone = hereOnly ? current : null
   // Mobs rows the player marked as players are gone for good (owner, 2026-10-19).
   const playerList = usePlayerList()
@@ -187,7 +188,7 @@ export default function GapsView(): JSX.Element {
   const [grouped, setGrouped] = useBoolPref(GROUPED_KEY, false)
   const entries = useMemo(() => (grouped ? groupGaps(sorted, loot, PAGE_EXTRAS.zoneName) : rowEntries(sorted)), [grouped, sorted, loot])
   // An item the player holds right now needs only a screenshot (review C6; owner, 2026-10-19).
-  const holding = useHeld(loot)
+  const holding = useHeld(loot, charSnap?.character ?? null)
 
   if (!snap) return <CircularProgress size={20} />
 

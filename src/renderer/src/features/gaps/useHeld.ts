@@ -4,18 +4,19 @@
 // folds (heldCounts.ts), so "held" means here what it means on every other tab.
 
 import { useMemo } from 'react'
-import { heldIndex, type HeldIndex } from '@shared/gapHeld'
-import type { LootEvent } from '@shared/types'
+import { heldIndex, isOwnExport, type HeldIndex } from '@shared/gapHeld'
+import type { CharacterRef, LootEvent } from '@shared/types'
 import { useGearOwnership } from '../gear/gearData'
 import { computeDestroyedAfter, computeHeldCountsAfter } from '../posky/heldCounts'
 
 const NONE: HeldIndex = new Map()
 
-export function useHeld(loot: readonly LootEvent[]): HeldIndex {
+/** What `me` holds: only from `me`'s own export (the Gear read may hand back another character's), named `who` when given. */
+export function useHeld(loot: readonly LootEvent[], me: CharacterRef | null, who?: string): HeldIndex {
   const { payload } = useGearOwnership()
   return useMemo(() => {
     const at = payload.loadedAt === null ? Number.NaN : Date.parse(payload.loadedAt)
-    if (Number.isNaN(at)) return NONE
-    return heldIndex(payload, computeHeldCountsAfter(loot, at), computeDestroyedAfter(loot, at))
-  }, [payload, loot])
+    if (Number.isNaN(at) || me === null || !isOwnExport(payload.path, me.name, me.server)) return NONE
+    return heldIndex(payload, computeHeldCountsAfter(loot, at), computeDestroyedAfter(loot, at), who)
+  }, [payload, loot, me, who])
 }
