@@ -15,7 +15,8 @@
 
 import { app, ipcMain } from 'electron'
 import { createHash } from 'node:crypto'
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
+import { existsSync, readdirSync, statSync } from 'node:fs'
+import { readFile, readdir } from 'node:fs/promises'
 import { join } from 'node:path'
 import { IPC } from '../shared/ipc'
 import {
@@ -29,13 +30,12 @@ import {
   type SavedGaps,
   type SavedLog
 } from '../shared/gapsAllCharacters'
-import { HEAD_BYTES, logStampKey } from '../shared/logArchive/segment'
+import { HEAD_BYTES, logStampKey, parseSegment, type Segment } from '../shared/logArchive/segment'
 import { characterId } from './log/config'
 import { getActiveCharacter } from './session'
 import { engineRequest, engineServeReadiness } from './dataServer/engineClientHost'
 import { readHeadBytes } from './logArchive/history'
 import { logArchiveDir } from './logArchive/liveHistory'
-import { listSegments } from './logArchive/segmentStore'
 import { logArchiveOn } from './storeLogArchive'
 import { writeFileDurable } from './telemetry/durableWrite'
 import { logInfo } from './errorLog'
@@ -99,22 +99,38 @@ export async function saveAttachedGaps(): Promise<void> {
   }
 }
 
-/** Every saved character file this build reads. */
-function readSaved(): SavedGaps[] {
-  const dir = savedDir()
+/**
+ * Every JSON file in `dir` that `parse` accepts, read without blocking: an archive can hold many
+ * large segments, and a synchronous read here froze the window behind the tab's spinner. An
+ * unreadable or foreign file is skipped, never repaired.
+ */
+async function readJsonFiles<T>(dir: string, suffix: string, parse: (raw: unknown, file: string) => T | null): Promise<T[]> {
   if (!existsSync(dir)) return []
-  const out: SavedGaps[] = []
-  for (const file of readdirSync(dir)) {
-    if (!file.endsWith('.json')) continue
-    try {
-      const s = parseSavedGaps(JSON.parse(readFileSync(join(dir, file), 'utf8')))
-      if (s !== null && `${s.character}.json` === file) out.push(s)
-    } catch {
-      // a half-written or foreign file: skipped, never repaired
-    }
-  }
-  return out
+  const files = (await readdir(dir)).filter((f) => f.endsWith(suffix))
+  const read = await Promise.all(
+    files.map(async (file) => {
+      try {
+        return parse(JSON.parse(await readFile(join(dir, file), 'utf8')), file)
+      } catch {
+        return null
+      }
+    })
+  )
+  return read.filter((x): x is Awaited<T> & NonNullable<T> => x !== null)
 }
+
+const readSaved = (): Promise<SavedGaps[]> =>
+  readJsonFiles(savedDir(), '.json', (raw, file) => {
+    const s = parseSavedGaps(raw)
+    return s !== null && `${s.character}.json` === file ? s : null
+  })
+
+/** The archive's segments, read as `segmentStore.listSegments` reads them (same parser, same name check). */
+const readSegments = (): Promise<Segment[]> =>
+  readJsonFiles(logArchiveDir(), '.segment.json', (raw, file) => {
+    const p = parseSegment(raw)
+    return p.ok && `${p.segment.id}.segment.json` === file ? p.segment : null
+  })
 
 /** What the listing depends on: each file's name, size and time in both folders. */
 function folderMark(dir: string): string {
@@ -134,14 +150,13 @@ function folderMark(dir: string): string {
 let cache: { key: string; value: CharacterGaps[] } | null = null
 
 /** Every other character's Gaps inputs, archives folded in when the archive is on, cut at `sinceStamp`. */
-export function allCharacterGaps(sinceStamp: string | null): CharacterGaps[] {
+export async function allCharacterGaps(sinceStamp: string | null): Promise<CharacterGaps[]> {
   const active = getActiveCharacter()
   const except = active === null ? null : characterId(active)
   const archiveOn = logArchiveOn()
   const key = [sinceStamp, except, archiveOn, folderMark(savedDir()), archiveOn ? folderMark(logArchiveDir()) : ''].join('\n')
   if (cache?.key === key) return cache.value
-  const saved = readSaved()
-  const segments = archiveOn ? listSegments(logArchiveDir()).segments : []
+  const [saved, segments] = await Promise.all([readSaved(), archiveOn ? readSegments() : Promise.resolve([])])
   const value: CharacterGaps[] = []
   for (const id of otherCharacters(saved, segments, except)) {
     const one = characterGaps(id, saved.find((s) => s.character === id) ?? null, segments, sinceStamp)

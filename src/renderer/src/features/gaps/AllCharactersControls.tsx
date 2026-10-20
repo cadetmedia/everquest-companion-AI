@@ -3,7 +3,7 @@
 // how old each saved part is, and which are older than two months.
 
 import type { JSX } from 'react'
-import { Checkbox, FormControlLabel, Stack, TextField, Typography } from '@mui/material'
+import { Checkbox, CircularProgress, FormControlLabel, Stack, TextField, Typography } from '@mui/material'
 import { MAX_GAP_DAYS, isStale, type CharacterGaps } from '@shared/gapsAllCharacters'
 import { Tooltip } from '../../lib/Tooltip'
 
@@ -11,8 +11,32 @@ const WARNING =
   "Joins every character's saved Gaps, on every account and server, with their archived logs when Summarize and archive log is on. " +
   'With many characters this can be a lot of data and take a moment. A character is saved while it is logged in here; one never logged in since this was added shows only its archives. Each log stays separate: only this list is joined.'
 
-/** The box, and while it is ticked the day window. */
-export function AllCharactersBox({ on, onChange, days, onDays }: { on: boolean; onChange: (on: boolean) => void; days: number; onDays: (days: number) => void }): JSX.Element {
+/** While main reads every character's saves or the tab joins them: a spinner and what it is doing. */
+function Working(): JSX.Element {
+  return (
+    <Stack direction="row" spacing={0.75} alignItems="center" data-testid="gaps-all-working">
+      <CircularProgress size={14} />
+      <Typography variant="caption" color="text.secondary">
+        Reading every character…
+      </Typography>
+    </Stack>
+  )
+}
+
+/** The box, and while it is ticked the day window, and a spinner while the join is being made. */
+export function AllCharactersBox({
+  on,
+  onChange,
+  days,
+  onDays,
+  working = false
+}: {
+  on: boolean
+  onChange: (on: boolean) => void
+  days: number
+  onDays: (days: number) => void
+  working?: boolean
+}): JSX.Element {
   return (
     <Stack direction="row" spacing={1} alignItems="center">
       <Tooltip title={WARNING}>
@@ -38,6 +62,7 @@ export function AllCharactersBox({ on, onChange, days, onDays }: { on: boolean; 
           />
         </Tooltip>
       )}
+      {on && working && <Working />}
     </Stack>
   )
 }

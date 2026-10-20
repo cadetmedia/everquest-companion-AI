@@ -159,7 +159,7 @@ export default function GapsView(): JSX.Element {
   const charSnap = useModule<CharacterSnap>('character')
   // All characters (owner, 2026-10-19): every character's saved Gaps joined in, within a day window.
   const allChars = useAllCharacters(charSnap?.character ?? null)
-  const { snap, engine, loot, ownLoot, kills, seenBy } = useGapsData(allChars.all)
+  const { snap, engine, loot, ownLoot, kills, seenBy, joining } = useGapsData(allChars.all)
   const [domain, setDomain] = useState<GapDomain>('item')
   const [query, setQuery] = useState('')
   const [copied, setCopied] = useState<number | null>(null)
@@ -240,7 +240,7 @@ export default function GapsView(): JSX.Element {
         <Pref label="Group by zone, then mob" checked={grouped} onChange={setGrouped} testId="gaps-grouped" />
         <Pref label="Show done" checked={showDone} onChange={setShowDone} testId="gaps-show-done" />
         <HideUncertainBox state={sure} />
-        <AllCharactersBox on={allChars.on} onChange={allChars.setOn} days={allChars.days} onDays={allChars.setDays} />
+        <AllCharactersBox on={allChars.on} onChange={allChars.setOn} days={allChars.days} onDays={allChars.setDays} working={allChars.others === undefined || joining} />
         <Button size="small" variant="outlined" startIcon={<ContentCopyIcon />} onClick={() => void copy()} disabled={visible.length === 0} data-testid="gaps-copy">
           Copy list
         </Button>
