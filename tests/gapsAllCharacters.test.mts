@@ -1,0 +1,185 @@
+// ============================================================================
+// gapsAllCharacters.test.mts — the Gaps tab across every character (owner, 2026-10-19;
+// docs/community/plans/2026-10-19-gaps-all-characters.md).
+// ============================================================================
+//
+// Each character's state is its saved snapshot plus the archive segments its SAVED log does not
+// hold; the characters are then joined with the archive's merge rules, each cut to the day window.
+// Nothing here reads or writes a log.
+
+import { test } from 'node:test'
+import assert from 'node:assert/strict'
+import { createHash } from 'node:crypto'
+import { SEGMENT_VERSION, type Segment } from '../src/shared/logArchive/segment'
+import {
+  characterGaps,
+  cutoffOf,
+  gapsSince,
+  isStale,
+  joinCharacters,
+  nameFromId,
+  otherCharacters,
+  otherInputs,
+  parseSavedGaps,
+  seenByKey,
+  stampKeyOf,
+  SAVED_GAPS_VERSION,
+  type CharacterGaps,
+  type SavedGaps
+} from '../src/shared/gapsAllCharacters'
+import type { GapRow, GapsSnap } from '../src/shared/gaps'
+
+const sha = (s: string): string => createHash('sha256').update(s).digest('hex')
+
+function row(domain: GapRow['domain'], name: string, count: number, last = '2026-10-10 10:00:00'): GapRow {
+  return { domain, name, kinds: ['looted'], count, first: '2026-09-01 10:00:00', last, details: { samples: [] } }
+}
+
+function gaps(rows: GapRow[]): GapsSnap {
+  const totals = { item: 0, mob: 0, spell: 0, merchant: 0, faction: 0, drop: 0, image: 0 }
+  for (const r of rows) totals[r.domain]++
+  return { rows, totals, seen: { ...totals } }
+}
+
+const run = (ts: number) => ({ count: 1, firstTs: ts, lastTs: ts, credited: 1, lastCreditedTs: ts })
+const kills = (name: string, ts: number) => ({ v: 5, mobs: { [name]: { count: 1, bestTier: 0, firstTs: ts, lastTs: ts, credited: 1, display: name, tiers: { 0: run(ts) } } } })
+const loot = (item: string, ts: number) => [{ ts, item, source: 'a rat' }]
+
+function saved(character: string, head: string, state: { gaps: unknown; loot: unknown; kills: unknown }, savedAt = '2026-10-19T12:00:00.000Z'): SavedGaps {
+  return {
+    v: SAVED_GAPS_VERSION,
+    character,
+    name: nameFromId(character).name,
+    server: nameFromId(character).server,
+    savedAt,
+    log: { headBytes: head.length, headSha256: sha(head), firstStamp: '2026-10-01 09:00:00' },
+    modules: { gaps: { seq: 1, state: state.gaps }, loot: { seq: 1, state: state.loot }, kills: { seq: 1, state: state.kills } }
+  }
+}
+
+interface Seg {
+  id: string
+  character: string
+  head: string
+  last: string
+  first?: string
+}
+
+function segment({ id, character, head, last, first = '2026-08-01 10:00:00' }: Seg, modules: Segment['modules']): Segment {
+  return {
+    v: SEGMENT_VERSION,
+    id,
+    character,
+    state: 'sealed',
+    log: { bytes: 1000, sha256: sha(id), headBytes: head.length, headSha256: sha(head), firstStamp: first, lastStamp: last },
+    producedBy: { app: 'test', engine: 'test' },
+    archivePath: null,
+    modules
+  }
+}
+
+test('a saved file round-trips through the parser; a foreign or older one is refused', () => {
+  const s = saved('drywrought_oggok', 'head-D', { gaps: gaps([]), loot: [], kills: kills('rat', 1) })
+  assert.deepEqual(parseSavedGaps(JSON.parse(JSON.stringify(s))), s)
+  assert.equal(parseSavedGaps({ ...s, v: 99 }), null)
+  assert.equal(parseSavedGaps({ ...s, modules: { gaps: s.modules.gaps } }), null)
+  assert.equal(parseSavedGaps(null), null)
+})
+
+test('a character id names its character', () => {
+  assert.deepEqual(nameFromId('drywrought_oggok'), { name: 'Drywrought', server: 'oggok' })
+  assert.deepEqual(nameFromId('kaltinril_freeport'), { name: 'Kaltinril', server: 'freeport' })
+})
+
+test('one character: its saved snapshot with its archives, never one its saved log holds', () => {
+  const live = gaps([row('item', 'Bat Wing', 2)])
+  const s = saved('drywrought_oggok', 'head-D', { gaps: live, loot: loot('Bat Wing', 2000), kills: kills('rat', 2000) })
+  const older = segment({ id: 'd-old', character: 'drywrought_oggok', head: 'head-old', last: '2026-09-15 10:00:00' }, {
+    gaps: { seq: 1, state: gaps([row('item', 'Bat Wing', 3), row('item', 'Rat Ear', 1)]) },
+    loot: { seq: 1, state: loot('Rat Ear', 1000) },
+    kills: { seq: 1, state: kills('rat', 1000) }
+  })
+  // The saved log begins with this segment's head: the snapshot already holds those lines.
+  const held = segment({ id: 'd-held', character: 'drywrought_oggok', head: 'head-D', last: '2026-09-20 10:00:00' }, { gaps: { seq: 1, state: gaps([row('item', 'Bat Wing', 50)]) } })
+  const other = segment({ id: 'k-1', character: 'kaltinril_freeport', head: 'head-K', last: '2026-09-15 10:00:00' }, { gaps: { seq: 1, state: gaps([row('item', 'Cloth Cap', 1)]) } })
+  const c = characterGaps('drywrought_oggok', s, [older, held, other], null)
+  assert.ok(c !== null)
+  assert.equal(c.archives, 1)
+  const rows = (c.gaps as GapsSnap).rows
+  assert.deepEqual(rows.map((r) => [r.name, r.count]), [['Bat Wing', 5], ['Rat Ear', 1]])
+  assert.equal((c.loot as unknown[]).length, 2)
+  assert.equal((c.kills as { mobs: Record<string, { count: number }> }).mobs.rat.count, 2)
+})
+
+test('an archive that ended before the window is left out whole', () => {
+  const s = saved('drywrought_oggok', 'head-D', { gaps: gaps([row('item', 'Bat Wing', 2)]), loot: [], kills: kills('rat', 1) })
+  const old = segment({ id: 'd-old', character: 'drywrought_oggok', head: 'head-old', last: '2026-07-01 10:00:00' }, { gaps: { seq: 1, state: gaps([row('item', 'Rat Ear', 1)]) } })
+  const c = characterGaps('drywrought_oggok', s, [old], '2026-08-20 00:00:00')
+  assert.equal(c?.archives, 0)
+  assert.deepEqual((c?.gaps as GapsSnap).rows.map((r) => r.name), ['Bat Wing'])
+})
+
+test('a character known only by its archives is its archives alone; one with neither is nothing', () => {
+  const a = segment({ id: 'x-1', character: 'xan_oggok', head: 'head-1', last: '2026-09-01 10:00:00' }, { gaps: { seq: 1, state: gaps([row('mob', 'a gnoll', 1)]) } })
+  const b = segment({ id: 'x-2', character: 'xan_oggok', head: 'head-2', last: '2026-09-10 10:00:00', first: '2026-09-05 10:00:00' }, { gaps: { seq: 1, state: gaps([row('mob', 'a gnoll', 2)]) } })
+  const c = characterGaps('xan_oggok', null, [a, b], null)
+  assert.equal(c?.savedAt, null)
+  assert.equal(c?.name, 'Xan')
+  assert.deepEqual((c?.gaps as GapsSnap).rows.map((r) => [r.name, r.count]), [['a gnoll', 3]])
+  assert.equal(characterGaps('nobody_oggok', null, [a], null), null)
+})
+
+test('the other characters are every saved or archived one but the attached', () => {
+  const s = saved('drywrought_oggok', 'h', { gaps: gaps([]), loot: [], kills: kills('rat', 1) })
+  const seg = segment({ id: 'x', character: 'xan_oggok', head: 'h2', last: '2026-09-01 10:00:00' }, {})
+  const mine = segment({ id: 'k', character: 'kaltinril_freeport', head: 'h3', last: '2026-09-01 10:00:00' }, {})
+  assert.deepEqual(otherCharacters([s], [seg, mine], 'kaltinril_freeport'), ['drywrought_oggok', 'xan_oggok'])
+})
+
+test('the join: rows add up across characters and each row names who saw it', () => {
+  const k = { label: 'Kaltinril', gaps: gaps([row('item', 'Bat Wing', 1), row('mob', 'a gnoll', 1)]), loot: loot('Bat Wing', 3000), kills: kills('gnoll', 3000) }
+  const d = { label: 'Drywrought', gaps: gaps([row('item', 'bat wing', 4)]), loot: loot('Bat Wing', 1000), kills: kills('gnoll', 1000) }
+  const j = joinCharacters([k, d], null)
+  assert.deepEqual(j.gaps?.rows.map((r) => [r.domain, r.name, r.count]), [['item', 'Bat Wing', 5], ['mob', 'a gnoll', 1]])
+  assert.deepEqual(j.seenBy.get(seenByKey({ domain: 'item', name: 'Bat Wing' })), ['Kaltinril', 'Drywrought'])
+  assert.deepEqual(j.seenBy.get(seenByKey({ domain: 'mob', name: 'a gnoll' })), ['Kaltinril'])
+  assert.deepEqual(j.loot.map((e) => e.ts), [1000, 3000], 'loot back in time order')
+  assert.equal(j.kills?.mobs.gnoll.count, 2)
+})
+
+test('the join cuts every character to the window', () => {
+  const cut = { stamp: '2026-10-01 00:00:00', ms: 2000 }
+  const k = { label: 'K', gaps: gaps([row('item', 'New', 1, '2026-10-05 00:00:00'), row('item', 'Old', 1, '2026-09-05 00:00:00')]), loot: [...loot('New', 3000), ...loot('Old', 1000)], kills: kills('rat', 1000) }
+  const j = joinCharacters([k], cut)
+  assert.deepEqual(j.gaps?.rows.map((r) => r.name), ['New'])
+  assert.equal(j.gaps?.totals.item, 1)
+  assert.deepEqual(j.loot.map((e) => e.item), ['New'])
+  assert.deepEqual(Object.keys(j.kills?.mobs ?? {}), [])
+})
+
+test('a kills shape from another build is not joined, and nothing is counted twice', () => {
+  const k = { label: 'K', gaps: null, loot: [], kills: kills('rat', 1) }
+  const old = { label: 'D', gaps: null, loot: [], kills: { ...kills('rat', 2), v: 4 } }
+  assert.equal(joinCharacters([k, old], null).kills?.mobs.rat.count, 1)
+})
+
+test("another character's mob row the catalog now knows is dropped", () => {
+  const o: CharacterGaps = { character: 'd_o', name: 'D', server: 'o', savedAt: null, archives: 0, gaps: gaps([row('mob', 'a rat', 1), row('mob', 'a zork', 1)]), loot: [], kills: null }
+  const [inp] = otherInputs([o], (n) => n === 'a rat')
+  assert.deepEqual((inp.gaps as GapsSnap).rows.map((r) => r.name), ['a zork'])
+})
+
+test('two characters of one name are told apart by server', () => {
+  const one = (server: string): CharacterGaps => ({ character: `d_${server}`, name: 'D', server, savedAt: null, archives: 0, gaps: null, loot: [], kills: null })
+  assert.deepEqual(otherInputs([one('oggok'), one('freeport')], () => false).map((i) => i.label), ['D (oggok)', 'D (freeport)'])
+})
+
+test('the window and the stale flag', () => {
+  const now = new Date(2026, 9, 19, 17, 30, 0)
+  assert.equal(stampKeyOf(now), '2026-10-19 17:30:00')
+  assert.equal(cutoffOf(60, now).stamp, '2026-08-20 17:30:00')
+  assert.equal(isStale('2026-08-18T00:00:00.000Z', now), true)
+  assert.equal(isStale('2026-08-20T12:00:00.000Z', now), false)
+  const g = gaps([row('item', 'A', 1, '2026-10-01 00:00:00')])
+  assert.equal(gapsSince(g, '2026-09-01 00:00:00'), g, 'nothing cut: the same object')
+})

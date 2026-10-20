@@ -41,6 +41,8 @@ import { useSpellFacts } from '../../lib/gapSpellFacts'
 import GapsTable from './GapsTable'
 import { GAPS_DATA_DATE, PAGE_EXTRAS, useGapsData } from './useGapsData'
 import { useDoneMarks, usePlayerList } from './useDoneMarks'
+import { useAllCharacters } from './useOtherCharacters'
+import { AllCharactersBox, CharactersLine } from './AllCharactersControls'
 
 // One line (owner, 2026-10-11): the how is in the module header, not on the page. Since 2026-10-18
 // the line says what the chosen domain's rows are (GAP_DOMAIN_HELP).
@@ -106,14 +108,41 @@ function DomainToggle({ snap, domain, zone, onPick }: { snap: GapsSnap; domain: 
   )
 }
 
+/** How many rows are shown of how many, and what narrows them. */
+function ShownLine({
+  counts,
+  domain,
+  zone,
+  tail
+}: {
+  counts: { visible: number; held: number; served: number; hidden: number }
+  domain: GapDomain
+  zone: string | null
+  tail: string
+}): JSX.Element {
+  const { visible, held, served, hidden } = counts
+  return (
+    <Typography variant="caption" color="text.secondary" data-testid="gaps-shown">
+      {visible} of {held} unknown {GAP_DOMAIN_LABELS[domain].toLowerCase()} shown
+      {zone !== null ? `, seen in ${zone} or another tier of it` : ''}
+      {hidden > 0 ? `, ${hidden} marked done hidden` : ''}
+      {held > served ? ` (the engine serves the ${served} most mentioned)` : ''}
+      {tail}. Wiki data from {GAPS_DATA_DATE}.
+    </Typography>
+  )
+}
+
 export default function GapsView(): JSX.Element {
-  const { snap, engine, loot, kills } = useGapsData()
+  const charSnap = useModule<CharacterSnap>('character')
+  // All characters (owner, 2026-10-19): every character's saved Gaps joined in, within a day window.
+  const allChars = useAllCharacters(charSnap?.character ?? null)
+  const { snap, engine, loot, kills, seenBy } = useGapsData(allChars.all)
   const [domain, setDomain] = useState<GapDomain>('item')
   const [query, setQuery] = useState('')
   const [copied, setCopied] = useState<number | null>(null)
   // "Zone I'm in" (owner ask, 2026-10-17): only what was named where you stand, every tier of it.
   const [hereOnly, setHereOnly] = useBoolPref(ZONE_HERE_KEY, false)
-  const current = useModule<CharacterSnap>('character')?.zone ?? null
+  const current = charSnap?.zone ?? null
   const zone = hereOnly ? current : null
   // Mobs rows the player marked as players are gone for good (owner, 2026-10-19).
   const playerList = usePlayerList()
@@ -185,6 +214,7 @@ export default function GapsView(): JSX.Element {
         />
         <Pref label="Group by zone, then mob" checked={grouped} onChange={setGrouped} testId="gaps-grouped" />
         <Pref label="Show done" checked={showDone} onChange={setShowDone} testId="gaps-show-done" />
+        <AllCharactersBox on={allChars.on} onChange={allChars.setOn} days={allChars.days} onDays={allChars.setDays} />
         <Button size="small" variant="outlined" startIcon={<ContentCopyIcon />} onClick={() => void copy()} disabled={visible.length === 0} data-testid="gaps-copy">
           Copy list
         </Button>
@@ -194,12 +224,8 @@ export default function GapsView(): JSX.Element {
           </Typography>
         )}
       </Stack>
-      <Typography variant="caption" color="text.secondary" data-testid="gaps-shown">
-        {visible.length} of {held} unknown {GAP_DOMAIN_LABELS[domain].toLowerCase()} shown
-        {zone !== null ? `, seen in ${zone} or another tier of it` : ''}
-        {hidden > 0 ? `, ${hidden} marked done hidden` : ''}
-        {held > served ? ` (the engine serves the ${served} most mentioned)` : ''}. Wiki data from {GAPS_DATA_DATE}.
-      </Typography>
+      <ShownLine counts={{ visible: visible.length, held, served, hidden }} domain={domain} zone={zone} tail={allChars.caption} />
+      {allChars.on && <CharactersLine live={allChars.liveLabel} others={allChars.others} />}
       <GapsTable
         entries={entries}
         verdicts={verdicts}
@@ -211,6 +237,7 @@ export default function GapsView(): JSX.Element {
         onDone={marks.toggle}
         onPlayer={playerList.mark}
         chipContext={CHIP_CONTEXT}
+        seenBy={seenBy}
         hiddenByFilter={held > 0}
       />
     </Stack>

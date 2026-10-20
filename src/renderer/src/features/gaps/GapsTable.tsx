@@ -33,6 +33,7 @@ import {
   type GapVerdicts
 } from '@shared/gaps'
 import { unfoldedEntries, type GapEntry } from '@shared/gapGroups'
+import { seenByKey } from '@shared/gapsAllCharacters'
 import { wikiPageUrl } from '@shared/wiki'
 import { copyText } from '../../lib/clipboard'
 import { Tooltip } from '../../lib/Tooltip'
@@ -145,12 +146,15 @@ interface PaneActions {
   onDone: (row: GapRow) => void
   /** add a "may be a player" name to the permanent players list */
   onPlayer: (name: string) => void
+  /** All characters: who saw each row */
+  seenBy?: ReadonlyMap<string, readonly string[]>
 }
 
 /** The open row's details, above the list: capped so the list keeps room on a short screen. */
 function DetailsPane({ row, actions }: { row: GapRow; actions: PaneActions }): JSX.Element {
   const isDone = actions.done.has(doneKey(row))
   const needed = actions.needed(row)
+  const seen = actions.seenBy?.get(seenByKey(row))
   return (
     <Paper variant="outlined" sx={{ px: 1.5, py: 0.5, flexShrink: 0, maxHeight: '40vh', overflow: 'auto' }} data-testid="gaps-details-pane">
       <Stack direction="row" spacing={1} alignItems="center">
@@ -164,6 +168,11 @@ function DetailsPane({ row, actions }: { row: GapRow; actions: PaneActions }): J
           </Tooltip>
         )}
       </Stack>
+      {seen !== undefined && (
+        <Typography variant="caption" color="text.secondary" component="div" data-testid="gaps-seen-by">
+          Seen by: {seen.join(', ')}.
+        </Typography>
+      )}
       {needed.length > 0 && (
         <Typography variant="caption" color="text.secondary" data-testid="gaps-needed">
           Still needed for the page: {needed.join(', ')}.
@@ -276,6 +285,7 @@ export default function GapsTable({
   onDone,
   onPlayer,
   chipContext,
+  seenBy,
   hiddenByFilter = false
 }: {
   /** the rows, or the grouped list with its zone and mob headings */
@@ -295,6 +305,8 @@ export default function GapsTable({
   chipContext: GapActionContext
   /** the domain HAS unknown names, so an empty list means the search or zone filter hid them */
   hiddenByFilter?: boolean
+  /** All characters: who saw each row, named in its details */
+  seenBy?: ReadonlyMap<string, readonly string[]>
 }): JSX.Element {
   const [open, setOpen] = useState<string | null>(null)
   const onToggle = useCallback((name: string) => setOpen((cur) => (cur === name ? null : name)), [])
@@ -325,7 +337,7 @@ export default function GapsTable({
   const openedRow = opened?.kind === 'row' ? opened.row : undefined
   return (
     <Stack spacing={1.5} sx={{ flexGrow: 1, minHeight: 0 }}>
-      {openedRow !== undefined && <DetailsPane row={openedRow} actions={{ pageText, needed, done, onDone, onPlayer }} />}
+      {openedRow !== undefined && <DetailsPane row={openedRow} actions={{ pageText, needed, done, onDone, onPlayer, seenBy }} />}
       <Box ref={scrollRef} sx={{ flexGrow: 1, minHeight: 0, overflow: 'auto', overscrollBehavior: 'contain' }} data-testid="gaps-scroll">
         <Table size="small" stickyHeader data-testid="gaps-table">
           <SortHeader sort={sort} onSort={onSort} />

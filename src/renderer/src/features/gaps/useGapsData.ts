@@ -16,6 +16,7 @@ import type { PageExtras, ZoneNamer } from '@shared/wikiPage'
 import dropGroupsJson from '../../data/eqlegends/dropGroups.json'
 import mobsJson from '../../data/eqlegends/mobs.json'
 import { MOB_CATALOG } from '../mobs/mobSearch'
+import { joinCharacters, otherInputs, type CharacterGaps } from '@shared/gapsAllCharacters'
 import { useModule } from '../../lib/useModule'
 import { useItemMobs } from '../../lib/gapItemMobs'
 
@@ -35,12 +36,31 @@ export interface GapsData {
   engine: GapsSnap | null | undefined
   loot: LootSnap
   kills: KillMap
+  /** All characters: `domain|name` lower-cased -> who saw it; undefined in the one-character view. */
+  seenBy?: ReadonlyMap<string, readonly string[]>
 }
 
-export function useGapsData(): GapsData {
-  const engine = useModule<GapsSnap>(GAPS_MODULE_ID)
-  const loot = useModule<LootSnap>('loot')
-  const killMobs = useModule<KillsSnap>('kills')?.mobs
+/** All characters ticked: the others' inputs, the attached one's label, and the day window. */
+export interface AllCharacters {
+  others: readonly CharacterGaps[]
+  liveLabel: string
+  cut: { stamp: string; ms: number }
+}
+
+export function useGapsData(all: AllCharacters | null = null): GapsData {
+  const liveEngine = useModule<GapsSnap>(GAPS_MODULE_ID)
+  const liveLoot = useModule<LootSnap>('loot')
+  const liveKills = useModule<KillsSnap>('kills')
+  // All characters (owner, 2026-10-19): the attached character's live inputs joined with every other
+  // character's saved ones, each cut to the day window, before anything is derived from them.
+  const joined = useMemo(() => {
+    if (all === null || liveEngine == null) return null
+    const live = { label: all.liveLabel, gaps: liveEngine, loot: liveLoot ?? [], kills: liveKills ?? null }
+    return joinCharacters([live, ...otherInputs(all.others, IS_MOB)], all.cut)
+  }, [all, liveEngine, liveLoot, liveKills])
+  const engine = joined === null ? liveEngine : joined.gaps
+  const loot = joined === null ? liveLoot : joined.loot
+  const killMobs = joined === null ? liveKills?.mobs : joined.kills?.mobs
   const cons = useModule<ConsiderSnap>('consider')
   // The item pages' side of each drop, asked of main (the corpus is main-only).
   const looted = useMemo(() => lootedItemNames(loot ?? []), [loot])
@@ -52,5 +72,5 @@ export function useGapsData(): GapsData {
     return withImageRows(derived, { kills: killMobs ?? {}, loot: loot ?? [], cons: cons ?? [] }, MOB_CATALOG)
   }, [engine, loot, killMobs, itemMobs, cons])
   const kills = useMemo(() => killIndex(killMobs ?? {}), [killMobs])
-  return { snap, engine, loot: loot ?? [], kills }
+  return { snap, engine, loot: loot ?? [], kills, seenBy: joined?.seenBy }
 }

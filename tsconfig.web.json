@@ -56,6 +56,8 @@
     "src/preload/respawn.ts",
     // …and `logArchive.ts` (Keep log history, docs/plans/log-archive), likewise.
     "src/preload/logArchive.ts",
+    // …and `gapsCharacters.ts` (the Gaps tab's All characters), likewise.
+    "src/preload/gapsCharacters.ts",
     // …and `presencePrefs.ts` (cursor ring + overlay auto-hide, moved for the line ceiling), likewise.
     "src/preload/presencePrefs.ts",
     // …and `planner.ts` (the exaltation planner + the Gear tab's reads, JOS-285), likewise.
