@@ -35,7 +35,7 @@ import {
 } from '@shared/gaps'
 import type { CharacterSnap } from '@shared/types'
 import { stillNeeded, wikiPageText } from '@shared/wikiPage'
-import { GAP_GROUP_ORDERS, GAP_GROUP_ORDER_LABELS, gapGroupOrderOf, type GapGroupOrder } from '@shared/gapGroups'
+import { GAP_GROUP_ORDERS, GAP_GROUP_ORDER_LABELS, gapGroupOrderOf } from '@shared/gapGroups'
 import { useModule } from '../../lib/useModule'
 import { Tooltip } from '../../lib/Tooltip'
 import { useBoolPref } from '../combat/useCombatPrefs'
@@ -47,7 +47,7 @@ import { GAPS_DATA_DATE, PAGE_EXTRAS, useGapsData } from './useGapsData'
 import { useDoneMarks, usePlayerList } from './useDoneMarks'
 import { useHeld } from './useHeld'
 import { useHideUncertain, type HideUncertain } from './useHideUncertain'
-import { useGrouping } from './useGrouping'
+import { useGrouping, type Grouping } from './useGrouping'
 
 // One line (owner, 2026-10-11): the how is in the module header, not on the page. Since 2026-10-18
 // the line says what the chosen domain's rows are (GAP_DOMAIN_HELP).
@@ -99,25 +99,16 @@ function HideUncertainBox({ state }: { state: HideUncertain }): JSX.Element {
  * Grouped only (owner asks, 2026-10-20): the order of the headings themselves, and Collapse all /
  * Expand all. The toolbar is shared by every domain, so each domain has them.
  */
-function GroupControls({
-  order,
-  onOrder,
-  onCollapseAll,
-  onExpandAll
-}: {
-  order: GapGroupOrder
-  onOrder: (o: GapGroupOrder) => void
-  onCollapseAll: () => void
-  onExpandAll: () => void
-}): JSX.Element {
+function GroupControls({ group }: { group: Grouping }): JSX.Element | null {
+  if (!group.grouped) return null
   return (
     <Stack direction="row" spacing={1} alignItems="center">
       <TextField
         select
         size="small"
         label="Groups"
-        value={order}
-        onChange={(e) => onOrder(gapGroupOrderOf(e.target.value))}
+        value={group.order}
+        onChange={(e) => group.setOrder(gapGroupOrderOf(e.target.value))}
         sx={{ minWidth: 150 }}
         slotProps={{ htmlInput: { 'data-testid': 'gaps-group-order' } }}
       >
@@ -127,10 +118,10 @@ function GroupControls({
           </MenuItem>
         ))}
       </TextField>
-      <Button size="small" startIcon={<UnfoldLessIcon />} onClick={onCollapseAll} data-testid="gaps-collapse-all">
+      <Button size="small" startIcon={<UnfoldLessIcon />} onClick={group.collapseAll} data-testid="gaps-collapse-all">
         Collapse all
       </Button>
-      <Button size="small" startIcon={<UnfoldMoreIcon />} onClick={onExpandAll} data-testid="gaps-expand-all">
+      <Button size="small" startIcon={<UnfoldMoreIcon />} onClick={group.expandAll} data-testid="gaps-expand-all">
         Expand all
       </Button>
     </Stack>
@@ -285,7 +276,7 @@ export default function GapsView(): JSX.Element {
           }}
         />
         <Pref label="Group by zone, then mob" checked={group.grouped} onChange={group.setGrouped} testId="gaps-grouped" />
-        {group.grouped && <GroupControls order={group.order} onOrder={group.setOrder} onCollapseAll={group.collapseAll} onExpandAll={group.expandAll} />}
+        <GroupControls group={group} />
         <Pref label="Show done" checked={showDone} onChange={setShowDone} testId="gaps-show-done" />
         <HideUncertainBox state={sure} />
         <Button size="small" variant="outlined" startIcon={<ContentCopyIcon />} onClick={() => void copy()} disabled={visible.length === 0} data-testid="gaps-copy">
