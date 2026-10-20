@@ -52,6 +52,14 @@ interface MobSpecial {
   specials: string[]
 }
 
+/** One mob's corpse coin, `[platinum, gold, silver, copper]` (gaps_coin.rs, 2026-10-19). */
+interface MobCoin {
+  mob: string
+  n: number
+  min: number[]
+  max: number[]
+}
+
 interface Snap {
   rows: Row[]
   totals: Record<string, number>
@@ -60,6 +68,8 @@ interface Snap {
   mobLocs?: MobLoc[]
   /** What each mob was seen to do on its attack lines (gaps_specials.rs, 2026-10-19). */
   mobSpecials?: MobSpecial[]
+  /** What each mob's corpse paid at the player's kills: how many paid, each coin's least and most. */
+  mobCoin?: MobCoin[]
 }
 
 /** The fold's own caps (gaps.rs `CAP_PER_DOMAIN`, gaps_details.rs `LIST_CAP` and `SAMPLES`). */
@@ -186,6 +196,21 @@ function mergeMobSpecials(older: Snap, newer: Snap): MobSpecial[] {
   return [...out.values()]
 }
 
+/** Both sides' corpse coin, one entry per case-folded mob: the paying kills added, each coin's least and most widened. */
+function mergeMobCoin(older: Snap, newer: Snap): MobCoin[] {
+  const out = new Map<string, MobCoin>()
+  for (const m of [...(older.mobCoin ?? []), ...(newer.mobCoin ?? [])]) {
+    const had = out.get(m.mob.toLowerCase())
+    out.set(
+      m.mob.toLowerCase(),
+      had === undefined
+        ? { ...m, min: [...m.min], max: [...m.max] }
+        : { mob: had.mob, n: had.n + m.n, min: had.min.map((v, i) => Math.min(v, m.min[i] ?? v)), max: had.max.map((v, i) => Math.max(v, m.max[i] ?? v)) }
+    )
+  }
+  return [...out.values()]
+}
+
 /** Both sides' mob points, one entry per case-folded mob, each point once (gaps_locs.rs keeps them rounded). */
 function mergeMobLocs(older: Snap, newer: Snap): MobLoc[] {
   const out = new Map<string, MobLoc>()
@@ -208,5 +233,5 @@ export function mergeGaps(older: unknown, newer: unknown): Snap | null {
     out.set(k, had === undefined ? { ...r } : mergeRow(had, r))
   }
   const { rows, counted } = served(out.values())
-  return { rows, ...perDomain(older, newer, counted), killFactions: mergeKillFactions(older, newer), mobLocs: mergeMobLocs(older, newer), mobSpecials: mergeMobSpecials(older, newer) }
+  return { rows, ...perDomain(older, newer, counted), killFactions: mergeKillFactions(older, newer), mobLocs: mergeMobLocs(older, newer), mobSpecials: mergeMobSpecials(older, newer), mobCoin: mergeMobCoin(older, newer) }
 }
