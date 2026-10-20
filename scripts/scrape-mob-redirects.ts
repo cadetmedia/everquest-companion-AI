@@ -1,17 +1,21 @@
 // Collect every main-namespace redirect on eqlwiki and keep those that land on a mob page as that
 // mob's `otherNames` in mobs.json (sources/mobRedirects.ts). One request per 500 redirects, at the
 // shared 1 request per second. Run after a full `scrape:mobs`, which writes records without them.
+// The list is kept in cache/redirects/redirects.json like every other wiki text (owner, 2026-10-19:
+// "everything we get from the wiki should be cached"), so mobs.json re-derives from it offline.
 //
-//   npx tsx scripts/scrape-mob-redirects.ts
+//   npx tsx scripts/scrape-mob-redirects.ts            fetch the list (about 19 requests), cache it, apply
+//   npx tsx scripts/scrape-mob-redirects.ts --offline  apply the cached list, zero requests
 
 import { readFileSync, writeFileSync } from 'fs'
 import { resolve } from 'path'
 import { fileURLToPath } from 'url'
 import { isMain } from './sources/isMain'
-import { applyOtherNames, type NamedMob, type Redirect } from './sources/mobRedirects'
+import { applyOtherNames, readRedirectCache, writeRedirectCache, type NamedMob, type Redirect } from './sources/mobRedirects'
 import { wikiGet } from './sources/wikiApi'
 
 const MOBS_PATH = resolve(fileURLToPath(import.meta.url), '../../src/renderer/src/data/eqlegends/mobs.json')
+const CACHE = resolve(fileURLToPath(import.meta.url), '../sources/cache/redirects/redirects.json')
 
 type Get = typeof wikiGet
 
@@ -48,7 +52,11 @@ export async function allRedirects(get: Get = wikiGet): Promise<Redirect[]> {
 
 async function main(): Promise<void> {
   const data = JSON.parse(readFileSync(MOBS_PATH, 'utf8')) as { mobs: NamedMob[] }
-  const redirects = await allRedirects()
+  const offline = process.argv.slice(2).includes('--offline')
+  const cached = offline ? readRedirectCache(CACHE) : null
+  if (offline && cached === null) throw new Error(`no cached redirect list at ${CACHE}: run once without --offline (about 19 requests)`)
+  const redirects = cached?.redirects ?? (await allRedirects())
+  if (cached === null) writeRedirectCache(CACHE, redirects)
   applyOtherNames(data.mobs, redirects)
   const named = data.mobs.filter((m) => m.otherNames).length
   const names = data.mobs.reduce((n, m) => n + (m.otherNames?.length ?? 0), 0)

@@ -16,9 +16,9 @@
  *   2. THE COMPACT PROJECTION. The committed catalog is names only (see MobEntry) — no drop
  *      rates, no wikitext — because it is inlined into the main bundle.
  */
-import { parsePageEraTag } from '../../src/main/itemLookupParse'
+import { parsePageEraTag, templateField } from '../../src/main/itemLookupParse'
 import { CURRENT_ERA, eraBadgeOverrides } from '../../src/shared/planner/era'
-import { parseMobWikitext } from '../../src/main/mobLookupParse'
+import { parseMobLoot, parseMobWikitext } from '../../src/main/mobLookupParse'
 import { factionNames } from './mobFaction'
 import type { MobEntry } from '../../src/shared/types'
 
@@ -64,13 +64,17 @@ export function splitZones(zone: string | undefined): string[] {
 }
 
 /** For the Gaps tab (owner ask, 2026-10-18): whether the page is a vendor's, and the factions a kill moves. */
-function gapsFacts(wikitext: string): Pick<MobEntry, 'merchant' | 'factions' | 'image'> {
+function gapsFacts(wikitext: string): Pick<MobEntry, 'merchant' | 'factions' | 'image' | 'commonDrops'> {
   const factions = factionNames(wikitext)
+  // `|common_loot` lists drops as surely as `|known_loot`: on 195 pages, mostly shared tables (Classic
+  // Raid Tier Treasures) and a zone's set loot (owner, 2026-10-19: Gaps read them as missing).
+  const common = [...new Set(parseMobLoot(templateField(wikitext, 'common_loot') ?? '').map((d) => d.item))]
   const image = /\|\s*imagefilename\s*=\s*([^\n|}]*)/i.exec(wikitext)?.[1].trim() ?? ''
   return {
     ...(/\{\{\s*MerchantPage\b/i.test(wikitext) ? { merchant: true } : {}),
     ...(factions.length ? { factions } : {}),
-    ...(image !== '' ? { image } : {})
+    ...(image !== '' ? { image } : {}),
+    ...(common.length ? { commonDrops: common } : {})
   }
 }
 
