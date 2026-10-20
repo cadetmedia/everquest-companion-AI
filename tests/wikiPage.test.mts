@@ -192,3 +192,36 @@ test('a Gaps row picks its page by domain and takes the vendor value from a sale
   }
   assert.match(wikiPageText(row, [], {}), /\|merchant_value = 4s\n/)
 })
+
+// Review E3: a mob page's MONEY DROPS, in the layout of the wiki's 406 blocks, at the end of known_loot.
+test('a mob page ends known_loot with MONEY DROPS, each coin least to most over the kills that paid; none seen writes none', () => {
+  const coin = { mob: 'A rabid kobold', n: 2, min: [0, 0, 0, 1], max: [0, 2, 4, 9] }
+  const kobold: GapRow = { domain: 'mob', name: 'a rabid kobold', kinds: [], count: 1, first: '', last: '', details: { samples: [] } }
+  const loot: LootEvent[] = [{ ts: 1, item: 'Rabid Kobold Fang', source: 'a rabid kobold' }]
+  const text = wikiPageText(kobold, loot, {}, { mobCoin: [coin] })
+  assert.ok(
+    text.includes(
+      [
+        '| known_loot = ',
+        '',
+        '<ul>',
+        '<li> {{:Rabid Kobold Fang}} </li>',
+        '</ul>',
+        '<p><b>MONEY DROPS</b></p>',
+        '<ul>',
+        '<li> 0 - 0 <span style="color:#e5e4e2"><b>Platinums</b></span></li>',
+        '<li> 0 - 2 <span style="color:gold"><b>Golds</b></span></li>',
+        '<li> 0 - 4 <span style="color:silver"><b>Silvers</b></span></li>',
+        '<li> 1 - 9 <span style="color:#CD7F32"><b>Coppers</b></span></li>',
+        '</ul>',
+        ''
+      ].join('\n')
+    ),
+    text
+  )
+  // No coin seen: the log cannot prove "NO MONEY DROPS", so the page says nothing about money.
+  const none = wikiPageText(kobold, loot, {}, {})
+  assert.ok(!none.includes('MONEY'), none)
+  // Coin and no loot: the block alone.
+  assert.match(wikiPageText(kobold, [], {}, { mobCoin: [coin] }), /\| known_loot = \n\n<p><b>MONEY DROPS<\/b><\/p>\n<ul>\n/)
+})

@@ -25,6 +25,7 @@
 //! What counts as known beyond the exact lookups — the wiki's spellings of a mob, a mob's pet, an
 //! AA or an item's effect cast as a spell — is in [`super::gaps_names`] and [`super::gaps_keys`].
 
+use super::gaps_coin::KillCoin;
 use super::gaps_details::Details;
 use super::gaps_keys::{aa_known, item_gap_key, loose_key, scroll_known, spell_gap_key, spell_known};
 use super::gaps_names::{no_mob, no_spell, owner_of_pet, MobNames};
@@ -120,6 +121,8 @@ pub struct GapsModule {
     zone: Option<String>,
     /// Which factions each kill moved, for the tab's check against the mob pages.
     kill_factions: KillFactions,
+    /// What each mob's corpse paid, for a page's `MONEY DROPS` (`gaps_coin.rs`).
+    kill_coin: KillCoin,
     /// Where a con or hail beside a `/loc` placed each mob (`gaps_locs.rs`).
     mob_locs: MobLocs,
     /// Who chats (a player) and which hailed or conned one-word names are NPCs (`gaps_players.rs`).
@@ -140,6 +143,7 @@ impl GapsModule {
         self.seen.clear();
         self.players.clear();
         self.kill_factions.clear();
+        self.kill_coin.clear();
         self.mob_locs.clear();
         self.who.clear();
         self.specials.clear();
@@ -246,11 +250,15 @@ impl GapsModule {
         self.note(Domain::Mob, mob_key(name), name, known, kind, ev)
     }
 
-    /// A purchase (an item and its merchant), a vendor sale, or an unparsed line (a price quote, or
-    /// a faction line held for the kill after it).
+    /// A purchase (an item and its merchant), a vendor sale or a corpse's coin (held for the kill
+    /// after it), or an unparsed line (a price quote, or a faction line held for the kill after it).
     fn trade(&mut self, ev: &Event) -> bool {
         match ev.kind() {
             "purchase" => self.item_event(ev) | self.merchant(ev),
+            "coin" => {
+                self.kill_coin.line(ev);
+                self.merchant(ev)
+            }
             "unknown" => {
                 self.kill_factions.line(ev);
                 let zone = self.zone.clone();
@@ -303,10 +311,11 @@ impl GapsModule {
         self.note(Domain::Merchant, mob_key(name), name, known, kind, ev)
     }
 
-    /// A death claims the faction lines just before it (`gaps_trade.rs`).
+    /// A death claims the faction lines and the corpse coin just before it (`gaps_trade.rs`,
+    /// `gaps_coin.rs`).
     fn kill_factions_of(&mut self, ev: &Event) -> bool {
         let zone = self.zone.clone();
-        ev.str("name").is_some_and(|mob| self.kill_factions.death(mob, ev.ts(), zone.as_deref()))
+        ev.str("name").is_some_and(|mob| self.kill_factions.death(mob, ev.ts(), zone.as_deref()) | self.kill_coin.death(mob, ev.ts()))
     }
 
     /// The death rule from the module header: a player-shaped name that dies to a mob is a player
@@ -493,7 +502,7 @@ impl EqModule for GapsModule {
         let kill_factions = self.kill_factions.serve();
         let mob_locs = self.mob_locs.serve();
         let mob_specials = self.specials.serve();
-        json!({ "seq": self.seq, "state": { "rows": rows, "totals": totals, "seen": seen, "killFactions": kill_factions, "mobLocs": mob_locs, "mobSpecials": mob_specials } })
+        json!({ "seq": self.seq, "state": { "rows": rows, "totals": totals, "seen": seen, "killFactions": kill_factions, "mobLocs": mob_locs, "mobSpecials": mob_specials, "mobCoin": self.kill_coin.serve() } })
     }
 
     fn install_knowledge(&mut self, k: &Arc<dyn Knowledge>) {

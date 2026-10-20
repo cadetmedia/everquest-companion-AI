@@ -207,6 +207,16 @@ export interface GapsSnap {
   mobLocs?: { mob: string; zone: string; points: number[][] }[]
   /** What each mob was seen to do on its own attack lines, `Rampages` / `Flurries` (gaps_specials.rs). */
   mobSpecials?: { mob: string; specials: string[] }[]
+  /** What each mob's corpse paid at the player's kills: how many paid, each coin's least and most (gaps_coin.rs). */
+  mobCoin?: MobCoin[]
+}
+
+/** One mob's corpse coin, `[platinum, gold, silver, copper]` (gaps_coin.rs). */
+export interface MobCoin {
+  mob: string
+  n: number
+  min: number[]
+  max: number[]
 }
 
 /** The lists in display order, with the words the tab and the copy text use for them. */

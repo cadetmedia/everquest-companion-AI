@@ -16,7 +16,7 @@
 import { CURRENT_ERA } from './planner/era'
 import type { KillMap } from './kills'
 import { killsFor } from './kills'
-import { derivedPrices, factionMob, factionOf, npcOnlySpell, type ClientSpellFacts, type GapDomain, type GapRow } from './gaps'
+import { derivedPrices, factionMob, factionOf, npcOnlySpell, type ClientSpellFacts, type GapDomain, type GapRow, type MobCoin } from './gaps'
 import { itemBaseName } from './itemStats'
 import { wikiZoneLink } from './gapWikiZone'
 import type { VendorFinder } from './gapMobPage'
@@ -143,6 +143,8 @@ export interface MobFacts {
   factions: FactionSeen[]
   /** What its attack lines showed it doing (`Rampages`, `Flurries`): the page's `special`. */
   specials: string[]
+  /** What its corpse paid at the player's kills; absent when no kill paid (never "none", gaps_coin.rs). */
+  coin?: MobCoin
 }
 
 /** What the log saw of mobs beyond the rows: each kill's factions and each mob's `/loc` points. */
@@ -150,6 +152,7 @@ export interface MobSightings {
   killFactions?: readonly ({ mob: string } & FactionSeen)[]
   mobLocs?: readonly { mob: string; points: number[][] }[]
   mobSpecials?: readonly { mob: string; specials: readonly string[] }[]
+  mobCoin?: readonly MobCoin[]
 }
 
 export interface SpellFacts {
@@ -248,6 +251,7 @@ export function mobFacts(row: GapRow, loot: readonly LootEvent[], kills: KillMap
     credited: killed?.credited ?? 0,
     points: (seen.mobLocs ?? []).filter(mine).flatMap((m) => m.points),
     specials: [...new Set((seen.mobSpecials ?? []).filter(mine).flatMap((m) => m.specials))],
+    ...coinOf(seen.mobCoin, row.name),
     factions: (seen.killFactions ?? []).filter(mine).map(({ faction, adjust, raised }) => ({
       faction,
       ...(adjust === undefined ? {} : { adjust }),
@@ -386,13 +390,39 @@ function npcValues(f: NpcFacts): Record<string, string> {
 const lootList = (loot: MobFacts['loot'], kills: number): string =>
   loot.length === 0 ? '' : `<ul>\n${loot.map((l) => lootLine(l.item, l.drops, kills)).join('\n')}\n</ul>`
 
+/** The mob's coin, when its kills paid any. */
+function coinOf(all: readonly MobCoin[] | undefined, mob: string): { coin?: MobCoin } {
+  const hit = all?.find((c) => same(c.mob, mob))
+  return hit === undefined || hit.n === 0 ? {} : { coin: hit }
+}
+
+/** The page's coins, in its order, with the colour each line's span carries. */
+const COINS: readonly (readonly [string, string])[] = [
+  ['Platinums', '#e5e4e2'],
+  ['Golds', 'gold'],
+  ['Silvers', 'silver'],
+  ['Coppers', '#CD7F32']
+]
+
+/**
+ * `MONEY DROPS` as the wiki writes it at the end of `|known_loot` (review E3; measured 2026-10-19 on
+ * the cached mob pages, 406 blocks): each coin's least and most over the kills that paid,
+ * `<li> 9 - 16 <span style="color:silver"><b>Silvers</b></span></li>`, every coin listed. The log
+ * cannot prove a mob pays nothing (gaps_coin.rs), so `NO MONEY DROPS` is never written.
+ */
+export function moneyBlock(c: MobCoin): string {
+  const lines = COINS.map(([word, color], i) => `<li> ${String(c.min[i] ?? 0)} - ${String(c.max[i] ?? 0)} <span style="color:${color}"><b>${word}</b></span></li>`)
+  return ['<p><b>MONEY DROPS</b></p>', '<ul>', ...lines, '</ul>'].join('\n')
+}
+
 /**
  * A mob's page. A drop the wiki files under `|common_loot` (shared loot, `commonLootNames`) goes
  * there; everything else is the mob's own `|known_loot` (owner, 2026-10-19).
  */
 export function mobPage(f: MobFacts, commonLoot: ReadonlySet<string> = new Set()): string {
   const isCommon = (l: MobFacts['loot'][number]): boolean => commonLoot.has(l.item.toLowerCase())
-  const own = lootList(f.loot.filter((l) => !isCommon(l)), f.kills)
+  const loot = lootList(f.loot.filter((l) => !isCommon(l)), f.kills)
+  const own = [loot, f.coin === undefined ? '' : moneyBlock(f.coin)].filter((s) => s !== '').join('\n')
   const shared = lootList(f.loot.filter(isCommon), f.kills)
   return page(layoutBlock('Namedmobpage', NPC_LAYOUT, { ...npcValues(f), known_loot: own, common_loot: shared }), f.zones)
 }

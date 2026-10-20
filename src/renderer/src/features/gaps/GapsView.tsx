@@ -152,7 +152,7 @@ export default function GapsView(): JSX.Element {
   const spellNames = useMemo(() => (domain === 'spell' ? spellNamesOf(visible) : NO_NAMES), [domain, visible])
   const spellFacts = useSpellFacts(spellNames)
   const sightings = useMemo(
-    () => ({ killFactions: engine?.killFactions, mobLocs: engine?.mobLocs, mobSpecials: engine?.mobSpecials, ...PAGE_EXTRAS, spellFacts }),
+    () => ({ killFactions: engine?.killFactions, mobLocs: engine?.mobLocs, mobSpecials: engine?.mobSpecials, mobCoin: engine?.mobCoin, ...PAGE_EXTRAS, spellFacts }),
     [engine, spellFacts]
   )
   const pageText = useCallback((row: GapRow) => wikiPageText(row, loot, kills, sightings), [loot, kills, sightings])
