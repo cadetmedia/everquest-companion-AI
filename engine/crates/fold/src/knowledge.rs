@@ -142,6 +142,13 @@ pub trait Knowledge: Send + Sync {
         false
     }
 
+    /// Does the committed catalog have this name with no picture on ANY of its pages (`noImage`)?
+    /// The Gaps tab's Images test (`shared/gapImages.ts imagelessByMob`), read like
+    /// [`Knowledge::known_mob`], announcing nothing. Defaulted false, so a test corpus need list none.
+    fn imageless_mob(&self, _name: &str) -> bool {
+        false
+    }
+
     /// Take the names this process could not answer, and forget them.
     ///
     /// A hand-back rather than a callback, like [`crate::EqModule::take_fires`]: a lookup called
