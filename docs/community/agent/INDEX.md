@@ -18,6 +18,7 @@ into `main_community`, and push with the rest of the work.
 | [../RELEASING.md](../RELEASING.md) | Before a release (on `community_release_rules`). |
 | [../plans/2026-10-18-scrape-rebaseline.md](../plans/2026-10-18-scrape-rebaseline.md) | Open: the era rules, the stale-scrape defect, the August catch-up (phases and status). |
 | [../plans/2026-10-19-gaps-all-characters.md](../plans/2026-10-19-gaps-all-characters.md) | The Gaps tab across every character: the owner's answers (built on `gaps-all-characters`). |
+| [../plans/2026-10-20-meter-pet-split.md](../plans/2026-10-20-meter-pet-split.md) | Open, not built: owner and pet on one damage-meter row (option 3), overlay and Combat tab, group-mates' pets too. Owner questions before the UI. |
 | [../audits/2026-10-19-gaps-review.md](../audits/2026-10-19-gaps-review.md) | Before changing the Gaps tab: the review, the owner's eight decisions, what is left. |
 | [../audits/2026-10-20-performance-review.md](../audits/2026-10-20-performance-review.md) | Before any performance work: what was measured, what is fixed, the ranked structural findings and quick wins. |
 
