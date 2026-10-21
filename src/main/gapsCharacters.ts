@@ -4,9 +4,18 @@
 // SAVE. While a character is attached and the engine is live on its log, its raw `gaps`, `loot` and
 // `kills` (the live log only, no archive merged) go to one file of its own in the app's data folder,
 // `gaps-characters/<characterId>.json`, with the log's head fingerprint, so the archive's
-// eligibility rule can later tell which of its segments that snapshot already holds. Checked every
-// two minutes and written only when a module moved. Nothing is read from another character's log
-// and no log is copied, joined or touched: the files are each character's results alone.
+// eligibility rule can later tell which of its segments that snapshot already holds. Nothing is read
+// from another character's log and no log is copied, joined or touched: the files are each
+// character's results alone.
+//
+// CHEAP WHEN NOTHING MOVED, RARE WHEN EVERYTHING DOES (perf audit, 2026-10-20). The save used to
+// pull all three whole snapshots (about 2 MB on a long log) every two minutes and compare seqs
+// after the fetch, then write with a blocking fsync on main; during play that was a 2 MB read
+// queued in front of every Combat poll, and the gaps snapshot's own suggestion pass ran on the
+// engine's fold thread. Now: the first save comes a minute after launch, then one every ten
+// minutes, each skipped without asking the engine unless a cursor moved (gapSourceMoves.ts), and
+// the write is the async durable one. Nothing is lost by the longer interval: the file is a cache
+// of what the character's own log says, rebuilt the next time that character is attached.
 //
 // SERVE. `gaps:allCharacters` answers every OTHER character's inputs (the attached one's the tab
 // already has, served live): its saved snapshot with its eligible archive segments folded in when
@@ -19,6 +28,7 @@ import { existsSync, readdirSync, statSync } from 'node:fs'
 import { readFile, readdir } from 'node:fs/promises'
 import { join } from 'node:path'
 import { IPC } from '../shared/ipc'
+import type { CharacterRef } from '../shared/types'
 import {
   GAP_SOURCE_MODULES,
   SAVED_GAPS_VERSION,
@@ -40,10 +50,12 @@ import { logArchiveOn } from './storeLogArchive'
 import { loadInventoryDump } from './outputs'
 import { ownershipPayload, type OwnershipPayload } from '../shared/planner/ownership'
 import { isOwnExport } from '../shared/gapHeld'
-import { writeFileDurable } from './telemetry/durableWrite'
+import { writeFileDurableAsync } from './telemetry/durableWrite'
+import { takeMoved } from './gapSourceMoves'
 import { logInfo } from './errorLog'
 
-const SAVE_EVERY_MS = 2 * 60 * 1000
+const FIRST_SAVE_MS = 60 * 1000
+const SAVE_EVERY_MS = 10 * 60 * 1000
 const SAFE_ID = /^[a-z0-9_.-]+$/
 
 function savedDir(): string {
@@ -76,13 +88,23 @@ async function rawModule(module: GapSourceModule): Promise<{ seq: number; state:
 const lastSeqs = new Map<string, string>()
 let saving = false
 
+/** The character a save is owed for now, or null: none attached, engine not live, or nothing moved. */
+function owedSave(): { c: CharacterRef; id: string } | null {
+  if (saving || !engineServeReadiness().ok) return null
+  const c = getActiveCharacter()
+  if (c === null) return null
+  const id = characterId(c)
+  if (!SAFE_ID.test(id)) return null
+  // Nothing moved since the last look and this character is already saved: no engine read at all.
+  if (!takeMoved(GAP_SOURCE_MODULES) && lastSeqs.has(id)) return null
+  return { c, id }
+}
+
 /** Save the attached character's Gaps inputs when the engine is live on its log and something moved. */
 export async function saveAttachedGaps(): Promise<void> {
-  if (saving || !engineServeReadiness().ok) return
-  const c = getActiveCharacter()
-  if (c === null) return
-  const id = characterId(c)
-  if (!SAFE_ID.test(id)) return
+  const owed = owedSave()
+  if (owed === null) return
+  const { c, id } = owed
   saving = true
   try {
     const got = await Promise.all(GAP_SOURCE_MODULES.map(rawModule))
@@ -93,7 +115,7 @@ export async function saveAttachedGaps(): Promise<void> {
     if (log === null) return
     const modules = Object.fromEntries(GAP_SOURCE_MODULES.map((m, i) => [m, got[i]])) as SavedGaps['modules']
     const saved: SavedGaps = { v: SAVED_GAPS_VERSION, character: id, name: c.name, server: c.server, savedAt: new Date().toISOString(), log, modules }
-    writeFileDurable(savedDir(), join(savedDir(), `${id}.json`), JSON.stringify(saved))
+    await writeFileDurableAsync(savedDir(), join(savedDir(), `${id}.json`), JSON.stringify(saved))
     lastSeqs.set(id, seqs)
   } catch (err) {
     logInfo(`[everquest-companion] gaps characters: save failed: ${(err as Error).message}`)
@@ -185,6 +207,7 @@ export async function allCharacterGaps(sinceStamp: string | null): Promise<Chara
 
 /** Called once at launch, after the session has started tailing. */
 export function startGapsCharacterSaves(): void {
+  setTimeout(() => void saveAttachedGaps(), FIRST_SAVE_MS).unref()
   setInterval(() => void saveAttachedGaps(), SAVE_EVERY_MS).unref()
 }
 
