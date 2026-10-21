@@ -11,11 +11,13 @@
 interface Tally {
   entries: { name: string; n: number }[]
   distinct: number
-  /** The zones list: every name, past the cap (the Gaps tab's "this zone" filter reads it). */
+  /** The zones and forageZones lists: every name, past the cap (the "this zone" filter, a page's `|foraged`). */
   all?: string[]
 }
 
-const LISTS = ['zones', 'sources', 'dispositions', 'drops', 'cons', 'killers', 'casters', 'sales', 'paid'] as const
+// forageZones and tradeskills (owner, 2026-10-20, gaps-item-facts): where an item was foraged and
+// the tradeskill its combines raised, for the copied item page; an archive from before has none.
+const LISTS = ['zones', 'forageZones', 'sources', 'dispositions', 'tradeskills', 'drops', 'cons', 'killers', 'casters', 'sales', 'paid'] as const
 const COPPER = ['salesCopper', 'paidCopper'] as const
 
 /**

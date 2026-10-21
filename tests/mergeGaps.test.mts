@@ -260,3 +260,11 @@ test('gaps: merchant offers survive the join, the same offer counted once (owner
   const one = mergeGaps(older, snap([]))
   assert.equal((one?.rows[0].details.offers as unknown[]).length, 1)
 })
+
+test('gaps: forage zones and tradeskills survive the join, every forage zone kept (owner, 2026-10-20)', () => {
+  const older = snap([row('item', 'Gray Wolf Skull', 1, { details: { forageZones: { ...tally(['Qeynos Hills', 2]), all: ['Qeynos Hills'] }, tradeskills: tally(['Jewelry Making', 1]), samples: [] } })])
+  const newer = snap([row('item', 'Gray Wolf Skull', 1, { details: { forageZones: { ...tally(['The Rathe Mountains', 1]), all: ['The Rathe Mountains'] }, samples: [] } })])
+  const details = (mergeGaps(older, newer) as Snap).rows[0].details
+  assert.deepEqual((details.forageZones as Tally).all, ['Qeynos Hills', 'The Rathe Mountains'])
+  assert.deepEqual((details.tradeskills as Tally).entries, [{ name: 'Jewelry Making', n: 1 }])
+})
