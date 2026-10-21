@@ -184,6 +184,27 @@ sides scored with the repo's own `parseStatsBlock`.
 - Synthetic text is an upper bound. Real windows (EQ's own font rendering, UI scale, the window's
   art behind the text) are the open risk; question 3.
 
+### First real screenshot (owner, 2026-10-21: Ruined Robe, 336x420 snip of the item window)
+
+- Text: init 174 ms, read 586 ms, confidence 72. Every line came back, plus the tab row
+  ("Description", "Lore") as junk on top and stray characters at line ends.
+- **One wrong number: `Weight: 2.0` read as `Weight 20`** (the decimal point lost). Weight always
+  has one decimal in the game, so a missing point is detectable; still flagged, never guessed.
+- **The game window is not wiki layout.** Two columns (`Size: MEDIUM` beside `AC: 1`, `Charisma:
+  -20` beside the `SV.` column), long names (`Weight:`, `Charisma:`, `SV. Magic:`), the slot as a
+  bare word (`Chest`), the name in red, an `Unmodified` line at the bottom. The synthetic benchmark
+  drew wiki layout, so it measured the wrong thing for the line split. Phase 2 needs a mapping
+  from the game's window to the wiki's lines, e.g. for this item:
+  `Lore Equipped, No Trade, Temporary` (WIKI.md: the tooltip form is kept as-is), `Slot: CHEST`,
+  `AC: 1`, `CHA: -20`, `SV MAGIC: -15` ..., `Size: MEDIUM WT: 2.0`, `Class: NEC WIZ MAG ENC`,
+  `Race: ALL`.
+- **The window's own icon cannot be matched.** It is drawn at ~60% size and nearly black over the
+  window's stone texture (max brightness 90 of 255); the top scores sat within 1% of each other
+  and no robe icon ranked. The icon finder takes the icon from an inventory slot or the cursor (full
+  40 px colour, the wiki's own Icon Finder workflow), not from the item window.
+- Real-window fixtures needed: a weapon (Skill, Atk Delay, DMG), an Effect line, a long class list,
+  the Lore tab.
+
 ### What the prototype changes in the design
 
 - Text engine: **tesseract.js** (option A). Windows OCR is fast but too weak on small text.
