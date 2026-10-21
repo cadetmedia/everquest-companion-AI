@@ -31,6 +31,9 @@ use crate::views::{self, Meter};
 use crate::world::{FoldMark, World};
 use crate::{clock, spawn::DIAGNOSTIC_PREFIX};
 
+mod nap;
+use nap::nap;
+
 /// How many bytes one scan read asks for.
 ///
 /// The scan is deliberately impolite — no yield, no throttle, no slice sleep; the process boundary
@@ -51,8 +54,9 @@ const PROGRESS_EVERY: Duration = Duration::from_millis(250);
 /// The longest prefix of an event's JSON that is searched for its timestamp. See [`ts_of`].
 const TS_SCAN_BYTES: usize = 128;
 
-/// The nap the tail loop sleeps in, so a preempted tail notices promptly instead of after a whole
-/// poll interval. Mirrors `FileTail::follow`'s own nap.
+/// The longest the tail loop sleeps between two looks at the world, so a preempted tail notices
+/// promptly instead of after a whole poll interval. Mirrors `FileTail::follow`'s own nap. An ask
+/// does not wait it out — it wakes the nap the moment it arrives (see `ingest/nap.rs`).
 const TAIL_NAP: Duration = Duration::from_millis(25);
 
 /// The live world's heartbeat interval — `session.ts startHeartbeat`'s `setInterval(…, 1000)`,
@@ -954,7 +958,7 @@ fn run(world: &World, generation: u64, attach: &Attach, sinks: &SinkFactory) -> 
         if cadence.due() && !world.report_progress(generation, mark(&core, size, seq, &*sink)) {
             return Ok(Ended::Preempted);
         }
-        answer_asks(&answers, &*sink, &serving);
+        answer_asks(&answers, None, &*sink, &serving);
         // A define mid-scan is taken mid-scan and the fold does not restart for it. That is the
         // honest reading of a full-set replace: it is a fact about the world from here on, and the
         // events already folded were folded under what the user had said at the time.
@@ -1084,7 +1088,7 @@ fn run(world: &World, generation: u64, attach: &Attach, sinks: &SinkFactory) -> 
                 return Ok(Ended::Preempted);
             }
         }
-        answer_asks(&answers, &*sink, &serving);
+        answer_asks(&answers, None, &*sink, &serving);
         answer_writes(&writes, &mut *sink);
         // The fires, immediately and not at a cadence. Everything else this loop publishes is
         // state, which coalesces by definition; a fire is not state — two charm breaks are two
@@ -1269,41 +1273,12 @@ impl Serving {
     }
 }
 
-/// Sleep out one poll interval in short naps, waking early when the world changes hands — and
-/// answering asks between them.
-///
-/// A live engine spends almost all of its time here, so a reader served only at the top of a poll
-/// would wait a whole poll interval. Serving inside the nap makes the live latency one
-/// [`TAIL_NAP`].
-fn nap(
-    interval: Duration,
-    world: &World,
-    generation: u64,
-    answers: &Receiver<Ask>,
-    writes: &Receiver<Write>,
-    sink: &mut dyn EventSink,
-    serving: &mut Serving,
-) {
-    let mut slept = Duration::ZERO;
-    while slept < interval && world.owns(generation) {
-        thread::sleep(TAIL_NAP);
-        slept += TAIL_NAP;
-        answer_asks(answers, &*sink, serving);
-        // A write arriving while the tail naps is taken in that nap, for the same reason — and a
-        // session mark, which the user presses because the log has gone quiet, lands almost always
-        // in exactly this nap.
-        answer_writes(writes, sink);
-        // A subscription opened while the tail is napping is owed a reset, for the same reason:
-        // serving here makes the wait for a full window one nap instead of one poll. Nothing is
-        // built when nothing owes and nothing moved.
-        serving.tick(world, generation, &*sink);
-    }
-}
-
 /// Answer everything asked of the fold since the last boundary, and block on none of it.
 ///
 /// `try_recv` until empty rather than a blocking read: this is called from the fold's own loop and
 /// must never stall it. A send that fails is an asker that gave up and is dropped without comment.
+/// `woke` is an ask the nap already took off the channel by waiting on it, answered first because
+/// it arrived first.
 ///
 /// Every arm is a read of the fold, which is what makes it safe to call at every boundary,
 /// including inside the nap — a property of the `Ask` enum rather than of this loop, since an arm
@@ -1312,8 +1287,13 @@ fn nap(
 /// With one stated exception: the combat engine ages itself, so `snapshot(now)` is a mutating read
 /// once the tail is live. It advances only what time advances, it is idempotent in `now`, and while
 /// the scan runs it cannot happen at all — the gate is `hydrating` and the scan never leaves it.
-fn answer_asks(answers: &Receiver<Ask>, sink: &dyn EventSink, serving: &Serving) {
-    while let Ok(ask) = answers.try_recv() {
+fn answer_asks(
+    answers: &Receiver<Ask>,
+    woke: Option<Ask>,
+    sink: &dyn EventSink,
+    serving: &Serving,
+) {
+    for ask in woke.into_iter().chain(answers.try_iter()) {
         match ask {
             Ask::Module(ask) => {
                 let _dropped = ask.answer.send(sink.snapshot(&ask.module));

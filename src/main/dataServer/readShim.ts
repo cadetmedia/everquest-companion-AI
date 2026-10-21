@@ -61,8 +61,18 @@
 // disconnected, idle, answering, erroring — with no Electron, no socket and no Rust binary
 // (`tests/dataServerShim.test.mts`). The awkward cases are the point, and they are impossible to
 // stage against a real engine.
+//
+// ── ONE REQUEST PER QUESTION IN FLIGHT ────────────────────────────────────────────────────────
+//
+// `serveShared` is `serve` that joins an identical read already on the wire instead of
+// sending its own (`inFlight.ts`): the main window and the overlays ask for the same module, and the
+// same meter options, in the same millisecond, and on a slow PC the queue of duplicates is what
+// pushed the last of them past the deadline. What is shared is the engine arm's OUTCOME. The
+// fallback is still each caller's own — its own `own()`, its own count in the tally — so a joined
+// read that fails fails exactly as N separate ones would, minus N−1 requests.
 
 import type { ParamsFor, RequestOp, ResultFor } from '../../shared/dataServer/ops'
+import { createInFlight, stableKey } from './inFlight'
 
 /**
  * WHY A CALL DID NOT COME FROM THE ENGINE. A closed set, because every member is a different thing
@@ -160,6 +170,19 @@ export interface ReadShim {
     own: () => T
   ) => Promise<T>
   /**
+   * `serve`, JOINING AN IDENTICAL READ ALREADY IN FLIGHT rather than sending another (the header).
+   * The key is the op plus a stable spelling of `params`, so it names the question by construction.
+   * The one thing it cannot see is `project`: use this only where the projection is decided by the
+   * op and params alone — every product channel's is — because joiners are handed the first
+   * caller's outcome. `own` is still every caller's own.
+   */
+  serveShared: <O extends RequestOp, T>(
+    op: O,
+    params: ParamsFor<O>,
+    project: (result: ResultFor<O>) => T | null,
+    own: () => T
+  ) => Promise<T>
+  /**
    * THE ENGINE ARM ALONE — no fallback, no note. It exists for the e2e's parity seam, which must be
    * able to say "the engine answered THIS and the app answered THAT" rather than being handed
    * whichever one won. Nothing in the product calls it.
@@ -244,6 +267,7 @@ function raceDeadline<T>(deps: ShimDeps, work: Promise<T>): Promise<T | typeof D
 
 export function createReadShim(deps: ShimDeps): ReadShim {
   const tally: NoteTally = { counts: new Map(), lastAt: Number.NEGATIVE_INFINITY }
+  const inFlight = createInFlight()
 
   const ask = async <O extends RequestOp, T>(
     op: O,
@@ -276,20 +300,33 @@ export function createReadShim(deps: ShimDeps): ReadShim {
     return { served: true, value }
   }
 
-  const serve = async <O extends RequestOp, T>(
-    op: O,
-    params: ParamsFor<O>,
-    project: (result: ResultFor<O>) => T | null,
-    own: () => T
-  ): Promise<T> => {
-    const outcome = await ask(op, params, project)
+  /** The served value, or THIS caller's empty shape — counted once per caller, shared or not. */
+  const answerOrOwn = <T>(outcome: ServeOutcome<T>, own: () => T): T => {
     if (outcome.served) return outcome.value
     tallyFallback(deps, tally, outcome.why)
     return own()
   }
 
+  const serve = async <O extends RequestOp, T>(
+    op: O,
+    params: ParamsFor<O>,
+    project: (result: ResultFor<O>) => T | null,
+    own: () => T
+  ): Promise<T> => answerOrOwn(await ask(op, params, project), own)
+
+  const serveShared = async <O extends RequestOp, T>(
+    op: O,
+    params: ParamsFor<O>,
+    project: (result: ResultFor<O>) => T | null,
+    own: () => T
+  ): Promise<T> => {
+    const key = `${op} ${stableKey(params)}`
+    return answerOrOwn(await inFlight.share(key, () => ask(op, params, project)), own)
+  }
+
   return {
     serve,
+    serveShared,
     ask,
     flushNotes: (): void => {
       flush(deps, tally)

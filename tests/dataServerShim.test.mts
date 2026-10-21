@@ -318,6 +318,84 @@ test('THE NOTE NAMES EVERY REASON IT SAW, with a count each', async () => {
   assert.match(notes[1], /^data-server shim: 2 unserved reads/)
 })
 
+// ---- shared reads: one request per question in flight ------------------------------------------
+//
+// The main window and the overlays ask the same question in the same millisecond. `serveShared`
+// joins the read already on the wire, and the claim is the pair the read path rests on: ONE request
+// reaches the engine, and every caller's fallback is still its own.
+
+/** A fresh empty shape per call, so "each caller got its own object" is a checkable claim. */
+function freshShape(calls: { n: number }) {
+  return (): { seq: number; state: unknown } => {
+    calls.n += 1
+    return { seq: 0, state: { fresh: calls.n } }
+  }
+}
+
+test('SHARED: three windows asking for one module at once put ONE request on the wire', async () => {
+  const r = rig({ kind: 'answering', result: snap('buffs', 4, ENGINE_STATE) })
+  const calls = { n: 0 }
+  const ask = (): Promise<unknown> =>
+    r.shim.serveShared(OP, { module: 'buffs' }, project('buffs'), freshShape(calls))
+
+  const got = await Promise.all([ask(), ask(), ask()])
+
+  assert.deepEqual(r.sent, [OP], 'one request answered all three')
+  for (const answer of got) assert.deepEqual(answer, { seq: 4, state: ENGINE_STATE })
+  assert.equal(calls.n, 0, 'served, so nobody built an empty shape')
+  assert.deepEqual(r.notes, [])
+})
+
+test('SHARED AND REFUSED: every joiner still gets its OWN empty shape, and every read is counted', async () => {
+  const r = rig({ kind: 'erroring', error: new Error('engine says no') })
+  const calls = { n: 0 }
+  const ask = (): Promise<unknown> =>
+    r.shim.serveShared(OP, { module: 'buffs' }, project('buffs'), freshShape(calls))
+
+  const got = await Promise.all([ask(), ask(), ask()])
+  r.shim.flushNotes()
+
+  assert.deepEqual(r.sent, [OP], 'the failure was one request, too')
+  assert.equal(calls.n, 3, 'each caller ran its own fallback')
+  assert.notEqual(got[0], got[1], 'never one mutable empty shape handed to two windows')
+  assert.notEqual(got[1], got[2])
+  // The first fallback of a launch prints at once and the other two are tallied: three reads went
+  // unserved, and the narration says three — sharing the request did not hide two of them.
+  assert.equal(r.notes.length, 2)
+  assert.match(r.notes[0], /^data-server shim: 1 unserved read answered/)
+  assert.match(r.notes[1], /^data-server shim: 2 unserved reads answered .*the engine refused ×2/)
+})
+
+test('SHARED READS STILL TIME OUT: joiners of a silent engine are handed back by the one deadline', async () => {
+  const r = rig({ kind: 'idle' })
+  const calls = { n: 0 }
+  const ask = (): Promise<unknown> =>
+    r.shim.serveShared(OP, { module: 'buffs' }, project('buffs'), freshShape(calls))
+
+  const got = await Promise.all([ask(), ask()])
+
+  assert.deepEqual(r.sent, [OP])
+  assert.equal(calls.n, 2)
+  assert.notEqual(got[0], got[1])
+})
+
+test('SHARING IS PER QUESTION: another module, an unshared call, and a later call each ask', async () => {
+  const r = rig({ kind: 'answering', result: snap('buffs', 4, ENGINE_STATE) })
+  const calls = { n: 0 }
+
+  await Promise.all([
+    r.shim.serveShared(OP, { module: 'buffs' }, project('buffs'), freshShape(calls)),
+    r.shim.serveShared(OP, { module: 'loot' }, project('loot'), freshShape(calls)),
+    // Plain `serve` is the old one-request-per-call path, unchanged.
+    r.shim.serve(OP, { module: 'buffs' }, project('buffs'), freshShape(calls))
+  ])
+  assert.equal(r.sent.length, 3, 'two different questions, plus one plain `serve`')
+
+  // Not a cache: the read settled, so the next caller asks again.
+  await r.shim.serveShared(OP, { module: 'buffs' }, project('buffs'), freshShape(calls))
+  assert.equal(r.sent.length, 4)
+})
+
 test('flushNotes on an empty tally says nothing at all — silence is the served state', async () => {
   const r = rig({ kind: 'answering', result: snap('loot', 3, ENGINE_STATE) })
   await r.shim.serve(OP, { module: 'loot' }, project('loot'), emptyShape({ n: 0 }, EMPTY_ANSWER))

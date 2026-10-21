@@ -267,12 +267,17 @@ export async function serveModuleSnapshot(moduleId: string): Promise<ModuleSnap 
   // Asked first, so the history merge inside the projection already knows the live log's first
   // zone line (docs/plans/log-archive, step 3.8). Only with history shown, and only until it is known.
   if (liveHistory.wantsLiveZone(moduleId)) liveHistory.noteLiveProgression(await serveLiveState('progression'))
-  return readShim().serve('module.snapshot', { module: moduleId }, (r) =>
-    projectModule(moduleId, r)
-  , () => null)
+  // SHARED (readShim.ts header): every window hydrates off the same modules at once, and one
+  // request per module id is all the engine needs to answer them. The projection is decided by the
+  // module id alone, which is what makes joining safe.
+  return readShim().serveShared('module.snapshot', { module: moduleId }, (r) => projectModule(moduleId, r), () => null)
 }
 
-/** One module's live state as the engine served it, no history merged; null when unserved. */
+/**
+ * One module's live state as the engine served it, no history merged; null when unserved. NOT
+ * shared: its projection differs from `serveModuleSnapshot`'s for the same request, and a joined
+ * read hands every joiner the first caller's projection.
+ */
 function serveLiveState(moduleId: string): Promise<unknown> {
   return readShim().serve<'module.snapshot', unknown>('module.snapshot', { module: moduleId }, (r) =>
     r.module === moduleId ? r.state : null
@@ -282,6 +287,10 @@ function serveLiveState(moduleId: string): Promise<unknown> {
 /**
  * `combat:snapshot`, served — see the header for the clock test and for the cast.
  *
+ * SHARED, keyed by the translated options: the main window's meter and the overlay meters poll the
+ * same options on the same cadence. Each caller still builds its own `own()` — a hydrating meter is
+ * never one object handed to two windows.
+ *
  * ARCHIVED HISTORY (docs/plans/log-archive, step 4.7): for a caller that asks (`opts.archived`),
  * fights from eligible archived logs follow the live ones. The same object back unless Keep log
  * history is on and an eligible segment kept fights.
@@ -290,7 +299,7 @@ export function serveCombatSnapshot(
   opts: SnapshotOpts,
   own: () => CombatSnapshot
 ): Promise<CombatSnapshot> {
-  return readShim().serve(
+  return readShim().serveShared(
     'combat.snapshot',
     { opts: engineOpts(engineSideOpts(opts)) },
     (r) =>
