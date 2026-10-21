@@ -37,7 +37,11 @@ function iconIndex(): Promise<IconIndex | null> {
     const cached = readIconIndex(cache, fp)
     if (cached !== null) return cached
     const built = await buildIconIndex(sheets)
-    writeIconIndex(cache, fp, built)
+    try {
+      writeIconIndex(cache, fp, built)
+    } catch {
+      // The index works from memory; only the next launch rebuilds it.
+    }
     return built
   }
   index = { dir, index: build().catch(() => null) }
@@ -62,9 +66,9 @@ const READERS: ShotReaders = {
 async function readItem(png: unknown): Promise<ItemShotReply> {
   const empty: ItemShotReply = { read: { statsblock: '', unread: [] }, lines: [], icons: [], ms: 0 }
   if (!(png instanceof Uint8Array) || png.length === 0 || png.length > MAX_BYTES) return { ...empty, error: 'Not a picture.' }
-  const img = decodePicture(png)
-  if (img === null) return { ...empty, error: 'Not a picture.' }
   try {
+    const img = decodePicture(png)
+    if (img === null) return { ...empty, error: 'Not a picture, or larger than a 4K screen.' }
     const shot = await readItemShot(img, READERS)
     const noIcons = shot.icons.length === 0 && (await iconIndex()) === null
     return { read: shot.read, lines: shot.lines, icons: shot.icons, ms: shot.ms, ...(noIcons ? { iconNote: 'No EverQuest install found with icon sheets (uifiles/default/dragitem*.dds).' } : {}) }

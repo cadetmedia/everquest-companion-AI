@@ -2,9 +2,24 @@
 // save answers, and whether the picture shows the mob's nameplate. Pure; main does the saving and
 // the OCR (src/main/ipc/shotPicture.ts).
 
+/**
+ * The file name a picture is written under: no folder parts, no characters Windows refuses, and always
+ * `.png` (main writes PNG bytes, and a renderer that asked for `x.bat` must not get one).
+ */
+export function pictureFileName(asked: string): string {
+  // Code unit by code unit: control characters (below 32) and the ones Windows refuses become `_`.
+  const units = Array.from({ length: asked.length }, (_, i) => asked.charCodeAt(i))
+  const base = String.fromCharCode(...units.map((c) => (c < 32 || '\\/:*?"<>|'.includes(String.fromCharCode(c)) ? 95 : c)))
+    .replace(/\.[^.]*$/, '')
+    .replace(/^[.\s]+|[.\s]+$/g, '')
+    .slice(0, 120)
+  return `${base === '' ? 'picture' : base}.png`
+}
+
 /** What saving a pasted mob picture came to. */
 export type PictureSave =
-  | { status: 'saved'; path: string }
+  /** `checkId` asks main for the nameplate check on the picture it already decoded. */
+  | { status: 'saved'; path: string; checkId: number }
   /** The auto-save folder already holds this file name: replace it only when the player says. */
   | { status: 'exists'; path: string }
   | { status: 'cancelled' }

@@ -15,7 +15,7 @@ import { formatCoin, type GapRow } from '@shared/gaps'
 import type { ItemShotReply } from '@shared/itemWindow'
 import { cleared, hasWindowPart, keptAfter, sameItem, shotKind, type ShotKind } from '@shared/itemShotKeep'
 import type { ItemPageShot } from '@shared/wikiPage'
-import { setItemShot, useItemShots, type StoredShot } from './itemShotsStore'
+import { itemShotNow, setItemShot, useItemShots, type StoredShot } from './itemShotsStore'
 import { Line, PasteZone } from './PasteZone'
 import MobPicture from './MobPicture'
 
@@ -146,21 +146,26 @@ function ItemShot({ row }: { row: GapRow }): JSX.Element {
   const [reply, setReply] = useState<ItemShotReply | null>(null)
   const [failed, setFailed] = useState(false)
   const [pending, setPending] = useState<Pending | null>(null)
-  const apply = useCallback((p: Pending) => keep(row.name, keptAfter(kept, p.reply, p.kind)), [row.name, kept])
+  // Merged against what is stored NOW, not this render's copy (review, 2026-10-21: a Lore paste that
+  // landed right after a window paste merged against the older reading and dropped one of them).
+  const apply = useCallback((p: Pending) => keep(row.name, keptAfter(itemShotNow(row.name), p.reply, p.kind)), [row.name])
   const read = useCallback(
     (png: Uint8Array) => {
       setBusy(true)
       setPending(null)
-      void window.eq.shotReadItem(png).then((r) => {
-        setBusy(false)
-        const kind = shotKind(r)
-        setFailed(kind === null)
-        setReply(kind === null ? null : r)
-        if (kind === null) return
-        // A window that names another item waits for the player; nothing is kept until they say.
-        if (kind === 'window' && !sameItem(r.read.name, row.name)) setPending({ reply: r, kind })
-        else apply({ reply: r, kind })
-      })
+      window.eq
+        .shotReadItem(png)
+        .then((r) => {
+          const kind = shotKind(r)
+          setFailed(kind === null)
+          setReply(kind === null ? null : r)
+          if (kind === null) return
+          // A window that names another item waits for the player; nothing is kept until they say.
+          if (kind === 'window' && !sameItem(r.read.name, row.name)) setPending({ reply: r, kind })
+          else apply({ reply: r, kind })
+        })
+        .catch(() => setFailed(true))
+        .finally(() => setBusy(false))
     },
     [row.name, apply]
   )

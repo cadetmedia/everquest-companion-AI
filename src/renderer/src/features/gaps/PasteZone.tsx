@@ -19,10 +19,13 @@ export function PasteZone({ label, busy, onPicture }: { label: string; busy: boo
   const [note, setNote] = useState<string | null>(null)
   const take = useCallback(
     (png: Uint8Array | null) => {
+      // A paste while the last one is still being read is ignored (review, 2026-10-21: a window paste
+      // then a Lore paste inside the OCR time lost one of them).
+      if (busy) return
       setNote(png === null ? 'No image on the clipboard: snip one with Win+Shift+S first.' : null)
       if (png !== null) onPicture(png)
     },
-    [onPicture]
+    [onPicture, busy]
   )
   useEffect(() => {
     const onPaste = (e: ClipboardEvent): void => {
@@ -34,7 +37,7 @@ export function PasteZone({ label, busy, onPicture }: { label: string; busy: boo
   }, [take])
   return (
     <ButtonBase
-      onClick={() => void window.eq.shotClipboard().then(take)}
+      onClick={() => void window.eq.shotClipboard().then(take).catch(() => setNote('Could not read the clipboard.'))}
       onDragOver={(e) => e.preventDefault()}
       onDrop={(e) => {
         e.preventDefault()
