@@ -102,5 +102,13 @@ export const knowledgeBridge = {
   /** A copied spell page's fill: what the install's spell files state (src/main/gapSpellFacts.ts). */
   // The type is named inline so the import line spell-upgrades also edits stays untouched.
   gapSpellFacts: (names: readonly string[]): Promise<Record<string, import('../shared/gaps').ClientSpellFacts>> =>
-    ipcRenderer.invoke(IPC.gapSpellFacts, [...names])
+    ipcRenderer.invoke(IPC.gapSpellFacts, [...names]),
+  /** The clipboard's picture as PNG bytes (a click on a paste box); null when it holds none. */
+  shotClipboard: (): Promise<Uint8Array | null> => ipcRenderer.invoke(IPC.shotClipboard),
+  /** A pasted item-window screenshot, read on this machine: page fields and icon ids (src/main/ipc/shotIpc.ts). */
+  shotReadItem: (png: Uint8Array): Promise<import('../shared/itemWindow').ItemShotReply> => ipcRenderer.invoke(IPC.shotReadItem, png),
+  /** An item icon drawn from the install's own sheets, as a data URL; null when it is not there. */
+  shotIcon: (id: number): Promise<string | null> => ipcRenderer.invoke(IPC.shotIcon, id),
+  /** Save a pasted picture under the wiki's file name through a save dialog; the path, or null when cancelled. */
+  shotSaveImage: (png: Uint8Array, fileName: string): Promise<string | null> => ipcRenderer.invoke(IPC.shotSaveImage, png, fileName)
 }

@@ -51,6 +51,7 @@ import { Tooltip } from '../../lib/Tooltip'
 import { useWindowedRows } from '../../lib/useWindowedRows'
 import GapActionChips from './GapActionChips'
 import GapDetailsPanel from './GapDetailsPanel'
+import ShotPanel from './ShotPanel'
 import GapRowButtons from './GapRowButtons'
 import MobHeadingButtons from './MobHeadingButtons'
 
@@ -231,6 +232,7 @@ function DetailsPane({ row, actions }: { row: GapRow; actions: PaneActions }): J
           Still needed for the page: {needed.join(', ')}.
         </Typography>
       )}
+      <ShotPanel row={row} />
       <GapDetailsPanel details={row.details} />
     </Paper>
   )

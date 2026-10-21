@@ -52,13 +52,15 @@
     "dist:dir": "npm run build && npm run build:engine && electron-builder --win --dir"
   },
   "dependencies": {
+    "@tesseract.js-data/eng": "1.0.0",
     "chokidar": "^4.0.1",
     "electron-store": "^8.2.0",
     "electron-updater": "^6.8.9",
     "koffi": "2.16.3",
     "native-reg": "1.1.1",
     "onnxruntime-node": "1.20.1",
-    "phonemizer": "1.2.1"
+    "phonemizer": "1.2.1",
+    "tesseract.js": "7.0.0"
   },
   "devDependencies": {
     "@aws-sdk/client-cloudwatch": "^3.1130.0",

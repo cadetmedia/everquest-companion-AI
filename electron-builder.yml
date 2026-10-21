@@ -44,6 +44,17 @@ files:
   # Same reasoning as onnxruntime above: this build is win/x64 only, so the other two are ~1 MB
   # of binary the app can never load. A future arm64 target needs the ia32 line only.
   - '!node_modules/native-reg/prebuilds/win32-{arm64,ia32}/**'
+  # tesseract.js (screenshot to wiki, src/main/shot/ocr.ts) ships six WASM cores, each twice (a
+  # .wasm beside its loader, and again inlined as base64 in a .wasm.js), 44 MB in all. Under Node it
+  # loads `tesseract-core-{relaxedsimd-,simd-,}lstm.js` (worker-script/node/getCore.js; the app runs
+  # the LSTM engine), which reads the .wasm beside it: those three pairs stay. Its browser bundles
+  # (dist/), the browser-only inflater (zlibjs, worker-script/browser/gunzip.js; Node uses zlib) and
+  # the larger English data (4.0.0; the app reads 4.0.0_best_int) are never loaded. ~9 MB stays.
+  - '!node_modules/tesseract.js-core/*.wasm.js'
+  - '!node_modules/tesseract.js-core/tesseract-core{,-simd,-relaxedsimd}.{js,wasm}'
+  - '!node_modules/tesseract.js/dist/**'
+  - '!node_modules/zlibjs/**'
+  - '!node_modules/@tesseract.js-data/eng/4.0.0/**'
   # koffi (JOS-182, the presence watcher's Win32 surface) is the same story again, and the most
   # lopsided of the three: 18 prebuilt N-API binaries in one tarball, 28.7 MB unpacked, of which
   # this Windows-x64-only app can load exactly one. Keep in sync with `win.target.arch` too.
