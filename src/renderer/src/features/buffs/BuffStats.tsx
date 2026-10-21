@@ -18,7 +18,7 @@
 // The input echoes instantly and the FILTER rides `useDeferredValue` (AGENTS.md's search rule).
 
 import type { JSX } from 'react'
-import { useDeferredValue, useMemo, useState } from 'react'
+import { memo, useDeferredValue, useMemo, useState } from 'react'
 import {
   Box,
   Chip,
@@ -178,8 +178,15 @@ function matching(stats: Record<string, BuffStat>, cls: BuffClass, needle: strin
  * A class with no MATCH disappears rather than printing its own empty state, so a search reads as
  * one list narrowing rather than as two tables arguing about it; the one empty state below says
  * which of the two situations you are in — nothing mined yet, or nothing matching.
+ *
+ * MEMOIZED (perf audit, 2026-10-20). BuffsView ticks a clock every second for the active cards'
+ * countdowns, and every tick used to re-render this block too: a table row, an estimate tooltip
+ * and a chip for every spell the log has ever mined (~120 rows, ~1,600 elements on the owner's
+ * log), every second the tab is open, for a `stats` that had not changed. Its one prop is the
+ * buffs snapshot's own `stats` object, so it re-renders when the snapshot does and not on a tick;
+ * the search box and the allow-mode subscription are its own state and update it as before.
  */
-export function BuffStats({ stats }: { stats: Record<string, BuffStat> }): JSX.Element {
+export const BuffStats = memo(function BuffStats({ stats }: { stats: Record<string, BuffStat> }): JSX.Element {
   const [query, setQuery] = useState('')
   // The input echoes instantly; the FILTER is deferred (AGENTS.md's search rule).
   const needle = useDeferredValue(query).trim().toLowerCase()
@@ -233,4 +240,4 @@ export function BuffStats({ stats }: { stats: Record<string, BuffStat> }): JSX.E
       )}
     </Box>
   )
-}
+})
