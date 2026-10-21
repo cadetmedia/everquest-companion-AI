@@ -9,7 +9,7 @@
 import type { GapRow } from './gaps'
 import { spanStamps, widen, type Span } from './gapTimes'
 import type { KillMap } from './kills'
-import { mobKey } from './mobKey'
+import { gapMobKey as mobKey, perObject } from './gapMemo'
 import type { MobEntry } from './mobTypes'
 import type { LootEvent } from './types'
 import { npcImageName } from './wikiPage'
@@ -17,8 +17,11 @@ import { npcImageName } from './wikiPage'
 /** A catalog record as this reads it; `otherNames` and the image fields are absent on a branch without them. */
 type CatalogMob = Pick<MobEntry, 'name' | 'page'> & { otherNames?: string[]; image?: string; noImage?: true }
 
-/** Every catalog name → its pages, all of them with no image; a name with one image anywhere is left out. */
-function imagelessByMob(catalog: readonly CatalogMob[]): Map<string, CatalogMob> {
+/**
+ * Every catalog name → its pages, all of them with no image; a name with one image anywhere is left
+ * out. Built once per catalog (perf audit, 2026-10-20: gapMemo.ts), so read-only.
+ */
+const imagelessByMob = perObject((catalog: readonly CatalogMob[]): ReadonlyMap<string, CatalogMob> => {
   const out = new Map<string, CatalogMob>()
   const pictured = new Set<string>()
   for (const m of catalog) {
@@ -29,7 +32,7 @@ function imagelessByMob(catalog: readonly CatalogMob[]): Map<string, CatalogMob>
   }
   for (const key of pictured) out.delete(key)
   return out
-}
+})
 
 interface Met {
   name: string
