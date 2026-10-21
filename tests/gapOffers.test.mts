@@ -28,6 +28,10 @@ test('an offer is checked against the Value estimate only at ally; any other sta
   assert.equal(offerCheck(offer({ standing: 'ally', coin: 'nothing', copper: 0 }), 40), 'nothing', 'a free sale is no price')
   assert.equal(offerCheckText(offer({ standing: 'ally', copper: 40 }), 40), 'at ally: matches the Value estimate')
   assert.match(offerCheckText(offer({}), 40), /\/con the merchant/)
+  // Unknown standing, equal to the estimate (owner, 2026-10-20: count it if it matches, and recommend a /con).
+  assert.equal(offerCheck(offer({ copper: 40 }), 40), 'unconfirmedMatch')
+  assert.match(offerCheckText(offer({ copper: 40 }), 40), /^matches the Value estimate; \/con the merchant/)
+  assert.equal(offerCheck(offer({ copper: 39 }), 40), 'noStanding')
   assert.match(offerCheckText(offer({ standing: 'amiably' }), 40), /^at amiably: /)
 })
 
