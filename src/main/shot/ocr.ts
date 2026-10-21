@@ -38,7 +38,9 @@ export function langPath(): string {
 }
 
 async function start(): Promise<Worker> {
-  const w = await createWorker('eng', 1, { langPath: langPath(), gzip: true, cacheMethod: 'none' })
+  // errorHandler: without one, tesseract.js throws a failed job inside the worker's message listener,
+  // an uncaught exception in main; with it the job's own promise rejects and the caller answers it.
+  const w = await createWorker('eng', 1, { langPath: langPath(), gzip: true, cacheMethod: 'none', errorHandler: () => undefined })
   // One uniform block of text, spaces between columns kept so `Size: MEDIUM   AC: 1` stays one line.
   await w.setParameters({ tessedit_pageseg_mode: PSM.SINGLE_BLOCK, preserve_interword_spaces: '1' })
   return w
@@ -94,7 +96,11 @@ export function ocrScale(w: number, h: number): number {
 
 /** Every text line of the picture, top to bottom, with where it sits. */
 export async function readLines(img: Rgba): Promise<OcrLine[]> {
-  worker ??= start()
+  // A start that failed is forgotten, so the next paste tries again instead of the same rejection.
+  worker ??= start().catch((e: unknown) => {
+    worker = null
+    throw e
+  })
   touch()
   const k = ocrScale(img.w, img.h)
   const { w, h, gray } = ocrGray(img, k)

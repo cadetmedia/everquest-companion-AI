@@ -60,6 +60,11 @@ function save(shots: Record<string, StoredShot>): void {
   for (const l of listeners) l()
 }
 
+/** The reading kept for one item right now (not a render's copy: a paste merges against this). */
+export function itemShotNow(name: string): StoredShot | undefined {
+  return load()[name]
+}
+
 /** Keep (or replace) the reading for one item; `null` forgets it. */
 export function setItemShot(name: string, shot: ItemPageShot | null): void {
   const others = Object.fromEntries(Object.entries(load()).filter(([k]) => k !== name))

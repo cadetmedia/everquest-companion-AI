@@ -34,6 +34,26 @@ export function toRgb(img: Rgba): Rgb {
   return { w: img.w, h: img.h, rgb }
 }
 
+/** A pasted picture past this many pixels is refused (a 4K screen is 8.3 MP): the byte cap bounds only the compressed size. */
+export const MAX_PICTURE_PIXELS = 16_000_000
+
+/**
+ * Chromium's BGRA bitmap to RGBA, by index (the per-pixel `data.set([...])` it replaces took ~300 ms
+ * on a 4K screenshot); null past MAX_PICTURE_PIXELS or when the bitmap is short.
+ */
+export function bgraToRgba(bgra: Uint8Array, w: number, h: number): Rgba | null {
+  const n = w * h
+  if (n <= 0 || n > MAX_PICTURE_PIXELS || bgra.length < n * 4) return null
+  const data = new Uint8Array(n * 4)
+  for (let i = 0; i < n * 4; i += 4) {
+    data[i] = bgra[i + 2]
+    data[i + 1] = bgra[i + 1]
+    data[i + 2] = bgra[i]
+    data[i + 3] = bgra[i + 3]
+  }
+  return { w, h, data }
+}
+
 /**
  * Blank or near one colour (owner, 2026-10-21: a mob picture that shows nothing is refused): the
  * brightness of up to ~4,000 evenly spread pixels varies by less than 5 levels (standard deviation).

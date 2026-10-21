@@ -4,12 +4,13 @@
 // refused. After the save the picture is read for the mob's nameplate, and when the name is not in it
 // the player may keep or delete the file (src/main/ipc/shotPicture.ts).
 
-import { type JSX, useCallback, useEffect, useState } from 'react'
+import { type JSX, useCallback, useEffect, useRef, useState } from 'react'
 import { Button, Stack, Typography } from '@mui/material'
 import { wikiUploadUrl, type GapRow } from '@shared/gaps'
 import type { PictureSave } from '@shared/mobPicture'
 import { npcImageName } from '@shared/wikiPage'
 import { Line, PasteZone } from './PasteZone'
+import { latestOnly } from './latestOnly'
 
 type NameCheck = 'checking' | 'found' | 'missing' | 'deleted' | null
 
@@ -87,19 +88,31 @@ export default function MobPicture({ row }: { row: GapRow }): JSX.Element {
   const [png, setPng] = useState<Uint8Array | null>(null)
   const [result, setResult] = useState<PictureSave | null>(null)
   const [check, setCheck] = useState<NameCheck>(null)
+  // Each save is a ticket: a save or nameplate check that answers after a newer save is dropped, so
+  // A's warning never shows against B and "Delete it" only ever deletes the picture on screen.
+  const tickets = useRef(latestOnly())
   const save = useCallback(
     (bytes: Uint8Array, overwrite = false) => {
+      const ticket = tickets.current.start()
+      const mine = (): boolean => tickets.current.isLatest(ticket)
       setBusy(true)
       setPng(bytes)
       setCheck(null)
-      void window.eq.shotSaveImage(bytes, file, overwrite).then((r) => {
-        setBusy(false)
-        setResult(r)
-        if (r.status !== 'saved') return
-        // The nameplate check runs after the save: OCR of a full screenshot can take seconds.
-        setCheck('checking')
-        void window.eq.shotCheckMob(bytes, row.name).then((found) => setCheck(found === false ? 'missing' : 'found'))
-      })
+      window.eq
+        .shotSaveImage(bytes, file, overwrite)
+        .then((r) => {
+          if (!mine()) return
+          setResult(r)
+          if (r.status !== 'saved') return
+          // The nameplate check runs after the save: OCR of a full screenshot can take seconds.
+          setCheck('checking')
+          window.eq
+            .shotCheckMob(r.checkId, row.name)
+            .then((found) => mine() && setCheck(found === false ? 'missing' : 'found'))
+            .catch(() => mine() && setCheck('found'))
+        })
+        .catch(() => mine() && setResult({ status: 'error', message: 'Could not save it.' }))
+        .finally(() => mine() && setBusy(false))
     },
     [file, row.name]
   )
@@ -117,7 +130,12 @@ export default function MobPicture({ row }: { row: GapRow }): JSX.Element {
           name={row.name}
           check={check}
           onKeep={() => setCheck('found')}
-          onDelete={() => void window.eq.shotSavedFile('delete', result.path).then(() => setCheck('deleted'))}
+          onDelete={() =>
+            void window.eq
+              .shotSavedFile('delete', result.path)
+              .then((ok) => setCheck(ok ? 'deleted' : 'missing'))
+              .catch(() => setCheck('missing'))
+          }
         />
       )}
     </Stack>
