@@ -3,7 +3,8 @@
 Owner ask, 2026-10-20: "any knowledge we get from the game that could go to the wiki should
 [go there] right?" and, on forage: "the line in the logs says it was foraged, and we even display
 that in the wiki gaps tab for the user so why can't we include the forage zone and information
-automatically?" Also: "FACTION plays into SELL and PURCHASE price from vendors." Not built. Rules
+automatically?" Also: "FACTION plays into SELL and PURCHASE price from vendors." Phases 1, 3 and 4
+built on `gaps-item-facts` (2026-10-21); 2, 5 and 6 not. Rules
 first: `docs/community/RULES.md`, then `agent/INDEX.md`, `agent/WIKI.md` (page conventions).
 The requirement row is in `requirements/gaps-tab.md`; build on `gaps-tab`.
 
@@ -94,7 +95,9 @@ Cross-check, log against the cached pages:
    `|playercrafted =` `* [[Jewelry Making]]` (trivial, container and ingredients left for the
    player; a skill-up stops at trivial, so the log cannot state it). Without a skill-up, the
    field stays out and only the category is written, as now.
-5. **Lore and flags scaffolding (owner to choose, see below).** Today the statsblock skeleton is
+5. **Lore and flags: not from the log (owner, 2026-10-21: "lore flags we can't gather here, we'll
+   have to wait for the other agent that's building an image ocr tool").** They come from the item
+   window's screenshot, `plans/2026-10-20-screenshot-to-wiki.md`. Kept for that work: Today the statsblock skeleton is
    Size/WT, Class, Race. Candidates: an empty first flags line, and `|notes = {{Item Lore Missing}}`
    (the wiki's own marker for unknown lore, 466 pages) so a page made from the copy is listed with
    the others that need a Lore screenshot.
@@ -119,9 +122,6 @@ then 5 and 6 on the owner's word.
 
 ## Open questions for the owner
 
-- Phase 5: write `{{Item Lore Missing}}` into every copied item page's `|notes`, or nothing?
-  ("we can't always add lore because not all items have it": the marker says unknown, not none.)
-- Phase 5: the flags line. The wiki writes both styles: classic caps (`LORE ITEM  NO DROP
-  TEMPORARY`) on most pages, the Legends tooltip (`Lore Equipped, No Trade, Temporary`) on newer
-  ones. An empty first line for the player, or nothing?
+- Phase 5 is decided: lore and flags wait for the screenshot reader. What it needs from here: lore
+  goes in `|notes = {{Item Lore|...}}`; the flag line's two styles are in `agent/WIKI.md`.
 - Phase 6: seed `Slot:` from the worn location, or leave Slot to the screenshot?

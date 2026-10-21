@@ -1,8 +1,10 @@
 # Screenshot to wiki: phase doc (2026-10-20)
 
 Ask from the owner, 2026-10-20: the app reads a screenshot of an item, spell, mob or other game
-window and pulls out what it can, to fill the wiki facts the log never carries. Nothing is built in
-the app. A throwaway prototype was built outside it (section "Prototype"). Rules first:
+window and pulls out what it can, to fill the wiki facts the log never carries. A throwaway
+prototype was built outside the app first (section "Prototype"). Phases 1, 2 and 5 are built on
+`screenshot-to-wiki` (2026-10-21, section "Built"); the owner's questions 1 and 2 were answered by
+the ask to build it into a row's details. Rules first:
 `docs/community/RULES.md`, then `agent/INDEX.md`. What was asked:
 `requirements/screenshot-to-wiki.md` (rule 19).
 
@@ -307,3 +309,19 @@ screenshots are being gathered)
 - Node 24.19 gave a wrong re-rank score about 1 run in 10 until the hot loop sat in its own
   function (gone under `--no-maglev`; 30 of 30 clean since). The in-app matcher gets a test that
   scores a known icon against itself many times.
+
+## Built (2026-10-21, `screenshot-to-wiki`)
+
+- A box in a Gaps row's details (Items, Mobs, Merchants, Images): a click reads the clipboard (snip
+  with Win+Shift+S first), Ctrl+V works while the row is open, a file can be dropped. Items: the
+  statsblock (editable), the icon picker (top 5, drawn from the install), Value, focus effect; a
+  second paste of the Lore tab adds `{{Item Lore|...}}`. Copy wiki page uses what is kept. Mobs:
+  the picture is saved as `npc_<name>.png` (or the Images row's file name), the upload form a click
+  away.
+- Measured on the five fixture screenshots (`tests/fixtures/shots`): Ruined Robe's statsblock equals
+  the owner's page; icons 1126 (window and icon alone), 1225 at rank 1, 1104 in the recolour pair
+  with 597 on both of Malkil's shots. 0.5-2 s a paste; the index 4 s once.
+- Changed from the design above: the background view with the lowest best score wins (not the
+  widest margin); OCR reads TSV at about 3 MP; DMG is checked against the window's Ratio.
+- Not built: phase 3 (hotkey, auto-find in a full screen), phase 4 (spell windows), local icons
+  app-wide (question 4).

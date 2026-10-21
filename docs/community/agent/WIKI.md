@@ -104,7 +104,8 @@ A page is a mob page only if its OWN text opens the template (indirect transclus
 ## What the log can and cannot give a page
 
 - From the log: level range (`/con`), location (`/loc` within 10 s of a hail or `/con`), loot and
-  rates (corpses over kills), factions with their amounts and direction, merchant status (a quote,
+  rates (corpses over kills), an item's forage zones (`|foraged`), its tradeskill (a skill-up in the
+  combine's second), Tradeskill Ingredient (a loot line stored it in the tradeskill depot), factions with their amounts and direction, merchant status (a quote,
   a purchase, a sale), forage zones, Rampage and Flurry (`special`), the vendor value from an
   instant sale on loot (sale x 1.4 / 1.05, MEASURED.md).
 - From the game's own files at runtime (owner, 2026-10-19, for spell pages only): classes and
