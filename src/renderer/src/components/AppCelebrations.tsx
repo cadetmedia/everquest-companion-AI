@@ -46,6 +46,7 @@ import { questKey } from '../features/posky/keys'
 // The third always-mounted celebration watch (docs/plans/levelup-whats-new.md §2): a LIVE ding
 // fires the level-up toast, counting what it unlocked against the loadout AT THE DING'S ts.
 import { useLevelUpToast } from '../features/leveling/useLevelUpToast'
+import { UnreleasedGapsOverlayFeed } from '../unreleasedGaps'
 
 const bossData = getBossData()
 
@@ -179,6 +180,9 @@ export default function AppCelebrations(): JSX.Element {
         onDismissDefeat={dismissDefeat}
         onDismissQuest={dismissQuest}
       />
+      {/* The Wiki Gaps overlay's rows while the Gaps tab is closed: on any tab, and only while the
+          overlay is open (unreleasedGaps.tsx). */}
+      <UnreleasedGapsOverlayFeed />
     </>
   )
 }

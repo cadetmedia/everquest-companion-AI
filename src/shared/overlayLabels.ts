@@ -33,7 +33,8 @@ export const OVERLAY_KIND_LABEL: Record<OverlayKind, string> = {
   alertBanner: 'Alert banner',
   conCard: 'Mob card on con',
   mapPins: 'Map pins',
-  skyQuests: 'Sky quests'
+  skyQuests: 'Sky quests',
+  gaps: 'Wiki Gaps'
 }
 
 /**
@@ -59,6 +60,7 @@ export const OVERLAY_LABEL_ORDER: readonly OverlayKind[] = [
   'respawn',
   'mapPins',
   'skyQuests',
+  'gaps',
   'toast',
   'alertBanner',
   'conCard'

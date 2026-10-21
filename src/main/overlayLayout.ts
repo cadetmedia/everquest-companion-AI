@@ -515,5 +515,6 @@ export const OVERLAY_TITLE: Partial<Record<OverlayKind, string>> = {
   alertBanner: 'Alert Banner Overlay',
   conCard: 'Mob Card Overlay',
   mapPins: 'Map Pins Overlay',
-  skyQuests: 'Sky Quest Overlay'
+  skyQuests: 'Sky Quest Overlay',
+  gaps: 'Wiki Gaps Overlay'
 }

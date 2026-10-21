@@ -17,6 +17,7 @@ import { OVERLAY_KIND_LABEL } from '@shared/overlayLabels'
 import { track } from '../lib/telemetry'
 import { isTelemetryOverlayKind } from '@shared/telemetryOverlays'
 import { type OverlayReset, OverlayResetDialog, useOverlayReset } from './OverlayResetDialog'
+import { UNRELEASED } from '../devFlags'
 import PerfChip from './PerfChip'
 import { isDragSurfaceDoubleClick } from './titleBarDrag'
 
@@ -112,6 +113,8 @@ function CaptionButton({
  *                              actually read in: the Timers tab is where you choose what to clock.
  *
  *   conCard                    JOS-383 — the card that appears when you `/con` a creature.
+ *   gaps                       owner, 2026-10-20 — the Wiki Gaps tab's top ten, UNRELEASED like
+ *                              the tab, so a build without the tab has no row for it.
  *
  * Every kind from `buffs` through `respawn` ships DEFAULT OFF and this menu is the ONLY way to meet
  * it; `conCard` is the exception in both directions — it ships ON, so this row is how you turn it
@@ -135,6 +138,9 @@ const OVERLAY_MENU_ROWS: readonly (readonly [OverlayKind, string])[] = [
   ['respawn', 'Countdowns started by your own kills'],
   ['mapPins', 'Tracked map points over the game map'],
   ['skyQuests', 'Starred Plane of Sky quests and the items they need'],
+  // The Wiki Gaps overlay (owner, 2026-10-20), behind the Gaps tab's own UNRELEASED gate: a build
+  // without the tab has nothing to feed the window, so it has no row to open it from either.
+  ...(UNRELEASED ? ([['gaps', 'The top 10 of the Wiki Gaps tab you have showing']] as const) : []),
   // JOS-383, and the first row here for a kind that ships ON. It is in this menu on the owner's
   // instruction (2026-08-16, the JOS-139 mirroring precedent): a window that appears by itself
   // needs its off switch within reach of the place you are already looking when you want it gone.
