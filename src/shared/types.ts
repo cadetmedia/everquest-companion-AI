@@ -845,7 +845,9 @@ export interface ItemTiersDelta {
 // only when the quest dataset actually names a reward item — an unknown reward shows NO item
 // hover rather than a fabricated one, and `page` is absent when no wiki page is known.
 
-export type FeedEventKind = 'alert' | 'loot' | 'quest' | 'con'
+/** `keep`: a merchant offered to buy an item the wiki data lacks, so keep it (owner ask, 2026-10-20;
+ *  engine event_feed_offer.rs). */
+export type FeedEventKind = 'alert' | 'loot' | 'quest' | 'con' | 'keep'
 
 /**
  * The consider context of a 'con' row (Task #63). Carried structurally instead of baked into
