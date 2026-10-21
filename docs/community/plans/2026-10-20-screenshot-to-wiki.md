@@ -85,8 +85,9 @@ the app. A throwaway prototype was built outside it (section "Prototype"). Rules
 - Query: trim the paste's borders, scale to the grid, compare against every icon, re-rank the top
   50 at full size. Colour matters: many icons are recolours of one model (the breastplates 1569,
   1570, 1571 in the wiki's own results).
-- In an item window screenshot the icon sits top-left; the finder runs on that crop with no extra
-  step.
+- In an item window the icon is the 40x40 cell at a fixed place (`IDW_IconButton`), unscaled; the
+  finder cuts that cell and ranks within the icons used by items of the slot the OCR read
+  (measured on a real window, Prototype section). A paste of the icon alone works the same way.
 
 ### Reading the text
 
@@ -194,14 +195,44 @@ sides scored with the repo's own `parseStatsBlock`.
   -20` beside the `SV.` column), long names (`Weight:`, `Charisma:`, `SV. Magic:`), the slot as a
   bare word (`Chest`), the name in red, an `Unmodified` line at the bottom. The synthetic benchmark
   drew wiki layout, so it measured the wrong thing for the line split. Phase 2 needs a mapping
-  from the game's window to the wiki's lines, e.g. for this item:
-  `Lore Equipped, No Trade, Temporary` (WIKI.md: the tooltip form is kept as-is), `Slot: CHEST`,
-  `AC: 1`, `CHA: -20`, `SV MAGIC: -15` ..., `Size: MEDIUM WT: 2.0`, `Class: NEC WIZ MAG ENC`,
-  `Race: ALL`.
-- **The window's own icon cannot be matched.** It is drawn at ~60% size and nearly black over the
-  window's stone texture (max brightness 90 of 255); the top scores sat within 1% of each other
-  and no robe icon ranked. The icon finder takes the icon from an inventory slot or the cursor (full
-  40 px colour, the wiki's own Icon Finder workflow), not from the item window.
+  from the game's window to the wiki's lines.
+- **The target, from the page the owner wrote for this item (2026-10-21):**
+
+  ```
+  |itemname = Ruined Robe
+  |lucy_img_ID = 1126
+  |notes = {{Item Lore|The Cloth Seems To Be Moving}}
+  |statsblock =
+  LORE ITEM  NO DROP  TEMPORARY<br>
+  Slot: CHEST<br>
+  AC: 1<br>
+  CHA: -20<br>
+  SV MAGIC: -15  SV FIRE: -15  SV COLD: -15  SV DISEASE: -15  SV POISON: -15<br>
+  WT: 2.0  Size: MEDIUM<br>
+  Class: NEC WIZ MAG ENC<br>
+  Race: ALL<br>
+  ```
+
+  So the mapping: the flag line in classic caps, two spaces apart (`Lore Equipped` -> `LORE ITEM`,
+  `No Trade` -> `NO DROP`, `Temporary` -> `TEMPORARY`); the bare slot word -> `Slot: CHEST`; long
+  stat names -> short (`Charisma` -> `CHA`); every `SV.` row on ONE line, two spaces apart, in the
+  window's order; `WT:` before `Size:`; Class and Race last; `Unmodified` dropped. Two cells per row
+  in the window become separate wiki lines (`Size` / `AC`), not one. The Lore tab's text goes to
+  `notes = {{Item Lore|...}}` (a second paste, of the Lore tab).
+- **The window's icon is the real icon, at 1:1, but dark.** `EQUI_ItemDisplayWindow.xml`
+  `IDW_IconButton`: a 44 px button at (10, 12) in the window, decal offset 2, so the 40x40 icon
+  sits at a fixed place, unscaled. Icon 1126 itself peaks at 90 of 255, as does the snip: nothing
+  dims it. Matching the owner's icon-only snip (45x65, the robe on the window's stone texture):
+  - The finder as built: 1126 ranks 4th (837, 4249, 4201 above it, all close scores). Its content
+    box comes from a brightness threshold of 48, which a dark icon on dark stone defeats.
+  - Each icon's own alpha mask slid over the snip at 1:1: worse (1126 ranks 10th; small dark icons
+    win) and slow (14.6 s for 12,715 icons). Dropped.
+  - **The slot as a prior: 1126 ranks 1st.** `items.json` has 30 distinct icons on CHEST items;
+    filtering the finder's list to them puts 1126 first (18 icons on items named "Robe": also 1st).
+    The OCR gives the slot from the same paste.
+- So the icon step ranks within the icons that items of the read slot use, then shows the
+  unfiltered list after it (a new item may use an icon no wiki item has). A bright icon (the wiki's
+  skull test) needs no prior; a dark one does.
 - Real-window fixtures needed: a weapon (Skill, Atk Delay, DMG), an Effect line, a long class list,
   the Lore tab.
 
