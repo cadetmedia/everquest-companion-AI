@@ -23,6 +23,7 @@ import BarChartIcon from '@mui/icons-material/BarChart'
 import { usePetLayout } from '../combat/useCombatPrefs'
 import { PET_LAYOUTS, type PetLayout } from '../combat/combatPrefs'
 import { useSelfMeterNameToggle } from '../combat/useSelfMeterName'
+import { PetLayoutPreview } from './PetLayoutPreview'
 import { MeterScopeSetting } from './MeterScopeSetting'
 import { ResistEvidenceSetting } from './ResistEvidenceSetting'
 import type { PrefSection } from './PreferencesView'
@@ -87,6 +88,7 @@ function PetLayoutSetting(): JSX.Element {
       <Typography variant="caption" color="text.secondary">
         {LAYOUT_HINT[layout]}
       </Typography>
+      <PetLayoutPreview layout={layout} />
     </Stack>
   )
 }
