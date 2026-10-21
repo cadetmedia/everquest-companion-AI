@@ -309,11 +309,17 @@ impl EventSink for FoldSink {
     /// This splits the module's `{ seq, state }` pair rather than re-deriving either half: four
     /// modules publish a private revision counter instead of an event seq, and reading it off
     /// anything but the module's own answer would be a second opinion about a number it owns.
+    ///
+    /// The state is moved out of the pair, never cloned: the registry builds that pair fresh for
+    /// this read and nobody else holds it, and a `loot` or `kills` state is the biggest value a read
+    /// makes — copying it only to drop the original doubled the cost of every `module.snapshot`.
+    /// `Value::take` leaves a `null` behind in a pair dropped when this returns, and answers
+    /// `None` for a missing `state` exactly as `get(..).cloned()` did.
     fn snapshot(&self, module: &str) -> Option<ModuleSnapshot> {
-        let published = self.fold.registry.snapshot_of(module)?;
+        let mut published = self.fold.registry.snapshot_of(module)?;
         Some(ModuleSnapshot {
             seq: published.get("seq").and_then(serde_json::Value::as_i64)?,
-            state: published.get("state").cloned()?,
+            state: published.get_mut("state").map(serde_json::Value::take)?,
         })
     }
 
