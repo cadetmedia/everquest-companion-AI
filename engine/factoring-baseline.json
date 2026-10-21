@@ -45,7 +45,7 @@
       "file": "crates/engined/src/ingest.rs",
       "metric": "file-lines",
       "name": "",
-      "value": 1301
+      "value": 1290
     },
     {
       "file": "crates/engined/src/ingest.rs",

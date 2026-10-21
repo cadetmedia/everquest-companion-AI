@@ -394,6 +394,42 @@ fn an_unknown_module_is_not_found_and_an_unattached_engine_is_unavailable() {
     assert_eq!(snapshot(&mut client, id, "loot").module, "loot");
 }
 
+/// The live tail's nap is the engine's idle state, and a read used to wait out whatever was left of
+/// it — up to 25 ms (`ingest.rs TAIL_NAP`) before the fold even looked. Asked back to back, every
+/// read landed just after the drain and paid the whole nap. The nap now waits on the ask door
+/// (`ingest/nap.rs`), so a read is answered when it arrives.
+///
+/// The claim is about the MEDIAN of a run of back-to-back reads, against half a nap: a blind nap
+/// puts every one of them near 25 ms, a woken one near zero, and a median is what survives a
+/// runner that is starved for a moment or two in between.
+#[test]
+fn a_read_of_a_live_fold_is_answered_on_arrival_not_after_the_nap() {
+    const READS: usize = 15;
+    const HALF_A_NAP: Duration = Duration::from_millis(12);
+    let engine = Engine::start();
+    let mut client = engine.connected();
+    let scratch = Scratch::new("on-arrival");
+    let log = scratch.stage(1);
+    client.send(&attach(1, &log.to_string_lossy()));
+    let mut id = 100;
+    settle_live(&mut client, &mut id);
+
+    let mut took: Vec<Duration> = (0..READS)
+        .map(|_| {
+            id += 1;
+            let asked = Instant::now();
+            assert_eq!(snapshot(&mut client, id, "character").module, "character");
+            asked.elapsed()
+        })
+        .collect();
+    took.sort();
+    let median = took[READS / 2];
+    assert!(
+        median < HALF_A_NAP,
+        "the median live read took {median:?}, a nap slept out rather than woken: {took:?}"
+    );
+}
+
 #[test]
 fn health_carries_the_mark_once_the_fold_is_live() {
     let engine = Engine::start();
