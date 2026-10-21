@@ -54,6 +54,11 @@ disagree, RULES.md wins; fix this file.
   with PowerShell `New-Item -ItemType Junction -Path <wt>\node_modules -Target <clone>\node_modules`
   (Git Bash `mklink` mangles paths). Without it, a gate grep can false-pass: npm's
   tool-not-found text contains no "error". Check real exit codes.
+- **Stage your own files by name in a shared worktree.** Several sessions write to the
+  `main_community_rules` worktree at once (the owner often has a second agent drafting a plan
+  there). `git add docs/community` sweeps their uncommitted drafts into your commit
+  (2026-10-20: a screenshot-to-wiki plan went out under a requirements commit). `git add <path>`
+  each file you changed, and read `git status` before committing.
 - **Merge into the scratch tree first, every time.** A merge into the main clone that stops on a
   conflict leaves conflict markers under `src/`, the dev app's `--watch` rebuilds them, and the
   app crashes on the owner (2026-10-11: two conflicts in a branch merged straight into
