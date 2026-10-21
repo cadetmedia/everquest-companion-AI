@@ -50,6 +50,7 @@ import { FOOTER_ROW, OverlayContent } from './overlayScale'
 import { TextScaleStepper } from './TextScaleStepper'
 import { useOverlayChrome, type OverlayChrome } from './useOverlayChrome'
 import { OverlayHeader } from './OverlayHeader'
+import { isMarkedDone, useDoneKeys } from '../features/gaps/doneMarksStore'
 
 const GOLD = '#d9b25f'
 
@@ -158,15 +159,20 @@ function previewItemOf(e: FeedEvent): string | undefined {
 }
 
 /** The reminder to screenshot it for the wiki: not in the app's data (owner ask, 2026-10-18), or a
- *  mob whose wiki pages have no picture (owner ask, 2026-10-20). The engine never sets both. */
-function screenshotLabel(e: FeedEvent): string | undefined {
-  // Sold on loot is already gone: the next one is the screenshot (review 2026-10-19).
-  if (e.unknown) return e.detail?.startsWith('auto-sold') === true ? 'missing · auto-sold, keep the next one' : 'missing · screenshot it'
-  return e.needsImage ? 'no picture · screenshot it' : undefined
+ *  mob whose wiki pages have no picture (owner ask, 2026-10-20). The engine never sets both. A row
+ *  the player marked Done on the Gaps tab asks for nothing (owner, 2026-10-20: "if i've marked it
+ *  done, don't tell me it needs a screenshot still"). */
+function screenshotLabel(e: FeedEvent, done: ReadonlySet<string>): string | undefined {
+  if (e.unknown) {
+    if (isMarkedDone(done, e.kind === 'con' ? 'mob' : 'item', e.title)) return undefined
+    // Sold on loot is already gone: the next one is the screenshot (review 2026-10-19).
+    return e.detail?.startsWith('auto-sold') === true ? 'missing · auto-sold, keep the next one' : 'missing · screenshot it'
+  }
+  return e.needsImage && !isMarkedDone(done, 'image', e.title) ? 'no picture · screenshot it' : undefined
 }
 
 function UnknownTag({ e }: { e: FeedEvent }): JSX.Element | null {
-  const label = screenshotLabel(e)
+  const label = screenshotLabel(e, useDoneKeys())
   if (label === undefined) return null
   return (
     <span
