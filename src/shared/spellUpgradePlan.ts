@@ -24,6 +24,27 @@
 //   `unranked`  - lines you hold that could not be valued at all, counted rather than dropped.
 //
 // ============================================================================
+// YOUR CLASSES, NOT EVERY CLASS THE LOG HAS WATCHED YOU CAST AS
+// ============================================================================
+// Owner, 2026-10-20: *"i don't think that the upgrades tab is respecting the classes i am using or
+// selecting?"* - and it was not, because nothing here took a class at all. EQ Legends lets a
+// character swap classes, and the observed-rank map is every rank the log has watched THIS
+// CHARACTER cast, whatever it was running at the time. The owner's /who rows read WAR/MNK/SHM most
+// days and WAR/PAL/MNK, WAR/RNG/MNK, WAR/SHD/SHM, WAR/DRU/MNK and others on other days, and every
+// one of those stints left its casts behind: `You begin casting Wrath VI.` (Paladin), `Searing Arrow IV`
+// and `Ignite IV` (Ranger), `Drain Spirit IV` (Shadow Knight), `Force Snap III` and `Garrison's
+// Mighty Mana Shock III` (from the archived log). None were somebody else's lines - the fold
+// reads only your own cast-begins (`X begins casting` is a different event), your own resists and
+// your own merges.
+//
+// So `classes` filters the held lines to the ones a class you are running casts, through the
+// spell's own (class, level) pairs, the same `at` the Loadout's buff pool reads. The caller hands
+// in the Loadout tab's "Your classes" pick (`LoadoutClasses.useLoadoutClasses`, one key for both
+// tabs). An EMPTY list means no class is known yet and filters nothing, which is the readout this
+// tab gave before; the lines a pick sets aside are counted in `otherClassCount`, never dropped
+// without a word.
+//
+// ============================================================================
 // WHAT "VALUE" MEANS HERE, AND WHY IT IS NOT roleWeights
 // ============================================================================
 // The Loadout tab scores a BUFF through `planner/roleWeights.ts`, because what a stat is worth
@@ -39,6 +60,7 @@
 //
 // Pure: no React, no Electron, no clock. Relative value imports, the shared/ house rule.
 
+import type { ClassAbbr } from './classCombo'
 import type { UnlockSpell } from './levelUnlocks'
 import { spellLineKey } from './spellLines'
 import type { ObservedSpellRanksSnap } from './spellRanks'
@@ -90,8 +112,13 @@ export interface UpgradePlan {
    * lines and sees 12 rows needs to know where the other 28 went.
    */
   unrankedCount: number
-  /** Lines the log has watched you hold at all. The denominator for everything above. */
+  /** Lines the log has watched you hold, in your classes. The denominator for everything above. */
   heldCount: number
+  /**
+   * Lines the log has watched you hold that none of `classes` casts - casts from a stint as another
+   * class (see the header). Counted so the reader knows they were set aside rather than lost.
+   */
+  otherClassCount: number
 }
 
 /**
@@ -122,21 +149,29 @@ export function heldRank(observed: ObservedSpellRanksSnap | null, name: string):
  * never seen is NOT in this readout at all, and that is deliberate: this tab answers "where do MY
  * next motes go", and a spell the character has never cast is not a spell he is deciding about. The
  * Spellbook tab is where the whole catalog lives.
+ *
+ * `classes` is the loadout the readout is for; empty filters nothing (see the header).
  */
 export function buildUpgradePlan(
   spells: readonly UnlockSpell[],
-  observed: ObservedSpellRanksSnap | null
+  observed: ObservedSpellRanksSnap | null,
+  classes: readonly ClassAbbr[] = []
 ): UpgradePlan {
   const next: UpgradeCandidate[] = []
   const deadEnds: DeadEnd[] = []
   let unrankedCount = 0
   let heldCount = 0
+  let otherClassCount = 0
   // One line, one row: the catalog lists a few spells twice, and each copy counted as held.
   for (const spell of foldSpellsByName(spells)) {
     const rank = heldRank(observed, spell.name)
     // Presence in the observed map is what makes a line "held" - not a positive rank, since the log
     // watching you cast the base of a line is still evidence you own it.
     if (observed?.[spellLineKey(spell.name)] === undefined) continue
+    if (!castByAny(spell, classes)) {
+      otherClassCount++
+      continue
+    }
     heldCount++
     const row = spellbookRow(spell, rank)
     if (!row.payoff.magnitude) {
@@ -154,7 +189,15 @@ export function buildUpgradePlan(
   }
   next.sort((a, b) => b.perMote - a.perMote || a.name.localeCompare(b.name))
   deadEnds.sort((a, b) => a.name.localeCompare(b.name))
-  return { next, deadEnds, unrankedCount, heldCount }
+  return { next, deadEnds, unrankedCount, heldCount, otherClassCount }
+}
+
+/**
+ * Does one of these classes cast this spell? Any level: the log has already watched you hold it, so
+ * the level it unlocks at says nothing more. An empty class list is "not known yet" and admits all.
+ */
+function castByAny(spell: UnlockSpell, classes: readonly ClassAbbr[]): boolean {
+  return classes.length === 0 || spell.at.some((p) => classes.includes(p.cls))
 }
 
 /**

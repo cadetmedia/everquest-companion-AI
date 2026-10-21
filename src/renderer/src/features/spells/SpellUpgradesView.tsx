@@ -23,6 +23,16 @@
 // mana cost and cast time like Bear Form"* - so the list of lines whose numbers never move is an
 // answer he asked for out loud, and it is drawn rather than hidden behind a toggle.
 //
+// ── YOUR CLASSES, THE LOADOUT TAB'S PICK ──────────────────────────────────────────────────────
+//
+// Owner, 2026-10-20: *"i don't think that the upgrades tab is respecting the classes i am using or
+// selecting?"* It had no classes at all, so a character that swaps classes saw every line it had
+// ever cast as any of them (Wrath from a Paladin stint, Searing Arrow from a Ranger one). The tab
+// now draws the Loadout tab's "Your classes" picker and reads the plan for it: the same stored key,
+// so a pick on either tab is the pick on both, following the log's detected trio until touched.
+// Not the Spellbook's filter, which is a browsing control that may hold five classes or none; this
+// tab and the Loadout both answer "what do I, running these three, do next".
+//
 // NOTHING HERE FILTERS OR SORTS (ruling 4): `buildUpgradePlan` does all of it in src/shared.
 
 import { type JSX, useMemo } from 'react'
@@ -43,6 +53,7 @@ import { buildUpgradePlan, type DeadEnd, type UpgradeCandidate } from '@shared/s
 import { useLevelUnlocks } from '../leveling/useLevelUnlocks'
 import { useObservedSpellRanks } from '../../lib/useObservedSpellRanks'
 import { SpellTooltip } from '../../lib/SpellCard'
+import LoadoutClasses, { useLoadoutClasses } from './LoadoutClasses'
 import { Tooltip } from '../../lib/Tooltip'
 import { romanRank, whole } from './spellbookFormat'
 
@@ -136,6 +147,20 @@ function NothingHeld(): JSX.Element {
   )
 }
 
+/**
+ * WHAT THE CLASS PICK SET ASIDE, said rather than hidden - the lines your log has watched you cast
+ * as a class you are not running now. Nothing when the pick set nothing aside.
+ */
+function OtherClasses({ count }: { count: number }): JSX.Element | null {
+  if (count === 0) return null
+  return (
+    <Typography variant="caption" color="text.secondary" data-testid="upgrade-other-classes">
+      {String(count)} more {count === 1 ? 'line' : 'lines'} your log has seen you cast belong to
+      classes you have not picked above
+    </Typography>
+  )
+}
+
 /** The ranked table, or the honest sentence for a character whose lines all read flat. */
 function CandidateTable({ plan }: { plan: ReturnType<typeof buildUpgradePlan> }): JSX.Element {
   if (plan.next.length === 0) {
@@ -173,7 +198,12 @@ function CandidateTable({ plan }: { plan: ReturnType<typeof buildUpgradePlan> })
 export default function SpellUpgradesView(): JSX.Element {
   const data = useLevelUnlocks()
   const observed = useObservedSpellRanks()
-  const plan = useMemo(() => buildUpgradePlan(data.spells, observed), [data.spells, observed])
+  const picked = useLoadoutClasses()
+  const classes = picked.combo.resolved
+  const plan = useMemo(
+    () => buildUpgradePlan(data.spells, observed, classes),
+    [data.spells, observed, classes]
+  )
 
   return (
     <Stack spacing={2} sx={{ maxWidth: 900 }} data-testid="spell-upgrades-view">
@@ -184,9 +214,13 @@ export default function SpellUpgradesView(): JSX.Element {
           the last, so the cheap rungs on a low-ranked spell beat the expensive ones on a high one.
         </Typography>
       </Box>
+      <LoadoutClasses state={picked} />
 
       {plan.heldCount === 0 ? (
-        <NothingHeld />
+        <>
+          <NothingHeld />
+          <OtherClasses count={plan.otherClassCount} />
+        </>
       ) : (
         <>
           <CandidateTable plan={plan} />
@@ -202,6 +236,7 @@ export default function SpellUpgradesView(): JSX.Element {
               figure to rank
             </Typography>
           )}
+          <OtherClasses count={plan.otherClassCount} />
           {plan.deadEnds.length > 0 && (
             <Box data-testid="upgrade-dead-ends">
               <Typography variant="overline" color="text.secondary">

@@ -58,7 +58,7 @@ test('a line the log has never watched is not in this readout at all', () => {
 
 test('with no observed map at all, nothing is held and nothing is claimed', () => {
   const plan = buildUpgradePlan([NUKE, BEAR], null)
-  assert.deepEqual(plan, { next: [], deadEnds: [], unrankedCount: 0, heldCount: 0 })
+  assert.deepEqual(plan, { next: [], deadEnds: [], unrankedCount: 0, heldCount: 0, otherClassCount: 0 })
 })
 
 test('a line watched only at base still counts as held', () => {
@@ -172,6 +172,55 @@ test('the unvaluable are COUNTED, never silently dropped', () => {
   assert.equal(plan.heldCount, 2)
   assert.equal(plan.next.length, 1)
   assert.equal(plan.unrankedCount, 1)
+})
+
+// =================================================================================================
+// YOUR CLASSES (owner, 2026-10-20: "i don't think that the upgrades tab is respecting the classes i
+// am using or selecting?")
+// =================================================================================================
+
+// The owner's own shape: a WAR/MNK/SHM character whose log also holds casts from stints as other
+// classes. Each spell carries the (class, level) pairs the catalog states for it.
+const ENVENOMED = spell({
+  name: 'Envenomed Bolt',
+  upgradeCategory: 'nuke',
+  metrics: { damage: 400 } as UnlockSpell['metrics'],
+  at: [{ cls: 'SHM', level: 49 }, { cls: 'NEC', level: 50 }]
+})
+const WRATH = spell({
+  name: 'Wrath',
+  upgradeCategory: 'nuke',
+  metrics: { damage: 300 } as UnlockSpell['metrics'],
+  at: [{ cls: 'CLR', level: 29 }, { cls: 'PAL', level: 34 }]
+})
+const FORCE_SNAP = spell({
+  name: 'Force Snap',
+  upgradeCategory: 'nuke',
+  metrics: { damage: 100 } as UnlockSpell['metrics'],
+  at: [{ cls: 'WIZ', level: 17 }]
+})
+const SWAPPED = held({ 'Envenomed Bolt': 9, Wrath: 6, 'Force Snap': 3 })
+
+test('a held line none of your classes casts is set aside, and counted', () => {
+  const plan = buildUpgradePlan([ENVENOMED, WRATH, FORCE_SNAP], SWAPPED, ['WAR', 'MNK', 'SHM'])
+  assert.deepEqual(plan.next.map((c) => c.name), ['Envenomed Bolt'])
+  assert.equal(plan.heldCount, 1)
+  assert.equal(plan.otherClassCount, 2)
+})
+
+test('one class of the trio casting it is enough, at any level', () => {
+  // Envenomed Bolt is a Necromancer spell too; the Shaman pair is what admits it here. A Paladin
+  // pick admits Wrath at 34 for a character the log has already watched casting it.
+  const plan = buildUpgradePlan([ENVENOMED, WRATH, FORCE_SNAP], SWAPPED, ['WAR', 'PAL', 'MNK'])
+  assert.deepEqual(plan.next.map((c) => c.name), ['Wrath'])
+  assert.equal(plan.otherClassCount, 2)
+})
+
+test('no class known yet filters nothing, which is the readout before the pick existed', () => {
+  const plan = buildUpgradePlan([ENVENOMED, WRATH, FORCE_SNAP], SWAPPED, [])
+  assert.equal(plan.heldCount, 3)
+  assert.equal(plan.otherClassCount, 0)
+  assert.deepEqual(buildUpgradePlan([ENVENOMED, WRATH, FORCE_SNAP], SWAPPED), plan)
 })
 
 // =================================================================================================

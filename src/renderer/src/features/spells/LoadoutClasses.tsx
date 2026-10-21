@@ -12,6 +12,11 @@
 //
 // Its own key rather than the Spellbook's: browsing five classes' spells to compare them must not
 // re-plan the buff set, and the reverse.
+//
+// THE UPGRADES TAB SHARES IT (owner, 2026-10-20: *"i don't think that the upgrades tab is
+// respecting the classes i am using or selecting?"*). Both tabs ask what a player running these
+// three does next, so the same picker sits on both under this one key: a pick on either is the pick
+// on both. The Spells views mount one at a time, so each reads the key fresh when it opens.
 
 import { type JSX, useCallback, useMemo, useState } from 'react'
 import { Chip, Stack } from '@mui/material'
