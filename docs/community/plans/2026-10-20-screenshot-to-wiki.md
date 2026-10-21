@@ -48,7 +48,7 @@ the app. A throwaway prototype was built outside it (section "Prototype"). Rules
 - The client ships every icon: `<EQ>/uifiles/default/dragitem1.dds` .. `dragitem379.dds`, 256x256,
   DXT5. `EQUI_DragItems.xml` (`A_DragItem`): 40x40 cells, `Grid=true`, `Vertical=true`, so 6x6 =
   36 per sheet, 13,644 cells, ids from 500.
-- Formula (prototype confirms the cell order, see Prototype): `id = 500 + (sheet - 1) * 36 + cell`.
+- Formula, confirmed by the prototype: `id = 500 + (sheet - 1) * 36 + col * 6 + row` (column-major).
 - Ground truth on hand: `items.json` carries `iconId` for 11,675 items (777 distinct, 500..10308).
 - Spell icons: `uifiles/default/Spells01.tga` .. (40x40 cells, `EQUI_SpellIcons.xml`); the icon
   number per spell is a field of `spells_us.txt`.
@@ -96,8 +96,7 @@ the app. A throwaway prototype was built outside it (section "Prototype"). Rules
 | B. Windows OCR (`Windows.Media.Ocr`) | part of Windows | 0 | prototype measures if cheap | Windows only (the app is). Needs a WinRT bridge (native addon or a helper process); English OCR pack present on en-US installs. |
 | C. Glyph templates of EQ's font | ours | tiny | fastest | Exact at the native size, breaks with UI scale or font change. A later speed-up, not a start. |
 
-- Recommendation pending the prototype's numbers: A first (no native code, one npm dep), B as the
-  fallback if A's accuracy on real windows is poor.
+- Chosen after the prototype: A. B read small text far worse (table under Prototype).
 - OCR runs in a worker (utility process or worker thread), never on the main thread (perf audit,
   `audits/2026-10-20-performance-review.md`).
 
@@ -139,6 +138,59 @@ item page), BRANCHES.md row in the same change (rule 9).
 4. **Local item icons everywhere.** Draw item icons from the sheets instead of fetching them from
    eqlwiki, app-wide. Separate branch if yes.
 
-## Prototype
+## Prototype (2026-10-20, outside the repo, thrown away)
 
-<!-- filled from the prototype's report -->
+Node 24 scripts in the session scratchpad, ~620 lines. Every run blocked all network calls; zero
+wiki requests. Deps: pngjs (MIT), jpeg-js (BSD-3), @napi-rs/canvas (MIT, synthetic renders only),
+tesseract.js + core (Apache-2.0), `@tesseract.js-data/eng` (MIT, data Apache-2.0, loaded from disk).
+
+### Icons
+
+- **Formula confirmed: `id = 500 + (sheet - 1) * 36 + col * 6 + row`** (column-major, as
+  `Vertical=true` says). Checked by eye against `items.json`: 502 necklace, 566 medallion, 639 cap,
+  504 scroll, 519 sword. Row-major puts the wrong art at those ids.
+- **Not every sheet is DXT5:** sheet 323 is DXT3; sheets 9 and 302 are uncompressed ARGB. The
+  decoder must handle all three.
+- 13,444 cells have art, 200 are empty; ids reach 14143. All 777 `iconId`s in `items.json` land on
+  art.
+- Build: 2.6 s, index 10.4 MB (16x16 RGB per icon). Load 18 ms; query 38 ms median, 53 ms p90
+  (first query cold ~170 ms).
+- The 13 labelled crops from the owner's screenshot of the wiki's Icon Finder (the skull query and
+  its 12 result tiles, about 2x scale): **13 of 13 at rank 1**, tight crop and with 6 px of the
+  tile's UI around it. The winner scores 4x to 15x better than the runner-up.
+- Self-test, 300 random icons with a 2 px slot frame, 1.25x to 2x scale, up to 3 px offset, JPEG on
+  half: top-1 94.7%, top-5 96.3%. Misses are near-twins (1808/1809) and art that touches the cell
+  edge.
+- 3 exact duplicate pairs (3470/3471, 4448/4451, 6853/6880) and 35 near-duplicate pairs: the UI
+  shows the top 3 to 5 with their art, never a lone answer.
+
+### Item window text (synthetic only: no real screenshots on this PC)
+
+30 real `statsBlock`s from `items.json`, drawn in Arial on a dark textured panel, read back, both
+sides scored with the repo's own `parseStatsBlock`.
+
+| Render | Engine | Names | Lines | Fields | ms per image |
+| --- | --- | --- | --- | --- | --- |
+| 13 px | tesseract.js, upscale 3x, no threshold | 27/30 | 99.1% | 99.3% | ~250 warm (+~180 worker start) |
+| 10 px, noisy, dim | tesseract.js | 21/30 | 93.0% | 95.7% | ~220 |
+| 10 px | tesseract.js, upscale 2x | 22/30 | 97.7% | 98.7% | ~165 |
+| 13 px | Windows OCR | n/a | 87% | 90% | ~10 |
+| 10 px | Windows OCR | n/a | 22-69% | 27-74% | ~10 |
+
+- A hard black/white threshold before Tesseract cost ~17 points: keep the greys.
+- Typical slips: rn to m (Thorny to Thomy), the backtick in Teir`Dal dropped, I to l, Slot to Slat,
+  9/6/5 to 8/8/3, colon to semicolon, a missed title line. The item name is the weakest field,
+  and Gaps already knows the name from the log, so the name is checked against the row, not read.
+- Synthetic text is an upper bound. Real windows (EQ's own font rendering, UI scale, the window's
+  art behind the text) are the open risk; question 3.
+
+### What the prototype changes in the design
+
+- Text engine: **tesseract.js** (option A). Windows OCR is fast but too weak on small text.
+- The decoder handles DXT5, DXT3 and raw ARGB sheets.
+- Fix-ups use the closed vocabularies (Slot, Size, class and race codes, `SV` names, the item name
+  from the Gaps row); numbers are never corrected, only flagged when `parseStatsBlock` rejects the
+  line.
+- Node 24.19 gave a wrong re-rank score about 1 run in 10 until the hot loop sat in its own
+  function (gone under `--no-maglev`; 30 of 30 clean since). The in-app matcher gets a test that
+  scores a known icon against itself many times.
