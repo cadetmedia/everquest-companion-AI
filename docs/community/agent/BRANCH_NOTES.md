@@ -329,6 +329,19 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   TEST.exe" <script>` that `require`s `resources/app.asar/node_modules/tesseract.js` and
   recognizes a small PNG (2026-10-21: 161 ms, installer 139.5 MB).
 - `tests/shotScreenshots.test.mts` runs the real OCR (~12 s with the icon checks).
+- What a paste keeps is pure and tested (`shared/itemShotKeep.ts`, `shared/mobPicture.ts`): a paste
+  with nothing usable keeps nothing; another item's window waits for Use it anyway; a window paste
+  replaces every window field, a Lore paste only the lore. Merge against `itemShotNow()` (the
+  store now), never a render's copy, and ignore pastes while one is being read.
+- Nothing in `shotPicture.ts` throws to the renderer (a failed write answers `{ status: 'error' }`,
+  `pictureFiles.ts`), and every renderer call has a `.catch`/`.finally` that clears the spinner
+  (review, 2026-10-21). Async answers in `MobPicture.tsx` go through `latestOnly` tickets; the
+  nameplate check takes the save's `checkId` (main keeps that one decoded picture), never the bytes.
+- Main writes only `.png` (`pictureFileName`), and deletes only files this run saved.
+- `.npmrc` audit note is stale (review, 2026-10-21): tesseract.js brings
+  `opencollective-postinstall` (`hasInstallScript`), suppressed by `ignore-scripts` and harmless
+  (a donation banner), so the file's "SIX" install-time hooks are now seven. `.npmrc` is the
+  creator's file: left as it is, recorded here.
 
 ## Unassigned open items (no branch yet)
 
