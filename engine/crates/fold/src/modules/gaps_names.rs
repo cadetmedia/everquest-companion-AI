@@ -88,10 +88,11 @@ pub fn no_spell(name: &str) -> bool {
     matches!(name.trim(), "Use Ability" | "Enable Ability" | "Disable Ability")
 }
 
-/// The `Reward Chest`, and a player's mount or familiar (`Malkil`s Mount`, `Revilus`s familiar`).
+/// The `Reward Chest`, a player's mount or familiar (`Malkil`s Mount`, `Revilus`s familiar`), and
+/// a summoned pet by its generated name (`Genekn`, `Zobektik`: see [`is_pet_name`]).
 pub fn no_mob(name: &str) -> bool {
     let n = fold_quotes(name);
-    if n == "Reward Chest" {
+    if n == "Reward Chest" || is_pet_name(&n) {
         return true;
     }
     let Some((owner, what)) = n.split_once("'s ") else {
@@ -101,4 +102,49 @@ pub fn no_mob(name: &str) -> bool {
         what.to_lowercase().as_str(),
         "mount" | "familiar" | "warder"
     ) && is_player_shaped_name(owner)
+}
+
+/// A summoned pet's generated name (owner, 2026-10-20: the Plane of Sky gaps "are mostly all
+/// pets"). EverQuest builds one from four parts: a first letter (G J K L V X Z), up to two middle
+/// syllables, and an ending (`er`, `ab`, `n`, `tik`): `Genekn` is G+en+ek+n, `Zobektik` Z+ob+ek+tik,
+/// `Kaser` K+as+er. At least one middle syllable, so a bare `Gn` or `Ker` is not taken for one.
+/// A pet has no wiki page, so a name of this shape is never a gap.
+pub fn is_pet_name(name: &str) -> bool {
+    const FIRST: [char; 7] = ['G', 'J', 'K', 'L', 'V', 'X', 'Z'];
+    const SECOND: [&str; 9] = ["", "ab", "ar", "as", "eb", "en", "ib", "ob", "on"];
+    const THIRD: [&str; 5] = ["", "an", "ar", "ek", "ob"];
+    const LAST: [&str; 4] = ["er", "ab", "n", "tik"];
+    let mut chars = name.chars();
+    let Some(first) = chars.next().filter(|c| FIRST.contains(c)) else {
+        return false;
+    };
+    let rest = &name[first.len_utf8()..];
+    SECOND.iter().any(|b| {
+        rest.strip_prefix(b).is_some_and(|r| {
+            THIRD.iter().any(|c| {
+                (!b.is_empty() || !c.is_empty())
+                    && r.strip_prefix(c).is_some_and(|r| LAST.contains(&r))
+            })
+        })
+    })
+}
+
+#[cfg(test)]
+mod pet_tests {
+    use super::{is_pet_name, no_mob};
+
+    #[test]
+    fn generated_pet_names_are_not_mobs() {
+        for pet in ["Genekn", "Xasarn", "Genab", "Kaser", "Vabekn", "Zasann", "Zobektik", "Jonobtik"] {
+            assert!(is_pet_name(pet), "{pet} is a pet name");
+            assert!(no_mob(pet), "{pet} is never a gap");
+        }
+    }
+
+    #[test]
+    fn other_names_are_left_alone() {
+        for other in ["Lowejak", "Toejam", "Gn", "Ker", "Gabber", "a gnoll", "Genekns", "genekn", "Hoptor", "Lord Nagafen"] {
+            assert!(!is_pet_name(other), "{other} is not a pet name");
+        }
+    }
 }
