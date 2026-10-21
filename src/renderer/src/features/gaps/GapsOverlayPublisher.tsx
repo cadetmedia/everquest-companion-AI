@@ -8,6 +8,6 @@ import { useGapsList } from './useGapsList'
 import { useGapsOverlayFeed } from './useGapsOverlayFeed'
 
 export default function GapsOverlayPublisher(): null {
-  useGapsOverlayFeed(useGapsList())
+  useGapsOverlayFeed(useGapsList({ background: true }))
   return null
 }

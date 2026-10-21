@@ -96,13 +96,21 @@ export interface GapsList {
   sorted: GapRow[]
 }
 
-export function useGapsList(): GapsList {
+/** With the tab closed, the overlay's copy takes the game's new data at most this often. */
+const BACKGROUND_HOLD_MS = 15_000
+
+/**
+ * `background` is the overlay's publisher with the tab closed (owner, 2026-10-20: every tab click
+ * took 500 ms while it re-derived the whole list on every push): only the shown domain is derived,
+ * and the game's data is taken every 15 s. Done marks, filters and the domain still apply at once.
+ */
+export function useGapsList(opts: { background?: boolean } = {}): GapsList {
   const charSnap = useModule<CharacterSnap>('character')
   // All characters (owner, 2026-10-19): every character's saved Gaps joined in, within a day window.
   const me = charSnap?.character ?? null
   const allChars = useAllCharacters(me)
-  const data = useGapsData(allChars.all)
   const [domain, setDomain] = useGapDomain()
+  const data = useGapsData(allChars.all, opts.background === true ? { only: domain, holdMs: BACKGROUND_HOLD_MS } : undefined)
   const shownQuery = useGapsQuery()
   // "Zone I'm in" (owner ask, 2026-10-17): only what was named where you stand, every tier of it.
   const [hereOnly, setHereOnly] = useBoolPref(ZONE_HERE_KEY, false)
