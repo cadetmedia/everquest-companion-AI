@@ -1,6 +1,6 @@
 {
  "source": "eqlwiki.com — |respawn_time on every page in the committed mob catalog",
- "scrapedAt": "2026-10-20",
+ "scrapedAt": "2026-10-21",
  "rows": [
   {
    "key": "a alchemist`s acolyte",
@@ -381,6 +381,12 @@
    "seconds": 86400
   },
   {
+   "key": "a shady mercenary",
+   "page": "A shady mercenary",
+   "text": "1m 12s",
+   "seconds": 72
+  },
+  {
    "key": "a silverflank guardian",
    "page": "A Silverflank guardian",
    "text": "10 minutes",
@@ -733,6 +739,12 @@
    "page": "An undead jester",
    "text": "18:20",
    "seconds": 1100
+  },
+  {
+   "key": "an undead knight",
+   "page": "An undead knight (Qeynos Aqueducts)",
+   "text": "1m 12s",
+   "seconds": 72
   },
   {
    "key": "an undead knight of unrest",
