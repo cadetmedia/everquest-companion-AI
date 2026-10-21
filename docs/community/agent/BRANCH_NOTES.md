@@ -319,8 +319,15 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   DMG against the window's own Ratio and Delay (the player is told in `checks`).
 - Locate the icon from the `Class:` and `Race:` WORDS (`OcrLine.lead`), not the line box: OCR reads
   the icon beside the text as junk (`| Class`, `8 Quest`) and stretches the box over it.
-- Packaging: `electron-builder.yml` keeps the three `-lstm` cores, `4.0.0_best_int` and drops
-  `*.wasm.js`, `dist/`, `zlibjs` (browser only). Confirm with a real `npm run dist` (rule 11).
+- Packaging: `electron-builder.yml` keeps the three FULL tesseract cores (`tesseract-core{-relaxedsimd,
+  -simd,}.js` + `.wasm`) and `4.0.0_best_int`, and drops the `-lstm` cores, `*.wasm.js`, `dist/`,
+  `zlibjs` (browser only) and `4.0.0`. TRAP (2026-10-21): tesseract.js 7.0.0 under Node always
+  loads the full core (`getCore(lstmOnly)` gets a boolean its OEM test never matches); the first
+  dist kept the `-lstm` ones and the packed app could not find its core. Dev and `npm test` never
+  show it (every core is in node_modules). After any change to these lines or a tesseract bump,
+  run OCR inside the packed asar: `ELECTRON_RUN_AS_NODE=1 "<win-unpacked>/EQ Legends Companion
+  TEST.exe" <script>` that `require`s `resources/app.asar/node_modules/tesseract.js` and
+  recognizes a small PNG (2026-10-21: 161 ms, installer 139.5 MB).
 - `tests/shotScreenshots.test.mts` runs the real OCR (~12 s with the icon checks).
 
 ## Unassigned open items (no branch yet)
