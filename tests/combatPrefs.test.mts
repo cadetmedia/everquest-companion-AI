@@ -46,6 +46,7 @@ import {
   parseDrillMemory,
   parseHiddenLines,
   readMeterScope,
+  readPetLayout,
   serializeDrillMemory,
   serializeHiddenLines,
   toggleHiddenLine,
@@ -93,6 +94,19 @@ test('the scope is ONE key for every surface — no per-surface suffix survives'
   // Overview card and every floating overlay are reading and writing the same string.
   assert.equal(METER_SCOPE_KEY, 'eq.combat.meterScope')
   assert.ok(!METER_SCOPE_KEY.endsWith('.'), 'the key is complete, not a prefix a surface appends to')
+})
+
+// ── where a pet's damage shows (Malkil, 2026-10-21) ─────────────────────────────────────
+
+test('the pet layout is opt-in: an untouched install stays nested, an old switch turned off stays separate', () => {
+  assert.equal(readPetLayout(null, null), 'nested')
+  assert.equal(readPetLayout(null, '1'), 'nested')
+  assert.equal(readPetLayout(null, '0'), 'separate')
+  assert.equal(readPetLayout('grouped', '0'), 'grouped')
+  assert.equal(readPetLayout('nested', '0'), 'nested')
+  // a value this build does not know falls back to the old switch, never to a blank meter
+  assert.equal(readPetLayout('sideways', '0'), 'separate')
+  assert.equal(readPetLayout('', null), 'nested')
 })
 
 // ── JOS-116: where you had drilled to ────────────────────────────────────────────────────

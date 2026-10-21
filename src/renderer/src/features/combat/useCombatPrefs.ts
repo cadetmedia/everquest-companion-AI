@@ -26,27 +26,18 @@ import { useCallback, useMemo, useSyncExternalStore } from 'react'
 import {
   DEFAULT_METER_SCOPE,
   HIDDEN_LINES_KEY,
+  LEGACY_PET_ROW_KEY,
   METER_SCOPE_KEY,
+  PET_LAYOUT_KEY,
   parseHiddenLines,
   readMeterScope,
+  readPetLayout,
   serializeHiddenLines,
   toggleHiddenLine,
-  type ChartLineKey
+  type ChartLineKey,
+  type PetLayout
 } from './combatPrefs'
 import type { MeterScope } from '@shared/roster'
-
-/**
- * Nest the pet as ONE line item inside your damage breakdown (drillable to the pet's own
- * skills) instead of listing it as a separate source. Default ON: the game is mostly played
- * solo, so "you and your pet" is the shape of nearly every fight (owner direction, 2026-08-03).
- *
- * It is also the DEFAULT ZOOM (owner direction, 2026-08-04): on ⇒ the dashboard opens on your
- * breakdown with the pet nested in it, off ⇒ it opens fully zoomed out on the source list. One
- * choice, one key — `petRows.defaultDrill` is the rule, and `eq.combat.drill` (a second bit
- * that used to decide the opening level on its own, and that plain navigation rewrote) is
- * RETIRED. Nothing reads that key any more; a stale one in localStorage is inert.
- */
-export const COMBINE_PET_ROW_KEY = 'eq.combat.petRow'
 
 const listeners = new Set<() => void>()
 
@@ -123,11 +114,39 @@ export function useBoolPref(key: string, dflt: boolean): [boolean, (v: boolean) 
   return [value, set]
 }
 
-/** See COMBINE_PET_ROW_KEY. Read by the Combat dashboard, the Overview DPS card AND the floating
- *  overlay meters — all of them take their layout and their opening level from it, and only the
- *  Preferences tab ever writes it. */
-export function useCombinePetRow(): [boolean, (v: boolean) => void] {
-  return useBoolPref(COMBINE_PET_ROW_KEY, true)
+/** A layout a blocked store refused to keep: it still applies for this session (see `unsaved`). */
+let unsavedLayout: PetLayout | null = null
+
+/** A stored string, or null when the store is absent or refuses the read. */
+function readRaw(key: string): string | null {
+  try {
+    return localStorage.getItem(key)
+  } catch {
+    return null
+  }
+}
+
+/**
+ * WHERE A PET'S DAMAGE SHOWS (combatPrefs.PetLayout). Read by the Combat dashboard, the Overview
+ * DPS card AND the floating overlay meters; only Preferences > Combat writes it. It replaced the
+ * one-bit `eq.combat.petRow` switch, whose stored answer is still read when this key is absent.
+ */
+export function usePetLayout(): [PetLayout, (v: PetLayout) => void] {
+  const value = useSyncExternalStore<PetLayout>(
+    subscribe,
+    () => unsavedLayout ?? readPetLayout(readRaw(PET_LAYOUT_KEY), readRaw(LEGACY_PET_ROW_KEY)),
+    () => 'nested'
+  )
+  const set = useCallback((v: PetLayout) => {
+    try {
+      localStorage.setItem(PET_LAYOUT_KEY, v)
+      unsavedLayout = null
+    } catch {
+      unsavedLayout = v
+    }
+    notifyAll()
+  }, [])
+  return [value, set]
 }
 
 /**

@@ -55,6 +55,30 @@ export function readMeterScope(raw: string | null): MeterScope {
   return isMeterScope(raw) ? raw : DEFAULT_METER_SCOPE
 }
 
+// ── where a pet's damage shows ───────────────────────────────────────────────────────────
+
+/**
+ * THREE LAYOUTS, ONE CHOICE. `nested` folds your pet into your bar (owner direction, 2026-08-03),
+ * `separate` gives it a bar of its own, and `grouped` (Malkil, 2026-10-21) puts each pet whose
+ * master is known on the line under that master, over one shared bar (shared/combatPetGroups.ts).
+ * One three-way key rather than a second switch: two booleans make four states, one meaningless.
+ */
+export type PetLayout = 'nested' | 'separate' | 'grouped'
+export const PET_LAYOUTS: readonly PetLayout[] = ['nested', 'separate', 'grouped']
+export const PET_LAYOUT_KEY = 'eq.combat.petLayout'
+/** The one-bit key this replaced: '1' (or absent) nested, anything else separate. */
+export const LEGACY_PET_ROW_KEY = 'eq.combat.petRow'
+
+/**
+ * The stored layout, else the old switch's answer, else `nested`. `grouped` is opt-in (owner,
+ * 2026-10-21: "users will have to CHOOSE this option"), so nobody's meter changes on upgrade: an
+ * untouched install stays nested and a switch turned off stays separate.
+ */
+export function readPetLayout(raw: string | null, legacy: string | null): PetLayout {
+  if ((PET_LAYOUTS as readonly (string | null)[]).includes(raw)) return raw as PetLayout
+  return legacy === null || legacy === '1' ? 'nested' : 'separate'
+}
+
 // ── where you had drilled to (JOS-116) ───────────────────────────────────────────────────
 
 /**

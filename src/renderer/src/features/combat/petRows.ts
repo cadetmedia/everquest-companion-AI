@@ -51,6 +51,7 @@
 //     reads `outTotal`, so the two can't drift.
 
 import { flattenSkills, type SkillRow } from './dashboardData'
+import { petGroupRows, type PetGroupRow } from '../../../../shared/combatPetGroups'
 import type { SourceView } from '@shared/combat'
 
 /** The synthetic line item that stands for ONE pet inside your breakdown. */
@@ -283,7 +284,12 @@ export function ownBreakdown(entities: SourceView[], combine: boolean): OwnBreak
  * combatShared.SkillBar), never as a level of their own.
  */
 export type MeterPanel =
-  | { level: 1; sources: SourceView[] }
+  | {
+      level: 1
+      sources: SourceView[]
+      /** the "With its owner" layout's rows over `sources` (`groupedPanel`), else absent. */
+      groups?: PetGroupRow[]
+    }
   | {
       level: 2
       subject: SourceView
@@ -393,6 +399,16 @@ export function panelTotals(panel: MeterPanel, total: number, dps: number): { to
   // eslint-disable-next-line eqc/no-domain-munging -- JOS-459 cutover ledger item 3: no served view source answers this yet, so the renderer still derives SourceView. Becomes a view descriptor when the source lands.
   const shown = [panel.subject, ...panel.pets].reduce((n, s) => n + s.total, 0)
   return { total: shown, dps: total > 0 ? (dps * shown) / total : 0 }
+}
+
+/**
+ * THE THIRD LAYOUT, "With its owner" (Malkil, 2026-10-21): level 1 regrouped so each pet whose
+ * master is known sits under that master (shared/combatPetGroups.ts). Built over the panel
+ * `meterPanel` returns with combine OFF, so drills and headlines are exactly the separate layout's;
+ * only the level-1 drawing changes. Any other level, or `on` false, comes back by reference.
+ */
+export function groupedPanel(panel: MeterPanel, on: boolean): MeterPanel {
+  return on && panel.level === 1 ? { ...panel, groups: petGroupRows(panel.sources) } : panel
 }
 
 export function meterPanel(entities: SourceView[], combine: boolean, drill: MeterDrill | null): MeterPanel {

@@ -20,8 +20,9 @@ import type { OverlayDrill } from '@shared/types'
 import { type DamageCategory, type SegmentView, type SourceView } from '@shared/combat'
 import { formatNum as fmt, formatRate } from '../lib/formatRate'
 import { type FlatSkill, type SkillRow } from '../features/combat/dashboardData'
-import { laneDps, meterPanel, type MeterPanel, type OwnRow, type PetRow } from '../features/combat/petRows'
-import { useCombinePetRow } from '../features/combat/useCombatPrefs'
+import { groupedPanel, laneDps, meterPanel, type MeterPanel, type OwnRow, type PetRow } from '../features/combat/petRows'
+import { usePetLayout } from '../features/combat/useCombatPrefs'
+import { PetGroupBars } from './petGroupBars'
 import { scopeSources } from '../features/combat/meterScope'
 import { landEvidence } from '../features/combat/landEvidence'
 import { MeterCrumb, type CrumbTotal } from './meterCrumb'
@@ -41,7 +42,7 @@ import type { MeterScope, RosterSnap } from '@shared/roster'
  */
 const ACCENT = '#d9b25f'
 
-const KIND_COLOR: Record<string, string> = {
+export const KIND_COLOR: Record<string, string> = {
   you: '#d9b25f',
   pet: '#6fb3d2',
   allyPet: '#5b7f95',
@@ -52,7 +53,7 @@ const KIND_COLOR: Record<string, string> = {
 // The one-word tag after a bar's name. KEEP IN SYNC with the app's KIND_TAG (features/combat/
 // EntityRow.tsx), which carries the argument for each word — in particular why `other` (JOS-430)
 // is not called 'player'.
-const KIND_SUFFIX: Record<string, string> = {
+export const KIND_SUFFIX: Record<string, string> = {
   pet: ' ·pet',
   member: ' ·group',
   allyPet: ' ·ally',
@@ -372,7 +373,7 @@ export function MeterBars({
 }): JSX.Element {
   // The SAME preference the Combat tab reads, out of the same localStorage key — one origin, one
   // store, and a 'storage' event when the other window's Preferences tab writes it.
-  const [combine] = useCombinePetRow()
+  const [petLayout] = usePetLayout()
   // …and the SAME scope filter, out of the same shared module (features/combat/meterScope). It
   // returns the identical array by reference when nothing is filtered out, so a solo session
   // pays nothing and this memo does not churn.
@@ -385,7 +386,11 @@ export function MeterBars({
   // The overlay hands its PERSISTED drill straight to the builder — `OverlayDrill` is exactly the
   // shape `meterPanel` takes, which is why this surface needs no translation where the Combat tab
   // and the Overview card each call `dashboardData.meterDrill` on their richer union.
-  const panel = useMemo(() => meterPanel(entities, combine, drill), [entities, combine, drill])
+  // "With its owner" regroups level 1 over the separate list (petRows.groupedPanel).
+  const panel = useMemo(
+    () => groupedPanel(meterPanel(entities, petLayout === 'nested', drill), petLayout === 'grouped'),
+    [entities, petLayout, drill]
+  )
   const dur = fmtDur(seg?.durationSec ?? 0)
 
   if (!seg || (panel.level === 1 && panel.sources.length === 0)) return <MeterEmpty live={live} />
@@ -400,7 +405,11 @@ export function MeterBars({
 
   return (
     <MeterCrumb name={null} dur={dur} total={total} onBack={null}>
-      <SourceLines sources={panel.sources} setDrill={setDrill} />
+      {panel.groups ? (
+        <PetGroupBars groups={panel.groups} setDrill={setDrill} />
+      ) : (
+        <SourceLines sources={panel.sources} setDrill={setDrill} />
+      )}
     </MeterCrumb>
   )
 }

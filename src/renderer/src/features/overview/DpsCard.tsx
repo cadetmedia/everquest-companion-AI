@@ -61,7 +61,7 @@ import { LIVE_SELECTION, fightScopeOptions, meterDrill, type Drill } from '../co
 import { DrillCrumb, MeterRows, crumbOf } from '../combat/MeterRows'
 import { meterPanel, panelTotals, type MeterPanel } from '../combat/petRows'
 import { scopeSources, scopeTotals } from '../combat/meterScope'
-import { useCombinePetRow, useMeterScope } from '../combat/useCombatPrefs'
+import { useMeterScope, usePetLayout } from '../combat/useCombatPrefs'
 import { useDrillMemory } from '../combat/useDrillMemory'
 import { AbilityExpandProvider } from '../combat/abilityExpand'
 import type { CombatFocus } from '../combat/combatFocus'
@@ -187,7 +187,9 @@ function DpsRows({
 export function DpsCard({ snap, onOpenCombat }: DpsCardProps): JSX.Element {
   const head = fightScopeOptions(snap?.segments ?? []).head
   const seg = snap?.selected ?? null
-  const [combinePetRow] = useCombinePetRow()
+  // The glance card draws "With its owner" as "Inside your bar": one bar per owner, the pet inside it,
+  // which is what a quarter-width card has room for (plans/2026-10-20-meter-pet-split.md).
+  const combinePetRow = usePetLayout()[0] !== 'separate'
   // WHOSE damage — the app-wide preference (JOS-115), applied here exactly as it is on the Combat
   // tab. `EMPTY_ROSTER` while the first snapshot is in flight makes Group render as Everyone for
   // that instant, never an empty card.
