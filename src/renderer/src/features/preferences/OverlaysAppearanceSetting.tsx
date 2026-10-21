@@ -57,7 +57,11 @@ import { overlayIndependent } from '@shared/overlayIndependent'
 import { OVERLAY_KIND_LABEL, OVERLAY_LABEL_ORDER, OVERLAY_STRIP_KINDS } from '@shared/overlayLabels'
 import type { OverlayKind } from '@shared/types'
 import { PREF_STEPPER_W, PrefStepper } from './PrefStepper'
+import { UNRELEASED } from '../../devFlags'
 import { recordPref, usePrefsSeed } from './prefsHydration'
+
+/** The rows this build lists: the Wiki Gaps window only where the Gaps tab exists to feed it. */
+const LISTED_KINDS = OVERLAY_LABEL_ORDER.filter((kind) => UNRELEASED || kind !== 'gaps')
 
 /** The percentage, which is the vocabulary the whole Appearance section speaks. */
 const pct = (v: number): string => `${String(Math.round(v * 100))}%`
@@ -376,7 +380,7 @@ function PerOverlayRows({
   return (
     <Stack spacing={0.25}>
       <ColumnHeaders />
-      {OVERLAY_LABEL_ORDER.map((kind) => {
+      {LISTED_KINDS.map((kind) => {
         // IN FORCE, never remembered — the one rule the rows keep from the retired list. Under this
         // switch that is the kind's own value, which is also what the window is drawing.
         const scale = effectiveOverlayTextScale(size, scales[kind])

@@ -55,7 +55,8 @@ const ROWS = '[data-testid^="pref-overlay-row-"]'
 const sizeRow = (kind: string, part = ''): string => `[data-testid="pref-overlay-text-size-${kind}${part}"]`
 const alphaRow = (kind: string, part = ''): string => `[data-testid="pref-overlay-bg-alpha-${kind}${part}"]`
 
-/** Every kind that gets a row — the whole union, which is the list's own claim. */
+/** Every kind that gets a row — the whole union, which is the list's own claim — less 'gaps': the
+ *  Wiki Gaps window is listed only where the UNRELEASED Gaps tab is built, and an e2e build is not. */
 const ALL_KINDS = [
   'fight',
   'overall',

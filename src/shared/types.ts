@@ -71,6 +71,9 @@ export type { LootDisposition, ItemStatBlock }
  *                 (owner, 2026-08-16) — it answers a question the player just asked by typing
  *                 `/con`, which is what makes it different from text nobody asked for. Its one knob
  *                 (the auto-hide, 0 = never) lives in shared/conCard.ts.
+ *   - 'gaps' (owner, 2026-10-20): the WIKI GAPS list — the first ten rows of the Gaps tab's list, as
+ *                 the tab shows them, written by the main window to the storage both windows share
+ *                 (shared/gapsOverlay.ts). A panel that docks like the meters; default off.
  * Each kind has its own independently-persisted OverlayConfig (bounds/alpha/lock/text size/drill)
  * and can be open simultaneously. IPC channels + the store are keyed by this.
  *
@@ -93,9 +96,9 @@ export type { LootDisposition, ItemStatBlock }
  * tests/overlayLayout.test.mts pins both halves.
  */
 // prettier-ignore
-export type OverlayKind = 'fight' | 'overall' | 'events' | 'heal-fight' | 'heal-overall' | 'toast' | 'buffs' | 'debuffs' | 'xp' | 'respawn' | 'alertBanner' | 'conCard'
+export type OverlayKind = 'fight' | 'overall' | 'events' | 'heal-fight' | 'heal-overall' | 'toast' | 'buffs' | 'debuffs' | 'xp' | 'respawn' | 'alertBanner' | 'conCard' | 'gaps'
 // prettier-ignore
-export const OVERLAY_KINDS: OverlayKind[] = ['fight', 'overall', 'events', 'heal-fight', 'heal-overall', 'toast', 'buffs', 'debuffs', 'xp', 'respawn', 'alertBanner', 'conCard']
+export const OVERLAY_KINDS: OverlayKind[] = ['fight', 'overall', 'events', 'heal-fight', 'heal-overall', 'toast', 'buffs', 'debuffs', 'xp', 'respawn', 'gaps', 'alertBanner', 'conCard']
 
 /** True for the two HEALING overlay kinds (they render HealMeter, not OverlayMeter). */
 export function isHealOverlayKind(kind: OverlayKind): boolean {

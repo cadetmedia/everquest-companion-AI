@@ -8,55 +8,29 @@
 // The domain toggle and the search box narrow those rows in shared/gaps.ts; "Copy list" puts the
 // visible rows on the clipboard as tab-separated text.
 
-import { type JSX, useCallback, useDeferredValue, useMemo, useState } from 'react'
+import { type JSX, useCallback, useMemo, useState } from 'react'
 import { Box, Button, Checkbox, CircularProgress, FormControlLabel, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
-import {
-  DEFAULT_GAP_SORT,
-  GAP_DOMAINS,
-  GAP_DOMAIN_HELP,
-  GAP_DOMAIN_LABELS,
-  GAP_SHOWN_NOUN,
-  firstGapSortDir,
-  gapsAsText,
-  gapsCaption,
-  hiddenBy,
-  sortGaps,
-  visibleGaps,
-  withoutDone,
-  withoutPlayers,
-  type GapDomain,
-  type GapRow,
-  type GapSort,
-  type GapSortKey,
-  type GapsSnap
-} from '@shared/gaps'
-import type { CharacterSnap } from '@shared/types'
+import { GAP_DOMAINS, GAP_DOMAIN_HELP, GAP_DOMAIN_LABELS, GAP_SHOWN_NOUN, gapsAsText, gapsCaption, hiddenBy, visibleGaps, type GapDomain, type GapRow, type GapsSnap } from '@shared/gaps'
 import { stillNeeded, wikiPageText } from '@shared/wikiPage'
-import { useModule } from '../../lib/useModule'
 import { Tooltip } from '../../lib/Tooltip'
-import { useBoolPref } from '../combat/useCombatPrefs'
 import { copyText } from '../../lib/clipboard'
-import { useGapVerdicts } from '../../lib/gapVerdicts'
 import { useSpellFacts } from '../../lib/gapSpellFacts'
+import { useMarkGapsTabMounted } from '../../lib/gapsTabMounted'
 import GapsTable from './GapsTable'
-import { GAPS_DATA_DATE, PAGE_EXTRAS, useGapsData } from './useGapsData'
-import { useDoneMarks, usePlayerList } from './useDoneMarks'
-import { useAllCharacters } from './useOtherCharacters'
+import { GAPS_DATA_DATE, PAGE_EXTRAS } from './useGapsData'
 import { AllCharactersBox, CharactersLine } from './AllCharactersControls'
 import { useAllHeld } from './useAllHeld'
-import { useHideUncertain, type HideUncertain } from './useHideUncertain'
+import type { HideUncertain } from './useHideUncertain'
 import { useGrouping } from './useGrouping'
+import { useGapsList } from './useGapsList'
+import { useGapsOverlayFeed } from './useGapsOverlayFeed'
 import GroupHeaderControls from './GroupHeaderControls'
 
 // One line (owner, 2026-10-11): the how is in the module header, not on the page. Since 2026-10-18
 // the line says what the chosen domain's rows are (GAP_DOMAIN_HELP).
 const CLICK_HINT = 'Click a row for where it was seen.'
 
-/** Where the "Zone I'm in" choice is remembered, per viewer, as the Achievements tab remembers its own. */
-const ZONE_HERE_KEY = 'eq.gaps.zoneHere'
-/** Where "Show done" is remembered. */
-const SHOW_DONE_KEY = 'eq.gaps.showDone'
 const CHIP_CONTEXT = { dataDate: GAPS_DATA_DATE, isMob: PAGE_EXTRAS.isMob }
 const NO_NAMES: readonly string[] = []
 /** The names of the rows on screen. */
@@ -181,45 +155,17 @@ function sightingsOf(engine: GapsSnap | null | undefined, spellFacts: ReturnType
   return { killFactions: engine?.killFactions, mobLocs: engine?.mobLocs, mobSpecials: engine?.mobSpecials, mobCoin: engine?.mobCoin, ...PAGE_EXTRAS, spellFacts }
 }
 
-/** The table's order: a header click picks the column, a second flips it. */
-function useGapSort(): [GapSort, (key: GapSortKey) => void] {
-  const [sort, setSort] = useState<GapSort>(DEFAULT_GAP_SORT)
-  const onSort = useCallback((key: GapSortKey) => {
-    setSort((cur) => (cur.key === key ? { key, dir: cur.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: firstGapSortDir(key) }))
-  }, [])
-  return [sort, onSort]
-}
-
 export default function GapsView(): JSX.Element {
-  const charSnap = useModule<CharacterSnap>('character')
-  // All characters (owner, 2026-10-19): every character's saved Gaps joined in, within a day window.
-  const me = charSnap?.character ?? null
-  const allChars = useAllCharacters(me)
-  const { snap, engine, loot, ownLoot, kills, seenBy, joining } = useGapsData(allChars.all)
-  const [domain, setDomain] = useState<GapDomain>('item')
-  const [query, setQuery] = useState('')
+  // The list itself, from the engine's rows to the order on screen, is the hook the Wiki Gaps
+  // overlay's publisher runs too (useGapsList), so the overlay lists what this tab lists.
+  const list = useGapsList()
+  const { me, allChars, domain, setDomain, query, setQuery, hereOnly, setHereOnly, current, zone, playerList, rows, marks, showDone, setShowDone, sure, visible, verdicts, sort, onSort, sorted } = list
+  const { snap, engine, loot, ownLoot, kills, seenBy, joining } = list.data
+  // While this tab is mounted it feeds the overlay itself, and the headless publisher stands down.
+  useMarkGapsTabMounted()
+  useGapsOverlayFeed(list)
   const [copied, setCopied] = useState<number | null>(null)
-  // "Zone I'm in" (owner ask, 2026-10-17): only what was named where you stand, every tier of it.
-  const [hereOnly, setHereOnly] = useBoolPref(ZONE_HERE_KEY, false)
-  const current = charSnap?.zone ?? null
-  const zone = hereOnly ? current : null
-  // Mobs rows the player marked as players are gone for good (owner, 2026-10-19).
-  const playerList = usePlayerList()
-  const rows = useMemo(() => (snap ? withoutPlayers(snap.rows, playerList.players) : undefined), [snap, playerList.players])
-  const marks = useDoneMarks(new Date().toISOString().slice(0, 10), GAPS_DATA_DATE)
-  const [showDone, setShowDone] = useBoolPref(SHOW_DONE_KEY, false)
-  // The list follows the query a beat behind the keystroke, so typing never waits on a filter.
-  const deferredQuery = useDeferredValue(query)
-  const inDomain = useMemo(() => visibleGaps(rows ?? [], domain, deferredQuery, zone), [rows, domain, deferredQuery, zone])
-  // "Hide uncertain" (owner, 2026-10-19): rows the tab is not sure are gaps, hidden on request.
-  const sure = useHideUncertain(inDomain)
-  const visible = useMemo(() => (showDone ? [...sure.rows] : withoutDone(sure.rows, marks.done)), [sure.rows, showDone, marks.done])
   const hiddenRow = useMemo(() => hiddenBy(marks.done, showDone, sure.hide), [marks.done, showDone, sure.hide])
-  // What the caches already say about the rows on screen: `unchecked` until the answer lands.
-  const verdicts = useGapVerdicts(domain, visible)
-  const [sort, onSort] = useGapSort()
-  // The table and Copy list read the same order, so a copied list matches what is on screen.
-  const sorted = useMemo(() => sortGaps(visible, sort, verdicts), [visible, sort, verdicts])
   // What the pages read beside the ledgers: each kill's factions, each mob's points, the wiki's spellings.
   // A spell page fills from the install's spell files (owner, 2026-10-19): asked for the spells on screen.
   const spellNames = useMemo(() => (domain === 'spell' ? spellNamesOf(visible) : NO_NAMES), [domain, visible])
