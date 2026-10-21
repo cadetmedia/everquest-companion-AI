@@ -20,11 +20,13 @@ import type { GapDetails, GapOffer } from './gaps'
 export const BEST_STANDING = 'ally'
 
 /** How one offer stands against the estimate. */
-export type OfferCheck = 'matches' | 'differs' | 'noEstimate' | 'otherStanding' | 'noStanding' | 'nothing'
+export type OfferCheck = 'matches' | 'differs' | 'noEstimate' | 'otherStanding' | 'noStanding' | 'unconfirmedMatch' | 'nothing'
 
 export function offerCheck(o: GapOffer, estimate: number | undefined): OfferCheck {
   if (o.copper <= 0) return 'nothing'
-  if (o.standing === undefined) return 'noStanding'
+  // Standing unknown (owner, 2026-10-20: count it if it matches): an offer equal to the estimate
+  // to the copper reads as the ally price, the case in 19 of the 21 items the log could check.
+  if (o.standing === undefined) return estimate !== undefined && o.copper === estimate ? 'unconfirmedMatch' : 'noStanding'
   if (o.standing !== BEST_STANDING) return 'otherStanding'
   if (estimate === undefined) return 'noEstimate'
   return o.copper === estimate ? 'matches' : 'differs'
@@ -37,7 +39,10 @@ export function offerCheckText(o: GapOffer, estimate: number | undefined): strin
       // A free sale is not a price (MEASURED.md): a bound or worthless item says nothing of value.
       return 'pays nothing, which is no price'
     case 'noStanding':
-      return 'standing unknown: /con the merchant before selling to record it'
+      return 'standing unknown: /con the merchant, then show it the item again'
+    case 'unconfirmedMatch':
+      // Still asks for the con (owner, 2026-10-20: "recommend the person CON the NPC").
+      return 'matches the Value estimate; /con the merchant to confirm the standing'
     case 'otherStanding':
       return `at ${o.standing ?? ''}: the Value estimate is for ally, and no formula converts it`
     case 'noEstimate':
