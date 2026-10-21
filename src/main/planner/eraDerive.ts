@@ -206,6 +206,7 @@
 import { itemKey, type ItemDbEntry, type ItemDbFile } from '../itemsDb'
 import { pageEraKey, type PageEraFile } from '../pageEraDb'
 import { itemBaseName } from '../../shared/itemStats'
+import { runSteps, type Steps } from '../yieldingSteps'
 import {
   CURRENT_ERA,
   eraBadge,
@@ -568,12 +569,38 @@ export function buildEraDerivations(
   file: ItemDbFile,
   catalogs: EraDeriveCatalogs = committedCatalogs()
 ): Map<string, EraDerivation> {
+  return runSteps(eraDerivationSteps(file, catalogs))
+}
+
+/**
+ * Pages walked between two safe stopping points. One page is a few microseconds, so this is well
+ * under a millisecond of work per step; the runner, not this number, decides how long a slice is.
+ */
+const PAGES_PER_STEP = 64
+
+/**
+ * `buildEraDerivations` as STEPS (`../yieldingSteps.ts`): the same walk, in the same order, yielding
+ * between pages so the gear index can be built in the main process without holding it. Every bit of
+ * the walk's state lives in this generator's locals, so a pause between two pages changes nothing.
+ *
+ * The committed catalogs are resolved INSIDE the steps, between two yields, rather than as a default
+ * parameter: their first build is the largest single piece of the walk (about 30 ms, mostly the
+ * dropper inversion), and a default parameter would fuse it onto the first page's step.
+ */
+export function* eraDerivationSteps(
+  file: ItemDbFile,
+  given?: EraDeriveCatalogs
+): Steps<Map<string, EraDerivation>> {
+  yield
+  const catalogs = given ?? committedCatalogs()
+  yield
   const corpus = new Map(Object.entries(file.items ?? {}))
   const out = new Map<string, EraDerivation>()
   const seen = new Set<string>()
   for (const entry of corpus.values()) {
     if (seen.has(entry.page)) continue
     seen.add(entry.page)
+    if (seen.size % PAGES_PER_STEP === 0) yield
     // A page that already states an era, or that any zone places, is not layer 3's business —
     // EXCEPT for the one definitive edge, which is the only thing here entitled to overrule a
     // witness. Asked with the page's OWN zones only: the renderer folds the catalog in as well and
