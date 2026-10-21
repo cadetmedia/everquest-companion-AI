@@ -45,6 +45,7 @@ import { effectiveEqRoot } from './log/config'
 import { bundledImageRoots, findBundledImagesDir } from './bundledImages'
 import { installSpeechCacheProtocol } from './speech/cache'
 import { registerIpc } from './ipc'
+import { prewarmGearIndex } from './ipc/planner'
 import { DATA_READY_MS, logSpellDbSummary } from './appSpellDb'
 import { markStartupPhase, startPerfSampler, stopPerf } from './perf'
 import { stopEnginePerfWatch } from './enginePerfWatch'
@@ -110,6 +111,9 @@ applyGraphicsCompatibilityFlags()
 // number is bucketed (never sent raw) into `sessionStart` when the window exists. See
 // src/shared/telemetry.ts COLD_START_MS_EDGES.
 const PROCESS_START_MS = Date.now()
+
+/** How long after `ready` the gear index starts building on its own (see where it is armed). */
+const GEAR_PREWARM_DELAY_MS = 5_000
 
 // --- startup profile, phases 1 and 2 (docs/plans/perf-profiling.md P4) ---
 //
@@ -364,6 +368,13 @@ if (!gotSingleInstanceLock) {
     // data (the plan's boundary); phase 0 has no renderer surface, so what this buys today is an
     // engine that exists and narrates itself into the dev log.
     startEngineSupervisor()
+    // THE GEAR INDEX, BUILT BEFORE ANYONE ASKS FOR IT (perf audit, 2026-10-20). Built on the first
+    // Gear visit it held the main process for 204 ms, every window's IPC with it. The build is
+    // sliced now (ipc/planner.ts) and this starts it at a quiet moment so the first visit is a read:
+    // GEAR_PREWARM_DELAY_MS after launch, when the window has hydrated and the engine has attached
+    // (both inside 1.5 s on the owner's 79 MB log) and the engine's own fold is a separate process.
+    // Unref'd, so it can never hold a quitting process open.
+    setTimeout(prewarmGearIndex, GEAR_PREWARM_DELAY_MS).unref()
     // Drain the offline feedback queue (feedback/queue.ts). A report filed while the user's
     // network was unhappy is spooled to <userData>/feedback.json + feedback-pending/*.gz and
     // sent later over the same wire, carrying the same idempotency key; without this call it

@@ -7,7 +7,8 @@
 // it), so importing the same module here costs no extra bytes — but WALKING it does, so the index
 // is built on the first call and kept for the life of the process. An install that never opens
 // the Planner never pays for it; one that opens it twice pays once. Same shape as itemLookup's
-// module-scope index, just deferred.
+// module-scope index, just deferred. The GEAR index is the one exception: it is built in slices and
+// started ahead of time at an idle moment (`prewarmGearIndex`, below, says what that costs).
 //
 // The renderer is UNTRUSTED, here as everywhere: the search query must be a string, and a set
 // list is re-validated field by field against the closed slot/socket/class allowlists
@@ -17,7 +18,9 @@ import { ipcMain } from 'electron'
 import { IPC } from '../../shared/ipc'
 import { equippedHosts, type PlannerInventory } from '../../shared/planner/inventorySlots'
 import { searchPlannerItems } from '../planner/effectIndex'
-import { buildGearIndex } from '../planner/gearIndex'
+import { gearIndexSteps } from '../planner/gearIndex'
+import { runStepsSliced } from '../yieldingSteps'
+import { logError } from '../errorLog'
 import type { GearIndexPayload } from '../../shared/planner/gear'
 import { NO_OWNERSHIP, ownershipPayload, type OwnershipPayload } from '../../shared/planner/ownership'
 import { sanitizeExaltPlans, sanitizeGearSets, sanitizeWishlist } from '../planner/validate'
@@ -38,16 +41,43 @@ import { currentWornFocus } from '../planner/wornFocusCurrent'
 // gear memo's own comment below warns about. See planner/indexCurrent.ts.
 import { plannerIndex } from '../planner/indexCurrent'
 
-let gear: GearIndexPayload | null = null
+let gear: Promise<GearIndexPayload> | null = null
 
 /**
  * The GEAR candidate index (JOS-283), memoized the same way and for the same reason. It lives in
  * THIS file rather than a gear-only handler module because the memoization is per-import of a
  * committed corpus: two handler modules would each hold their own walk of the same 8.6 MB.
+ *
+ * BUILT IN SLICES, AND MEMOIZED AS THE PROMISE (perf audit, 2026-10-20). Built in one go, the walk
+ * held the main process for the first Gear visit's whole build — 204 ms of main-loop lag, with every
+ * window's IPC queued behind it, overlays included. `runStepsSliced` hands the thread back every few
+ * milliseconds, so the build costs the same CPU and stalls nothing. Memoizing the PROMISE is what
+ * lets a request that arrives mid-build wait for the build already running instead of starting a
+ * second one. A failed build is forgotten, so the next ask retries — as a throw did before.
  */
-function gearIndex(): GearIndexPayload {
-  gear ??= buildGearIndex(itemsJson as unknown as ItemDbFile)
+function gearIndex(): Promise<GearIndexPayload> {
+  if (gear === null) {
+    const building = runStepsSliced(gearIndexSteps(itemsJson as unknown as ItemDbFile))
+    gear = building
+    building.catch(() => {
+      if (gear === building) gear = null
+    })
+  }
   return gear
+}
+
+/**
+ * Start the gear index's build ahead of the first Gear visit, so that visit finds it ready.
+ *
+ * THIS GIVES UP ONE THING THE LAZY BUILD PROMISED: "an install that never opens the Planner never
+ * pays for it" (the header). It now pays once per launch — about 150 ms of CPU, sliced so that it
+ * stalls nothing, and the payload's heap — at a moment the composition root picks as idle. What it
+ * buys is a first Gear visit that is a read rather than a build.
+ */
+export function prewarmGearIndex(): void {
+  gearIndex().catch((err: unknown) => {
+    logError('main:gearIndex', err)
+  })
 }
 
 /**
@@ -94,7 +124,7 @@ export function registerPlannerIpc(): void {
   // Every equippable item, described in numbers (JOS-283). One versioned payload, fetched once —
   // the renderer scales it to any plus-state itself (shared/planner/gearScale.ts), so no upgrade
   // slider ever comes back here.
-  ipcMain.handle(IPC.gearIndex, (): GearIndexPayload => gearIndex())
+  ipcMain.handle(IPC.gearIndex, (): Promise<GearIndexPayload> => gearIndex())
 
   // What the active character OWNS, keyed the way the gear index is (JOS-285). Re-asked by the
   // renderer on every `inventory:autoReloaded`; re-folded here only when the file itself moved.

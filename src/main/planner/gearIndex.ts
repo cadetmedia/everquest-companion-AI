@@ -39,7 +39,8 @@ import {
   type ResearchedKnowledge
 } from '../itemsResearch'
 import { COMMITTED_SPELL_FACTS, slotsOf, type SpellFactsIndex } from './effectIndex'
-import { buildEraDerivations } from './eraDerive'
+import { eraDerivationSteps } from './eraDerive'
+import { runSteps, type Steps } from '../yieldingSteps'
 import {
   isHasteEffect,
   normalizeClasses,
@@ -455,11 +456,35 @@ export function buildGearIndex(
   spells: SpellFactsIndex = COMMITTED_SPELL_FACTS,
   sources: SourceIndex = committedSources()
 ): GearIndexPayload {
-  const acc = newAcc(buildEraDerivations(file))
+  return runSteps(gearIndexSteps(file, research, spells, sources))
+}
+
+/** Pages built between two safe stopping points — the same grain as layer 3's walk, and for the
+ *  same reason: the runner decides how long a slice is, this only has to be finer than that. */
+const PAGES_PER_STEP = 64
+
+/**
+ * `buildGearIndex` as STEPS (`../yieldingSteps.ts`), so the IPC handler can build it in the main
+ * process WITHOUT HOLDING IT: the first Gear visit used to stop every window's IPC for the whole
+ * build (perf audit, 2026-10-20: 204 ms of main-loop lag). Same walks, same order, same payload —
+ * layer 3's own steps first, then the row walk, yielding between pages; the census is still taken
+ * in one pass at the end, over the kept rows.
+ */
+export function* gearIndexSteps(
+  file: ItemDbFile,
+  research: ItemResearchFile = ITEMS_RESEARCH,
+  spells: SpellFactsIndex = COMMITTED_SPELL_FACTS,
+  sources: SourceIndex = committedSources()
+): Steps<GearIndexPayload> {
+  const acc = newAcc(yield* eraDerivationSteps(file))
   const deps: BuildDeps = { research, spells, sources }
   // Through the rename overlay (JOS-415) — same reasoning as `buildPlannerIndex`: a gear row is a
   // DISPLAYED name, and `addPage`'s page dedupe already absorbs the alias key.
-  for (const entry of Object.values(renamedItems(file.items ?? {}))) addPage(acc, entry, deps)
+  let walked = 0
+  for (const entry of Object.values(renamedItems(file.items ?? {}))) {
+    addPage(acc, entry, deps)
+    if (++walked % PAGES_PER_STEP === 0) yield
+  }
   // The census is taken from the KEPT rows, after dedupe (see `countRow`).
   for (const row of acc.rows.values()) countRow(acc, row)
   return {

@@ -21,12 +21,11 @@
 import { app } from 'electron'
 import { readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
-import { writeFileDurable } from '../telemetry/durableWrite'
 import { Worker } from 'node:worker_threads'
 import { effectiveEqRoot } from '../log/config'
 import { logError } from '../errorLog'
 import type { SpellResistTable } from '../../shared/resistTypes'
-import type { ResistTableWorkerReply } from '../resistTableWorker'
+import type { ResistTableCacheTarget, ResistTableWorkerReply } from '../resistTableWorker'
 
 /**
  * Bump to invalidate every cached table in the field (a parser change, not a game patch).
@@ -111,21 +110,17 @@ function readCache(stamp: { size: number; mtimeMs: number }): SpellResistTable |
   }
 }
 
-function writeCache(stamp: { size: number; mtimeMs: number }, table: SpellResistTable): void {
-  const file: CacheFile = { version: SPELL_RESIST_CACHE_VERSION, ...stamp, table }
-  try {
-    writeFileDurable(app.getPath('userData'), cachePath(), JSON.stringify(file))
-  } catch (err) {
-    // Best-effort: a failed cache write costs one re-parse next launch, nothing else.
-    logError('main:resistTable', { message: 'spell-resist-cache write failed', err })
-  }
-}
-
-function parseOnWorker(path: string): Promise<SpellResistTable | null> {
+/**
+ * Parse on the worker, which also WRITES THE CACHE before it replies. That write used to happen
+ * here, and its `JSON.stringify` plus a synchronous write were 65 ms of this thread (perf audit,
+ * 2026-10-20; `resistTableWorker.ts` has the rest). Still best-effort: a failed write is logged and
+ * costs one re-parse next launch, nothing else.
+ */
+function parseOnWorker(path: string, cache: ResistTableCacheTarget): Promise<SpellResistTable | null> {
   return new Promise((resolve) => {
     let worker: Worker
     try {
-      worker = new Worker(join(__dirname, 'resistTableWorker.js'), { workerData: { path } })
+      worker = new Worker(join(__dirname, 'resistTableWorker.js'), { workerData: { path, cache } })
     } catch (err) {
       logError('main:resistTable', { message: 'resist table worker failed to start', err })
       resolve(null)
@@ -140,6 +135,9 @@ function parseOnWorker(path: string): Promise<SpellResistTable | null> {
     }
     worker.on('message', (reply: ResistTableWorkerReply) => {
       if (!reply.ok) logError('main:resistTable', { message: reply.error ?? 'parse failed' })
+      if (reply.cacheError !== undefined) {
+        logError('main:resistTable', { message: `spell-resist-cache write failed: ${reply.cacheError}` })
+      }
       finish(reply.table ?? null)
     })
     worker.on('error', (err) => {
@@ -197,11 +195,8 @@ async function load(): Promise<SpellResistTable | null> {
     state = 'ok'
     return cached
   }
-  const parsed = await parseOnWorker(path)
-  if (parsed) {
-    loaded = parsed
-    writeCache(stamp, parsed)
-  }
+  const parsed = await parseOnWorker(path, { path: cachePath(), version: SPELL_RESIST_CACHE_VERSION, ...stamp })
+  if (parsed) loaded = parsed
   state = parsed ? 'ok' : 'unloadable'
   return parsed
 }
