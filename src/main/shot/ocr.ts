@@ -28,7 +28,12 @@ const IDLE_MS = 3 * 60_000
 let worker: Promise<Worker> | null = null
 let idle: NodeJS.Timeout | null = null
 
-function langPath(): string {
+/**
+ * The English data's folder, on disk. NO NETWORK (RULES.md rule 15): tesseract.js fetches from its
+ * CDN only when `langPath` is empty or a URL (worker-script/index.js, `langPathDownload`); this is
+ * always a local path, and a missing package throws here instead of reaching that fallback.
+ */
+export function langPath(): string {
   return join(dirname(require.resolve('@tesseract.js-data/eng/package.json')), '4.0.0_best_int')
 }
 

@@ -78,7 +78,8 @@ async function iconsIn(img: Rgba, b: Box | null, r: ShotReaders): Promise<IconHi
   // views). By margin instead, a meaningless near-tie on the untouched sky (999 vs 1085) beat the flat
   // view's real answer (1104 at 435) on Malkil's sky shot.
   const tryView = (q: Rgb): void => {
-    const hits = findIcon(q, index, r.cell, 5)
+    // 30 kept: the picker shows 5 and "Show more" adds 5 a click (owner, 2026-10-21).
+    const hits = findIcon(q, index, r.cell, 30)
     if (hits.length > 0 && (best.length === 0 || hits[0].score < best[0].score)) best = hits
   }
   // Cheapest first: as it is, the flat background, then the skin's textures (the slow fit).

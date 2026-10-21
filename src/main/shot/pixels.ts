@@ -34,6 +34,27 @@ export function toRgb(img: Rgba): Rgb {
   return { w: img.w, h: img.h, rgb }
 }
 
+/**
+ * Blank or near one colour (owner, 2026-10-21: a mob picture that shows nothing is refused): the
+ * brightness of up to ~4,000 evenly spread pixels varies by less than 5 levels (standard deviation).
+ */
+export function isNearSolid(img: Rgba): boolean {
+  const step = Math.max(1, Math.floor(Math.sqrt((img.w * img.h) / 4000)))
+  let n = 0
+  let sum = 0
+  let sq = 0
+  for (let y = 0; y < img.h; y += step) {
+    for (let x = 0; x < img.w; x += step) {
+      const p = (y * img.w + x) * 4
+      const v = 0.299 * img.data[p] + 0.587 * img.data[p + 1] + 0.114 * img.data[p + 2]
+      n++
+      sum += v
+      sq += v * v
+    }
+  }
+  return n === 0 || Math.sqrt(Math.max(0, sq / n - (sum / n) ** 2)) < 5
+}
+
 /** A box clipped to the image; null when nothing of it is inside. */
 export function clipBox(b: Box, w: number, h: number): Box | null {
   const x0 = Math.max(0, Math.round(b.x))

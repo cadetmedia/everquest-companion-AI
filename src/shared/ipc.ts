@@ -1158,8 +1158,15 @@ export const IPC = {
   shotClipboard: 'shot:clipboard',
   // An item icon drawn from the install's own sheets, as a data URL. Payload: (id: number).
   shotIcon: 'shot:icon',
-  // Save a pasted picture under the wiki's file name, through a save dialog. Payload: (png: Uint8Array, fileName: string).
+  // Save a pasted mob picture under the wiki's file name: the auto-save folder, else a save dialog
+  // opened in the last folder (src/main/ipc/shotPicture.ts). Payload: (png, fileName, overwrite?: boolean).
   shotSaveImage: 'shot:saveImage',
+  // Whether a mob's name shows in a picture (its nameplate), by OCR. Payload: (png, name). Answers boolean | null.
+  shotCheckMob: 'shot:checkMob',
+  // The mob-picture auto-save folder. Payload: ('get' | 'pick' | 'clear'). Answers the folder or null.
+  shotAutoDir: 'shot:autoDir',
+  // A picture this run saved: ('show' | 'delete', path). Answers whether the path was one.
+  shotSavedFile: 'shot:savedFile',
 
   // ---- error harness (renderer -> main, fire-and-forget) ----
   // window.onerror / onunhandledrejection / React ErrorBoundary report here so

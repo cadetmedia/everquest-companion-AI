@@ -3,7 +3,7 @@
 
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { cellOf, decodeDds, decodeTga, iconIdOf } from '../src/main/shot/gameTextures.ts'
@@ -11,7 +11,7 @@ import { buildIconIndex, iconSheets, readIconIndex, sheetsFingerprint, SheetCell
 import { findIcon } from '../src/main/shot/iconMatch.ts'
 import { fitTexture, flatRemoved, textureRemoved } from '../src/main/shot/background.ts'
 import { grayPng, ocrGray, toRgb, type Rgba } from '../src/main/shot/pixels.ts'
-import { linesFromTsv, ocrScale } from '../src/main/shot/ocr.ts'
+import { langPath, linesFromTsv, ocrScale } from '../src/main/shot/ocr.ts'
 import { iconRegion } from '../src/main/shot/readItemShot.ts'
 import { readPng } from './shotPng.mts'
 
@@ -184,4 +184,10 @@ test('THE ICON SITS LEFT OF THE CLASS WORD, ITS TOP AT THE NAME LINE, SIZED BY T
   // pitch 14: side 47.6, right edge just left of x = 73, top 2.5 pitches above Class
   assert.ok(Math.abs(r.x + r.w - 71) <= 2 && Math.abs(r.y - 58) <= 1 && Math.abs(r.w - 48) <= 1, JSON.stringify(r))
   assert.equal(iconRegion([line('nothing here', 10, 10)], 100, 100), null)
+})
+
+test('OCR READS ITS ENGLISH DATA FROM DISK, NEVER A URL (rule 15: no CDN fallback)', () => {
+  const dir = langPath()
+  assert.ok(!/^[a-z][a-z0-9+.-]*:\/\//i.test(dir), dir)
+  assert.ok(existsSync(join(dir, 'eng.traineddata.gz')), dir)
 })

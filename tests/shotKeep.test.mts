@@ -1,0 +1,86 @@
+// What a paste in a Gaps item row's screenshot box keeps (src/shared/itemShotKeep.ts; owner, 2026-10-21,
+// after testing): a nonsense image keeps nothing, another item's window waits, a window paste replaces
+// every window field, a Lore paste only the lore, each part clears on its own.
+
+import { test } from 'node:test'
+import assert from 'node:assert/strict'
+import { cleared, hasWindowPart, keptAfter, sameItem, shotKind } from '../src/shared/itemShotKeep.ts'
+import { readItemWindow, type ItemShotReply } from '../src/shared/itemWindow.ts'
+import { nameInLines } from '../src/shared/mobPicture.ts'
+import { isNearSolid } from '../src/main/shot/pixels.ts'
+
+const reply = (lines: string[], icons: { id: number; score: number }[] = []): ItemShotReply => ({ read: readItemWindow(lines), lines, icons, ms: 1 })
+
+const WINDOW = ['| Ruined Robe', 'Ruined Robe', 'Lore Equipped, No Trade, Temporary', 'Class: NEC WIZ MAG ENC', 'Race: ALL', 'Chest', 'Size: MEDIUM AC: 1', 'Weight: 2.0']
+const LORE_TAB = ['| Ruined Robe', '| /~ SPDesciption 3, © [[ 4" “Lore 7AM', 'The Cloth Seems To Be Moving']
+
+test('A CAT IS NOT AN ITEM: NO CLASS LINE, NO LORE TAB, NO ICON THAT FITS -> NOTHING IS KEPT', () => {
+  assert.equal(shotKind(reply(['meow', 'a soft orange cat sitting on a warm windowsill in the sun'])), null)
+  // a small picture is tried as an icon alone, and a poor fit is refused
+  assert.equal(shotKind(reply([], [{ id: 1126, score: 1900 }])), null)
+  assert.equal(shotKind({ ...reply(WINDOW), error: 'Not a picture.' }), null)
+})
+
+test('THE ITEM WINDOW, ITS LORE TAB AND AN ICON ALONE ARE EACH TOLD APART', () => {
+  assert.equal(shotKind(reply(WINDOW)), 'window')
+  assert.equal(shotKind(reply(LORE_TAB)), 'lore')
+  assert.equal(reply(LORE_TAB).read.lore, 'The Cloth Seems To Be Moving')
+  assert.equal(shotKind(reply([], [{ id: 1126, score: 146 }])), 'icon')
+  // a sentence without the Lore tab around it is not a Lore tab (a chat snip)
+  assert.equal(shotKind(reply(['Malkil tells you, that sword looks great on you'])), null)
+})
+
+test("THE WINDOW'S NAME MATCHES THE ROW THROUGH OCR'S SMALL SLIPS, NOT ANOTHER ITEM", () => {
+  assert.ok(sameItem('BlackLizard Scale', 'Black Lizard Scale'))
+  assert.ok(sameItem('Windstiker', 'Windstriker'))
+  assert.ok(sameItem(undefined, 'Anything'))
+  assert.ok(!sameItem('Ruined Robe', 'Black Lizard Scale'))
+  assert.ok(!sameItem('Windstriker', 'Bow of the Huntsman'))
+})
+
+test('A WINDOW PASTE REPLACES EVERY WINDOW FIELD (A FIELD IT LACKS IS CLEARED); THE LORE STAYS', () => {
+  const before = { statsblock: 'old', iconId: 999, valueCopper: 4000, focusEffect: 'Old Focus', lore: 'Kept lore' }
+  const after = keptAfter(before, reply(WINDOW, [{ id: 1126, score: 146 }]), 'window')
+  assert.equal(after.iconId, 1126)
+  assert.equal(after.lore, 'Kept lore')
+  assert.equal(after.valueCopper, undefined)
+  assert.equal(after.focusEffect, undefined)
+  assert.ok(after.statsblock?.includes('Slot: CHEST'))
+})
+
+test('A LORE PASTE CHANGES ONLY THE LORE; AN ICON PASTE ONLY THE ICON', () => {
+  const before = { statsblock: 'kept', iconId: 1126, valueCopper: 38 }
+  assert.deepEqual(keptAfter(before, reply(LORE_TAB), 'lore'), { ...before, lore: 'The Cloth Seems To Be Moving' })
+  assert.deepEqual(keptAfter(before, reply([], [{ id: 1225, score: 300 }]), 'icon'), { ...before, iconId: 1225 })
+})
+
+test('EACH PART CLEARS ON ITS OWN; CLEARING THE LAST PART FORGETS THE ITEM', () => {
+  const both = { statsblock: 's', iconId: 1, lore: 'L' }
+  assert.deepEqual(cleared(both, 'window'), { lore: 'L' })
+  assert.deepEqual(cleared(both, 'lore'), { statsblock: 's', iconId: 1 })
+  assert.equal(cleared({ lore: 'L' }, 'lore'), null)
+  assert.equal(cleared({ iconId: 1 }, 'window'), null)
+  assert.ok(hasWindowPart({ iconId: 1 }))
+  assert.ok(!hasWindowPart({ lore: 'L' }))
+  assert.ok(!hasWindowPart(undefined))
+})
+
+test("A MOB'S NAMEPLATE IS FOUND LOOSELY: LETTERS ONLY, NO (ZONE), WITH OR WITHOUT ITS ARTICLE, A SLIP IN A LONG NAME", () => {
+  assert.ok(nameInLines('a lesser kobold', ['  A Lesser Kobold  ', 'some chat']))
+  assert.ok(nameInLines('Orc Centurion (Crushbone)', ['[45] Orc Centurion']))
+  assert.ok(nameInLines('a fire giant warrior', ['Fire Giant Warrior']))
+  assert.ok(nameInLines('Hoptor Thaggelum', ['Hoptor Thagge1um']))
+  assert.ok(!nameInLines('a lesser kobold', ['a decaying skeleton', 'You have slain a gnoll!']))
+  assert.ok(!nameInLines('Marda', []))
+})
+
+test('A BLANK OR ONE-COLOUR PICTURE IS NEAR SOLID; A REAL SCENE IS NOT', () => {
+  const pic = (at: (x: number, y: number) => number): { w: number; h: number; data: Uint8Array } => {
+    const data = new Uint8Array(100 * 80 * 4)
+    for (let y = 0; y < 80; y++) for (let x = 0; x < 100; x++) data.set([at(x, y), at(x, y), at(x, y), 255], (y * 100 + x) * 4)
+    return { w: 100, h: 80, data }
+  }
+  assert.ok(isNearSolid(pic(() => 0)))
+  assert.ok(isNearSolid(pic((x) => 120 + (x % 3))))
+  assert.ok(!isNearSolid(pic((x, y) => ((x >> 3) + (y >> 3)) % 2 === 0 ? 30 : 200)))
+})
