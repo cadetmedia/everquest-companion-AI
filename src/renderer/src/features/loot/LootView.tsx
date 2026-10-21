@@ -29,7 +29,7 @@
 // means. What the hover used to say is not lost — clicking a row (or a pickup chip) opens the
 // drill-down, which is where the item window and its quest/recipe knowledge live anyway.
 
-import { type JSX, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { type JSX, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Box, Snackbar, Stack } from '@mui/material'
 import type { ItemKnowledge, LootEvent } from '@shared/types'
 import type { EngineClient } from '@shared/dataServer/client'
@@ -162,20 +162,29 @@ function useLootDetail(
     if (selected === null && scrollRef.current) scrollRef.current.scrollTop = savedScroll.current
   }, [selected, scrollRef])
 
-  return {
-    selected,
-    open: (item) => {
+  // `open` keeps ONE identity across renders (perf audit, 2026-10-20). It is every ledger row's
+  // `onSelect`, and the rows are memoized: a fresh arrow per render re-rendered every mounted row
+  // on every render of this view, which is what made each knowledge answer and each data push
+  // cost a whole table.
+  const nav = props.nav
+  const open = useCallback(
+    (item: string) => {
       savedScroll.current = scrollRef.current?.scrollTop ?? 0
       // A NATIVE drill: the reader clicked a row in the ledger they are standing in, so the list
       // IS where back goes — and whatever a link parked before belongs to a journey that ended
       // when they started browsing here (navOrigin.ts).
-      props.nav?.clear()
+      nav?.clear()
       setSelected(item)
     },
+    [nav, scrollRef]
+  )
+  return {
+    selected,
+    open,
     // A hop parks nothing and saves nothing, by the spell drilldown's rule (appRouting.ts): you
     // did not travel, so the trail behind you — the parked origin and the ledger's scroll — is
     // still the trail behind you, and ONE Back leaves the whole excursion.
-    hop: (item) => setSelected(item),
+    hop: (item: string) => setSelected(item),
     close: () => setSelected(null)
   }
 }
