@@ -267,7 +267,25 @@ screenshots are being gathered)
   texture) drops to the plain finder plus the slot prior.
 - The text layout differs per skin too (`EQUI_ItemDisplayWindow.xml` is per skin), so the window
   to wiki mapping keys on labels (`Weight:`, `Value:`), never on positions.
-- Malkil's screenshots are the first test of this; record each skin's result here.
+- **Malkil's window (2026-10-21, Windstriker +10, 642x979):** an ornate silver scrollwork frame
+  that none of the three stock skins draws (their frame sheets and `EQUI_Templates.xml` checked:
+  the only filigree is the achievement window's), so most likely a custom UI in his
+  `uifiles/<name>/`, named by his ini's `UISkin=`. The window background is see-through: the 3D
+  world shows behind the text (the owner's `eqclient.ini` has `BGAlpha=247`, nearly opaque; his is
+  likely far lower). Text ~1.5x the owner's size. The Merge/Place buttons, Tier bar and exaltation
+  rows are stock (`IDW_Merge_Item_*` in default's `EQUI_ItemDisplayWindow.xml`); they show because
+  the item upgrades.
+  - Text: 1.65 s, confidence 79, every stat read across three columns (`Base Dmg: 90`, `Delay:
+    60`, `Accuracy: +25%`, `SV. Void: 10`), the exaltation rows and the effect block. Faults: the
+    title bar is junk; decimals lost again (`0.4` -> `04`, `Ratio 1.5` -> `15`: 3 windows of 3,
+    so a preprocessing fault, not chance); rn -> m (`Omamentation`, `Wom`); `lll` for `III`.
+  - Icon (about 1.9x, over the see-through world, so no texture to subtract): the plain finder
+    puts the right icon 2nd (1104, the `items.json` icon of Windstriker; 597 first, 754 vs 747).
+    The name read from the window (`Windstriker +10` -> `Windstriker`) or the `Range` slot settles
+    it.
+- To collect from a player with an unknown UI: the `UISkin=` line of `UI_<char>_<server>_LO1.ini`,
+  the `uifiles/<skin>/` folder name (and whether it is a downloaded UI), and the `BGAlpha`,
+  `BRAlpha`, `FGAlpha` lines of `eqclient.ini`.
 
 ### What the prototype changes in the design
 
