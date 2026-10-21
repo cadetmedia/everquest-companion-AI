@@ -1,13 +1,5 @@
 [
  {
-  "title": ":Rat Tooth",
-  "content": "{{Luclin Era}}\n\n<onlyinclude>{{Itempage\n|notes       = This is a Luclin Era item and should not be in the game.[https://everquest.allakhazam.com/db/item.html?item=18208]\n|itemname    = Rat Tooth\n|lucy_img_ID = 800\n|statsblock  =\nWT: 0.1  Size: SMALL<br>\nClass: ALL<br>\nRace: ALL<br>\n|dropsfrom = \n\n[[Befallen]]\n\n* [[a plague rat]]\n\n[[Paineel]]\n\n* [[an undead rat]]\n\n}}</onlyinclude>\n\nQuest item involved in post-classic newbie armor quests. Earliest comment Jan, 2004."
- },
- {
-  "title": ":Raw-hide Armor",
-  "content": "{{Gear Set\n|Raw-hide Belt\n|Raw-hide Boots\n|Raw-hide Cloak\n|Raw-hide Gloves\n|Raw-hide Gorget\n|Raw-hide Leggings\n|Raw-hide Mask\n|Raw-hide Shoulderpads\n|Raw-hide Skullcap\n|Raw-hide Sleeves\n|Raw-hide Tunic\n|Raw-hide Wristbands\n}}\n\nClasses: [[PAL]], [[SHD]], [[WAR]], [[CLR]], [[DRU]], [[SHM]], [[MNK]], [[RNG]], [[ROG]], [[BRD]].\n\nRaces: ALL\n\n== Drop Locations ==\n* Orcs at Orc Highway (west wall of Oasis of Marr) and those in South Ro drop Large Raw-Hide pieces;\n* Orcs at West Commonlands drop normal Raw-Hide pieces;\n* Ghouls across various zones drop normal Raw-Hide pieces;\n* Zombies in Nektulos Forest (near East Commonlands zone) drop normal Raw-Hide pieces;\n* Goblins in HHK (small Raw-hide?)\n* Mucktail Gnolls in East Karana, and Highpass Hold.\n\n\n[[Category:Armor Sets]]"
- },
- {
   "title": "A Faded Velishoul's Tome Page",
   "content": "<onlyinclude>{{Itempage\n|notes       = '''Note:''' There are two identically named items - '''pages 16 and 108'''. If you use /outputfile inventory Filenamehere you can tell which faded page you have based off its item id 16084 is 16 (Faded), 11701 is 108 (Faded).\n|merchant_value =\n<p><b>VALUE TO VENDOR with CHA : 80 and faction at Indifferently</b></p>\n<ul>\n<li> 0 <span style=\"color:#e5e4e2\"><b>Platinums</b></span></li>\n<li> 0 <span style=\"color:gold\"><b>Golds</b></span></li>\n<li> 2 <span style=\"color:silver\"><b>Silvers</b></span></li>\n<li> 4 <span style=\"color:#CD7F32\"><b>Coppers</b></span></li>\n</ul>\n|itemname    = Faded Velishoul's Tome Page\n|lucy_img_ID = 870\n|statsblock  = \nWT: 0.1  Size: TINY<br>\nClass: ALL<br>\nRace: ALL<br>\n|dropsfrom = \n\nVarious Zones\n\n* Random drop from any level ~24-29 mob\n\n[[Rathe Mountains]]\n* [[a giant skeleton]]\n\n[[South Karana]]\n* [[A shadowed man]]\n\n[[Iceclad Ocean]]\n* [[a shadow guardian]]\n\n|recipes = \n\n* [[Spell Research]]\n** [[Invigor]] (Pg. 16) (Trivial: 62)\n** [[Feedback]] (Pg. 108) (Trivial: 82)\n\n}}</onlyinclude>"
  },
@@ -76,8 +68,8 @@
   "content": "{{Classic Era}}\n<onlyinclude>{{Itempage\n|notes       = {{Item Lore|Treant heart}}<br>\nMay be obtained as a reward (small chance) from turning in [[Small Lantern]] to [[Jyle Windshot]] in [[West Freeport]]\n|itemname    = Wooden Heart\n|lucy_img_ID = 1003\n|statsblock  = \nNo Trade, Quest<br>\nWT: 2.0  Size: SMALL<br>\nClass: ALL<br>\nRace: ALL<br>\n|dropsfrom = \n\n[[Southern Karana]]\n\n* [[a treant]]\n\n|relatedquests = \n\n* [[Rain Caller Quest]]\n\n}}</onlyinclude>\n\n\n[[Category:Southern Karana]]\n\n[[Category:Quest Items]]"
  },
  {
-  "title": "Alligator Tooth",
-  "content": "<ul>\n<li>[[An Alligator Tooth]]</li>\n<li>[[Alligator Tooth Earring]]</li>\n</ul>"
+  "title": "An Alligator Tooth",
+  "content": "{{Classic Era}}\n<onlyinclude>{{Itempage\n|notes       = For the earring, see [[Alligator Tooth Earring]]. No use in Classic, but for quests in Planes of Power expansion.\n|itemname    = Alligator Tooth\n|lucy_img_ID = 803\n|merchant_value = 7s 1c\n|statsblock  = \nQuest<br>\nWT: 0.1  Size: TINY<br>\nClass: ALL<br>\nRace: ALL<br>\n|dropsfrom = \n\n[[Innothule Swamp]]\n\n* [[a bull alligator]]\n* [[a swamp alligator]]\n\n|relatedquests =\n\n* [[Dark One's Armor]]\n* [[Spiritcharmer Final Job]]\n}}</onlyinclude>\n\n\n[[Category:Innothule Swamp]]\n\n[[Category:Quest Items]]"
  },
  {
   "title": "An Executioners Axe",
@@ -521,6 +513,10 @@
  },
  {
   "title": "Netted Armor",
+  "content": "{{Classic Era}}\n\nNetted armor is found in [[Upper Guk]], [[Innothule Swamp]], and [[Feerrott]] off the Frogloks.\n\n{{Gear Set\n|Netted Cap\n|Netted Cape\n|Netted Choker\n|Netted Girth\n|Netted Gloves\n|Netted Mantle\n|Netted Mask\n|Netted Pants\n|Netted Shirt\n|Netted Sleeves\n|Netted Wristband\n}}\n\n\n[[Category:Armor Sets]]"
+ },
+ {
+  "title": "Netted Armor Set",
   "content": "{{Classic Era}}\n\nNetted armor is found in [[Upper Guk]], [[Innothule Swamp]], and [[Feerrott]] off the Frogloks.\n\n{{Gear Set\n|Netted Cap\n|Netted Cape\n|Netted Choker\n|Netted Girth\n|Netted Gloves\n|Netted Mantle\n|Netted Mask\n|Netted Pants\n|Netted Shirt\n|Netted Sleeves\n|Netted Wristband\n}}\n\n\n[[Category:Armor Sets]]"
  },
  {

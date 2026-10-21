@@ -1,10 +1,6 @@
 {
  "source": "eqlwiki.com — the drop-list pages that are not items",
  "groups": {
-  "Alligator Tooth": [
-   "Alligator Tooth Earring",
-   "An Alligator Tooth"
-  ],
   "Bamboo Splint Armor": [
    "Bamboo Splint Boots",
    "Bamboo Splint Bracelet",
@@ -424,6 +420,19 @@
    "Netted Sleeves",
    "Netted Wristband"
   ],
+  "Netted Armor Set": [
+   "Netted Cap",
+   "Netted Cape",
+   "Netted Choker",
+   "Netted Girth",
+   "Netted Gloves",
+   "Netted Mantle",
+   "Netted Mask",
+   "Netted Pants",
+   "Netted Shirt",
+   "Netted Sleeves",
+   "Netted Wristband"
+  ],
   "Netted Kelp Armor": [
    "Netted Kelp Amice",
    "Netted Kelp Bracelet",
@@ -689,6 +698,7 @@
   "A Stein": "Stein (of Water)",
   "A Tattered Cloth Note": "Tattered Cloth Note",
   "A Wooden Heart": "Wooden Heart",
+  "An Alligator Tooth": "Alligator Tooth",
   "An Executioners Axe": "Executioner's Axe",
   "Balanced Fer'Esh": "Balanced Fer`Esh",
   "Balanced Shan'Tok": "Balanced Shan`Tok",
