@@ -53,6 +53,9 @@ import { isOwnExport } from '../shared/gapHeld'
 import { writeFileDurableAsync } from './telemetry/durableWrite'
 import { takeMoved } from './gapSourceMoves'
 import { logInfo } from './errorLog'
+import { withoutNowKnown, type KnownNow } from '../shared/gapsRecheck'
+import { inItemDb } from './itemLookup'
+import { localMobEntry } from './mobLookupLocal'
 
 const FIRST_SAVE_MS = 60 * 1000
 const SAVE_EVERY_MS = 10 * 60 * 1000
@@ -174,6 +177,9 @@ function folderMark(dir: string): string {
 
 let cache: { key: string; value: CharacterGaps[] } | null = null
 
+/** Today's committed data, asked of a saved row (shared/gapsRecheck.ts has why). */
+const knownNow: KnownNow = (domain, name) => (domain === 'item' ? inItemDb(name) : localMobEntry(name) !== null)
+
 /**
  * The character's OWN inventory export folded as the Gear tab folds it, for "held by" (owner,
  * 2026-10-19). The loader falls back to another character's newest export; that one is refused.
@@ -199,7 +205,8 @@ export async function allCharacterGaps(sinceStamp: string | null): Promise<Chara
   const value: CharacterGaps[] = []
   for (const id of otherCharacters(saved, segments, except)) {
     const one = characterGaps(id, saved.find((s) => s.character === id) ?? null, segments, sinceStamp)
-    if (one !== null) value.push(one)
+    // A saved list is re-checked against today's data: a page the wiki gained since stops showing.
+    if (one !== null) value.push({ ...one, gaps: withoutNowKnown(one.gaps, knownNow) })
   }
   cache = { key, value }
   return value.map((c) => ({ ...c, inventory: ownInventory(c) }))
