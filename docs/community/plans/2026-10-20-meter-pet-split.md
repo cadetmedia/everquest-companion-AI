@@ -1,21 +1,25 @@
-# Owner and pet on one bar in the damage meters: phase doc (2026-10-20)
+# Owner and pet grouped in the damage meters: phase doc (2026-10-20/21)
 
 Ask from Malkil (tester, Discord, 2026-10-20), confirmed by the owner: a third pet layout for the
 damage meters, on the floating overlay and the Combat tab, for your own pet and for a group-mate's
-pet whose master is known. Nothing is built yet. Rules first: `docs/community/RULES.md`, then
-`agent/INDEX.md`. What was asked: `requirements/meter-pet-split.md` (rule 19).
+pet whose master is known. Shape chosen 2026-10-21 on the mock (the stacked pair); built
+2026-10-21 on `meter-pet-split` (BRANCHES.md row), not yet tested in the app. Rules first: `docs/community/RULES.md`, then `agent/INDEX.md`. What was asked:
+`requirements/meter-pet-split.md` (rule 19).
+
+Mock (look and feel only; all three layouts, a test pair with dps sliders):
+https://claude.ai/artifact/5AKWz78ZYQrDD6suETpye7
 
 ## The ask
 
-- One row per owner: `[ owner segment | pet segment ] [ total cell ]`. From Malkil's mock:
-  `1 You` / `563 dps · 73.2k` (gold) | `Vanab` / `251 dps · 32.6k` (pet blue) | `814 dps` /
-  `105.8k`.
-- "The third section should be static, but the other two columns should dynamically adjust in
-  width." Two lines tall is fine ("Even if it still takes up two lines so it fits").
+- Keep track of a player and their pet together, and of the pair's total. Malkil's first image
+  put them side by side on one row (`1 You 563 dps · 73.2k` | `Vanab 251 dps · 32.6k` | `814 dps
+  105.8k`), with a static total cell and the other two columns sized by share.
 - Both surfaces ("Both, if possible"); party members too ("if it knows the pet's master").
-- The total cell's colour is the builder's choice; purple in the mock is not a requirement (owner,
-  2026-10-20). Suggested: a neutral (not a kind colour), because the total is the pair's, not a
-  combatant's; the overlay already reasons the same way about `ACCENT` in `overlay/meterBars.tsx`.
+- The side-by-side shape failed on the mock: a pair needs room for two names and two sets of
+  numbers, so a near-zero pair drew wider than rows above it (owner: "how it looks like the pet and
+  player with almost no DPS are suddenly doing more than some one above them, because of the WIDTH
+  of their line"). Malkil's answer, chosen: the stacked pair below.
+- The total box's colour is the builder's choice (owner: purple is not a requirement).
 
 ## What exists (options 1 and 2, measured 2026-10-20)
 
@@ -56,80 +60,86 @@ pet whose master is known. Nothing is built yet. Rules first: `docs/community/RU
 
 ### Preference: one three-way choice, not a second switch
 
-- New key `eq.combat.petLayout`: `'nested'` (option 1) | `'separate'` (option 2) | `'split'`
+- New key `eq.combat.petLayout`: `'nested'` (option 1) | `'separate'` (option 2) | `'grouped'`
   (option 3). Absent: read the old `eq.combat.petRow` (`'0'` -> `separate`, else `nested`), so no
   one's layout moves. Default stays `nested`. Parser and default in `combatPrefs.ts` (node-tested,
   `tests/combatPrefs.test.mts`); hook `usePetLayout()` in `useCombatPrefs.ts`.
-- Two booleans were rejected: four combinations, one of them meaningless (split while nested).
-- Preferences > Combat: the switch becomes a three-way control (radio or toggle group), label
-  "Where your pet's damage shows", a caption per choice. The split caption names the
-  `/pet who leader` limit for group-mates' pets. Add search keywords: split, beside, side by side,
-  owner, party, group pet.
+- Two booleans were rejected: four combinations, one of them meaningless (grouped while nested).
+- Preferences > Combat: the switch becomes a three-way control, label "Where your pet's damage
+  shows", choices "Inside your bar" / "Its own bar" / "With its owner", a caption per choice (the
+  mock has the wording). The grouped caption names the `/pet who leader` limit for group-mates'
+  pets. Add search keywords: group, grouped, stacked, owner, master, party, group pet.
 
 ### Rows: a pure pairing over the separate list
 
-- New `features/combat/petSplit.ts`, MUI-free and JSX-free like `petRows.ts` and `meterScope.ts`
-  (both bundles import it):
+- `src/shared/combatPetGroups.ts` (built there, not in the renderer: pairing and ranking is list
+  derivation, which `eqc/no-domain-munging` keeps out of renderer code; it now owns
+  `memberKeyOf`/`charmerKeyOf`, re-exported by `meterScope.ts`). As built:
 
   ```ts
-  export interface SplitRow {
-    id: string                 // the owner's source id, else the lone row's id
-    owner: SourceView | null   // null: a bound pet whose owner has no row in this list
-    pets: SourceView[]         // ranked by total desc
-    total: number              // owner + pets
-    dps: number                // summed: every source divides by the segment's durationSec
-    pct: number                // total / top row's total * 100
+  export interface PetGroupLine { source: SourceView; label: string; pct: number } // own total / top row
+  export interface PetGroupRow {
+    id: string             // the first line's source id
+    lines: PetGroupLine[]  // master (or the lone source) first, its pets beneath, by damage
+    total: number          // every line's damage; rows rank on it
+    dps: number            // summed: every source divides by the segment's durationSec
+    pct: number            // total / top row's total * 100: the shared bar's length
   }
-  export function splitRows(sources: SourceView[]): SplitRow[]
+  export function petGroupRows(sources: SourceView[]): PetGroupRow[]
+  export function pairedPetLabel(pet: SourceView, master: SourceView): string
   ```
 
 - `kind: 'pet'` joins the `you` row; `kind: 'allyPet'` joins the row whose `memberKeyOf` equals
   its `charmerKeyOf`. A pet with no owner row (owner did no damage this segment) stays a row of
-  its own. Every other row is a group of one. Owner segment first, pets after; rows ranked by
-  `total`.
-- Split is a LEVEL-1 presentation over the `separate` list: surfaces call
-  `meterPanel(entities, false, drill)` and, at level 1, `splitRows(panel.sources)`. Level 2 is the
-  separate layout's drill: the owner segment opens the owner's own lanes, the pet segment opens
+  its own. Every other row is a group of one. Rows ranked by `total`.
+- Grouped is a LEVEL-1 presentation over the `separate` list: surfaces call
+  `meterPanel(entities, false, drill)` and, at level 1, `petGroupRows(panel.sources)`. Level 2 is
+  the separate layout's drill: the owner's line opens the owner's own lanes, the pet's line opens
   the pet's. `meterPanel`, `panelTotals` and the headline do not change, so no number moves.
-- Conservation is the test: the sum of `SplitRow.total` equals the sum of the input totals; every
-  input id appears once.
+- Conservation is the test: the sum of `PetGroupRow.total` equals the sum of the input totals;
+  every input id appears once.
 
-### Rendering
+### Rendering: the stacked pair (Malkil, chosen 2026-10-21)
 
-Mock (look and feel only, three layouts switchable):
-https://claude.ai/artifact/5AKWz78ZYQrDD6suETpye7. Malkil's answers to it, 2026-10-20, are
-below; the mock's option 3 follows them.
+Malkil's sketch, `+` master colour, `-` pet colour, `/` the shared third colour:
 
-- **A pair** (owner + pet) is a two-line row. Owner segment: rank + name / `dps · total`. Pet
-  segment: name / `dps · total`. Total cell: pair dps / pair total. "The double height line is
-  just to accommodate the extra text" (owner).
-- **Anything else is one line**, today's `Bar` unchanged: a player with no pet, and a pet whose
-  master is not known (an unpaired `pet`/`allyPet`, an `other` row). Malkil: "If a player doesn't
-  have a pet or if the pet doesn't have a master, it can be displayed on a single height line."
-- **Rank: the row is cut short at its share of the top row** (Malkil: "C is closest"). A pair's
-  segments plus total cell span `SplitRow.pct` of the width, the rest is empty track, like today's
-  fill. A row too short for its own text grows to fit it, so short rows are only roughly to scale.
-  A one-line row fills to `pct` exactly as today.
-- **A pet beside its owner shows its own name only, and no kind tag** (Malkil: "it doesn't need
-  to display 'pet' in the bar's title, since we already know it's a pet when it's on the same line
-  as a player"). Your pet's name is already bare. A group-mate's pet arrives as
-  `Pet (<pet>) - <Owner>` (engine `ally_pet_source`); when `splitRows` pairs it, the renderer
-  strips exactly the prefix `Pet (` and the suffix `) - <owner row's name>`, and keeps the full
-  name if the string is not that shape. Not chosen: a new `SourceView` field for the bare name
-  (schema, `gen:protocol`, fixtures, engine harness) for a string the renderer can take apart
-  against the owner row it already holds. An unpaired ally pet keeps its full name, since no owner
-  sits beside it.
-- Segments: flex, `flex-grow` = the segment's total, basis 0, so widths follow the share. The
-  figures line never clips; the name ellipsizes. A floor keeps a small pet's segment readable
-  (the mock is about 57/43 for a 69/31 split, so the floor is visible in the ask).
-- Total cell: fixed width. Overlay: in `em`, so the text-scale stepper scales it; tab: fixed px.
-- Colours: segments wear `KIND_COLOR` (you gold, pet blue, ally pet slate, member green); the
-  overlay's copy in `meterBars.tsx` is kept in step (its comment says so).
-- Clicks (interactive only): a segment drills its source. The total cell drills nothing. Locked
-  overlay: no affordances, as now. No hover on the overlay bars (JOS-358).
-- Combat tab: the owner segment keeps its kind chip (`group`) and hit/resist badges after the
-  figures, dropped by overflow when narrow; the pet segment has no kind chip. The `~` ambiguity
-  chip still rides on the pet segment, because it is about the number, not the kind.
+```
+|You+++++++++++++++++++++++563|/////////////////|       814 dps|
+|Vanab--------251|//////////////////////////////////////|        105.8k|
+```
+
+- **A pair is two lines.** Line 1: the owner (rank, name, own `dps · total`). Line 2: the pet
+  (name, own `dps · total`). More than one pet: one more line each.
+- **Every bar is its true length; text never sizes a bar.** Each line's fill is that source's
+  `total / top total`. Behind the lines, one double-height bar in a third colour at the pair's
+  `pct`. Text lays out as on today's `Bar` (name left, figures right) and runs over the empty
+  track when a fill is short. A 10 + 5 dps pair under rows in the hundreds stays a sliver (test it
+  on the mock's sliders).
+- **Every row has the total box on the right, pair or not** (Malkil: "even the single height bars
+  should have the box on the right side like the double height bars do for consistent
+  formatting"). Fixed width; overlay in `em` so the text-scale stepper scales it, tab in px. A
+  pair's box: pair dps over pair damage. A one-line row's box: its `dps · damage` on one line, and
+  its bar carries the name only. So in this layout every level-1 row renders through the new row,
+  not `Bar`.
+- **One line for anything that is not a pair:** a player with no pet, and a pet whose master is not
+  known (an unpaired `pet`/`allyPet`, an `other` row). Malkil: "If a player doesn't have a pet or if
+  the pet doesn't have a master, it can be displayed on a single height line." Owner: "The double
+  height line is just to accommodate the extra text."
+- **A paired pet shows its own name only, and no kind tag** (Malkil: "we already know it's a pet
+  when it's on the same line as a player"). Your pet's name is already bare. A group-mate's pet
+  arrives as `Pet (<pet>) - <Owner>`; when `petGroupRows` pairs it, the renderer strips exactly the
+  prefix `Pet (` and the suffix `) - <owner row's name>`, and keeps the full name if the string is
+  not that shape. Not chosen: a new `SourceView` field for the bare name (schema, `gen:protocol`,
+  fixtures, engine harness) for a string the renderer can take apart against the owner row it
+  already holds. An unpaired ally pet keeps its full name.
+- Colours: lines wear `KIND_COLOR` (you gold, pet blue, ally pet slate, member green); the overlay's
+  copy in `meterBars.tsx` is kept in step (its comment says so). The third colour (shared bar and
+  total box) is the builder's pick; the mock uses a muted violet `#4a4366`.
+- Clicks (interactive only): a line drills its source. The total box drills nothing. Locked overlay:
+  no affordances, as now. No hover on the overlay bars (JOS-358).
+- Combat tab: the owner's line keeps its kind chip (`group`) and hit/resist badges; the pet's line
+  has no kind chip. The `~` ambiguity chip still rides on the pet's line, because it is about the
+  number, not the kind.
 - Incoming direction and the healing meter: unchanged (`SegmentPanel` already applies pet layout
   to `mode === 'out'` only).
 
@@ -140,16 +150,16 @@ below; the mock's option 3 follows them.
 | `features/combat/combatPrefs.ts` | `PetLayout`, key, `readPetLayout(raw, legacy)` |
 | `features/combat/useCombatPrefs.ts` | `usePetLayout()`; `useCombinePetRow` removed or derived |
 | `features/preferences/CombatSection.tsx` | three-way control and captions |
-| `features/combat/petSplit.ts` | new, the pairing |
-| `features/combat/SplitRow.tsx` | new, tab row (MUI), memo gate like `EntityRow` |
-| `features/combat/MeterRows.tsx` | level 1 picks `SplitRow` when split |
-| `features/combat/SegmentPanel.tsx` | reads the layout; split only when `mode === 'out'` |
-| `overlay/splitBars.tsx` | new, overlay row (plain React); `meterBars.tsx` is 419 lines of 440 |
+| `shared/combatPetGroups.ts` | new, the pairing and the paired-pet name |
+| `features/combat/PetGroupRows.tsx` | new, tab rows (MUI), one or more lines plus the total box; memo gate like `EntityRow` |
+| `features/combat/MeterRows.tsx` | level 1 renders `PetGroupRows` when the panel carries `groups` (`petRows.groupedPanel`) |
+| `features/combat/SegmentPanel.tsx` | reads the layout; grouped only when `mode === 'out'` |
+| `overlay/petGroupBars.tsx` | new, overlay row (plain React); `meterBars.tsx` is 419 lines of 440 |
 | `overlay/meterBars.tsx` | `SourceLines` switches on the layout |
-| `features/overview/DpsCard.tsx` | maps split (owner question 3) |
-| `tests/combatPetSplit.test.mts` | new: pairing, orphan pet, ally join, scope, conservation |
+| `features/overview/DpsCard.tsx` | maps grouped (open question) |
+| `tests/combatPetGroups.test.mts` | new: pairing, orphan pet, ally join, scope, conservation, name strip |
 | `tests/combatPrefs.test.mts` | layout parse and legacy key |
-| e2e `combatPrefsSteps.mts`, `overlay-sync.e2e.mts` | split row has two segments and a total cell; testids `meter-split-row`, `overlay-split-row` |
+| e2e `combatPrefsSteps.mts`, `overlay-sync.e2e.mts` | a pair is two lines plus a box, a lone row one line plus a box; testids `meter-group-row`, `overlay-group-row` |
 
 ## Phases
 
@@ -159,23 +169,24 @@ below; the mock's option 3 follows them.
    that line; resolve in the scratch tree, `rerere` replays.
 2. **Preference.** The three-way key, legacy read, Preferences control. Options 1 and 2 behave
    exactly as before. Tests.
-3. **Pairing.** `petSplit.ts` and its tests. No UI.
-4. **Combat tab.** `SplitRow.tsx`, `MeterRows`, `SegmentPanel`.
-5. **Overlay.** `splitBars.tsx`, `meterBars.tsx`.
-6. **Close.** Overview card, e2e, gate on the branch and on the scratch merge, owner tests in the
-   app, then `main_community`.
+3. **Pairing.** `shared/combatPetGroups.ts` and its tests. No UI.
+4. **Combat tab.** `PetGroupRows.tsx`, `MeterRows`, `SegmentPanel`.
+5. **Overlay.** `petGroupBars.tsx`, `meterBars.tsx`.
+6. **Close.** Overview card, e2e, gate on the branch and on the scratch merge, owner and Malkil test
+   in the app, then `main_community`.
 
 ## Questions
 
-Answered by Malkil on the mock, relayed by the owner, 2026-10-20 (Rendering has the detail):
+Answered on the mock by Malkil, relayed by the owner:
 
-1. **How a row shows its rank:** cut short at its share of the top row ("C is closest"). Not
-   chosen: full-width rows (the first mock), full width with a share strip.
-2. **Rows with no pet, and pets with no known master:** one line, today's bar.
-3. **A pet beside its owner:** its own name only, no "pet" tag.
+- 2026-10-21: the stacked pair ("Yeah, I like the look of the stacked pair"); every row gets the
+  total box. Replaces the side-by-side shape and its rank styles (full width, share strip, cut
+  short), which were tried on the mock and dropped.
+- 2026-10-20: rows with no pet and pets with no known master are one line; a paired pet shows its
+  own name only.
 
 Open:
 
-4. **The Overview damage card** (not asked for, but reads the same pref). Recommended: split shows
-   there as option 1 (one bar per owner, pet inside), because the card is a glance at a quarter
-   width.
+- **The Overview damage card** (not asked for, but reads the same pref). Recommended: grouped shows
+  there as option 1 (one bar per owner, pet inside), because the card is a glance at a quarter
+  width.
