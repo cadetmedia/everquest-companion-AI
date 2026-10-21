@@ -520,10 +520,10 @@ impl EqModule for GapsModule {
     }
 }
 
-#[cfg(test)]
 /// A forage's zone and a combine's tradeskill: a child module, so it files onto the rows.
 #[path = "gaps_craft.rs"]
 mod craft;
 
+#[cfg(test)]
 #[path = "gaps_tests.rs"]
 mod tests;
