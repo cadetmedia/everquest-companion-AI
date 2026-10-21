@@ -3,7 +3,7 @@ import type { CombatSnapshot } from '@shared/combat'
 import { LIVE_SELECTION, type CombatScope } from './dashboardData'
 import { useGlobalFight } from './useGlobalFight'
 import type { CombatFocus } from './combatFocus'
-import { coalesced, createFeed, keptSnapshot } from './combatFeed'
+import { coalesced, createFeed, keptSnapshot, type FeedView } from './combatFeed'
 
 /** Re-export: the sentinel lives with the scope helpers (dashboardData) so the overlay entry —
  *  which never imports this hook — can share one definition. */
@@ -24,6 +24,8 @@ const DEFAULT_MAX_SEGMENTS = 100
 
 export interface UseCombat {
   snap: CombatSnapshot | null
+  /** the last real snapshot is on screen while a fresh one is waited for (combatFeed.ts) */
+  updating: boolean
   showUnparsed: boolean
   setShowUnparsed: (v: boolean) => void
   selection: string
@@ -90,7 +92,7 @@ export function useCombat(
   const [maxSegments, setMaxSegments] = useState(DEFAULT_MAX_SEGMENTS)
   const [wantTimeline, setWantTimeline] = useState(true)
   // A revisit paints the last real answer at once instead of "Reading log…" (combatFeed.ts).
-  const [snap, setSnap] = useState<CombatSnapshot | null>(() => keptSnapshot(world))
+  const [{ snap, updating }, setView] = useState<FeedView>(() => ({ snap: keptSnapshot(world), updating: false }))
 
   /** What this surface is showing — the scope picks which of the two selections is in force. */
   const selection = scope === 'fight' ? fightId : zoneSelection
@@ -103,8 +105,8 @@ export function useCombat(
   useEffect(() => {
     let alive = true
     // Slow answers neither blank the tab nor pile up behind each other (combatFeed.ts).
-    const accept = createFeed(world, (s) => {
-      if (alive) setSnap(s)
+    const accept = createFeed(world, (v) => {
+      if (alive) setView(v)
     })
     const tick = coalesced(async (): Promise<void> => {
       // The engine-side pet fold is GONE (not "off"): pet presentation is the renderer's nesting
@@ -154,6 +156,7 @@ export function useCombat(
 
   return {
     snap,
+    updating,
     showUnparsed,
     setShowUnparsed,
     selection,

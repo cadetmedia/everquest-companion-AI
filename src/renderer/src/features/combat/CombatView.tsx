@@ -3,6 +3,7 @@ import { Box, CircularProgress, Paper, Skeleton, Stack, Typography } from '@mui/
 import { useCombat } from './useCombat'
 import { CombatTimeline } from './CombatTimeline'
 import { CombatHeader } from './CombatHeader'
+import UpdatingBadge from './UpdatingBadge'
 import { ProcessingLog } from './ProcessingLog'
 import { SegmentBody } from './SegmentPanel'
 import { DpsChartCard, MobDamageCard, type Ringless } from './CombatDashboard'
@@ -313,7 +314,7 @@ export default function CombatView({
   focusNonce?: number
   onFocusConsumed?: () => void
 }): React.JSX.Element {
-  const { snap, showUnparsed, setShowUnparsed, selection, scope, maxSegments, loadMore, ...combat } =
+  const { snap, updating, showUnparsed, setShowUnparsed, selection, scope, maxSegments, loadMore, ...combat } =
     useCombat(world)
   const [mode, setModeState] = useState<MeterMode>('out')
   const [view, setView] = useState<'dash' | 'timeline'>('dash')
@@ -379,7 +380,8 @@ export default function CombatView({
     // after the header and the FIXED-height combat log, and nothing here may spill into the
     // app's scrolling content area. Before Task #56 the unbounded log below did exactly that —
     // it grew past the viewport and pushed the dashboard to 0px, leaving "just a combat log".
-    <Stack spacing={1.5} sx={{ height: '100%', minHeight: 0, overflow: 'hidden' }}>
+    <Stack spacing={1.5} sx={{ height: '100%', minHeight: 0, overflow: 'hidden', position: 'relative' }}>
+      <UpdatingBadge show={updating} />
       <CombatHeader
         seg={seg}
         snap={snap}

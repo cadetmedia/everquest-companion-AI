@@ -52,9 +52,11 @@
 // compares the two worlds' answers field by field with `firstDiff`, which is the only honest way to
 // hold a cast like this one accountable.
 
+import { app } from 'electron'
 import { logInfo } from '../errorLog'
 import { engineLogMtimeMs, engineRequest, engineServeReadiness } from './engineClientHost'
 import { createReadShim, type ReadShim } from './readShim'
+import { startSlowReadLog } from './slowReads'
 import type { CombatSnapshot, FightSearchResult, SnapshotOpts } from '../../shared/combat'
 import type { MobLevelFact } from '../resist/world'
 import type { MobSeenDrop } from '../../shared/mobTypes'
@@ -139,7 +141,9 @@ function readShim(): ReadShim {
     now: () => Date.now(),
     timeoutMs: SERVE_TIMEOUT_MS,
     noteEveryMs: NOTE_EVERY_MS,
-    delay
+    delay,
+    // Slow and unserved reads, to a file a tester can send (slowReads.ts).
+    observe: startSlowReadLog(app.getPath('userData'))
   })
   return shim
 }
