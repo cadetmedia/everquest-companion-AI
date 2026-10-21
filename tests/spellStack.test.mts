@@ -209,20 +209,32 @@ test('slots are POSITIONAL - the same effect in different slots does not contest
   assert.equal(checkStackConflict(a, c, L), 'overwrites')
 })
 
-test('a BLOCK directive finds its effect ANYWHERE on the other spell, not at a named slot', () => {
-  // The half that was dead. Harnessing of Spirit is the shape: it grants STR itself and carries
-  // `BLOCK{STR, 67}`, which is why it refuses nine separate stat buffs in the owner's log even
-  // though their STR rows sit in slots its own does not.
+test('a directive reaches across slots to the one it NAMES, and only that one', () => {
+  // The half that was dead until 2026-09-10. Harnessing of Spirit is the shape: it grants STR itself
+  // in its fourth slot and carries `BLOCK{STR below 67, slot 1}` and `OVERWRITE{STR below 67, slot
+  // 1}`, which is why it refuses nine separate stat buffs in the owner's log even though their STR
+  // rows sit in slot 1, where its own does not - lockstep alone would never compare them.
   const BLOCK_DIR = 148
+  const OVERWRITE_DIR = 149
   const blocker = spell({
-    slots: [slot(0, STR, 42, { max: 67 }), slot(7, BLOCK_DIR, STR, { limit: 1, max: 1067 })]
+    slots: [
+      slot(3, STR, 42, { max: 67 }),
+      slot(5, OVERWRITE_DIR, STR, { limit: 1, max: 67 }),
+      slot(7, BLOCK_DIR, STR, { limit: 1, max: 1067 })
+    ]
   })
-  // A weaker STR buff, in a DIFFERENT slot - lockstep alone would never compare them.
-  const weaker = spell({ slots: [slot(3, STR, 50)] })
+  const weaker = spell({ slots: [slot(0, STR, 50)] })
   assert.equal(checkStackConflict(blocker, weaker, L), 'blocked')
-  // …and something the directive does not name is untouched by it.
-  const unrelated = spell({ slots: [slot(3, 6 /* AGI */, 50)] })
+  assert.equal(checkStackConflict(weaker, blocker, L), 'overwrites')
+  // …something the directive does not name is untouched by it…
+  const unrelated = spell({ slots: [slot(0, 6 /* AGI */, 50)] })
   assert.equal(checkStackConflict(blocker, unrelated, L), 'stacks')
+  // …and NEITHER IS THE SAME EFFECT IN ANOTHER SLOT (owner, 2026-10-20: *"RAGE is missing from this
+  // list?"*). Rage keeps its STR in slot 6, and the log shows the game running it with Harnessing
+  // in both orders. The 2026-09-10 rule searched every slot and refused it.
+  const rageShaped = spell({ slots: [slot(2, AC, 35), slot(5, STR, 2, { calc: 102, max: 51 })] })
+  assert.equal(checkStackConflict(blocker, rageShaped, L), 'stacks')
+  assert.equal(checkStackConflict(rageShaped, blocker, L), 'stacks')
 })
 
 test('a gap becomes a blank rather than shifting the effects after it', () => {
