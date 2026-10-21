@@ -75,6 +75,7 @@ import { DEFAULT_MAIN_WINDOW_SIZE } from './windowState'
 import { getUiScale } from './uiScale'
 import { TRANSPARENT_OVERLAY_BG, overlayBackgroundColor } from '../shared/graphicsPrefs'
 import { OVERLAY_KINDS, type OverlayKind } from '../shared/types'
+import { raiseOnUnpark } from '../shared/overlayUnpark'
 // ScreenRect lives in shared/presencePrefs.ts, not shared/types.ts — see the note at the
 // bottom of types.ts (that file is at its factoring ceiling).
 import type { ScreenRect } from '../shared/presencePrefs'
@@ -985,6 +986,8 @@ let overlaysHiddenNow: boolean | null = null
 // teardown want windows GONE (the fold owns the message loop), and E2E never shows one at all.
 // Presence simply stopped being one of its callers.
 let overlaysParkedNow = false
+/** When the overlays were last parked: a long time away re-raises them on un-park (overlayUnpark.ts). */
+let parkedAt: number | null = null
 
 /** The opacity the park state implies for a window being shown or un-parked right now. */
 function parkedOpacity(): 0 | 1 {
@@ -1009,18 +1012,28 @@ const overlayDesiredIgnore: Partial<Record<OverlayKind, boolean>> = {}
 export function parkOverlays(parked: boolean): void {
   if (overlaysParkedNow === parked) return
   overlaysParkedNow = parked
-  logInfo('[everquest-companion]', describeOverlayPark(parked, Date.now()))
+  const now = Date.now()
+  // Back after a long time away (a screenshot tool, Paint): the game may have come back above them,
+  // so they are raised — while still at opacity 0, so nothing moves in sight (overlayUnpark.ts).
+  const raise = !parked && raiseOnUnpark(parkedAt, now)
+  parkedAt = parked ? now : null
+  logInfo('[everquest-companion]', describeOverlayPark(parked, now))
   for (const kind of OVERLAY_KINDS) {
     const w = overlayWindows[kind]
     if (!w || w.isDestroyed()) continue
+    if (raise) raiseTopmost(w)
     w.setOpacity(parkedOpacity())
     // Replay the kind's own last capture ask through the park gate: parked forces ignore+no-hook;
     // un-parked restores exactly what the queue/hover state wanted (a strip with a live card takes
     // the mouse again, an idle one stays pass-through). Falls back to the persisted lock for a
-    // kind that has never asked. No topmost re-assert and no ring re-raise here, on purpose: the
-    // window never hid and its z-order never moved, so there is nothing to restore — that absence
-    // IS the fix.
+    // kind that has never asked. No topmost re-assert after a quick alt-tab, on purpose: the window
+    // never hid, and a raise on every refocus is what made alt-tabbing hitch. Only a long absence
+    // raises (above), and then the ring is raised after the overlays, as every raise path ends.
     setOverlayIgnoreMouse(kind, overlayDesiredIgnore[kind] ?? getOverlayConfig(kind).locked)
+  }
+  if (raise) {
+    raiseCursorRing()
+    logInfo('[everquest-companion]', 'presence: overlays re-raised after a long time away')
   }
 }
 
