@@ -82,8 +82,13 @@ A page is a mob page only if its OWN text opens the template (indirect transclus
 - **Foraged items**: `|foraged =` then a blank line and one `* [[Zone]]` per zone (`* ?` or
   `* Various` when unknown); after `</onlyinclude>` add `[[Category:Foraged]]` plus a
   `[[Category:<Zone>]]` per zone (`[[Category:Tradeskill Ingredient]]` when it is one).
-- **statsblock** flags use classic wording: tooltip "No Trade" is `NO DROP`, "Temporary" is
-  `NO RENT`.
+- **statsblock flag line** (first line, measured 2026-10-20 on 11,594 cached pages): mostly classic
+  caps, `MAGIC ITEM` 4,988, `LORE ITEM` 4,070, `NO DROP` 2,920; newer pages copy the Legends
+  tooltip as-is (`Lore Equipped, No Trade, Quest`: No Trade 612, Lore Equipped 423, Quest 617).
+  The temporary flag is `TEMPORARY` (146), rarely `NO RENT` (14): e.g. `LORE ITEM  NO DROP
+  TEMPORARY<br>`. `LORE EQUIPPED` (33) is the caps form of "Lore Equipped".
+- **Item lore missing**: 466 pages carry `{{Item Lore Missing}}` in `|notes` (813 have
+  `{{Item Lore|`); a screenshot of the Lore tab replaces it.
 - **Spell pages**: NPC-only spells say `| classes =` then `This spell is cast by NPCs only.` and
   carry `[[Category:NPC Only Spells]]` (321 and 311 of 354 cached NPC-only pages).
 - **Redirects** send common spellings to the page (`Hoptor Thaggelum` -> `The Ghoul Lord`; item
