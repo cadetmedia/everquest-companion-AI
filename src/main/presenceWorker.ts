@@ -153,6 +153,30 @@ function makeHover(): {
   return { point, active: () => zones.size > 0, test, apply }
 }
 
+/** How many foreground looks (~150 ms apart) after a foreground change also check the stacking. */
+const BURIED_LOOKS = 8
+let buriedLooks = 0
+let lastBuried = false
+
+/**
+ * ARE OUR OVERLAYS UNDER THE NEW FOREGROUND? (owner, 2026-10-20: after Paint, back in the game,
+ * "the overlays are not showing" until the reset button.) Asked on the foreground cadence for a
+ * short while after each foreground change only (`changed`) — the activation that buries them
+ * lands then — and said once per burial (`B`), so main re-raises exactly when they are under, and
+ * a plain alt-tab with the overlays where they belong moves no window (the hitch topmost.ts records).
+ */
+function lookForBurial(native: PresenceNative, changed: boolean): void {
+  if (changed) {
+    buriedLooks = BURIED_LOOKS
+    lastBuried = false
+  }
+  if (buriedLooks <= 0) return
+  buriedLooks -= 1
+  const buried = native.ownTopmostBelowForeground(process.pid)
+  if (buried && !lastBuried) say('B')
+  lastBuried = buried
+}
+
 /** The whole loop, once the surface is known to work. */
 function run(native: PresenceNative): void {
   const { eqRootWithSep, runningPollMs, tickMs, foregroundEveryTicks, watchCursor } = init
@@ -177,7 +201,8 @@ function run(native: PresenceNative): void {
    *  screen locked. */
   const NO_WINDOW: ForegroundWindow = { pid: 0, x: 0, y: 0, width: 0, height: 0, title: '' }
 
-  function foregroundBlock(): void {
+  /** Reads the foreground and says it when it changed; true when it did. */
+  function foregroundBlock(): boolean {
     const fg = native.foreground() ?? NO_WINDOW
     if (!paths.has(fg.pid)) {
       // Bounded so a machine churning through pids cannot grow this without limit between beats.
@@ -196,10 +221,10 @@ function run(native: PresenceNative): void {
       // but NOT a line break, which would split one record into two on the way through the codec.
       fg.title.replace(/[\r\n]/g, ' ')
     ].join('|')
-    if (line !== lastFg) {
-      lastFg = line
-      say(line)
-    }
+    if (line === lastFg) return false
+    lastFg = line
+    say(line)
+    return true
   }
 
   function runningBlock(): void {
@@ -256,7 +281,7 @@ function run(native: PresenceNative): void {
       if (fgCountdown <= 0) {
         fgCountdown = foregroundEveryTicks
         // ---- everything below runs on the ORIGINAL ~150 ms cadence, not the fast tick ----
-        foregroundBlock()
+        lookForBurial(native, foregroundBlock())
         const now = Date.now()
         if (now >= nextRun) {
           nextRun = now + runningPollMs

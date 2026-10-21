@@ -100,6 +100,12 @@ test('a trailing CR is stripped — the child writes Windows line endings', () =
   assert.deepEqual(parsePresenceLine('R|1\r'), { t: 'run', running: true })
 })
 
+test('a BURIAL sighting is a bare B — our overlays found under the foreground (owner, 2026-10-20)', () => {
+  assert.deepEqual(parsePresenceLine('B'), { t: 'buried' })
+  assert.deepEqual(parsePresenceLine('B\r'), { t: 'buried' })
+  assert.equal(parsePresenceLine('B|x'), null)
+})
+
 test('the HEARTBEAT is a bare line — the one record the child prints unconditionally', () => {
   // Every other record is change-driven, so a healthy idle watcher says nothing at all and is
   // indistinguishable from a wedged one. This line is what makes the difference observable.

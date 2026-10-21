@@ -80,6 +80,9 @@ export type PresenceRecord =
   | { t: 'run'; running: boolean }
   | { t: 'cursor'; visible: boolean }
   | { t: 'hover'; key: string; inside: boolean }
+  // `B` — one of our always-on-top windows was found stacked under the foreground (owner,
+  // 2026-10-20, the overlays missing after Paint). A sighting, not a state: main re-raises.
+  | { t: 'buried' }
   | { t: 'beat' }
   | { t: 'exit'; reason: string }
 
@@ -159,6 +162,7 @@ export function parsePresenceLine(line: string): PresenceRecord | null {
   if (trimmed === '') return null
   // The heartbeat carries no payload, so it is the whole line or it is not a heartbeat.
   if (trimmed === 'H') return { t: 'beat' }
+  if (trimmed === 'B') return { t: 'buried' }
   const parts = trimmed.split('|')
   if (parts[0] === 'F') return parseForeground(parts)
   if (parts[0] === 'X') return parseExit(parts)

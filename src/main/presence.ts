@@ -78,6 +78,7 @@ import type { PresenceState, ScreenRect } from '../shared/presencePrefs'
 // accessory/app split has to come from Electron. It is a QUERY — the only thing imported from the
 // window module here, and nothing in this file's dependency closure reaches back into presence.
 import { mainWindowFocused } from './windows'
+import { raiseBuriedOverlays } from './overlayBuried'
 
 // ------------------------------------------------------------------ the watcher thread itself
 
@@ -300,6 +301,12 @@ function applyRecord(rec: PresenceRecord): void {
   // it moves no presence fact. It goes straight to whoever asked — see the section at the foot.
   if (rec.t === 'hover') {
     emitHover(rec)
+    return
+  }
+  // Nor is a burial sighting (owner, 2026-10-20): our overlays were found under the foreground
+  // window, and the answer is a raise, not a state change (overlayBuried.ts).
+  if (rec.t === 'buried') {
+    raiseBuriedOverlays()
     return
   }
   // ANY record means we have actually looked (the watcher emits a `C`, an `F` and an `R` on its

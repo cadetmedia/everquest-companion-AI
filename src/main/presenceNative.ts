@@ -103,7 +103,7 @@ import * as koffi from 'koffi'
 import { EQ_CLIENT_EXES } from './presenceProtocol'
 
 /**
- * What the watcher can ask Windows. Deliberately four methods and no state: this module is a
+ * What the watcher can ask Windows. Deliberately five methods and no state: this module is a
  * translation layer, and every decision made from these answers lives in `presenceProtocol.ts`.
  */
 export interface PresenceNative {
@@ -128,6 +128,15 @@ export interface PresenceNative {
   imagePath(pid: number): string
   /** 1 = an EverQuest client is running, 0 = none is, -1 = the enumeration itself failed. */
   eqRunning(rootWithSep: string): number
+  /**
+   * Is a visible always-on-top window of process `ownPid` stacked BELOW the foreground window?
+   * (owner, 2026-10-20: after Paint the overlays stay missing behind the game.) Measured on the
+   * owner's machine: opening Paint leaves our overlays still flagged WS_EX_TOPMOST but stacked
+   * under ordinary windows, so the next window activated — the game — covers them. False when the
+   * foreground is ours or is itself topmost (a screenshot tool's surface may rightly sit above
+   * ours), and on any failed call.
+   */
+  ownTopmostBelowForeground(ownPid: number): boolean
 }
 
 /**
@@ -206,10 +215,56 @@ const TITLE_CHARS = 512
 /** Image paths: 1024 UTF-16 code units. Longer than MAX_PATH on purpose (\\?\ paths exist). */
 const PATH_CHARS = 1024
 
+/** GetWindow's "the window below this one in the z-order". */
+const GW_HWNDNEXT = 2
+const GWL_EXSTYLE = -20
+const WS_EX_TOPMOST = 0x8
+/** How far below the foreground the stacking walk looks. Buried overlays sit right under it (the
+ *  first eight windows on the owner's machine); the cap only bounds a desktop with thousands. */
+const MAX_STACK_WALK = 1024
+
 const PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
 /** EnumProcesses' pid buffer. 4096 processes is far past any real desktop; the call reports how
  *  much it wanted, and a truncated answer is clamped rather than trusted. */
 const MAX_PIDS = 4096
+
+// ----------------------------------------------------------------------- the stacking walk
+
+/**
+ * `ownTopmostBelowForeground` (see the interface), built apart from the loader so that stays one
+ * screen. Its own out-buffer, so a walk never shares scratch with the foreground read.
+ */
+function makeStackingWalk(
+  user32: koffi.IKoffiLib,
+  GetForegroundWindow: Win32Fn,
+  GetWindowThreadProcessId: Win32Fn
+): (ownPid: number) => boolean {
+  const GetWindow = bind(user32, 'void *__stdcall GetWindow(void *hWnd, uint32 cmd)')
+  const GetWindowLongW = bind(user32, 'int32 __stdcall GetWindowLongW(void *hWnd, int index)')
+  const IsWindowVisible = bind(user32, 'bool __stdcall IsWindowVisible(void *hWnd)')
+  const pidOut = [0]
+
+  function pidOf(hWnd: unknown): number {
+    pidOut[0] = 0
+    GetWindowThreadProcessId(hWnd, pidOut)
+    return pidOut[0]
+  }
+
+  function topmost(hWnd: unknown): boolean {
+    return (asInt(GetWindowLongW(hWnd, GWL_EXSTYLE)) & WS_EX_TOPMOST) !== 0
+  }
+
+  return (ownPid: number): boolean => {
+    const fg = GetForegroundWindow()
+    if (!isHandle(fg) || pidOf(fg) === ownPid || topmost(fg)) return false
+    let h = GetWindow(fg, GW_HWNDNEXT)
+    for (let i = 0; i < MAX_STACK_WALK && isHandle(h); i++) {
+      if (pidOf(h) === ownPid && topmost(h) && asBool(IsWindowVisible(h))) return true
+      h = GetWindow(h, GW_HWNDNEXT)
+    }
+    return false
+  }
+}
 
 // -------------------------------------------------------------------------------- the loader
 
@@ -237,6 +292,9 @@ export function loadPresenceNative(): PresenceNative {
     user32,
     'int __stdcall GetWindowTextW(void *hWnd, _Out_ void *buf, int max)'
   )
+
+  // ---- (1b) the stacking order below it ----
+  const ownTopmostBelowForeground = makeStackingWalk(user32, GetForegroundWindow, GetWindowThreadProcessId)
 
   // ---- (2) cursor visibility ----
   const GetCursorInfo = bind(user32, 'bool __stdcall GetCursorInfo(_Inout_ void *pci)')
@@ -341,5 +399,5 @@ export function loadPresenceNative(): PresenceNative {
     return 0
   }
 
-  return { cursorShowing, foreground, imagePath, eqRunning }
+  return { cursorShowing, foreground, imagePath, eqRunning, ownTopmostBelowForeground }
 }
