@@ -19,6 +19,19 @@ import { itemCountKey } from '../../lib/itemName'
 /** How many most-recent distinct looted items to probe for notability. */
 const PROBE_LIMIT = 40
 
+/**
+ * How long answers wait to be committed together, in ms (perf audit, 2026-10-20).
+ *
+ * The probe asks main one name at a time, and it used to commit each answer the moment it
+ * landed: a new Map, a `setByKey`, and a full re-render of whatever view holds the hook. Main
+ * answers a cached name in a millisecond or two, so a visit to the Loot tab re-rendered the whole
+ * ledger 41 times in its first ~300 ms (measured: 41 LootView renders, 1,330 row renders), and the
+ * Overview, which runs the same probe, paid the same storm. The requests stay one at a time, as
+ * the header promises main; only the COMMITS are coalesced, one per window, so a warm probe lands
+ * in two or three renders. 50 ms is below anything a reader could see as a late badge.
+ */
+const COMMIT_WINDOW_MS = 50
+
 export interface NotablePickup {
   /** display item name (most recent occurrence) */
   item: string
@@ -80,24 +93,40 @@ export function useNotablePickups(history: LootEvent[], dismissed: Set<string>):
     const toFetch = recent.current.filter((r) => !requested.current.has(r.key))
     if (toFetch.length === 0) return
     for (const r of toFetch) requested.current.add(r.key)
+    // Answers wait in `pending` until the window closes (COMMIT_WINDOW_MS above). The cleanup
+    // commits whatever is still waiting, so every answer that arrived is kept exactly as it was
+    // when each one was committed on arrival; a commit after unmount is a no-op in React 18.
+    let pending: [string, ItemKnowledge][] = []
+    let timer: ReturnType<typeof setTimeout> | null = null
+    const commit = (): void => {
+      if (timer !== null) clearTimeout(timer)
+      timer = null
+      if (pending.length === 0) return
+      const batch = pending
+      pending = []
+      setByKey((prev) => {
+        const next = new Map(prev)
+        for (const [key, k] of batch) next.set(key, k)
+        return next
+      })
+    }
     void (async () => {
       for (const r of toFetch) {
         if (!alive) return
         try {
           const k = await window.eq.lookupItem(r.item)
           if (!alive) return
-          setByKey((prev) => {
-            const next = new Map(prev)
-            next.set(r.key, k)
-            return next
-          })
+          pending.push([r.key, k])
+          timer ??= setTimeout(commit, COMMIT_WINDOW_MS)
         } catch {
           /* main never rejects; ignore */
         }
       }
+      commit()
     })()
     return () => {
       alive = false
+      commit()
     }
     // Re-run when the set of recent keys changes (join of the capped recent keys).
     // eslint-disable-next-line react-hooks/exhaustive-deps
