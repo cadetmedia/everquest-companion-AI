@@ -4,6 +4,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { dropsSeen, itemPage, itemWhereTable, mobFacts, mobPage, spellPage, wikiCoin, wikiPageText } from '../src/shared/wikiPage'
 import { vendorFinder } from '../src/shared/gapMobPage'
+import { wikiZoneNamer } from '../src/shared/gapWikiZone'
 import { killIndex, type KillMap } from '../src/shared/kills'
 import type { GapRow } from '../src/shared/gaps'
 import type { LootEvent } from '../src/shared/types'
@@ -227,4 +228,74 @@ test('a mob page ends known_loot with MONEY DROPS, each coin least to most over 
   assert.ok(!none.includes('MONEY'), none)
   // Coin and no loot: the block alone.
   assert.match(wikiPageText(kobold, [], {}, { mobCoin: [coin] }), /\| known_loot = \n\n<p><b>MONEY DROPS<\/b><\/p>\n<ul>\n/)
+})
+
+// Owner, 2026-10-20 (plans/2026-10-20-gaps-item-page-facts.md): every fact the game gives goes on
+// the copied page. The field order and bullet shape are the wiki's own (measured on the cached
+// item pages: dropsfrom, playercrafted, soldby, foraged; `* [[Tailoring]] (Trivial: 335)`).
+test('a foraged, depot-stored, tradeskill item page lists the forage zones, the tradeskill and their categories', () => {
+  const tally = (names: string[]): { entries: { name: string; n: number }[]; distinct: number; all: string[] } => ({
+    entries: names.map((name) => ({ name, n: 1 })),
+    distinct: names.length,
+    all: [...names].sort()
+  })
+  const row: GapRow = {
+    domain: 'item',
+    name: 'Gray Wolf Skull',
+    kinds: ['foraged', 'looted', 'failed-combine'],
+    count: 4,
+    first: '',
+    last: '',
+    details: {
+      samples: [],
+      zones: tally(['Qeynos Hills', 'The Rathe Mountains 2 (Adaptive)', 'Blackburrow']),
+      forageZones: tally(['The Rathe Mountains 2 (Adaptive)', 'Qeynos Hills']),
+      dispositions: { entries: [{ name: 'depot', n: 1 }], distinct: 1 },
+      tradeskills: { entries: [{ name: 'Jewelry Making', n: 1 }], distinct: 1 }
+    }
+  }
+  const zoneName = wikiZoneNamer(new Map([['Rathe Mountains', 5], ['Qeynos Hills', 3], ['Blackburrow', 9]]))
+  assert.equal(
+    wikiPageText(row, [], {}, { zoneName }),
+    [
+      '{{Classic Era}}',
+      '<onlyinclude>{{Itempage',
+      '|itemname = Gray Wolf Skull',
+      '|statsblock = ',
+      'Size:   WT: <br>',
+      'Class: <br>',
+      'Race: <br>',
+      '|playercrafted = ',
+      '',
+      '* [[Jewelry Making]]',
+      '',
+      '|foraged = ',
+      '',
+      '* [[Qeynos Hills]]',
+      '* [[Rathe Mountains]]',
+      '',
+      '}}</onlyinclude>',
+      '',
+      '[[Category:Player Crafted]]',
+      '[[Category:Tradeskill Ingredient]]',
+      '[[Category:Foraged]]',
+      '[[Category:Qeynos Hills]]',
+      '[[Category:Rathe Mountains]]',
+      ''
+    ].join('\n'),
+    'Blackburrow, where it was only looted, is no forage zone'
+  )
+})
+
+test('a zone it both dropped and was foraged in is one category; an item never foraged has no |foraged', () => {
+  const text = itemPage({
+    name: 'Fresh Fish',
+    drops: [{ zone: 'Kedge Keep', mob: 'a shark', drops: 2 }],
+    soldBy: [],
+    crafted: false,
+    foragedIn: ['Kedge Keep']
+  })
+  assert.equal(text.match(/\[\[Category:Kedge Keep\]\]/g)?.length, 1)
+  assert.match(text, /\|foraged = \n\n\* \[\[Kedge Keep\]\]\n/)
+  assert.doesNotMatch(itemPage({ name: 'X', drops: [], soldBy: [], crafted: true }), /foraged|playercrafted|Tradeskill Ingredient/)
 })

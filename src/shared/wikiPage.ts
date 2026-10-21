@@ -17,7 +17,7 @@
 import { CURRENT_ERA } from './planner/era'
 import type { KillMap } from './kills'
 import { killsFor } from './kills'
-import { derivedPrices, factionMob, factionOf, npcOnlySpell, type ClientSpellFacts, type GapDomain, type GapRow, type MobCoin } from './gaps'
+import { derivedPrices, factionMob, factionOf, npcOnlySpell, type ClientSpellFacts, type GapDomain, type GapRow, type GapTally, type MobCoin } from './gaps'
 import { merchantValueOf } from './gapOffers'
 import { itemBaseName } from './itemStats'
 import { wikiZoneLink } from './gapWikiZone'
@@ -57,6 +57,11 @@ export function zoneBlocks(byZone: ReadonlyMap<string, readonly string[]>): stri
     return zone === '' ? list : `${wikiZoneLink(zone)}\n\n${list}`
   })
   return `\n\n${blocks.join('\n\n')}\n`
+}
+
+/** A field's bulleted list, a blank line first, as the wiki's own `|foraged` and `|playercrafted` are. */
+function bullets(lines: readonly string[]): string {
+  return `\n\n${lines.map((l) => `* ${l}`).join('\n')}\n`
 }
 
 /** One vendor an item was bought from: its page, the zone it stands in, its `/loc` (ns, ew). */
@@ -117,8 +122,14 @@ export interface ItemFacts {
   merchantValue?: number
   /** Merchants the player bought it from. */
   soldBy: VendorSeen[]
-  /** The player made it in a combine (a mote fusion is not one). */
+  /** The player made it in a combine, or failed one (a mote fusion is not one). */
   crafted: boolean
+  /** The tradeskills its combines raised in the same second (engine gaps_craft.rs). */
+  tradeskills?: string[]
+  /** Where the player foraged it, as the wiki spells the zones (owner, 2026-10-20). */
+  foragedIn?: string[]
+  /** A loot line stored it in the tradeskill depot, where the game files only tradeskill items. */
+  tradeskillIngredient?: boolean
 }
 
 /** A faction a kill moved: the amount most lines stated, and whether the kill raised it. */
@@ -173,10 +184,15 @@ const itemKey = (name: string): string => itemBaseName(name).toLowerCase()
 /** One corpse: a loot line per copy of an item prints the same second from the same corpse. */
 const corpseOf = (e: LootEvent): string => `${String(e.ts)}|${(e.source ?? '').toLowerCase()}`
 
+/** A zone list as the wiki spells its zones, each once. */
+function tallyZones(t: GapTally | undefined, zoneName: ZoneNamer): string[] {
+  const raw = t?.all ?? t?.entries.map((e) => e.name) ?? []
+  return [...new Set(raw.map(zoneName).filter((z) => z !== ''))]
+}
+
 /** The row's zones as the wiki spells them, each once. */
 function rowZones(row: GapRow, zoneName: ZoneNamer): string[] {
-  const raw = row.details.zones?.all ?? row.details.zones?.entries.map((e) => e.name) ?? []
-  return [...new Set(raw.map(zoneName).filter((z) => z !== ''))]
+  return tallyZones(row.details.zones, zoneName)
 }
 
 /** Every (zone, mob) the ledger looted the item from, at any tier, with the corpses that dropped it. */
@@ -213,7 +229,23 @@ export function itemFacts(row: GapRow, loot: readonly LootEvent[], zoneName: Zon
   // A merchant's offer heard at ally wins over the instant-sale estimate; any other never stands in
   // for it (shared/gapOffers.ts `merchantValueOf`, owner ask 2026-10-20).
   const merchantValue = merchantValueOf(row.details, derivedPrices(row.details)?.vendorValue)
-  return { name: row.name, drops, soldBy, crafted: row.kinds.includes('crafted'), ...(merchantValue === undefined ? {} : { merchantValue }) }
+  return { name: row.name, drops, soldBy, ...madeAndForaged(row, zoneName), ...(merchantValue === undefined ? {} : { merchantValue }) }
+}
+
+/**
+ * How the player came by it besides a drop or a merchant (owner, 2026-10-20, every fact the game
+ * gives): a combine and the tradeskill it raised, the zones it was foraged in, the tradeskill depot.
+ */
+function madeAndForaged(row: GapRow, zoneName: ZoneNamer): Pick<ItemFacts, 'crafted' | 'tradeskills' | 'foragedIn' | 'tradeskillIngredient'> {
+  const tradeskills = (row.details.tradeskills?.entries ?? []).map((e) => e.name)
+  const foragedIn = tallyZones(row.details.forageZones, zoneName).sort((a, b) => a.localeCompare(b))
+  const tradeskillIngredient = (row.details.dispositions?.entries ?? []).some((e) => e.name === 'depot')
+  return {
+    crafted: row.kinds.includes('crafted') || row.kinds.includes('failed-combine'),
+    ...(tradeskills.length > 0 ? { tradeskills } : {}),
+    ...(foragedIn.length > 0 ? { foragedIn } : {}),
+    ...(tradeskillIngredient ? { tradeskillIngredient } : {})
+  }
 }
 
 /** The levels a mob row's /con lines stated (`L12 indifferent`), lowest first. */
@@ -341,14 +373,26 @@ export function itemPage(f: ItemFacts): string {
   const fields: [string, string][] = [['itemname', f.name]]
   if (f.merchantValue !== undefined) fields.push(['merchant_value', wikiCoin(f.merchantValue)])
   fields.push(['statsblock', STATS_SKELETON])
+  const tradeskills = f.tradeskills ?? []
+  const foragedIn = f.foragedIn ?? []
   if (byZone.size > 0) fields.push(['dropsfrom', zoneBlocks(byZone)])
+  // The tradeskill only: trivial, container and components are the player's to type (a skill-up
+  // stops at trivial, so the log cannot state it). The wiki's order: playercrafted, soldby, foraged.
+  if (tradeskills.length > 0) fields.push(['playercrafted', bullets(tradeskills.map(wikiLink))])
   if (f.soldBy.length > 0) fields.push(['soldby', itemWhereTable(f.soldBy)])
-  const cats = [
+  if (foragedIn.length > 0) fields.push(['foraged', bullets(foragedIn.map(wikiZoneLink))])
+  return page(templateBlock('Itempage', fields), itemCategories(f, [...byZone.keys(), ...foragedIn]))
+}
+
+/** How it came, then each zone it dropped or was foraged in (a zone in both, once). */
+function itemCategories(f: ItemFacts, zones: readonly string[]): string[] {
+  return [
     ...(f.soldBy.length > 0 ? ['Vendor Sold'] : []),
     ...(f.crafted ? ['Player Crafted'] : []),
-    ...[...byZone.keys()].filter((z) => z !== '').sort((a, b) => a.localeCompare(b))
+    ...(f.tradeskillIngredient === true ? ['Tradeskill Ingredient'] : []),
+    ...((f.foragedIn ?? []).length > 0 ? ['Foraged'] : []),
+    ...zones.filter((z) => z !== '').sort((a, b) => a.localeCompare(b))
   ]
-  return page(templateBlock('Itempage', fields), cats)
 }
 
 // ---- NPC and merchant pages: the blueprints' full layout ------------------------------------------

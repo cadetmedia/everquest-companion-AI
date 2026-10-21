@@ -137,6 +137,8 @@ export type GapKind =
   | 'crafted'
   /** a mote fusion's result (`merged two items together`): not a tradeskill, so no Player Crafted */
   | 'fused'
+  /** a combine that failed (`You lacked the skills to fashion X.`): still a recipe's product */
+  | 'failed-combine'
   | 'foraged'
   | 'killed'
   | 'considered'
@@ -175,7 +177,7 @@ export interface GapOffer {
 export interface GapTally {
   entries: { name: string; n: number }[]
   distinct: number
-  /** The zones list only: every zone by name, beyond the eight, for the "this zone" filter. */
+  /** The zones and forageZones lists only: every zone by name, beyond the eight (the "this zone" filter, a page's `|foraged`). */
   all?: string[]
 }
 
@@ -207,6 +209,10 @@ export interface GapDetails {
   paidCopper?: number
   /** An item: what merchants offered for it, newest last, at most eight distinct. */
   offers?: GapOffer[]
+  /** An item: the zones it was foraged in, apart from `zones` (every way it came). */
+  forageZones?: GapTally
+  /** An item: the tradeskill a combine of it raised in the same second (engine gaps_craft.rs). */
+  tradeskills?: GapTally
   /** The last three raw log lines, oldest first. */
   samples: string[]
 }
@@ -278,11 +284,13 @@ export interface MobCoin {
 }
 
 /** The lists in display order, with the words the tab and the copy text use for them. */
-export type GapListKey = 'zones' | 'sources' | 'dispositions' | 'drops' | 'cons' | 'killers' | 'casters' | 'sales' | 'paid'
+export type GapListKey = 'zones' | 'forageZones' | 'sources' | 'dispositions' | 'tradeskills' | 'drops' | 'cons' | 'killers' | 'casters' | 'sales' | 'paid'
 export const GAP_LISTS: { key: GapListKey; label: string }[] = [
   { key: 'zones', label: 'zones' },
+  { key: 'forageZones', label: 'foraged in' },
   { key: 'sources', label: 'from' },
   { key: 'dispositions', label: 'disposed' },
+  { key: 'tradeskills', label: 'tradeskill' },
   { key: 'drops', label: 'dropped' },
   { key: 'cons', label: 'con' },
   { key: 'killers', label: 'killed by' },
