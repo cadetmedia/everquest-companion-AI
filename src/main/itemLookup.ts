@@ -172,6 +172,11 @@ export function itemMarks(names: readonly string[]): Record<string, ItemMarks> {
   return out
 }
 
+/** Whether the committed item database holds `name` (gapsCharacters.ts re-checks saved Gaps rows with it). */
+export function inItemDb(name: string): boolean {
+  return itemDb().has(cacheKey(name))
+}
+
 // ---- local (posky) cross-ref --------------------------------------------------
 
 const posky = poskyJson as unknown as PoskyData
