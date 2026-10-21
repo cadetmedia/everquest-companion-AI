@@ -79,6 +79,9 @@ A page is a mob page only if its OWN text opens the template (indirect transclus
   `|notes = {{Item Lore|<text>}}`, not in `statsblock` and not in a `== Lore ==` section (that
   heading is for NPC pages). 624 of 772 `{{Item Lore|` uses in the cache sit in `|notes`; several
   same-named variants list one `{{Item Lore|...}}` each.
+- **Foraged items**: `|foraged =` then a blank line and one `* [[Zone]]` per zone (`* ?` or
+  `* Various` when unknown); after `</onlyinclude>` add `[[Category:Foraged]]` plus a
+  `[[Category:<Zone>]]` per zone (`[[Category:Tradeskill Ingredient]]` when it is one).
 - **statsblock** flags use classic wording: tooltip "No Trade" is `NO DROP`, "Temporary" is
   `NO RENT`.
 - **Spell pages**: NPC-only spells say `| classes =` then `This spell is cast by NPCs only.` and
