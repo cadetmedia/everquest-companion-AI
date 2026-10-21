@@ -114,3 +114,18 @@ test('THE RUNNING SCAN finds a process under a given root, and never confuses -1
   // the posture on an install whose EQ directory could not be resolved.
   assert.notEqual(s.eqRunning(''), -1)
 })
+
+test('THE STACKING WALK answers without throwing, and never for a process with no windows', {
+  skip: NOT_WINDOWS
+}, () => {
+  // owner, 2026-10-20: the overlays left under the game after Paint. The walk runs on every
+  // foreground change for about a second; it must answer, and a pid that owns no window (this test
+  // process has none) can never be "under" anything.
+  const s = surface()
+  assert.equal(s.ownTopmostBelowForeground(process.pid), false)
+  assert.equal(s.ownTopmostBelowForeground(NO_SUCH_PID), false)
+  const t0 = performance.now()
+  for (let i = 0; i < 20; i++) s.ownTopmostBelowForeground(process.pid)
+  const each = (performance.now() - t0) / 20
+  assert.ok(each < 20, `one walk took ${each.toFixed(2)} ms`)
+})
