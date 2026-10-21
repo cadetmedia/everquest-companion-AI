@@ -28,22 +28,17 @@ function ddsHeader(w: number, h: number, fourcc: string | null): Buffer {
   return b
 }
 
+/** One cell's rectangle, its colour and size from `k`, stored BGRA. */
+function paintCell(px: Buffer, col: number, row: number, k: number): void {
+  const [r, g, b] = [(k * 53) % 256, (k * 97) % 256, (k * 31 + 64) % 256]
+  const [w, h] = [10 + (k % 5) * 6, 10 + ((k >> 2) % 5) * 6]
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) px.set([b, g, r, 255], ((row * 40 + 4 + y) * 256 + col * 40 + 4 + x) * 4)
+}
+
 /** A 256x256 A8R8G8B8 sheet: in each cell a rectangle whose colour and size depend on the cell. */
 function syntheticSheet(seed: number): Buffer {
   const px = Buffer.alloc(256 * 256 * 4)
-  for (let col = 0; col < 6; col++) {
-    for (let row = 0; row < 6; row++) {
-      const k = seed * 36 + col * 6 + row
-      const [r, g, b] = [(k * 53) % 256, (k * 97) % 256, (k * 31 + 64) % 256]
-      const [w, h] = [10 + (k % 5) * 6, 10 + ((k >> 2) % 5) * 6]
-      for (let y = 0; y < h; y++) {
-        for (let x = 0; x < w; x++) {
-          const o = ((row * 40 + 4 + y) * 256 + col * 40 + 4 + x) * 4
-          px.set([b, g, r, 255], o)
-        }
-      }
-    }
-  }
+  for (let col = 0; col < 6; col++) for (let row = 0; row < 6; row++) paintCell(px, col, row, seed * 36 + col * 6 + row)
   return Buffer.concat([ddsHeader(256, 256, null), px])
 }
 
