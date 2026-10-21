@@ -1,4 +1,4 @@
-// useHeld — a value that follows `live` at most once every `holdMs` (owner, 2026-10-20: with the
+// useThrottled — a value that follows `live` at most once every `holdMs` (owner, 2026-10-20: with the
 // Wiki Gaps overlay open the whole app took 500 ms a tab click, because its background copy of the
 // Gaps list re-derived everything on every kill, loot and /con). The first value lands at once; a
 // change after that waits out the rest of the gap, measured from the last hand-over, so a value
@@ -7,7 +7,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 
-export function useHeld<T>(live: T, holdMs: number): T {
+export function useThrottled<T>(live: T, holdMs: number): T {
   const [held, setHeld] = useState(live)
   const lastAt = useRef(Number.NEGATIVE_INFINITY)
   useEffect(() => {

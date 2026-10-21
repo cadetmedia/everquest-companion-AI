@@ -19,7 +19,7 @@ import { MOB_CATALOG } from '../mobs/mobSearch'
 import { joinCharacters, otherInputs, type CharacterGaps } from '@shared/gapsAllCharacters'
 import { useModule } from '../../lib/useModule'
 import { useItemMobs } from '../../lib/gapItemMobs'
-import { useHeld } from '../../lib/useHeld'
+import { useThrottled } from '../../lib/useThrottled'
 
 /** Each drop group's members, and the drop-list links that redirect to an item (scrape-drop-groups.ts). */
 const DROPS = dropGroupsJson as { groups: DropGroups; aliases?: DropAliases }
@@ -75,7 +75,7 @@ export function useGapsData(all: AllCharacters | null = null, opts: GapsDataOpti
     cons: useModule<ConsiderSnap>('consider')
   }
   const fresh = useMemo(() => fed, [fed.engine, fed.loot, fed.kills, fed.cons]) // eslint-disable-line react-hooks/exhaustive-deps
-  const { engine: liveEngine, loot: liveLoot, kills: liveKills, cons } = useHeld(fresh, holdMs)
+  const { engine: liveEngine, loot: liveLoot, kills: liveKills, cons } = useThrottled(fresh, holdMs)
   // The join runs a beat behind the box, so the tab stays live and can say it is working (owner, 2026-10-19).
   const deferredAll = useDeferredValue(all)
   // All characters (owner, 2026-10-19): the attached character's live inputs joined with every other
