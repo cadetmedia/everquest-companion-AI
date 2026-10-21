@@ -2,8 +2,8 @@
 
 Ask from Malkil (tester, Discord, 2026-10-20), confirmed by the owner: a third pet layout for the
 damage meters, on the floating overlay and the Combat tab, for your own pet and for a group-mate's
-pet whose master is known. Shape chosen 2026-10-21 on the mock (the stacked pair). Nothing is
-built yet. Rules first: `docs/community/RULES.md`, then `agent/INDEX.md`. What was asked:
+pet whose master is known. Shape chosen 2026-10-21 on the mock (the stacked pair); built
+2026-10-21 on `meter-pet-split` (BRANCHES.md row), not yet tested in the app. Rules first: `docs/community/RULES.md`, then `agent/INDEX.md`. What was asked:
 `requirements/meter-pet-split.md` (rule 19).
 
 Mock (look and feel only; all three layouts, a test pair with dps sliders):
@@ -72,19 +72,21 @@ https://claude.ai/artifact/5AKWz78ZYQrDD6suETpye7
 
 ### Rows: a pure pairing over the separate list
 
-- New `features/combat/petGroups.ts`, MUI-free and JSX-free like `petRows.ts` and `meterScope.ts`
-  (both bundles import it):
+- `src/shared/combatPetGroups.ts` (built there, not in the renderer: pairing and ranking is list
+  derivation, which `eqc/no-domain-munging` keeps out of renderer code; it now owns
+  `memberKeyOf`/`charmerKeyOf`, re-exported by `meterScope.ts`). As built:
 
   ```ts
+  export interface PetGroupLine { source: SourceView; label: string; pct: number } // own total / top row
   export interface PetGroupRow {
-    id: string                 // the owner's source id, else the lone row's id
-    owner: SourceView | null   // null: a bound pet whose owner has no row in this list
-    pets: SourceView[]         // ranked by total desc
-    total: number              // owner + pets
-    dps: number                // summed: every source divides by the segment's durationSec
-    pct: number                // total / top row's total * 100: the shared bar's length
+    id: string             // the first line's source id
+    lines: PetGroupLine[]  // master (or the lone source) first, its pets beneath, by damage
+    total: number          // every line's damage; rows rank on it
+    dps: number            // summed: every source divides by the segment's durationSec
+    pct: number            // total / top row's total * 100: the shared bar's length
   }
   export function petGroupRows(sources: SourceView[]): PetGroupRow[]
+  export function pairedPetLabel(pet: SourceView, master: SourceView): string
   ```
 
 - `kind: 'pet'` joins the `you` row; `kind: 'allyPet'` joins the row whose `memberKeyOf` equals
@@ -148,9 +150,9 @@ Malkil's sketch, `+` master colour, `-` pet colour, `/` the shared third colour:
 | `features/combat/combatPrefs.ts` | `PetLayout`, key, `readPetLayout(raw, legacy)` |
 | `features/combat/useCombatPrefs.ts` | `usePetLayout()`; `useCombinePetRow` removed or derived |
 | `features/preferences/CombatSection.tsx` | three-way control and captions |
-| `features/combat/petGroups.ts` | new, the pairing |
-| `features/combat/PetGroupRow.tsx` | new, tab row (MUI), one or more lines plus the total box; memo gate like `EntityRow` |
-| `features/combat/MeterRows.tsx` | level 1 renders `PetGroupRow` for every row when grouped |
+| `shared/combatPetGroups.ts` | new, the pairing and the paired-pet name |
+| `features/combat/PetGroupRows.tsx` | new, tab rows (MUI), one or more lines plus the total box; memo gate like `EntityRow` |
+| `features/combat/MeterRows.tsx` | level 1 renders `PetGroupRows` when the panel carries `groups` (`petRows.groupedPanel`) |
 | `features/combat/SegmentPanel.tsx` | reads the layout; grouped only when `mode === 'out'` |
 | `overlay/petGroupBars.tsx` | new, overlay row (plain React); `meterBars.tsx` is 419 lines of 440 |
 | `overlay/meterBars.tsx` | `SourceLines` switches on the layout |
@@ -167,8 +169,8 @@ Malkil's sketch, `+` master colour, `-` pet colour, `/` the shared third colour:
    that line; resolve in the scratch tree, `rerere` replays.
 2. **Preference.** The three-way key, legacy read, Preferences control. Options 1 and 2 behave
    exactly as before. Tests.
-3. **Pairing.** `petGroups.ts` and its tests. No UI.
-4. **Combat tab.** `PetGroupRow.tsx`, `MeterRows`, `SegmentPanel`.
+3. **Pairing.** `shared/combatPetGroups.ts` and its tests. No UI.
+4. **Combat tab.** `PetGroupRows.tsx`, `MeterRows`, `SegmentPanel`.
 5. **Overlay.** `petGroupBars.tsx`, `meterBars.tsx`.
 6. **Close.** Overview card, e2e, gate on the branch and on the scratch merge, owner and Malkil test
    in the app, then `main_community`.
