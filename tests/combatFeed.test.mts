@@ -3,49 +3,50 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import type { CombatSnapshot } from '../src/shared/combat'
-import { coalesced, createFeed, forgetKept, HYDRATING_GRACE_MS, keptSnapshot } from '../src/renderer/src/features/combat/combatFeed'
+import { coalesced, createFeed, forgetKept, keptSnapshot } from '../src/renderer/src/features/combat/combatFeed'
 
 const snap = (hydrating: boolean, id = 'a'): CombatSnapshot => ({ hydrating, selectedId: id }) as unknown as CombatSnapshot
 
 test('a real answer is drawn and kept for the next mount of the same world, never another', () => {
   forgetKept()
-  const shown: CombatSnapshot[] = []
-  const accept = createFeed('log1#0', (s) => shown.push(s), () => 1000)
+  const shown: unknown[] = []
+  const accept = createFeed('log1#0', (v) => shown.push(v))
   const real = snap(false)
   accept(real)
-  assert.deepEqual(shown, [real])
+  assert.deepEqual(shown, [{ snap: real, updating: false }])
   assert.equal(keptSnapshot('log1#0'), real)
   assert.equal(keptSnapshot('log2#0'), null, 'a character switch starts empty')
   assert.equal(keptSnapshot('log1#1'), null, 'a rebuild of the same log starts empty')
 })
 
-test('a hydrating answer right after a real one is held off; once the grace runs out it is believed', () => {
+test('once a world has a real answer, a hydrating one keeps it on screen, marked updating, until a real one lands', () => {
   forgetKept()
-  let t = 0
-  const shown: boolean[] = []
-  const accept = createFeed('w', (s) => shown.push(s.hydrating), () => t)
-  accept(snap(false))
-  t = HYDRATING_GRACE_MS
+  const shown: { snap: CombatSnapshot | null; updating: boolean }[] = []
+  const accept = createFeed('w', (v) => shown.push(v))
+  const first = snap(false, 'first')
+  accept(first)
   accept(snap(true))
-  assert.deepEqual(shown, [false], 'a slow poll keeps the numbers on screen')
-  t = HYDRATING_GRACE_MS + 1
   accept(snap(true))
-  assert.deepEqual(shown, [false, true], 'an engine still reading after the grace says so')
+  assert.deepEqual(shown.slice(1), [{ snap: first, updating: true }, { snap: first, updating: true }], 'never blanked')
+  const next = snap(false, 'next')
+  accept(next)
+  assert.deepEqual(shown.at(-1), { snap: next, updating: false })
 })
 
-test('with no real answer yet, hydrating is drawn at once (the first read after launch)', () => {
+test('with no real answer yet, hydrating is drawn as itself (the first read after launch)', () => {
   forgetKept()
-  const shown: boolean[] = []
-  createFeed('w', (s) => shown.push(s.hydrating), () => 0)(snap(true))
-  assert.deepEqual(shown, [true])
+  const shown: { snap: CombatSnapshot | null; updating: boolean }[] = []
+  createFeed('w', (v) => shown.push(v))(snap(true))
+  assert.equal(shown[0]?.snap?.hydrating, true)
+  assert.equal(shown[0]?.updating, false)
 })
 
-test('a real answer from another world does not hold off this one', () => {
+test('a real answer from another world is never shown in this one', () => {
   forgetKept()
-  createFeed('old', () => undefined, () => 0)(snap(false))
-  const shown: boolean[] = []
-  createFeed('new', (s) => shown.push(s.hydrating), () => 1)(snap(true))
-  assert.deepEqual(shown, [true])
+  createFeed('old', () => undefined)(snap(false))
+  const shown: { snap: CombatSnapshot | null; updating: boolean }[] = []
+  createFeed('new', (v) => shown.push(v))(snap(true))
+  assert.equal(shown[0]?.snap?.hydrating, true)
 })
 
 test('polls coalesce: one in flight, at most one more after it, however many arrive meanwhile', async () => {

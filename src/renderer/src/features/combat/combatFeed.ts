@@ -12,9 +12,11 @@
 //      previous character's fights.
 //   2. ONE SLOW ANSWER BLANKED THE TAB. Main answers a request the engine could not serve in time
 //      with an empty `hydrating` stand-in (`ipc/world.ts emptyCombat`), and the view believed it.
-//      A `hydrating` answer right after a real one is now held off for HYDRATING_GRACE_MS: a slow
-//      poll keeps the numbers on screen, while an engine that really is re-reading (a restart, a
-//      new log) still says so once the grace runs out.
+//      Once a world has a real answer, a `hydrating` one never replaces it (owner, 2026-10-20:
+//      "show the data and then have each element update as we get the correct data in with a
+//      loading indicator somewhere but don't blank the screen"): the last real answer stays drawn
+//      and the feed says `updating` until a real one lands. Only a world with no real answer yet
+//      draws "Reading log…".
 //   3. THE POLLS PILED UP. A one-second interval plus the activity ping fired a new request
 //      whether or not the last had come back, so on a slow machine they queued behind each other
 //      until they ran into main's two-second deadline, which is (2). `coalesced` keeps one request
@@ -22,14 +24,16 @@
 
 import type { CombatSnapshot } from '@shared/combat'
 
-/** How long after a real answer a `hydrating` one is taken for a slow poll rather than a re-read. */
-export const HYDRATING_GRACE_MS = 3_000
-
 interface Kept {
   world: string
   snap: CombatSnapshot
-  /** when it was received (ms) */
-  at: number
+}
+
+/** What a surface draws: the snapshot, and whether a newer one is still being waited for. */
+export interface FeedView {
+  snap: CombatSnapshot | null
+  /** a real answer is on screen but the latest poll could not get a fresh one */
+  updating: boolean
 }
 
 /** The last real answer of any mount, for the next mount of the same world. */
@@ -46,20 +50,20 @@ export function forgetKept(): void {
 }
 
 /**
- * The feed of one mount: takes each answer and calls `show` with the ones worth drawing. A real
- * answer is always drawn and kept; a `hydrating` one is dropped while a real one of this world is
- * younger than the grace.
+ * The feed of one mount: takes each answer and calls `show` with what to draw. A real answer is
+ * drawn and kept; a `hydrating` one keeps the last real answer of this world on screen, marked
+ * `updating`, and is drawn as itself only when this world has none.
  */
-export function createFeed(world: string, show: (s: CombatSnapshot) => void, now: () => number = Date.now): (s: CombatSnapshot) => void {
+export function createFeed(world: string, show: (v: FeedView) => void): (s: CombatSnapshot) => void {
   return (s) => {
-    const t = now()
     if (!s.hydrating) {
-      kept = { world, snap: s, at: t }
-      show(s)
-      return
+      kept = { world, snap: s }
+      show({ snap: s, updating: false })
+    } else if (kept?.world === world) {
+      show({ snap: kept.snap, updating: true })
+    } else {
+      show({ snap: s, updating: false })
     }
-    if (kept?.world === world && t - kept.at <= HYDRATING_GRACE_MS) return
-    show(s)
   }
 }
 

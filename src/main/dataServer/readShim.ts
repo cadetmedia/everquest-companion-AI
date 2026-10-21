@@ -130,6 +130,10 @@ export interface ShimDeps {
    * the main process must be `unref`'d (`serveShim.ts` knows).
    */
   delay: (ms: number) => Promise<void>
+  /** Every finished read: its op, how long it took, and the fallback phrase when it went unserved
+   *  (slowReads.ts writes the slow and unserved ones to a file a tester can send). Optional so the
+   *  unit tests need not supply it. */
+  observe?: (op: string, ms: number, unserved?: string) => void
 }
 
 /** What `world.ts` calls. One method per shape of question, plus the two the probe seam needs. */
@@ -250,17 +254,24 @@ export function createReadShim(deps: ShimDeps): ReadShim {
     // put on a wire that is not there would come back as `refused` anyway, but it would come back
     // saying the wrong thing about WHY — and `why` is the whole value of the note.
     const ready = deps.readiness()
-    if (!ready.ok) return { served: false, why: ready.why, detail: REASON_PHRASE[ready.why] }
+    if (!ready.ok) {
+      deps.observe?.(op, 0, REASON_PHRASE[ready.why])
+      return { served: false, why: ready.why, detail: REASON_PHRASE[ready.why] }
+    }
+    const t0 = deps.now()
     let reply: ResultFor<O> | typeof DEADLINE
     try {
       reply = await raceDeadline(deps, deps.request(op, params))
     } catch (err) {
+      deps.observe?.(op, deps.now() - t0, REASON_PHRASE.refused)
       return { served: false, why: 'refused', detail: `${op} — ${describe(err)}` }
     }
     if (reply === DEADLINE) {
+      deps.observe?.(op, deps.now() - t0, REASON_PHRASE.timedOut)
       return { served: false, why: 'timedOut', detail: `${op} after ${String(deps.timeoutMs)} ms` }
     }
     const value = project(reply)
+    deps.observe?.(op, deps.now() - t0, value === null ? REASON_PHRASE.guess : undefined)
     if (value === null) return { served: false, why: 'guess', detail: `${op} answered, unusably` }
     return { served: true, value }
   }
