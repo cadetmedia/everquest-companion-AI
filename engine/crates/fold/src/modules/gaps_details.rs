@@ -92,6 +92,11 @@ pub struct Details {
     paid_copper: i64,
     /// An item: what merchants offered for it in the sell slot (`gaps_offers.rs`).
     offers: Offers,
+    /// An item: the zones it was foraged in, apart from `zones` (every way it came), so the
+    /// copied wiki page's `|foraged` names only these (owner, 2026-10-20).
+    forage_zones: Tally,
+    /// An item: the tradeskill a combine of it raised in the same second (`gaps_craft.rs`).
+    tradeskills: Tally,
     samples: VecDeque<String>,
 }
 
@@ -160,6 +165,16 @@ impl Details {
     pub fn offer(&mut self, o: &Offer, standing: Option<&str>, zone: Option<&str>, last: &str) -> bool {
         self.offers.add(o, standing, zone, last);
         true
+    }
+
+    /// A forage of the item in `zone` (`record` already counted the zone among `zones`).
+    pub fn foraged(&mut self, zone: &str) {
+        self.forage_zones.add(zone);
+    }
+
+    /// The tradeskill a combine of the item raised.
+    pub fn tradeskill(&mut self, skill: &str) {
+        self.tradeskills.add(skill);
     }
 
     /// A later disposal of the name — the disposition and the line, nothing placing it anywhere.
@@ -240,16 +255,22 @@ impl Serialize for Details {
             ("casters", &self.casters),
             ("sales", &self.sales),
             ("paid", &self.paid),
+            ("forageZones", &self.forage_zones),
+            ("tradeskills", &self.tradeskills),
         ];
         for (name, tally) in lists {
             if let Some(v) = tally.serve() {
                 out.insert(name.to_string(), v);
             }
         }
-        if let Some(zones) = out.get_mut("zones") {
-            let mut all: Vec<&String> = self.zones.0.keys().collect();
-            all.sort();
-            zones["all"] = json!(all);
+        // Every name past the cap: the tab's zone filter reads `zones`, a page's `|foraged` lists
+        // every forage zone.
+        for (name, tally) in [("zones", &self.zones), ("forageZones", &self.forage_zones)] {
+            if let Some(list) = out.get_mut(name) {
+                let mut all: Vec<&String> = tally.0.keys().collect();
+                all.sort();
+                list["all"] = json!(all);
+            }
         }
         if let Some(v) = self.offers.serve() {
             out.insert("offers".to_string(), v);

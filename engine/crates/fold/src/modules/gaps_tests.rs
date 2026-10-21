@@ -453,3 +453,7 @@ mod review;
 /// Merchant offers (owner, 2026-10-20): a file of their own for the factoring bar.
 #[path = "gaps_offer_tests.rs"]
 mod offers;
+
+/// Forage zones and a combine's tradeskill (owner, 2026-10-20): a file of their own.
+#[path = "gaps_item_facts_tests.rs"]
+mod item_facts;

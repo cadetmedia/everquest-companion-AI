@@ -30,7 +30,7 @@ use super::gaps_details::{stamp_of, Details};
 use super::gaps_keys::{aa_known, item_gap_key, loose_key, spell_gap_key, spell_known, ItemIndex};
 use super::gaps_names::{no_mob, no_spell, owner_of_pet, MobNames};
 use super::gaps_offers::{offer_of, Offer, Standings};
-use super::gaps_players::{forage_of, hail_of, speaker_of, Players};
+use super::gaps_players::{hail_of, speaker_of, Players};
 use super::gaps_specials::MobSpecials;
 use super::gaps_suggest::{item_candidates, spell_candidates, suggest, Candidate, Suggest};
 use super::gaps_locs::MobLocs;
@@ -127,6 +127,8 @@ pub struct GapsModule {
     specials: MobSpecials,
     /// Each name's last /con rung: the standing a merchant's offer is made at (`gaps_offers.rs`).
     standings: Standings,
+    /// The last tradeskill tick and combine, paired by their second (`gaps_craft.rs`).
+    combines: craft::Combines,
     seq: i64,
     announce: crate::announce::Announce,
 }
@@ -146,6 +148,7 @@ impl GapsModule {
         self.who.clear();
         self.specials.clear();
         self.standings.clear();
+        self.combines.clear();
         if let Ok(mut cache) = self.suggests.lock() {
             cache.clear();
         }
@@ -167,6 +170,7 @@ impl GapsModule {
             // Handing an item to it is meeting it (owner, 2026-10-19: a fallen froglok, only traded with).
             "offer" => self.npc_met(ev.str("npc"), "offered", ev),
             "allyPetLeader" => self.player_pet(ev.str("pet")),
+            "skillUp" => self.skill_up(ev),
             _ => false,
         }
     }
@@ -178,14 +182,7 @@ impl GapsModule {
             // the loot itself: it says what became of the item, not where it came from.
             "loot" if ev.str("disposition") == Some("destroyed") => self.disposal(ev),
             "loot" => self.item(ev, "looted") | self.mob(ev.str("source"), "dropped-by", ev),
-            "itemReceived" => {
-                let how = if ev.str("via") == Some("fashioned") {
-                    "crafted"
-                } else {
-                    "received"
-                };
-                self.item(ev, how)
-            }
+            "itemReceived" => self.received(ev),
             "purchase" => self.item(ev, "bought"),
             _ => self.merge(ev),
         }
@@ -284,8 +281,8 @@ impl GapsModule {
     /// An unparsed line the parser has no family for: a forage, a hail, or a player's chat.
     fn unparsed(&mut self, ev: &Event) -> bool {
         let text = message_text_of(ev.raw());
-        if let Some(item) = forage_of(text) {
-            return self.item_named(item, "foraged", ev);
+        if let Some(filed) = self.item_line(text, ev) {
+            return filed;
         }
         if let Some(name) = hail_of(text) {
             return self.met(name, true, ev);
@@ -524,5 +521,9 @@ impl EqModule for GapsModule {
 }
 
 #[cfg(test)]
+/// A forage's zone and a combine's tradeskill: a child module, so it files onto the rows.
+#[path = "gaps_craft.rs"]
+mod craft;
+
 #[path = "gaps_tests.rs"]
 mod tests;
