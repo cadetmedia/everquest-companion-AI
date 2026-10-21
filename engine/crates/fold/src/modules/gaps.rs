@@ -26,10 +26,11 @@
 //! AA or an item's effect cast as a spell — is in [`super::gaps_names`] and [`super::gaps_keys`].
 
 use super::gaps_coin::KillCoin;
-use super::gaps_details::Details;
-use super::gaps_keys::{aa_known, item_gap_key, loose_key, scroll_known, spell_gap_key, spell_known};
+use super::gaps_details::{stamp_of, Details};
+use super::gaps_keys::{aa_known, item_gap_key, loose_key, spell_gap_key, spell_known, ItemIndex};
 use super::gaps_names::{no_mob, no_spell, owner_of_pet, MobNames};
-use super::gaps_players::{hail_of, speaker_of, Players};
+use super::gaps_offers::{offer_of, Offer, Standings};
+use super::gaps_players::{forage_of, hail_of, speaker_of, Players};
 use super::gaps_specials::MobSpecials;
 use super::gaps_suggest::{item_candidates, spell_candidates, suggest, Candidate, Suggest};
 use super::gaps_locs::MobLocs;
@@ -97,13 +98,8 @@ pub struct GapRow {
 #[derive(Default)]
 pub struct GapsModule {
     knowledge: Option<Arc<dyn Knowledge>>,
-    /// Every key the committed item database is keyed by, under [`item_gap_key`] (quotes folded),
-    /// and the same under [`loose_key`], tried only when the exact key misses.
-    items: HashSet<String>,
-    items_loose: HashSet<String>,
-    /// The loose keys of the items the wiki titles with an article (`A skeletal finger`), without
-    /// it: the loot line strips its own article, so the game's `Skeletal Finger` is that page.
-    items_bare: HashSet<String>,
+    /// Every key the committed item database is keyed by, exactly and loosely (`gaps_keys.rs`).
+    items: ItemIndex,
     /// The same keys with their pages, for a near-miss suggestion — see [`super::gaps_suggest`].
     item_candidates: Vec<Candidate>,
     /// Every effect an item states, under [`loose_key`]: a cast of one is a known spell.
@@ -129,6 +125,8 @@ pub struct GapsModule {
     who: Players,
     /// What each mob was seen to do, Rampage or Flurry (`gaps_specials.rs`).
     specials: MobSpecials,
+    /// Each name's last /con rung: the standing a merchant's offer is made at (`gaps_offers.rs`).
+    standings: Standings,
     seq: i64,
     announce: crate::announce::Announce,
 }
@@ -147,6 +145,7 @@ impl GapsModule {
         self.mob_locs.clear();
         self.who.clear();
         self.specials.clear();
+        self.standings.clear();
         if let Ok(mut cache) = self.suggests.lock() {
             cache.clear();
         }
@@ -161,14 +160,7 @@ impl GapsModule {
             "loot" | "itemReceived" | "itemMerge" => self.item_event(ev),
             "purchase" | "coin" | "unknown" => self.trade(ev),
             "death" => self.kill_factions_of(ev) | self.death(ev),
-            "consider" => match ev.str("mob") {
-                Some(mob) => {
-                    let zone = self.zone.clone();
-                    let placed = self.mob_locs.target(mob, ev.ts(), zone.as_deref());
-                    placed | self.met(mob, false, ev)
-                }
-                None => false,
-            },
+            "consider" => self.considered(ev),
             "damage" | "miss" => self.specials.event(ev),
             "castBegin" | "otherCastBegin" => self.spell(ev),
             "petClaim" | "petSay" => self.player_pet(ev.str("name")),
@@ -216,14 +208,9 @@ impl GapsModule {
     }
 
     fn item_named(&mut self, name: &str, kind: &'static str, ev: &Event) -> bool {
-        let key = item_gap_key(name);
         // A known scroll is an item the log named and we could place: checked, never a row.
-        let loose = loose_key(&key);
-        let known = self.items.contains(&key)
-            || self.items_loose.contains(&loose)
-            || self.items_bare.contains(&loose)
-            || scroll_known(name);
-        self.note(Domain::Item, key, &item_base_name(name), known, kind, ev)
+        let known = self.items.known(name);
+        self.note(Domain::Item, item_gap_key(name), &item_base_name(name), known, kind, ev)
     }
 
     /// A later disposal of an item already filed: its disposition and its line go on the row,
@@ -264,10 +251,34 @@ impl GapsModule {
             "unknown" => {
                 self.kill_factions.line(ev);
                 let zone = self.zone.clone();
-                self.mob_locs.line(ev, zone.as_deref()) | self.unparsed(ev) | self.merchant(ev)
+                self.mob_locs.line(ev, zone.as_deref()) | self.unparsed(ev) | self.merchant(ev) | self.offered(ev)
             }
             _ => self.merchant(ev),
         }
+    }
+
+    /// A merchant's offer for an item (owner, 2026-10-20: "more information is gathered about the
+    /// items if a merchant tries to sell"): an unknown item is filed as `appraised`, placed nowhere,
+    /// with the offer and the player's standing with that merchant on its row (`gaps_offers.rs`).
+    fn offered(&mut self, ev: &Event) -> bool {
+        let filed = |o: &Offer| self.item_named(o.item, "appraised", ev);
+        let Some(o) = offer_of(message_text_of(ev.raw())).filter(filed) else {
+            return false;
+        };
+        let (at, standing) = (stamp_of(ev.raw()).unwrap_or_default(), self.standings.of(o.merchant));
+        let row = self.rows.get_mut(&(Domain::Item, item_gap_key(o.item)));
+        row.is_some_and(|r| r.details.offer(&o, standing, self.zone.as_deref(), &at))
+    }
+
+    /// A /con: a mob met, maybe placed by a `/loc`, and the standing a later offer from it carries.
+    fn considered(&mut self, ev: &Event) -> bool {
+        let Some(mob) = ev.str("mob") else {
+            return false;
+        };
+        self.standings.con(mob, ev.str("faction"));
+        let zone = self.zone.clone();
+        let placed = self.mob_locs.target(mob, ev.ts(), zone.as_deref());
+        placed | self.met(mob, false, ev)
     }
 
     /// An unparsed line the parser has no family for: a forage, a hail, or a player's chat.
@@ -397,7 +408,9 @@ impl GapsModule {
             details: Details::default(),
             maybe_player: false,
         });
-        row.details.record(domain.as_str(), ev, self.zone.as_deref());
+        // An offer is a sale's start: it says where the item went, not where it came from.
+        let zone = if kind == "appraised" { None } else { self.zone.as_deref() };
+        row.details.record(domain.as_str(), ev, zone);
         row.count += 1;
         row.last = at;
         if !row.kinds.contains(&kind) {
@@ -454,29 +467,6 @@ impl GapsModule {
     }
 }
 
-/// `You have scrounged up a Tuft of Black Bear Fur.` → the item: a forage, which no parser family reads.
-fn forage_of(text: &str) -> Option<&str> {
-    let item = text.strip_prefix("You have scrounged up ")?.strip_suffix('.')?;
-    let item = ["a ", "an "].iter().find_map(|a| item.strip_prefix(a)).unwrap_or(item);
-    (!item.is_empty()).then_some(item)
-}
-
-/// `[Wed Sep 23 17:54:48 2026] …` → `2026-09-23 17:54:48`: the log's own clock, as the bazaar
-/// module prints it.
-fn stamp_of(raw: &str) -> Option<String> {
-    const MONTHS: [&str; 12] = [
-        "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-    ];
-    let stamp = raw.strip_prefix('[')?.split(']').next()?;
-    let parts: Vec<&str> = stamp.split_whitespace().collect();
-    let [_, month, day, time, year] = parts.as_slice() else {
-        return None;
-    };
-    let m = MONTHS.iter().position(|x| x == month)? + 1;
-    let d: u32 = day.parse().ok()?;
-    Some(format!("{year}-{m:02}-{d:02} {time}"))
-}
-
 impl EqModule for GapsModule {
     fn id(&self) -> &'static str {
         "gaps"
@@ -524,10 +514,7 @@ impl EqModule for GapsModule {
 
     fn install_knowledge(&mut self, k: &Arc<dyn Knowledge>) {
         let index = k.gap_index();
-        self.items = index.item_pages.iter().map(|(key, _)| item_gap_key(key)).collect();
-        self.items_loose = self.items.iter().map(|k| loose_key(k)).collect();
-        let bare = |k: &String| ["a ", "an ", "the "].iter().find_map(|a| k.strip_prefix(a)).map(str::to_string);
-        self.items_bare = self.items_loose.iter().filter_map(bare).collect();
+        self.items = ItemIndex::new(&index.item_pages);
         self.item_candidates = item_candidates(&index.item_pages);
         let effect_key = |n: &String| loose_key(&spell_gap_key(n));
         self.item_effects = index.item_effects.iter().map(|(n, _)| effect_key(n)).collect();
