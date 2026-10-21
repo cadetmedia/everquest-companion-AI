@@ -22,9 +22,7 @@
 
 import type { JSX } from 'react'
 import { Chip, Stack, TextField, Typography } from '@mui/material'
-import { CLASS_ABBRS } from '@shared/classCombo'
 import type { GearClasses } from '../gear/gearData'
-import { classDisplayName } from '@shared/spellLevels'
 import {
   UPGRADE_CATEGORIES,
   UPGRADE_CATEGORY_LABEL,
@@ -33,6 +31,7 @@ import {
 import { magnitudeRatePercent, type SpellbookQuery } from '@shared/spellbook'
 import ChipMultiSelect from '../../components/ChipMultiSelect'
 import SpellTierSlider, { tierLabel } from './SpellTierSlider'
+import { SpellClassOffer, SpellClassPicker } from './SpellClassFilter'
 
 // Re-exported: it moved to the shared control and this module was its home.
 export { tierLabel }
@@ -104,27 +103,8 @@ function FilterRow({
         slotProps={{ htmlInput: { 'data-testid': 'spellbook-search' } }}
         sx={{ minWidth: 200 }}
       />
-      {/* THE GEAR TAB'S CLASS FILTER, WHOLE (owner, 2026-09-10: *"the class thing isn't letting me
-          pick and chose like the gear is, this should be shared control so we don't reinvent the
-          wheel"*).
-
-          The CONTROL was always the shared `ChipMultiSelect`; what was not shared was everything
-          around it. This tab drove it from a query field that started EMPTY, with a separate chip
-          that swapped the whole selection in and out - so it opened showing no pills, and there was
-          no way to drop just the Warrior and keep the other two. The Gear tab has had the right
-          arrangement since JOS-302: the picker holds the real list and shows it as removable pills,
-          it FOLLOWS detection until you touch it, and a separate chip offers today's detected trio
-          when the two disagree. `useFollowingClasses` is that state, now shared by key. */}
-      <ChipMultiSelect
-        options={CLASS_ABBRS}
-        value={classes.classes}
-        onChange={classes.set}
-        label="Classes"
-        placeholder="every class"
-        optionLabel={classDisplayName}
-        minWidth={190}
-        testId="spellbook-classes"
-      />
+      {/* THE GEAR TAB'S CLASS FILTER, WHOLE - `SpellClassFilter`, which the Upgrades tab draws too. */}
+      <SpellClassPicker classes={classes} />
       <ChipMultiSelect
         options={UPGRADE_CATEGORIES}
         value={[...categories]}
@@ -138,23 +118,8 @@ function FilterRow({
           because a browser that opened pre-filtered to your trio would answer a question the reader
           had not asked yet - and the owner's standing ask was explicitly to be able to look OUTSIDE
           his classes in order to compare. */}
-      {/* THE OFFER, not a toggle - the Gear tab's `gear-class-offer` chip, same words and same
-          behaviour. It appears only when you have PINNED a list that disagrees with what the app
-          currently infers, and one click adopts today's trio into the picker above, where it is
-          then editable like anything else you typed. A filter following detection shows no chip,
-          because there is nothing to offer it. */}
-      {classes.offer !== null && (
-        <Chip
-          size="small"
-          color="warning"
-          variant="outlined"
-          label={`detected: ${classes.offer.map(classDisplayName).join(', ')}`}
-          data-testid="spellbook-class-offer"
-          title="What the app currently infers you are running. Click to read the list for it."
-          onClick={classes.adopt}
-          sx={{ flexShrink: 0 }}
-        />
-      )}
+      {/* THE OFFER, not a toggle - `SpellClassFilter` says what it does. */}
+      <SpellClassOffer classes={classes} />
       {/* The owner's question 2, as one click: hide everything a tier does not improve. */}
       {/* THE OWNER'S THIRD ONE-CLICK QUESTION (2026-09-10): *"I don't need to see 5 different
           versions of regeneration or poison resist"*. It hides a rung whose own line has a later

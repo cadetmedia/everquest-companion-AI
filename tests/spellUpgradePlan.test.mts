@@ -216,7 +216,7 @@ test('one class of the trio casting it is enough, at any level', () => {
   assert.equal(plan.otherClassCount, 2)
 })
 
-test('no class known yet filters nothing, which is the readout before the pick existed', () => {
+test('an empty filter (every class, on the Spellbook) filters nothing, as before the pick existed', () => {
   const plan = buildUpgradePlan([ENVENOMED, WRATH, FORCE_SNAP], SWAPPED, [])
   assert.equal(plan.heldCount, 3)
   assert.equal(plan.otherClassCount, 0)

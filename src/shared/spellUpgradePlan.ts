@@ -37,12 +37,13 @@
 // reads only your own cast-begins (`X begins casting` is a different event), your own resists and
 // your own merges.
 //
-// So `classes` filters the held lines to the ones a class you are running casts, through the
-// spell's own (class, level) pairs, the same `at` the Loadout's buff pool reads. The caller hands
-// in the Loadout tab's "Your classes" pick (`LoadoutClasses.useLoadoutClasses`, one key for both
-// tabs). An EMPTY list means no class is known yet and filters nothing, which is the readout this
-// tab gave before; the lines a pick sets aside are counted in `otherClassCount`, never dropped
-// without a word.
+// So `classes` filters the held lines to the ones a picked class casts, through the spell's own
+// (class, level) pairs, the same `at` the Loadout's buff pool reads. The caller hands in the
+// Spellbook tab's class filter (`SpellClassFilter.useSpellClasses`, one stored selection for both
+// tabs; owner, 2026-10-20: *"spellbooks, we should just add the same existing control from the
+// other spellbook tabs on this tab"*). An EMPTY list - every class, on the Spellbook - filters
+// nothing, which is the readout this tab gave before; the lines a pick sets aside are counted in
+// `otherClassCount`, never dropped without a word.
 //
 // ============================================================================
 // WHAT "VALUE" MEANS HERE, AND WHY IT IS NOT roleWeights
@@ -194,7 +195,7 @@ export function buildUpgradePlan(
 
 /**
  * Does one of these classes cast this spell? Any level: the log has already watched you hold it, so
- * the level it unlocks at says nothing more. An empty class list is "not known yet" and admits all.
+ * the level it unlocks at says nothing more. An empty class list is "every class" and admits all.
  */
 function castByAny(spell: UnlockSpell, classes: readonly ClassAbbr[]): boolean {
   return classes.length === 0 || spell.at.some((p) => classes.includes(p.cls))

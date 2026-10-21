@@ -23,15 +23,16 @@
 // mana cost and cast time like Bear Form"* - so the list of lines whose numbers never move is an
 // answer he asked for out loud, and it is drawn rather than hidden behind a toggle.
 //
-// ── YOUR CLASSES, THE LOADOUT TAB'S PICK ──────────────────────────────────────────────────────
+// ── YOUR CLASSES, THE SPELLBOOK'S CONTROL ─────────────────────────────────────────────────────
 //
 // Owner, 2026-10-20: *"i don't think that the upgrades tab is respecting the classes i am using or
 // selecting?"* It had no classes at all, so a character that swaps classes saw every line it had
-// ever cast as any of them (Wrath from a Paladin stint, Searing Arrow from a Ranger one). The tab
-// now draws the Loadout tab's "Your classes" picker and reads the plan for it: the same stored key,
-// so a pick on either tab is the pick on both, following the log's detected trio until touched.
-// Not the Spellbook's filter, which is a browsing control that may hold five classes or none; this
-// tab and the Loadout both answer "what do I, running these three, do next".
+// ever cast as any of them (Wrath from a Paladin stint, Searing Arrow from a Ranger one). Which
+// control picks them was the owner's call the same day: *"spellbooks, we should just add the same
+// existing control from the other spellbook tabs on this tab reusing the existing code"*. So the tab
+// draws the Spellbook's class filter (`SpellClassFilter`) on the Spellbook's stored selection: a
+// pick on either tab is the pick on both, following the log's detected trio until touched. An
+// empty filter means every class there and no filter here.
 //
 // NOTHING HERE FILTERS OR SORTS (ruling 4): `buildUpgradePlan` does all of it in src/shared.
 
@@ -53,7 +54,7 @@ import { buildUpgradePlan, type DeadEnd, type UpgradeCandidate } from '@shared/s
 import { useLevelUnlocks } from '../leveling/useLevelUnlocks'
 import { useObservedSpellRanks } from '../../lib/useObservedSpellRanks'
 import { SpellTooltip } from '../../lib/SpellCard'
-import LoadoutClasses, { useLoadoutClasses } from './LoadoutClasses'
+import { SpellClassOffer, SpellClassPicker, useSpellClasses } from './SpellClassFilter'
 import { Tooltip } from '../../lib/Tooltip'
 import { romanRank, whole } from './spellbookFormat'
 
@@ -198,8 +199,8 @@ function CandidateTable({ plan }: { plan: ReturnType<typeof buildUpgradePlan> })
 export default function SpellUpgradesView(): JSX.Element {
   const data = useLevelUnlocks()
   const observed = useObservedSpellRanks()
-  const picked = useLoadoutClasses()
-  const classes = picked.combo.resolved
+  const picked = useSpellClasses()
+  const classes = picked.classes
   const plan = useMemo(
     () => buildUpgradePlan(data.spells, observed, classes),
     [data.spells, observed, classes]
@@ -214,7 +215,10 @@ export default function SpellUpgradesView(): JSX.Element {
           the last, so the cheap rungs on a low-ranked spell beat the expensive ones on a high one.
         </Typography>
       </Box>
-      <LoadoutClasses state={picked} />
+      <Stack direction="row" spacing={1} alignItems="center" useFlexGap flexWrap="wrap">
+        <SpellClassPicker classes={picked} />
+        <SpellClassOffer classes={picked} />
+      </Stack>
 
       {plan.heldCount === 0 ? (
         <>
