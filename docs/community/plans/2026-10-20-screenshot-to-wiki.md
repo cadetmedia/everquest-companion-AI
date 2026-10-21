@@ -283,6 +283,16 @@ screenshots are being gathered)
     puts the right icon 2nd (1104, the `items.json` icon of Windstriker; 597 first, 754 vs 747).
     The name read from the window (`Windstriker +10` -> `Windstriker`) or the `Range` slot settles
     it.
+- **Malkil's same window over the sky (2026-10-21):** the background is the world through a
+  translucent window, so it changes with the camera. Text: confidence 84 (better than over ground),
+  same faults. Icon, plain finder: 1104 left the top 3 (it assumes icons on black; this is
+  blue-grey). **Flat background removal** fixes it: the median colour of the crop's border ring is
+  the background, pixels within 25-40 of it go black, then the normal finder. Sky: 1104 1st (435),
+  597 2nd (462); ground: 597 1st (422), 1104 2nd (438); third place ~940-1010 on both. 597 and
+  1104 are the same bow in two colours (1104 pale with purple tips, as his is), so the pair is a
+  recolour tie the top-5 list, the name read from the window, or the slot settles.
+- So the background step is: the skin's texture when it fits (opaque windows), else a flat colour
+  from the ring (translucent windows), else nothing; take the step with the clearest winner.
 - To collect from a player with an unknown UI: the `UISkin=` line of `UI_<char>_<server>_LO1.ini`,
   the `uifiles/<skin>/` folder name (and whether it is a downloaded UI), and the `BGAlpha`,
   `BRAlpha`, `FGAlpha` lines of `eqclient.ini`.
