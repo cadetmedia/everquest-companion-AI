@@ -18,6 +18,7 @@ import { CURRENT_ERA } from './planner/era'
 import type { KillMap } from './kills'
 import { killsFor } from './kills'
 import { derivedPrices, factionMob, factionOf, npcOnlySpell, type ClientSpellFacts, type GapDomain, type GapRow, type MobCoin } from './gaps'
+import { merchantValueOf } from './gapOffers'
 import { itemBaseName } from './itemStats'
 import { wikiZoneLink } from './gapWikiZone'
 import type { VendorFinder } from './gapMobPage'
@@ -112,7 +113,7 @@ export interface DropSeen {
 export interface ItemFacts {
   name: string
   drops: DropSeen[]
-  /** What a vendor pays at best standing, in copper (`derivedPrices`). */
+  /** What a vendor pays at best standing, in copper: an ally offer, else `derivedPrices` (`merchantValueOf`). */
   merchantValue?: number
   /** Merchants the player bought it from. */
   soldBy: VendorSeen[]
@@ -209,7 +210,9 @@ export function itemFacts(row: GapRow, loot: readonly LootEvent[], zoneName: Zon
   const bought = row.kinds.includes('bought')
   const vendors = bought ? (row.details.sources?.entries ?? []).map((e) => e.name).filter((n) => !mobs.has(n.toLowerCase())) : []
   const soldBy = vendors.map((v) => vendorSeen(v, rowZones(row, zoneName), zoneName, vendorAt))
-  const merchantValue = derivedPrices(row.details)?.vendorValue
+  // A merchant's offer heard at ally wins over the instant-sale estimate; any other never stands in
+  // for it (shared/gapOffers.ts `merchantValueOf`, owner ask 2026-10-20).
+  const merchantValue = merchantValueOf(row.details, derivedPrices(row.details)?.vendorValue)
   return { name: row.name, drops, soldBy, crafted: row.kinds.includes('crafted'), ...(merchantValue === undefined ? {} : { merchantValue }) }
 }
 

@@ -4,6 +4,7 @@
 import type { JSX } from 'react'
 import { Box, Chip, Stack, Typography } from '@mui/material'
 import { GAP_LISTS, derivedPrices, formatCoin, type GapDetails, type GapTally } from '@shared/gaps'
+import { offerCheckText, offerText } from '@shared/gapOffers'
 
 /** Under the sale-on-loot chips: what the sale implies (shared/gaps.ts `derivedPrices`). */
 function SalesCaveat({ details }: { details: GapDetails }): JSX.Element | null {
@@ -13,6 +14,28 @@ function SalesCaveat({ details }: { details: GapDetails }): JSX.Element | null {
     <Typography variant="caption" color="warning.main" sx={{ pl: 8 }} data-testid="gaps-sales-caveat">
       Instant sale pays less than a vendor. Vendor value (the game&apos;s Value line) ≈ {formatCoin(prices.vendorValue)}.
     </Typography>
+  )
+}
+
+/**
+ * What merchants offered for the item in the sell slot, newest first, each with the standing it was
+ * made at and how it stands against the Value estimate (shared/gapOffers.ts; owner ask, 2026-10-20).
+ */
+function MerchantOffers({ details }: { details: GapDetails }): JSX.Element | null {
+  const offers = details.offers ?? []
+  if (offers.length === 0) return null
+  const estimate = derivedPrices(details)?.vendorValue
+  return (
+    <Stack spacing={0.25} data-testid="gaps-offers">
+      <Typography variant="caption" color="text.secondary">
+        merchant offers{estimate === undefined ? '' : ` (Value estimate ≈ ${formatCoin(estimate)})`}
+      </Typography>
+      {[...offers].reverse().map((o) => (
+        <Typography key={`${o.merchant}|${o.copper}|${o.per === true ? 'per' : ''}|${o.standing ?? ''}`} variant="caption" sx={{ pl: 8 }}>
+          {offerText(o)} ({offerCheckText(o, estimate)})
+        </Typography>
+      ))}
+    </Stack>
   )
 }
 
@@ -48,6 +71,7 @@ export default function GapDetailsPanel({ details }: { details: GapDetails }): J
           </Stack>
         )
       })}
+      <MerchantOffers details={details} />
       {details.samples.length > 0 && (
         <Box component="pre" sx={{ m: 0, px: 1, py: 0.5, fontSize: 12, bgcolor: 'action.hover', borderRadius: 1, whiteSpace: 'pre-wrap' }}>
           {details.samples.join('\n')}

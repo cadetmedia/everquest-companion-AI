@@ -8,6 +8,7 @@
 // rows (owner ruling 4); the Copy list text is rendered here for the same reason.
 
 import type { FactionFix, KillFaction } from './gapFactions'
+import { offerCheckText, offerText } from './gapOffers'
 import { decodeFactionAmount } from './mobFactionAmounts'
 import { wikiPageUrl } from './wiki'
 import { zoneKey } from './zones'
@@ -147,6 +148,28 @@ export type GapKind =
   | 'cast'
   | 'quoted'
   | 'sold'
+  /** a merchant offered to buy it (an item), or offered to buy an item (a merchant): gaps_offers.rs */
+  | 'appraised'
+
+/**
+ * One distinct merchant offer for an item, from the sell slot (`X told you, 'I'll give you ...'`;
+ * owner ask, 2026-10-20). See shared/gapOffers.ts for what it is compared with.
+ */
+export interface GapOffer {
+  merchant: string
+  /** As printed, `5 silver 7 copper`; `nothing` for "absolutely nothing". */
+  coin: string
+  copper: number
+  /** `per X`: the price of one of a stack. `for the X.` is one unstackable item: one item's price either way. */
+  per?: true
+  /** The player's last /con rung with that merchant before the offer (`ally`); absent with no con. */
+  standing?: string
+  /** Where the offer was made (the merchant's zone, never the item's). */
+  zone?: string
+  n: number
+  /** The log's own stamp of the newest. */
+  last: string
+}
 
 /** Distinct values with counts: the eight most frequent, and how many there were in all. */
 export interface GapTally {
@@ -182,6 +205,8 @@ export interface GapDetails {
   /** The two lists summed, in copper; absent when zero. */
   salesCopper?: number
   paidCopper?: number
+  /** An item: what merchants offered for it, newest last, at most eight distinct. */
+  offers?: GapOffer[]
   /** The last three raw log lines, oldest first. */
   samples: string[]
 }
@@ -369,6 +394,8 @@ export function gapDetailsText(row: GapRow, verdict: GapVerdict = 'unchecked'): 
     const prices = key === 'sales' ? derivedPrices(row.details) : null
     if (prices !== null) lines.push(`\tvendor value: ${formatCoin(prices.vendorValue)}`)
   }
+  const estimate = derivedPrices(row.details)?.vendorValue
+  for (const o of row.details.offers ?? []) lines.push(`\tmerchant offer: ${offerText(o)} (${offerCheckText(o, estimate)})`)
   for (const s of row.details.samples) lines.push(`\tsample: ${s}`)
   return lines.join('\n')
 }

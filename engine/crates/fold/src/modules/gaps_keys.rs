@@ -132,3 +132,31 @@ pub fn aa_known(name: &str) -> bool {
     });
     keys.contains(&loose_key(&spell_gap_key(name)))
 }
+
+/// The item test the Gaps tab and the Event log share, so a KEEP mark agrees with the Items row:
+/// the committed DB's keys under [`item_gap_key`], the same under [`loose_key`] (tried only when the
+/// exact key misses), the loose keys of pages titled with an article without it (the loot line
+/// strips its own: the game's `Skeletal Finger` is `A skeletal finger`), and a known scroll.
+#[derive(Default)]
+pub struct ItemIndex {
+    exact: HashSet<String>,
+    loose: HashSet<String>,
+    bare: HashSet<String>,
+}
+
+impl ItemIndex {
+    pub fn new(item_pages: &[(String, String)]) -> Self {
+        let exact: HashSet<String> = item_pages.iter().map(|(key, _)| item_gap_key(key)).collect();
+        let loose: HashSet<String> = exact.iter().map(|k| loose_key(k)).collect();
+        let bare = |k: &String| ["a ", "an ", "the "].iter().find_map(|a| k.strip_prefix(a)).map(str::to_string);
+        let bare = loose.iter().filter_map(bare).collect();
+        Self { exact, loose, bare }
+    }
+
+    /// Does the committed data know the item, under any of the keys above?
+    pub fn known(&self, name: &str) -> bool {
+        let key = item_gap_key(name);
+        let loose = loose_key(&key);
+        self.exact.contains(&key) || self.loose.contains(&loose) || self.bare.contains(&loose) || scroll_known(name)
+    }
+}

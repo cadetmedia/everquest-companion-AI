@@ -68,6 +68,13 @@ pub fn hail_of(text: &str) -> Option<&str> {
     text.strip_prefix("You say, 'Hail, ")?.strip_suffix('\'')
 }
 
+/// `You have scrounged up a Tuft of Black Bear Fur.` → the item: a forage, which no parser family reads.
+pub fn forage_of(text: &str) -> Option<&str> {
+    let item = text.strip_prefix("You have scrounged up ")?.strip_suffix('.')?;
+    let item = ["a ", "an "].iter().find_map(|a| item.strip_prefix(a)).unwrap_or(item);
+    (!item.is_empty()).then_some(item)
+}
+
 #[derive(Default)]
 pub struct Players {
     /// Lower-cased names a line showed to be players.

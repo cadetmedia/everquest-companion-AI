@@ -50,7 +50,8 @@ import { FOOTER_ROW, OverlayContent } from './overlayScale'
 import { TextScaleStepper } from './TextScaleStepper'
 import { useOverlayChrome, type OverlayChrome } from './useOverlayChrome'
 import { OverlayHeader } from './OverlayHeader'
-import { isMarkedDone, useDoneKeys } from '../features/gaps/doneMarksStore'
+import { useDoneKeys } from '../features/gaps/doneMarksStore'
+import { hiddenKeep, screenshotLabel } from './feedGapTags'
 
 const GOLD = '#d9b25f'
 
@@ -61,7 +62,9 @@ const KIND_STYLE: Record<FeedEvent['kind'], { color: string; glyph: string }> = 
   alert: { color: '#d9b25f', glyph: '!' },
   loot: { color: '#6fb3d2', glyph: '◆' },
   quest: { color: '#5fbf72', glyph: '✦' },
-  con: { color: '#a98bf0', glyph: '◎' }
+  con: { color: '#a98bf0', glyph: '◎' },
+  // A merchant's offer for an item the wiki lacks: the mark's own amber, an item's diamond.
+  keep: { color: '#ffb74d', glyph: '◆' }
 }
 
 /**
@@ -133,8 +136,11 @@ function useTradeskillFilter(feed: FeedEvent[]): FeedEvent[] {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lootKeys])
 
+  // The same pass drops a KEEP row the player marked Done on the Gaps tab: the marks are this
+  // viewer's own (localStorage), so no engine view can apply them (feedGapTags.ts).
+  const done = useDoneKeys()
   // eslint-disable-next-line eqc/no-domain-munging -- JOS-459 cutover ledger item 3: no served view source answers this yet, so the renderer still derives FeedEvent. Becomes a view descriptor when the source lands.
-  return feed.filter((e) => e.kind !== 'loot' || e.unknown === true || verdict[e.title.toLowerCase()] === false)
+  return feed.filter((e) => !hiddenKeep(e, done) && (e.kind !== 'loot' || e.unknown === true || verdict[e.title.toLowerCase()] === false))
 }
 
 
@@ -158,25 +164,13 @@ function previewItemOf(e: FeedEvent): string | undefined {
   return e.kind === 'loot' && !e.unknown ? e.title : undefined
 }
 
-/** The reminder to screenshot it for the wiki: not in the app's data (owner ask, 2026-10-18), or a
- *  mob whose wiki pages have no picture (owner ask, 2026-10-20). The engine never sets both. A row
- *  the player marked Done on the Gaps tab asks for nothing (owner, 2026-10-20: "if i've marked it
- *  done, don't tell me it needs a screenshot still"). */
-function screenshotLabel(e: FeedEvent, done: ReadonlySet<string>): string | undefined {
-  if (e.unknown) {
-    if (isMarkedDone(done, e.kind === 'con' ? 'mob' : 'item', e.title)) return undefined
-    // Sold on loot is already gone: the next one is the screenshot (review 2026-10-19).
-    return e.detail?.startsWith('auto-sold') === true ? 'missing · auto-sold, keep the next one' : 'missing · screenshot it'
-  }
-  return e.needsImage && !isMarkedDone(done, 'image', e.title) ? 'no picture · screenshot it' : undefined
-}
-
+/** The Wiki Gaps mark on a row: missing, no picture, or KEEP (feedGapTags.ts). */
 function UnknownTag({ e }: { e: FeedEvent }): JSX.Element | null {
   const label = screenshotLabel(e, useDoneKeys())
   if (label === undefined) return null
   return (
     <span
-      data-testid={e.unknown ? 'feed-unknown' : 'feed-needs-image'}
+      data-testid={e.kind === 'keep' ? 'feed-keep' : e.unknown ? 'feed-unknown' : 'feed-needs-image'}
       style={{ color: '#ffb74d', marginLeft: 5, fontWeight: 600 }}
     >
       {label}
