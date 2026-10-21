@@ -2,13 +2,18 @@
 
 Every request this branch has taken, newest at the bottom. Read it before changing the branch;
 nothing listed here is removed or narrowed without the owner's word (RULES.md, rule 19).
-The branch does not exist yet; the plan is `plans/2026-10-20-screenshot-to-wiki.md`.
+The plan is `plans/2026-10-20-screenshot-to-wiki.md`.
 
 | Date | Asked by | The ask | Status |
 | --- | --- | --- | --- |
-| 2026-10-20 | owner | The app takes a screenshot of an item, mob, spell, "whatever", and basic image parsing pulls out as much information as possible from it, to supplement what the log gives (kills, con, factions, zone). | asked |
-| 2026-10-20 | owner | Non-AI: no option that needs tokens. | asked |
-| 2026-10-20 | owner | Fast. | asked |
-| 2026-10-20 | owner | Every piece matches the project's licence or is open source. | asked |
-| 2026-10-20 | owner | Bonus: find an item's `lucy_img_ID` from a pasted icon, as the wiki's Icon Finder does ("paste just the icon ... it tries to find the matching lucy img id"). | asked |
+| 2026-10-20 | owner | The app takes a screenshot of an item, mob, spell, "whatever", and basic image parsing pulls out as much information as possible from it, to supplement what the log gives (kills, con, factions, zone). | items built; mobs: the picture only; spells not yet |
+| 2026-10-20 | owner | Non-AI: no option that needs tokens. | built (tesseract.js and the icon matcher run locally) |
+| 2026-10-20 | owner | Fast. | built: 0.5-2 s a paste on the owner's PC; the icon index 4 s once |
+| 2026-10-20 | owner | Every piece matches the project's licence or is open source. | built: tesseract.js Apache-2.0, its English data MIT |
+| 2026-10-20 | owner | Bonus: find an item's `lucy_img_ID` from a pasted icon, as the wiki's Icon Finder does ("paste just the icon ... it tries to find the matching lucy img id"). | built (the install's own icon sheets) |
 | 2026-10-20 | owner | A throwaway proof of concept outside the app first, small and targeted. | done: see the plan's Prototype section |
+| 2026-10-21 | owner | Other players' UIs differ ("some users may have a different UI"); Malkil's screenshots to test with. | built: the item window is read by its labels; flat and texture backgrounds; Malkil's windows pass |
+| 2026-10-21 | owner | Build it into the app: paste an image directly into the details section of the item or mob, or a popup ("click here to add screenshot" in the DETAILS section). "As easy as possible." | built: the box in a row's details reads the clipboard on a click, Ctrl+V while the row is open, or a dropped file |
+| 2026-10-21 | owner | Stages are fine ("whatever you think is best"). | stage 1 items, stage 2 the mob picture, both on the branch |
+| 2026-10-21 | owner | Unit tests with test images, "if possible use the ones i gave you". | built: `tests/fixtures/shots/` (owner's and Malkil's screenshots), `tests/shotScreenshots.test.mts`; the icon checks skip without an install |
+| 2026-10-21 | owner | Keep the app's size in check ("how big is this going to BLOAT the app?"). | built: the installer keeps ~9 MB of the packages' 60 (electron-builder.yml excludes); `npm run dist` to confirm |

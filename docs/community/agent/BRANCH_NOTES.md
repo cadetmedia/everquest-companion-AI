@@ -298,6 +298,31 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
 - `event_feed.rs` is 431 code lines: red on this branch alone against the old 400 bar, green on
   `main_community` (catch_all's 440). The npm gate does not run the size check on the real tree.
 
+## screenshot-to-wiki
+
+- Plan and measurements: `plans/2026-10-20-screenshot-to-wiki.md`. Off `gaps-tab`, recipe after
+  `gaps-overlay`. Main: `src/main/shot/` (Electron-free) and `src/main/ipc/shotIpc.ts`; the window
+  to wiki mapping `src/shared/itemWindow.ts`; UI `features/gaps/ShotPanel.tsx`, kept readings in
+  `itemShotsStore.ts` (`eq.gaps.itemShots`); `wikiPage.ts itemPage(f, shot)`.
+- Game art is never committed or shipped: the icon index is built from the player's
+  `uifiles/default/dragitem*.dds` and cached as `userData/item-icon-index.bin` (fingerprint: sheet
+  count, bytes, newest mtime). Tests use synthetic sheets; the real-icon tests skip without an
+  install (`EQ_ROOT`).
+- Icon id = 500 + (sheet-1)*36 + col*6 + row (column-major). Sheets are DXT5, one DXT3 (323), two
+  A8R8G8B8 (9, 302).
+- The background view with the LOWEST best score wins, never the widest margin: by margin a
+  meaningless near-tie on the raw sky beat the real answer (Malkil's sky shot).
+- OCR: TSV output, never `blocks` (the tree of a big window overflows the worker message, "Too many
+  properties to enumerate"). Scale by area, ~3 MP: 1x read `DMG: 90` as `920` on Malkil's window.
+  Input as an 8-bit gray PNG (`grayPng`, node zlib): BMP went through tesseract's JS decoder, slow.
+- Never guess a number. Two measured repairs only: Weight's one decimal (lost on 3 windows of 3), and
+  DMG against the window's own Ratio and Delay (the player is told in `checks`).
+- Locate the icon from the `Class:` and `Race:` WORDS (`OcrLine.lead`), not the line box: OCR reads
+  the icon beside the text as junk (`| Class`, `8 Quest`) and stretches the box over it.
+- Packaging: `electron-builder.yml` keeps the three `-lstm` cores, `4.0.0_best_int` and drops
+  `*.wasm.js`, `dist/`, `zlibjs` (browser only). Confirm with a real `npm run dist` (rule 11).
+- `tests/shotScreenshots.test.mts` runs the real OCR (~12 s with the icon checks).
+
 ## Unassigned open items (no branch yet)
 
 - The Recommended tab ignores layer-3 era derivations on purpose (`progressionPlan.ts`

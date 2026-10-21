@@ -20,7 +20,7 @@ into `main_community`, and push with the rest of the work.
 | [../plans/2026-10-19-gaps-all-characters.md](../plans/2026-10-19-gaps-all-characters.md) | The Gaps tab across every character: the owner's answers (built on `gaps-all-characters`). |
 | [../plans/2026-10-20-meter-pet-split.md](../plans/2026-10-20-meter-pet-split.md) | Before changing the damage meters' pet layouts: the third one, "With its owner" (the stacked pair), built on `meter-pet-split`; the mock and Malkil's answers. |
 | [../plans/2026-10-20-gaps-item-page-facts.md](../plans/2026-10-20-gaps-item-page-facts.md) | Before changing Copy wiki page for items: what the logs give a page (forage zone, tradeskill depot, combine tradeskill), measured, in phases. |
-| [../plans/2026-10-20-screenshot-to-wiki.md](../plans/2026-10-20-screenshot-to-wiki.md) | Open, not built: read item and spell windows from a pasted screenshot (OCR, local) and find an item's `lucy_img_ID` from its icon using the game's own icon sheets. Prototype measured; owner questions before phase 1. |
+| [../plans/2026-10-20-screenshot-to-wiki.md](../plans/2026-10-20-screenshot-to-wiki.md) | Before changing screenshot to wiki (built on `screenshot-to-wiki`): a pasted item window read locally (OCR) into the page, its `lucy_img_ID` from the game's own icon sheets; the measurements, the UI quirks, what is not built. |
 | [../audits/2026-10-19-gaps-review.md](../audits/2026-10-19-gaps-review.md) | Before changing the Gaps tab: the review, the owner's eight decisions, what is left. |
 | [../audits/2026-10-20-performance-review.md](../audits/2026-10-20-performance-review.md) | Before any performance work: what was measured, what is fixed, the ranked structural findings and quick wins. |
 
