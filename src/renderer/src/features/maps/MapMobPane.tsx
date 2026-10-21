@@ -41,7 +41,7 @@
 // MapBody floats over the map, because a control that hides a panel has to live somewhere the
 // panel is not.
 
-import type { JSX } from 'react'
+import { memo, type JSX } from 'react'
 import {
   Box,
   Chip,
@@ -123,7 +123,13 @@ function rowNote(row: MapPaneRow): string | null {
   return row.pins.length > 1 ? `${String(row.pins.length)} spawn points` : null
 }
 
-function Row({
+/**
+ * One pane row. MEMOIZED (perf audit, 2026-10-20): the view renders several times as a zone's
+ * map, catalog and position arrive, and each pass re-rendered every row (measured: ~200 row
+ * renders for ~50 rows on one visit). `row` comes from `useMapPane`'s memoized lists, `selected`
+ * is a boolean and `onSelect` is its `useCallback`, so a pass that changed none of them skips it.
+ */
+const Row = memo(function Row({
   row,
   selected,
   onSelect
@@ -158,7 +164,7 @@ function Row({
       )}
     </ListItemButton>
   )
-}
+})
 
 /** The heading that names an AUTHORITY. Every list in this pane sits under exactly one. */
 function SectionHead({ title, note }: { title: string; note: string }): JSX.Element {
