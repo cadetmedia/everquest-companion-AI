@@ -239,6 +239,13 @@ sides scored with the repo's own `parseStatsBlock`.
     `WDT_Inner` template's background), tiled at 1:1. Aligning it to a blank patch of the full-window
     snip (below the text) fits to 0.8 RMS, gain 1.02; predicted background subtracted, pixels within
     10 of it set to black, then the normal finder. The window's border lines stay and are cropped.
+- **Second window (owner, 2026-10-21: Black Lizard Scale, 217x327, no Lore tab, an item not in
+  `items.json`, so a real Gaps case):** text in 336 ms, every line read, `BlackLizard` (space
+  lost), and `Weight: 2.0` read as `Weight 20` AGAIN: the decimal loss is systematic (fix in
+  preprocessing, or restore the one decimal weight always has). New line: `Value: 3 silver 8
+  copper`, the vendor's base value, which maps to `merchant_value` (`3s 8c`). Texture aligned at
+  0.9 RMS; the finder's winner **1225, score 333 against 1,403**, matches by eye, and
+  `items.json` gives the same icon to Pristine Lizard Scale.
 - So the icon step for an item window: align the window's texture, subtract it, find. Rank within
   the icons that items of the read slot use only as a fallback when the winner's margin is thin. The
   prototype's alignment is brute force (3.6 s over 256x256 offsets); a coarse-to-fine search or the
@@ -246,6 +253,21 @@ sides scored with the repo's own `parseStatsBlock`.
   align on) and other window skins (`default_light`, `default_modern`, custom UIs).
 - Real-window fixtures needed: a weapon (Skill, Atk Delay, DMG), an Effect line, a long class list,
   the Lore tab.
+
+### Other players' UIs (owner, 2026-10-21: "some users may have a different UI"; Malkil's
+screenshots are being gathered)
+
+- Each character's skin is `UISkin=` in `<EQ>/UI_<char>_<server>_LO1.ini` (all four of the
+  owner's say `default`). A skin's files sit in `uifiles/<skin>/`; missing files fall back to
+  `default`. The install ships `default`, `default_light`, `default_modern`; the backgrounds differ
+  (`wnd_bg_light_rock.tga`, `wnd_bg_mid_rock.tga`, `eqls_wnd_bg_*_rock.tga` in `default_modern`).
+- Plan: read the skin from the ini, take the window's background from that skin's
+  `EQUI_Templates.xml`; when unsure, fit every `wnd_bg_*` texture the install has and keep the
+  lowest RMS. A fit that stays high (window transparency over the 3D world, a custom UI with no
+  texture) drops to the plain finder plus the slot prior.
+- The text layout differs per skin too (`EQUI_ItemDisplayWindow.xml` is per skin), so the window
+  to wiki mapping keys on labels (`Weight:`, `Value:`), never on positions.
+- Malkil's screenshots are the first test of this; record each skin's result here.
 
 ### What the prototype changes in the design
 
