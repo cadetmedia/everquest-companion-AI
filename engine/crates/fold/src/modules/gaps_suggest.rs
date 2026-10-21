@@ -18,6 +18,13 @@
 //! The distance is Damerau-Levenshtein in its optimal-string-alignment form (a transposition
 //! counts 1), computed within a bound: a candidate whose length differs by more than the bound is
 //! never scored, and scoring stops at the first row whose minimum exceeds it.
+//!
+//! THE LENGTH SCREEN COMES FIRST AND COSTS NOTHING (perf audit, 2026-10-20). Each candidate carries
+//! its character and word counts, worked out once when the list is built, so the ~12k items are
+//! screened by two integer compares before anything allocates. The old order counted the
+//! candidate's words and built four strings for `trivially_apart` on every candidate of every row;
+//! the first gaps snapshot after an attach scored every row that way on the fold thread, long
+//! enough on a slow machine to time out every read queued behind it.
 
 use super::gaps_keys::{loose_key, spell_gap_key};
 use serde::Serialize;
@@ -44,12 +51,23 @@ pub struct Suggest {
     pub distance: u8,
 }
 
-/// One known name to compare against: its loose key, its name, and the page to link.
+/// One known name to compare against: its loose key, its name, the page to link, and the key's
+/// character and word counts for the free screen (see the header).
 #[derive(Debug, Clone)]
 pub struct Candidate {
     pub key: String,
     pub name: String,
     pub page: String,
+    chars: usize,
+    words: usize,
+}
+
+impl Candidate {
+    pub fn new(key: String, name: String, page: String) -> Self {
+        let chars = key.chars().count();
+        let words = key.split_whitespace().count();
+        Self { key, name, page, chars, words }
+    }
 }
 
 /// The one candidate within reach of `key` (a row's loose key), or nothing — see the header.
@@ -64,7 +82,7 @@ pub fn suggest(key: &str, candidates: &[Candidate]) -> Option<Suggest> {
     let mut best: Option<(usize, &Candidate)> = None;
     let mut tied = false;
     for c in candidates {
-        let Some(d) = within_reach(key, &c.key, (len, words, bound)) else {
+        let Some(d) = within_reach(key, c, (len, words, bound)) else {
             continue;
         };
         match best {
@@ -85,12 +103,17 @@ pub fn suggest(key: &str, candidates: &[Candidate]) -> Option<Suggest> {
     })
 }
 
-/// A candidate's distance from the key when it passes every screen — the same number of words,
-/// not trivially apart, within the bound, and not a lone substitution in a name under 16 — or
-/// `None`. `shape` is the key's (length, words, bound), computed once.
-fn within_reach(key: &str, candidate: &str, shape: (usize, usize, usize)) -> Option<usize> {
+/// A candidate's distance from the key when it passes every screen — the same number of words and
+/// a length within the bound (both free: counted when the list was built), not trivially apart,
+/// within the bound, and not a lone substitution in a name under 16 — or `None`. `shape` is the
+/// key's (length, words, bound), computed once.
+fn within_reach(key: &str, c: &Candidate, shape: (usize, usize, usize)) -> Option<usize> {
     let (len, words, bound) = shape;
-    if candidate.split_whitespace().count() != words || trivially_apart(key, candidate) {
+    if c.words != words || c.chars.abs_diff(len) > bound {
+        return None;
+    }
+    let candidate = c.key.as_str();
+    if trivially_apart(key, candidate) {
         return None;
     }
     let d = distance_within(key, candidate, bound)?;
@@ -169,11 +192,7 @@ fn distance_within(a: &str, b: &str, bound: usize) -> Option<usize> {
 pub fn item_candidates(pages: &[(String, String)]) -> Vec<Candidate> {
     pages
         .iter()
-        .map(|(key, page)| Candidate {
-            key: loose_key(&super::gaps_keys::item_gap_key(key)),
-            name: page.clone(),
-            page: page.clone(),
-        })
+        .map(|(key, page)| Candidate::new(loose_key(&super::gaps_keys::item_gap_key(key)), page.clone(), page.clone()))
         .collect()
 }
 
@@ -184,11 +203,7 @@ pub fn spell_candidates() -> &'static [Candidate] {
         eqlog::spelldb::shared()
             .spells
             .iter()
-            .map(|s| Candidate {
-                key: loose_key(&spell_gap_key(&s.name)),
-                name: s.name.clone(),
-                page: s.name.clone(),
-            })
+            .map(|s| Candidate::new(loose_key(&spell_gap_key(&s.name)), s.name.clone(), s.name.clone()))
             .collect()
     })
 }

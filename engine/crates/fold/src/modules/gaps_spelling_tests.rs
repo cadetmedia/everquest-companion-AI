@@ -67,8 +67,8 @@ fn a_known_mobs_pet_is_known_and_a_players_pet_or_mount_is_no_mob() {
     );
     assert_eq!(
         rows(&m).len(),
-        2,
-        "the unknown mob's pet and the pet that has not spoken yet"
+        1,
+        "the unknown mob's pet; a pet with a generated name (Zonarer) is no mob even before it speaks"
     );
     feed(
         &mut m,
