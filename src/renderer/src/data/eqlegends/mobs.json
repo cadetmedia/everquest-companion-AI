@@ -1,5 +1,5 @@
 {
-  "scrapedAt": "2026-10-20T09:38:11.197Z",
+  "scrapedAt": "2026-10-21T02:00:26.532Z",
   "source": "eqlwiki.com — Category:NPCs/Named Mobs/Merchants/Raid Encounters ∪ embeddedin Template:Namedmobpage/MerchantPage, filtered to pages opening a mob template + recentchanges delta (scripts/scrape-delta.mts)",
   "mobs": [
     {
@@ -2318,8 +2318,11 @@
       ],
       "drops": [
         "Alligator Skin",
-        "An Alligator Tooth",
-        "Gator Meat"
+        "Gator Meat",
+        "Alligator Tooth",
+        "Bull Alligator Tooth",
+        "Chunk of Meat",
+        "Pristine Bull Alligator Hide"
       ],
       "loc": [
         {
@@ -15708,23 +15711,14 @@
         "Innothule Swamp"
       ],
       "drops": [
-        "Netted Cap",
-        "Netted Mask",
-        "Netted Choker",
-        "Netted Shirt",
-        "Netted Mantle",
-        "Netted Cape",
-        "Netted Girth",
-        "Netted Sleeves",
-        "Netted Wristband",
-        "Netted Gloves",
-        "Netted Pants",
-        "Rusty Shortened Spear",
         "Ale",
-        "Froglok Meat",
-        "Undead Froglok Tongue",
+        "Backpack",
         "Froglok Blood",
-        "Backpack"
+        "Froglok Meat",
+        "Netted Armor Set",
+        "Rusty Weapons",
+        "Splintering Club",
+        "Undead Froglok Tongue"
       ],
       "factions": [
         "Frogloks of Guk"
@@ -16058,21 +16052,17 @@
         "Innothule Swamp"
       ],
       "drops": [
-        "Netted Cap",
-        "Netted Mask",
-        "Netted Choker",
-        "Netted Shirt",
-        "Netted Mantle",
-        "Netted Cape",
-        "Netted Girth",
-        "Netted Sleeves",
-        "Netted Wristband",
-        "Netted Gloves",
-        "Netted Pants",
-        "Splintering Club",
-        "Froglok Meat",
+        "Ale",
         "Froglok Blood",
-        "Large Bag"
+        "Froglok Meat",
+        "Iron Ration",
+        "Large Bag",
+        "Netted Armor Set",
+        "Rusty Weapons",
+        "Short Beer",
+        "Small Box",
+        "Splintering Club",
+        "Water Flask"
       ],
       "factions": [
         "Frogloks of Guk"
@@ -16091,19 +16081,21 @@
         "Innothule Swamp"
       ],
       "drops": [
+        "Froglok Blood",
+        "Froglok Meat",
+        "Froglok Poison Gland",
+        "Rusty Weapons",
         "Woven Cap",
-        "Woven Collar",
-        "Woven Tunic",
-        "Woven Mantle",
         "Woven Cape",
+        "Woven Collar",
         "Woven Girth",
-        "Woven Sleeves",
-        "Woven Wristbands",
         "Woven Gloves",
         "Woven Leggings",
-        "Froglok Meat",
-        "Froglok Blood",
-        "Rusty Weapons"
+        "Woven Mantle",
+        "Woven Mask",
+        "Woven Sleeves",
+        "Woven Tunic",
+        "Woven Wristbands"
       ],
       "factions": [
         "Frogloks of Guk"
@@ -16751,9 +16743,9 @@
     },
     {
       "page": "A froglok outlander",
-      "eraTag": "Kunark",
+      "eraTag": "Classic",
       "name": "a froglok outlander",
-      "level": "18",
+      "level": "18-20",
       "zones": [
         "Swamp of No Hope",
         "Innothule Swamp",
@@ -16776,19 +16768,19 @@
           "ns": 817,
           "ew": -2889,
           "pct": 30
+        },
+        {
+          "ns": 224,
+          "ew": -416
         }
       ],
-      "outOfEra": true,
       "factions": [
-        "Frogloks of Kunark",
-        "Exiled Frogloks"
+        "Frogloks of Kunark"
       ],
       "factionAmounts": [
-        "-30",
-        "-"
+        "-1"
       ],
-      "image": "npc_a_froglok_outlander.png",
-      "noImage": true
+      "image": "npc_a_froglok_outlander.png"
     },
     {
       "page": "A Froglok Priest",
@@ -19373,7 +19365,8 @@
         "Innothule Swamp"
       ],
       "drops": [
-        "A Spore Mushroom"
+        "A Spore Mushroom",
+        "Sarcoscypha Fungus"
       ],
       "factions": [
         "Fungus Man"
@@ -21226,12 +21219,13 @@
         "A Piece of Rat Fur",
         "Giant Rat Ear",
         "Giant Rat Pelt",
+        "Giant Rat Whiskers",
         "Rat Meat"
       ],
+      "image": "npc_a_giant_rat.png",
       "otherNames": [
         "Giant rat"
-      ],
-      "image": "npc_a_giant_rat.png"
+      ]
     },
     {
       "page": "A Giant Rattlesnake",
@@ -32507,7 +32501,9 @@
         "Innothule Swamp"
       ],
       "drops": [
-        "Ale"
+        "Ale",
+        "Copper Band",
+        "Woven Cap"
       ],
       "loc": [
         {
@@ -33940,7 +33936,8 @@
         "Rat Whiskers",
         "Rat Ears",
         "Rat Meat",
-        "Rat Foot"
+        "Rat Foot",
+        "Rat Eye"
       ],
       "image": "npc_a_large_rat.png"
     },
@@ -34848,6 +34845,14 @@
       "level": "2",
       "zones": [
         "Innothule Swamp"
+      ],
+      "drops": [
+        "Bandages",
+        "Belt Pouch",
+        "Large Bag",
+        "Rusty Weapons",
+        "Short Beer",
+        "Small Box"
       ],
       "image": "npc_a_lesser_kobold.png"
     },
@@ -38734,8 +38739,13 @@
         "Piece of Rat Fur",
         "Rat Meat"
       ],
-      "image": "npc_a_nesting_rat.png",
-      "noImage": true
+      "loc": [
+        {
+          "ns": 355,
+          "ew": 333
+        }
+      ],
+      "image": "npc_a_nesting_rat.png"
     },
     {
       "page": "A newly created sentry",
@@ -49093,7 +49103,7 @@
     {
       "page": "A shady mercenary",
       "name": "a shady mercenary",
-      "level": "5-7",
+      "level": "4-7",
       "zones": [
         "Qeynos Aqueducts"
       ],
@@ -49113,11 +49123,10 @@
           "pct": 10
         }
       ],
+      "image": "npc_a_shady_mercenary.jpg",
       "otherNames": [
         "A shady mercernary"
-      ],
-      "image": "npc_a_shady_mercenary.jpg",
-      "noImage": true
+      ]
     },
     {
       "page": "A Shady Swashbuckler",
@@ -57228,6 +57237,8 @@
       "drops": [
         "Bronze Short Sword",
         "Frog Eye Necklace",
+        "Malachite",
+        "Rusty Weapons",
         "Troll Parts"
       ],
       "loc": [
@@ -58806,7 +58817,13 @@
       "name": "a water moccasin",
       "level": "6",
       "zones": [
-        "Innothule Swamp"
+        "Innothule Swamp",
+        "Rathe Mountains"
+      ],
+      "drops": [
+        "Moccasin Eggs",
+        "Snake Egg",
+        "Snake Fang"
       ],
       "image": "npc_a_water_moccasin.png"
     },
@@ -71642,7 +71659,7 @@
     {
       "page": "An injured rat",
       "name": "an injured rat",
-      "level": "3",
+      "level": "2-3",
       "zones": [
         "Qeynos Aqueducts"
       ],
@@ -71655,8 +71672,7 @@
           "ew": 200
         }
       ],
-      "image": "npc_an_injured_rat.png",
-      "noImage": true
+      "image": "npc_an_injured_rat.png"
     },
     {
       "page": "An injured warrior",
@@ -74431,7 +74447,7 @@
       "page": "An undead knight (Qeynos Aqueducts)",
       "eraTag": "Classic",
       "name": "An Undead Knight (Qeynos Aqueducts)",
-      "level": "4",
+      "level": "3-4",
       "zones": [
         "Qeynos Aqueducts"
       ],
@@ -74446,8 +74462,7 @@
           "pct": 100
         }
       ],
-      "image": "An_undead_knight.png",
-      "noImage": true
+      "image": "npc_an_undead_knight_qeynos_aqueducts.png"
     },
     {
       "page": "An undead knight of Unrest",
@@ -75196,8 +75211,7 @@
         "-30",
         "-30"
       ],
-      "image": "npc_angrog.png",
-      "noImage": true
+      "image": "npc_angrog.png"
     },
     {
       "page": "Ania Klephia",
@@ -79456,6 +79470,12 @@
       "level": "50",
       "zones": [
         "Innothule Swamp"
+      ],
+      "drops": [
+        "Classic Mid-Tier Treasures",
+        "Fine Steel Weapons",
+        "Intestine Necklace",
+        "Round Shield"
       ],
       "loc": [
         {
@@ -98270,8 +98290,7 @@
         "-30",
         "-30"
       ],
-      "image": "npc_crunga.png",
-      "noImage": true
+      "image": "npc_crunga.png"
     },
     {
       "page": "Crusader Axmo",
@@ -111881,8 +111900,7 @@
         "-30",
         "-30"
       ],
-      "image": "npc_erung.png",
-      "noImage": true
+      "image": "npc_erung.png"
     },
     {
       "page": "Eruvin T`Kix",
@@ -113012,8 +113030,7 @@
         "-30",
         "10"
       ],
-      "image": "npc_fandl_arathin.png",
-      "noImage": true
+      "image": "npc_fandl_arathin.png"
     },
     {
       "page": "Fang",
@@ -115389,12 +115406,12 @@
         "Innothule Swamp"
       ],
       "drops": [
-        "Netted Mantle",
-        "Netted Mask",
         "Cracked Staff",
         "Froglok Blood",
         "Froglok Meat",
-        "Rusty Spear"
+        "Netted Armor",
+        "Rusty Weapons",
+        "Undead Froglok Tongue"
       ],
       "loc": [
         {
@@ -115407,7 +115424,7 @@
         "Frogloks of Guk"
       ],
       "factionAmounts": [
-        "-3"
+        "-2"
       ],
       "image": "npc_forager_grikk.png"
     },
@@ -118854,8 +118871,11 @@
         "Innothule Swamp"
       ],
       "drops": [
+        "Copper Band",
+        "Innothule Mushroom",
         "Rusty Weapons",
-        "Sarcoscypha Fungus"
+        "Sarcoscypha Fungus",
+        "Splintering Club"
       ],
       "factions": [
         "Fungus Man"
@@ -121565,7 +121585,10 @@
       ],
       "drops": [
         "Giant Snake Fang",
-        "A Snake Venom Sac"
+        "A Snake Venom Sac",
+        "Snake Egg",
+        "Giant Snake Rattle",
+        "Snake Meat"
       ],
       "loc": [
         {
@@ -152551,6 +152574,8 @@
         "Innothule Swamp"
       ],
       "drops": [
+        "High Elf Flesh",
+        "Tattered Parchment",
         "A Noble's Crest"
       ],
       "loc": [
@@ -154829,7 +154854,9 @@
       "drops": [
         "High Elf Parts",
         "High Elf Flesh",
-        "Noble's Crest"
+        "Noble's Crest",
+        "Rusty Weapons",
+        "Tattered Parchment"
       ],
       "loc": [
         {
@@ -215160,7 +215187,9 @@
         "Innothule Swamp"
       ],
       "drops": [
-        "Huge Mushroom Head"
+        "Huge Mushroom Head",
+        "Rusty Weapons",
+        "Splintering Club"
       ],
       "loc": [
         {
@@ -218228,8 +218257,7 @@
         "-1",
         "1"
       ],
-      "image": "npc_tal_godin.png",
-      "noImage": true
+      "image": "npc_tal_godin.png"
     },
     {
       "page": "Tala Felton",
@@ -219028,7 +219056,11 @@
         "Innothule Swamp"
       ],
       "drops": [
-        "Noble's Crest"
+        "Noble's Crest",
+        "Arrow",
+        "Longbow",
+        "Rusty Weapons",
+        "Tattered Parchment"
       ],
       "loc": [
         {
