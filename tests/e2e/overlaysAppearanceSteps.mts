@@ -56,7 +56,7 @@ const sizeRow = (kind: string, part = ''): string => `[data-testid="pref-overlay
 const alphaRow = (kind: string, part = ''): string => `[data-testid="pref-overlay-bg-alpha-${kind}${part}"]`
 
 /** Every kind that gets a row — the whole union, which is the list's own claim — less 'gaps': the
- *  Wiki Gaps window is listed only where the UNRELEASED Gaps tab is built, and an e2e build is not. */
+ *  Wiki Gaps window is listed only where the UNRELEASED Gaps tab is built (`listedKinds`). */
 const ALL_KINDS = [
   'fight',
   'overall',
@@ -73,6 +73,15 @@ const ALL_KINDS = [
   'alertBanner',
   'conCard'
 ]
+
+/**
+ * The kinds THIS build lists: every kind, plus 'gaps' exactly where the Gaps tab is built. Read off
+ * the gate the app uses (UNRELEASED): the nav row `nav-gaps` exists only then, and stays mounted in
+ * a collapsed group. A plain e2e build lists 14; the community TEST build, which opens UNRELEASED, 15.
+ */
+async function listedKinds(page: Page): Promise<string[]> {
+  return (await countOf(page, '[data-testid="nav-gaps"]')) > 0 ? [...ALL_KINDS, 'gaps'] : ALL_KINDS
+}
 
 /** `TEXT_SCALE_STEP` and `BG_ALPHA_PREF_STEP` from src/shared, spelled out rather than imported: an
  *  e2e file loads no `src` module (tests/e2e/overlayMinSizeSteps.mts states that rule). */
@@ -231,16 +240,17 @@ export async function stepSyncedShape(page: Page): Promise<void> {
  * be revealed with whatever number it was showing before the flip.
  */
 export async function stepIndependentShape(page: Page): Promise<void> {
+  const listed = await listedKinds(page)
   await page.click(SWITCH, { timeout: 15_000 })
-  const rows = await settle(() => countOf(page, ROWS), (n) => n === ALL_KINDS.length, { timeoutMs: 15_000 })
+  const rows = await settle(() => countOf(page, ROWS), (n) => n === listed.length, { timeoutMs: 15_000 })
   check(
     'turning it on shows every overlay kind, including the three that are not in the Overlay menu',
-    rows === ALL_KINDS.length,
-    `${String(rows)} of ${String(ALL_KINDS.length)}`
+    rows === listed.length,
+    `${String(rows)} of ${String(listed.length)}`
   )
   const missing = await page.evaluate(
     (kinds) => kinds.filter((k) => document.querySelector(`[data-testid="pref-overlay-row-${k}"]`) === null),
-    ALL_KINDS
+    listed
   )
   check('…each one named', missing.length === 0, missing.join(', ') || 'none missing')
 
@@ -254,10 +264,10 @@ export async function stepIndependentShape(page: Page): Promise<void> {
         const btn = document.querySelector(`[data-testid="pref-overlay-text-size-${k}-plus"]`)
         return (btn as HTMLButtonElement | null)?.disabled !== true
       }),
-    ALL_KINDS
+    listed
   )
-  check('every row is LIVE — nothing here is rendered and dead', live.length === ALL_KINDS.length,
-    `${String(live.length)} of ${String(ALL_KINDS.length)}`)
+  check('every row is LIVE — nothing here is rendered and dead', live.length === listed.length,
+    `${String(live.length)} of ${String(listed.length)}`)
 }
 
 /**
@@ -277,8 +287,9 @@ export async function stepClosedTag(page: Page): Promise<void> {
   const open = await page.evaluate(() =>
     (window as unknown as { eq: { getOverlayState: () => Promise<Record<string, boolean>> } }).eq.getOverlayState()
   )
-  const openKinds = ALL_KINDS.filter((k) => open[k])
-  const closedKinds = ALL_KINDS.filter((k) => !open[k])
+  const listed = await listedKinds(page)
+  const openKinds = listed.filter((k) => open[k])
+  const closedKinds = listed.filter((k) => !open[k])
   // …and the claim is not vacuous only if both sides exist. This spec opened two meters, so they
   // do; if a future default opened all twelve the tag would have nothing to say and this says so.
   check('there are open overlays AND closed ones to tell apart', openKinds.length > 0 && closedKinds.length > 0,
@@ -289,7 +300,7 @@ export async function stepClosedTag(page: Page): Promise<void> {
       kinds.filter((k) =>
         /closed/i.test((document.querySelector(`[data-testid="pref-overlay-row-${k}"]`) as HTMLElement | null)?.innerText ?? '')
       ),
-    ALL_KINDS
+    listed
   )
   check(
     'a row whose window is closed says `closed`, so a press that moves nothing on screen explains itself',
