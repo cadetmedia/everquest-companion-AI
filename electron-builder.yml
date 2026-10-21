@@ -38,13 +38,16 @@ files:
   # of binary the app can never load. A future arm64 target needs the ia32 line only.
   - '!node_modules/native-reg/prebuilds/win32-{arm64,ia32}/**'
   # tesseract.js (screenshot to wiki, src/main/shot/ocr.ts) ships six WASM cores, each twice (a
-  # .wasm beside its loader, and again inlined as base64 in a .wasm.js), 44 MB in all. Under Node it
-  # loads `tesseract-core-{relaxedsimd-,simd-,}lstm.js` (worker-script/node/getCore.js; the app runs
-  # the LSTM engine), which reads the .wasm beside it: those three pairs stay. Its browser bundles
-  # (dist/), the browser-only inflater (zlibjs, worker-script/browser/gunzip.js; Node uses zlib) and
-  # the larger English data (4.0.0; the app reads 4.0.0_best_int) are never loaded. ~9 MB stays.
+  # .wasm beside its loader, and again inlined as base64 in a .wasm.js), 44 MB in all. Under Node
+  # 7.0.0 loads the FULL cores, `tesseract-core{-relaxedsimd,-simd,}.js`, never the -lstm ones:
+  # worker-script/index.js calls `getCore(lstmOnly)` with a boolean, and node/getCore.js tests it
+  # against the OEM numbers, which a boolean never matches. MEASURED 2026-10-21: with the full cores
+  # excluded the packed app failed "Cannot find module 'tesseract.js-core/tesseract-core-relaxedsimd'".
+  # Those three pairs stay; re-measure on any version bump (package.json pins it exactly). Its browser
+  # bundles (dist/), the browser-only inflater (zlibjs, worker-script/browser/gunzip.js; Node uses
+  # zlib) and the larger English data (4.0.0; the app reads 4.0.0_best_int) are never loaded.
   - '!node_modules/tesseract.js-core/*.wasm.js'
-  - '!node_modules/tesseract.js-core/tesseract-core{,-simd,-relaxedsimd}.{js,wasm}'
+  - '!node_modules/tesseract.js-core/tesseract-core{-relaxedsimd,-simd,}-lstm.{js,wasm}'
   - '!node_modules/tesseract.js/dist/**'
   - '!node_modules/zlibjs/**'
   - '!node_modules/@tesseract.js-data/eng/4.0.0/**'
