@@ -32,11 +32,15 @@ export interface Grouping {
   toggleAll: () => void
 }
 
-export function useGrouping(sorted: readonly GapRow[], loot: readonly LootEvent[]): Grouping {
+/** `here`: the zone "Zone I'm in" narrows to, or null; the headings keep to it (gapGroups.ts placesHere). */
+export function useGrouping(sorted: readonly GapRow[], loot: readonly LootEvent[], here: string | null = null): Grouping {
   const [grouped, setGrouped] = useBoolPref(GROUPED_KEY, false)
   const [rawOrder, setRawOrder] = useRawPref(GROUP_ORDER_KEY)
   const order = gapGroupOrderOf(rawOrder)
-  const entries = useMemo(() => (grouped ? groupGaps(sorted, loot, PAGE_EXTRAS.zoneName, order) : rowEntries(sorted)), [grouped, sorted, loot, order])
+  const entries = useMemo(
+    () => (grouped ? groupGaps(sorted, loot, PAGE_EXTRAS.zoneName, { order, here }) : rowEntries(sorted)),
+    [grouped, sorted, loot, order, here]
+  )
   const [folded, setFolded] = useState<ReadonlySet<string>>(new Set())
   const onFold = useCallback(
     (key: string) =>

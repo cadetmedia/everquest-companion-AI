@@ -132,3 +132,18 @@ test('collapse all folds every heading, leaving the zones alone on screen', () =
   assert.deepEqual(unfoldedEntries(all, new Set(keys)).map((e) => e.kind), ['zone', 'zone'])
   assert.deepEqual(headingKeys(rowEntries([row('item', 'x')])), [], 'ungrouped has no headings')
 })
+
+test("Zone I'm in keeps the headings to the zone you stand in (owner, 2026-10-20)", () => {
+  // A spell cast in two zones, with the player in one: one heading, not two.
+  const rows = [row('spell', 'Summon Holy Steed Bridle', ['Butcherblock Mountains', 'New Sebilis Expedition']), row('spell', 'Summon Death Charger Bridle', ['New Sebilis Expedition'])]
+  assert.deepEqual(shape(groupGaps(rows, [], undefined, { here: 'New Sebilis Expedition' })), [
+    '# New Sebilis Expedition (2)',
+    '    Summon Holy Steed Bridle',
+    '    Summon Death Charger Bridle'
+  ])
+  // An item named here but looted elsewhere still files under here, not under the other zone.
+  const loot: LootEvent[] = [{ ts: 1, item: 'Spider Fang', source: 'a spider', zone: 'The Feerrott' }]
+  assert.deepEqual(shape(groupGaps([row('item', 'Spider Fang', ['Befallen'])], loot, undefined, { here: 'Befallen' })), ['# Befallen (1)', '    Spider Fang'])
+  // Off, every zone it was seen in, as before.
+  assert.equal(groupGaps(rows, []).filter((e) => e.kind === 'zone').length, 2)
+})

@@ -228,7 +228,7 @@ export default function GapsView(): JSX.Element {
   const pageText = useCallback((row: GapRow) => wikiPageText(row, loot, kills, sightings), [loot, kills, sightings])
   const needed = useCallback((row: GapRow) => stillNeeded(row, loot, kills, sightings), [loot, kills, sightings])
   // "Group by zone, then mob" (owner ask, 2026-10-18), its heading order and its folds (useGrouping).
-  const group = useGrouping(sorted, loot)
+  const group = useGrouping(sorted, loot, zone)
   // An item a character holds right now needs only a screenshot (review C6; owner, 2026-10-19): each
   // character's own export plus ITS loot since, named per holder while All characters is on.
   const holding = useAllHeld(ownLoot, me, allChars)
