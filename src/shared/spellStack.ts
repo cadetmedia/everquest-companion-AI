@@ -416,7 +416,25 @@ function directiveThreshold(max: number): number {
 }
 
 /**
- * Does `other` carry this directive's effect ANYWHERE, below its threshold?
+ * Does `other` carry this directive's effect IN THE SLOT THE DIRECTIVE NAMES, below its threshold?
+ *
+ * ============================================================================
+ * THE SLOT, NOT ANYWHERE (owner, 2026-10-20: *"RAGE is missing from this list?"*)
+ * ============================================================================
+ * Until 2026-10-20 this searched every slot of `other` for the effect. That reproduced the nine
+ * stat buffs Harnessing of Spirit refuses in the owner's log, and it also refused Rage, so the
+ * Loadout tab listed Rage under "Left out" behind Harnessing for a Shaman who keeps both up. The log
+ * says the game runs them together, in both orders (Quick Buff, 2026-08-22): at 18:00:36 Rage
+ * landed with Harnessing worn since 17:20:56 (72 minutes, no fade between), and at 18:30:43
+ * Harnessing landed over a worn Rage that then stayed up until 21:59:40. No `Blocked by Harnessing
+ * of Spirit` line names Rage in either log.
+ *
+ * `limit` is the slot, 1-based, and it is a real slot number: across the owner's client file the
+ * 1,422 directive rows name slots 1, 2, 3, 4, 6, 10 and more, so it is not a constant. The wiki
+ * prints it in the same words (`Stacking: Block New Spell if Slot 1 is Strength and Less Than
+ * 1067`). The nine stat buffs Harnessing refuses all keep their STR or DEX in slot 1, which is why
+ * the effect search reproduced them; Rage keeps its STR in slot 6 and its DEX in slot 7, which is
+ * why it is not refused. `tests/stackGroundTruth.test.mts` holds both halves, Rage included.
  *
  * IT COMPARES THE ROW'S BASE MAGNITUDE, NOT ITS LEVEL-SCALED VALUE, and that is measured rather
  * than reasoned. Harnessing of Spirit's `BLOCK{STR, 67}` refuses Strength in the owner's log, and
@@ -430,27 +448,23 @@ function directiveThreshold(max: number): number {
  * base comparison is exact on both sides; the scaled one is not.
  */
 function directiveBites(other: StackSpellView, directive: StackSlot): boolean {
-  const threshold = directiveThreshold(directive[4])
-  for (let i = 0; i < EFFECT_COUNT; i++) {
-    if (other.effects[i][0] !== directive[1]) continue
-    if (Math.abs(other.effects[i][1]) < threshold) return true
-  }
-  return false
+  const at = directive[2] - 1
+  if (at < 0 || at >= EFFECT_COUNT) return false
+  const target = other.effects[at]
+  if (target[0] !== directive[1]) return false
+  return Math.abs(target[1]) < directiveThreshold(directive[4])
 }
 
 /**
  * THE EXPLICIT BLOCK/OVERWRITE DIRECTIVES - the half of the model that decides cross-line stacking.
  *
- * IT SEARCHES FOR THE EFFECT, IT DOES NOT INDEX A SLOT. EQEmu encodes a directive's target slot in
- * the formula field (`formula - 201`); this client does not - its stacking rows read `calc: 100`
- * like everything else, and the port was reading `limit` as a slot index instead, which resolved to
- * slot 1 for every directive in the file and therefore matched almost nothing. That is why the
- * whole pass was silently dead, and why `contestPass` briefly grew a compensating rule it did not
- * need (its header tells that half).
- *
- * The rule that does fit the evidence: a directive names an EFFECT and a magnitude, and it bites on
- * any spell carrying that effect below that magnitude, wherever the effect sits. Scored against the
- * owner's log it is exact - 40 of 40 blocks reproduced, 81 of 81 coexisting pairs left alone.
+ * EQEmu encodes a directive's target slot in the formula field (`formula - 201`); this client does
+ * not - its stacking rows read `calc: 100` like everything else and carry the slot, 1-based, in
+ * `limit`. A directive names a SLOT, an EFFECT and a magnitude, and it bites on a spell carrying that
+ * effect in that slot below that magnitude (`directiveBites`, whose header has the 2026-10-20 Rage
+ * evidence that retired the 2026-09-10 "wherever the effect sits" reading). Scored against the
+ * owner's log it is exact - 40 of 40 blocks reproduced, and every coexisting pair left alone,
+ * Harnessing of Spirit with Rage among them.
  *
  * NO LEVEL ARGUMENT, unlike every other pass here: `directiveBites` compares BASE magnitudes, and
  * its own header carries the measurement that says it must.

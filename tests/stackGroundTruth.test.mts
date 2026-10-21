@@ -175,7 +175,13 @@ const ALSO_STACKED: readonly (readonly [string, string])[] = [
   // over-report of the effect-matching rule for one evening; the directive model gets it right.
   ['Guardian', 'Inner Fire'],
   // 19:35:09 "You are infused with power", 19:35:19 "You feel strong" - ten seconds apart.
-  ['Strength', 'Infusion of Spirit']
+  ['Strength', 'Infusion of Spirit'],
+  // Owner, 2026-10-20: *"RAGE is missing from this list?"* The Loadout put Rage under "Left out",
+  // beaten by Harnessing of Spirit, because the directive pass searched every slot for STR. Quick
+  // Buff on 2026-08-22 ran them together both ways round: Rage landed at 18:00:36 with Harnessing
+  // worn since 17:20:56, and Harnessing landed at 18:30:43 over a Rage that stayed up until 21:59:40.
+  ['Harnessing of Spirit', 'Rage'],
+  ['Rage', 'Harnessing of Spirit']
 ]
 
 /** Every pair that must NOT be reported as a conflict. */

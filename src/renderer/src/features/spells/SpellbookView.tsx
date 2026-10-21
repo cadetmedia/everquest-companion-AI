@@ -71,8 +71,9 @@ import {
 } from '@shared/spellbook'
 import { useLevelUnlocks } from '../leveling/useLevelUnlocks'
 // THE GEAR TAB'S CLASS-FILTER STATE, under this tab's own key (owner, 2026-09-10). See
-// `useFollowingClasses` for why the shape is shared and the storage deliberately is not.
-import { useFollowingClasses } from '../gear/gearData'
+// `useFollowingClasses` for why the shape is shared with Gear and the storage deliberately is not;
+// `SpellClassFilter` for why the Upgrades tab shares this key (owner, 2026-10-20).
+import { useSpellClasses } from './SpellClassFilter'
 import { SpellTooltip } from '../../lib/SpellCard'
 import { useWindowedRows } from '../../lib/useWindowedRows'
 import SpellbookToolbar from './SpellbookToolbar'
@@ -335,7 +336,7 @@ export default function SpellbookView(): JSX.Element {
   const data = useLevelUnlocks()
   // Mounted HERE and passed down, never inside the toolbar: two mounts of one storage key would
   // each hold their own copy and only one would re-read after the other wrote.
-  const classes = useFollowingClasses('eq.spells.classes')
+  const classes = useSpellClasses()
   const [query, setQuery] = useState<SpellbookQuery>({ sort: 'level' })
   const [tier, setTier] = useState(0)
   // THE STANDING SEARCH LAW: the controls echo instantly and the LIST follows. The gear tab's own
