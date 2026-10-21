@@ -275,6 +275,11 @@ disagree, RULES.md wins; fix this file.
   (Gaps, Factions) is absent from `out-e2e` on a feature branch; run the probe on
   `main_community` (test-neutering forces the renderer half) with `env: { EQ_UNRELEASED: '1' }`.
 
+- **`start_companion.ps1 -NoWatch` still hot-reloads the renderer.** It runs `npm start`, which is
+  `electron-vite dev`: only main stops relaunching. A merge or checkout in the main clone while the
+  owner uses that window swaps the screens under them (2026-10-20). Do the work in worktrees and
+  merge into `main_community` only when the owner is not using the dev app, or after telling them.
+
 ## Bug hunts that worked
 
 - Read-only hunter agents by area, one independent validator per report (validators refuted
