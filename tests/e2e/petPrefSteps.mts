@@ -28,7 +28,7 @@
 import type { Page } from 'playwright-core'
 import { check, note, settle, settleStable, snapshot, type Snap } from './appHarness.mjs'
 import { drilled, meterRows } from './drill.mjs'
-import { setCombinePet } from './combatPrefsSteps.mjs'
+import { setCombinePet, setPetLayout } from './combatPrefsSteps.mjs'
 
 /** The bare total on the panel's header line — the number the ticket is about. */
 const TOTAL = '[data-testid="meter-total"]'
@@ -163,4 +163,64 @@ export async function stepPetPreferenceMovesTheYouLine(page: Page): Promise<void
   //    the drill itself sticky.
   const back = await meterRows(page)
   check('…and the crumb still walks back out to the source list', back >= 1, `${String(back)} rows`)
+}
+
+const GROUP_ROW = '[data-testid="meter-group-row"]'
+
+/** What the grouped list draws, row by row, read off the DOM. */
+interface GroupShape {
+  lines: number
+  totals: number
+  shared: number
+  first: string
+}
+
+function groupShape(page: Page): Promise<GroupShape[]> {
+  return page.$$eval(GROUP_ROW, (rows) =>
+    rows.map((r) => {
+      const lines = r.querySelectorAll('[data-testid="meter-group-line"]')
+      return {
+        lines: lines.length,
+        totals: r.querySelectorAll('[data-testid="meter-group-total"]').length,
+        shared: r.querySelectorAll('[data-testid="meter-group-shared"]').length,
+        first: [...(lines[0]?.querySelectorAll('span') ?? [])].map((s) => (s.textContent ?? '').trim()).join('|')
+      }
+    })
+  )
+}
+
+/**
+ * THE THIRD PET LAYOUT, "With its owner" (Malkil, 2026-10-21; plans/2026-10-20-meter-pet-split.md),
+ * walked through Preferences. Runs after step 16 for the same reason: the live fight carries YOUR
+ * damage and a bound pet's, which is exactly a pair. Every source of the separate list must come
+ * back as one LINE of the grouped list; your pet sits on the line under you, over a shared bar; every
+ * row ends in one total box; a pet's line drills into the pet. It leaves the layout as shipped.
+ */
+export async function stepPetGroupedLayout(page: Page): Promise<void> {
+  await meterRows(page)
+  if (!check('the pet layout can be set to Its own bar', await setPetLayout(page, 'separate', 'nav-combat'))) return
+  await page.waitForSelector('[data-testid="combat-dashboard"]', { timeout: 30_000 })
+  const sources = await settleStable(() => page.$$(ROW).then((r) => r.length), { timeoutMs: 10_000 })
+  const totals = ownAndPets(await snapshot(page))
+
+  if (!check('the pet layout can be set to With its owner', await setPetLayout(page, 'grouped', 'nav-combat'))) return
+  const drawn = await settle(() => page.$$(GROUP_ROW).then((r) => r.length), (n) => n > 0, { timeoutMs: 30_000 })
+  if (!check('With its owner draws grouped rows on the Combat tab', drawn > 0)) return
+  const shape = JSON.parse(await settleStable(() => groupShape(page).then((s) => JSON.stringify(s)), { timeoutMs: 10_000 })) as GroupShape[]
+  const lines = shape.reduce((n, r) => n + r.lines, 0)
+  check('every source of the separate list is one line of the grouped list', lines === sources, `${String(lines)} lines, ${String(sources)} sources`)
+  check('every row ends in exactly one total box', shape.every((r) => r.totals === 1))
+  check('only a pair has the shared bar', shape.every((r) => r.shared === (r.lines > 1 ? 1 : 0)))
+  const mine = shape.findIndex((r) => r.first.split('|').includes('You'))
+  if (totals) {
+    check('your pet sits on the line under you, in one row', mine >= 0 && shape[mine].lines >= 2, JSON.stringify(shape[mine] ?? null))
+    if (mine >= 0) {
+      await page.locator(GROUP_ROW).nth(mine).locator('[data-testid="meter-group-line"]').nth(1).click({ timeout: 15_000 })
+      check('the pet line drills into the pet', (await settle(() => drilled(page), (d) => d, { timeoutMs: 10_000 })) === true)
+      await meterRows(page)
+    }
+  } else note('the selected fight has no You row and pet row together; the pair is not asserted')
+
+  check('the pet layout can be set back to Inside your bar', await setPetLayout(page, 'nested', 'nav-combat'))
+  await page.waitForSelector('[data-testid="combat-dashboard"]', { timeout: 30_000 })
 }
