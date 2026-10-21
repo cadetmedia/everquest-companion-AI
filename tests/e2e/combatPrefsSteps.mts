@@ -14,7 +14,7 @@
 // or near the repo's max-lines budget: split, never ratchet (drill.mts set the precedent).
 
 import type { Page } from 'playwright-core'
-import { settle } from './appHarness.mjs'
+import { check, settle } from './appHarness.mjs'
 
 /** The three scopes, exactly as `shared/roster.METER_SCOPES` spells them. */
 export type Scope = 'you' | 'group' | 'everyone'
@@ -80,8 +80,24 @@ export async function setPetLayout(page: Page, layout: PetLayout, back: string):
     (v) => v === 1,
     { timeoutMs: 8_000 }
   )
+  // The example meter under the control redraws for the choice (owner, 2026-10-21): its sample is
+  // Kyle, you and your pet, so nested draws 2 bars, separate 3, and grouped 2 rows of 3 lines.
+  const want = PREVIEW_SHAPE[layout]
+  const got = await settle(() => previewShape(page), (s) => s === want, { timeoutMs: 8_000 })
+  check(`the example under the pet layout control shows the ${layout} layout`, got === want, `${got}, want ${want}`)
   await page.click(`[data-testid="${back}"]`, { timeout: 30_000 })
   return n === 1
+}
+
+const PREVIEW_SHAPE: Record<PetLayout, string> = { nested: 'bars 2', separate: 'bars 3', grouped: 'rows 2 lines 3' }
+
+/** What the example meter in Preferences draws: plain bars, or grouped rows and their lines. */
+function previewShape(page: Page): Promise<string> {
+  return page.$eval('[data-testid="pref-pet-layout-preview"]', (el) => {
+    const rows = el.querySelectorAll('[data-testid="meter-group-row"]').length
+    if (rows > 0) return `rows ${String(rows)} lines ${String(el.querySelectorAll('[data-testid="meter-group-line"]').length)}`
+    return `bars ${String(el.querySelectorAll('[data-testid="meter-row"]').length)}`
+  })
 }
 
 /**
