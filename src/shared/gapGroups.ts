@@ -9,6 +9,7 @@
 import { factionOf, onMobPage, type GapRow } from './gaps'
 import { itemBaseName } from './itemStats'
 import type { LootEvent } from './types'
+import { zoneKey } from './zones'
 
 export const ZONE_NOT_SEEN = 'Zone not seen'
 
@@ -97,6 +98,30 @@ function placesOf(row: GapRow, looted: ReadonlyMap<string, Place[]>): Place[] {
   return places.length > 0 ? places : [{ zone: '', mob: '' }]
 }
 
+/**
+ * "Zone I'm in" (owner, 2026-10-20: "i shouldn't see 2 zones when i say only the zone i'm in"): a
+ * row seen here and elsewhere files under here alone, any tier of it, and one the filter let in on
+ * a sighting its places do not carry (an item named here but looted elsewhere) files under here too.
+ */
+function placesHere(places: Place[], here: string | null): Place[] {
+  if (here === null) return places
+  const key = zoneKey(here)
+  const kept = places.filter((p) => zoneKey(p.zone) === key)
+  return kept.length > 0 ? kept : [{ zone: here, mob: '' }]
+}
+
+/** The heading order, and with "Zone I'm in" on the one place the headings are kept to. */
+export interface GapGroupOptions {
+  order?: GapGroupOrder
+  here?: string | null
+}
+
+/** The fourth argument read: an order alone (the older call), or the options. */
+function groupOptions(opts: GapGroupOrder | GapGroupOptions): { order: GapGroupOrder; here: string | null } {
+  if (typeof opts === 'string') return { order: opts, here: null }
+  return { order: opts.order ?? 'name', here: opts.here ?? null }
+}
+
 interface MobGroup {
   mob: string
   rows: GapRow[]
@@ -121,11 +146,12 @@ export function groupGaps(
   rows: readonly GapRow[],
   loot: readonly LootEvent[],
   zoneName: (raw: string) => string = (z) => z,
-  order: GapGroupOrder = 'name'
+  opts: GapGroupOrder | GapGroupOptions = 'name'
 ): GapEntry[] {
+  const { order, here } = groupOptions(opts)
   const tree: Tree = new Map()
   const looted = lootPlaces(loot)
-  for (const row of rows) for (const p of placesOf(row, looted)) addTo(tree, p, row, zoneName)
+  for (const row of rows) for (const p of placesHere(placesOf(row, looted), here)) addTo(tree, p, row, zoneName)
   // A zone's count is its distinct rows: an item two of its mobs drop is one thing missing there.
   const zones = [...tree.values()]
     .map((z) => ({ ...z, n: new Set([...z.mobs.values()].flatMap((m) => m.rows)).size }))
