@@ -249,17 +249,29 @@ function projectModule(moduleId: string, r: ModuleSnapshotResult): ModuleSnap | 
  * still counted and narrated by `readShim.ts`, so the silence is legible in the dev log.
  */
 export function serveModuleSnapshot(moduleId: string): Promise<ModuleSnap | null> {
-  return readShim().serve('module.snapshot', { module: moduleId }, (r) =>
-    projectModule(moduleId, r)
-  , () => null)
+  // SHARED (readShim.ts header): every window hydrates off the same modules at once, and one
+  // request per module id is all the engine needs to answer them. The projection is decided by the
+  // module id alone, which is what makes joining safe.
+  return readShim().serveShared(
+    'module.snapshot',
+    { module: moduleId },
+    (r) => projectModule(moduleId, r),
+    () => null
+  )
 }
 
-/** `combat:snapshot`, served — see the header for the clock test and for the cast. */
+/**
+ * `combat:snapshot`, served — see the header for the clock test and for the cast.
+ *
+ * SHARED, keyed by the translated options: the main window's meter and the overlay meters poll the
+ * same options on the same cadence. Each caller still builds its own `own()` — a hydrating meter is
+ * never one object handed to two windows.
+ */
 export function serveCombatSnapshot(
   opts: SnapshotOpts,
   own: () => CombatSnapshot
 ): Promise<CombatSnapshot> {
-  return readShim().serve(
+  return readShim().serveShared(
     'combat.snapshot',
     { opts: engineOpts(opts) },
     (r) =>
