@@ -12,16 +12,24 @@
     5. clears ELECTRON_RUN_AS_NODE (VS Code terminals leak it; Electron then runs as Node);
     6. clears the vite pre-bundle and the dev channel's Electron caches (a stale pre-bundle
        once left title-bar clicks silently dead);
-    7. runs `npm run dev` (with -NoWatch, `npm start`) in this window. Ctrl+C stops it.
+    7. runs `npm run dev` (with -NoWatch, `npm start`; with -Prod, a production build) in this
+       window. Ctrl+C stops it.
 
 .PARAMETER NoWatch
   Run `npm start` instead of `npm run dev`: no restart when files under src/main change.
   Use it while merging or switching branches in this clone.
 
+.PARAMETER Prod
+  Build the app once (`electron-vite build`) and run that build (`electron-vite preview`) instead of
+  the dev server: about twice as fast on every tab (owner, 2026-10-20, measured 2.2x), no hot reload
+  and no restart on file changes, so a merge here changes nothing until the next launch. Same
+  settings and data as the dev app (an unpackaged build is still the dev channel). The dev-only
+  tools (the Restart app button, the triage tab) are absent, as in an installer.
+
 .EXAMPLE
   powershell -ExecutionPolicy Bypass -File .\start_companion.ps1
 #>
-param([switch]$NoWatch)
+param([switch]$NoWatch, [switch]$Prod)
 
 $ErrorActionPreference = 'Stop'
 $repo = $PSScriptRoot
@@ -100,5 +108,5 @@ foreach ($dir in @((Join-Path $repo 'node_modules\.vite'), (Join-Path $devData '
 }
 
 # 7. Launch.
-if ($NoWatch) { npm start } else { npm run dev }
+if ($Prod) { npm run preview } elseif ($NoWatch) { npm start } else { npm run dev }
 exit $LASTEXITCODE

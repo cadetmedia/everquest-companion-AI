@@ -31,6 +31,14 @@ it with `powershell -ExecutionPolicy Bypass -File .\start_companion.ps1`.
 
 4. **Tell the owner it is up**, with the branch (`git branch --show-current`) and the short HEAD.
 
+## When the owner is playing on it: `-Prod`
+
+`-Prod` builds once and runs the build (`electron-vite preview`) instead of the dev server. It is
+about twice as fast on every tab switch (measured 2.2x, 2026-10-20), uses the same settings and data,
+and nothing a merge does in this clone reaches it until the next launch, so no hot reload lands on
+the owner mid-play. The build adds a minute or so to the launch. Use it when the owner is going to
+play; use the dev server when a change needs hot reload.
+
 ## If it is already running
 
 The script exits with `already running from this clone (pid N)`. Do not kill Electron or
