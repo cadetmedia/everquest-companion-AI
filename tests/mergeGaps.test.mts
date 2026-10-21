@@ -17,7 +17,7 @@ interface Tally {
   distinct: number
   all?: string[]
 }
-type Details = Record<string, Tally | number | string[] | undefined> & { samples: string[] }
+type Details = Record<string, unknown> & { samples: string[] }
 interface Row {
   domain: string
   name: string
@@ -224,4 +224,39 @@ test('gaps: a kill-faction pair takes the newer side of its direction, as it tak
   const m = mergeGaps(older, newer) as Snap & { killFactions: { n: number; raised?: boolean }[] }
   assert.equal(m.killFactions[0]?.n, 2)
   assert.equal(m.killFactions[0]?.raised, true)
+})
+
+test('gaps: merchant offers survive the join, the same offer counted once (owner, 2026-10-20)', () => {
+  const offer = (merchant: string, copper: number, n: number, last: string): Record<string, unknown> => ({ merchant, coin: `${String(copper)} copper`, copper, n, last })
+  const older = snap([
+    row('item', 'Fungus Spores', 1, {
+      kinds: ['appraised'],
+      details: { samples: [], offers: [{ ...offer('Klok Koglin', 1143, 2, '2026-10-19 20:00:00'), standing: 'ally', zone: 'Oggok' }] }
+    })
+  ])
+  const newer = snap([
+    row('item', 'Fungus Spores', 1, {
+      kinds: ['appraised'],
+      details: {
+        samples: [],
+        offers: [
+          { ...offer('Klok Koglin', 1143, 1, '2026-10-20 22:27:39'), standing: 'ally', zone: 'Oggok' },
+          { ...offer('Klok Nylsi', 1100, 1, '2026-10-20 21:00:00'), per: true }
+        ]
+      }
+    })
+  ])
+  const merged = mergeGaps(older, newer)
+  const offers = merged?.rows[0].details.offers as Record<string, unknown>[]
+  assert.deepEqual(
+    offers.map((o) => [o.merchant, o.n, o.last]),
+    [
+      ['Klok Nylsi', 1, '2026-10-20 21:00:00'],
+      ['Klok Koglin', 3, '2026-10-20 22:27:39']
+    ],
+    'the same merchant, price, form and standing add up; newest last'
+  )
+  // A row only one side holds keeps its offers as they were.
+  const one = mergeGaps(older, snap([]))
+  assert.equal((one?.rows[0].details.offers as unknown[]).length, 1)
 })

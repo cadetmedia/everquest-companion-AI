@@ -18,7 +18,24 @@ interface Tally {
 const LISTS = ['zones', 'sources', 'dispositions', 'drops', 'cons', 'killers', 'casters', 'sales', 'paid'] as const
 const COPPER = ['salesCopper', 'paidCopper'] as const
 
-type Details = Partial<Record<(typeof LISTS)[number], Tally>> & Partial<Record<(typeof COPPER)[number], number>> & { samples: string[] }
+/**
+ * A merchant's offer for an item (owner, 2026-10-20, the Gaps tab's merchant offers; engine
+ * gaps_offers.rs). Declared here by shape, not imported: this branch sits before the Gaps
+ * branches in the recipe, and an archive written before offers existed simply has none.
+ */
+interface Offer {
+  merchant: string
+  coin: string
+  copper: number
+  per?: true
+  standing?: string
+  zone?: string
+  n: number
+  last: string
+}
+
+type Details = Partial<Record<(typeof LISTS)[number], Tally>> &
+  Partial<Record<(typeof COPPER)[number], number>> & { samples: string[]; offers?: Offer[] }
 
 interface Row {
   domain: string
@@ -128,7 +145,30 @@ function mergeDetails(a: Details, b: Details): Details {
     const sum = (a[k] ?? 0) + (b[k] ?? 0)
     if (sum > 0) out[k] = sum
   }
+  const offers = mergeOffers(a.offers, b.offers)
+  if (offers !== undefined) out.offers = offers
   return out
+}
+
+/** The fold's own cap on a row's offers (gaps_offers.rs `OFFERS_KEPT`). */
+const OFFERS_KEPT = 8
+
+/**
+ * Two rows' offers as one, by the fold's own rule (gaps_offers.rs `Offers::add`): an offer is the
+ * same when its merchant, price, form (`per`) and standing are; the same offer's counts add, and
+ * the newer one's stamp and zone stand. Newest last, the OFFERS_KEPT newest kept. Without this the
+ * archive merge, which keeps the detail lists it names, dropped every offer of a row it joined.
+ */
+function mergeOffers(a: Offer[] | undefined, b: Offer[] | undefined): Offer[] | undefined {
+  if (a === undefined && b === undefined) return undefined
+  const keyOf = (o: Offer): string => [o.merchant, o.copper, o.per === true, o.standing ?? ''].join('|')
+  const byKey = new Map<string, Offer>()
+  for (const o of [...(a ?? []), ...(b ?? [])]) {
+    const had = byKey.get(keyOf(o))
+    if (had === undefined) byKey.set(keyOf(o), { ...o })
+    else byKey.set(keyOf(o), { ...(o.last >= had.last ? o : had), n: had.n + o.n })
+  }
+  return [...byKey.values()].sort((x, y) => (x.last < y.last ? -1 : x.last > y.last ? 1 : 0)).slice(-OFFERS_KEPT)
 }
 
 /** The earlier of two stamps, an empty one (a line without a stamp) losing to the other. */
