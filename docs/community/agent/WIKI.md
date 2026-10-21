@@ -75,6 +75,12 @@ A page is a mob page only if its OWN text opens the template (indirect transclus
   1,243 of 1,278 pages that fill it.
 - **Merchant items_sold**: `<li> {{:Item}} <span class='ddp'>(5gp 2sp 4cp)</span>`.
 - **merchant_value** (item): `2s 7c` style.
+- **Item lore text** (the in-game Lore tab, e.g. "The Cloth Seems To Be Moving") goes in
+  `|notes = {{Item Lore|<text>}}`, not in `statsblock` and not in a `== Lore ==` section (that
+  heading is for NPC pages). 624 of 772 `{{Item Lore|` uses in the cache sit in `|notes`; several
+  same-named variants list one `{{Item Lore|...}}` each.
+- **statsblock** flags use classic wording: tooltip "No Trade" is `NO DROP`, "Temporary" is
+  `NO RENT`.
 - **Spell pages**: NPC-only spells say `| classes =` then `This spell is cast by NPCs only.` and
   carry `[[Category:NPC Only Spells]]` (321 and 311 of 354 cached NPC-only pages).
 - **Redirects** send common spellings to the page (`Hoptor Thaggelum` -> `The Ghoul Lord`; item
