@@ -15,7 +15,7 @@ import type { GapRow, GapsSnap } from './gaps'
 import type { KillMap } from './kills'
 import { spanStamps, widen, type Span } from './gapTimes'
 import { pagesByMob, pickPage } from './gapMobPage'
-import { mobKey } from './mobKey'
+import { gapMobKey as mobKey, memoFold, perObject } from './gapMemo'
 import type { MobEntry } from './mobTypes'
 import { decodeFactionAmount } from './mobFactionAmounts'
 
@@ -45,19 +45,23 @@ export interface KillFaction {
 /**
  * The log and the wiki spell some factions apart: `Solusek Mining Co.` / `Solusek Mining Co`, `the
  * Ebon Mask`, `Opal Darkbriar` / `Opal Dark Briar`, `King Ak'Anon (Faction)`. Case, a leading
- * "the", a trailing "(Faction)" and everything but letters and digits are folded away.
+ * "the", a trailing "(Faction)" and everything but letters and digits are folded away. Remembered
+ * per spelling (perf audit, 2026-10-20: gapMemo.ts), since every page's every faction is folded.
  */
-export function factionKey(name: string): string {
-  return name
+export const factionKey = memoFold((name: string): string =>
+  name
     .trim()
     .toLowerCase()
     .replace(/\s*\(faction\)\s*$/, '')
     .replace(/^the /, '')
     .replace(/[^a-z0-9]/g, '')
-}
+)
 
-/** Every catalog name (its `|name`, page title and wiki redirects) → each faction its pages list → what each page says of it. */
-function factionsByMob(catalog: readonly CatalogMob[]): Map<string, Map<string, string[]>> {
+/**
+ * Every catalog name (its `|name`, page title and wiki redirects) → each faction its pages list → what
+ * each page says of it. Built once per catalog (perf audit, 2026-10-20: gapMemo.ts), so read-only.
+ */
+const factionsByMob = perObject((catalog: readonly CatalogMob[]): ReadonlyMap<string, ReadonlyMap<string, readonly string[]>> => {
   const out = new Map<string, Map<string, string[]>>()
   for (const m of catalog) {
     for (const name of [m.name, m.page, ...(m.otherNames ?? [])]) {
@@ -70,7 +74,7 @@ function factionsByMob(catalog: readonly CatalogMob[]): Map<string, Map<string, 
     }
   }
   return out
-}
+})
 
 /** What one page's statement of a faction lacks against the log's pair; null when it agrees. */
 function fixOf(said: string, p: Pick<KillFaction, 'adjust' | 'raised'>): FactionFix | null {
