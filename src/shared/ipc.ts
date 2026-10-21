@@ -1049,6 +1049,15 @@ export const IPC = {
   // Spell names in, `{ [name]: what the install's spells_us.txt / spells_us_str.txt state }` out
   // (src/main/gapSpellFacts.ts), for a copied spell page. Payload: (names: string[]).
   gapSpellFacts: 'gaps:spellFacts',
+  // A pasted screenshot of an item window -> its page fields and icon id, read on this machine
+  // (src/main/ipc/shotIpc.ts). Payload: (png: Uint8Array).
+  shotReadItem: 'shot:readItem',
+  // The clipboard's picture as PNG bytes, or null (a click on the paste box). Payload: none.
+  shotClipboard: 'shot:clipboard',
+  // An item icon drawn from the install's own sheets, as a data URL. Payload: (id: number).
+  shotIcon: 'shot:icon',
+  // Save a pasted picture under the wiki's file name, through a save dialog. Payload: (png: Uint8Array, fileName: string).
+  shotSaveImage: 'shot:saveImage',
 
   // ---- error harness (renderer -> main, fire-and-forget) ----
   // window.onerror / onunhandledrejection / React ErrorBoundary report here so

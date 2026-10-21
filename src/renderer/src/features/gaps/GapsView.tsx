@@ -45,6 +45,7 @@ import { useDoneMarks, usePlayerList } from './useDoneMarks'
 import { useHeld } from './useHeld'
 import { useHideUncertain, type HideUncertain } from './useHideUncertain'
 import { useGrouping } from './useGrouping'
+import { useItemShots } from './itemShotsStore'
 import GroupHeaderControls from './GroupHeaderControls'
 
 // One line (owner, 2026-10-11): the how is in the module header, not on the page. Since 2026-10-18
@@ -208,9 +209,11 @@ export default function GapsView(): JSX.Element {
   // A spell page fills from the install's spell files (owner, 2026-10-19): asked for the spells on screen.
   const spellNames = useMemo(() => (domain === 'spell' ? spellNamesOf(visible) : NO_NAMES), [domain, visible])
   const spellFacts = useSpellFacts(spellNames)
+  // What pasted item screenshots gave (ShotPanel), for the item pages (owner ask, 2026-10-21).
+  const itemShots = useItemShots()
   const sightings = useMemo(
-    () => ({ killFactions: engine?.killFactions, mobLocs: engine?.mobLocs, mobSpecials: engine?.mobSpecials, mobCoin: engine?.mobCoin, ...PAGE_EXTRAS, spellFacts }),
-    [engine, spellFacts]
+    () => ({ killFactions: engine?.killFactions, mobLocs: engine?.mobLocs, mobSpecials: engine?.mobSpecials, mobCoin: engine?.mobCoin, ...PAGE_EXTRAS, spellFacts, itemShots }),
+    [engine, spellFacts, itemShots]
   )
   const pageText = useCallback((row: GapRow) => wikiPageText(row, loot, kills, sightings), [loot, kills, sightings])
   const needed = useCallback((row: GapRow) => stillNeeded(row, loot, kills, sightings), [loot, kills, sightings])

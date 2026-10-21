@@ -335,12 +335,35 @@ function rateLine(link: string, drops: number, kills: number): string {
  */
 export const STATS_SKELETON = '\nSize:   WT: <br>\nClass: <br>\nRace: <br>'
 
-export function itemPage(f: ItemFacts): string {
+/**
+ * What a screenshot of the item's window gave, as the player kept it (shared/itemWindow.ts; owner ask,
+ * 2026-10-21). Field order follows the page the owner wrote for Ruined Robe: itemname, lucy_img_ID,
+ * notes, statsblock. The window's Value line is the game's own number, so it wins over the estimate.
+ */
+export interface ItemPageShot {
+  statsblock?: string
+  iconId?: number
+  focusEffect?: string
+  valueCopper?: number
+  lore?: string
+}
+
+/** The fields a screenshot fills, in the page's order, around the log's merchant_value. */
+function shotFields(shot: ItemPageShot, merchantValue: number | undefined): [string, string][] {
+  const value = shot.valueCopper ?? merchantValue
+  const fields: [string, string][] = []
+  if (shot.iconId !== undefined) fields.push(['lucy_img_ID', String(shot.iconId)])
+  if (value !== undefined) fields.push(['merchant_value', wikiCoin(value)])
+  if (shot.lore) fields.push(['notes', `{{Item Lore|${shot.lore}}}`])
+  fields.push(['statsblock', shot.statsblock !== undefined && shot.statsblock !== '' ? shot.statsblock : STATS_SKELETON])
+  if (shot.focusEffect) fields.push(['focus_effect', shot.focusEffect])
+  return fields
+}
+
+export function itemPage(f: ItemFacts, shot: ItemPageShot = {}): string {
   const byZone = new Map<string, string[]>()
   for (const d of f.drops) byZone.set(d.zone, [...(byZone.get(d.zone) ?? []), d.mob])
-  const fields: [string, string][] = [['itemname', f.name]]
-  if (f.merchantValue !== undefined) fields.push(['merchant_value', wikiCoin(f.merchantValue)])
-  fields.push(['statsblock', STATS_SKELETON])
+  const fields: [string, string][] = [['itemname', f.name], ...shotFields(shot, f.merchantValue)]
   if (byZone.size > 0) fields.push(['dropsfrom', zoneBlocks(byZone)])
   if (f.soldBy.length > 0) fields.push(['soldby', itemWhereTable(f.soldBy)])
   const cats = [
@@ -518,6 +541,8 @@ export interface PageExtras {
   spellFacts?: Readonly<Record<string, ClientSpellFacts>>
   /** Where a vendor stands, by the catalog (`vendorFinder`): an item page's `|soldby` rows. */
   vendorAt?: VendorFinder
+  /** What pasted screenshots of item windows gave, by the row's name (ItemPageShot). */
+  itemShots?: Readonly<Record<string, ItemPageShot>>
 }
 
 /**
@@ -528,7 +553,7 @@ export interface PageExtras {
 export function wikiPageText(row: GapRow, loot: readonly LootEvent[], kills: KillMap, seen: MobSightings & PageExtras = {}): string {
   const extras = seen
   if (row.suggest !== undefined && (row.domain === 'item' || row.domain === 'spell')) return `#REDIRECT [[${row.suggest.page}]]\n`
-  return PAGE_OF[row.domain](row, { loot, kills, seen, zoneName: extras.zoneName ?? asPrinted, isMob: extras.isMob, commonLoot: extras.commonLoot, spellFacts: extras.spellFacts, vendorAt: extras.vendorAt })
+  return PAGE_OF[row.domain](row, { loot, kills, seen, zoneName: extras.zoneName ?? asPrinted, isMob: extras.isMob, commonLoot: extras.commonLoot, spellFacts: extras.spellFacts, vendorAt: extras.vendorAt, itemShots: extras.itemShots })
 }
 
 interface PageContext {
@@ -540,6 +565,7 @@ interface PageContext {
   commonLoot?: ReadonlySet<string>
   spellFacts?: Readonly<Record<string, ClientSpellFacts>>
   vendorAt?: VendorFinder
+  itemShots?: Readonly<Record<string, ItemPageShot>>
 }
 
 /**
@@ -547,7 +573,7 @@ interface PageContext {
  * so a new domain is one entry, and a domain without one does not compile.
  */
 const PAGE_OF: Record<GapDomain, (row: GapRow, c: PageContext) => string> = {
-  item: (row, c) => itemPage(itemFacts(row, c.loot, c.zoneName, c.vendorAt)),
+  item: (row, c) => itemPage(itemFacts(row, c.loot, c.zoneName, c.vendorAt), c.itemShots?.[row.name]),
   mob: (row, c) => mobPage(mobFacts(row, c.loot, c.kills, { ...c.seen, zoneName: c.zoneName }), c.commonLoot),
   merchant: (row, c) => merchantPage(mobFacts(row, [], c.kills, { ...c.seen, zoneName: c.zoneName })),
   spell: (row, c) => spellPage({ name: row.name, npcOnly: npcOnlySpell(row, c.isMob), client: c.spellFacts?.[row.name] }),
@@ -559,8 +585,8 @@ const PAGE_OF: Record<GapDomain, (row: GapRow, c: PageContext) => string> = {
 }
 
 /** The domains whose page needs the same thing whatever the log saw; mobs and merchants are read below. */
-const NEEDED_OF: Partial<Record<GapDomain, (row: GapRow) => string[]>> = {
-  item: () => ['stats (the item window)'],
+const NEEDED_OF: Partial<Record<GapDomain, (row: GapRow, seen: PageExtras) => string[]>> = {
+  item: (row, seen) => (seen.itemShots?.[row.name]?.statsblock ? [] : ['stats (paste a screenshot of the item window below)']),
   spell: () => ['spell details (its description window)'],
   faction: (row) => (row.adjust === undefined ? ['the amount (a kill that is not capped)'] : []),
   drop: () => [],
@@ -571,9 +597,9 @@ const NEEDED_OF: Partial<Record<GapDomain, (row: GapRow) => string[]>> = {
  * The page fields the log left blank for this row, in the player's words, so the details can say
  * what to collect before the trip ends (review 2026-10-19). `kills` must be a `killIndex` result.
  */
-export function stillNeeded(row: GapRow, loot: readonly LootEvent[], kills: KillMap, seen: MobSightings = {}): string[] {
+export function stillNeeded(row: GapRow, loot: readonly LootEvent[], kills: KillMap, seen: MobSightings & PageExtras = {}): string[] {
   const fixed = NEEDED_OF[row.domain]
-  if (fixed !== undefined) return fixed(row)
+  if (fixed !== undefined) return fixed(row, seen)
   const f = mobFacts(row, row.domain === 'mob' ? loot : [], kills, seen)
   return [
     ...(f.levels.length === 0 ? ['level (/con)'] : []),

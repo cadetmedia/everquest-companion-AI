@@ -1,0 +1,166 @@
+// The item window, as OCR read it, into the wiki's Item Page lines (src/shared/itemWindow.ts), and
+// the page Copy wiki page builds from it (src/shared/wikiPage.ts `itemPage`). The OCR text below is
+// real: the prototype's reads of the owner's and Malkil's screenshots (2026-10-21), junk and all.
+// The target is the page the owner wrote for Ruined Robe the same night.
+
+import { test } from 'node:test'
+import assert from 'node:assert/strict'
+import { checkRatio, cleanLine, readItemWindow, valueCopper, weightValue } from '../src/shared/itemWindow.ts'
+import { itemPage } from '../src/shared/wikiPage.ts'
+
+const ROBE_OCR = `| Ruined Robe =
+| /~ SPDesciption 3, © [[ 4" “Lore 7AM
+++ Ruined Robe
+Lore Equipped, No Trade, Temporary
+Class: NEC WIZ MAG ENC
+Race: ALL
+Chest i
+Size: MEDIUM AC: 1
+Weight 20
+Charisma: -20 SV. Magic: -15
+SV. Fire: -15
+SV. Cold: -15
+SV._Disease: -15 :
+SV. Poison: -15 N
+PB Unmodified`.split('\n')
+
+const WINDSTRIKER_OCR = `{e Fingstiker +10 (Augmented (a |
+Description
+Windstriker +10
+1 Lore Equipped, No Trade, Placeable
+| Class: RNG
+Race: ALL
+Range
+Merge | Tier: 10/10 J
+Rem This item cannot be upgraded. :
+Size: MEDIUM HP: 100 Base Dmg: 920
+| Weight 04 Accuracy. +25% Delay: 60
+Skill: Archery Ratio: 15
+Range: 300
+Strength: 15 SV. Void: 10
+Agility: 15
+Dexterity: 15
+| Modified Windstriker +10 +
+| Omamentation: empty
+i Focus Exaltation: Idol of the Underking (Exaltation)
+Wom Exaltation: empty
+Focus Effect Improved Healing lll
+Click Effect Firestrike (Must Equip)
+Cast Time: Instant
+Required Level: 40
+Cooldown: 120 seconds
+This item is placeable in yards, guild yards, houses and guild halls.`.split('\n')
+
+const SCALE_OCR = `| Black Lizard Scale [l=
+Fa. > ~ Description
+++ BlackLizard Scale
+8 Quest
+Class: None
+Race: None
+Size: MEDIUM |
+Weight 20
+PB Unmodified
+|| Value: 3 silver 8 copper`.split('\n')
+
+/** The owner's own page for Ruined Robe (2026-10-21), its statsblock field. */
+const ROBE_PAGE_STATS = [
+  'LORE ITEM  NO DROP  TEMPORARY<br>',
+  'Slot: CHEST<br>',
+  'AC: 1<br>',
+  'CHA: -20<br>',
+  'SV MAGIC: -15  SV FIRE: -15  SV COLD: -15  SV DISEASE: -15  SV POISON: -15<br>',
+  'WT: 2.0  Size: MEDIUM<br>',
+  'Class: NEC WIZ MAG ENC<br>',
+  'Race: ALL<br>'
+]
+
+test('RUINED ROBE: THE OCR OF THE OWNER\'S WINDOW BECOMES THE STATSBLOCK THE OWNER WROTE, LINE FOR LINE', () => {
+  const r = readItemWindow(ROBE_OCR)
+  assert.equal(r.statsblock, `\n${ROBE_PAGE_STATS.join('\n')}`)
+  assert.equal(r.name, 'Ruined Robe')
+  assert.deepEqual(r.unread, [])
+})
+
+test('WINDSTRIKER: THREE COLUMNS, WEAPON LINES, EFFECTS; THE FOCUS GOES OUTSIDE THE STATSBLOCK; EXALTATION ROWS ARE NOT THE ITEM', () => {
+  const r = readItemWindow(WINDSTRIKER_OCR)
+  const lines = r.statsblock.split('\n').filter(Boolean)
+  assert.deepEqual(lines, [
+    'LORE ITEM  NO DROP  PLACEABLE<br>',
+    'Slot: RANGE<br>',
+    'Skill: Archery  Atk Delay: 60<br>',
+    'DMG: 90<br>',
+    'Range: 300<br>',
+    'STR: +15  AGI: +15  DEX: +15  HP: +100  Accuracy: +25%<br>',
+    'SV VOID: +10<br>',
+    'Effect: [[Firestrike]] (Must Equip, Casting Time: Instant) at Level 40<br>',
+    'WT: 0.4  Size: MEDIUM<br>',
+    'Class: RNG<br>',
+    'Race: ALL<br>'
+  ])
+  assert.equal(r.name, 'Windstriker')
+  assert.equal(r.focusEffect, 'Improved Healing III')
+  // DMG 920 is corrected by the window's own Ratio and Delay, and the player is told.
+  assert.deepEqual(r.checks, ['DMG read as 920; the window\'s Ratio (1.5) and Delay (60) say 90.'])
+  assert.deepEqual(r.unread, [])
+})
+
+test('BLACK LIZARD SCALE: A QUEST FLAG, NO SLOT, THE VALUE LINE IN COPPER', () => {
+  const r = readItemWindow(SCALE_OCR)
+  assert.equal(r.statsblock, '\nQUEST ITEM<br>\nWT: 2.0  Size: MEDIUM<br>\nClass: NONE<br>\nRace: NONE<br>')
+  assert.equal(r.valueCopper, 38)
+})
+
+test('A LORE TAB (NO CLASS LINE) GIVES ITS TEXT AND NO STATSBLOCK', () => {
+  const r = readItemWindow(['| Ruined Robe', 'Description Lore', 'The Cloth Seems To Be Moving'])
+  assert.equal(r.statsblock, '')
+  assert.equal(r.lore, 'The Cloth Seems To Be Moving')
+})
+
+test('JUNK AT LINE ENDS GOES, A ROMAN RANK AND A SIGNED NUMBER STAY', () => {
+  assert.equal(cleanLine('++ Ruined Robe'), 'Ruined Robe')
+  assert.equal(cleanLine('8 Quest'), 'Quest')
+  assert.equal(cleanLine('S— Windstriker +10'), 'Windstriker +10')
+  assert.equal(cleanLine('SV. Poison: -15 N'), 'SV. Poison: -15')
+  assert.equal(cleanLine('Chest i'), 'Chest')
+  assert.equal(cleanLine('Focus Effect: Spell Haste I'), 'Focus Effect: Spell Haste I')
+})
+
+test('WEIGHT GETS BACK THE ONE DECIMAL THE GAME ALWAYS PRINTS; A READ DECIMAL IS KEPT', () => {
+  assert.equal(weightValue('20'), '2.0')
+  assert.equal(weightValue('04'), '0.4')
+  assert.equal(weightValue('125'), '12.5')
+  assert.equal(weightValue('4.2'), '4.2')
+  assert.equal(weightValue('2,0'), '2.0')
+})
+
+test('VALUE: EVERY COIN WORD TO COPPER; NO COIN WORD IS NO VALUE', () => {
+  assert.equal(valueCopper('4 platinum'), 4000)
+  assert.equal(valueCopper('1 platinum 2 gold 3 silver 4 copper'), 1234)
+  assert.equal(valueCopper('none'), undefined)
+})
+
+test('RATIO CHECK: A DMG THAT FITS IS LEFT ALONE; ONE NO SINGLE DIGIT FIXES IS ONLY FLAGGED', () => {
+  const ok = new Map([['DMG', '90'], ['Atk Delay', '60'], ['Ratio', '15']])
+  assert.equal(checkRatio(ok), undefined)
+  assert.equal(ok.get('DMG'), '90')
+  const bad = new Map([['DMG', '77'], ['Atk Delay', '60'], ['Ratio', '15']])
+  assert.match(checkRatio(bad) ?? '', /check DMG/)
+  assert.equal(bad.get('DMG'), '77')
+})
+
+test('COPY WIKI PAGE: A SCREENSHOT FILLS lucy_img_ID, notes, statsblock IN THE OWNER\'S ORDER; WITHOUT ONE THE SKELETON STAYS', () => {
+  const facts = { name: 'Ruined Robe', drops: [], soldBy: [], crafted: false }
+  const page = itemPage(facts, { iconId: 1126, lore: 'The Cloth Seems To Be Moving', statsblock: readItemWindow(ROBE_OCR).statsblock })
+  const order = ['|itemname = Ruined Robe', '|lucy_img_ID = 1126', '|notes = {{Item Lore|The Cloth Seems To Be Moving}}', '|statsblock = ']
+  const at = order.map((l) => page.indexOf(l))
+  assert.ok(at.every((i, k) => i >= 0 && (k === 0 || i > at[k - 1])), page)
+  assert.ok(page.includes(ROBE_PAGE_STATS.join('\n')), page)
+  assert.ok(!itemPage(facts).includes('lucy_img_ID'))
+  assert.ok(itemPage(facts).includes('Size:   WT: <br>'))
+})
+
+test("COPY WIKI PAGE: THE WINDOW'S VALUE LINE WINS OVER THE LOG'S ESTIMATE", () => {
+  const facts = { name: 'Black Lizard Scale', drops: [], soldBy: [], crafted: false, merchantValue: 40 }
+  assert.ok(itemPage(facts, { valueCopper: 38 }).includes('|merchant_value = 3s 8c'))
+  assert.ok(itemPage(facts).includes('|merchant_value = 4s'))
+})
