@@ -86,8 +86,8 @@ the app. A throwaway prototype was built outside it (section "Prototype"). Rules
   50 at full size. Colour matters: many icons are recolours of one model (the breastplates 1569,
   1570, 1571 in the wiki's own results).
 - In an item window the icon is the 40x40 cell at a fixed place (`IDW_IconButton`), unscaled; the
-  finder cuts that cell and ranks within the icons used by items of the slot the OCR read
-  (measured on a real window, Prototype section). A paste of the icon alone works the same way.
+  finder subtracts the window's tiled rock texture (aligned from the same snip), then matches;
+  the slot the OCR read is the fallback prior (measured on a real window, Prototype section). A paste of the icon alone works the same way.
 
 ### Reading the text
 
@@ -230,9 +230,20 @@ sides scored with the repo's own `parseStatsBlock`.
   - **The slot as a prior: 1126 ranks 1st.** `items.json` has 30 distinct icons on CHEST items;
     filtering the finder's list to them puts 1126 first (18 icons on items named "Robe": also 1st).
     The OCR gives the slot from the same paste.
-- So the icon step ranks within the icons that items of the read slot use, then shows the
-  unfiltered list after it (a new item may use an icon no wiki item has). A bright icon (the wiki's
-  skull test) needs no prior; a dark one does.
+  - Brightness as a first cut (owner's idea, 2026-10-21): the snip's mean is mostly stone (1126
+    ranks 3,047th by it), and percentiles fail the same way; the snip's PEAK works (90, same as
+    1126's): within 10% keeps 136 of 13,583 icons with 1126 in, but 1126 still ranks 3rd inside
+    them. A cut, not a fix.
+  - **Remove the texture: 1126 ranks 1st, score 148 against 604 for the runner-up, no prior.** The
+    stone is the game's own `uifiles/default/wnd_bg_dark_rock.tga` (256x256, 24-bit TGA; the
+    `WDT_Inner` template's background), tiled at 1:1. Aligning it to a blank patch of the full-window
+    snip (below the text) fits to 0.8 RMS, gain 1.02; predicted background subtracted, pixels within
+    10 of it set to black, then the normal finder. The window's border lines stay and are cropped.
+- So the icon step for an item window: align the window's texture, subtract it, find. Rank within
+  the icons that items of the read slot use only as a fallback when the winner's margin is thin. The
+  prototype's alignment is brute force (3.6 s over 256x256 offsets); a coarse-to-fine search or the
+  window's own position makes it fast. Untested: a paste of the icon alone (little blank stone to
+  align on) and other window skins (`default_light`, `default_modern`, custom UIs).
 - Real-window fixtures needed: a weapon (Skill, Atk Delay, DMG), an Effect line, a long class list,
   the Lore tab.
 
