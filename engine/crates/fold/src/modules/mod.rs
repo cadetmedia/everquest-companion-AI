@@ -52,6 +52,7 @@ pub mod gaps_details;
 pub mod gaps_keys;
 pub mod gaps_locs;
 pub mod gaps_names;
+pub mod gaps_offers;
 pub mod gaps_players;
 pub mod gaps_specials;
 pub mod gaps_suggest;

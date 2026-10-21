@@ -9,6 +9,7 @@
 //! KILL_FACTION_MS before a death are that kill's. This side only records the pairs; the tab
 //! checks each against the mob page's `factions`.
 
+use super::gaps_offers::offer_of;
 use crate::event::Event;
 use crate::message_overlay::message_text_of;
 use serde_json::{json, Value};
@@ -25,9 +26,12 @@ pub fn merchant_of<'a>(ev: &'a Event) -> Option<(&'a str, &'static str)> {
     match ev.kind() {
         "purchase" => ev.str("npc").map(|n| (n, "bought")),
         "coin" if ev.str("source") == Some("vendor") => ev.str("npc").map(|n| (n, "sold")),
-        "unknown" => message_text_of(ev.raw())
-            .split_once(" told you, 'That'll be ")
-            .map(|(n, _)| (n, "quoted")),
+        // A sell offer (`X told you, 'I'll give you …`) shows a merchant too (owner, 2026-10-20).
+        "unknown" => {
+            let text = message_text_of(ev.raw());
+            let quote = text.split_once(" told you, 'That'll be ").map(|(n, _)| (n, "quoted"));
+            quote.or_else(|| offer_of(text).map(|o| (o.merchant, "appraised")))
+        }
         _ => None,
     }
 }
@@ -212,6 +216,8 @@ mod tests {
         let sold =
             ev(r#"{"kind":"coin","source":"vendor","npc":"Zok Zribb","ts":1,"seq":1,"raw":"x"}"#);
         assert_eq!(merchant_of(&sold), Some(("Zok Zribb", "sold")));
+        let offer = line("Klok Koglin told you, 'I'll give you 3 copper per Rat Ear'", 1);
+        assert_eq!(merchant_of(&offer), Some(("Klok Koglin", "appraised")));
         assert_eq!(merchant_of(&line("Soandso tells you, 'hi'", 1)), None);
     }
 

@@ -449,3 +449,7 @@ fn a_trader_the_wiki_lists_as_no_merchant_is_a_row_and_a_kill_keeps_its_faction_
 /// The review's engine rules (2026-10-19): a file of their own for the factoring bar.
 #[path = "gaps_review_tests.rs"]
 mod review;
+
+/// Merchant offers (owner, 2026-10-20): a file of their own for the factoring bar.
+#[path = "gaps_offer_tests.rs"]
+mod offers;

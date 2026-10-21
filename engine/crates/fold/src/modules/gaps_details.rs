@@ -23,6 +23,7 @@
 //! to one spelling. A SALE ON LOOT IS NOT THE REAL PRICE: an item sold instantly, to no vendor, is
 //! sold at a discount, so its amount is a floor, and the list is named so wherever it is shown.
 
+use super::gaps_offers::{Offer, Offers};
 use crate::event::Event;
 use crate::jsfn::item_base_name;
 use regex::Regex;
@@ -89,12 +90,14 @@ pub struct Details {
     /// The two above summed, in copper, so a row can say what it brought in all.
     sales_copper: i64,
     paid_copper: i64,
+    /// An item: what merchants offered for it in the sell slot (`gaps_offers.rs`).
+    offers: Offers,
     samples: VecDeque<String>,
 }
 
 /// `4 platinum, 2 gold, 1 silver and 4 copper` → (`4 platinum 2 gold 1 silver 4 copper`, copper
 /// total); `None` for `free` or a clause with no coin in it.
-fn coin_of(clause: &str) -> Option<(String, i64)> {
+pub(crate) fn coin_of(clause: &str) -> Option<(String, i64)> {
     static TOKEN: OnceLock<Regex> = OnceLock::new();
     let token = TOKEN.get_or_init(|| {
         Regex::new(r"([0-9][0-9,]*) (platinum|gold|silver|copper)").expect("a valid pattern")
@@ -121,6 +124,22 @@ fn price_of(raw: &str, marker: &str) -> Option<(String, i64)> {
     coin_of(raw[at..].trim().trim_end_matches('.'))
 }
 
+/// `[Wed Sep 23 17:54:48 2026] …` → `2026-09-23 17:54:48`: the log's own clock, as the bazaar
+/// module prints it.
+pub fn stamp_of(raw: &str) -> Option<String> {
+    const MONTHS: [&str; 12] = [
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+    ];
+    let stamp = raw.strip_prefix('[')?.split(']').next()?;
+    let parts: Vec<&str> = stamp.split_whitespace().collect();
+    let [_, month, day, time, year] = parts.as_slice() else {
+        return None;
+    };
+    let m = MONTHS.iter().position(|x| x == month)? + 1;
+    let d: u32 = day.parse().ok()?;
+    Some(format!("{year}-{m:02}-{d:02} {time}"))
+}
+
 impl Details {
     /// One mention of the row's name on `ev`, read for the row's domain.
     pub fn record(&mut self, domain: &str, ev: &Event, zone: Option<&str>) {
@@ -134,6 +153,13 @@ impl Details {
             _ => {}
         }
         self.sample(ev);
+    }
+
+    /// A merchant's offer for the item (`record` kept its line). The zone is the offer's, not
+    /// the item's: a sale says where it went, not where it came from. True: the row moved.
+    pub fn offer(&mut self, o: &Offer, standing: Option<&str>, zone: Option<&str>, last: &str) -> bool {
+        self.offers.add(o, standing, zone, last);
+        true
     }
 
     /// A later disposal of the name — the disposition and the line, nothing placing it anywhere.
@@ -224,6 +250,9 @@ impl Serialize for Details {
             let mut all: Vec<&String> = self.zones.0.keys().collect();
             all.sort();
             zones["all"] = json!(all);
+        }
+        if let Some(v) = self.offers.serve() {
+            out.insert("offers".to_string(), v);
         }
         let sums = [("salesCopper", self.sales_copper), ("paidCopper", self.paid_copper)];
         for (name, copper) in sums {

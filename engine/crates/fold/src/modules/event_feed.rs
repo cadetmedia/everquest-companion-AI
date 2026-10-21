@@ -23,6 +23,10 @@ use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::sync::Arc;
 
+/// The KEEP row a merchant's offer for a gap item makes (owner, 2026-10-20).
+#[path = "event_feed_offer.rs"]
+mod offer;
+
 /// How many entries the feed keeps. Oldest fall off the back.
 pub const FEED_CAP: usize = 100;
 
@@ -41,21 +45,12 @@ pub const CONSIDER_FEED_DEDUPE_MS: i64 = 10_000;
 /// verbatim clause — never a guessed tier, and no numeric ordering, which the log does not state.
 const CONSIDER_DIFFICULTY_SHORT: &[(&str, &str)] = &[
     ("what would you like your tombstone to say?", "suicide"),
-    (
-        "looks like it would wipe the floor with you!",
-        "wipes the floor",
-    ),
+    ("looks like it would wipe the floor with you!", "wipes the floor"),
     ("it appears to be quite formidable.", "formidable"),
     ("looks like quite a gamble.", "a gamble"),
     ("looks kind of dangerous.", "dangerous"),
-    (
-        "you would probably win this fight... it's not certain though.",
-        "probably win",
-    ),
-    (
-        "looks quite risky, but might be worth a try.",
-        "worth a try",
-    ),
+    ("you would probably win this fight... it's not certain though.", "probably win"),
+    ("looks quite risky, but might be worth a try.", "worth a try"),
     ("looks kind of risky, but you might win.", "might win"),
     ("looks kind of risky... you might win.", "might win"),
     ("you could probably win this fight.", "likely win"),
@@ -149,6 +144,8 @@ pub struct EventFeedModule {
     knowledge: Option<Arc<dyn Knowledge>>,
     /// The Gaps tab's names for a mob (wiki spellings, pets), so the mark agrees with the tab.
     mob_names: MobNames,
+    /// The Gaps tab's item test, so a KEEP mark agrees with its Items rows.
+    items: crate::modules::gaps_keys::ItemIndex,
     /// The announce cursor — see [`crate::announce`]. Every path into the ring goes through
     /// `append`, so that one function is the whole announce surface.
     announce: crate::announce::Announce,
@@ -337,6 +334,7 @@ impl EqModule for EventFeedModule {
         match ev.kind() {
             "consider" => self.note_consider(ev),
             "loot" => self.probe_loot(ev),
+            "unknown" => self.note_offer(ev),
             _ => {}
         }
     }
@@ -356,7 +354,9 @@ impl EqModule for EventFeedModule {
     }
 
     fn install_knowledge(&mut self, k: &Arc<dyn Knowledge>) {
-        self.mob_names = MobNames::new(&k.gap_index().mob_names);
+        let index = k.gap_index();
+        self.mob_names = MobNames::new(&index.mob_names);
+        self.items = crate::modules::gaps_keys::ItemIndex::new(&index.item_pages);
         self.knowledge = Some(Arc::clone(k));
     }
 }
