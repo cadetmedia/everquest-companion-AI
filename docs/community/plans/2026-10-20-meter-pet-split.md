@@ -96,8 +96,29 @@ pet whose master is known. Nothing is built yet. Rules first: `docs/community/RU
 
 ### Rendering
 
-- Two lines per row. Owner segment: rank + name / `dps · total`. Pet segment: name /
-  `dps · total`. Total cell: pair dps / pair total.
+Mock (look and feel only, three layouts switchable):
+https://claude.ai/artifact/5AKWz78ZYQrDD6suETpye7. Malkil's answers to it, 2026-10-20, are
+below; the mock's option 3 follows them.
+
+- **A pair** (owner + pet) is a two-line row. Owner segment: rank + name / `dps · total`. Pet
+  segment: name / `dps · total`. Total cell: pair dps / pair total. "The double height line is
+  just to accommodate the extra text" (owner).
+- **Anything else is one line**, today's `Bar` unchanged: a player with no pet, and a pet whose
+  master is not known (an unpaired `pet`/`allyPet`, an `other` row). Malkil: "If a player doesn't
+  have a pet or if the pet doesn't have a master, it can be displayed on a single height line."
+- **Rank: the row is cut short at its share of the top row** (Malkil: "C is closest"). A pair's
+  segments plus total cell span `SplitRow.pct` of the width, the rest is empty track, like today's
+  fill. A row too short for its own text grows to fit it, so short rows are only roughly to scale.
+  A one-line row fills to `pct` exactly as today.
+- **A pet beside its owner shows its own name only, and no kind tag** (Malkil: "it doesn't need
+  to display 'pet' in the bar's title, since we already know it's a pet when it's on the same line
+  as a player"). Your pet's name is already bare. A group-mate's pet arrives as
+  `Pet (<pet>) - <Owner>` (engine `ally_pet_source`); when `splitRows` pairs it, the renderer
+  strips exactly the prefix `Pet (` and the suffix `) - <owner row's name>`, and keeps the full
+  name if the string is not that shape. Not chosen: a new `SourceView` field for the bare name
+  (schema, `gen:protocol`, fixtures, engine harness) for a string the renderer can take apart
+  against the owner row it already holds. An unpaired ally pet keeps its full name, since no owner
+  sits beside it.
 - Segments: flex, `flex-grow` = the segment's total, basis 0, so widths follow the share. The
   figures line never clips; the name ellipsizes. A floor keeps a small pet's segment readable
   (the mock is about 57/43 for a 69/31 split, so the floor is visible in the ask).
@@ -106,8 +127,9 @@ pet whose master is known. Nothing is built yet. Rules first: `docs/community/RU
   overlay's copy in `meterBars.tsx` is kept in step (its comment says so).
 - Clicks (interactive only): a segment drills its source. The total cell drills nothing. Locked
   overlay: no affordances, as now. No hover on the overlay bars (JOS-358).
-- Combat tab: the `~` ambiguity chip rides on the pet segment's name; hit/resist badges after the
-  figures, dropped by overflow when narrow.
+- Combat tab: the owner segment keeps its kind chip (`group`) and hit/resist badges after the
+  figures, dropped by overflow when narrow; the pet segment has no kind chip. The `~` ambiguity
+  chip still rides on the pet segment, because it is about the number, not the kind.
 - Incoming direction and the healing meter: unchanged (`SegmentPanel` already applies pet layout
   to `mode === 'out'` only).
 
@@ -143,16 +165,17 @@ pet whose master is known. Nothing is built yet. Rules first: `docs/community/RU
 6. **Close.** Overview card, e2e, gate on the branch and on the scratch merge, owner tests in the
    app, then `main_community`.
 
-## Owner questions (before phase 4)
+## Questions
 
-1. **How a row shows its rank.** The mock's row is full width; in a list the bar length was the
-   ranking. Recommended: every row full width (the mock), plus a 2 px strip under it at the row's
-   share of the top row. Alternatives: no strip; or the segments' area shortened to that share.
-2. **Rows with no pet** (a warrior, a mob on Incoming is not affected). Recommended: one segment
-   with the name only, the total cell carries dps and total, so the column of totals lines up.
-3. **The Overview damage card** (not asked for, but reads the same pref). Recommended: split shows
+Answered by Malkil on the mock, relayed by the owner, 2026-10-20 (Rendering has the detail):
+
+1. **How a row shows its rank:** cut short at its share of the top row ("C is closest"). Not
+   chosen: full-width rows (the first mock), full width with a share strip.
+2. **Rows with no pet, and pets with no known master:** one line, today's bar.
+3. **A pet beside its owner:** its own name only, no "pet" tag.
+
+Open:
+
+4. **The Overview damage card** (not asked for, but reads the same pref). Recommended: split shows
    there as option 1 (one bar per owner, pet inside), because the card is a glance at a quarter
    width.
-4. **A group-mate's pet segment name.** The engine names it `Pet (Vanab) - Malkil`; beside
-   Malkil's own segment the owner repeats. Recommended: show it as the engine names it (no parsing
-   of a display string); trim later if the owner wants.

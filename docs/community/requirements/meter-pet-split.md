@@ -10,3 +10,6 @@ The branch does not exist yet; the plan is `plans/2026-10-20-meter-pet-split.md`
 | 2026-10-20 | Malkil | On both the overlay and the Combat tab ("Both, if possible"). | asked |
 | 2026-10-20 | Malkil | Party members' pets too, "if it knows the pet's master". | asked |
 | 2026-10-20 | owner | Options 1 (pet inside your bar) and 2 (pet its own bar) stay; this is a third choice beside them. The total cell need not be purple: any fitting colour. | asked |
+| 2026-10-20 | Malkil, relayed by owner | On the mock: a row is cut short at its share of the top row ("C is closest"). | asked |
+| 2026-10-20 | Malkil, relayed by owner | "If a player doesn't have a pet or if the pet doesn't have a master, it can be displayed on a single height line instead of a double height line." Owner: "The double height line is just to accommodate the extra text." | asked |
+| 2026-10-20 | Malkil, relayed by owner | A pet beside its owner does not say "pet" ("we already know it's a pet when it's on the same line as a player"): its own name only, so a group-mate's pet reads `Zobaner`, not `Pet (Zobaner) - Bob`. | asked |
