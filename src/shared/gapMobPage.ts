@@ -5,6 +5,7 @@
 // whose `|zone` is where the player met the mob wins; with no way to choose, none is picked. An item
 // page's `|soldby` row finds its vendor the same way (`vendorFinder`, review D1).
 
+import { gapMobKey, perObject } from './gapMemo'
 import { mobKey } from './mobKey'
 import { zoneKey } from './zones'
 
@@ -15,14 +16,23 @@ interface Paged {
   zones?: string[]
 }
 
-/** Every name a page goes by → its pages. */
-export function pagesByMob<M extends Paged>(catalog: readonly M[]): Map<string, M[]> {
-  const out = new Map<string, M[]>()
+/** Every name a page goes by → its pages; built once per catalog (gapMemo.ts), so it is read-only. */
+export function pagesByMob<M extends Paged>(catalog: readonly M[]): ReadonlyMap<string, readonly M[]> {
+  // Sound: every page in the index is an element of `catalog`, so it is an M.
+  return pagesIndex(catalog) as ReadonlyMap<string, readonly M[]>
+}
+
+const pagesIndex = perObject((catalog: readonly Paged[]): ReadonlyMap<string, readonly Paged[]> => {
+  const out = new Map<string, Paged[]>()
   for (const m of catalog) {
-    for (const key of new Set([m.name, m.page, ...(m.otherNames ?? [])].map(mobKey))) out.set(key, [...(out.get(key) ?? []), m])
+    for (const key of new Set([m.name, m.page, ...(m.otherNames ?? [])].map(gapMobKey))) {
+      const pages = out.get(key)
+      if (pages === undefined) out.set(key, [m])
+      else pages.push(m)
+    }
   }
   return out
-}
+})
 
 /** Whether the catalog has a mob of this name (any of its names, `mobKey`-folded). */
 export function catalogNameTest(catalog: readonly Paged[]): (name: string) => boolean {
@@ -44,8 +54,9 @@ export function pickPage(pages: readonly Paged[] | undefined, zone: string): str
  * 7,954 pages that field holds loot shared across mobs (Classic Raid Tier Treasures on 58 pages,
  * a plane's set loot), and `|known_loot` the mob's own. A name counts as common loot when at least
  * three pages list it there and more pages list it there than under `|known_loot`. Lower-cased.
+ * Built once per catalog (gapMemo.ts), so it is read-only.
  */
-export function commonLootNames(catalog: readonly { drops?: string[]; commonDrops?: string[] }[]): Set<string> {
+export const commonLootNames = perObject((catalog: readonly { drops?: string[]; commonDrops?: string[] }[]): ReadonlySet<string> => {
   const common = new Map<string, number>()
   const known = new Map<string, number>()
   for (const m of catalog) {
@@ -53,7 +64,7 @@ export function commonLootNames(catalog: readonly { drops?: string[]; commonDrop
     for (const d of m.drops ?? []) known.set(d.toLowerCase(), (known.get(d.toLowerCase()) ?? 0) + 1)
   }
   return new Set([...common].filter(([name, n]) => n >= 3 && n > (known.get(name) ?? 0)).map(([name]) => name))
-}
+})
 
 /** A vendor as an item page's `|soldby` row names it (review D1): its page, its zone, its one spawn point. */
 export interface VendorPlace {

@@ -16,12 +16,18 @@
 import type { GapRow } from './gaps'
 import { spanStamps, widen, type Span } from './gapTimes'
 import { commonLootNames, pagesByMob, pickPage } from './gapMobPage'
+import { gapMobKey as mobKey, memoFold, perObject } from './gapMemo'
 import { itemBaseName } from './itemStats'
-import { mobKey } from './mobKey'
 import type { LootEvent } from './types'
 
+// SPEED (perf audit, 2026-10-20: each Gaps visit 400–500 ms): every index below that reads only the
+// catalog or the groups is built once per object (gapMemo.ts `perObject`), and the two folds are
+// remembered (`memoFold`). The server-wide rule's `ties` used to rebuild the groups' keys and rescan
+// all ~7,900 pages per looted item; it now reads `catalogTies` and `groupTies`. The rows are the
+// same, byte for byte: only where the work happens moved.
+
 /** An item name as the catalog keys its drops: `+N` stripped, case folded (itemSources.ts `sourceItemKey`). */
-const sourceItemKey = (name: string): string => itemBaseName(name).toLowerCase()
+const sourceItemKey = memoFold((name: string): string => itemBaseName(name).toLowerCase())
 
 /**
  * The key with a leading article folded away, for matching a loot line to a page's list only (owner,
@@ -29,7 +35,7 @@ const sourceItemKey = (name: string): string => itemBaseName(name).toLowerCase()
  * page is `An Alligator Tooth`, while `Alligator Tooth` there is a disambiguation page whose
  * transclusion puts a list inside the mob's loot list.
  */
-const bareItemKey = (name: string): string => sourceItemKey(name).replace(/^(a|an|the) /, '')
+const bareItemKey = memoFold((name: string): string => sourceItemKey(name).replace(/^(a|an|the) /, ''))
 
 const GLOBAL_MOBS = 10
 const GLOBAL_TIES = 2
@@ -69,27 +75,55 @@ function listedDrops(m: CatalogMob, aliases: DropAliases): string[] {
   return [...named, ...bare, ...named.flatMap((d) => (aliases[d] === undefined ? [] : [aliases[d]]))]
 }
 
+/** The aliases when none are given: one object, so the per-(catalog, aliases) index below is found again. */
+const NO_ALIASES: DropAliases = {}
+
 /** Every catalog name → the drop names (item keys) its pages list. */
-function dropsByMob(catalog: readonly CatalogMob[], aliases: DropAliases = {}): Map<string, Set<string>> {
+function dropsByMob(catalog: readonly CatalogMob[], aliases: DropAliases): ReadonlyMap<string, ReadonlySet<string>> {
   const out = new Map<string, Set<string>>()
   for (const m of catalog) {
+    // One page's keys, once: the page's every name shares them.
+    const keys = listedDrops(m, aliases).flatMap((d) => [sourceItemKey(d), bareItemKey(d)])
     for (const name of [m.name, m.page, ...(m.otherNames ?? [])]) {
       const set = out.get(mobKey(name)) ?? new Set<string>()
-      for (const d of listedDrops(m, aliases)) set.add(sourceItemKey(d)).add(bareItemKey(d))
+      for (const k of keys) set.add(k)
       out.set(mobKey(name), set)
     }
   }
   return out
 }
 
-/** Item key → the groups that list it. */
-function groupsByItem(groups: DropGroups): Map<string, string[]> {
+/** `dropsByMob`, built once per (catalog, aliases). */
+const listedFor = perObject((catalog: readonly CatalogMob[]) => perObject((aliases: DropAliases) => dropsByMob(catalog, aliases)))
+
+/** Item key → the groups that list it; built once per groups table. */
+const groupsByItem = perObject((groups: DropGroups): ReadonlyMap<string, readonly string[]> => {
   const out = new Map<string, string[]>()
   for (const [group, members] of Object.entries(groups)) {
     for (const m of members) out.set(sourceItemKey(m), [...(out.get(sourceItemKey(m)) ?? []), group])
   }
   return out
-}
+})
+
+/** Each group as `ties` reads it, keys folded, in the table's order: (group key, member keys). Once per table. */
+const groupTies = perObject((groups: DropGroups): readonly (readonly [string, readonly string[]])[] =>
+  Object.entries(groups).map(([g, ms]) => [sourceItemKey(g), ms.map(sourceItemKey)] as const)
+)
+
+/**
+ * Drop key → the mobs (`mobKey` of each page's `|name`) whose page lists it under either loot field,
+ * raw names only (no aliases, no unqualified spellings: what `ties` always counted). Once per catalog.
+ */
+const catalogTies = perObject((catalog: readonly CatalogMob[]): ReadonlyMap<string, ReadonlySet<string>> => {
+  const out = new Map<string, Set<string>>()
+  for (const m of catalog) {
+    for (const d of [...(m.drops ?? []), ...(m.commonDrops ?? [])]) {
+      const mobs = out.get(sourceItemKey(d)) ?? new Set<string>()
+      out.set(sourceItemKey(d), mobs.add(mobKey(m.name)))
+    }
+  }
+  return out
+})
 
 interface Missing {
   mob: string
@@ -130,8 +164,8 @@ function addDrop(missing: Map<string, Missing>, e: LootEvent, mob: string, filed
 }
 
 export function dropGaps(loot: readonly LootEvent[], catalog: readonly CatalogMob[], groups: DropGroups, side: DropSide = {}): GapRow[] {
-  const { itemMobs, aliases = {} } = side
-  const listed = dropsByMob(catalog, aliases)
+  const { itemMobs, aliases = NO_ALIASES } = side
+  const listed = listedFor(catalog)(aliases)
   const pages = pagesByMob(catalog)
   const common = commonLootNames(catalog)
   const inGroups = groupsByItem(groups)
@@ -147,7 +181,7 @@ export function dropGaps(loot: readonly LootEvent[], catalog: readonly CatalogMo
 }
 
 /** What a looted item is filed as when its mob's page lists neither it nor a group holding it; null when listed or the mob is unknown. */
-function filedAs(e: LootEvent, listed: ReadonlyMap<string, Set<string>>, inGroups: ReadonlyMap<string, string[]>): { name: string; group: boolean } | null {
+function filedAs(e: LootEvent, listed: ReadonlyMap<string, ReadonlySet<string>>, inGroups: ReadonlyMap<string, readonly string[]>): { name: string; group: boolean } | null {
   const page = e.source === undefined ? undefined : listed.get(mobKey(e.source))
   if (page === undefined || page.has(sourceItemKey(e.item)) || page.has(bareItemKey(e.item))) return null
   const its = inGroups.get(sourceItemKey(e.item)) ?? []
@@ -161,19 +195,24 @@ function withoutServerWide(pairs: Missing[], catalog: readonly CatalogMob[], gro
   const mobsOf = new Map<string, Set<string>>()
   for (const p of pairs) mobsOf.set(sourceItemKey(p.name), (mobsOf.get(sourceItemKey(p.name)) ?? new Set()).add(mobKey(p.mob)))
   const wide = new Set<string>()
+  const wiki = { byDrop: catalogTies(catalog), entries: groupTies(groups), itemMobs }
   for (const [subject, mobs] of mobsOf) {
-    if (mobs.size >= GLOBAL_MOBS && ties(subject, catalog, groups, itemMobs).size <= GLOBAL_TIES) wide.add(subject)
+    if (mobs.size >= GLOBAL_MOBS && ties(subject, wiki).size <= GLOBAL_TIES) wide.add(subject)
   }
   return pairs.filter((p) => !wide.has(sourceItemKey(p.name)))
 }
 
 /** Every mob the wiki ties a drop (an item or group key) to, on either side of the two pages. */
-function ties(subject: string, catalog: readonly CatalogMob[], groups: DropGroups, itemMobs: ItemMobs): Set<string> {
-  const entries = Object.entries(groups).map(([g, ms]) => [sourceItemKey(g), ms.map(sourceItemKey)] as const)
+function ties(
+  subject: string,
+  wiki: { byDrop: ReadonlyMap<string, ReadonlySet<string>>; entries: ReturnType<typeof groupTies>; itemMobs: ItemMobs }
+): Set<string> {
+  const { byDrop, entries, itemMobs } = wiki
   const names = new Set([subject, ...(entries.find(([g]) => g === subject)?.[1] ?? [])])
+  // In the table's order, as before: a group added here can be a later group's member.
   for (const [g, ms] of entries) if (ms.some((m) => names.has(m))) names.add(g)
   const out = new Set<string>()
-  for (const m of catalog) if ([...(m.drops ?? []), ...(m.commonDrops ?? [])].some((d) => names.has(sourceItemKey(d)))) out.add(mobKey(m.name))
+  for (const n of names) for (const mob of byDrop.get(n) ?? []) out.add(mob)
   for (const n of names) for (const mob of itemMobs.get(n) ?? []) out.add(mobKey(mob))
   return out
 }
