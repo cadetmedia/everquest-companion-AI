@@ -8,26 +8,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { doneKey, keptDoneMarks, type GapRow } from '@shared/gaps'
-
-const DONE_KEY = 'eq.gaps.done'
-
-function load(): Record<string, string> {
-  try {
-    const raw = localStorage.getItem(DONE_KEY)
-    const parsed: unknown = raw === null ? {} : JSON.parse(raw)
-    return parsed !== null && typeof parsed === 'object' ? (parsed as Record<string, string>) : {}
-  } catch {
-    return {}
-  }
-}
-
-function save(done: Record<string, string>): void {
-  try {
-    localStorage.setItem(DONE_KEY, JSON.stringify(done))
-  } catch {
-    // A blocked store keeps the marks for this session only.
-  }
-}
+import { loadDoneMarks as load, saveDoneMarks as save } from './doneMarksStore'
 
 export interface DoneMarks {
   done: ReadonlySet<string>
