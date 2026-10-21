@@ -17,14 +17,17 @@ The plan is `plans/2026-10-20-screenshot-to-wiki.md`.
 | 2026-10-21 | owner | Stages are fine ("whatever you think is best"). | stage 1 items, stage 2 the mob picture, both on the branch |
 | 2026-10-21 | owner | Unit tests with test images, "if possible use the ones i gave you". | built: `tests/fixtures/shots/` (owner's and Malkil's screenshots), `tests/shotScreenshots.test.mts`; the icon checks skip without an install |
 | 2026-10-21 | owner | Keep the app's size in check ("how big is this going to BLOAT the app?"). | built: the installer keeps ~9 MB of the packages' 60 (electron-builder.yml excludes); `npm run dist` to confirm |
-| 2026-10-21 | owner (tested, relayed by the Gaps coordinator) | The paste box is too wordy: "Click here and paste an image to read it", the second line gone or a few words. | asked |
-| 2026-10-21 | owner | A nonsense image (a cat) creates no reading and shows no statsblock or clear controls: "ERROR: unable to read image", nothing saved. | asked |
+| 2026-10-21 | owner (tested, relayed by the Gaps coordinator) | The paste box is too wordy: "Click here and paste an image to read it", the second line gone or a few words. | built: "Click here and paste an image to read it" (snip: Win+Shift+S) |
+| 2026-10-21 | owner | A nonsense image (a cat) creates no reading and shows no statsblock or clear controls: "ERROR: unable to read image", nothing saved. | built: `shared/itemShotKeep.ts shotKind`; nothing kept, "ERROR: unable to read image" |
 | 2026-10-21 | owner | Click-to-paste on the big box stays as it is for now. | kept |
 | 2026-10-21 | owner | Asked why "Quest" becomes `QUEST ITEM`: the caps flag line the page uses writes it so on the wiki (474 cached item pages `QUEST ITEM`, 1 bare `QUEST`; 614 tooltip-case pages write `Quest`). | answered, unchanged unless the owner says otherwise |
-| 2026-10-21 | owner | Icon matches: a "Show more" button, 5 more a click (5, 10, 15...). | asked |
-| 2026-10-21 | owner | With a long statsblock the clear button sat below the box: the clear controls go beside the paste box, always visible after a paste. | asked |
-| 2026-10-21 | owner | Two pastes (the item window, then its Lore tab) are fine; make obvious which part is filled. | asked |
-| 2026-10-21 | owner | No full Undo: a small remove control beside each kept part, "Clear image data" and "Clear lore data", each shown only when there is something to clear. | asked (replaces the proposed Undo and the Forget rename) |
-| 2026-10-21 | owner | A window whose name is not the row's saves nothing until "Use it anyway" or "Discard". | asked |
-| 2026-10-21 | owner | A description paste replaces every description field (one the new window lacks is cleared); a Lore paste replaces only the lore. | asked |
-| 2026-10-21 | owner | A stray screenshot that is not an item window is refused. | asked |
+| 2026-10-21 | owner | Icon matches: a "Show more" button, 5 more a click (5, 10, 15...). | built: 30 matches served, 5 shown, +5 a click |
+| 2026-10-21 | owner | With a long statsblock the clear button sat below the box: the clear controls go beside the paste box, always visible after a paste. | built: the parts row sits right under the paste box |
+| 2026-10-21 | owner | Two pastes (the item window, then its Lore tab) are fine; make obvious which part is filled. | built: "Item window ✓" / "Lore ✓", or "not pasted" |
+| 2026-10-21 | owner | No full Undo: a small remove control beside each kept part, "Clear image data" and "Clear lore data", each shown only when there is something to clear. | built: each part chip's × ("Clear image data", "Clear lore data"), shown only when filled |
+| 2026-10-21 | owner | A window whose name is not the row's saves nothing until "Use it anyway" or "Discard". | built: letters only, two slips allowed (`sameItem`) |
+| 2026-10-21 | owner | A description paste replaces every description field (one the new window lacks is cleared); a Lore paste replaces only the lore. | built (`keptAfter`) |
+| 2026-10-21 | owner | A stray screenshot that is not an item window is refused. | built: a Lore tab needs its tab word and a sentence; an icon alone needs a close fit (<= 900) |
+| 2026-10-21 | owner | A mob picture's Save dialog opens in the last folder saved to, kept across restarts (as MS Paint); Pictures on the first save or when that folder is gone. | built: `userData/shot-settings.json lastDir` |
+| 2026-10-21 | owner | A preference "Save mob pictures automatically to: [folder]", off by default: no dialog, "Saved to ... · Open folder · Upload it to the wiki"; an existing file is asked about or suffixed, the safer one. | built: the setting sits in the mob picture panel; an existing file is replaced only on "Replace" (no suffix: the wiki needs the exact `npc_<name>.png`) |
+| 2026-10-21 | owner | A mob picture is checked: a blank or one-colour picture is refused; the NPC name is looked for by OCR (letters only, no case, no "(Zone)"); not found warns "Couldn't find <mob> in this picture" with keep or discard, never blocks. Name tags are fine on EQ wikis. | built: refused when the brightness varies under 5 levels; the name check runs after the save (OCR of a full screen takes seconds) and offers Keep it / Delete it |
