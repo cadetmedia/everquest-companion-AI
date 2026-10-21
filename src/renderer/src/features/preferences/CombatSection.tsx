@@ -18,9 +18,10 @@
 // "what does this app count".
 
 import { type JSX } from 'react'
-import { FormControlLabel, Stack, Switch, Typography } from '@mui/material'
+import { FormControlLabel, Stack, Switch, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material'
 import BarChartIcon from '@mui/icons-material/BarChart'
-import { useCombinePetRow } from '../combat/useCombatPrefs'
+import { usePetLayout } from '../combat/useCombatPrefs'
+import { PET_LAYOUTS, type PetLayout } from '../combat/combatPrefs'
 import { useSelfMeterNameToggle } from '../combat/useSelfMeterName'
 import { MeterScopeSetting } from './MeterScopeSetting'
 import { ResistEvidenceSetting } from './ResistEvidenceSetting'
@@ -43,26 +44,48 @@ import type { PrefSection } from './PreferencesView'
  * the engine's own pet fold instead, and showed a different breakdown for the same fight). The
  * Combat tab, the Overview card and the floating overlay meters all read THIS value and build
  * their rows with `petRows.meterPanel`.
+ *
+ * A THIRD CHOICE, opt-in (Malkil, owner, 2026-10-21): "With its owner" puts each pet whose master
+ * is known on the line under that master, over one shared bar (petRows.groupedPanel), for your pet
+ * and for a group-mate's once its owner has typed /pet who leader.
  */
-function PetNestingSetting(): JSX.Element {
-  const [combine, setCombine] = useCombinePetRow()
+const LAYOUT_LABEL: Record<PetLayout, string> = {
+  nested: 'Inside your bar',
+  separate: 'Its own bar',
+  grouped: 'With its owner'
+}
+const LAYOUT_HINT: Record<PetLayout, string> = {
+  nested:
+    'Your pet’s damage rides inside your bar, and appears once more as one row inside your breakdown - click it for the pet’s own skills. Your per-skill numbers stay yours; the pet’s damage is never folded into them.',
+  separate: 'Your pet gets its own bar beside yours, and each bar drills into its own skills.',
+  grouped:
+    'Each pet sits on the line under its owner, grouped by a shared bar, with the pair’s total on the right. A group-mate’s pet joins its owner once they have typed /pet who leader near you. The Overview card shows your pet inside your bar.'
+}
+
+function PetLayoutSetting(): JSX.Element {
+  const [layout, setLayout] = usePetLayout()
   return (
     <Stack spacing={1}>
-      <FormControlLabel
-        control={
-          <Switch
-            size="small"
-            checked={combine}
-            data-testid="pref-combine-pet"
-            onChange={(e) => setCombine(e.target.checked)}
-          />
-        }
-        label={<Typography variant="body2">Show your pet inside your damage</Typography>}
-      />
+      <ToggleButtonGroup
+        size="small"
+        exclusive
+        value={layout}
+        data-testid="pref-pet-layout"
+        // `exclusive` hands back null when the chosen button is pressed again; there is no fourth
+        // state, so that is a no-op.
+        onChange={(_e, v: PetLayout | null) => {
+          if (v !== null) setLayout(v)
+        }}
+        sx={{ alignSelf: 'flex-start' }}
+      >
+        {PET_LAYOUTS.map((l) => (
+          <ToggleButton key={l} value={l} data-testid={`pref-pet-layout-${l}`} sx={{ px: 1.5, py: 0.25 }}>
+            {LAYOUT_LABEL[l]}
+          </ToggleButton>
+        ))}
+      </ToggleButtonGroup>
       <Typography variant="caption" color="text.secondary">
-        {combine
-          ? 'Your pet’s damage rides inside your bar, and appears once more as one row inside your breakdown - click it for the pet’s own skills. Your per-skill numbers stay yours; the pet’s damage is never folded into them.'
-          : 'Your pet gets its own bar beside yours, and each bar drills into its own skills.'}
+        {LAYOUT_HINT[layout]}
       </Typography>
     </Stack>
   )
@@ -115,9 +138,10 @@ export function combatSection(): PrefSection {
       },
       {
         id: 'combine-pet',
-        label: 'Show your pet inside your damage',
-        keywords: 'pet combine merge damage breakdown solo meter drill charm nest source zoom default level',
-        content: <PetNestingSetting />
+        label: 'Where your pet’s damage shows',
+        keywords:
+          'pet pets combine merge damage breakdown solo meter drill charm nest source zoom default level owner master group grouped stacked together party leader',
+        content: <PetLayoutSetting />
       },
       {
         id: 'resist-evidence',

@@ -29,6 +29,7 @@ import { QuietNote, SkillBar } from './combatShared'
 import { MoreRows } from './meterBits'
 import { EntityRow } from './EntityRow'
 import { PetBar } from './PetBar'
+import { PetGroupRows } from './PetGroupRows'
 import { procAnnotationFor, procTagIndex } from './procRows'
 import type { Drill } from './dashboardData'
 import type { MeterPanel, OwnRow } from './petRows'
@@ -231,6 +232,8 @@ export function MeterRows({
   const shown = maxRows === undefined ? panel.sources : panel.sources.slice(0, maxRows)
   const hidden = panel.sources.length - shown.length
   if (shown.length === 0) return <QuietNote>{empty ?? 'No outgoing damage in this segment.'}</QuietNote>
+  // The "With its owner" layout (petRows.groupedPanel): set only on the Combat tab's outgoing list.
+  if (panel.groups) return <PetGroupRows groups={panel.groups} setDrill={setDrill} />
   return (
     <>
       {shown.map((e, i) => (

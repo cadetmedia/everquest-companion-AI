@@ -26,24 +26,10 @@ import { effectiveScope, isScopedKind } from '../../../../shared/roster'
 import type { MeterScope, RosterSnap } from '@shared/roster'
 import type { HealSourceView, SourceView } from '@shared/combat'
 
-/** The canonical roster key behind a `member:<key>` source id, or null for any other row. Both the
- *  `'member'` and the `'other'` kind carry this id shape (JOS-430) — one person, one row, whether
- *  or not the roster has learned their name yet. */
-export function memberKeyOf(id: string): string | null {
-  return id.startsWith('member:') ? id.slice('member:'.length) : null
-}
-
-/**
- * The CHARMER's canonical key behind an ally-pet row id (JOS-250). The id is
- * `allypet:<charmerKey>:<petKey>` — the charmer sits in the middle because the pet's own key may
- * itself contain a colon-free but space-bearing mob name, and because the ROW is about the person.
- */
-export function charmerKeyOf(id: string): string | null {
-  if (!id.startsWith('allypet:')) return null
-  const rest = id.slice('allypet:'.length)
-  const cut = rest.indexOf(':')
-  return cut <= 0 ? null : rest.slice(0, cut)
-}
+// The two row-id readers live beside the pet grouping, which pairs an ally pet with its charmer by
+// the same keys (shared/combatPetGroups.ts); re-exported here for this file's callers and tests.
+import { charmerKeyOf, memberKeyOf } from '../../../../shared/combatPetGroups'
+export { charmerKeyOf, memberKeyOf }
 
 /** The canonical key behind a healer id (`heal:<key>`, or 'you' for your own row). */
 function healerKeyOf(id: string): string | null {

@@ -60,11 +60,33 @@ export async function setMeterScope(page: Page, scope: Scope, back: string): Pro
   await page.click(`[data-testid="${back}"]`, { timeout: 30_000 })
 }
 
-/** The pet-nesting switch — 'Show your pet inside your damage' (features/preferences). */
-const COMBINE_PET = '[data-testid="pref-combine-pet"] input'
+/** The three pet layouts, exactly as `features/combat/combatPrefs.PET_LAYOUTS` spells them. */
+export type PetLayout = 'nested' | 'separate' | 'grouped'
+
+/**
+ * Choose a PET LAYOUT through Preferences > Combat ('Where your pet's damage shows'), and return to
+ * `back`. Clicks the control, as the scope step does, and waits for MUI to mark it selected.
+ * Returns whether the control agreed.
+ */
+export async function setPetLayout(page: Page, layout: PetLayout, back: string): Promise<boolean> {
+  await page.click('[data-testid="nav-preferences"]', { timeout: 30_000 })
+  await page.waitForSelector('[data-testid="prefs-rail-combat"]', { timeout: 20_000 })
+  await page.click('[data-testid="prefs-rail-combat"]')
+  const button = `[data-testid="pref-pet-layout-${layout}"]`
+  await page.waitForSelector(button, { timeout: 20_000 })
+  if ((await page.$$(`${button}.Mui-selected`)).length === 0) await page.click(button, { timeout: 15_000 })
+  const n = await settle(
+    async () => (await page.$$(`${button}.Mui-selected`)).length,
+    (v) => v === 1,
+    { timeoutMs: 8_000 }
+  )
+  await page.click(`[data-testid="${back}"]`, { timeout: 30_000 })
+  return n === 1
+}
 
 /**
  * Turn the PET NESTING preference on or off through Preferences > Combat, and return to `back`.
+ * On is the 'Inside your bar' layout, off is 'Its own bar' (the switch became a three-way choice).
  *
  * The same two-window act as the scope above, and for the same reason it CLICKS THE CONTROL: this
  * preference reaches four surfaces through localStorage plus the DOM's own 'storage' event, and a
@@ -76,16 +98,7 @@ const COMBINE_PET = '[data-testid="pref-combine-pet"] input'
  * control to agree, so a caller may state what it wants rather than track what it did.
  */
 export async function setCombinePet(page: Page, on: boolean, back: string): Promise<boolean> {
-  await page.click('[data-testid="nav-preferences"]', { timeout: 30_000 })
-  await page.waitForSelector('[data-testid="prefs-rail-combat"]', { timeout: 20_000 })
-  await page.click('[data-testid="prefs-rail-combat"]')
-  await page.waitForSelector(COMBINE_PET, { timeout: 20_000 })
-  const isOn = (): Promise<boolean> => page.$eval(COMBINE_PET, (el) => (el as HTMLInputElement).checked)
-  if ((await isOn()) !== on) await page.click(COMBINE_PET, { timeout: 15_000 })
-  // The CONDITION the click produces — the checkbox agreeing it took the value, never a sleep.
-  const settled = await settle(isOn, (v) => v === on, { timeoutMs: 8_000 })
-  await page.click(`[data-testid="${back}"]`, { timeout: 30_000 })
-  return settled === on
+  return setPetLayout(page, on ? 'nested' : 'separate', back)
 }
 
 /**

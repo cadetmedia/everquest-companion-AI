@@ -19,9 +19,9 @@ import { meterDrill, skillsForTarget, type Drill, type MeterMode, type TargetDet
 import { HealBody } from './HealPanel'
 import { DrillCrumb, MeterRows, crumbOf } from './MeterRows'
 import { SegmentHeader } from './SegmentHeader'
-import { meterPanel, panelTotals, type MeterPanel } from './petRows'
+import { groupedPanel, meterPanel, panelTotals, type MeterPanel } from './petRows'
 import { scopeSources, scopeTotals } from './meterScope'
-import { useCombinePetRow } from './useCombatPrefs'
+import { usePetLayout } from './useCombatPrefs'
 import { useModule } from '../../lib/useModule'
 import { selfMeterLabel, withSelfLabel } from './selfMeterLabel'
 import { useShowSelfName } from './useSelfMeterName'
@@ -308,7 +308,7 @@ export function SegmentBody({
   // persist because they are answers a user would have to re-derive; a tab is one click.)
   const [tab, setTab] = useState<MeterTab>('damage')
   const dim = scopedDimension(seg, mode, scope, roster)
-  const [combinePetRow] = useCombinePetRow()
+  const [petLayout] = usePetLayout()
   // Show the self row as the tailed character's own name — `Primitive (You)` — when the user
   // asked for it (features/combat/selfMeterLabel.ts). Off by default: `withSelfLabel` hands back
   // `dim.rows` by reference, so this surface is byte-identical to before the feature.
@@ -321,7 +321,12 @@ export function SegmentBody({
   // THE one row builder — the same call the floating overlay makes (petRows.meterPanel). Nesting
   // is an OUTGOING idea: the Incoming direction lists enemies, and none of them owns a pet of
   // yours, so the preference is folded into the `combine` argument rather than tested downstream.
-  const panel = meterPanel(scoped, mode === 'out' && combinePetRow, meterDrill(drill))
+  // Grouping likewise, applied over the separate list (petRows.groupedPanel).
+  const out = mode === 'out'
+  const panel = groupedPanel(
+    meterPanel(scoped, out && petLayout === 'nested', meterDrill(drill)),
+    out && petLayout === 'grouped'
+  )
   // …and the SAME panel decides the header's figures, so the number over the rows can never
   // describe a different set of rows than the ones under it (JOS-170).
   const head = headline(panel, dim)

@@ -36,7 +36,7 @@ const KIND_TAG: Partial<Record<string, string>> = {
   pet: 'pet', member: 'group', allyPet: 'ally', other: 'other'
 }
 
-function KindChip({ kind }: { kind: string }): React.JSX.Element | null {
+export function KindChip({ kind }: { kind: string }): React.JSX.Element | null {
   const tag = KIND_TAG[kind]
   if (tag === undefined) return null
   return (
@@ -74,7 +74,7 @@ function missLead(kind: SourceView['kind']): string {
  * `EntityRow` stays inside the complexity budget, and so the glance card can drop both with one
  * test rather than three.
  */
-function StatBadges({ e }: { e: SourceView }): React.JSX.Element {
+export function StatBadges({ e }: { e: SourceView }): React.JSX.Element {
   const swings = e.hits + e.misses
   return (
     <>
