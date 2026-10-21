@@ -86,7 +86,7 @@ import {
   stepPetNeverAsked,
   stepScriptedPull
 } from './combatSteps.mjs'
-import { stepPetPreferenceMovesTheYouLine } from './petPrefSteps.mjs'
+import { stepPetGroupedLayout, stepPetPreferenceMovesTheYouLine } from './petPrefSteps.mjs'
 
 // ── the run, one step per numbered section ─────────────────────────────────────────────
 //
@@ -583,6 +583,9 @@ async function main(): Promise<void> {
     //     because it needs exactly what they leave: a live fight carrying YOUR damage and a bound
     //     pet's, so the folded and unfolded You totals are two different numbers.
     await stepPetPreferenceMovesTheYouLine(page)
+    // 17. …AND THE THIRD LAYOUT, "With its owner" (Malkil, 2026-10-21): the same live pair drawn as
+    //     one grouped row, every source one line of it. Leaves the layout as shipped.
+    await stepPetGroupedLayout(page)
 
     check('no renderer console errors', consoleErrors.length === 0, consoleErrors.slice(0, 3).join(' | '))
 
