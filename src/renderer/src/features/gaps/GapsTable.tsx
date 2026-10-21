@@ -26,15 +26,12 @@
 
 import { type JSX, type ReactNode, memo, useCallback, useMemo, useRef, useState } from 'react'
 import { Box, Button, Chip, Paper, Stack, Table, TableBody, TableCell, TableHead, TableRow, TableSortLabel, Typography } from '@mui/material'
-import ContentCopyIcon from '@mui/icons-material/ContentCopy'
-import NoteAddIcon from '@mui/icons-material/NoteAdd'
 import {
   charactersOff,
   doneKey,
   factionOf,
   gapZone,
   mobPageOf,
-  wikiEditUrl,
   logSaysText,
   pageSaysText,
   onMobPage,
@@ -49,12 +46,12 @@ import {
 import { unfoldedEntries, type GapEntry } from '@shared/gapGroups'
 import { gapHeld, heldChipLabel, heldLine, heldTitle, type GapHeld, type HeldIndex } from '@shared/gapHeld'
 import { wikiPageUrl } from '@shared/wiki'
-import { copyText } from '../../lib/clipboard'
 import { Tooltip } from '../../lib/Tooltip'
 import { useWindowedRows } from '../../lib/useWindowedRows'
 import GapActionChips from './GapActionChips'
 import GapDetailsPanel from './GapDetailsPanel'
 import GapRowButtons from './GapRowButtons'
+import MobHeadingButtons from './MobHeadingButtons'
 
 /** One line of small cells with a small chip: 6px padding above and below a 24px chip, plus the border. */
 const ROW_HEIGHT = 37
@@ -278,61 +275,28 @@ function SortHeader({ sort, onSort, nameLead }: { sort: GapSort; onSort: (key: G
   )
 }
 
-/** A mob heading's one copy of every missing line under it, for one edit of that page (owner ask, 2026-10-18). */
-function CopyLinesButton({ text }: { text: () => string }): JSX.Element {
-  const [copied, setCopied] = useState(false)
-  return (
-    <Button
-      size="small"
-      startIcon={<ContentCopyIcon />}
-      onClick={(e) => {
-        e.stopPropagation()
-        void copyText(text()).then(setCopied)
-      }}
-      sx={{ ml: 2, py: 0 }}
-      data-testid="gaps-copy-lines"
-    >
-      {copied ? 'Copied' : 'Copy lines'}
-    </Button>
-  )
-}
-
-/** Beside Copy lines: the wiki's editor on the mob's page, to paste them in (owner, 2026-10-20). */
-function EditPageButton({ page }: { page: string }): JSX.Element {
-  return (
-    <Tooltip title={`The wiki's editor on ${page}.`}>
-      <Button
-        size="small"
-        startIcon={<NoteAddIcon />}
-        href={wikiEditUrl(page)}
-        target="_blank"
-        rel="noreferrer"
-        onClick={(e) => e.stopPropagation()}
-        sx={{ ml: 1, py: 0 }}
-        data-testid="gaps-edit-mob-page"
-      >
-        Edit mob page
-      </Button>
-    </Tooltip>
-  )
+/** What a mob heading's buttons need (MobHeadingButtons): the page text, the Done marks and their setter. */
+interface HeadingWork {
+  pageText: (row: GapRow) => string
+  done: ReadonlySet<string>
+  onDoneAll: (rows: readonly GapRow[], on: boolean) => void
 }
 
 /** A zone or mob heading of the grouped list (shared/gapGroups.ts), one row high like the rest; a
- *  click folds what is under it (owner ask, 2026-10-18). A mob heading over a page's missing drops or
- *  factions copies all their lines at once. */
+ *  click folds what is under it (owner ask, 2026-10-18). A mob heading carries its work buttons:
+ *  copy all its page lines, search, edit, Done for all (MobHeadingButtons). */
 function GroupRow({
   entry,
   folded,
   onFold,
-  pageText
+  work
 }: {
   entry: Exclude<GapEntry, { kind: 'row' }>
   folded: boolean
   onFold: (key: string) => void
-  pageText: (row: GapRow) => string
+  work: HeadingWork
 }): JSX.Element {
   const zone = entry.kind === 'zone'
-  const lines = entry.kind === 'mob' && entry.rows.every(onMobPage) ? entry.rows : null
   return (
     <TableRow
       onClick={() => onFold(entry.key)}
@@ -347,8 +311,7 @@ function GroupRow({
         <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 1 }}>
           {entry.n} missing
         </Typography>
-        {lines !== null && <CopyLinesButton text={() => lines.map(pageText).join('')} />}
-        {lines?.[0] !== undefined && <EditPageButton page={mobPageOf(lines[0])} />}
+        {entry.kind === 'mob' && <MobHeadingButtons mob={entry.mob} rows={entry.rows} pageText={work.pageText} done={work.done} onDoneAll={work.onDoneAll} />}
       </TableCell>
     </TableRow>
   )
@@ -363,6 +326,7 @@ export default function GapsTable({
   needed,
   done,
   onDone,
+  onDoneAll,
   onPlayer,
   holding,
   chipContext,
@@ -383,6 +347,8 @@ export default function GapsTable({
   /** the rows marked done, and the mark's toggle */
   done: ReadonlySet<string>
   onDone: (row: GapRow) => void
+  /** every row under a mob heading marked done, or cleared */
+  onDoneAll: (rows: readonly GapRow[], on: boolean) => void
   onPlayer: (name: string) => void
   /** what the player holds right now (shared/gapHeld.ts): a chip on the row, a line in its details */
   holding: HeldIndex
@@ -400,6 +366,7 @@ export default function GapsTable({
   const onToggle = useCallback((name: string) => setOpen((cur) => (cur === name ? null : name)), [])
   const shown = useMemo(() => unfoldedEntries(entries, folded), [entries, folded])
   const work = useMemo<RowWork>(() => ({ pageText, onDone }), [pageText, onDone])
+  const headingWork = useMemo<HeadingWork>(() => ({ pageText, done, onDoneAll }), [pageText, done, onDoneAll])
   const scrollRef = useRef<HTMLDivElement>(null)
   const win = useWindowedRows({ count: shown.length, rowHeight: ROW_HEIGHT, scrollRef })
   if (entries.length === 0) {
@@ -425,7 +392,7 @@ export default function GapsTable({
               e.kind === 'row' ? (
                 <GapTableRow key={e.key} row={e.row} open={open === e.row.name} verdict={verdicts[e.row.name] ?? 'unchecked'} onToggle={onToggle} depth={e.depth} done={done.has(doneKey(e.row))} chipContext={chipContext} work={work} held={gapHeld(e.row, holding)} />
               ) : (
-                <GroupRow key={e.key} entry={e} folded={folded.has(e.key)} onFold={onFold} pageText={pageText} />
+                <GroupRow key={e.key} entry={e} folded={folded.has(e.key)} onFold={onFold} work={headingWork} />
               )
             )}
             <PadRow height={win.bottomPad} />
