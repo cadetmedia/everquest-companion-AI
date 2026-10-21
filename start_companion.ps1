@@ -63,8 +63,15 @@ $env:PATH = "$nodeDir;$env:PATH"
 Write-Host "Node $(& (Join-Path $nodeDir 'node.exe') --version) from $nodeDir"
 
 # 2. One instance per clone. Closing it is the user's call, never this script's.
-$running = Get-Process electron -ErrorAction SilentlyContinue |
-  Where-Object { $_.Path -and $_.Path.StartsWith($repo, [StringComparison]::OrdinalIgnoreCase) }
+# Test runs from worktrees (an agent's hidden e2e app, `out-e2e`) share this clone's Electron binary
+# through their node_modules junction but are not the app: they are skipped (2026-10-20, a hidden
+# test app blocked the owner's relaunch).
+$running = Get-CimInstance Win32_Process -Filter "name='electron.exe'" -ErrorAction SilentlyContinue |
+  Where-Object {
+    $_.ExecutablePath -and $_.ExecutablePath.StartsWith($repo, [StringComparison]::OrdinalIgnoreCase) -and
+    $_.CommandLine -notmatch '--type=' -and $_.CommandLine -notmatch 'out-e2e|worktrees'
+  } |
+  Select-Object @{ n = 'Id'; e = { $_.ProcessId } }
 if ($running) {
   Write-Warning "EQ Companion is already running from this clone (pid $($running[0].Id)). Close it first."
   exit 1
