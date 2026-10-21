@@ -9,10 +9,8 @@
 // visible rows on the clipboard as tab-separated text.
 
 import { type JSX, useCallback, useDeferredValue, useMemo, useState } from 'react'
-import { Button, Checkbox, CircularProgress, FormControlLabel, MenuItem, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material'
+import { Box, Button, Checkbox, CircularProgress, FormControlLabel, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
-import UnfoldLessIcon from '@mui/icons-material/UnfoldLess'
-import UnfoldMoreIcon from '@mui/icons-material/UnfoldMore'
 import {
   DEFAULT_GAP_SORT,
   GAP_DOMAINS,
@@ -35,7 +33,6 @@ import {
 } from '@shared/gaps'
 import type { CharacterSnap } from '@shared/types'
 import { stillNeeded, wikiPageText } from '@shared/wikiPage'
-import { GAP_GROUP_ORDERS, GAP_GROUP_ORDER_LABELS, gapGroupOrderOf } from '@shared/gapGroups'
 import { useModule } from '../../lib/useModule'
 import { Tooltip } from '../../lib/Tooltip'
 import { useBoolPref } from '../combat/useCombatPrefs'
@@ -47,7 +44,8 @@ import { GAPS_DATA_DATE, PAGE_EXTRAS, useGapsData } from './useGapsData'
 import { useDoneMarks, usePlayerList } from './useDoneMarks'
 import { useHeld } from './useHeld'
 import { useHideUncertain, type HideUncertain } from './useHideUncertain'
-import { useGrouping, type Grouping } from './useGrouping'
+import { useGrouping } from './useGrouping'
+import GroupHeaderControls from './GroupHeaderControls'
 
 // One line (owner, 2026-10-11): the how is in the module header, not on the page. Since 2026-10-18
 // the line says what the chosen domain's rows are (GAP_DOMAIN_HELP).
@@ -95,36 +93,19 @@ function HideUncertainBox({ state }: { state: HideUncertain }): JSX.Element {
   )
 }
 
-/**
- * Grouped only (owner asks, 2026-10-20): the order of the headings themselves, and Collapse all /
- * Expand all. The toolbar is shared by every domain, so each domain has them.
- */
-function GroupControls({ group }: { group: Grouping }): JSX.Element | null {
-  if (!group.grouped) return null
+/** "Copy list", and how many rows the last press copied. */
+function CopyList({ onCopy, disabled, copied }: { onCopy: () => void; disabled: boolean; copied: number | null }): JSX.Element {
   return (
-    <Stack direction="row" spacing={1} alignItems="center">
-      <TextField
-        select
-        size="small"
-        label="Groups"
-        value={group.order}
-        onChange={(e) => group.setOrder(gapGroupOrderOf(e.target.value))}
-        sx={{ minWidth: 150 }}
-        slotProps={{ htmlInput: { 'data-testid': 'gaps-group-order' } }}
-      >
-        {GAP_GROUP_ORDERS.map((o) => (
-          <MenuItem key={o} value={o}>
-            {GAP_GROUP_ORDER_LABELS[o]}
-          </MenuItem>
-        ))}
-      </TextField>
-      <Button size="small" startIcon={<UnfoldLessIcon />} onClick={group.collapseAll} data-testid="gaps-collapse-all">
-        Collapse all
+    <>
+      {copied !== null && (
+        <Typography variant="caption" color="success.main">
+          Copied {copied} rows
+        </Typography>
+      )}
+      <Button size="small" variant="outlined" startIcon={<ContentCopyIcon />} onClick={onCopy} disabled={disabled} data-testid="gaps-copy">
+        Copy list
       </Button>
-      <Button size="small" startIcon={<UnfoldMoreIcon />} onClick={group.expandAll} data-testid="gaps-expand-all">
-        Expand all
-      </Button>
-    </Stack>
+    </>
   )
 }
 
@@ -254,8 +235,10 @@ export default function GapsView(): JSX.Element {
       <Typography variant="body2" color="text.secondary">
         {GAP_DOMAIN_HELP[domain]} {CLICK_HINT}
       </Typography>
+      {/* Two rows (owner, 2026-10-20: "put search and all the values after that on the next row
+          instead of next to the tabs"): the domains alone, then what narrows them, Copy list last. */}
+      <DomainToggle snap={snap} domain={domain} zone={zone} onPick={setDomain} hidden={hiddenRow} />
       <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" useFlexGap>
-        <DomainToggle snap={snap} domain={domain} zone={zone} onPick={setDomain} hidden={hiddenRow} />
         <TextField
           size="small"
           label="Search"
@@ -276,17 +259,10 @@ export default function GapsView(): JSX.Element {
           }}
         />
         <Pref label="Group by zone, then mob" checked={group.grouped} onChange={group.setGrouped} testId="gaps-grouped" />
-        <GroupControls group={group} />
         <Pref label="Show done" checked={showDone} onChange={setShowDone} testId="gaps-show-done" />
         <HideUncertainBox state={sure} />
-        <Button size="small" variant="outlined" startIcon={<ContentCopyIcon />} onClick={() => void copy()} disabled={visible.length === 0} data-testid="gaps-copy">
-          Copy list
-        </Button>
-        {copied !== null && (
-          <Typography variant="caption" color="success.main">
-            Copied {copied} rows
-          </Typography>
-        )}
+        <Box sx={{ flexGrow: 1 }} />
+        <CopyList onCopy={() => void copy()} disabled={visible.length === 0} copied={copied} />
       </Stack>
       <ShownLine counts={{ visible: visible.length, held, served, hidden, uncertain: sure.hidden }} domain={domain} zone={zone} />
       <GapsTable
@@ -303,6 +279,7 @@ export default function GapsView(): JSX.Element {
         chipContext={CHIP_CONTEXT}
         hiddenByFilter={held > 0}
         {...group.folds}
+        nameLead={<GroupHeaderControls group={group} />}
       />
     </Stack>
   )
