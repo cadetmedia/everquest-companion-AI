@@ -1,9 +1,9 @@
 // The Gaps tab's grouped view: whether it is on, the order of its headings, and which are folded.
 //
 // "Group by zone, then mob" (owner ask, 2026-10-18): where to go and what to kill. The headings
-// sort by how many are missing as well as A to Z, and Collapse all / Expand all fold every heading
-// at once (owner asks, 2026-10-20). The folded set lives here, not in the table, so the toolbar's
-// buttons reach it.
+// sort by how many are missing as well as A to Z, and one toggle folds or unfolds every heading at
+// once (owner asks, 2026-10-20). The folded set lives here, not in the table, so the Name header's
+// controls (GroupHeaderControls.tsx) reach it.
 
 import { useCallback, useMemo, useState } from 'react'
 import { gapGroupOrderOf, groupGaps, headingKeys, rowEntries, type GapEntry, type GapGroupOrder } from '@shared/gapGroups'
@@ -26,8 +26,10 @@ export interface Grouping {
   entries: GapEntry[]
   /** the folded headings and their toggle, as the table takes them */
   folds: { folded: ReadonlySet<string>; onFold: (key: string) => void }
-  collapseAll: () => void
-  expandAll: () => void
+  /** every heading is folded (and there is at least one), so the one toggle expands */
+  allFolded: boolean
+  /** collapse every heading, or expand them all when every one is already folded */
+  toggleAll: () => void
 }
 
 export function useGrouping(sorted: readonly GapRow[], loot: readonly LootEvent[]): Grouping {
@@ -45,8 +47,9 @@ export function useGrouping(sorted: readonly GapRow[], loot: readonly LootEvent[
       }),
     []
   )
-  const collapseAll = useCallback(() => setFolded(new Set(headingKeys(entries))), [entries])
-  const expandAll = useCallback(() => setFolded(new Set()), [])
+  const heads = useMemo(() => headingKeys(entries), [entries])
+  const allFolded = heads.length > 0 && heads.every((k) => folded.has(k))
+  const toggleAll = useCallback(() => setFolded(allFolded ? new Set() : new Set(heads)), [allFolded, heads])
   const folds = useMemo(() => ({ folded, onFold }), [folded, onFold])
-  return { grouped, setGrouped, order, setOrder: setRawOrder, entries, folds, collapseAll, expandAll }
+  return { grouped, setGrouped, order, setOrder: setRawOrder, entries, folds, allFolded, toggleAll }
 }

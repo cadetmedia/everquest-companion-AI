@@ -24,7 +24,7 @@
 // a viewport-arithmetic cap that left the page scrolling beside it. The pane above it caps its own
 // height modestly so the list keeps room on a short screen.
 
-import { type JSX, memo, useCallback, useMemo, useRef, useState } from 'react'
+import { type JSX, type ReactNode, memo, useCallback, useMemo, useRef, useState } from 'react'
 import { Box, Button, Chip, Paper, Stack, Table, TableBody, TableCell, TableHead, TableRow, TableSortLabel, Typography } from '@mui/material'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import NoteAddIcon from '@mui/icons-material/NoteAdd'
@@ -257,12 +257,13 @@ const HEADERS: readonly (readonly [string, GapSortKey, 'left' | 'right', number 
 const WORK_WIDTH = 136
 
 /** Every header sorts (owner asks, 2026-10-13 and, for Zone, 2026-10-17): a click picks the column, a second flips it. */
-function SortHeader({ sort, onSort }: { sort: GapSort; onSort: (key: GapSortKey) => void }): JSX.Element {
+function SortHeader({ sort, onSort, nameLead }: { sort: GapSort; onSort: (key: GapSortKey) => void; nameLead?: ReactNode }): JSX.Element {
   return (
     <TableHead>
       <TableRow>
         {HEADERS.map(([label, key, align, width], i) => [
           <TableCell key={key} align={align} sortDirection={sort.key === key ? sort.dir : false} sx={{ width, whiteSpace: 'nowrap' }}>
+            {i === 0 && nameLead}
             <TableSortLabel
               active={sort.key === key}
               direction={sort.key === key ? sort.dir : 'asc'}
@@ -377,7 +378,8 @@ export default function GapsTable({
   seenBy,
   hiddenByFilter = false,
   folded,
-  onFold
+  onFold,
+  nameLead
 }: {
   /** the rows, or the grouped list with its zone and mob headings */
   entries: readonly GapEntry[]
@@ -403,6 +405,8 @@ export default function GapsTable({
   /** the folded headings' keys, held by the view so its Collapse all and Expand all reach them */
   folded: ReadonlySet<string>
   onFold: (key: string) => void
+  /** before the Name header's label: the grouped list's fold-all and order controls */
+  nameLead?: ReactNode
 }): JSX.Element {
   const [open, setOpen] = useState<string | null>(null)
   const onToggle = useCallback((name: string) => setOpen((cur) => (cur === name ? null : name)), [])
@@ -426,7 +430,7 @@ export default function GapsTable({
       {openedRow !== undefined && <DetailsPane row={openedRow} actions={{ pageText, needed, done, onDone, onPlayer, seenBy, holding }} />}
       <Box ref={scrollRef} sx={{ flexGrow: 1, minHeight: 0, overflow: 'auto', overscrollBehavior: 'contain' }} data-testid="gaps-scroll">
         <Table size="small" stickyHeader sx={{ tableLayout: 'fixed', minWidth: TABLE_MIN_WIDTH }} data-testid="gaps-table">
-          <SortHeader sort={sort} onSort={onSort} />
+          <SortHeader sort={sort} onSort={onSort} nameLead={nameLead} />
           <TableBody>
             <PadRow height={win.topPad} />
             {shown.slice(win.start, win.end).map((e) =>
