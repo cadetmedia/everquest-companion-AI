@@ -80,6 +80,21 @@ export function keptDoneMarks(marks: Readonly<Record<string, string>>, dataDate:
   return Object.fromEntries(Object.entries(marks).filter(([, markedOn]) => markedOn >= dataDate))
 }
 
+/**
+ * The Done marks with every one of `rows` marked on `today`, or every one cleared: a mob heading's
+ * one Done for every line under it (owner ask, 2026-10-21). A mark already made keeps its day.
+ */
+export function withDoneMarks(marks: Readonly<Record<string, string>>, rows: readonly GapRow[], on: boolean, today: string): Record<string, string> {
+  const keys = new Set(rows.map(doneKey))
+  if (!on) return Object.fromEntries(Object.entries(marks).filter(([k]) => !keys.has(k)))
+  return { ...Object.fromEntries([...keys].map((k) => [k, today])), ...marks }
+}
+
+/** Every one of `rows` is marked done, and there is at least one. */
+export function allDone(rows: readonly GapRow[], done: ReadonlySet<string>): boolean {
+  return rows.length > 0 && rows.every((r) => done.has(doneKey(r)))
+}
+
 /** The rows less the Mobs rows the player marked as players (lower-cased names). */
 export function withoutPlayers(rows: readonly GapRow[], players: ReadonlySet<string>): GapRow[] {
   return players.size === 0 ? [...rows] : rows.filter((r) => r.domain !== 'mob' || !players.has(r.name.toLowerCase()))

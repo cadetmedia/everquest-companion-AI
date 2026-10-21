@@ -236,6 +236,7 @@ export default function GapsView(): JSX.Element {
         needed={needed}
         done={marks.done}
         onDone={marks.toggle}
+        onDoneAll={marks.setMany}
         onPlayer={playerList.mark}
         holding={holding}
         chipContext={CHIP_CONTEXT}
