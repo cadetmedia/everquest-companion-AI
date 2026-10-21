@@ -1,0 +1,125 @@
+// MobPicture — a pasted picture of a mob, saved under its wiki file name (`npc_<name>.png`, or the
+// Images row's file), the wiki's upload form a click away (owner, 2026-10-21). With an auto-save
+// folder set there is no dialog; an existing file is replaced only on "Replace". A blank picture is
+// refused. After the save the picture is read for the mob's nameplate, and when the name is not in it
+// the player may keep or delete the file (src/main/ipc/shotPicture.ts).
+
+import { type JSX, useCallback, useEffect, useState } from 'react'
+import { Button, Stack, Typography } from '@mui/material'
+import { wikiUploadUrl, type GapRow } from '@shared/gaps'
+import type { PictureSave } from '@shared/mobPicture'
+import { npcImageName } from '@shared/wikiPage'
+import { Line, PasteZone } from './PasteZone'
+
+type NameCheck = 'checking' | 'found' | 'missing' | 'deleted' | null
+
+/** "Save automatically to: <folder>" with Change / Turn off, or Off with Choose folder (owner, 2026-10-21). */
+function AutoSave(): JSX.Element {
+  const [dir, setDir] = useState<string | null>(null)
+  useEffect(() => void window.eq.shotAutoDir('get').then(setDir), [])
+  const act = (a: 'pick' | 'clear'): void => void window.eq.shotAutoDir(a).then(setDir)
+  return (
+    <Stack direction="row" spacing={1} alignItems="center" data-testid="gaps-shot-autosave">
+      <Line>Save automatically to: {dir ?? 'Off (asks where, starting in the last folder)'}</Line>
+      <Button size="small" onClick={() => act('pick')}>
+        {dir === null ? 'Choose folder…' : 'Change'}
+      </Button>
+      {dir !== null && (
+        <Button size="small" onClick={() => act('clear')}>
+          Turn off
+        </Button>
+      )}
+    </Stack>
+  )
+}
+
+/** Saved: where, Open folder, Upload; then whether the mob's name was found in the picture. */
+function SavedLine({ path, file, name, check, onDelete, onKeep }: { path: string; file: string; name: string; check: NameCheck; onDelete: () => void; onKeep: () => void }): JSX.Element {
+  if (check === 'deleted') return <Line>Deleted {path}.</Line>
+  return (
+    <Stack spacing={0.25}>
+      <Stack direction="row" spacing={1} alignItems="center">
+        <Line>Saved to {path}.</Line>
+        <Button size="small" onClick={() => void window.eq.shotSavedFile('show', path)}>
+          Open folder
+        </Button>
+        <Button size="small" href={wikiUploadUrl(file)} target="_blank" rel="noreferrer">
+          Upload it to the wiki
+        </Button>
+      </Stack>
+      {check === 'checking' && <Line>Looking for {name} in the picture…</Line>}
+      {check === 'missing' && (
+        <Stack direction="row" spacing={1} alignItems="center" data-testid="gaps-shot-name-missing">
+          <Line warn>Couldn&apos;t find {name} in this picture.</Line>
+          <Button size="small" onClick={onKeep}>
+            Keep it
+          </Button>
+          <Button size="small" onClick={onDelete}>
+            Delete it
+          </Button>
+        </Stack>
+      )}
+    </Stack>
+  )
+}
+
+/** What a save came to, short of saved. */
+function NotSaved({ result, onReplace, onCancel }: { result: PictureSave; onReplace: () => void; onCancel: () => void }): JSX.Element | null {
+  if (result.status === 'blank') return <Typography variant="body2" color="error.main">ERROR: this picture is blank</Typography>
+  if (result.status === 'error') return <Typography variant="body2" color="error.main">ERROR: {result.message}</Typography>
+  if (result.status !== 'exists') return null
+  return (
+    <Stack direction="row" spacing={1} alignItems="center" data-testid="gaps-shot-exists">
+      <Line warn>{result.path} already exists.</Line>
+      <Button size="small" onClick={onReplace}>
+        Replace
+      </Button>
+      <Button size="small" onClick={onCancel}>
+        Cancel
+      </Button>
+    </Stack>
+  )
+}
+
+export default function MobPicture({ row }: { row: GapRow }): JSX.Element {
+  const file = row.domain === 'image' && row.image !== undefined ? row.image : npcImageName(row.name)
+  const [busy, setBusy] = useState(false)
+  const [png, setPng] = useState<Uint8Array | null>(null)
+  const [result, setResult] = useState<PictureSave | null>(null)
+  const [check, setCheck] = useState<NameCheck>(null)
+  const save = useCallback(
+    (bytes: Uint8Array, overwrite = false) => {
+      setBusy(true)
+      setPng(bytes)
+      setCheck(null)
+      void window.eq.shotSaveImage(bytes, file, overwrite).then((r) => {
+        setBusy(false)
+        setResult(r)
+        if (r.status !== 'saved') return
+        // The nameplate check runs after the save: OCR of a full screenshot can take seconds.
+        setCheck('checking')
+        void window.eq.shotCheckMob(bytes, row.name).then((found) => setCheck(found === false ? 'missing' : 'found'))
+      })
+    },
+    [file, row.name]
+  )
+  return (
+    <Stack spacing={0.5} data-testid="gaps-shot-picture">
+      <PasteZone label={`Click here and paste a picture of ${row.name} (saved as ${file})`} busy={busy} onPicture={(b) => save(b)} />
+      <AutoSave />
+      {result !== null && result.status !== 'saved' && (
+        <NotSaved result={result} onReplace={() => png !== null && save(png, true)} onCancel={() => setResult(null)} />
+      )}
+      {result?.status === 'saved' && (
+        <SavedLine
+          path={result.path}
+          file={file}
+          name={row.name}
+          check={check}
+          onKeep={() => setCheck('found')}
+          onDelete={() => void window.eq.shotSavedFile('delete', result.path).then(() => setCheck('deleted'))}
+        />
+      )}
+    </Stack>
+  )
+}

@@ -319,7 +319,8 @@ function statsLines(flags: readonly string[], g: Gathered, cls?: string, race?: 
 
 /** The Lore tab: no Class line; its text is the longest line that is not a tab or the title. */
 function loreRead(lines: readonly string[]): ItemWindowRead {
-  const text = lines.filter((l) => !/^(Description|Lore)$/i.test(l) && /[a-z]{3}/i.test(l)).sort((a, b) => b.length - a.length)[0]
+  // The tab row reads as junk around `Description` (`| /~ SPDesciption 3, © [[ 4" “Lore`): never the lore.
+  const text = lines.filter((l) => !/^Lore$/i.test(l) && !/Desc\w{0,3}ption/i.test(l) && /[a-z]{3}/i.test(l)).sort((a, b) => b.length - a.length)[0]
   return { statsblock: '', unread: [], ...(text === undefined ? {} : { lore: text }) }
 }
 
