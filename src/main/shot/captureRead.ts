@@ -46,16 +46,17 @@ export function captureSize(displays: readonly { size: { width: number; height: 
 }
 
 /**
- * The game's own window among the capturable ones: titled exactly `EverQuest`. Electron names no
+ * The game's own window among the capturable ones: titled exactly `EverQuest Legends` or `EverQuest`. Electron names no
  * window's process, so a title is all there is, and one that merely contains the word (a browser on
  * the wiki, a chat channel) is never taken. The error says what was seen instead.
  */
 export function gameWindow<T extends { name: string }>(sources: readonly T[]): T | { error: string } {
-  const eq = sources.find((s) => /^EverQuest$/i.test(s.name.trim()))
+  // The Legends client titles its window `EverQuest Legends` (measured, 2026-10-21); the classic client `EverQuest`.
+  const eq = sources.find((s) => /^EverQuest(?: Legends)?$/i.test(s.name.trim()))
   if (eq !== undefined) return eq
   const near = sources.filter((s) => /EverQuest/i.test(s.name)).map((s) => `"${s.name}"`)
   if (near.length === 0) return { error: 'No EverQuest window was found to capture.' }
-  return { error: `No window titled exactly "EverQuest" was found (seen: ${near.slice(0, 3).join(', ')}): only the game's own window is captured.` }
+  return { error: `No window titled exactly "EverQuest Legends" or "EverQuest" was found (seen: ${near.slice(0, 3).join(', ')}): only the game's own window is captured.` }
 }
 
 /** A label inside a window already read is that window's (a second yellow word in it), not another. */

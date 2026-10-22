@@ -139,8 +139,12 @@ test('THE CAPTURE ASKS FOR THE LARGEST DISPLAY AT FULL PIXELS, NEVER PAST 16 MP 
 test("ONLY THE GAME'S OWN WINDOW IS CAPTURED: A BROWSER OR CHAT WINDOW THAT NAMES EVERQUEST IS NEVER TAKEN", () => {
   const game = { name: 'EverQuest', id: 'window:1:0' }
   assert.equal(gameWindow([{ name: 'EverQuest Wiki - Google Chrome', id: 'a' }, game]), game)
+  // The Legends client's own title (eqgame's MainWindowTitle on the owner's PC, 2026-10-21).
+  const legends = { name: ' EverQuest Legends ', id: 'window:2:0' }
+  assert.equal(gameWindow([{ name: 'EverQuest Legends - Google Chrome', id: 'a' }, legends]), legends)
+  assert.ok('error' in gameWindow([{ name: 'EverQuest Legends Wiki - Google Chrome', id: 'a' }]))
   const none = gameWindow([{ name: 'EverQuest Legends Wiki - Google Chrome', id: 'a' }, { name: 'Discord - #everquest', id: 'b' }])
-  assert.ok('error' in none && /exactly "EverQuest"/.test(none.error) && /Google Chrome/.test(none.error), JSON.stringify(none))
+  assert.ok('error' in none && /exactly "EverQuest Legends" or "EverQuest"/.test(none.error) && /Google Chrome/.test(none.error), JSON.stringify(none))
   assert.deepEqual(gameWindow([{ name: 'Notepad', id: 'n' }]), { error: 'No EverQuest window was found to capture.' })
 })
 
