@@ -91,15 +91,19 @@ test("SUREFALL FLETCHING KIT (MALKIL'S CONTAINER, 2026-10-21): CAPACITY, SIZE CA
 })
 
 for (const file of ['windstriker-ground.png', 'windstriker-sky.png']) {
-  test(`WINDSTRIKER, MALKIL'S UI (${file}): THE WEAPON, STATS AND EFFECT LINES; DMG 90; THE FOCUS APART`, async () => {
+  test(`WINDSTRIKER, MALKIL'S UI (${file}): THE WEAPON AND STATS; DMG 90; NO EXALTATION'S EFFECT AS THE BOW'S OWN`, async () => {
     const s = await read(file, textOnly)
     const got = lines(s)
     for (const want of ['Slot: RANGE<br>', 'Skill: Archery  Atk Delay: 60<br>', 'DMG: 90<br>', 'Range: 300<br>', 'SV VOID: +10<br>', 'Size: MEDIUM WT: 0.4<br>', 'Class: RNG<br>', 'Race: ALL<br>']) {
       assert.ok(got.includes(want), `${want} in ${JSON.stringify(got)}`)
     }
     assert.ok(got.some((l) => l.startsWith('STR: +15  AGI: +15  DEX: +15  HP: +100')), JSON.stringify(got))
-    assert.ok(got.includes('Effect: [[Firestrike]] (Must Equip, Casting Time: Instant) at Level 40<br>'), JSON.stringify(got))
-    assert.equal(s.read.focusEffect, 'Improved Healing III')
+    // The Focus and Click Exaltation slots hold Idol of the Underking and Rain Caller, which grant
+    // Improved Healing III and Firestrike (items.json): neither is written as the bow's own, and both are said.
+    assert.ok(!got.some((l) => l.includes('Firestrike')), JSON.stringify(got))
+    assert.equal(s.read.focusEffect, undefined)
+    assert.ok(s.read.checks?.some((c) => c.startsWith('Focus effect Improved Healing III not written')), JSON.stringify(s.read.checks))
+    assert.ok(s.read.checks?.some((c) => c.startsWith('Click effect Firestrike not written') && c.includes('Rain Caller')), JSON.stringify(s.read.checks))
   })
 }
 
@@ -179,3 +183,27 @@ for (const [file, rank, modifier] of BURST_SHOTS) {
     assert.equal(r.checks.some((c) => c.startsWith('An upgraded rank was read')), rank !== undefined)
   })
 }
+
+test("SICKLY MAIDEN'S HAIR, THE LORE TAB (THE OWNER'S, 2026-10-21): TWO WRAPPED LINES ARE ONE LORE; THE TITLE BAR'S JUNK IS NOT THE NAME", async () => {
+  const s = await read('sickly-maidens-hair-lore.png', textOnly)
+  assert.equal(s.read.lore, 'This sample of long, golden grass is tinged with disease')
+  assert.equal(s.read.name, "Sickly Maiden's Hair")
+  assert.equal(s.read.statsblock, '')
+})
+
+test("WU'S FIST OF MASTERY +10 (AUGMENTED) (THE OWNER'S, 2026-10-21): THE +10 PATH, NO EXALTATION LINE, NO EFFECT AN EXALTATION GRANTS", async () => {
+  const s = await read('wus-fist-of-mastery-10-augmented.png', textOnly)
+  assert.equal(s.read.name, "Wu's Fist of Mastery")
+  assert.equal(s.read.tier, 10)
+  const got = lines(s)
+  for (const want of ['No Trade, Placeable<br>', 'Slot: PRIMARY SECONDARY<br>', 'Size: TINY WT: 0.1<br>', 'Class: MNK<br>', 'Race: ALL<br>']) assert.ok(got.includes(want), `${want} in ${JSON.stringify(got)}`)
+  // The Click and Proc slots hold Golem Metal Wand and Cherista's Fangs, which grant Pillage Enchantment
+  // and Lifebite (items.json; Wu's Fist's own page has no effect): neither is written as the item's.
+  assert.ok(!got.some((l) => /Exaltation|Ornamentation|Effect:/.test(l)), JSON.stringify(got))
+  const checks = s.read.checks ?? []
+  assert.ok(checks.some((c) => c.startsWith('Click effect Pillage Enchantment not written') && c.includes('Golem Metal Wand (Exaltation)')), JSON.stringify(checks))
+  assert.ok(checks.some((c) => c.startsWith('Combat effect Lifebite not written') && c.includes("Proc Exaltation slot holds Cherista's Fangs (Exaltation)")), JSON.stringify(checks))
+  // The +10 numbers are the upgraded item's: no +0 guess where they do not take back exactly.
+  assert.ok(checks.some((c) => c.startsWith('This window is +10')), JSON.stringify(checks))
+  assert.equal(s.read.baseStatsblock, undefined)
+})

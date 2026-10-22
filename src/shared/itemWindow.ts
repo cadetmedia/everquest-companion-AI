@@ -234,6 +234,8 @@ interface Gathered {
   unread: string[]
   /** Values kept as read or snapped to a known one (itemVocab.ts), for the player. */
   notes: string[]
+  /** Filled exaltation slots: the effect kind each grants -> what fills it. */
+  exalts: Map<string, string>
 }
 
 /** A snapped value's note into the gathered notes; the value back. */
@@ -287,8 +289,20 @@ function slotLine(g: Gathered, line: string): boolean {
   return true
 }
 
+/** A filled exaltation slot (`Click Exaltation: Golem Metal Wand (Exaltation)`; OCR reads Worn as `Wom`). */
+const EXALT_SLOT = /\b(Focus|Click|Proc|W\w{1,2}n|Wom)\s+Exaltation\s*[:;.]?\s*(.+)$/i
+/** The effect kind each exaltation slot grants, as the effect labels name it. */
+const EXALT_KIND = (slot: string): string => ({ focus: 'Focus', click: 'Click', proc: 'Combat' })[slot.toLowerCase()] ?? 'Worn'
+
+/** A filled exaltation slot line into `g.exalts`; an `empty` one is nothing. */
+function noteExalt(g: Gathered, line: string): void {
+  const exalt = EXALT_SLOT.exec(line)
+  if (exalt !== null && !/^empty\b/i.test(exalt[2])) g.exalts.set(EXALT_KIND(exalt[1]), exalt[2].trim())
+}
+
 /** One line of the stats region into `g`: the bare slot word, or its pairs, or an unread line. */
 function gatherLine(g: Gathered, effects: Effect[], line: string): void {
+  noteExalt(g, line)
   if (NOT_ITEM.test(line) || slotLine(g, line)) return
   // `Deity: Karana`, or the god's name alone on its line (Malkil's Surefall Fletching Kit, 2026-10-21).
   const deity = /^Deity\s*[:;.]?\s+(.+)$/i.exec(line)
@@ -306,14 +320,26 @@ function gatherLine(g: Gathered, effects: Effect[], line: string): void {
 
 /** The stats region, line by line: pairs placed, effects gathered with the info lines under them. */
 function gather(lines: readonly string[]): Gathered {
-  const g: Gathered = { attrs: [], saves: [], weapon: new Map(), lines: [], bag: new Map(), effects: [], unread: [], notes: [] }
+  const g: Gathered = { attrs: [], saves: [], weapon: new Map(), lines: [], bag: new Map(), effects: [], unread: [], notes: [], exalts: new Map() }
   const effects: Effect[] = []
   for (const line of lines) gatherLine(g, effects, line)
   for (const e of effects) {
-    if (e.kind === 'Focus') g.focus = rankFix(e.value.replace(/\s*\(.*\)$/, ''))
+    const exalt = g.exalts.get(e.kind)
+    if (exalt !== undefined) g.notes.push(exaltNote(e, exalt))
+    else if (e.kind === 'Focus') g.focus = rankFix(e.value.replace(/\s*\(.*\)$/, ''))
     else g.effects.push(effectLine(e.kind, e.value, e.info))
   }
   return g
+}
+
+/**
+ * An effect of the kind a filled exaltation slot grants is not written (owner, 2026-10-21: Wu's Fist of
+ * Mastery's Click and Proc slots hold Golem Metal Wand and Cherista's Fangs, whose effects the window
+ * lists as Pillage Enchantment and Lifebite): the window cannot tell it from the item's own.
+ */
+function exaltNote(e: Effect, exalt: string): string {
+  const name = rankFix(e.value.replace(/\s*\(.*$/, '').trim())
+  return `${e.kind} effect ${name} not written: the item's ${e.kind === 'Combat' ? 'Proc' : e.kind} Exaltation slot holds ${exalt}, and the window cannot tell its effect from the item's own. Check the item's page.`
 }
 
 /** The wiki's order (Windstriker: `STR: +5 AGI: +5 DEX: +5 HP: +50`): attributes, then pools, then the rest as read. */
@@ -407,9 +433,17 @@ function loreRead(lines: readonly string[]): ItemWindowRead {
   const prose = (l: string): boolean => !/^Lore$/i.test(l) && !TAB_ROW.test(l) && /[a-z]{3}/i.test(l) && (l.match(/[A-Za-z ]/g) ?? []).length >= 0.8 * l.length
   const text = tabAt >= 0 ? lines.slice(tabAt + 1).filter(prose).join(' ') : lines.filter(prose).sort((a, b) => b.length - a.length)[0]
   // The title bar above the tab row names the item: a captured Lore tab finds its row by it.
-  const title = tabAt > 0 ? lines.slice(0, tabAt).reverse().find((l) => /[A-Za-z]{3}/.test(l))?.replace(/\s*\*+$/, '').replace(/\s*\+\d+$/, '') : undefined
+  const title = tabAt > 0 ? bareTitle(lines.slice(0, tabAt).reverse().find((l) => /[A-Za-z]{3}/.test(l)))?.replace(/\s*\+\d+$/, '') : undefined
   return { statsblock: '', unread: [], ...(text === undefined || text === '' ? {} : { lore: text }), ...(title === undefined ? {} : { name: title }) }
 }
+
+/**
+ * A title as the item's name, the window's marks dropped: the title bar's buttons OCR reads as junk
+ * (`Sickly Maiden's Hair [1 [=E`), the `*` (Mud Stained Skin Tunic*) and `(Augmented)` (Wu's Fist of
+ * Mastery +10 (Augmented), owner's screenshots 2026-10-21).
+ */
+const bareTitle = (l: string | undefined): string | undefined =>
+  l?.replace(/(?<=\S)\s+[[\]{}=|<>].*$/, '').replace(/\s*\*+$/, '').replace(/\s*\(Augmented\)$/i, '').trim()
 
 /** The tab row above the name names a Lore tab: the item has lore (Ruined Robe; Windstriker and Black Lizard Scale show none). */
 const hasLoreTab = (lines: readonly string[], before: number): boolean =>
@@ -419,8 +453,7 @@ const hasLoreTab = (lines: readonly string[], before: number): boolean =>
 function nameAbove(lines: readonly string[], at: number): { name?: string; tier?: number } {
   const line = lines.slice(0, at).reverse().find((l) => /[A-Za-z]{2}/.test(l) && !NOT_ITEM.test(l))
   if (line === undefined) return {}
-  // The title's `*` (Mud Stained Skin Tunic*, owner's screenshot 2026-10-21) is the window's mark, not the name.
-  const bare = line.replace(/\s*\*+$/, '')
+  const bare = bareTitle(line) ?? ''
   const tier = /\s*\+(\d{1,2})$/.exec(bare)
   return { name: bare.replace(/\s*\+\d+$/, '').trim(), ...(tier === null || tier[1] === '0' ? {} : { tier: Number(tier[1]) }) }
 }
