@@ -51,7 +51,8 @@ import { useGrouping } from './useGrouping'
 import GroupHeaderControls from './GroupHeaderControls'
 
 // One line (owner, 2026-10-11): the how is in the module header, not on the page. Since 2026-10-18
-// the line says what the chosen domain's rows are (GAP_DOMAIN_HELP).
+// the line says what the chosen domain's rows are (GAP_DOMAIN_HELP); since 2026-10-21 the hint is its
+// tooltip (owner: "we just hit them with so much text to read").
 const CLICK_HINT = 'Click a row for where it was seen.'
 
 /** Where the "Zone I'm in" choice is remembered, per viewer, as the Achievements tab remembers its own. */
@@ -77,7 +78,7 @@ function Pref({ label, checked, onChange, testId, disabled }: { label: string; c
 /** "Zone I'm in (<zone>)", the Achievements tab's control: only the rows seen in that place, any tier. */
 function ZoneHere({ zone, checked, onChange }: { zone: string | null; checked: boolean; onChange: (on: boolean) => void }): JSX.Element {
   return (
-    <Tooltip title={zone === null ? 'The log has not named a zone yet. Zone once and this fills in.' : `Only what was seen in ${zone} or another tier of it.`}>
+    <Tooltip title={zone === null ? 'No zone in the log yet; zone once and this fills in.' : `Only what was seen in ${zone} or another tier of it.`}>
       <span>
         <Pref label={zone === null ? "Zone I'm in" : `Zone I'm in (${zone})`} checked={checked} onChange={onChange} disabled={zone === null} testId="gaps-zone-here" />
       </span>
@@ -126,14 +127,14 @@ function HeldPicker({ pick, onPick, domain }: { pick: HeldPick; onPick: (p: Held
 /** "Show" (owner, 2026-10-21): every row, only the new pages, or only the updates to pages that exist. */
 function ShowPicker({ show, onShow }: { show: GapShow; onShow: (s: GapShow) => void }): JSX.Element {
   return (
-    <Picker label="Show" value={show} options={SHOW_PICKS} onChange={onShow} testId="gaps-show" tip="New pages: the wiki has no page for it. Updates: the page exists and lacks something, a small edit." />
+    <Picker label="Show" value={show} options={SHOW_PICKS} onChange={onShow} testId="gaps-show" tip="New pages are missing from the wiki; updates are small edits to existing pages." />
   )
 }
 
 /** "Hide uncertain": the rows whose very existence as a gap is in doubt (shared/gaps.ts `uncertainGap`). */
 function HideUncertainBox({ state }: { state: HideUncertain }): JSX.Element {
   return (
-    <Tooltip title="Hides the rows the tab is not sure are gaps at all: one-word names you only hailed or conned that may be players.">
+    <Tooltip title="Hides one-word names you only hailed or conned, which may be players.">
       <span>
         <Pref label="Hide uncertain" checked={state.hide} onChange={state.setHide} testId="gaps-hide-uncertain" />
       </span>
@@ -292,9 +293,11 @@ export default function GapsView(): JSX.Element {
   return (
     // A full-height column whose last child, the table box, is the page's only scroller (GapsTable).
     <Stack spacing={2} data-testid="gaps-view" sx={{ height: '100%', minHeight: 0 }}>
-      <Typography variant="body2" color="text.secondary">
-        {GAP_DOMAIN_HELP[domain]} {CLICK_HINT}
-      </Typography>
+      <Tooltip title={CLICK_HINT}>
+        <Typography variant="body2" color="text.secondary" sx={{ alignSelf: 'flex-start' }}>
+          {GAP_DOMAIN_HELP[domain]}
+        </Typography>
+      </Tooltip>
       {/* Two rows (owner, 2026-10-20: "put search and all the values after that on the next row
           instead of next to the tabs"): the domains alone, then what narrows them, Copy list last. */}
       <DomainToggle snap={snap} domain={domain} zone={zone} onPick={setDomain} hidden={hiddenRow} heldOnly={mine.pick === 'off' ? null : { index: holding, where: mine.pick }} />

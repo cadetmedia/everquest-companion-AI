@@ -212,6 +212,6 @@ export function heldLine(h: GapHeld): string {
 /** The row chip's tooltip, a line per holder: where each count comes from. */
 export function heldTitle(holders: readonly GapHeld[]): string {
   return holders
-    .map((h) => `${holder(h)} ${String(h.total)} (${placesText(h)}): the inventory export of ${h.exportedAt.slice(0, 10)}, plus what the log saw looted since, less destroys.`)
+    .map((h) => `${holder(h)} ${String(h.total)} (${placesText(h)}), per the inventory export of ${h.exportedAt.slice(0, 10)} plus loot since.`)
     .join(' ')
 }

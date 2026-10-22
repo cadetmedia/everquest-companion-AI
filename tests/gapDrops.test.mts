@@ -144,7 +144,7 @@ test('drop groups are standardized: only the group line is offered, with the pag
   assert.deepEqual(gapActions(rusty, 'unchecked').map((a) => [a.label, a.why]), [
     [
       'Add to mob page',
-      "The wiki page for A Cracked Skeleton lists neither Rusty Weapons nor the one you looted. While you're editing (optional): these 3 lines (Rusty Short Sword, Rusty Axe, Rusty Mace) can become the one [[Rusty Weapons]] line."
+      "The wiki page for A Cracked Skeleton lists neither Rusty Weapons nor the one you looted. Optional: merge its 3 lines (Rusty Short Sword, Rusty Axe, Rusty Mace) into one [[Rusty Weapons]] line."
     ]
   ])
   // Its page states no `[Overall: x%]` (the older `[2] 1x 25% (7%)` shape): the log's rate, here none.
