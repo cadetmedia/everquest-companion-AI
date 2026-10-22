@@ -72,7 +72,7 @@ test('the copy is the lines to add, in the new-page copy\'s spelling, and the ch
   assert.equal(wikiPageText(fish, [], {}), '|foraged = \n\n* [[Kedge Keep]]\n\n[[Category:Foraged]]\n[[Category:Kedge Keep]]\n')
   const [chip] = gapActions(fish, 'hasPage')
   assert.equal(chip.label, 'Add to item page')
-  assert.match(chip.why, /does not list Kedge Keep under foraged and is not in Category:Foraged/)
+  assert.match(chip.why, /lacks Kedge Keep under foraged and Category:Foraged/)
   assert.equal(chip.href, 'https://eqlwiki.com/index.php?title=Fresh_Fish&action=edit')
   // A page listing other zones gets the bullet alone; one lacking only the category, the category alone.
   assert.equal(forageAddText({ page: 'X', zones: ['Kedge Keep'], noField: false, category: false }), '* [[Kedge Keep]]\n\n[[Category:Kedge Keep]]\n')
