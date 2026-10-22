@@ -45,6 +45,10 @@ information!" Built 2026-10-19 on `gaps-all-characters` (BRANCHES.md row has the
    engine); say so in the tab ("as of <date> for <character>").
 4. **Show whose.** A row's details name the characters that saw it, so a screenshot trip knows who
    to log in.
+   Held works the same way (owner, 2026-10-19 and 2026-10-21): each character's OWN inventory export
+   plus its loot since, each holder named ("held by Drywrought"); the "I have it" filter on the Items
+   list then means held by any character with an export (gaps-tab's box, `onlyHeld`). A character
+   with no export of its own claims nothing.
 5. **First save** needs one attach of each character after this ships (Drywrought's log, 76 MB,
    re-reads once).
 
@@ -72,8 +76,13 @@ Cost: moderate. No engine change; a store file, an IPC pair, the merge, the chec
   60 days but give them the ability to change that". One player setting (not per character): rows
   last seen, and archived segments that ended, more than N days ago are left out; N defaults to 60
   and the player can change it. This replaces the fixed-date proposal (rolling days, owner's
-  choice). Built for the All characters view only; whether it also trims the single-character view
-  is NOT decided (agent's suggestion: yes, same reason); ask before building it there.
+  choice). Built for the All characters view first; since 2026-10-21 it trims every view (owner:
+  "days back should be for any character yes"): the attached character's rows last seen, and its
+  loot and kills, before the cut are left out (`ownSince`, the cut the join makes per character),
+  and the Days back field shows with All characters off. Its archive history is already folded into
+  its modules, so a segment that ended before the cut drops out through its rows, loot and kills; a
+  row also seen since keeps its whole count, as in the join. Held is not cut: it reads the
+  character's whole loot since its export.
 - **The 2-month flag and the 60-day window overlap:** a character not attached for two months has
   little or nothing inside a 60-day window. The flag then says so per character ("Drywrought: last
   seen <date>, outside the N-day window") rather than warning about rows that are already hidden.

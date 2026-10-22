@@ -301,6 +301,13 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   apart, and quoted prices carry the player's faction and Charisma.
 - `event_feed.rs` is 431 code lines: red on this branch alone against the old 400 bar, green on
   `main_community` (catch_all's 440). The npm gate does not run the size check on the real tree.
+- "I have it" (`eq.gaps.heldOnly`, off by default): Items only; filters through `useHeldOnly` before
+  Hide uncertain; on gaps-overlay that lives in `useGapsList`, so the overlay follows it. No
+  export, no Items row.
+- Days back (gaps-all-characters) cuts the one-character view through `ownSince`; a row also seen
+  since the cut keeps its whole count, as in the join. The cut is memoised per slot (`lastOwnCut`,
+  `lastOwnCutOnly` on gaps-overlay): a fresh array misses `snapOf` and a Gaps visit costs
+  400-500 ms again. Held is never cut.
 
 ## screenshot-to-wiki
 
