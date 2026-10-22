@@ -3,6 +3,9 @@
 // (`[[Rusty Weapons]]`) instead of its items; dropGroups.json (scrape-drop-groups.ts) holds each
 // group's members. The owner's rule: an item in a group is filed as the group, "Rusty Weapons
 // (a bandit)", with the members the player saw, since a mob that drops one member drops the set.
+// A page that writes a group out item by item instead (A Cracked Skeleton lists fifteen Rusty
+// weapons one by one) is answered in its own style: the item the page lacks, never the group line
+// again (owner, 2026-10-21: the copy offered `[[Rusty Weapons]]` beside the listed weapons).
 // A mob the catalog does not have at all is a mob row already, so its drops are not repeated here.
 //
 // The wiki ties a drop to a mob on two pages, each typed by hand: the mob page's `|known_loot` and
@@ -106,6 +109,9 @@ const groupsByItem = perObject((groups: DropGroups): ReadonlyMap<string, readonl
   return out
 })
 
+/** Group name → its members' keys; built once per groups table. */
+const memberKeys = perObject((groups: DropGroups): ReadonlyMap<string, readonly string[]> => new Map(Object.entries(groups).map(([g, ms]) => [g, ms.map(sourceItemKey)])))
+
 /** Each group as `ties` reads it, keys folded, in the table's order: (group key, member keys). Once per table. */
 const groupTies = perObject((groups: DropGroups): readonly (readonly [string, readonly string[]])[] =>
   Object.entries(groups).map(([g, ms]) => [sourceItemKey(g), ms.map(sourceItemKey)] as const)
@@ -169,7 +175,7 @@ export function dropGaps(loot: readonly LootEvent[], catalog: readonly CatalogMo
   const listed = listedFor(catalog)(aliases)
   const pages = pagesByMob(catalog)
   const common = commonLootNames(catalog)
-  const inGroups = groupsByItem(groups)
+  const inGroups = { byItem: groupsByItem(groups), members: memberKeys(groups) }
   const missing = new Map<string, Missing>()
   for (const e of loot) {
     const filed = filedAs(e, listed, inGroups)
@@ -182,15 +188,26 @@ export function dropGaps(loot: readonly LootEvent[], catalog: readonly CatalogMo
   return kept.map((m) => ({ ...rowOf(m, itemMobs, pickPage(pages.get(mobKey(m.mob)), m.zone)), ...field(m) })).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
 }
 
-/** What a looted item is filed as when its mob's page lists neither it nor a group holding it; null when listed, the mob is unknown or it was a chest payout. */
-function filedAs(e: LootEvent, listed: ReadonlyMap<string, ReadonlySet<string>>, inGroups: ReadonlyMap<string, readonly string[]>): { name: string; group: boolean } | null {
+/** The groups an item is in, and each group's members (keys). */
+interface InGroups {
+  byItem: ReadonlyMap<string, readonly string[]>
+  members: ReadonlyMap<string, readonly string[]>
+}
+
+/**
+ * What a looted item is filed as when its mob's page lists neither it nor a group holding it; null
+ * when listed, the mob is unknown or it was a chest payout. The group, unless the page already lists
+ * one of the group's members by itself: that page lists the set item by item, so the item is filed.
+ */
+function filedAs(e: LootEvent, listed: ReadonlyMap<string, ReadonlySet<string>>, inGroups: InGroups): { name: string; group: boolean } | null {
   const mob = mobSourceOf(e)
   const page = mob === undefined ? undefined : listed.get(mobKey(mob))
   if (page === undefined || page.has(sourceItemKey(e.item)) || page.has(bareItemKey(e.item))) return null
-  const its = inGroups.get(sourceItemKey(e.item)) ?? []
+  const its = inGroups.byItem.get(sourceItemKey(e.item)) ?? []
   if (its.some((g) => page.has(sourceItemKey(g)))) return null
+  const itemByItem = its.some((g) => (inGroups.members.get(g) ?? []).some((k) => page.has(k)))
   // The item's own page is the base item's: `Barbed Legplates +4` is filed as `Barbed Legplates`.
-  return its.length > 0 ? { name: its[0], group: true } : { name: itemBaseName(e.item), group: false }
+  return its.length > 0 && !itemByItem ? { name: its[0], group: true } : { name: itemBaseName(e.item), group: false }
 }
 
 /** The pairs less the server-wide drops (see the header): looted from many mobs, tied by the wiki to almost none. */

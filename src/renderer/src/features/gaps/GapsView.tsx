@@ -9,10 +9,11 @@
 // visible rows on the clipboard as tab-separated text.
 
 import { type JSX, useCallback, useMemo, useState } from 'react'
-import { Box, Button, Checkbox, CircularProgress, FormControlLabel, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material'
+import { Box, Button, Checkbox, CircularProgress, FormControlLabel, MenuItem, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
-import { GAP_DOMAINS, GAP_DOMAIN_HELP, GAP_DOMAIN_LABELS, GAP_SHOWN_NOUN, gapsAsText, gapsCaption, hiddenBy, visibleGaps, type GapDomain, type GapRow, type GapsSnap } from '@shared/gaps'
-import { heldCaption, type HeldIndex } from '@shared/gapHeld'
+import { GAP_DOMAINS, GAP_DOMAIN_HELP, GAP_DOMAIN_LABELS, GAP_SHOWN_NOUN, gapsAsText, hiddenBy, visibleGaps, type GapDomain, type GapRow, type GapsSnap } from '@shared/gaps'
+import { heldCaption, type HeldFilter, type HeldPick } from '@shared/gapHeld'
+import { GAP_SHOW_WORDS, jobCaption, type GapShow } from '@shared/gapJob'
 import { stillNeeded, wikiPageText } from '@shared/wikiPage'
 import { Tooltip } from '../../lib/Tooltip'
 import { copyText } from '../../lib/clipboard'
@@ -61,16 +62,45 @@ function ZoneHere({ zone, checked, onChange }: { zone: string | null; checked: b
   )
 }
 
-/** "I have it" (owner, 2026-10-21): only the Items rows the player holds now, the rows with the held chip. */
-function HeldOnlyBox({ on, onChange, domain }: { on: boolean; onChange: (on: boolean) => void; domain: GapDomain }): JSX.Element {
+/** A small labelled select, the toolbar's control for a choice of more than two. */
+function Picker<T extends string>({ label, value, options, onChange, testId, disabled }: { label: string; value: T; options: readonly (readonly [T, string])[]; onChange: (v: T) => void; testId: string; disabled?: boolean }): JSX.Element {
+  return (
+    <TextField select size="small" label={label} value={value} disabled={disabled} onChange={(e) => onChange(e.target.value as T)} sx={{ minWidth: 130 }} slotProps={{ htmlInput: { 'data-testid': testId } }}>
+      {options.map(([v, text]) => (
+        <MenuItem key={v} value={v}>
+          {text}
+        </MenuItem>
+      ))}
+    </TextField>
+  )
+}
+
+const HELD_PICKS = [['off', 'Off'], ['any', 'Anywhere'], ['bags', 'In bags'], ['bank', 'In bank']] as const
+const SHOW_PICKS = [['all', 'All'], ['new', 'New pages'], ['update', 'Updates']] as const
+const HELD_PLACE: Record<HeldPick, string> = { off: '', any: '', bags: ' in the bags', bank: ' in the bank' }
+const HELD_WHERE = 'In bags is worn, the bags and the keyring; In bank is the bank, the shared bank and the tradeskill depot.'
+
+/** "I have it" (owner, 2026-10-21): only the Items rows the player holds now, anywhere, in the bags or in the bank. */
+function HeldPicker({ pick, onPick, domain }: { pick: HeldPick; onPick: (p: HeldPick) => void; domain: GapDomain }): JSX.Element {
   const title =
     domain === 'item'
-      ? "Only the items you hold now, the rows marked held: your last inventory export (/outputfile inventory), plus what the log saw you loot since, less destroys. No export, nothing shows. With All characters on, every character's own export counts, each holder named in the row."
+      ? `Only the items you hold now, the rows marked held: your last inventory export (/outputfile inventory), plus what the log saw you loot since (in the bags), less destroys. No export, nothing shows. With All characters on, every character's own export counts, each holder named in the row. ${HELD_WHERE}`
       : 'Items only: shows only the items you hold now.'
   return (
     <Tooltip title={title}>
       <span>
-        <Pref label="I have it" checked={on} onChange={onChange} disabled={domain !== 'item'} testId="gaps-held-only" />
+        <Picker label="I have it" value={pick} options={HELD_PICKS} onChange={onPick} disabled={domain !== 'item'} testId="gaps-held-only" />
+      </span>
+    </Tooltip>
+  )
+}
+
+/** "Show" (owner, 2026-10-21): every row, only the new pages, or only the updates to pages that exist. */
+function ShowPicker({ show, onShow }: { show: GapShow; onShow: (s: GapShow) => void }): JSX.Element {
+  return (
+    <Tooltip title="New pages: the wiki has no page for it. Updates: the page exists and lacks something, a small edit.">
+      <span>
+        <Picker label="Show" value={show} options={SHOW_PICKS} onChange={onShow} testId="gaps-show" />
       </span>
     </Tooltip>
   )
@@ -117,8 +147,8 @@ function DomainToggle({
   onPick: (d: GapDomain) => void
   /** rows the player hid, left out of each count */
   hidden: (row: GapRow) => boolean
-  /** "I have it" on: the Items count is what the player holds */
-  heldOnly: HeldIndex | null
+  /** "I have it" on: the Items count is what the player holds, and where */
+  heldOnly: HeldFilter | null
 }): JSX.Element {
   return (
     <ToggleButtonGroup
@@ -137,7 +167,7 @@ function DomainToggle({
               {GAP_DOMAIN_LABELS[d]}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              {d === 'item' && heldOnly !== null ? heldCaption(snap.rows, zone, hidden, heldOnly) : gapsCaption(snap, d, zone, hidden)}
+              {d === 'item' && heldOnly !== null ? heldCaption(snap.rows, zone, hidden, heldOnly) : jobCaption(snap, d, { zone, hidden }, CHIP_CONTEXT)}
             </Typography>
           </Stack>
         </ToggleButton>
@@ -157,7 +187,7 @@ function ShownLine({
   counts: { visible: number; held: number; served: number; hidden: number; uncertain: number }
   domain: GapDomain
   zone: string | null
-  /** what "I have it" adds: `, that you hold`, or '' when off */
+  /** what "I have it" and Show add: `, that you hold`, `, updates only`, or '' when off */
   mine?: string
   tail?: string
 }): JSX.Element {
@@ -175,8 +205,9 @@ function ShownLine({
   )
 }
 
-/** What "I have it" adds to the shown line: with All characters on, held means by any of them. */
-const mineWords = (active: boolean, allCharacters: boolean): string => (!active ? '' : allCharacters ? ', that one of your characters holds' : ', that you hold')
+/** What "I have it" adds to the shown line: with All characters on, held means by any of them; and where. */
+const mineWords = (pick: HeldPick, active: boolean, allCharacters: boolean): string =>
+  !active ? '' : `${allCharacters ? ', that one of your characters holds' : ', that you hold'}${HELD_PLACE[pick]}`
 
 /** What the pages read beside the ledgers, from the engine's snapshot (useGapsData). */
 function sightingsOf(engine: GapsSnap | null | undefined, spellFacts: ReturnType<typeof useSpellFacts>) {
@@ -187,7 +218,7 @@ export default function GapsView(): JSX.Element {
   // The list itself, from the engine's rows to the order on screen, is the hook the Wiki Gaps
   // overlay's publisher runs too (useGapsList), so the overlay lists what this tab lists.
   const list = useGapsList()
-  const { allChars, domain, setDomain, query, setQuery, hereOnly, setHereOnly, current, zone, playerList, rows, marks, showDone, setShowDone, holding, mine, sure, visible, verdicts, sort, onSort, sorted } = list
+  const { allChars, domain, setDomain, query, setQuery, hereOnly, setHereOnly, current, zone, playerList, rows, marks, showDone, setShowDone, holding, job, mine, sure, visible, verdicts, sort, onSort, sorted } = list
   const { snap, engine, loot, kills, seenBy, joining } = list.data
   // While this tab is mounted it feeds the overlay itself, and the headless publisher stands down.
   useMarkGapsTabMounted()
@@ -228,7 +259,7 @@ export default function GapsView(): JSX.Element {
       </Typography>
       {/* Two rows (owner, 2026-10-20: "put search and all the values after that on the next row
           instead of next to the tabs"): the domains alone, then what narrows them, Copy list last. */}
-      <DomainToggle snap={snap} domain={domain} zone={zone} onPick={setDomain} hidden={hiddenRow} heldOnly={mine.on ? holding : null} />
+      <DomainToggle snap={snap} domain={domain} zone={zone} onPick={setDomain} hidden={hiddenRow} heldOnly={mine.pick === 'off' ? null : { index: holding, where: mine.pick }} />
       <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" useFlexGap>
         <TextField
           size="small"
@@ -249,7 +280,8 @@ export default function GapsView(): JSX.Element {
             setCopied(null)
           }}
         />
-        <HeldOnlyBox on={mine.on} onChange={mine.setOn} domain={domain} />
+        <ShowPicker show={job.show} onShow={job.setShow} />
+        <HeldPicker pick={mine.pick} onPick={mine.setPick} domain={domain} />
         <Pref label="Group by zone, then mob" checked={group.grouped} onChange={group.setGrouped} testId="gaps-grouped" />
         <Pref label="Show done" checked={showDone} onChange={setShowDone} testId="gaps-show-done" />
         <HideUncertainBox state={sure} />
@@ -258,7 +290,7 @@ export default function GapsView(): JSX.Element {
         <CopyList onCopy={() => void copy()} disabled={visible.length === 0} copied={copied} />
       </Stack>
       {domain === 'item' && <CaptureBar rows={itemNames} />}
-      <ShownLine counts={{ visible: visible.length, held, served, hidden, uncertain: sure.hidden }} domain={domain} zone={zone} mine={mineWords(mine.active, allChars.on)} tail={allChars.caption} />
+      <ShownLine counts={{ visible: visible.length, held, served, hidden, uncertain: sure.hidden }} domain={domain} zone={zone} mine={mineWords(mine.pick, mine.active, allChars.on) + GAP_SHOW_WORDS[job.show]} tail={allChars.caption} />
       {allChars.on && <CharactersLine live={allChars.liveLabel} others={allChars.others} />}
       <GapsTable
         entries={group.entries}
