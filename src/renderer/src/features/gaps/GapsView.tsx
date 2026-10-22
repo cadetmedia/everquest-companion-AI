@@ -14,10 +14,9 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import { GAP_DOMAINS, GAP_DOMAIN_HELP, GAP_DOMAIN_LABELS, GAP_SHOWN_NOUN, gapsAsText, hiddenBy, visibleGaps, type GapDomain, type GapRow, type GapsSnap } from '@shared/gaps'
 import { heldCaption, type HeldFilter, type HeldPick } from '@shared/gapHeld'
 import { GAP_SHOW_WORDS, jobCaption, type GapShow } from '@shared/gapJob'
-import { stillNeeded, wikiPageText } from '@shared/wikiPage'
+import { wikiPageText } from '@shared/wikiPage'
 import { Tooltip } from '../../lib/Tooltip'
 import { copyText } from '../../lib/clipboard'
-import { useSpellFacts } from '../../lib/gapSpellFacts'
 import { useMarkGapsTabMounted } from '../../lib/gapsTabMounted'
 import GapsTable from './GapsTable'
 import { GAPS_DATA_DATE, PAGE_EXTRAS } from './useGapsData'
@@ -26,7 +25,6 @@ import type { HideUncertain } from './useHideUncertain'
 import { useGrouping } from './useGrouping'
 import { useGapsList } from './useGapsList'
 import { useGapsOverlayFeed } from './useGapsOverlayFeed'
-import { useItemShots, useSpellShots } from './itemShotsStore'
 import CaptureBar from './CaptureBar'
 import { itemRowNames } from '@shared/itemShotKeep'
 import GroupHeaderControls from './GroupHeaderControls'
@@ -36,9 +34,6 @@ import GroupHeaderControls from './GroupHeaderControls'
 const CLICK_HINT = 'Click a row for where it was seen.'
 
 const CHIP_CONTEXT = { dataDate: GAPS_DATA_DATE, isMob: PAGE_EXTRAS.isMob }
-const NO_NAMES: readonly string[] = []
-/** The names of the rows on screen. */
-const spellNamesOf = (rows: readonly GapRow[]): string[] => rows.map((r) => r.name)
 
 /** A small checkbox with a caption, the tab's toolbar control. */
 function Pref({ label, checked, onChange, testId, disabled }: { label: string; checked: boolean; onChange: (on: boolean) => void; testId: string; disabled?: boolean }): JSX.Element {
@@ -76,7 +71,7 @@ function Picker<T extends string>({ label, value, options, onChange, testId, dis
 }
 
 const HELD_PICKS = [['off', 'Off'], ['any', 'Anywhere'], ['bags', 'In bags'], ['bank', 'In bank']] as const
-const SHOW_PICKS = [['all', 'All'], ['new', 'New pages'], ['update', 'Updates']] as const
+const SHOW_PICKS = [['all', 'All'], ['new', 'New pages'], ['update', 'Updates'], ['ready', 'Ready']] as const
 const HELD_PLACE: Record<HeldPick, string> = { off: '', any: '', bags: ' in the bags', bank: ' in the bank' }
 const HELD_WHERE = 'In bags is worn, the bags and the keyring; In bank is the bank, the shared bank and the tradeskill depot.'
 
@@ -209,35 +204,23 @@ function ShownLine({
 const mineWords = (pick: HeldPick, active: boolean, allCharacters: boolean): string =>
   !active ? '' : `${allCharacters ? ', that one of your characters holds' : ', that you hold'}${HELD_PLACE[pick]}`
 
-/** What the pages read beside the ledgers, from the engine's snapshot (useGapsData). */
-function sightingsOf(engine: GapsSnap | null | undefined, spellFacts: ReturnType<typeof useSpellFacts>) {
-  return { killFactions: engine?.killFactions, mobLocs: engine?.mobLocs, mobSpecials: engine?.mobSpecials, mobCoin: engine?.mobCoin, ...PAGE_EXTRAS, spellFacts }
-}
-
 export default function GapsView(): JSX.Element {
   // The list itself, from the engine's rows to the order on screen, is the hook the Wiki Gaps
   // overlay's publisher runs too (useGapsList), so the overlay lists what this tab lists.
   const list = useGapsList()
-  const { allChars, domain, setDomain, query, setQuery, hereOnly, setHereOnly, current, zone, playerList, rows, marks, showDone, setShowDone, holding, job, mine, sure, visible, verdicts, sort, onSort, sorted } = list
-  const { snap, engine, loot, kills, seenBy, joining } = list.data
+  const { allChars, domain, setDomain, query, setQuery, hereOnly, setHereOnly, current, zone, playerList, rows, marks, showDone, setShowDone, holding, job, readiness, mine, sure, visible, verdicts, sort, onSort, sorted } = list
+  const { snap, loot, kills, seenBy, joining } = list.data
   // While this tab is mounted it feeds the overlay itself, and the headless publisher stands down.
   useMarkGapsTabMounted()
   useGapsOverlayFeed(list)
   const [copied, setCopied] = useState<number | null>(null)
   const hiddenRow = useMemo(() => hiddenBy(marks.done, showDone, sure.hide), [marks.done, showDone, sure.hide])
-  // What the pages read beside the ledgers: each kill's factions, each mob's points, the wiki's spellings.
-  // A spell page fills from the install's spell files (owner, 2026-10-19): asked for the spells on screen.
-  const spellNames = useMemo(() => (domain === 'spell' ? spellNamesOf(visible) : NO_NAMES), [domain, visible])
-  const spellFacts = useSpellFacts(spellNames)
-  // What pasted item screenshots gave (ShotPanel), for the item pages (owner ask, 2026-10-21).
-  const itemShots = useItemShots()
-  // And pasted spell display windows, for the spell pages (owner, 2026-10-21).
-  const spellShots = useSpellShots()
   // Where a capture from the game can be filed (phase 3): every item row, not only the ones on screen.
   const itemNames = useMemo(() => itemRowNames(rows ?? []), [rows])
-  const sightings = useMemo(() => ({ ...sightingsOf(engine, spellFacts), itemShots, spellShots }), [engine, spellFacts, itemShots, spellShots])
+  // What the pages read beside the ledgers (each kill's factions, each mob's points, the install's spell
+  // files, the kept screenshots) and what each row still lacks come from the list (useGapReady).
+  const { sightings, needed } = readiness
   const pageText = useCallback((row: GapRow) => wikiPageText(row, loot, kills, sightings), [loot, kills, sightings])
-  const needed = useCallback((row: GapRow) => stillNeeded(row, loot, kills, sightings), [loot, kills, sightings])
   // "Group by zone, then mob" (owner ask, 2026-10-18), its heading order and its folds (useGrouping).
   const group = useGrouping(sorted, loot, zone)
 

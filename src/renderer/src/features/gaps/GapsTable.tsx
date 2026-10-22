@@ -49,6 +49,7 @@ import { otherPageTitle } from '@shared/gapImages'
 import { replaceWhy } from '@shared/gapDrops'
 import { gapHeld, heldChipLabel, heldLine, heldTitle, heldWhere, type GapHeld, type HeldIndex } from '@shared/gapHeld'
 import { GAP_JOB_LABEL, GAP_JOB_TIP, gapJob, type GapJob } from '@shared/gapJob'
+import { needsWords } from '@shared/gapReady'
 import { wikiPageUrl } from '@shared/wiki'
 import { Tooltip } from '../../lib/Tooltip'
 import { useWindowedRows } from '../../lib/useWindowedRows'
@@ -128,6 +129,28 @@ function JobChip({ job }: { job: GapJob }): JSX.Element {
   )
 }
 
+/** After the job tag (owner, 2026-10-21): Ready when nothing is left to capture (shared/gapReady.ts). */
+function ReadyChip({ need }: { need: string }): JSX.Element | null {
+  if (need !== '') return null
+  return (
+    <Tooltip title="Nothing left to capture in game: copy the page and post it.">
+      <Chip label="Ready" size="small" color="success" sx={{ mr: 1, height: 20 }} data-testid="gaps-ready" />
+    </Tooltip>
+  )
+}
+
+/** After the name of a row not yet Ready: what is left to capture, a word each (`needs: lore`). */
+function NeedsHint({ need }: { need: string }): JSX.Element | null {
+  if (need === '') return null
+  return (
+    <Tooltip title="Capture these in game and the row turns Ready.">
+      <Typography variant="caption" color="text.secondary" component="span" sx={{ ml: 1, fontWeight: 400 }} data-testid="gaps-needs">
+        needs: {need}
+      </Typography>
+    </Tooltip>
+  )
+}
+
 const GapTableRow = memo(function GapTableRow({
   row,
   open,
@@ -137,12 +160,15 @@ const GapTableRow = memo(function GapTableRow({
   done = false,
   chipContext,
   work,
-  held
+  held,
+  need
 }: {
   row: GapRow
   open: boolean
   verdict: GapVerdict
   onToggle: (name: string) => void
+  /** what is left to capture, a word each; '' when the row is Ready */
+  need: string
   /** marked done: shown only under "Show done", dimmed */
   done?: boolean
   chipContext?: GapActionContext
@@ -162,8 +188,10 @@ const GapTableRow = memo(function GapTableRow({
           </Box>
         )}
         <JobChip job={gapJob(row, chipContext)} />
+        <ReadyChip need={need} />
         {/* Under its mob's heading a faction or drop row is the faction or item alone. */}
         {depth === 2 && onMobPage(row) ? factionOf(row) : row.name}
+        <NeedsHint need={need} />
         {row.suggest !== undefined && <SuggestCaption s={row.suggest} />}
         <PageTitleCaption row={row} />
         {row.maybePlayer === true && <Chip label="may be a player" size="small" color="warning" variant="outlined" sx={{ ml: 1 }} data-testid="gaps-maybe-player" />}
@@ -392,7 +420,7 @@ export default function GapsTable({
   onSort: (key: GapSortKey) => void
   /** the wiki page text for a row, for its Copy wiki page button */
   pageText: (row: GapRow) => string
-  /** the page fields the log left blank for a row */
+  /** the page fields still open for a row; none means Ready (shared/gapReady.ts) */
   needed: (row: GapRow) => string[]
   /** the rows marked done, and the mark's toggle */
   done: ReadonlySet<string>
@@ -442,7 +470,7 @@ export default function GapsTable({
             <PadRow height={win.topPad} />
             {shown.slice(win.start, win.end).map((e) =>
               e.kind === 'row' ? (
-                <GapTableRow key={e.key} row={e.row} open={open === e.row.name} verdict={verdicts[e.row.name] ?? 'unchecked'} onToggle={onToggle} depth={e.depth} done={done.has(doneKey(e.row))} chipContext={chipContext} work={work} held={gapHeld(e.row, holding)} />
+                <GapTableRow key={e.key} row={e.row} open={open === e.row.name} verdict={verdicts[e.row.name] ?? 'unchecked'} onToggle={onToggle} depth={e.depth} done={done.has(doneKey(e.row))} chipContext={chipContext} work={work} held={gapHeld(e.row, holding)} need={needsWords(needed(e.row))} />
               ) : (
                 <GroupRow key={e.key} entry={e} folded={folded.has(e.key)} onFold={onFold} work={headingWork} />
               )

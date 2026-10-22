@@ -6,8 +6,8 @@
 import { gapsCaption, visibleGaps, type GapActionContext, type GapDomain, type GapRow, type GapsSnap } from './gaps'
 
 export type GapJob = 'new' | 'update'
-/** The Show picker's choice: every row, or one job. */
-export type GapShow = 'all' | GapJob
+/** The Show picker's choice: every row, one job, or the rows with nothing left to capture (shared/gapReady.ts). */
+export type GapShow = 'all' | GapJob | 'ready'
 
 /** The domains whose every row is a line for a mob page that exists: a faction, a drop, a picture. */
 const UPDATE_DOMAINS: ReadonlySet<GapDomain> = new Set<GapDomain>(['faction', 'drop', 'image'])
@@ -29,12 +29,13 @@ export const GAP_JOB_TIP: Record<GapJob, string> = {
   update: 'The wiki has a page that lacks this: a small edit to that page.'
 }
 
-/** The rows the Show picker keeps; all of them, the same array, for `all`. */
-export function onlyJob(rows: readonly GapRow[], show: GapShow, ctx: GapActionContext = {}): readonly GapRow[] {
-  return show === 'all' ? rows : rows.filter((r) => gapJob(r, ctx) === show)
+/** The rows the Show picker keeps; all of them, the same array, for `all`. `ready` answers Ready. */
+export function onlyJob(rows: readonly GapRow[], show: GapShow, ctx: GapActionContext = {}, ready: (row: GapRow) => boolean = () => false): readonly GapRow[] {
+  if (show === 'all') return rows
+  return rows.filter((r) => (show === 'ready' ? ready(r) : gapJob(r, ctx) === show))
 }
 
-const SHOWS: readonly GapShow[] = ['all', 'new', 'update']
+const SHOWS: readonly GapShow[] = ['all', 'new', 'update', 'ready']
 
 /** The stored Show choice; All when absent or unreadable. */
 export function gapShowOf(raw: string | null): GapShow {
@@ -42,7 +43,7 @@ export function gapShowOf(raw: string | null): GapShow {
 }
 
 /** What the shown-count line adds for a Show choice. */
-export const GAP_SHOW_WORDS: Record<GapShow, string> = { all: '', new: ', new pages only', update: ', updates only' }
+export const GAP_SHOW_WORDS: Record<GapShow, string> = { all: '', new: ', new pages only', update: ', updates only', ready: ', ready only' }
 
 /** What a caption counts: the rows in the zone when one is given, less the hidden ones. */
 export interface CaptionFilter {

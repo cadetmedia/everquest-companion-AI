@@ -3,7 +3,7 @@
 // (owner, 2026-10-20: the overlay shows "the top 10 of whatever list they have on whatever tab they
 // have showing"). The steps, in order: every character joined when All characters is on
 // (useGapsData), the marked players dropped, the domain tab + search + Zone I'm in (visibleGaps),
-// Show (useGapShow), I have it (useHeldOnly), Hide uncertain, the Done marks unless Show done, and
+// Show (useGapShow, Ready read by useGapReady), I have it (useHeldOnly), Hide uncertain, the Done marks unless Show done, and
 // the sort.
 //
 // EVERY CHOICE THE LIST DEPENDS ON IS READ HERE, NOT IN THE TAB, so the publisher sees the tab's
@@ -25,6 +25,7 @@ import { useHideUncertain, type HideUncertain } from './useHideUncertain'
 import { useAllHeld } from './useAllHeld'
 import { useHeldOnly, type HeldOnly } from './useHeldOnly'
 import { useGapShow, type GapShowState } from './useGapShow'
+import { useGapReady, type GapReadiness } from './useGapReady'
 import type { HeldIndex } from '@shared/gapHeld'
 
 /** Where the "Zone I'm in" choice is remembered, per viewer, as the Achievements tab remembers its own. */
@@ -33,6 +34,7 @@ const ZONE_HERE_KEY = 'eq.gaps.zoneHere'
 const SHOW_DONE_KEY = 'eq.gaps.showDone'
 /** What a row's job reads beyond the row: which names are catalog mobs (a merchant with a page). */
 const JOB_CONTEXT = { isMob: PAGE_EXTRAS.isMob }
+const NO_NAMES: readonly string[] = []
 
 // ---- the search, kept for the session ----
 
@@ -95,8 +97,10 @@ export interface GapsList {
   setShowDone: (on: boolean) => void
   /** what each character holds now (the held chip), every character's while All characters is on */
   holding: HeldIndex
-  /** "Show" (owner, 2026-10-21): new pages, updates to pages that exist, or both */
+  /** "Show" (owner, 2026-10-21): new pages, updates to pages that exist, both, or the Ready rows */
   job: GapShowState
+  /** what each row still lacks, the pages' inputs with it (useGapReady) */
+  readiness: GapReadiness
   /** "I have it" (owner, 2026-10-21): the Items list narrowed to what is held, and where */
   mine: HeldOnly
   sure: HideUncertain
@@ -143,7 +147,10 @@ export function useGapsList(opts: { background?: boolean } = {}): GapsList {
   // character's own export plus ITS loot since, named per holder while All characters is on.
   const holding = useAllHeld(data.ownLoot, me, allChars)
   // "Show" (owner, 2026-10-21): new pages, updates or both; then "I have it", what the player holds.
-  const job = useGapShow(inDomain, JOB_CONTEXT)
+  // Ready (owner, 2026-10-21): nothing left to capture; the install's spell files asked for the domain's spells.
+  const spellNames = useMemo(() => (domain === 'spell' ? inDomain.map((r) => r.name) : NO_NAMES), [domain, inDomain])
+  const readiness = useGapReady(data, spellNames)
+  const job = useGapShow(inDomain, JOB_CONTEXT, readiness.isReady)
   const mine = useHeldOnly(job.rows, holding, domain)
   // "Hide uncertain" (owner, 2026-10-19): rows the tab is not sure are gaps, hidden on request.
   const sure = useHideUncertain(mine.rows)
@@ -154,5 +161,5 @@ export function useGapsList(opts: { background?: boolean } = {}): GapsList {
   // The table and Copy list read the same order, so a copied list matches what is on screen.
   const sorted = useMemo(() => sortGaps(visible, sort, verdicts), [visible, sort, verdicts])
   // prettier-ignore
-  return { me, allChars, data, domain, setDomain, query: shownQuery, setQuery, hereOnly, setHereOnly, current, zone, playerList, rows, marks, showDone, setShowDone, holding, job, mine, sure, visible, verdicts, sort, onSort, sorted }
+  return { me, allChars, data, domain, setDomain, query: shownQuery, setQuery, hereOnly, setHereOnly, current, zone, playerList, rows, marks, showDone, setShowDone, holding, job, readiness, mine, sure, visible, verdicts, sort, onSort, sorted }
 }
