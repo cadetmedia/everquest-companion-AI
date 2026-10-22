@@ -7,12 +7,14 @@
 // the list fills in stages at launch and swaps with the character, and dropping on absence lost marks.
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { doneKey, keptDoneMarks, type GapRow } from '@shared/gaps'
+import { doneKey, keptDoneMarks, withDoneMarks, type GapRow } from '@shared/gaps'
 import { loadDoneMarks as load, saveDoneMarks as save } from './doneMarksStore'
 
 export interface DoneMarks {
   done: ReadonlySet<string>
   toggle: (row: GapRow) => void
+  /** every one of `rows` marked done, or every one cleared: a mob heading's Done (owner ask, 2026-10-21) */
+  setMany: (rows: readonly GapRow[], on: boolean) => void
 }
 
 /** `dataDate`: the wiki data's date (`2026-10-19`); every mark made before it is cleared (keptDoneMarks). */
@@ -37,8 +39,17 @@ export function useDoneMarks(today: string, dataDate: string): DoneMarks {
       }),
     [today]
   )
+  const setMany = useCallback(
+    (rows: readonly GapRow[], on: boolean) =>
+      setMarks((cur) => {
+        const next = withDoneMarks(cur, rows, on, today)
+        save(next)
+        return next
+      }),
+    [today]
+  )
   const done = useMemo(() => new Set(Object.keys(marks)), [marks])
-  return { done, toggle }
+  return { done, toggle, setMany }
 }
 
 const PLAYERS_KEY = 'eq.gaps.players'

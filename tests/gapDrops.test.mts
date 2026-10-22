@@ -1,6 +1,7 @@
 // Drops missing from a mob (owner asks, 2026-10-18): an item looted from a mob the wiki has, which
 // its page lists neither by itself nor by a group holding it; an item in a group is filed as the group.
 import { test } from 'node:test'
+import { readFileSync } from 'node:fs'
 import assert from 'node:assert/strict'
 import { dropGaps } from '../src/shared/gapDrops'
 import { gapActions } from '../src/shared/gaps'
@@ -8,6 +9,7 @@ import { groupGaps } from '../src/shared/gapGroups'
 import { killIndex, type KillMap } from '../src/shared/kills'
 import { wikiPageText } from '../src/shared/wikiPage'
 import type { LootEvent } from '../src/shared/types'
+import { parseMobPage } from '../scripts/sources/mobPage'
 
 const catalog = [
   { page: 'A bandit (Eastern Karana)', name: 'a bandit', drops: ['Cloth Armor', 'Rusty Weapons'] },
@@ -97,4 +99,30 @@ test('grouped, a mob heading holds its drop rows, so one copy gives every line i
   assert.equal(heading?.kind === 'mob' ? heading.mob : '', 'a gnoll')
   const lines = heading?.kind === 'mob' ? heading.rows.map((r) => wikiPageText(r, [], {})).join('') : ''
   assert.equal(lines, '<li> [[Bronze Weapons]] </li>\n<li> {{:Hide Mask}} </li>\n')
+})
+
+test('a page that lists a group item by item gets the item it lacks, never the group line again (A Cracked Skeleton)', () => {
+  // The cached wiki page, cut to its name and four of its loot lines: Bone Chips and three Rusty weapons, one by one.
+  const text = readFileSync(new URL('./fixtures/mob-page-a-cracked-skeleton.wikitext', import.meta.url), 'utf8')
+  const page = parseMobPage('A Cracked Skeleton', text) ?? assert.fail('a mob page')
+  assert.deepEqual(page.drops, ['Bone Chips', 'Rusty Short Sword', 'Rusty Axe', 'Rusty Mace'])
+  const sets = { 'Rusty Weapons': ['Rusty Axe', 'Rusty Halberd', 'Rusty Mace', 'Rusty Short Sword', 'Worn Great Staff'], 'Cloth Armor': ['Cloth Cap', 'Cloth Gloves'] }
+  const rows = dropGaps(
+    [
+      loot('Rusty Axe +1', 'a cracked skeleton'), // listed by name
+      loot('Rusty Halberd', 'a cracked skeleton'), // a member the page lacks
+      loot('Worn Great Staff', 'a cracked skeleton'),
+      loot('Cloth Cap', 'a cracked skeleton') // its group has no member on the page: the group's own line
+    ],
+    [page],
+    sets
+  )
+  assert.deepEqual(rows.map((r) => [r.name, r.details.drops?.entries.map((e) => e.name)]).sort(), [
+    ['Cloth Armor (a cracked skeleton)', ['Cloth Cap']],
+    ['Rusty Halberd (a cracked skeleton)', undefined],
+    ['Worn Great Staff (a cracked skeleton)', undefined]
+  ])
+  // One line per item, in the page's own style; no [[Rusty Weapons]].
+  const lines = rows.map((r) => wikiPageText(r, [], {})).sort()
+  assert.deepEqual(lines, ['<li> [[Cloth Armor]] </li>\n', '<li> {{:Rusty Halberd}} </li>\n', '<li> {{:Worn Great Staff}} </li>\n'])
 })

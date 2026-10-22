@@ -11,6 +11,7 @@ import { spanStamps, widen, type Span } from './gapTimes'
 import type { KillMap } from './kills'
 import { gapMobKey as mobKey, perObject } from './gapMemo'
 import type { MobEntry } from './mobTypes'
+import { mobSourceOf } from './rewardChest'
 import type { LootEvent } from './types'
 import { npcImageName } from './wikiPage'
 
@@ -53,17 +54,18 @@ export interface ConMet {
   ts?: number
 }
 
-/** The mobs met, by key: kills from the ledger, loot sources with the zone last looted in, cons with theirs. */
+/** The mobs met, by key: kills from the ledger, loot sources (never the Reward Chest) with the zone last looted in, cons with theirs. */
 function metMobs(kills: KillMap, loot: readonly LootEvent[], cons: readonly ConMet[]): Map<string, Met> {
   const out = new Map<string, Met>()
   for (const k of Object.values(kills)) out.set(mobKey(k.display), { name: k.display, kills: k.count, loots: 0, cons: 0, zone: '', span: widen(widen(undefined, k.firstTs), k.lastTs) })
   for (const e of loot) {
-    if (e.source === undefined) continue
-    const m = out.get(mobKey(e.source)) ?? { name: e.source, kills: 0, loots: 0, cons: 0, zone: '' }
+    const mob = mobSourceOf(e)
+    if (mob === undefined) continue
+    const m = out.get(mobKey(mob)) ?? { name: mob, kills: 0, loots: 0, cons: 0, zone: '' }
     m.loots++
     m.zone = e.zone ?? m.zone
     m.span = widen(m.span, e.ts)
-    out.set(mobKey(e.source), m)
+    out.set(mobKey(mob), m)
   }
   // A con places a mob the player only killed (kills carry no zone) or only looked at.
   for (const c of cons) {

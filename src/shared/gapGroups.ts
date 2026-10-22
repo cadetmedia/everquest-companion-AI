@@ -8,6 +8,7 @@
 
 import { factionOf, onMobPage, type GapRow } from './gaps'
 import { itemBaseName } from './itemStats'
+import { mobSourceOf } from './rewardChest'
 import type { LootEvent } from './types'
 import { zoneKey } from './zones'
 
@@ -70,19 +71,20 @@ function zonesOf(row: GapRow): string[] {
   return row.details.zones?.all ?? row.details.zones?.entries.map((e) => e.name) ?? []
 }
 
-/** Every (zone, mob) each item was looted from, by lowercase item name: one pass over the ledger. */
+/** Every (zone, mob) each item was looted from, by lowercase item name: one pass over the ledger. A chest payout has no mob. */
 function lootPlaces(loot: readonly LootEvent[]): Map<string, Place[]> {
   const out = new Map<string, Place[]>()
   const seen = new Set<string>()
   for (const e of loot) {
-    if (e.source === undefined) continue
+    const mob = mobSourceOf(e)
+    if (mob === undefined) continue
     // An item at any tier is one item (owner, 2026-10-19).
     const key = itemBaseName(e.item).toLowerCase()
-    const pair = `${key}|${(e.zone ?? '').toLowerCase()}|${e.source.toLowerCase()}`
+    const pair = `${key}|${(e.zone ?? '').toLowerCase()}|${mob.toLowerCase()}`
     if (seen.has(pair)) continue
     seen.add(pair)
     const places = out.get(key) ?? []
-    places.push({ zone: e.zone ?? '', mob: e.source })
+    places.push({ zone: e.zone ?? '', mob })
     out.set(key, places)
   }
   return out
@@ -175,9 +177,22 @@ export function groupGaps(
   return uniqueKeys(out)
 }
 
-/** Every heading's key: what "Collapse all" folds (owner ask, 2026-10-20). */
-export function headingKeys(entries: readonly GapEntry[]): string[] {
-  return entries.filter((e) => e.kind !== 'row').map((e) => e.key)
+/**
+ * Every heading's key: what "Collapse all" folds (owner ask, 2026-10-20). With `kind`, that level's
+ * alone: the mobs fold at once while the zones stay as they are (owner ask, 2026-10-21).
+ */
+export function headingKeys(entries: readonly GapEntry[], kind?: 'zone' | 'mob'): string[] {
+  return entries.filter((e) => e.kind !== 'row' && (kind === undefined || e.kind === kind)).map((e) => e.key)
+}
+
+/** `folded` with every one of `keys` folded, or every one unfolded; the other headings keep theirs. */
+export function withFolds(folded: ReadonlySet<string>, keys: readonly string[], fold: boolean): Set<string> {
+  const next = new Set(folded)
+  for (const k of keys) {
+    if (fold) next.add(k)
+    else next.delete(k)
+  }
+  return next
 }
 
 /**
