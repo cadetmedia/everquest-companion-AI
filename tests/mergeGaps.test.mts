@@ -268,3 +268,15 @@ test('gaps: forage zones and tradeskills survive the join, every forage zone kep
   assert.deepEqual((details.forageZones as Tally).all, ['Qeynos Hills', 'The Rathe Mountains'])
   assert.deepEqual((details.tradeskills as Tally).entries, [{ name: 'Jewelry Making', n: 1 }])
 })
+
+test('gaps: a Reward Chest leaves an item row’s sources across the join, the mob beside it kept (owner, 2026-10-21)', () => {
+  // An archive folded before the chest was told apart from a mob still names it as a source.
+  const older = snap([row('item', 'Glowing Widget', 2, { details: { samples: [], sources: tally(['Reward Chest', 1], ['a skeleton', 1]) } })])
+  const newer = snap([row('item', 'Fetid Skin', 1, { details: { samples: [], sources: tally(['Reward Chest', 1]), zones: { ...tally(['Befallen', 1]), all: ['Befallen'] } } })])
+  const merged = mergeGaps(older, newer)
+  const widget = merged?.rows.find((r) => r.name === 'Glowing Widget')
+  const skin = merged?.rows.find((r) => r.name === 'Fetid Skin')
+  assert.deepEqual(widget?.details.sources, tally(['a skeleton', 1]))
+  assert.equal(skin?.details.sources, undefined, 'a chest-only item names no source')
+  assert.deepEqual(skin?.details.zones?.all, ['Befallen'], 'its zone stands')
+})
