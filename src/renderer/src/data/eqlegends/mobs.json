@@ -1,5 +1,5 @@
 {
-  "scrapedAt": "2026-10-22T04:07:21.563Z",
+  "scrapedAt": "2026-10-22T08:40:22.773Z",
   "source": "eqlwiki.com — Category:NPCs/Named Mobs/Merchants/Raid Encounters ∪ embeddedin Template:Namedmobpage/MerchantPage, filtered to pages opening a mob template + recentchanges delta (scripts/scrape-delta.mts)",
   "mobs": [
     {
@@ -35188,8 +35188,7 @@
         "-3",
         "3"
       ],
-      "image": "npc_a_lizard_broodling.png",
-      "noImage": true
+      "image": "npc_a_lizard_broodling.png"
     },
     {
       "page": "A lizard champion",
@@ -35479,8 +35478,7 @@
         "-",
         "+"
       ],
-      "image": "npc_cazicthule_1.0_-_a_lizard_probationer.png",
-      "noImage": true
+      "image": "npc_a_lizard_probationer.png"
     },
     {
       "page": "A lizard proselyte",
@@ -35500,8 +35498,7 @@
         "-3",
         "3"
       ],
-      "image": "npc_a_lizard_proselyte.png",
-      "noImage": true
+      "image": "npc_a_lizard_proselyte.png"
     },
     {
       "page": "A lizard protector",
@@ -35609,8 +35606,7 @@
         "-",
         "+"
       ],
-      "image": "npc_cazicthule_1.0_-_a_lizard_warder.png",
-      "noImage": true
+      "image": "npc_a_lizard_warder.png"
     },
     {
       "page": "A lizard zealot",
@@ -41140,8 +41136,7 @@
         "Polar Bear Skin",
         "Ruined Bear Pelt"
       ],
-      "image": "npc_a_polar_bear_cub.png",
-      "noImage": true
+      "image": "npc_a_polar_bear_cub.png"
     },
     {
       "page": "A Pox Scarab",
@@ -58980,8 +58975,7 @@
         "High Quality Wolf Skin",
         "Medium Quality Wolf Skin"
       ],
-      "image": "npc_a_white_wolf.png",
-      "noImage": true
+      "image": "npc_a_white_wolf.png"
     },
     {
       "page": "A whorl of natural energy",
@@ -76523,8 +76517,7 @@
         "-30",
         "10"
       ],
-      "image": "npc_arnis_mclish.png",
-      "noImage": true
+      "image": "npc_arnis_mclish.png"
     },
     {
       "page": "Arreken Skyward",
@@ -78193,8 +78186,7 @@
         "-30",
         "-30"
       ],
-      "image": "npc_bandl_mcmarrin.png",
-      "noImage": true
+      "image": "npc_bandl_mcmarrin.png"
     },
     {
       "page": "Bank Clerk Jaylin",
@@ -105216,8 +105208,7 @@
         "-30",
         "-30"
       ],
-      "image": "npc_dom_mcmarrin.png",
-      "noImage": true
+      "image": "npc_dom_mcmarrin.png"
     },
     {
       "page": "Dom Pathfinder",

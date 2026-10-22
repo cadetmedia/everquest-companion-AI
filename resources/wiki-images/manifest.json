@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-22T04:07:59.947Z",
+  "generatedAt": "2026-10-22T08:40:45.567Z",
   "note": "Images shipped with the app so it never fetches art at runtime. Every file states the exact upstream URL it came from. Regenerate with `npm run fetch:images`.",
   "sources": [
     "https://eqlwiki.com/",
