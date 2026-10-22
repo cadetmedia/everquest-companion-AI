@@ -308,6 +308,18 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   since the cut keeps its whole count, as in the join. The cut is memoised per slot (`lastOwnCut`,
   `lastOwnCutOnly` on gaps-overlay): a fresh array misses `snapOf` and a Gaps visit costs
   400-500 ms again. Held is never cut.
+- Forage update rows (`shared/gapForage.ts`): the engine files a KNOWN item's forage under domain
+  `forage` (served after the four, no total); `withForageRows` always removes those rows, and an
+  Items row with `forageUpdate` stands in for each page that lacks something. Zones compare by
+  place through the zone table, never by spelling (`Northern Karana` = `Northern Plains of Karana`).
+- items.json `foraged`, `foragedNote`, `foragedCategory` exist only on local-data-refresh:
+  `main/gapItemForage.ts` declares them locally so gaps-item-facts builds without them.
+- `itemLookupParse.ts` is 421 code lines: red on wiki-scraper-fixes alone against its old 400 bar,
+  green on `main_community` (catch_all's 440).
+- Merging gaps-item-facts forward conflicts in `gapDerive.ts` (keep `only`, always run
+  `withForageRows`, add `met.itemForage` to `keyOf`), `wikiPage.ts` (`row.forageUpdate ?
+  forageAddText(...) : itemPage(...)`; NEEDED_OF `[]` for a forage row) and `useGapsData.ts` (forage
+  names from the snapshot the derivation receives, the joined one under All characters).
 
 ## screenshot-to-wiki
 
