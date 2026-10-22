@@ -129,8 +129,17 @@ Done, on main_community, not yet in a test build (owner: no release until all of
 redirects as mob `otherNames` (516 on 463 mobs; Gaps and lookups); AAs in New at this level (each
 rank at its level, class AAs only); the delta covering every file (not yet run against the wiki);
 open screens refetch after an archive refresh; the stale UI specs (maps left red). Skipped by the
-owner: the table-driven item test. Still open: release test.27; whether general and archetype AAs
-belong in New at this level (archetype AAs name no classes on the wiki).
+owner: the table-driven item test. Still open: release test.27.
+
+General and archetype AAs in New at this level (owner, 2026-10-21: "sure include it if we can and
+if it makes sense"), on `spell-upgrades`, not yet merged: the 30 General AAs are listed for every
+class, each rank at its level (the wiki states Level 1 for all 30, so they all land at 1: a Shadow
+Knight's level 1 goes from 29 skill rows to 59), classless, chipped "General AA", after the class
+rows. The 34 Archetype AAs stay out: the wiki's Archetype table is Name/Ranks/Cost/Description with
+no archetype or class column, and Character Classes names the four archetypes (casters, priests,
+melee, hybrids) but not which AA belongs to which. Needed to list them: each Archetype AA's
+archetype or classes stated on the wiki (a column, or per-archetype sub-tables), or the in-game
+Archetype tab read per class. The one Special AA (Banestrike) is also left out.
 
 The list as it stood before that session:
 

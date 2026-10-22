@@ -134,6 +134,10 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   `DEFAULT_STAT_WEIGHTS`.
 - Rust `spells_us.rs` twin is not parity-gated; deferred.
 - Open: SPA 148 slot reading (MEASURED.md); SPA 475 rows in the same slot contest each other.
+- `LevelUnlockData.general` holds the General AAs with no class key; the fold appends them classless
+  (`UnlockRow.general`) after the class rows, and a name a class row shows wins.
+- Archetype AAs are not listed: `classes.json` `aas` has `group: 'archetype'` and no classes. Add them
+  only once the data states an archetype or classes.
 
 ## faction-tab, slayer-tab (Achievements), unlocks-tab
 
