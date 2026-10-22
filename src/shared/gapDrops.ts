@@ -251,10 +251,11 @@ function memberLines(pages: readonly CatalogMob[], keys: ReadonlySet<string>): R
   return { lines: [...names.values()], rate: Math.round(stated.reduce((a: number, r) => a + (r ?? 0), 0) * 10) / 10 }
 }
 
-/** The optional cleanup beside a group's row: the page's member lines, and the one group line that stands for them. */
-export function replaceWhy(group: string, lines: readonly string[]): string {
+/** The optional cleanup beside a group's row, after a space: the page's member lines and the one group line for them; '' with none. */
+export function replaceWhy(group: string, lines: readonly string[] | undefined): string {
+  if (lines === undefined) return ''
   const n = lines.length
-  return `While you're editing (optional): ${n === 1 ? 'this line' : `these ${String(n)} lines`} (${lines.join(', ')}) can become the one [[${group}]] line.`
+  return ` While you're editing (optional): ${n === 1 ? 'this line' : `these ${String(n)} lines`} (${lines.join(', ')}) can become the one [[${group}]] line.`
 }
 
 /** The pairs less the server-wide drops (see the header): looted from many mobs, tied by the wiki to almost none. */

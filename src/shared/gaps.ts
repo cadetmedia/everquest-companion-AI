@@ -531,14 +531,13 @@ function dropActions(row: GapRow): GapAction[] {
   const mob = mobPageOf(row)
   const item = factionOf(row)
   const field = row.lootField === 'common_loot' ? ' It belongs under common_loot: the wiki files it as loot shared across mobs.' : ''
-  const extra = row.replaces === undefined ? '' : ` ${replaceWhy(item, row.replaces.lines)}`
   const why =
     row.details.drops !== undefined
       ? `The wiki page for ${mob} lists neither ${item} nor ${row.replaces === undefined ? 'any item in it' : 'the one you looted'}.`
       : row.itemPage === 'namesMob'
         ? `The page for ${item} names ${mob} as a source, but ${mob}'s page does not list it.`
         : `The wiki page for ${mob} does not list ${item}.`
-  const actions: GapAction[] = [{ kind: 'checkWiki', label: 'Add to mob page', why: why + field + extra, href: wikiEditUrl(mob) }]
+  const actions: GapAction[] = [{ kind: 'checkWiki', label: 'Add to mob page', why: why + field + replaceWhy(item, row.replaces?.lines), href: wikiEditUrl(mob) }]
   if (row.itemPage === 'lacksMob') {
     actions.push({ kind: 'addToWiki', label: 'Add to item page', why: `The page for ${item} does not name ${mob} under dropsfrom.`, href: wikiEditUrl(item) })
   }
@@ -553,8 +552,7 @@ function dropActions(row: GapRow): GapAction[] {
  * when the name itself carries a parser's leftover.
  */
 /** An image row's chip: upload the file; the page's imagefilename line added, or fixed when it names another file. */
-function imageAction(row: GapRow): GapAction {
-  const file = row.image ?? ''
+function imageAction(row: GapRow, file = row.image ?? ''): GapAction {
   const fix = row.pageImage === undefined ? 'if the page names no image, add its imagefilename line too' : `the page's imagefilename says ${row.pageImage}: change it to ${file}`
   return { kind: 'addToWiki', label: 'Upload image', why: `The wiki has no image for ${row.name}. Upload a screenshot as ${file}; ${fix}.`, href: wikiUploadUrl(file) }
 }
