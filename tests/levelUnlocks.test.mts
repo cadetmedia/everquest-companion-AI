@@ -32,7 +32,7 @@ import {
 } from '../src/shared/levelUnlocks'
 import { spellMetricsParts } from '../src/shared/spellMetrics'
 import type { SpellResistTable } from '../src/shared/resistTypes'
-import { aaUnlocks, buildLevelUnlocks, dedupeByName, type NamedRow } from '../src/main/data/levelUnlocks'
+import { aaUnlocks, buildLevelUnlocks, dedupeByName, generalAaUnlocks, type NamedRow } from '../src/main/data/levelUnlocks'
 
 // ---- fixtures ---------------------------------------------------------------------------
 
@@ -326,6 +326,29 @@ test('an AA is new at the level each rank needs, for the classes the wiki lists 
   ])
   // A name the class's own tables already list stays that row.
   assert.deepEqual(aaUnlocks(aas, 'PAL', [{ name: 'Lay on Hands', level: 1, kind: 'innate' }]), [])
+})
+
+test('a General AA is new for every class at the level each rank needs; an Archetype AA is not listed', () => {
+  const aas = {
+    'Adamant Will': { group: 'general', levels: [1] },
+    Stoicism: { group: 'general', levels: [1, 20] },
+    'Mass Group Buff': { group: 'archetype', levels: [50] }
+  }
+  const general = generalAaUnlocks(aas)
+  assert.deepEqual(general.map((r) => `${r.name} @${String(r.level)}`), ['Adamant Will @1', 'Stoicism @1', 'Stoicism (rank 2) @20'])
+  const data: LevelUnlockData = { ...DATA, general: [...general, { name: 'Meditate', level: 12, kind: 'aa' }] }
+  // Classless, flagged General, after the class rows; a name a class row shows keeps that row.
+  const label = (r: UnlockRow): string => `${r.name} ${r.general ? 'General' : r.classes.join('/')}`
+  assert.deepEqual(unlocksAtLevel(data, CLR_PAL, 12).skills.map(label), ['Bind Wound CLR/PAL', 'Meditate CLR'])
+  const at1 = unlocksAtLevel(data, CLR_PAL, 1).skills
+  assert.deepEqual(at1.map(label), ['Lay on Hands PAL', 'Adamant Will General', 'Stoicism General'])
+  assert.deepEqual([at1[1].classes, ownershipPhrase(at1[1], new Set(['CLR', 'PAL']))], [[], null])
+  assert.deepEqual([unlockLevels(data, ['CLR']), unlockLevels(data, [])], [[1, 12, 20, 30], []])
+})
+
+test('every committed General AA is new at its level for any class', () => {
+  const war = comboClassesOf(interval(0, null, [slot(['WAR']), slot(['WAR'])]))
+  for (const g of REAL.general ?? []) assert.ok(unlocksAtLevel(REAL, war, g.level).skills.some((r) => r.name === g.name), g.name)
 })
 
 /** Rows a player has confirmed in EQ Legends — `CONFIRMED_UNLOCKS` in src/main/data/levelUnlocks.ts. */

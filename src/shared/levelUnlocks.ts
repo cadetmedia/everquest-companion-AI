@@ -234,6 +234,8 @@ export interface LevelUnlockData {
   spells: UnlockSpell[]
   /** skills + discs + innates, keyed by /who class code */
   skills: Partial<Record<ClassAbbr, UnlockSkill[]>>
+  /** the General AAs, one row per rank: every class can buy them, so they are keyed by no class */
+  general?: UnlockSkill[]
   /** classes.json's scrape stamp — provenance for the panel's "from the wiki DB" chip */
   scrapedAt?: string
 }
@@ -302,6 +304,8 @@ export interface UnlockRow {
   /** the classes IN THE QUERIED SET that gain this at this level, sorted */
   classes: ClassAbbr[]
   level: number
+  /** a General AA: every class gains it, so `classes` is empty and the chip says General AA */
+  general?: true
   /** the disputing source, quoted verbatim (disc rows only) */
   dispute?: string
   /** the spell's card fields, for the hover — absent on skill rows */
@@ -455,7 +459,8 @@ function addSkillRow(byKey: Map<string, UnlockRow>, cls: ClassAbbr, s: UnlockSki
 
 /**
  * Every skill/disc/innate the queried classes gain at `level`, folded by (name, kind) so a skill
- * two classes in the loadout both get at 10 is ONE row wearing two chips.
+ * two classes in the loadout both get at 10 is ONE row wearing two chips. The General AAs follow,
+ * classless, after the class rows; a name a class row already shows keeps that row.
  */
 function skillRows(data: LevelUnlockData, classes: readonly ClassAbbr[], level: number): UnlockRow[] {
   const byKey = new Map<string, UnlockRow>()
@@ -463,7 +468,11 @@ function skillRows(data: LevelUnlockData, classes: readonly ClassAbbr[], level: 
     for (const s of (data.skills[cls] ?? []).filter((r) => r.level === level)) addSkillRow(byKey, cls, s)
   }
   for (const row of byKey.values()) row.classes.sort((a, b) => a.localeCompare(b))
-  return [...byKey.values()].sort((a, b) => a.name.localeCompare(b.name))
+  const rows = [...byKey.values()].sort((a, b) => a.name.localeCompare(b.name))
+  const shown = new Set(rows.map((r) => r.name.toLowerCase()))
+  const general = (data.general ?? []).filter((s) => s.level === level && !shown.has(s.name.toLowerCase()))
+  const generalRows = general.map((s): UnlockRow => ({ kind: s.kind, name: s.name, classes: [], level, general: true }))
+  return [...rows, ...generalRows.sort((a, b) => a.name.localeCompare(b.name))]
 }
 
 /**
@@ -578,5 +587,6 @@ export function unlockLevels(data: LevelUnlockData, classes: readonly ClassAbbr[
     for (const p of spell.at.filter((x) => want.has(x.cls))) levels.add(p.level)
   }
   for (const cls of classes) for (const s of data.skills[cls] ?? []) levels.add(s.level)
+  if (classes.length > 0) for (const s of data.general ?? []) levels.add(s.level)
   return [...levels].sort((a, b) => a - b)
 }
