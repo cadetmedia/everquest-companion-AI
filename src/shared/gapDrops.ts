@@ -255,7 +255,7 @@ function memberLines(pages: readonly CatalogMob[], keys: ReadonlySet<string>): R
 export function replaceWhy(group: string, lines: readonly string[] | undefined): string {
   if (lines === undefined) return ''
   const n = lines.length
-  return ` While you're editing (optional): ${n === 1 ? 'this line' : `these ${String(n)} lines`} (${lines.join(', ')}) can become the one [[${group}]] line.`
+  return ` Optional: merge ${n === 1 ? 'its line' : `its ${String(n)} lines`} (${lines.join(', ')}) into one [[${group}]] line.`
 }
 
 /** The pairs less the server-wide drops (see the header): looted from many mobs, tied by the wiki to almost none. */

@@ -92,7 +92,7 @@ function SuggestCaption({ s }: { s: GapSuggest }): JSX.Element {
       >
         {s.name}
       </Box>{' '}
-      ({charactersOff(s.distance)}). The wiki page may be misspelled.
+      ({charactersOff(s.distance)})
     </Typography>
   )
 }
@@ -223,7 +223,7 @@ function DetailsPane({ row, actions }: { row: GapRow; actions: PaneActions }): J
         <Typography variant="subtitle2">{row.name}</Typography>
         <GapRowButtons row={row} pageText={actions.pageText} isDone={isDone} onDone={actions.onDone} />
         {row.maybePlayer === true && (
-          <Tooltip title="A one-word name you only hailed or conned may be a player. Marking it hides it here for good.">
+          <Tooltip title="Hides this name for good; one-word names you only hailed may be players.">
             <Button size="small" color="warning" onClick={() => actions.onPlayer(row.name)} data-testid="gaps-mark-player">
               Mark as player
             </Button>
@@ -247,7 +247,7 @@ function DetailsPane({ row, actions }: { row: GapRow; actions: PaneActions }): J
       )}
       {row.noPage === true && (
         <Typography variant="body2" color="warning.main" component="div" data-testid="gaps-no-page-line">
-          The wiki data has no page for {mobPageOf(row)}: a newer page may already list this. Check it before adding the line.
+          No page for {mobPageOf(row)} in the wiki data: check the wiki first.
         </Typography>
       )}
       {row.fix !== undefined && (
