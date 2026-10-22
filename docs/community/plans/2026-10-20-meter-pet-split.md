@@ -3,7 +3,8 @@
 Ask from Malkil (tester, Discord, 2026-10-20), confirmed by the owner: a third pet layout for the
 damage meters, on the floating overlay and the Combat tab, for your own pet and for a group-mate's
 pet whose master is known. Shape chosen 2026-10-21 on the mock (the stacked pair); built
-2026-10-21 on `meter-pet-split` (BRANCHES.md row), not yet tested in the app. Rules first: `docs/community/RULES.md`, then `agent/INDEX.md`. What was asked:
+2026-10-21 on `meter-pet-split` (BRANCHES.md row); Malkil tried it in the app the same day and
+liked it, asking only for a narrower total box (built, below). Rules first: `docs/community/RULES.md`, then `agent/INDEX.md`. What was asked:
 `requirements/meter-pet-split.md` (rule 19).
 
 Mock (look and feel only; all three layouts, a test pair with dps sliders):
@@ -117,10 +118,19 @@ Malkil's sketch, `+` master colour, `-` pet colour, `/` the shared third colour:
   on the mock's sliders).
 - **Every row has the total box on the right, pair or not** (Malkil: "even the single height bars
   should have the box on the right side like the double height bars do for consistent
-  formatting"). Fixed width; overlay in `em` so the text-scale stepper scales it, tab in px. A
-  pair's box: pair dps over pair damage. A one-line row's box: its `dps · damage` on one line, and
+  formatting"). A pair's box: pair dps over pair damage. A one-line row's box: its `dps · damage` on one line, and
   its bar carries the name only. So in this layout every level-1 row renders through the new row,
   not `Bar`.
+- **The box column is as wide as the widest total shown, no wider** (Malkil, 2026-10-21, after
+  trying it in the app: "the total dps/damage bar is much wider than it needs to be"; it was a
+  fixed 132 px on the tab, 96 px on the overlay). The list is one CSS grid,
+  `minmax(0, 1fr) minmax(<floor>, max-content)` (floor 48 px tab, 40 px overlay), and each row a
+  `subgrid` spanning both columns, so the browser sizes the column to the widest box's text and
+  every box lines up in it. Every bar track stays the same width, so a row's own text still never
+  sizes its bar. No width logic in code, so no unit test: e2e `petPrefSteps` checks one column and
+  width = widest text + 12 px padding (or the floor). The column moves when the widest total gains
+  a character (`999` -> `1.0k`), all rows together. The Preferences example draws through the
+  same `MeterRows`, so it follows.
 - **One line for anything that is not a pair:** a player with no pet, and a pet whose master is not
   known (an unpaired `pet`/`allyPet`, an `other` row). Malkil: "If a player doesn't have a pet or if
   the pet doesn't have a master, it can be displayed on a single height line." Owner: "The double
@@ -185,8 +195,8 @@ Answered on the mock by Malkil, relayed by the owner:
 - 2026-10-20: rows with no pet and pets with no known master are one line; a paired pet shows its
   own name only.
 
-Open:
+Closed:
 
-- **The Overview damage card** (not asked for, but reads the same pref). Recommended: grouped shows
-  there as option 1 (one bar per owner, pet inside), because the card is a glance at a quarter
-  width.
+- **The Overview damage card** (not asked for, but reads the same pref): stays as built, grouped
+  shows there as option 1 (one bar per owner, pet inside), until tester feedback (owner,
+  2026-10-21: nothing more changes on the damage meters until testers give feedback).

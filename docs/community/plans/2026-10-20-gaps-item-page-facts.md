@@ -3,8 +3,10 @@
 Owner ask, 2026-10-20: "any knowledge we get from the game that could go to the wiki should
 [go there] right?" and, on forage: "the line in the logs says it was foraged, and we even display
 that in the wiki gaps tab for the user so why can't we include the forage zone and information
-automatically?" Also: "FACTION plays into SELL and PURCHASE price from vendors." Phases 1, 3 and 4
-built on `gaps-item-facts` (2026-10-21); 2, 5 and 6 not. Rules
+automatically?" Also: "FACTION plays into SELL and PURCHASE price from vendors." Phases 1 to 4
+built on `gaps-item-facts` (2026-10-21; phase 2's parser on `wiki-scraper-fixes`, its data on
+`local-data-refresh`); phase 5 moved to the screenshot reader, phase 6 decided not built (owner,
+2026-10-21). Rules
 first: `docs/community/RULES.md`, then `agent/INDEX.md`, `agent/WIKI.md` (page conventions).
 The requirement row is in `requirements/gaps-tab.md`; build on `gaps-tab`.
 
@@ -83,9 +85,29 @@ Cross-check, log against the cached pages:
      category. Matches 137 pages (`agent/WIKI.md`, Foraged items).
    - Merge rule for saved and archived snapshots (`mergeGaps.ts`): sum the new tally like `zones`.
    - Test: Gray Wolf Skull foraged in Qeynos Hills writes the field and both categories.
-2. **Forage on pages that exist.** A row (Drops-style, "Add to item page") when a foraged item's
-   page lacks the zone or the category: 8 + 6 today. Reads `|foraged` from the item cache, so
-   `items.json` needs the field (re-parse offline; `itemLookupParse.ts` lists it as unconsumed).
+2. **Forage on pages that exist (built 2026-10-21).** Owner: "include the forage info and do a
+   reparse of local cache. if we can prove it was foraged lets make sure the item copy wiki code
+   gets that information".
+   - Parser (`wiki-scraper-fixes`, `itemLookupParse.ts parseForaged`): `foraged` (the zones the
+     field links, a piped link's label), `foragedNote` (lines naming no zone: `Various`, `?`),
+     `foragedCategory` (`[[Category:Foraged]]`).
+   - Data (`local-data-refresh`): `items.json` re-parsed offline from the item cache, zero
+     requests; a record took the fields only where the re-parse reproduced the rest exactly (all
+     11,556 did). 141 pages gain them (foraged 135, category 135, note 6); 8,867,024 to 8,877,257
+     bytes.
+   - Engine: a KNOWN item's forage is a `forage` row (engine-only domain, no total of its own), so
+     the archive merge keeps it like any row. Main answers each page's fields (`gaps:itemForage`,
+     `main/gapItemForage.ts`). `shared/gapForage.ts` turns a proof row whose page lacks a zone or
+     the category into an Items row, chip Add to item page; its copy is the lines to add: the
+     missing `* [[Zone]]` bullets (with `|foraged = ` when the page lists nothing), then
+     `[[Category:Foraged]]` if missing and each new zone's category. A `Various` or "most zones"
+     note covers every zone. Zones are spelled by the same namer and `wikiZoneLink` as the new-page
+     copy; a place is compared through the zone table (`Northern Karana` on item pages is the
+     catalog's `Northern Plains of Karana`).
+   - Measured on Drywrought (archive and live log, 2026-10-21): 25 known items foraged, 6 rows:
+     Pod of Water, Roots, Rabbit Meat, Fishing Grubs lack 18 to 24 zones each (pages list some;
+     the log foraged them nearly everywhere); Berries and Tuft of Polar Bear Fur lack only the
+     category. The 2026-10-20 "8 + 6" counted the testers' logs too and compared spellings raw.
 3. **Tradeskill Ingredient.** The copy adds `[[Category:Tradeskill Ingredient]]` when the row's
    dispositions hold `depot`, or the inventory export has the item under `Personal-Depot`
    (Gray Wolf Skull is there). An existing page missing it is an update row like phase 2 (34).
@@ -101,15 +123,16 @@ Cross-check, log against the cached pages:
    Size/WT, Class, Race. Candidates: an empty first flags line, and `|notes = {{Item Lore Missing}}`
    (the wiki's own marker for unknown lore, 466 pages) so a page made from the copy is listed with
    the others that need a Lore screenshot.
-6. **Inventory export facts (`<Char>_<server>-Inventory.txt`).** Already read for "held". Per
-   item it gives the worn location (`Chest`, `Ear`, `Primary`) and a container's slot count
-   (`Slots` 10 on the satchels, 4 on Zimbittle's Pouch; 11 on every non-bag item, meaning
-   unknown). A worn location is one of the item's slots, not all of them, so it can only seed
-   `Slot:` when the player confirms. The `ID` column is the item id, not the icon (Ruined Robe
-   8721 vs `lucy_img_ID` 1126): no use for `lucy_img_ID`.
+6. **Inventory export facts (`<Char>_<server>-Inventory.txt`): decided, not built (owner,
+   2026-10-21).** An item fits several slots (Primary and Secondary, or Primary, Secondary and
+   Range; Waist and Back), Ammo, Any, or sits in a bag slot, so one worn location cannot state its
+   `Slot:` line; Slot comes from the item window screenshot (`screenshot-to-wiki`). Measured for
+   the record: the export gives the worn location (`Chest`, `Ear`, `Primary`) and a container's
+   slot count (`Slots` 10 on the satchels, 4 on Zimbittle's Pouch; 11 on every non-bag item,
+   meaning unknown); its `ID` column is the item id, not the icon (Ruined Robe 8721 vs
+   `lucy_img_ID` 1126).
 
-Recommended order: 1, 3 and 4 (copy text only, one engine change), then 2 (needs the re-parse),
-then 5 and 6 on the owner's word.
+Built in the order 1, 3, 4, then 2 (it needed the re-parse).
 
 ## Not worth building (measured)
 
@@ -124,4 +147,4 @@ then 5 and 6 on the owner's word.
 
 - Phase 5 is decided: lore and flags wait for the screenshot reader. What it needs from here: lore
   goes in `|notes = {{Item Lore|...}}`; the flag line's two styles are in `agent/WIKI.md`.
-- Phase 6: seed `Slot:` from the worn location, or leave Slot to the screenshot?
+- Phase 6 is decided: not built (above).

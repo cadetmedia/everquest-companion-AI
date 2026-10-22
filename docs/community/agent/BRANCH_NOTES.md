@@ -134,6 +134,10 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   `DEFAULT_STAT_WEIGHTS`.
 - Rust `spells_us.rs` twin is not parity-gated; deferred.
 - Open: SPA 148 slot reading (MEASURED.md); SPA 475 rows in the same slot contest each other.
+- `LevelUnlockData.general` holds the General AAs with no class key; the fold appends them classless
+  (`UnlockRow.general`) after the class rows, and a name a class row shows wins.
+- Archetype AAs are not listed: `classes.json` `aas` has `group: 'archetype'` and no classes. Add them
+  only once the data states an archetype or classes.
 
 ## faction-tab, slayer-tab (Achievements), unlocks-tab
 
@@ -297,6 +301,25 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   apart, and quoted prices carry the player's faction and Charisma.
 - `event_feed.rs` is 431 code lines: red on this branch alone against the old 400 bar, green on
   `main_community` (catch_all's 440). The npm gate does not run the size check on the real tree.
+- "I have it" (`eq.gaps.heldOnly`, off by default): Items only; filters through `useHeldOnly` before
+  Hide uncertain; on gaps-overlay that lives in `useGapsList`, so the overlay follows it. No
+  export, no Items row.
+- Days back (gaps-all-characters) cuts the one-character view through `ownSince`; a row also seen
+  since the cut keeps its whole count, as in the join. The cut is memoised per slot (`lastOwnCut`,
+  `lastOwnCutOnly` on gaps-overlay): a fresh array misses `snapOf` and a Gaps visit costs
+  400-500 ms again. Held is never cut.
+- Forage update rows (`shared/gapForage.ts`): the engine files a KNOWN item's forage under domain
+  `forage` (served after the four, no total); `withForageRows` always removes those rows, and an
+  Items row with `forageUpdate` stands in for each page that lacks something. Zones compare by
+  place through the zone table, never by spelling (`Northern Karana` = `Northern Plains of Karana`).
+- items.json `foraged`, `foragedNote`, `foragedCategory` exist only on local-data-refresh:
+  `main/gapItemForage.ts` declares them locally so gaps-item-facts builds without them.
+- `itemLookupParse.ts` is 421 code lines: red on wiki-scraper-fixes alone against its old 400 bar,
+  green on `main_community` (catch_all's 440).
+- Merging gaps-item-facts forward conflicts in `gapDerive.ts` (keep `only`, always run
+  `withForageRows`, add `met.itemForage` to `keyOf`), `wikiPage.ts` (`row.forageUpdate ?
+  forageAddText(...) : itemPage(...)`; NEEDED_OF `[]` for a forage row) and `useGapsData.ts` (forage
+  names from the snapshot the derivation receives, the joined one under All characters).
 
 ## screenshot-to-wiki
 

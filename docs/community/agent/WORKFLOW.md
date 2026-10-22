@@ -96,7 +96,8 @@ disagree, RULES.md wins; fix this file.
   map-waypoints (home) and sky-quest-overlay, where `src/shared/telemetryOverlays.ts` differs only
   in the kind its list names; `scripts/sources/mobRedirects.ts` on wiki-scraper-fixes (home) and
   scrape-delta-tool; `scripts/sources/mobCache.ts` on slayer-tab (home) and scrape-delta-tool; `scripts/sources/mobFaction.ts`
-  on slayer-tab (home) and wiki-scraper-fixes. Verify pairs with `git merge-tree --write-tree <a> <b>`.
+  on slayer-tab (home) and wiki-scraper-fixes; `src/shared/rewardChest.ts` + `tests/rewardChestSource.test.mts`
+  on catch_all, log-archive and gaps-tab. Verify pairs with `git merge-tree --write-tree <a> <b>`.
 - **Branches with two UNRELEASED splices** in `appViews.ts`: `tests/telemetryContract.test.mts`
   on main reads only the first; take spell-upgrades' version of that test.
 
