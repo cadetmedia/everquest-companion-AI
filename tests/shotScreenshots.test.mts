@@ -98,6 +98,9 @@ const ICONS: readonly [string, number, number][] = [
   ['ruined-robe.png', 1126, 1],
   ['ruined-robe-icon.png', 1126, 1],
   ['black-lizard-scale.png', 1225, 1],
+  // OCR read the icon's edge as a word (`By Class: ALL`) and placed the box over the pane's border:
+  // 6911 (the same lump in brown) won until the Class word itself placed it (owner, 2026-10-21).
+  ['lizardman-mystic-scale.png', 1233, 1],
   // 597 and 1104 are one bow in two colours: a tie the picker shows, top two.
   ['windstriker-ground.png', 1104, 2],
   ['windstriker-sky.png', 1104, 2]
