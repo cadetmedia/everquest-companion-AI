@@ -50,7 +50,7 @@ export const GAP_DOMAIN_HELP: Record<GapDomain, string> = {
   spell: 'Spells cast near you that the wiki has no page for.',
   merchant: 'NPCs who traded with you that the wiki does not list as a merchant.',
   faction: "Factions a kill changed that the mob's wiki page does not list, or lists with another amount or side.",
-  drop: "Items you looted from a mob whose wiki page lists neither the item nor a group holding it, or lists a group's items one by one (replace them with the group's line). Drops that fall from almost any mob (the Motes) are left out.",
+  drop: "Items you looted from a mob whose wiki page lists neither the item nor a group holding it,. Drops that fall from almost any mob (the Motes) are left out.",
   image: 'Mobs you met whose wiki page has no picture: take a screenshot and upload it.'
 }
 
@@ -263,8 +263,9 @@ export interface GapRow {
   /** A drop row whose item or group the wiki files under a mob page's `|common_loot`, not `|known_loot`. */
   lootField?: 'common_loot'
   /**
-   * A group's drop row whose mob page lists members one by one (owner, 2026-10-21): those lines, to
-   * replace with the group's, and their `[Overall: x%]` summed when every one states it.
+   * A group's drop row whose mob page lists other members one by one (owner, 2026-10-21): those
+   * lines, which may become the group's while the page is edited, and their `[Overall: x%]` summed
+   * when every one states it.
    */
   replaces?: { lines: string[]; rate?: number }
   /** A one-word name only hailed or conned that the log has not shown to be an NPC (gaps_players.rs). */
@@ -530,14 +531,14 @@ function dropActions(row: GapRow): GapAction[] {
   const mob = mobPageOf(row)
   const item = factionOf(row)
   const field = row.lootField === 'common_loot' ? ' It belongs under common_loot: the wiki files it as loot shared across mobs.' : ''
-  if (row.replaces !== undefined) return [{ kind: 'checkWiki', label: 'Replace on mob page', why: replaceWhy(mob, item, row.replaces.lines) + field, href: wikiEditUrl(mob) }]
+  const extra = row.replaces === undefined ? '' : ` ${replaceWhy(item, row.replaces.lines)}`
   const why =
     row.details.drops !== undefined
-      ? `The wiki page for ${mob} lists neither ${item} nor any item in it.`
+      ? `The wiki page for ${mob} lists neither ${item} nor ${row.replaces === undefined ? 'any item in it' : 'the one you looted'}.`
       : row.itemPage === 'namesMob'
         ? `The page for ${item} names ${mob} as a source, but ${mob}'s page does not list it.`
         : `The wiki page for ${mob} does not list ${item}.`
-  const actions: GapAction[] = [{ kind: 'checkWiki', label: 'Add to mob page', why: why + field, href: wikiEditUrl(mob) }]
+  const actions: GapAction[] = [{ kind: 'checkWiki', label: 'Add to mob page', why: why + field + extra, href: wikiEditUrl(mob) }]
   if (row.itemPage === 'lacksMob') {
     actions.push({ kind: 'addToWiki', label: 'Add to item page', why: `The page for ${item} does not name ${mob} under dropsfrom.`, href: wikiEditUrl(item) })
   }

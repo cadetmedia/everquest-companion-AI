@@ -247,7 +247,7 @@ function DetailsPane({ row, actions }: { row: GapRow; actions: PaneActions }): J
       )}
       {row.replaces !== undefined && (
         <Typography variant="body2" color="warning.main" component="div" data-testid="gaps-replace-line">
-          {replaceWhy(mobPageOf(row), factionOf(row), row.replaces.lines)}
+          {replaceWhy(factionOf(row), row.replaces.lines)}
         </Typography>
       )}
       {row.pageImage !== undefined && (
