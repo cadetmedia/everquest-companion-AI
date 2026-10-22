@@ -392,8 +392,14 @@ export function layoutBlock(template: string, layout: readonly string[], values:
   return `{{${template}\n\n${lines.join('\n')}\n}}`
 }
 
-/** The wiki's image name for an NPC: `npc_drizda_tunesinger.png`. */
-export const npcImageName = (name: string): string => `npc_${name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')}.png`
+/**
+ * The wiki's image name for an NPC: `npc_drizda_tunesinger.png`. A backtick stays, as the wiki's own
+ * files keep it (Guard E`tru, `npc_guard_e`tru.png`: 397 of the 428 backtick mobs' files; owner,
+ * 2026-10-22); only a character Windows (`\/:*?"<>|`) or a wiki title (`#[]{}`) refuses becomes `_`,
+ * and a run of spaces or `_` is one `_`.
+ */
+export const npcImageName = (name: string): string =>
+  `npc_${name.trim().toLowerCase().replace(/[\\/:*?"<>|#[\]{}]/g, '_').replace(/[\s_]+/g, '_').replace(/^_|_$/g, '')}.png`
 
 /** `/loc` points as the wiki writes `|location`: `(-791, 173), (10, -21)`. */
 const locationText = (points: readonly number[][]): string => points.map((p) => `(${String(p[0])}, ${String(p[1])})`).join(', ')
