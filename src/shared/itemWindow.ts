@@ -108,7 +108,7 @@ const labelOf = (hit: string): readonly [string, string, Kind] | undefined => {
 }
 
 /** A line about the window, not the item: tabs, upgrade widgets, exaltation slots, placement. */
-const NOT_ITEM = /\b(Exaltation|O\w{0,2}amentation|Unmodified|Modified|Merge|Place\s*Item|Tier|upgraded|placeable in|Description|Container\W+(?:OPEN|CLOSED))\b/i
+const NOT_ITEM = /\b(Exaltation|O\w{0,2}amentation|Unmodified|Modified|Merge|Place\s*Item|Tier\s*\d+|Tier|upgraded|placeable in|Description|Container\W+(?:OPEN|CLOSED))\b/i
 
 // ---- small readers ------------------------------------------------------------------------------
 
@@ -407,7 +407,7 @@ function loreRead(lines: readonly string[]): ItemWindowRead {
   const prose = (l: string): boolean => !/^Lore$/i.test(l) && !TAB_ROW.test(l) && /[a-z]{3}/i.test(l) && (l.match(/[A-Za-z ]/g) ?? []).length >= 0.8 * l.length
   const text = tabAt >= 0 ? lines.slice(tabAt + 1).filter(prose).join(' ') : lines.filter(prose).sort((a, b) => b.length - a.length)[0]
   // The title bar above the tab row names the item: a captured Lore tab finds its row by it.
-  const title = tabAt > 0 ? lines.slice(0, tabAt).reverse().find((l) => /[A-Za-z]{3}/.test(l))?.replace(/\s*\+\d+$/, '') : undefined
+  const title = tabAt > 0 ? lines.slice(0, tabAt).reverse().find((l) => /[A-Za-z]{3}/.test(l))?.replace(/\s*\*+$/, '').replace(/\s*\+\d+$/, '') : undefined
   return { statsblock: '', unread: [], ...(text === undefined || text === '' ? {} : { lore: text }), ...(title === undefined ? {} : { name: title }) }
 }
 
@@ -419,8 +419,10 @@ const hasLoreTab = (lines: readonly string[], before: number): boolean =>
 function nameAbove(lines: readonly string[], at: number): { name?: string; tier?: number } {
   const line = lines.slice(0, at).reverse().find((l) => /[A-Za-z]{2}/.test(l) && !NOT_ITEM.test(l))
   if (line === undefined) return {}
-  const tier = /\s*\+(\d{1,2})$/.exec(line)
-  return { name: line.replace(/\s*\+\d+$/, '').trim(), ...(tier === null || tier[1] === '0' ? {} : { tier: Number(tier[1]) }) }
+  // The title's `*` (Mud Stained Skin Tunic*, owner's screenshot 2026-10-21) is the window's mark, not the name.
+  const bare = line.replace(/\s*\*+$/, '')
+  const tier = /\s*\+(\d{1,2})$/.exec(bare)
+  return { name: bare.replace(/\s*\+\d+$/, '').trim(), ...(tier === null || tier[1] === '0' ? {} : { tier: Number(tier[1]) }) }
 }
 
 /**

@@ -10,8 +10,13 @@
 // text, so OCR's slips in the words never reach the page; a window that does not match its file is
 // kept as read and the player is told. Labelled lines fill only what the files leave blank.
 //
-// No spell-window screenshot was on hand when this was written: the labels are the client's own
-// strings (eqstr_us.txt: `Mana: %1`, `Duration: %1`, `Range: %1`, `Resist: `, `Target: `, `Skill: %1`).
+// The labels are the window's own (owner's Burst of Flame window, 2026-10-21): `Spell:`, the class
+// line `SHM(1)`, Duration, Level, Skill, Mana, Cast, Recovery, Reuse, Resist, Target, Reflectable,
+// Range, the description, `On You:`, `On Other:`. OCR often drops a label's colon (`Cast 1.5 sec`).
+// A value the player's modifiers change is drawn after the base in brackets (`Cast: 1.5 sec (0.5)`,
+// cyan for better, red for worse; a cast-speed invocation): the page takes the base, never the
+// bracket. Reuse is not written: the window shows it in whole seconds (Burst of Flame: `Reuse: 1 sec`
+// for the file's and the wiki's 1.50), and Recovery, Level and Reflectable have no page field.
 
 import type { ClientSpellFacts } from './gaps'
 
@@ -40,26 +45,55 @@ export interface SpellPageShot {
   fields?: Record<string, string>
 }
 
+/** A label the window prints that the page has no field for: read so it is not taken for the description. */
+const UNUSED = '-'
+
 /** Window label -> the page's key, longest first so `Casting Time` beats `Cast`. */
 const LABELS: readonly (readonly [string, string])[] = [
   ['Recast Time', 'recast_time'], ['Refresh Time', 'recast_time'], ['Casting Time', 'casting_time'], ['Cast Time', 'casting_time'],
-  ['Target Type', 'target_type'], ['Spell Type', 'spell_type'], ['Duration', 'duration'], ['Recast', 'recast_time'],
-  ['Target', 'target_type'], ['Resist', 'resist'], ['Range', 'range'], ['Skill', 'skill'], ['Mana', 'mana'], ['Cast', 'casting_time']
+  ['Target Type', 'target_type'], ['Spell Type', 'spell_type'], ['Reflectable', UNUSED], ['Duration', 'duration'], ['Recovery', UNUSED],
+  ['On Other', 'msg_cast_on_other'], ['On You', 'msg_cast_on_you'], ['Recast', 'recast_time'], ['Target', 'target_type'], ['Resist', 'resist'],
+  ['Reuse', UNUSED], ['Range', 'range'], ['Skill', 'skill'], ['Level', UNUSED], ['Spell', UNUSED], ['Mana', 'mana'], ['Cast', 'casting_time']
 ]
-const LABEL_RE = new RegExp(`(?:^|\\s)(${LABELS.map(([l]) => l.replace(/ /g, '\\s*')).join('|')})\\s*[:;]`, 'gi')
+const LABEL_ALT = LABELS.map(([l]) => l.replace(/ /g, '\\s*')).join('|')
+const LABEL_RE = new RegExp(`(?:^|\\s)(${LABEL_ALT})\\s*[:;]`, 'gi')
+/** A short line that starts with a label whose colon OCR dropped (`Cast 1.5 sec`, `Resist Fire`). */
+const BARE_LABEL = new RegExp(`^(${LABEL_ALT})\\s+(\\S.*)$`, 'i')
 const keyOf = (hit: string): string | undefined => LABELS.find(([l]) => l.replace(/\s/g, '').toLowerCase() === hit.replace(/\s/g, '').toLowerCase())?.[1]
 
+/** One label's value: its key, the label as printed, the value. */
+type Pair = [key: string, label: string, value: string]
+
 /** Every `Label: value` on a line, a value running to the next label. */
-function pairsOf(line: string): [string, string][] {
-  const hits = [...line.matchAll(LABEL_RE)].map((m) => ({ key: keyOf(m[1]), from: (m.index ?? 0) + m[0].indexOf(m[1]), to: (m.index ?? 0) + m[0].length }))
-  return hits.flatMap((h, i) => {
+function pairsOf(line: string): Pair[] {
+  const hits = [...line.matchAll(LABEL_RE)].map((m) => ({ label: m[1], key: keyOf(m[1]), from: (m.index ?? 0) + m[0].indexOf(m[1]), to: (m.index ?? 0) + m[0].length }))
+  const pairs = hits.flatMap((h, i) => {
     const value = line.slice(h.to, i + 1 < hits.length ? hits[i + 1].from : line.length).trim()
-    return h.key === undefined || value === '' ? [] : [[h.key, value] as [string, string]]
+    return h.key === undefined || value === '' ? [] : [[h.key, h.label, value] as Pair]
   })
+  if (pairs.length > 0 || line.split(/\s+/).length > 5) return pairs
+  const bare = BARE_LABEL.exec(line)
+  const key = bare === null ? undefined : keyOf(bare[1])
+  return bare === null || key === undefined ? [] : [[key, bare[1], bare[2].trim()]]
+}
+
+/** OCR's junk at a value's end (the scroll bar, the frame): lone marks and single letters (`Instant E |`). */
+const unjunk = (v: string): string => v.replace(/(?:\s+(?:[^A-Za-z0-9\s]+|[A-Za-z]))+$/, '').trim()
+
+/**
+ * A value and the modified one the window draws after it in brackets (`1.5 sec (0.5)`): the base is
+ * the page's. Ticks in brackets are the duration's own words, not a modifier.
+ */
+export function baseValue(v: string): { base: string; modified?: string } {
+  const m = /^(.*?\d.*?)\s*\(([^()]*)\)?$/.exec(v.trim())
+  if (m === null || /tick/i.test(m[2]) || m[2].trim() === '') return { base: v.trim() }
+  return { base: m[1].trim(), modified: m[2].trim() }
 }
 
 /** The window's value as the page writes it: `[[Skill Alteration | Alteration]]`, `1.50` seconds. */
 function pageValue(key: string, v: string): string {
+  // The wiki writes the other person's message from "Someone"; the window from "Soandso".
+  if (key === 'msg_cast_on_other') return v.replace(/^Soandso\b/i, 'Someone')
   if (key === 'skill' && /^[A-Za-z ]+$/.test(v)) return `[[Skill ${v} | ${v}]]`
   const secs = /^(\d+(?:\.\d+)?)\s*(?:s|sec|secs|seconds)?$/i.exec(v)
   if ((key === 'casting_time' || key === 'recast_time') && secs !== null) return Number(secs[1]).toFixed(2)
@@ -87,7 +121,9 @@ function loose(ch: string, strict: boolean): string {
 }
 
 /** `strict`: punctuation must be there (the sentence's last mark is what ends the last hole). */
-const literal = (s: string, strict = false): string => s.replace(/<br>/gi, ' ').replace(/\s+/g, ' ').replace(/[\s\S]/g, (ch) => loose(ch, strict))
+const literal = (s: string, strict = false): string =>
+  // `rn` read as `m` too (Burst of Flame's `burns` came back `bums`).
+  s.replace(/<br>/gi, ' ').replace(/\s+/g, ' ').replace(/rn|[\s\S]/g, (ch) => (ch === 'rn' ? '(?:rn|m)' : loose(ch, strict)))
 
 /**
  * The file's words with the window's numbers: each placeholder takes the text the window shows in
@@ -117,20 +153,65 @@ const SLOT_LINE = /^(?:Slot\s*)?\d{1,2}\s*[:.]/i
 const titleOf = (l: string | undefined): string | undefined =>
   l !== undefined && l.split(/\s+/).length <= 6 && pairsOf(l).length === 0 && !/[.!?]$/.test(l) && /[A-Za-z]{3}/.test(l) ? l.replace(/^[^A-Za-z]+|[^A-Za-z)]+$/g, '') : undefined
 
+/** Lines of the window that are not the spell's: the upgrade block a Legends spell shows. */
+const NOT_SPELL = /^This spell can be upgraded|^Tier\s*\d|^Upgrade\b|^Place Mote\b/i
+
+const SPELL_LINE = /\bSpell\s*[:;]\s*(.+)$/i
+
+/** The name from the title bar or the box's first line, `Spell: Burst of Flame` (junk at either end dropped). */
+function spellLabelName(lines: readonly string[]): string | undefined {
+  const at = lines.map((l) => SPELL_LINE.exec(l)?.[1]).find((n) => n !== undefined)
+  const name = at === undefined ? '' : unjunk(at.replace(/^[^A-Za-z]+|[^A-Za-z)]+$/g, ''))
+  return name === '' ? undefined : name
+}
+
 /** OCR lines of one spell display window (top to bottom) -> the page's fields. `template`: the file's description. */
 export function readSpellWindow(raw: readonly string[], template?: string): SpellWindowRead {
-  const lines = raw.map((l) => l.replace(/\s+/g, ' ').trim()).filter((l) => l !== '')
-  const name = titleOf(lines[0])
+  const all = raw.map((l) => l.replace(/\s+/g, ' ').trim()).filter((l) => l !== '')
+  // What is above the first `Spell:` line is the title bar and the frame's junk.
+  const lines = all.slice(Math.max(0, all.findIndex((l) => SPELL_LINE.test(l))))
+  const titled = titleOf(lines[0])
+  const name = spellLabelName(lines) ?? titled
   const fields: Record<string, string> = {}
+  const modified: string[] = []
   const text: string[] = []
-  const squash = (l: string): string => l.toLowerCase().replace(/[^a-z]/g, '')
-  for (const line of lines.slice(name === undefined ? 0 : 1)) {
+  let wrapping = false
+  for (const line of lines.slice(titled === undefined ? 0 : 1)) {
     const pairs = pairsOf(line)
-    for (const [k, v] of pairs) fields[k] ??= pageValue(k, v)
-    // The name again inside the box is a heading, not the description.
-    if (pairs.length === 0 && !SLOT_LINE.test(line) && prose(line) && squash(line) !== squash(name ?? '')) text.push(line)
+    takePairs(pairs, fields, modified)
+    // A short line right after the description is its wrapped end (`damage.`).
+    wrapping = pairs.length === 0 && descriptionLine(line, name) && (prose(line) || (wrapping && /[a-z]{3}/i.test(line)))
+    if (wrapping) text.push(line)
   }
-  return { fields, ...(name === undefined ? {} : { name }), ...describe(text.join(' '), template) }
+  const told = describe(text.join(' '), template)
+  const checks = modified.length === 0 ? told.checks : [...told.checks, `A modifier was active (${modified.join(', ')}): the page keeps the base values.`]
+  return { fields, ...(name === undefined ? {} : { name }), ...told, checks }
+}
+
+/** A line's labelled values into the page's fields (the base value); the modified values it showed into `modified`. */
+function takePairs(pairs: readonly Pair[], fields: Record<string, string>, modified: string[]): void {
+  for (const [k, label, v] of pairs) {
+    const { base, modified: mod } = baseValue(unjunk(v))
+    if (mod !== undefined) modified.push(`${label} ${mod}`)
+    if (k !== UNUSED) fields[k] ??= pageValue(k, base)
+  }
+}
+
+const squash = (l: string): string => l.toLowerCase().replace(/[^a-z]/g, '')
+
+/** Not an effect slot, the upgrade block, or the name again inside the box (a heading). */
+const descriptionLine = (line: string, name: string | undefined): boolean =>
+  !SLOT_LINE.test(line) && !NOT_SPELL.test(line) && squash(line) !== squash(name ?? '')
+
+/**
+ * Why a spell window paste kept nothing, in plain words, with what to do (owner, 2026-10-21: "just
+ * says error without a reason").
+ */
+export function spellProblem(reply: ShotTextReply): string {
+  if (reply.error !== undefined) return `${reply.error} Paste a screenshot (PNG or JPEG) of the spell display window.`
+  const words = reply.lines.map((l) => l.trim()).find((l) => /[A-Za-z]{3}.*[A-Za-z]{3}/.test(l))
+  if (words === undefined) return 'No text was found in this picture. Snip the spell display window (Win+Shift+S) and paste it again.'
+  return `Text was read ("${words.length > 40 ? `${words.slice(0, 40)}…` : words}"), but not a spell display window (no description and fewer than two lines such as Mana: or Cast:). Snip the whole window.`
 }
 
 /** The description: the file's words with the window's numbers, else as read with a word to the player. */

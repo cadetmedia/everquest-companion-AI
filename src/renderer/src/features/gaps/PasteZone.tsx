@@ -11,6 +11,10 @@ async function pictureFrom(items: DataTransferItemList | null, files: FileList |
   return file === undefined || file === null ? null : new Uint8Array(await file.arrayBuffer())
 }
 
+/** Why a drop gave nothing to read, in the player's words. */
+const DROPPED_NONE = 'What was dropped is not a picture file: drop a PNG or JPEG, or snip with Win+Shift+S and click here.'
+const DROPPED_LINK = 'A picture dragged from a web page arrives as a link, not the picture: save it and drop the file, or copy the image and click here.'
+
 /** A paste in a text box is the player's typing, not a screenshot. */
 const typingIn = (t: EventTarget | null): boolean => t instanceof HTMLElement && (t.isContentEditable || ['INPUT', 'TEXTAREA'].includes(t.tagName))
 
@@ -41,7 +45,11 @@ export function PasteZone({ label, busy, onPicture }: { label: string; busy: boo
       onDragOver={(e) => e.preventDefault()}
       onDrop={(e) => {
         e.preventDefault()
-        void pictureFrom(e.dataTransfer.items, e.dataTransfer.files).then(take)
+        const fromPage = e.dataTransfer.types.includes('text/uri-list')
+        void pictureFrom(e.dataTransfer.items, e.dataTransfer.files).then((png) => {
+          if (png !== null) take(png)
+          else if (!busy) setNote(fromPage ? DROPPED_LINK : DROPPED_NONE)
+        })
       }}
       disabled={busy}
       sx={{ display: 'block', width: '100%', textAlign: 'left', border: '1px dashed', borderColor: 'warning.main', borderRadius: 1, px: 1.5, py: 0.75 }}
@@ -71,13 +79,14 @@ export function Line({ children, warn = false }: { children: ReactNode; warn?: b
   )
 }
 
-/** A window whose name is another row's (item or spell): nothing is kept until the player says (owner, 2026-10-21). */
-export function WrongItem({ read, row, onUse, onDiscard }: { read: string; row: string; onUse: () => void; onDiscard: () => void }): JSX.Element {
+/**
+ * A window whose name is another row's, or whose name was not read (item or spell): nothing is kept
+ * until the player says (owner, 2026-10-21). `note` says which (shared/itemShotKeep.ts otherItemNote).
+ */
+export function WrongItem({ note, onUse, onDiscard }: { note: string; onUse: () => void; onDiscard: () => void }): JSX.Element {
   return (
     <Stack direction="row" spacing={1} alignItems="center" data-testid="gaps-shot-wrong-item">
-      <Line warn>
-        This window is “{read}”, not {row}.
-      </Line>
+      <Line warn>{note}</Line>
       <Button size="small" onClick={onUse}>
         Use it anyway
       </Button>

@@ -1,13 +1,14 @@
 // The spell display window, as OCR would read it, into the Spell Page fields (src/shared/spellWindow.ts;
 // owner, 2026-10-21: "if they have spells up lets do it"), and what the install's files add on their own
-// (src/main/gapSpellFacts.ts: the icon, field 76, and the description, dbstr_us.txt type 6). No real
-// spell-window screenshot was on hand: the window text below is synthetic, in the client's own label
-// strings (eqstr_us.txt), with OCR's usual slips put in by hand.
+// (src/main/gapSpellFacts.ts: the icon, field 76, and the description, dbstr_us.txt type 6). The first
+// tests are synthetic, in the client's own label strings (eqstr_us.txt) with OCR's slips put in by hand;
+// the last ones are the owner's Burst of Flame window as OCR read it (2026-10-21), with and without a
+// cast-speed invocation.
 
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { descriptionsById, spellFactsFrom } from '../src/main/gapSpellFacts.ts'
-import { fileDescription, fillTemplate, isSpellWindow, readSpellWindow, spellPageValues } from '../src/shared/spellWindow.ts'
+import { baseValue, fileDescription, fillTemplate, isSpellWindow, readSpellWindow, spellPageValues, spellProblem } from '../src/shared/spellWindow.ts'
 import { spellPage, stillNeeded } from '../src/shared/wikiPage.ts'
 import type { GapRow } from '../src/shared/gaps.ts'
 
@@ -75,4 +76,55 @@ test("THE INSTALL'S FILES: FIELD 76 IS THE ICON, FIELD 86 THE DESCRIPTION'S ID; 
   const facts = spellFactsFrom(row.join('^'), '', ['Minor Healing'], db)['Minor Healing']
   assert.equal(facts.icon, 99)
   assert.equal(facts.description, 'Mends minor wounds,<br>healing #1 hit points.')
+})
+
+/** The owner's Burst of Flame window (tests/fixtures/shots/burst-of-flame-spell.png) as OCR read it, 2026-10-21. */
+const BURST_OF_FLAME = [
+  'CR — E— a = Se CL SERRSSELT ERR', '| @ Spell: Burst of Flame =', 'Spell: Burst of Flame t', 'SHM(1)', 'Duration: Instant E |', 'Level: 1',
+  'Skill: Evocation !', 'Mana: 4', 'Cast 1.5 sec', 'Recovery: 1.5 sec', 'Reuse: 1 sec', 'Resist Fire', 'Target Single', 'Reflectable: Yes i',
+  'Range: 200 %', 'Creates a ball of fire that bums your target, doing between 4 and 5', 'damage.',
+  'On You: You feel your skin singe as the Burst of Flame hits you.', 'On Other: Soandso singes as the Burst of Flame hits them. |', '| (A', '['
+]
+const BURST_TEMPLATE = 'Creates a ball of fire that burns your target, doing between #1 and @1 damage.'
+
+test("THE REAL WINDOW (BURST OF FLAME, THE OWNER'S): NAME, EVERY LABEL WITH OR WITHOUT ITS COLON, THE WRAPPED DESCRIPTION, BOTH MESSAGES", () => {
+  const r = readSpellWindow(BURST_OF_FLAME, BURST_TEMPLATE)
+  assert.equal(r.name, 'Burst of Flame')
+  assert.equal(r.description, 'Creates a ball of fire that burns your target, doing between 4 and 5 damage.')
+  assert.deepEqual(r.fields, {
+    duration: 'Instant',
+    skill: '[[Skill Evocation | Evocation]]',
+    mana: '4',
+    casting_time: '1.50',
+    resist: 'Fire',
+    target_type: 'Single',
+    range: '200',
+    msg_cast_on_you: 'You feel your skin singe as the Burst of Flame hits you.',
+    msg_cast_on_other: 'Someone singes as the Burst of Flame hits them.'
+  })
+  // Reuse (whole seconds on the window), Recovery, Level and Reflectable have no page field.
+  assert.deepEqual(r.checks, [])
+  assert.ok(isSpellWindow(r))
+})
+
+test('A MODIFIED VALUE (A CAST-SPEED INVOCATION) IS NEVER WRITTEN: THE BASE BEFORE THE BRACKET IS, AND THE PLAYER IS TOLD', () => {
+  // Owner, 2026-10-21, Inversion Invocation active: the bracket is cyan (better) or red (worse).
+  assert.deepEqual(baseValue('1.5 sec (0.5)'), { base: '1.5 sec', modified: '0.5' })
+  assert.deepEqual(baseValue('1.5 sec (2.5 sec)'), { base: '1.5 sec', modified: '2.5 sec' })
+  assert.deepEqual(baseValue('18 secs (3 ticks)'), { base: '18 secs (3 ticks)' })
+  assert.deepEqual(baseValue('1.5 sec (0.5'), { base: '1.5 sec', modified: '0.5' })
+  const invoked = BURST_OF_FLAME.map((l) => (l === 'Cast 1.5 sec' ? 'Cast: 1.5 sec (0.5)' : l === 'Recovery: 1.5 sec' ? 'Recovery: 1.5 sec (2.5 sec)' : l))
+  const withUpgrade = [...invoked.slice(0, -2), 'Upgrade Place Mote', 'Tier 0 0/1', 'This spell can be upgraded.']
+  // With no file to follow, the upgrade block still stays out of the description.
+  assert.equal(readSpellWindow(withUpgrade).description, 'Creates a ball of fire that bums your target, doing between 4 and 5 damage.')
+  const r = readSpellWindow(withUpgrade, BURST_TEMPLATE)
+  assert.equal(r.fields.casting_time, '1.50')
+  assert.equal(r.description, 'Creates a ball of fire that burns your target, doing between 4 and 5 damage.')
+  assert.deepEqual(r.checks, ['A modifier was active (Cast 0.5, Recovery 2.5 sec): the page keeps the base values.'])
+})
+
+test('A SPELL PASTE THAT KEEPS NOTHING SAYS WHY', () => {
+  assert.match(spellProblem({ lines: [], ms: 0, error: 'Not a picture.' }), /^Not a picture\. Paste a screenshot/)
+  assert.match(spellProblem({ lines: ['|', '['], ms: 0 }), /^No text was found/)
+  assert.match(spellProblem({ lines: ['meow', 'a cat on a mat'], ms: 0 }), /^Text was read \("a cat on a mat"\), but not a spell display window/)
 })

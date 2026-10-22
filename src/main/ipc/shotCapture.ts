@@ -64,7 +64,9 @@ async function capture(via: 'macro' | 'overlay'): Promise<void> {
       return
     }
     const read = await readCapture(got.img, READERS)
-    keep({ at: new Date().toISOString(), via, window: got.name, ms: ms(), ...(read.reply === undefined ? { error: 'No item window was found in the capture: snip it (Win+Shift+S) and paste it on the row instead.' } : { reply: read.reply }) })
+    if (read.windows.length === 0) keep({ at: new Date().toISOString(), via, window: got.name, ms: ms(), error: 'No item window was found in the capture: snip it (Win+Shift+S) and paste it on the row instead.' })
+    // Two windows open side by side are two readings, each filed on its own row.
+    for (const w of read.windows) keep({ at: new Date().toISOString(), via, window: got.name, ms: ms(), reply: w.reply })
   } catch (e) {
     keep({ at: new Date().toISOString(), via, error: `Could not capture: ${e instanceof Error ? e.message : String(e)}`, ms: ms() })
   } finally {

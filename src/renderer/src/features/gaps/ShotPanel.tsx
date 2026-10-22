@@ -13,7 +13,7 @@ import { type JSX, useCallback, useEffect, useState } from 'react'
 import { Box, Button, ButtonBase, Chip, Stack, TextField, Typography } from '@mui/material'
 import { formatCoin, type GapRow } from '@shared/gaps'
 import type { ItemShotReply } from '@shared/itemWindow'
-import { cleared, hasWindowPart, keptAfter, sameItem, shotKind, type ShotKind } from '@shared/itemShotKeep'
+import { cleared, hasWindowPart, keptAfter, otherItemNote, PART_WORDS, shotKind, shotProblem, type ShotKind } from '@shared/itemShotKeep'
 import type { ItemPageShot } from '@shared/wikiPage'
 import { itemShotNow, setItemShot, useItemShots, type StoredShot } from './itemShotsStore'
 import { Line, PasteZone, WrongItem } from './PasteZone'
@@ -147,13 +147,16 @@ function KeptShot({ name, kept, reply }: { name: string; kept: StoredShot; reply
 interface Pending {
   reply: ItemShotReply
   kind: ShotKind
+  /** Why it waits: another item's part, or no name read. */
+  note: string
 }
 
 function ItemShot({ row }: { row: GapRow }): JSX.Element {
   const kept = useItemShots()[row.name]
   const [busy, setBusy] = useState(false)
   const [reply, setReply] = useState<ItemShotReply | null>(null)
-  const [failed, setFailed] = useState(false)
+  /** Why the last paste kept nothing, in words; null when it kept something. */
+  const [failed, setFailed] = useState<string | null>(null)
   const [pending, setPending] = useState<Pending | null>(null)
   // Merged against what is stored NOW, not this render's copy (review, 2026-10-21: a Lore paste that
   // landed right after a window paste merged against the older reading and dropped one of them).
@@ -166,14 +169,15 @@ function ItemShot({ row }: { row: GapRow }): JSX.Element {
         .shotReadItem(png)
         .then((r) => {
           const kind = shotKind(r)
-          setFailed(kind === null)
+          setFailed(kind === null ? shotProblem(r) : null)
           setReply(kind === null ? null : r)
           if (kind === null) return
-          // A window that names another item waits for the player; nothing is kept until they say.
-          if (kind === 'window' && !sameItem(r.read.name, row.name)) setPending({ reply: r, kind })
-          else apply({ reply: r, kind })
+          // Another item's window or Lore tab, or one with no name read, waits for the player.
+          const note = kind === 'icon' ? undefined : otherItemNote(r.read.name, row.name, PART_WORDS[kind])
+          if (note !== undefined) setPending({ reply: r, kind, note })
+          else apply({ reply: r, kind, note: '' })
         })
-        .catch(() => setFailed(true))
+        .catch((e: unknown) => setFailed(`The reader did not answer (${e instanceof Error ? e.message : String(e)}). Try the paste again.`))
         .finally(() => setBusy(false))
     },
     [row.name, apply]
@@ -182,15 +186,14 @@ function ItemShot({ row }: { row: GapRow }): JSX.Element {
   return (
     <Stack spacing={0.75} data-testid="gaps-shot">
       <PasteZone label="Click here and paste an image to read it" busy={busy} onPicture={read} />
-      {failed && (
+      {failed !== null && (
         <Typography variant="body2" color="error.main" data-testid="gaps-shot-error">
-          ERROR: unable to read image
+          ERROR: unable to read image. {failed}
         </Typography>
       )}
       {pending !== null && (
         <WrongItem
-          read={pending.reply.read.name ?? ''}
-          row={row.name}
+          note={pending.note}
           onUse={() => {
             apply(pending)
             setPending(null)

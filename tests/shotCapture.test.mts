@@ -82,6 +82,24 @@ for (const [file, k] of [['vial-of-swamp-water.png', 1], ['surefall-fletching-ki
   })
 }
 
+test("TWO ITEM WINDOWS SIDE BY SIDE (THE OWNER'S, 2026-10-21) ARE TWO READINGS, EACH ONLY ITS OWN LINES", async () => {
+  const got = await readCapture(readPng(join(SHOTS, 'mud-stained-tunic-and-rusty-axe.png')), textOnly)
+  assert.deepEqual(got.windows.map((w) => w.reply.read.name), ['Mud Stained Skin Tunic', 'Rusty Battle Axe'])
+  const block = (i: number): string[] => got.windows[i].reply.read.statsblock.split('\n').filter(Boolean)
+  assert.deepEqual(block(0), ['Lore Equipped, No Trade<br>', 'Slot: CHEST<br>', 'AC: 4<br>', 'Size: MEDIUM WT: 1.6<br>', 'Class: WAR<br>', 'Race: ALL<br>'])
+  // The Legends lines (Base Dmg, Delay, Ratio, Tier, Modified, Ornamentation) map or stay out.
+  assert.deepEqual(block(1), [
+    'No Trade, Placeable<br>',
+    'Slot: PRIMARY SECONDARY<br>',
+    'Skill: 1H Slashing  Atk Delay: 42<br>',
+    'DMG: 6<br>',
+    'Size: MEDIUM WT: 8.5<br>',
+    'Class: WAR PAL RNG SHD BRD ROG<br>',
+    'Race: ALL<br>'
+  ])
+  assert.equal(got.windows[0].reply.read.loreTab, true)
+})
+
 test('A CAPTURE WITH NO ITEM WINDOW FINDS NONE (THE PLAYER IS SENT TO THE SNIP, NEVER TO A GAME SETTING)', async () => {
   const got = await readCapture(capture({ w: 1, h: 1, data: new Uint8Array(4) }, 0, 0), textOnly)
   assert.equal(got.reply, undefined)

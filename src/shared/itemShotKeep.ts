@@ -59,6 +59,36 @@ export function sameItem(read: string | undefined, row: string): boolean {
   return editDistance(squash(read), squash(row)) <= 2
 }
 
+/**
+ * Why a paste waits for the player before anything is kept, in words; undefined when it is the row's
+ * own. Another item's window or Lore tab, and a window or Lore tab whose name was not read (a snip
+ * below the title kept Mud Stained Skin Tunic's facts on Gray Wolf Skull, owner, 2026-10-21). An
+ * icon alone names nothing and is not asked about. `what`: the part, as the player calls it.
+ */
+export function otherItemNote(read: string | undefined, row: string, what: string): string | undefined {
+  if (read === undefined) return `No name was found in this ${what}: is it ${row}'s?`
+  return sameItem(read, row) ? undefined : `This is ${read}'s ${what}, not ${row}'s.`
+}
+
+/** The part a kind of paste is, in the player's words. */
+export const PART_WORDS: Record<ShotKind, string> = { window: 'item window', lore: 'Lore tab', icon: 'icon' }
+
+/** The first line that reads as words, for telling the player what was read. */
+const firstWords = (lines: readonly string[]): string | undefined => lines.map((l) => l.trim()).find((l) => /[A-Za-z]{3}.*[A-Za-z]{3}/.test(l))
+
+/**
+ * Why a paste kept nothing (shotKind null), in plain words, with what to do (owner, 2026-10-21: "just
+ * says error without a reason, sort of useless for me").
+ */
+export function shotProblem(r: ItemShotReply): string {
+  if (r.error !== undefined) return `${r.error} Paste a screenshot (PNG or JPEG) of the item window.`
+  const best = r.icons[0]
+  if (r.lines.length === 0 && best !== undefined) return `It looks like an icon alone, but no game icon matches it closely (the nearest is ${String(best.id)}). Snip the whole item window instead.`
+  const words = firstWords(r.lines)
+  if (words === undefined) return 'No text was found in this picture. Snip the item window (Win+Shift+S) and paste it again.'
+  return `Text was read ("${words.length > 40 ? `${words.slice(0, 40)}…` : words}"), but no item window (no Class, Race, Slot or Weight line) and no Lore tab. Snip the whole window, the tab row included.`
+}
+
 /** The window's own fields: everything but the lore. */
 export function hasWindowPart(s: ItemPageShot | undefined): boolean {
   return s !== undefined && (s.statsblock !== undefined || s.iconId !== undefined || s.valueCopper !== undefined || s.focusEffect !== undefined)
