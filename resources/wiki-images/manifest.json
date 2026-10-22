@@ -1,13 +1,13 @@
 {
-  "generatedAt": "2026-10-21T02:01:53.016Z",
+  "generatedAt": "2026-10-22T04:07:59.947Z",
   "note": "Images shipped with the app so it never fetches art at runtime. Every file states the exact upstream URL it came from. Regenerate with `npm run fetch:images`.",
   "sources": [
     "https://eqlwiki.com/",
     "https://wiki.project1999.com/"
   ],
   "totals": {
-    "files": 809,
-    "bytes": 6241855
+    "files": 810,
+    "bytes": 6242317
   },
   "images": [
     {
@@ -1668,6 +1668,13 @@
       "kind": "item",
       "bytes": 692,
       "sha256": "98d425b3e90234eec22ea0b309f20bc46582d2aa753e05ce84080b579fff2dde"
+    },
+    {
+      "file": "item-1252.png",
+      "url": "https://eqlwiki.com/index.php?title=Special:Redirect/file/Item_1252.png",
+      "kind": "item",
+      "bytes": 462,
+      "sha256": "d1b63e1cfbf66263f65ff8f2735720f2fe4dccdc13d27e323e646c4aa73553fd"
     },
     {
       "file": "item-1253.png",

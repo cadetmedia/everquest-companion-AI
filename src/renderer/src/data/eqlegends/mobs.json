@@ -1,5 +1,5 @@
 {
-  "scrapedAt": "2026-10-21T02:00:26.532Z",
+  "scrapedAt": "2026-10-22T04:07:21.563Z",
   "source": "eqlwiki.com — Category:NPCs/Named Mobs/Merchants/Raid Encounters ∪ embeddedin Template:Namedmobpage/MerchantPage, filtered to pages opening a mob template + recentchanges delta (scripts/scrape-delta.mts)",
   "mobs": [
     {
@@ -7252,22 +7252,19 @@
       "name": "a cracked skeleton",
       "level": "5",
       "drops": [
+        "Ale",
+        "Backpack",
+        "Bandages",
+        "Bottle of Kalish",
         "Bone Chips",
-        "Rusty Short Sword",
-        "Rusty Axe",
-        "Rusty Broad Sword",
-        "Rusty Long Sword",
-        "Rusty Battle Axe",
-        "Rusty Scimitar",
-        "Rusty Bastard Sword",
-        "Rusty Two Handed Sword",
-        "Rusty Mace",
-        "Rusty Warhammer",
-        "Rusty Morning Star",
-        "Rusty Dagger",
-        "Rusty Rapier",
-        "Rusty Spear",
-        "Rusty Shortened Spear"
+        "Buckler",
+        "Cloth Armor",
+        "Iron Ration",
+        "Large Bag",
+        "Parrying Dagger",
+        "Rusty Weapons",
+        "Small Box",
+        "Wooden Shield"
       ],
       "image": "npc_a_cracked_skeleton.png",
       "noImage": true
@@ -15830,8 +15827,7 @@
         "Amber",
         "Jade",
         "Onyx"
-      ],
-      "noImage": true
+      ]
     },
     {
       "page": "A Froglok Bok Knight",
@@ -16136,8 +16132,7 @@
       "factionAmounts": [
         "-30"
       ],
-      "image": "npc_a_froglok_gaz_knight.png",
-      "noImage": true
+      "image": "npc_a_froglok_gaz_knight.png"
     },
     {
       "page": "A Froglok Gaz Shaman",
@@ -16176,8 +16171,7 @@
       "factionAmounts": [
         "-30"
       ],
-      "image": "npc_a_froglok_gaz_shaman.png",
-      "noImage": true
+      "image": "npc_a_froglok_gaz_shaman.png"
     },
     {
       "page": "A Froglok Gaz Squire",
@@ -16215,6 +16209,7 @@
     },
     {
       "page": "A Froglok Gaz Warrior",
+      "eraTag": "Classic",
       "name": "a froglok gaz warrior",
       "level": "15 - 17",
       "zones": [
@@ -16253,8 +16248,7 @@
         "Onyx",
         "Words of Eradication",
         "Words of Possession"
-      ],
-      "noImage": true
+      ]
     },
     {
       "page": "A froglok ghoul",
@@ -16322,14 +16316,19 @@
         "Froglok Meat",
         "Froglok Blood"
       ],
+      "loc": [
+        {
+          "ns": 500,
+          "ew": 165
+        }
+      ],
       "factions": [
         "Frogloks of Guk"
       ],
       "factionAmounts": [
         "-30"
       ],
-      "image": "npc_a_froglok_guard.png",
-      "noImage": true
+      "image": "npc_a_froglok_guard.png"
     },
     {
       "page": "A froglok guk knight",
@@ -16738,8 +16737,7 @@
       "factionAmounts": [
         "-30"
       ],
-      "image": "npc_a_froglok_novice.png",
-      "noImage": true
+      "image": "npc_a_froglok_novice.png"
     },
     {
       "page": "A froglok outlander",
@@ -17046,8 +17044,7 @@
       "factionAmounts": [
         "-30"
       ],
-      "image": "npc_a_froglok_sentinel.png",
-      "noImage": true
+      "image": "npc_a_froglok_sentinel.png"
     },
     {
       "page": "A Froglok Sentry",
@@ -17132,8 +17129,7 @@
       "factionAmounts": [
         "-30"
       ],
-      "image": "npc_a_froglok_sentry.png",
-      "noImage": true
+      "image": "npc_a_froglok_sentry.png"
     },
     {
       "page": "A Froglok Shin Knight",
@@ -17159,8 +17155,7 @@
       "factionAmounts": [
         "-30"
       ],
-      "image": "npc_a_froglok_shin_knight.png",
-      "noImage": true
+      "image": "npc_a_froglok_shin_knight.png"
     },
     {
       "page": "A Froglok Shin Shaman",
@@ -17216,8 +17211,7 @@
       "factionAmounts": [
         "-30"
       ],
-      "image": "npc_a_froglok_shin_shaman.png",
-      "noImage": true
+      "image": "npc_a_froglok_shin_shaman.png"
     },
     {
       "page": "A Froglok Shin Warrior",
@@ -17269,8 +17263,7 @@
       "factionAmounts": [
         "-30"
       ],
-      "image": "npc_a_froglok_shin_warrior.png",
-      "noImage": true
+      "image": "npc_a_froglok_shin_warrior.png"
     },
     {
       "page": "A Froglok Shinta Warrior",
@@ -17599,8 +17592,7 @@
       "factionAmounts": [
         "-30"
       ],
-      "image": "npc_a_froglok_ton_knight.png",
-      "noImage": true
+      "image": "npc_a_froglok_ton_knight.png"
     },
     {
       "page": "A Froglok Ton Shaman",
@@ -17644,8 +17636,7 @@
       "factionAmounts": [
         "-30"
       ],
-      "image": "npc_a_froglok_ton_shaman.png",
-      "noImage": true
+      "image": "npc_a_froglok_ton_shaman.png"
     },
     {
       "page": "A Froglok Ton Warrior",
@@ -17711,8 +17702,7 @@
       "factionAmounts": [
         "-30"
       ],
-      "image": "npc_a_froglok_ton_warrior.png",
-      "noImage": true
+      "image": "npc_a_froglok_ton_warrior.png"
     },
     {
       "page": "A Froglok Tonta Knight",
@@ -17779,8 +17769,7 @@
       "factionAmounts": [
         "-30"
       ],
-      "image": "npc_a_froglok_tsu_shaman.png",
-      "noImage": true
+      "image": "npc_a_froglok_tsu_shaman.png"
     },
     {
       "page": "A Froglok Tuk Knight",
@@ -17822,8 +17811,7 @@
       "factionAmounts": [
         "-30"
       ],
-      "image": "npc_a_froglok_tuk_knight.png",
-      "noImage": true
+      "image": "npc_a_froglok_tuk_knight.png"
     },
     {
       "page": "A Froglok Tuk Shaman",
@@ -17920,8 +17908,7 @@
       "factionAmounts": [
         "-30"
       ],
-      "image": "npc_a_froglok_tuk_warrior.png",
-      "noImage": true
+      "image": "npc_a_froglok_tuk_warrior.png"
     },
     {
       "page": "A Froglok Urd Shaman",
@@ -17957,17 +17944,16 @@
           "pct": 50
         }
       ],
-      "otherNames": [
-        "Froglok Urd Shaman"
-      ],
       "factions": [
         "Frogloks of Guk"
       ],
       "factionAmounts": [
         "-30"
       ],
-      "image": "npc_a_froglok_urd_shaman_pet.png",
-      "noImage": true
+      "image": "npc_a_froglok_urd_shaman.png",
+      "otherNames": [
+        "Froglok Urd Shaman"
+      ]
     },
     {
       "page": "A froglok vis knight",
@@ -18040,8 +18026,7 @@
       "factionAmounts": [
         "-5"
       ],
-      "image": "npc_a_froglok_vis_knight.png",
-      "noImage": true
+      "image": "npc_a_froglok_vis_knight.png"
     },
     {
       "page": "A froglok vis shaman",
@@ -18098,8 +18083,7 @@
       "factionAmounts": [
         "-5"
       ],
-      "image": "npc_a_froglok_vis_shaman.png",
-      "noImage": true
+      "image": "npc_a_froglok_vis_shaman.png"
     },
     {
       "page": "A Froglok Wan Knight",
@@ -18136,8 +18120,7 @@
       "factionAmounts": [
         "-30"
       ],
-      "image": "npc_a_froglok_wan_knight.png",
-      "noImage": true
+      "image": "npc_a_froglok_wan_knight.png"
     },
     {
       "page": "A froglok witch doctor",
@@ -19244,8 +19227,7 @@
       "factionAmounts": [
         "-30"
       ],
-      "image": "npc_a_fungus_breeder.png",
-      "noImage": true
+      "image": "npc_a_fungus_breeder.png"
     },
     {
       "page": "A Fungus Drone",
@@ -19284,8 +19266,7 @@
       "factionAmounts": [
         "-30"
       ],
-      "image": "npc_a_fungus_drone.png",
-      "noImage": true
+      "image": "npc_a_fungus_drone.png"
     },
     {
       "page": "A fungus man watcher",
@@ -19353,8 +19334,7 @@
       "factionAmounts": [
         "-30"
       ],
-      "image": "npc_a_fungus_soldier.png",
-      "noImage": true
+      "image": "npc_a_fungus_soldier.png"
     },
     {
       "page": "A fungus spore",
@@ -20665,8 +20645,7 @@
         "-15",
         "1"
       ],
-      "image": "npc_a_ghoul_sage.png",
-      "noImage": true
+      "image": "npc_a_ghoul_sage.png"
     },
     {
       "page": "A ghoul savant",
@@ -30622,8 +30601,7 @@
         "Spiderling Legs",
         "Black Spider Silk"
       ],
-      "image": "npc_a_jungle_spiderling.png",
-      "noImage": true
+      "image": "npc_a_jungle_spiderling.png"
     },
     {
       "page": "A jungle spiritling",
@@ -35433,168 +35411,6 @@
       "noImage": true
     },
     {
-      "page": "A lizard man scout",
-      "eraTag": "Classic",
-      "name": "a lizardman scout",
-      "level": "3",
-      "zones": [
-        "The Feerrott"
-      ],
-      "drops": [
-        "Lizardman Scout Fife",
-        "Pristine Lizard Scale",
-        "Large Cloth Cap",
-        "Large Cloth Veil",
-        "Large Cloth Choker",
-        "Large Cloth Shirt",
-        "Large Cloth Shawl",
-        "Large Cloth Cord",
-        "Large Cloth Sleeves",
-        "Large Cloth Wristband",
-        "Large Cloth Gloves",
-        "Large Cloth Pants",
-        "Large Cloth Sandals",
-        "Rusty Scythe",
-        "Rusty Long Sword",
-        "Rusty Battle Axe",
-        "Rusty Two Handed Sword",
-        "Rusty Mace",
-        "Worn Great Staff",
-        "Rusty Warhammer",
-        "Cracked Staff",
-        "Rusty Rapier",
-        "Rusty Spear",
-        "Rusty Shortened Spear",
-        "Rusty Knuckles",
-        "Worn Weighted Gloves",
-        "Lizard Meat"
-      ],
-      "loc": [
-        {
-          "ns": 984,
-          "ew": 2323,
-          "pct": 100
-        },
-        {
-          "ns": -956,
-          "ew": -2626,
-          "pct": 100
-        },
-        {
-          "ns": -537,
-          "ew": 2638,
-          "pct": 100
-        },
-        {
-          "ns": 205,
-          "ew": 2395,
-          "pct": 100
-        },
-        {
-          "ns": 1261,
-          "ew": 2286,
-          "pct": 100
-        },
-        {
-          "ns": -376,
-          "ew": -2564,
-          "pct": 100
-        },
-        {
-          "ns": -844,
-          "ew": -1276,
-          "pct": 100
-        },
-        {
-          "ns": -201,
-          "ew": 1412,
-          "pct": 100
-        },
-        {
-          "ns": 117,
-          "ew": 2768,
-          "pct": 100
-        },
-        {
-          "ns": -362,
-          "ew": -664,
-          "pct": 100
-        },
-        {
-          "ns": -209,
-          "ew": 2635,
-          "pct": 100
-        },
-        {
-          "ns": -894,
-          "ew": 1979,
-          "pct": 100
-        },
-        {
-          "ns": -730,
-          "ew": 2267,
-          "pct": 100
-        },
-        {
-          "ns": -825,
-          "ew": 2074,
-          "pct": 100
-        },
-        {
-          "ns": -930,
-          "ew": 1531,
-          "pct": 100
-        },
-        {
-          "ns": -854,
-          "ew": -1300,
-          "pct": 100
-        },
-        {
-          "ns": -842,
-          "ew": -1300,
-          "pct": 100
-        },
-        {
-          "ns": -351,
-          "ew": -638,
-          "pct": 100
-        },
-        {
-          "ns": 368,
-          "ew": 460,
-          "pct": 100
-        },
-        {
-          "ns": 382,
-          "ew": 469,
-          "pct": 100
-        },
-        {
-          "ns": 894,
-          "ew": -872,
-          "pct": 100
-        },
-        {
-          "ns": 899,
-          "ew": -854,
-          "pct": 100
-        },
-        {
-          "ns": 877,
-          "ew": -847,
-          "pct": 100
-        },
-        {
-          "ns": -380,
-          "ew": -644,
-          "pct": 100
-        }
-      ],
-      "image": "npc_a_lizard_man_scout.png",
-      "noImage": true
-    },
-    {
       "page": "A lizard man warrior",
       "eraTag": "Classic",
       "name": "a lizard man warrior",
@@ -35826,6 +35642,68 @@
       "image": "npc_a_lizard_zealot.png"
     },
     {
+      "page": "A lizardman broodling",
+      "eraTag": "Classic",
+      "name": "a lizardman broodling",
+      "level": "1",
+      "zones": [
+        "The Feerrott"
+      ],
+      "drops": [
+        "Black Lizard Scale",
+        "Black Lizard Talon",
+        "Broken Lizard Talon",
+        "Brown Lizard Scale",
+        "Brown Lizard Talon",
+        "Cloth Cape",
+        "Cloth Cord",
+        "Cloth Sandals",
+        "Cloth Shawl",
+        "Cloth Sleeves",
+        "Cloth Veil",
+        "Dark Colored Fungus",
+        "Green Lizard Scale",
+        "Green Lizard Talon",
+        "Large Cloth Cap",
+        "Large Cloth Pants",
+        "Large Cloth Shirt",
+        "Light Colored Fungus",
+        "Lizard Meat",
+        "Long Lizard Tail",
+        "Multi-Colored Fungus",
+        "Orange Lizard Scale",
+        "Pristine Lizard Scale",
+        "Pristine Lizard Talon",
+        "Rusty Battle Axe",
+        "Rusty Knuckles",
+        "Rusty Mace",
+        "Rusty Rapier",
+        "Rusty Scythe",
+        "Rusty Shortened Spear",
+        "Rusty Spear",
+        "Rusty Two Handed Sword",
+        "Rusty Warhammer",
+        "Short Lizard Tail",
+        "White Lizard Scale",
+        "Yellow Lizard Scale"
+      ],
+      "loc": [
+        {
+          "ns": 565,
+          "ew": 258
+        },
+        {
+          "ns": 667,
+          "ew": 134
+        },
+        {
+          "ns": 1020,
+          "ew": -2514
+        }
+      ],
+      "image": "npc_a_lizardman_broodling.png"
+    },
+    {
       "page": "A lizardman forager",
       "eraTag": "Classic",
       "name": "a lizardman forager",
@@ -35900,8 +35778,7 @@
         "-30",
         "10"
       ],
-      "image": "npc_a_lizardman_forager.png",
-      "noImage": true
+      "image": "npc_a_lizardman_forager.png"
     },
     {
       "page": "A Lizardman Robber",
@@ -35942,12 +35819,140 @@
         "The Feerrott"
       ],
       "drops": [
-        "Lizard Meat",
+        "Lizardman Scout Fife",
+        "Pristine Lizard Scale",
         "Large Cloth Armor",
         "Rusty Weapons",
-        "Lizardman Scout Fife"
+        "Rusty Knuckles",
+        "Worn Weighted Gloves",
+        "Lizard Meat"
+      ],
+      "loc": [
+        {
+          "ns": 984,
+          "ew": 2323,
+          "pct": 100
+        },
+        {
+          "ns": -956,
+          "ew": -2626,
+          "pct": 100
+        },
+        {
+          "ns": -537,
+          "ew": 2638,
+          "pct": 100
+        },
+        {
+          "ns": 205,
+          "ew": 2395,
+          "pct": 100
+        },
+        {
+          "ns": 1261,
+          "ew": 2286,
+          "pct": 100
+        },
+        {
+          "ns": -376,
+          "ew": -2564,
+          "pct": 100
+        },
+        {
+          "ns": -844,
+          "ew": -1276,
+          "pct": 100
+        },
+        {
+          "ns": -201,
+          "ew": 1412,
+          "pct": 100
+        },
+        {
+          "ns": 117,
+          "ew": 2768,
+          "pct": 100
+        },
+        {
+          "ns": -362,
+          "ew": -664,
+          "pct": 100
+        },
+        {
+          "ns": -209,
+          "ew": 2635,
+          "pct": 100
+        },
+        {
+          "ns": -894,
+          "ew": 1979,
+          "pct": 100
+        },
+        {
+          "ns": -730,
+          "ew": 2267,
+          "pct": 100
+        },
+        {
+          "ns": -825,
+          "ew": 2074,
+          "pct": 100
+        },
+        {
+          "ns": -930,
+          "ew": 1531,
+          "pct": 100
+        },
+        {
+          "ns": -854,
+          "ew": -1300,
+          "pct": 100
+        },
+        {
+          "ns": -842,
+          "ew": -1300,
+          "pct": 100
+        },
+        {
+          "ns": -351,
+          "ew": -638,
+          "pct": 100
+        },
+        {
+          "ns": 368,
+          "ew": 460,
+          "pct": 100
+        },
+        {
+          "ns": 382,
+          "ew": 469,
+          "pct": 100
+        },
+        {
+          "ns": 894,
+          "ew": -872,
+          "pct": 100
+        },
+        {
+          "ns": 899,
+          "ew": -854,
+          "pct": 100
+        },
+        {
+          "ns": 877,
+          "ew": -847,
+          "pct": 100
+        },
+        {
+          "ns": -380,
+          "ew": -644,
+          "pct": 100
+        }
       ],
       "image": "npc_a_lizardman_scout.png",
+      "otherNames": [
+        "A lizard man scout"
+      ],
       "noImage": true
     },
     {
@@ -54520,8 +54525,7 @@
       "drops": [
         "Chunk of Meat"
       ],
-      "image": "npc_a_swampwater_crocodile.png",
-      "noImage": true
+      "image": "npc_a_swampwater_crocodile.png"
     },
     {
       "page": "A swarming beetle",
@@ -57208,8 +57212,7 @@
       "factionAmounts": [
         "-30"
       ],
-      "image": "npc_a_troll_prisoner.png",
-      "noImage": true
+      "image": "npc_a_troll_prisoner.png"
     },
     {
       "page": "A troll raider",
@@ -58556,8 +58559,7 @@
         "Fine Steel Weapons",
         "Classic Mid-Tier Treasures",
         "Undead Froglok Tongue"
-      ],
-      "noImage": true
+      ]
     },
     {
       "page": "A wanderer",
@@ -60312,8 +60314,7 @@
         "-30",
         "10"
       ],
-      "image": "npc_a_yun_ghoul_wizard.png",
-      "noImage": true
+      "image": "npc_a_yun_ghoul_wizard.png"
     },
     {
       "page": "A zol ghoul knight",
@@ -75616,6 +75617,9 @@
       "zones": [
         "The Feerrott"
       ],
+      "drops": [
+        "Ruined Robe"
+      ],
       "loc": [
         {
           "ns": -1460,
@@ -75623,8 +75627,7 @@
           "pct": 50
         }
       ],
-      "image": "npc_aqaar_aluram.png",
-      "noImage": true
+      "image": "npc_aqaar_aluram.png"
     },
     {
       "page": "Aqua goblin bosun",
@@ -84352,8 +84355,7 @@
         "-30",
         "-30"
       ],
-      "image": "npc_bouncer_fug.png",
-      "noImage": true
+      "image": "npc_bouncer_fug.png"
     },
     {
       "page": "Bouncer Gronk",
@@ -84628,8 +84630,7 @@
         "-30",
         "-30"
       ],
-      "image": "npc_bouncer_prud.png",
-      "noImage": true
+      "image": "npc_bouncer_prud.png"
     },
     {
       "page": "Bouncer Raan",
@@ -99900,6 +99901,7 @@
         "Cloth Gloves",
         "Cloth Pants",
         "Cloth Sandals",
+        "Crystallized Sulfur",
         "Bronze Short Sword",
         "Bronze Bastard Sword",
         "Bronze Axe",
@@ -109912,6 +109914,9 @@
       "zones": [
         "The Feerrott"
       ],
+      "drops": [
+        "Ruined Robe"
+      ],
       "loc": [
         {
           "ns": -1461,
@@ -109919,8 +109924,7 @@
           "pct": 100
         }
       ],
-      "image": "npc_eleann_morkul.png",
-      "noImage": true
+      "image": "npc_eleann_morkul.png"
     },
     {
       "page": "Elementalbone skeleton",
@@ -118075,8 +118079,7 @@
       "factionAmounts": [
         "-4"
       ],
-      "image": "npc_a_froglok_tuk_knight.png",
-      "noImage": true
+      "image": "npc_a_froglok_tuk_knight.png"
     },
     {
       "page": "Froglok tuk shaman",
@@ -118256,8 +118259,7 @@
       "factionAmounts": [
         "-4"
       ],
-      "image": "npc_a_froglok_tuk_warrior.png",
-      "noImage": true
+      "image": "npc_a_froglok_tuk_warrior.png"
     },
     {
       "page": "Froglok urd shaman",
@@ -118337,8 +118339,7 @@
       "factionAmounts": [
         "-30"
       ],
-      "image": "npc_a_froglok_vis_knight.png",
-      "noImage": true
+      "image": "npc_a_froglok_vis_knight.png"
     },
     {
       "page": "Froglok Wan Knight",
@@ -178434,6 +178435,19 @@
       "noImage": true
     },
     {
+      "page": "Moldrak Drin",
+      "eraTag": "Classic",
+      "name": "Moldrak Drin",
+      "level": "22",
+      "zones": [
+        "Southern Desert of Ro"
+      ],
+      "drops": [
+        "Cracked Staff"
+      ],
+      "image": "npc_moldrak_drin.png"
+    },
+    {
       "page": "Molon T`plth",
       "eraTag": "Classic",
       "name": "Molon T`plth",
@@ -214170,8 +214184,7 @@
           "pct": 100
         }
       ],
-      "image": "npc_spanner_scrapsnatcher.png",
-      "noImage": true
+      "image": "npc_spanner_scrapsnatcher.png"
     },
     {
       "page": "Sparlus Penfold",
@@ -234445,11 +234458,11 @@
         "Priests of Life"
       ],
       "factionAmounts": [
-        "-30",
-        "-30",
-        "-30",
-        "10",
-        "10"
+        "-200",
+        "-10",
+        "-20",
+        "15",
+        "15"
       ],
       "image": "Varsoon.JPG"
     },
