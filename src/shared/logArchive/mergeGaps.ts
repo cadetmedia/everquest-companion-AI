@@ -8,6 +8,8 @@
 // restated here rather than imported: shared/gaps.ts lives on the gaps-tab branch, and this file
 // must build without it.
 
+import { isRewardChest } from '../rewardChest'
+
 interface Tally {
   entries: { name: string; n: number }[]
   distinct: number
@@ -277,11 +279,25 @@ function mergeMobLocs(older: Snap, newer: Snap): MobLoc[] {
   return [...out.values()]
 }
 
+/**
+ * The row without a Reward Chest among its sources (shared/rewardChest.ts, owner 2026-10-21: the
+ * chest is no mob): a state folded before gaps_details.rs left it out still names it.
+ */
+function withoutChest(r: Row): Row {
+  const t = r.details.sources
+  if (!t?.entries.some((e) => isRewardChest(e.name))) return r
+  const entries = t.entries.filter((e) => !isRewardChest(e.name))
+  const details: Details = { ...r.details }
+  if (entries.length === 0) delete details.sources
+  else details.sources = { ...t, entries, distinct: Math.max(entries.length, t.distinct - 1) }
+  return { ...r, details }
+}
+
 /** `older` then `newer`, a row on both sides added together; null when either is not a gaps state. */
 export function mergeGaps(older: unknown, newer: unknown): Snap | null {
   if (!isSnap(older) || !isSnap(newer)) return null
   const out = new Map<string, Row>()
-  for (const r of [...older.rows, ...newer.rows]) {
+  for (const r of [...older.rows, ...newer.rows].map(withoutChest)) {
     const k = `${r.domain}|${r.name.toLowerCase()}`
     const had = out.get(k)
     out.set(k, had === undefined ? { ...r } : mergeRow(had, r))
