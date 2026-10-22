@@ -48,11 +48,28 @@ export const forageKey = (name: string): string => itemBaseName(name).toLowerCas
 const ANY_ZONE = /\bvarious\b|\b(most|all|any) zones?\b/i
 
 /**
+ * COMMON FORAGE (owner, 2026-10-21: "the water, veggies, pork meat thing, berries, fruit, fishing
+ * grubs are standard, those get dropped in any zone pretty much"): an item the log saw foraged in
+ * `seenPlaces` or more places (tiers folded), or whose page already lists `pageZones` or more forage
+ * zones, forages almost anywhere, so a zone its page lacks is no update; a missing
+ * `[[Category:Foraged]]` still is. A named default the owner has not ruled on yet.
+ */
+export const COMMON_FORAGE = { seenPlaces: 5, pageZones: 10 } as const
+
+/**
  * One key per place, whatever its spelling: the zone table's entry when it knows the name (item
  * pages write `Northern Karana` where the catalog writes `Northern Plains of Karana`), else the
  * name with tiers and a leading "the" folded.
  */
 const placeKey = (zone: string): string => zoneKey(zoneEntryFor(zone)?.name ?? zone)
+
+/** Is this item common forage by COMMON_FORAGE: seen in many places, or a page that lists many? */
+export function isCommonForage(seenZones: readonly string[], page: ItemPageForage): boolean {
+  return new Set(seenZones.map(placeKey)).size >= COMMON_FORAGE.seenPlaces || new Set(page.zones.map(placeKey)).size >= COMMON_FORAGE.pageZones
+}
+
+/** No zone line is owed: the page says it forages anywhere, or the item is common forage. */
+const noZoneOwed = (page: ItemPageForage, seenZones: readonly string[]): boolean => (page.note !== undefined && ANY_ZONE.test(page.note)) || isCommonForage(seenZones, page)
 
 const isProof = (r: GapRow): boolean => (r.domain as string) === FORAGE_PROOF
 
@@ -69,10 +86,9 @@ export function forageUpdateOf(row: GapRow, page: ItemPageForage | null | undefi
   if (page === undefined || page === null) return null
   // The page's zone as written and as the catalog spells it (`Permafrost Keep` is the catalog's `Permafrost`).
   const listed = new Set(page.zones.flatMap((z) => [placeKey(z), placeKey(zoneName(z))]))
-  const anyZone = page.note !== undefined && ANY_ZONE.test(page.note)
   const raw = row.details.forageZones?.all ?? row.details.forageZones?.entries.map((e) => e.name) ?? []
   const wiki = [...new Set(raw.map(zoneName).filter((z) => z !== ''))].sort((a, b) => a.localeCompare(b))
-  const zones = anyZone ? [] : wiki.filter((z) => !listed.has(placeKey(z)))
+  const zones = noZoneOwed(page, wiki) ? [] : wiki.filter((z) => !listed.has(placeKey(z)))
   if (zones.length === 0 && page.category) return null
   return { page: page.page, zones, noField: page.zones.length === 0 && page.note === undefined, category: !page.category }
 }
