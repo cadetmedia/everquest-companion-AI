@@ -405,6 +405,15 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
 - Nameplate check (`shot/nameplate.ts`): the picture as it stands, then near-white, then bright text.
 - Spell rank read against the row's name (`rankAfter`); `Resist: X -N` writes X.
 - A filled exaltation slot keeps its kind of effect off the page (no catalog at read time).
+- Review fixes (2026-10-21): the Class line = line start plus a colon or a code, a window needs
+  Class/Race codes, a Lore's prose may say "class"; Range +10 per tier is inverted in
+  `itemDelevel.ts` by key (catch_all's `scaleRange` is not on this branch); a classic numeral spell
+  (Clarity II) is told from an upgraded rank by the install's spells_us (upgraded ranks are not rows
+  there); the name check allows two OCR slips but never a digit change and never when another known
+  name is as near, and a capture files at once only on an exact name; forage update rows take no
+  shot (`isItemShotRow`); capture takes only a window titled exactly `EverQuest Legends` or
+  `EverQuest` (the owner's client: "EverQuest Legends"), the thumbnail is at most 16 MP from the
+  largest display, and an OCR read times out at 60 s and restarts the worker.
 - Every failed paste goes through `shotProblem` / `spellProblem`; every name check through
   `otherItemNote` (an unread name asks, never passes).
 - Spell icon = spells_us field 76; description id = field 86 into dbstr type 6; colour tags dropped,
