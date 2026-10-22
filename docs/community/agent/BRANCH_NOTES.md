@@ -321,7 +321,13 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   with `noPage` stays an update (the mob's own row is the new page).
 - Held picker places: `gapHeld.ts SIDE_OF`; `HeldPart.place`; `heldCaption` takes `{ index, where }`;
   stored values `1` (Anywhere), `0`, `bags`, `bank`.
-- Drops: `filedAs` files the item itself when the page lists any member of its group (`memberKeys`).
+- Drops (2026-10-21, reversed the same day): an item in a group is always filed as the group. A page
+  listing members one by one gets `replaces {lines, rate}` on that group's row only when it lacks a
+  looted member, as an optional cleanup; never a row of its own (no edits for formatting alone).
+  `CatalogMob.dropRates` (parallel to `drops`) is read when present; no data carries it yet.
+- Images: named after the page's in-game `|name`; `pageImage` when the page's imagefilename
+  differs; qualified titles keep the page's file. `imageAction` sits below `factionAction`, as on
+  gaps-item-facts; merging gaps-tab into main_community replays a rerere resolution in `gaps.ts`.
 - Common forage: `gapForage.ts COMMON_FORAGE`; 6 -> 2 rows on the owner's logs.
 - Saved Gaps files carry `rows` (SAVED_ROWS). Raise it whenever the engine serves a new kind of row
   an older save cannot hold.
@@ -393,6 +399,12 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
 - `readCapture` returns `windows[]`, every window found (at most 4 labels read).
 - Spell window: Reuse is never written (whole seconds on the window); a bracketed value is the
   modified one and never written.
+- Capture trigger (rebuilt 2026-10-21): the player's own `You tell eqc…:<n>, 'eqc capture'`; a second
+  watch of the app's own (`eqc-shot-channels`) keeps the latest `Channels:` line; IPC `shotChannels`.
+  `/echo` does not exist in the game; `/tell <self>` logs no text.
+- Nameplate check (`shot/nameplate.ts`): the picture as it stands, then near-white, then bright text.
+- Spell rank read against the row's name (`rankAfter`); `Resist: X -N` writes X.
+- A filled exaltation slot keeps its kind of effect off the page (no catalog at read time).
 - Every failed paste goes through `shotProblem` / `spellProblem`; every name check through
   `otherItemNote` (an unread name asks, never passes).
 - Spell icon = spells_us field 76; description id = field 86 into dbstr type 6; colour tags dropped,
