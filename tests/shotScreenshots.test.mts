@@ -167,6 +167,28 @@ test('A GREY NAMEPLATE OVER SNOW IS FOUND (a white wolf)', async () => {
   assert.equal(await showsName(img, 'a gnoll pup'), false)
 })
 
+/** The wolf's grey letters recoloured (test only): the con colour can be any of seven (owner, 2026-10-22). */
+function recolour(img: { w: number; h: number; data: Uint8Array }, rgb: readonly [number, number, number]): { w: number; h: number; data: Uint8Array } {
+  const d = new Uint8Array(img.data)
+  for (let y = 55; y < 115; y++) {
+    for (let x = 100; x < 470; x++) {
+      const i = (y * img.w + x) * 4
+      const [r, g, b] = [d[i], d[i + 1], d[i + 2]]
+      if (Math.max(r, g, b) - Math.min(r, g, b) > 18 || Math.min(r, g, b) < 90 || Math.max(r, g, b) > 190) continue
+      const k = r / 160
+      d.set([Math.min(255, rgb[0] * k), Math.min(255, rgb[1] * k), Math.min(255, rgb[2] * k)], i)
+    }
+  }
+  return { w: img.w, h: img.h, data: d }
+}
+
+test('A NAMEPLATE IN ANY CON COLOUR IS FOUND (red, blue, green)', async () => {
+  const img = readPng(join(SHOTS, 'a-white-wolf-npc.png'))
+  for (const rgb of [[230, 40, 40], [40, 60, 240], [40, 220, 40]] as const) {
+    assert.equal(await showsName(recolour(img, rgb), 'a white wolf'), true, String(rgb))
+  }
+})
+
 /** The owner's upgraded and invoked Burst of Flame windows (2026-10-21): each is the base spell's page. */
 const BURST_SHOTS: readonly [string, string | undefined, RegExp][] = [
   // tier 0, a cast-speed invocation on: Cast 1.5 sec (0.5), Recovery 1.5 sec (2.5 sec)

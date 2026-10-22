@@ -2,8 +2,8 @@
 // so it runs under node:test. A nameplate is bright text over a busy scene: OCR of the picture as it
 // stands read only noise on the owner's lizardman scout, and read the name at once with everything
 // but the near-white pixels blanked. So the picture is read as it is, then as near-white text, then as
-// any bright text (a nameplate tinted by its con colour), then as mid-grey text (a grey con), stopping
-// at the first that names the mob.
+// any bright text, then as mid-grey text, then with each of the picture's main colours as the text
+// fill (the con colour can be any of seven), stopping at the first that names the mob.
 
 import { nameInLines } from '../../shared/mobPicture'
 import { readLines } from './ocr'
@@ -27,9 +27,41 @@ export function textMask(img: Rgba, keep: Keep): Rgba {
   return { w: img.w, h: img.h, data }
 }
 
-/** Whether the picture shows the mob's name, in any of the three readings. */
+/**
+ * The picture's most common colours, quantised to 16 levels a channel. A nameplate's colour is the
+ * con colour, set by the mob's level against the player's (owner, 2026-10-22: "you shouldn't assume
+ * the color"), and its letters are one solid fill, so one of these is the fill whatever it is.
+ */
+export function mainColours(img: Rgba, n: number): Rgb[] {
+  const count = new Map<number, number>()
+  for (let i = 0; i < img.w * img.h; i++) {
+    const key = ((img.data[i * 4] >> 4) << 8) | ((img.data[i * 4 + 1] >> 4) << 4) | (img.data[i * 4 + 2] >> 4)
+    count.set(key, (count.get(key) ?? 0) + 1)
+  }
+  const mid = (q: number): number => q * 16 + 8
+  return [...count].sort((a, b) => b[1] - a[1]).slice(0, n).map(([k]) => [mid((k >> 8) & 15), mid((k >> 4) & 15), mid(k & 15)])
+}
+
+type Rgb = readonly [number, number, number]
+const nearColour = ([r0, g0, b0]: Rgb): Keep => (r, g, b) => Math.abs(r - r0) <= 36 && Math.abs(g - g0) <= 36 && Math.abs(b - b0) <= 36
+
+/** How long the check may read before it gives up (it runs after the save, off the player's path). */
+const BUDGET_MS = 15_000
+const COLOURS = 8
+
+/**
+ * Whether the picture shows the mob's name: the picture as it is, then the fixed masks (near white,
+ * bright, mid grey), then each of the picture's main colours as the text fill, stopping at the first
+ * reading that names the mob or when the budget runs out. Measured 2026-10-22 on the owner's two
+ * pictures and the wolf's name recoloured red, yellow, white, blue, light blue and green: all found,
+ * and no reading named a mob that was not there.
+ */
 export async function showsName(img: Rgba, name: string): Promise<boolean> {
-  for (const view of [() => img, () => textMask(img, WHITE), () => textMask(img, BRIGHT), () => textMask(img, GREY)]) {
+  const until = Date.now() + BUDGET_MS
+  const fixed = [(): Rgba => img, (): Rgba => textMask(img, WHITE), (): Rgba => textMask(img, BRIGHT), (): Rgba => textMask(img, GREY)]
+  const byColour = mainColours(img, COLOURS).map((c) => (): Rgba => textMask(img, nearColour(c)))
+  for (const view of [...fixed, ...byColour]) {
+    if (Date.now() > until) return false
     if (nameInLines(name, (await readLines(view())).map((l) => l.text))) return true
   }
   return false
