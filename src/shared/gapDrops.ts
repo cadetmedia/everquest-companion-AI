@@ -186,16 +186,16 @@ export function dropGaps(loot: readonly LootEvent[], catalog: readonly CatalogMo
   const common = commonLootNames(catalog)
   const inGroups = groupsByItem(groups)
   const missing = new Map<string, Missing>()
-  const listedMembers: [LootEvent, string, Filed][] = []
+  const listedMembers: [LootEvent, string, readonly string[]][] = []
   for (const e of loot) {
     const filed = filedAs(e, listed, inGroups)
     const mob = mobSourceOf(e)
     if (filed === null || mob === undefined) continue
-    if (filed.listed === true) listedMembers.push([e, mob, filed])
+    if (filed.listed !== undefined) listedMembers.push([e, mob, filed.listed])
     else addDrop(missing, e, mob, filed)
   }
-  // A member the page lists makes no row, but counts toward a group row the page lacks: its rate is any member.
-  for (const [e, mob, filed] of listedMembers) if (missing.has(`${mobKey(mob)}|${sourceItemKey(filed.name)}`)) addDrop(missing, e, mob, filed)
+  // A member the page lists makes no row, but counts toward each of its group rows the page lacks: its rate is any member.
+  for (const [e, mob, its] of listedMembers) for (const g of its) if (missing.has(`${mobKey(mob)}|${sourceItemKey(g)}`)) addDrop(missing, e, mob, { name: g, group: true })
   const kept = itemMobs === undefined ? [...missing.values()] : withoutServerWide([...missing.values()], catalog, groups, itemMobs)
   const field = (m: Missing): Partial<GapRow> => (common.has(m.name.toLowerCase()) ? { lootField: 'common_loot' } : {})
   const members = memberKeys(groups)
@@ -208,11 +208,11 @@ export function dropGaps(loot: readonly LootEvent[], catalog: readonly CatalogMo
   return kept.map(rowFor).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
 }
 
-/** What a loot line is filed as; `listed` for a group member the page lists by itself. */
+/** What a loot line is filed as; `listed` (its groups) for a group member the page lists by itself. */
 interface Filed {
   name: string
   group: boolean
-  listed?: true
+  listed?: readonly string[]
 }
 
 /**
@@ -227,7 +227,7 @@ function filedAs(e: LootEvent, listed: ReadonlyMap<string, ReadonlySet<string>>,
   const its = inGroups.get(sourceItemKey(e.item)) ?? []
   if (its.some((g) => page.has(sourceItemKey(g)))) return null
   const onPage = page.has(sourceItemKey(e.item)) || page.has(bareItemKey(e.item))
-  if (its.length > 0) return onPage ? { name: its[0], group: true, listed: true } : { name: its[0], group: true }
+  if (its.length > 0) return onPage ? { name: its[0], group: true, listed: its } : { name: its[0], group: true }
   // The item's own page is the base item's: `Barbed Legplates +4` is filed as `Barbed Legplates`.
   return onPage ? null : { name: itemBaseName(e.item), group: false }
 }

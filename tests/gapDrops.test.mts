@@ -41,6 +41,14 @@ test('listed items and listed groups are no gap; a group the page lacks is filed
   ])
 })
 
+test('a member the page lists counts toward every group row of its, not only its first group', () => {
+  // Fine Axe is in both groups and listed by itself; Bronze Axe (second group only) is not listed.
+  const sets = { 'Fine Weapons': ['Fine Axe'], 'Bronze Weapons': ['Bronze Axe', 'Fine Axe'] }
+  const page = [{ page: 'An orc', name: 'an orc', drops: ['Fine Axe'] }]
+  const rows = dropGaps([loot('Bronze Axe', 'an orc'), loot('Fine Axe', 'an orc')], page, sets)
+  assert.deepEqual(rows.map((r) => [r.name, r.count]), [['Bronze Weapons (an orc)', 2]])
+})
+
 test('a drop row copies its known_loot line and points at the mob page', () => {
   const kills = killIndex({ 'a gnoll': { display: 'a gnoll', count: 16 } } as unknown as KillMap)
   const [group, item] = dropGaps([loot('Bronze Axe', 'a gnoll'), loot('Hide Mask', 'a gnoll'), loot('Hide Mask', 'a gnoll')], catalog, groups).sort((a, b) => a.name.localeCompare(b.name))

@@ -50,7 +50,7 @@ export const GAP_DOMAIN_HELP: Record<GapDomain, string> = {
   spell: 'Spells cast near you that the wiki has no page for.',
   merchant: 'NPCs who traded with you that the wiki does not list as a merchant.',
   faction: "Factions a kill changed that the mob's wiki page does not list, or lists with another amount or side.",
-  drop: "Items you looted from a mob whose wiki page lists neither the item nor a group holding it,. Drops that fall from almost any mob (the Motes) are left out.",
+  drop: "Items you looted from a mob whose wiki page lists neither the item nor a group holding it. Drops that fall from almost any mob (the Motes) are left out.",
   image: 'Mobs you met whose wiki page has no picture: take a screenshot and upload it.'
 }
 
