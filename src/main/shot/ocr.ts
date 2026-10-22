@@ -29,6 +29,8 @@ const LABEL_WORD = /^(Class|Race)\b/i
 /** Upscale for small UI text (prototype: 3x beat 2x on 10 px text). */
 const SCALE = 3
 const IDLE_MS = 3 * 60_000
+/** A read this long is a hung worker: it is stopped and the next read starts a fresh one. */
+const READ_TIMEOUT_MS = 60_000
 
 let worker: Promise<Worker> | null = null
 let idle: NodeJS.Timeout | null = null
@@ -101,16 +103,34 @@ export function ocrScale(w: number, h: number): number {
   return Math.max(1, Math.min(SCALE, Math.floor(Math.sqrt(3_000_000 / (w * h)))))
 }
 
+/**
+ * `job`, or a rejection after `ms` with `onLate` run: a hung tesseract worker never holds a caller (and
+ * the capture's `busy`) for good (review, 2026-10-21).
+ */
+export function withTimeout<T>(job: Promise<T>, ms: number, onLate: () => void): Promise<T> {
+  let timer: NodeJS.Timeout | undefined
+  const late = new Promise<never>((_resolve, reject) => {
+    timer = setTimeout(() => {
+      onLate()
+      reject(new Error(`The text reader did not answer in ${String(Math.round(ms / 1000))} s and was restarted. Try again.`))
+    }, ms)
+  })
+  // A job that fails after the timeout has nobody waiting on it.
+  job.catch(() => undefined)
+  return Promise.race([job, late]).finally(() => clearTimeout(timer))
+}
+
 /** Every text line of the picture, top to bottom, with where it sits. */
 export async function readLines(img: Rgba): Promise<OcrLine[]> {
   // A start that failed is forgotten, so the next paste tries again instead of the same rejection.
-  worker ??= start().catch((e: unknown) => {
+  const ready = (worker ??= start().catch((e: unknown) => {
     worker = null
     throw e
-  })
+  }))
   touch()
   const k = ocrScale(img.w, img.h)
   const { w, h, gray } = ocrGray(img, k)
-  const { data } = await (await worker).recognize(grayPng(w, h, gray), {}, { text: false, tsv: true })
+  const read = (async () => (await ready).recognize(grayPng(w, h, gray), {}, { text: false, tsv: true }))()
+  const { data } = await withTimeout(read, READ_TIMEOUT_MS, () => void stopOcr())
   return linesFromTsv(data.tsv ?? '', k)
 }

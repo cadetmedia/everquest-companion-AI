@@ -41,3 +41,11 @@ test('A +N WINDOW: THE READ NOTES THE TIER AND OFFERS THE GUESS; THE PAGE KEEPS 
   assert.ok(!itemPage(facts, kept).includes('DMG: 90'), 'a +10 number never reaches the page')
   assert.ok(itemPage(facts, { ...kept, statsblock: kept.baseStatsblock, tier: undefined }).includes('DMG: 45'))
 })
+
+test('A +N RANGE TAKES BACK TEN A TIER: MITHRIL CHAMPION ARROWS +7 READ 220, BASE 150 (REVIEW, 2026-10-21)', () => {
+  const r = readItemWindow(['Mithril Champion Arrows +7', 'Magic', 'Class: RNG', 'Race: ALL', 'Ammo', 'Skill: Archery', 'Range: 220', 'Size: TINY Weight: 0.0'])
+  assert.equal(r.tier, 7)
+  assert.ok(r.statsblock.includes('Range: 220<br>'))
+  assert.ok(r.baseStatsblock?.includes('Range: 150<br>'), r.baseStatsblock)
+  assert.equal(delevel('\nRange: 250<br>', 10).block, '\nRange: 150<br>')
+})

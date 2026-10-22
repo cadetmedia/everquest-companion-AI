@@ -4,7 +4,9 @@
 
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { cleared, hasWindowPart, keptAfter, otherItemNote, sameItem, shotKind, shotProblem } from '../src/shared/itemShotKeep.ts'
+import { cleared, hasWindowPart, isItemShotRow, itemRowNames, keptAfter, nearNames, otherItemNote, sameItem, shotKind, shotProblem } from '../src/shared/itemShotKeep.ts'
+import type { GapRow } from '../src/shared/gaps.ts'
+import { gapJob } from '../src/shared/gapJob.ts'
 import { readItemWindow, type ItemShotReply } from '../src/shared/itemWindow.ts'
 import { nameInLines } from '../src/shared/mobPicture.ts'
 import { isNearSolid } from '../src/main/shot/pixels.ts'
@@ -124,4 +126,55 @@ test('A PASTE THAT KEEPS NOTHING SAYS WHY, IN WORDS, WITH WHAT TO DO (OWNER, 202
   assert.match(shotProblem(reply([])), /^No text was found in this picture/)
   assert.match(shotProblem(reply([], [{ id: 1126, score: 1900 }])), /icon alone, but no game icon matches it closely \(the nearest is 1126\)/)
   assert.match(shotProblem(reply(['meow', 'a soft orange cat sitting on a warm windowsill'])), /^Text was read \("a soft orange cat sitting on a warm wind…"\), but no item window/)
+})
+
+test('A LORE TAB WHOSE LORE SAYS "CLASS" IS A LORE TAB, AND THE KEPT WINDOW STAYS (REVIEW, 2026-10-21)', () => {
+  // The wiki's own lore for this item: {{Item Lore|Bloody Griffon-Hide Wrist Guard - Class 1}}
+  const tab = reply(['Bloody Griffon-Hide Wrist Guard', '- Description Lore', 'Bloody Griffon-Hide Wrist Guard - Class 1'])
+  assert.equal(shotKind(tab), 'lore')
+  assert.equal(tab.read.lore, 'Bloody Griffon-Hide Wrist Guard - Class 1')
+  const before = { statsblock: '\nMagic<br>\nSlot: WRIST<br>\nAC: 5<br>', iconId: 1234, valueCopper: 500 }
+  assert.deepEqual(keptAfter(before, tab, 'lore'), { ...before, lore: 'Bloody Griffon-Hide Wrist Guard - Class 1' })
+  const steel = reply(['| Fine Blade', '- Description Lore', 'Forged from the highest class of steel'])
+  assert.equal(shotKind(steel), 'lore')
+  assert.ok(!/OF STEEL/.test(steel.read.statsblock))
+  // A window needs its Class or Race codes on the block: a blank one is not a window.
+  assert.equal(shotKind({ ...tab, read: { ...tab.read, statsblock: '\n' } }), 'lore')
+})
+
+test('A SLIP IS NOT TAKEN WHEN THE DIGITS DIFFER OR ANOTHER KNOWN NAME IS AS NEAR (THE TWO SLIPS STAY FOR OCR, THE OWNER RULED)', () => {
+  assert.ok(sameItem('Windstiker', 'Windstriker', ['Bow of the Huntsman']))
+  assert.ok(!sameItem('Froggotten Page 2', 'Froggotten Page 3'))
+  assert.ok(!sameItem("Salil's Writ Pg. 60", "Salil's Writ Pg. 64"))
+  assert.ok(!sameItem('Cloth Cape', 'Cloth Cap', ['Cloth Cape']))
+  assert.ok(!sameItem('Powder of Unanimation', 'Powder of Reanimation', ['Powder of Unanimation']))
+  assert.ok(!sameItem('Faydark Ringmail Coif', 'Faydark Ringmail Coat', ['Faydark Ringmail Coif']))
+  // the row itself among the known names is not a rival
+  assert.ok(sameItem('Windstiker', 'Windstriker', ['Windstriker']))
+  assert.deepEqual(nearNames('Cloth Cap', ['Cloth Cape', 'Cloth Cap', 'Cloth Gloves', 'Cloak']), ['Cloth Cape', 'Cloth Cap'])
+  // the player is asked, with the name read and the row
+  assert.equal(otherItemNote('Cloth Cape', 'Cloth Cap', 'item window', ['Cloth Cape']), `This item window reads "Cloth Cape": is it Cloth Cap's?`)
+  assert.equal(otherItemNote('Windstiker', 'Windstriker', 'item window', []), undefined)
+})
+
+test('A +N TITLE OCR READ WITH A SPACE OR A MARK STILL STATES ITS TIER, AND THE NAME GUARD COMPARES THE BASE NAME', () => {
+  for (const title of ['Windstriker + 10', 'Windstriker +10.', 'Windstriker +10,', "Windstriker +10 (Augmented |"]) {
+    const r = readItemWindow([title, 'Lore Equipped, No Trade', 'Class: RNG', 'Race: ALL', 'Range', 'Base Dmg: 90 Delay: 60', 'Strength: 15 Agility: 15'])
+    assert.equal(r.name, 'Windstriker', title)
+    assert.equal(r.tier, 10, title)
+  }
+  assert.ok(sameItem('Windstriker + 10', 'Windstriker'))
+  assert.ok(sameItem("Wu's Fist of Mastery +10 (Augmented", "Wu's Fist of Mastery"))
+})
+
+const itemRow = (name: string, extra: object = {}): GapRow => ({ domain: 'item', name, kinds: ['looted'], count: 1, first: '', last: '', ...extra }) as unknown as GapRow
+const forageRow = itemRow('Fishing Grubs', { forageUpdate: { page: 'Fishing Grubs', zones: ['Qeynos Hills'], noField: false, category: true } })
+
+// Forage update rows come with gaps-item-facts; on this branch alone an Items row is always a new page.
+test('A FORAGE UPDATE ROW TAKES NO ITEM SCREENSHOT AND NO CAPTURE IS FILED ON IT (ITS PAGE COPIES NO READING)', { skip: gapJob(forageRow) !== 'update' && 'no forage update rows without gaps-item-facts' }, () => {
+  const row = itemRow
+  const update = forageRow
+  assert.equal(isItemShotRow(row('Rat Ear')), true)
+  assert.equal(isItemShotRow(update), false)
+  assert.deepEqual(itemRowNames([row('Rat Ear'), update]), ['Rat Ear'])
 })

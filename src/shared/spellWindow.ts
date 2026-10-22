@@ -64,17 +64,17 @@ const keyOf = (hit: string): string | undefined => LABELS.find(([l]) => l.replac
 /** One label's value: its key, the label as printed, the value. */
 type Pair = [key: string, label: string, value: string]
 
-/** Every `Label: value` on a line, a value running to the next label. */
-function pairsOf(line: string): Pair[] {
+/** Every `Label: value` on a line, a value running to the next label. `bare`: a short line's colon-less label too. */
+function pairsOf(line: string, bare = true): Pair[] {
   const hits = [...line.matchAll(LABEL_RE)].map((m) => ({ label: m[1], key: keyOf(m[1]), from: (m.index ?? 0) + m[0].indexOf(m[1]), to: (m.index ?? 0) + m[0].length }))
   const pairs = hits.flatMap((h, i) => {
     const value = line.slice(h.to, i + 1 < hits.length ? hits[i + 1].from : line.length).trim()
     return h.key === undefined || value === '' ? [] : [[h.key, h.label, value] as Pair]
   })
-  if (pairs.length > 0 || line.split(/\s+/).length > 5) return pairs
-  const bare = BARE_LABEL.exec(line)
-  const key = bare === null ? undefined : keyOf(bare[1])
-  return bare === null || key === undefined ? [] : [[key, bare[1], bare[2].trim()]]
+  if (pairs.length > 0 || !bare || line.split(/\s+/).length > 5) return pairs
+  const m = BARE_LABEL.exec(line)
+  const key = m === null ? undefined : keyOf(m[1])
+  return m === null || key === undefined ? [] : [[key, m[1], m[2].trim()]]
 }
 
 /** OCR's junk at a value's end (the scroll bar, the frame): lone marks and single letters (`Instant E |`). */
@@ -171,6 +171,9 @@ function spellLabelName(lines: readonly string[]): string | undefined {
 /** OCR's reading of a rank after the name: `I`..`X`, or the `I` read as a bar, an l, a one (`Burst of Flame | t`). */
 const RANK_TOKEN = /^\s*([IVX]{1,4}|[|l1!]{1,3})(?=\s|$)/
 
+/** The ranks that may follow a row's name: the names to ask the install about (`Clarity II` is a spell of its own). */
+export const RANKS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'] as const
+
 /**
  * An upgraded rank after the row's name on the `Spell:` line (owner, 2026-10-21: `Burst of Flame I`,
  * a Mote of Potential's tier 1): the page is the base spell's. Read against the row's own name, so a
@@ -181,7 +184,10 @@ export function rankAfter(lines: readonly string[], rowName: string): string | u
   const words = rowName.trim().split(/\s+/).map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
   const own = new RegExp(`^\\W*${words.join('\\s*')}`, 'i').exec(spell)
   const token = own === null ? null : RANK_TOKEN.exec(spell.slice(own[0].length))
-  return token === null ? undefined : token[1].replace(/[|l1!]/g, 'I')
+  if (token === null) return undefined
+  // A bar or an l is the frame's edge unless the window shows its upgrade block (review, 2026-10-21).
+  if (/^[|l1!]+$/.test(token[1]) && !lines.some((l) => NOT_SPELL.test(l))) return undefined
+  return token[1].replace(/[|l1!]/g, 'I')
 }
 
 /** A resist with an adjustment after its type (`Fire -15`): the type, and the adjustment. */
@@ -189,20 +195,22 @@ const RESIST_ADJUST = /^(.*?[A-Za-z])\s*([-+−]\s*\d+)$/
 
 /**
  * OCR lines of one spell display window (top to bottom) -> the page's fields. `template`: the file's
- * description; `rowName`: the spell the paste is for, which an upgraded rank's name is read against.
+ * description; `rowName`: the spell the paste is for, which an upgraded rank's name is read against;
+ * `isSpell`: whether a name is a spell of its own in the install (`Clarity II` is not Clarity's rank).
  */
-export function readSpellWindow(raw: readonly string[], template?: string, rowName?: string): SpellWindowRead {
+export function readSpellWindow(raw: readonly string[], template?: string, rowName?: string, isSpell?: (name: string) => boolean): SpellWindowRead {
   const all = raw.map((l) => l.replace(/\s+/g, ' ').trim()).filter((l) => l !== '')
   // What is above the first `Spell:` line is the title bar and the frame's junk.
   const lines = all.slice(Math.max(0, all.findIndex((l) => SPELL_LINE.test(l))))
   const titled = titleOf(lines[0])
-  const { name, rank } = nameOf(lines, titled, rowName)
+  const { name, rank } = nameOf(lines, titled, rowName, isSpell)
   const fields: Record<string, string> = {}
   const modified: string[] = []
   const text: string[] = []
   let wrapping = false
   for (const line of lines.slice(titled === undefined ? 0 : 1)) {
-    const pairs = pairsOf(line)
+    // Once the description has started, a short line led by a label word is its wrapped text (`target for 50 hit points.`).
+    const pairs = pairsOf(line, text.length === 0)
     takePairs(pairs, fields, modified)
     // A short line right after the description is its wrapped end (`damage.`).
     wrapping = pairs.length === 0 && descriptionLine(line, name) && (prose(line) || (wrapping && /[a-z]{3}/i.test(line)))
@@ -214,8 +222,10 @@ export function readSpellWindow(raw: readonly string[], template?: string, rowNa
 }
 
 /** The window's name, the row's when an upgraded rank follows it (`Burst of Flame I` -> `Burst of Flame`, `I`). */
-function nameOf(lines: readonly string[], titled: string | undefined, rowName: string | undefined): { name?: string; rank?: string } {
-  const rank = rowName === undefined ? undefined : rankAfter(lines, rowName)
+function nameOf(lines: readonly string[], titled: string | undefined, rowName: string | undefined, isSpell?: (name: string) => boolean): { name?: string; rank?: string } {
+  const read = rowName === undefined ? undefined : rankAfter(lines, rowName)
+  // A classic spell named with a numeral (`Clarity II`, `Cannibalize III`) is another spell, never a rank.
+  const rank = read !== undefined && isSpell?.(`${rowName ?? ''} ${read}`) === true ? undefined : read
   return rank === undefined ? { name: spellLabelName(lines) ?? titled } : { name: rowName, rank }
 }
 

@@ -90,3 +90,13 @@ export const useItemShots = (): Readonly<Record<string, StoredShot>> => items.us
 export const setSpellShot = (name: string, shot: SpellPageShot | null): void => spells.set(name, shot)
 /** Every kept spell window reading by spell name. */
 export const useSpellShots = (): Readonly<Record<string, StoredSpellShot>> => spells.use()
+
+/**
+ * The Gaps Items rows' names as the list last held them (CaptureBar keeps this current): a paste's name
+ * read through an OCR slip is checked against the other rows too (shared/itemShotKeep.ts `sameItem`).
+ */
+let rowNames: readonly string[] = []
+export const setItemRowNames = (names: readonly string[]): void => {
+  rowNames = names
+}
+export const itemRowNamesNow = (): readonly string[] => rowNames

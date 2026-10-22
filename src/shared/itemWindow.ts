@@ -47,6 +47,8 @@ export interface ItemShotReply {
   icons: { id: number; score: number }[]
   /** Why there are no icons, when there are none: no install, no icon sheets. */
   iconNote?: string
+  /** The catalog's item names within OCR's slips of the name read: a slip is not taken for a row when one is as near (itemShotKeep.ts `sameItem`). */
+  known?: string[]
   ms: number
   /** Set when the picture could not be read at all. */
   error?: string
@@ -112,12 +114,15 @@ const NOT_ITEM = /\b(Exaltation|O\w{0,2}amentation|Unmodified|Modified|Merge|Pla
 
 // ---- small readers ------------------------------------------------------------------------------
 
-/** OCR junk off both ends: a misread icon edge (`8 Quest`, `++ Ruined Robe`, `| Class`), a stray `:`. */
-export function cleanLine(raw: string): string {
+/**
+ * OCR junk off both ends: a misread icon edge (`8 Quest`, `++ Ruined Robe`, `| Class`), a stray `:`.
+ * `name`: the name line, where only marks are junk (`A Faded Salil's Writ Page`, `5 Dose Potion of Cold`).
+ */
+export function cleanLine(raw: string, name = false): string {
   return raw
     .replace(/\s+/g, ' ')
-    // leading tokens with no two letters or digits in a row: `++`, `8`, `S—`, `|`
-    .replace(/^(?:(?![^\s]*[A-Za-z0-9]{2})[^\s]+\s+)+/, '')
+    // leading tokens with no two letters or digits in a row: `++`, `8`, `S—`, `|`; on the name line, no letter or digit
+    .replace(name ? /^(?:[^\sA-Za-z0-9]+\s+)+/ : /^(?:(?![^\s]*[A-Za-z0-9]{2})[^\s]+\s+)+/, '')
     // a trailing lone mark, a lone lower-case letter, or any lone character after a number
     .replace(/(?:\s+[^A-Za-z0-9%)]{1,3}|\s+[a-z]|(?<=\d%?)\s+\S)+$/, '')
     .trim()
@@ -158,6 +163,19 @@ function rankFix(name: string): string {
 /** The flag words a line holds, in its order, in the window's spelling. */
 function flagsOf(line: string): string[] {
   return [...line.matchAll(FLAG_RE)].map((m) => FLAG_WORDS.find((f) => f.toLowerCase() === m[1].replace(/\s+/g, ' ').toLowerCase()) ?? m[1])
+}
+
+/**
+ * The flag line holds flag words, never a word of a name: `Lore of Malignancy` is the name line, not a
+ * `Lore` flag (review, 2026-10-21). Besides the known words: a flag within OCR's reach of one, or a
+ * flag the list does not know yet beside known ones, comma-separated (`Soulbound, No Trade`).
+ */
+function isFlagLine(line: string): boolean {
+  if (flagsOf(line).length === 0) return false
+  if (!/[A-Za-z]{3}/.test(line.replace(FLAG_RE, ' '))) return true
+  const pieces = line.split(/\s*,\s*/).filter(Boolean)
+  const known = pieces.filter((p) => FLAG_WORDS.includes(snap(p, FLAG_WORDS, 'Flag').value)).length
+  return pieces.length > 1 ? known > 0 : known === 1
 }
 
 /**
@@ -290,14 +308,14 @@ function slotLine(g: Gathered, line: string): boolean {
 }
 
 /** A filled exaltation slot (`Click Exaltation: Golem Metal Wand (Exaltation)`; OCR reads Worn as `Wom`). */
-const EXALT_SLOT = /\b(Focus|Click|Proc|W\w{1,2}n|Wom)\s+Exaltation\s*[:;.]?\s*(.+)$/i
+const EXALT_SLOT = /\b(Focus|Click|Proc|W\w{1,2}n|Wom)\s+Exaltation\s*[:;.]?\s*([A-Za-z].*)$/i
 /** The effect kind each exaltation slot grants, as the effect labels name it. */
 const EXALT_KIND = (slot: string): string => ({ focus: 'Focus', click: 'Click', proc: 'Combat' })[slot.toLowerCase()] ?? 'Worn'
 
-/** A filled exaltation slot line into `g.exalts`; an `empty` one is nothing. */
+/** A filled exaltation slot line into `g.exalts`; an `empty` one (OCR: `emply`) or one with no value read is nothing. */
 function noteExalt(g: Gathered, line: string): void {
   const exalt = EXALT_SLOT.exec(line)
-  if (exalt !== null && !/^empty\b/i.test(exalt[2])) g.exalts.set(EXALT_KIND(exalt[1]), exalt[2].trim())
+  if (exalt !== null && !/^emp\w*$/i.test(exalt[2].trim())) g.exalts.set(EXALT_KIND(exalt[1]), exalt[2].trim())
 }
 
 /** One line of the stats region into `g`: the bare slot word, or its pairs, or an unread line. */
@@ -427,13 +445,14 @@ const TAB_ROW = /Des\w{0,4}ption/i
  * The Lore tab: no Class line; its text is what follows the tab row, a wrapped lore joined back into
  * one line. With no tab row read, the longest line that is not a tab word.
  */
-function loreRead(lines: readonly string[]): ItemWindowRead {
+function loreRead(lines: readonly string[], raw: readonly string[]): ItemWindowRead {
   const tabAt = lines.findIndex((l) => TAB_ROW.test(l))
   // Words, not OCR's junk off the frame: mostly letters and spaces.
   const prose = (l: string): boolean => !/^Lore$/i.test(l) && !TAB_ROW.test(l) && /[a-z]{3}/i.test(l) && (l.match(/[A-Za-z ]/g) ?? []).length >= 0.8 * l.length
   const text = tabAt >= 0 ? lines.slice(tabAt + 1).filter(prose).join(' ') : lines.filter(prose).sort((a, b) => b.length - a.length)[0]
   // The title bar above the tab row names the item: a captured Lore tab finds its row by it.
-  const title = tabAt > 0 ? bareTitle(lines.slice(0, tabAt).reverse().find((l) => /[A-Za-z]{3}/.test(l)))?.replace(/\s*\+\d+$/, '') : undefined
+  const titleAt = tabAt > 0 ? lines.slice(0, tabAt).map((l) => /[A-Za-z]{3}/.test(l)).lastIndexOf(true) : -1
+  const title = titleAt < 0 ? undefined : withoutTier(bareTitle(cleanLine(raw[titleAt], true)) ?? '')
   return { statsblock: '', unread: [], ...(text === undefined || text === '' ? {} : { lore: text }), ...(title === undefined ? {} : { name: title }) }
 }
 
@@ -449,13 +468,19 @@ const bareTitle = (l: string | undefined): string | undefined =>
 const hasLoreTab = (lines: readonly string[], before: number): boolean =>
   lines.slice(0, before).some((l) => TAB_ROW.test(l) && /\bLore\b(?!\s*(Equipped|Item))/i.test(l))
 
-/** The name: the line above the flags line, else above Class; junk dropped, a `+N` tier apart. */
-function nameAbove(lines: readonly string[], at: number): { name?: string; tier?: number } {
-  const line = lines.slice(0, at).reverse().find((l) => /[A-Za-z]{2}/.test(l) && !NOT_ITEM.test(l))
-  if (line === undefined) return {}
-  const bare = bareTitle(line) ?? ''
-  const tier = /\s*\+(\d{1,2})$/.exec(bare)
-  return { name: bare.replace(/\s*\+\d+$/, '').trim(), ...(tier === null || tier[1] === '0' ? {} : { tier: Number(tier[1]) }) }
+/** A `+N` tier after a name, as OCR reads it (`+10`, `+ 10`, `+9.`, `+10 (Augmented`), and anything after it. */
+const TIER = /\s*\+\s*(\d{1,2})\b.*$/
+
+/** A name with its `+N` tier dropped. */
+export const withoutTier = (name: string): string => name.replace(TIER, '').trim()
+
+/** The name: the line above the flags line, else above Class; junk dropped, a `+N` tier apart. `raw`: the lines before cleaning. */
+function nameAbove(lines: readonly string[], raw: readonly string[], at: number): { name?: string; tier?: number } {
+  const i = lines.slice(0, at).map((l) => /[A-Za-z]{2}/.test(l) && !NOT_ITEM.test(l)).lastIndexOf(true)
+  if (i < 0) return {}
+  const bare = bareTitle(cleanLine(raw[i], true)) ?? ''
+  const tier = TIER.exec(bare)
+  return { name: withoutTier(bare), ...(tier === null || Number(tier[1]) === 0 ? {} : { tier: Number(tier[1]) }) }
 }
 
 /**
@@ -469,27 +494,53 @@ function tierParts(tier: number | undefined, statsblock: string): Partial<ItemWi
   return { tier, ...(back.block === undefined ? {} : { baseStatsblock: back.block }), checks: [`This window is +${String(tier)}: its numbers are the upgraded item's, not the page's.${why}`] }
 }
 
-/** The flag line (the last line above Class naming a flag, never the tab row), Class and Race, with their notes. */
-function headOf(lines: readonly string[], clsAt: number, raceAt: number): Head & { flagAt: number; notes: string[] } {
-  const flagAt = lines.slice(0, clsAt).map((l) => !TAB_ROW.test(l) && flagsOf(l).length > 0).lastIndexOf(true)
+/** The flag line (the last line of flag words above Class, never the tab row), Class and Race, with their notes. */
+function headOf(lines: readonly string[], clsAt: number, clsLine: string, raceLine: string | undefined): Head & { flagAt: number; notes: string[] } {
+  const flagAt = lines.slice(0, clsAt).map((l) => !TAB_ROW.test(l) && isFlagLine(l)).lastIndexOf(true)
   const flags = flagAt < 0 ? [] : flagLine(lines[flagAt])
-  const cls = codesOf(lines[clsAt], 'Class')
-  const race = raceAt < 0 ? undefined : codesOf(lines[raceAt], 'Race')
+  const cls = codesOf(clsLine, 'Class')
+  const race = raceLine === undefined ? undefined : codesOf(raceLine, 'Race')
   const notes = [...flags.flatMap((f) => (f.note === undefined ? [] : [f.note])), ...(cls?.notes ?? []), ...(race?.notes ?? [])]
   return { flagAt, flags: flags.map((f) => f.value), notes, ...(cls === undefined ? {} : { cls: cls.value }), ...(race === undefined ? {} : { race: race.value }) }
 }
 
+/**
+ * The Class line: at the line's start (a short OCR mark before it allowed: `By Class: ALL`), with a
+ * colon or a class code after the word. A Lore tab's prose (`... - Class 1`, `the highest class of
+ * steel`) is not one (review, 2026-10-21).
+ */
+const CLASS_LINE = new RegExp(`^(?:\\S{1,2}\\s+)?Class\\s*(?:[:;.]|\\s(?:${[...CLASS_CODES, 'ALL', 'NONE'].join('|')})\\b)`, 'i')
+
+/** A line of class or race codes only: a long list the window wrapped onto the next line. */
+const onlyCodes = (line: string, codes: readonly string[]): boolean =>
+  line.split(/\s+/).every((w) => codes.includes(w.replace(/[^A-Za-z]/g, '').toUpperCase()))
+
+/** The Class or Race line at `at` with the code lines wrapped under it joined on, and the last line it took. */
+function listAt(lines: readonly string[], at: number, codes: readonly string[]): { line: string; end: number } {
+  let end = at
+  while (end + 1 < lines.length && onlyCodes(lines[end + 1], codes)) end++
+  return { line: lines.slice(at, end + 1).join(' '), end }
+}
+
+/** The Race line under the Class list, with its wrapped codes; none when the window shows none. */
+function raceAfter(lines: readonly string[], after: number): { line: string; end: number } | undefined {
+  const at = lines.findIndex((l, i) => i > after && /\bRace\s*[:;.]?\s/i.test(l))
+  return at < 0 ? undefined : listAt(lines, at, RACE_CODES)
+}
+
 /** OCR lines of one item window (top to bottom) -> the page's fields. */
 export function readItemWindow(raw: readonly string[]): ItemWindowRead {
-  const lines = raw.map(cleanLine).filter((l) => l !== '')
-  const clsAt = lines.findIndex((l) => /\bClass\s*[:;.]?\s/i.test(l))
-  if (clsAt < 0) return loreRead(lines)
-  const raceAt = lines.findIndex((l, i) => i > clsAt && /\bRace\s*[:;.]?\s/i.test(l))
-  const head = headOf(lines, clsAt, raceAt)
-  const g = gather(lines.slice((raceAt < 0 ? clsAt : raceAt) + 1))
+  const kept = raw.filter((l) => cleanLine(l) !== '')
+  const lines = kept.map((l) => cleanLine(l))
+  const clsAt = lines.findIndex((l) => CLASS_LINE.test(l))
+  if (clsAt < 0) return loreRead(lines, kept)
+  const cls = listAt(lines, clsAt, CLASS_CODES)
+  const race = raceAfter(lines, cls.end)
+  const head = headOf(lines, clsAt, cls.line, race?.line)
+  const g = gather(lines.slice((race ?? cls).end + 1))
   const ratio = checkRatio(g.weapon)
   const statsblock = `\n${statsLines(head, g).map((l) => `${l}<br>`).join('\n')}`
-  const { name, tier } = nameAbove(lines, head.flagAt < 0 ? clsAt : head.flagAt)
+  const { name, tier } = nameAbove(lines, kept, head.flagAt < 0 ? clsAt : head.flagAt)
   const up = tierParts(tier, statsblock)
   const checks = [...(up.checks ?? []), ...(ratio === undefined ? [] : [ratio]), ...head.notes, ...g.notes]
   return {

@@ -2,7 +2,7 @@
 // where each copy was, the log's loot since it lands in the bags, its destroys come off. Fixtures only.
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { gapHeld, heldCaption, heldChipLabel, heldIndex, heldLine, heldPickOf, heldPickText, heldTitle, isOwnExport, joinHeld, onlyHeld } from '../src/shared/gapHeld'
+import { gapHeld, heldCaption, heldChipLabel, heldIndex, heldLine, heldPickOf, heldPickText, heldTitle, heldWhere, isOwnExport, joinHeld, onlyHeld } from '../src/shared/gapHeld'
 import type { GapRow } from '../src/shared/gaps'
 import type { OwnershipEntry, OwnershipRow } from '../src/shared/planner/ownership'
 import type { LootEvent } from '../src/shared/types'
@@ -120,4 +120,10 @@ test('the stored pick: the old box stored 1 for on, which is Anywhere and 0 is O
   assert.equal(heldPickOf('nonsense'), 'off')
   for (const p of ['off', 'any', 'bags', 'bank'] as const) assert.equal(heldPickOf(heldPickText(p)), p)
   assert.equal(heldPickText('any'), '1')
+})
+
+test("AN UPDATE ROW'S HELD LINE SAYS WHERE IT IS WITHOUT ASKING FOR A SCREENSHOT", () => {
+  const h = { total: 2, parts: [{ label: 'bags', count: 2 }], exportedAt: '2026-10-21T00:00:00Z' } as unknown as Parameters<typeof heldLine>[0]
+  assert.equal(heldLine(h), 'You hold 2 (bags): screenshot it for the wiki now.')
+  assert.equal(heldWhere(h), 'You hold 2 (bags).')
 })

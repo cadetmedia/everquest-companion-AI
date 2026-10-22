@@ -4,8 +4,9 @@
 // its own clear). Pure, so the rules are tested apart from the panel (ShotPanel.tsx).
 
 import { editDistance } from './itemVocab'
+import { gapJob } from './gapJob'
 import type { GapRow } from './gaps'
-import type { ItemShotReply } from './itemWindow'
+import { withoutTier, type ItemShotReply } from './itemWindow'
 import type { ItemPageShot } from './wikiPage'
 
 /** What one paste was: the item window, its Lore tab, the icon alone; null when nothing usable was read. */
@@ -25,8 +26,11 @@ const sentence = (s: string): boolean => s.split(/\s+/).length >= 3 && (s.match(
 
 /** Both tab words on one line: the window's tab row (`- Description Lore`), not a stray `Lore` in a picture. */
 const TAB_ROW_RE = /Des\w{0,4}ption.*\bLore\b/i
-/** The Description tab's own text: a lore read off it is a window whose Class line OCR missed. */
-const WINDOW_TEXT = /\b(Equipped|No Trade|Temporary|Class|Race|Size|Weight)\b/i
+/**
+ * The Description tab's own text: a lore read off it is a window whose Class line OCR missed. Labels
+ * with their colon: a lore's prose may say "class" (`... - Class 1`, review 2026-10-21).
+ */
+const WINDOW_TEXT = /\b(Equipped|No Trade|Temporary)\b|\b(Class|Race|Size|Weight)\s*[:;]/i
 
 /**
  * A Lore tab: its text under the tab row. A short lore counts when the tab row was read (owner,
@@ -39,35 +43,58 @@ function isLore(r: ItemShotReply): boolean {
   return r.lines.some((l) => TAB_ROW_RE.test(l)) || (sentence(lore) && r.lines.some((l) => TAB_RE.test(l)))
 }
 
+/** A window's statsblock carries its Class or Race codes; a blank one (a Lore tab taken for a window) does not. */
+const WINDOW_BLOCK = /^(?:Class|Race): \S/m
+
 export function shotKind(r: ItemShotReply): ShotKind | null {
   if (r.error !== undefined) return null
-  if (r.read.statsblock !== '') return 'window'
+  if (WINDOW_BLOCK.test(r.read.statsblock)) return 'window'
   if (isLore(r)) return 'lore'
   const best = r.icons[0]
   if (r.lines.length === 0 && best !== undefined && best.score <= ICON_FIT_MAX) return 'icon'
   return null
 }
 
-const squash = (s: string): string => s.toLowerCase().replace(/[^a-z0-9]/g, '')
+/** Letters and digits only, case ignored, a `+N` tier dropped. */
+const squash = (s: string): string => withoutTier(s).toLowerCase().replace(/[^a-z0-9]/g, '')
+const digits = (s: string): string => s.replace(/\D/g, '')
 
 /**
  * Whether the window's name is the row's item: letters and digits only, case ignored, two slips
- * allowed (OCR ran `Black Lizard Scale` together; a title read `Windstiker`). No name read: true.
+ * allowed (OCR ran `Black Lizard Scale` together; a title read `Windstiker`; owner's ruling). No name
+ * read: true. A slip is not taken when the digits differ (`Froggotten Page 2` / `3`) or when another
+ * known name (`others`: the catalog's items near it, the other Gaps rows) is as near, since then it
+ * may be that item (`Cloth Cape` on the `Cloth Cap` row; review, 2026-10-21).
  */
-export function sameItem(read: string | undefined, row: string): boolean {
+export function sameItem(read: string | undefined, row: string, others: readonly string[] = []): boolean {
   if (read === undefined) return true
-  return editDistance(squash(read), squash(row)) <= 2
+  const [a, b] = [squash(read), squash(row)]
+  if (a === b) return true
+  const d = editDistance(a, b)
+  if (d > 2 || digits(a) !== digits(b)) return false
+  return !others.some((o) => squash(o) !== b && editDistance(a, squash(o)) <= d)
+}
+
+/** The names within OCR's two slips of `name`: what `sameItem` checks a slip against (main, over the item catalog). */
+export function nearNames(name: string, names: readonly string[]): string[] {
+  const a = squash(name)
+  return names.filter((n) => {
+    const b = squash(n)
+    return Math.abs(a.length - b.length) <= 2 && editDistance(a, b) <= 2
+  })
 }
 
 /**
  * Why a paste waits for the player before anything is kept, in words; undefined when it is the row's
  * own. Another item's window or Lore tab, and a window or Lore tab whose name was not read (a snip
  * below the title kept Mud Stained Skin Tunic's facts on Gray Wolf Skull, owner, 2026-10-21). An
- * icon alone names nothing and is not asked about. `what`: the part, as the player calls it.
+ * icon alone names nothing and is not asked about. `what`: the part, as the player calls it;
+ * `others`: the known names a slip could also be (`sameItem`).
  */
-export function otherItemNote(read: string | undefined, row: string, what: string): string | undefined {
+export function otherItemNote(read: string | undefined, row: string, what: string, others: readonly string[] = []): string | undefined {
   if (read === undefined) return `No name was found in this ${what}: is it ${row}'s?`
-  return sameItem(read, row) ? undefined : `This is ${read}'s ${what}, not ${row}'s.`
+  if (sameItem(read, row, others)) return undefined
+  return sameItem(read, row) ? `This ${what} reads "${read}": is it ${row}'s?` : `This is ${read}'s ${what}, not ${row}'s.`
 }
 
 /** The part a kind of paste is, in the player's words. */
@@ -109,17 +136,33 @@ export function cleared(kept: ItemPageShot, part: 'window' | 'lore'): ItemPageSh
   return Object.keys(next).length === 0 ? null : next
 }
 
+/**
+ * A Gaps row that takes an item screenshot: an Items row for a new page. An update row (a known
+ * item's page that lacks a forage zone, gapJob.ts) copies no reading, so it has no paste box and no
+ * capture is filed on it.
+ */
+export const isItemShotRow = (r: GapRow): boolean => r.domain === 'item' && r.suggest === undefined && gapJob(r) !== 'update'
+
 /** The Gaps item rows' names: where a capture from the game can be filed. */
-export const itemRowNames = (rows: readonly GapRow[]): string[] => rows.filter((r) => r.domain === 'item' && r.suggest === undefined).map((r) => r.name)
+export const itemRowNames = (rows: readonly GapRow[]): string[] => rows.filter(isItemShotRow).map((r) => r.name)
+
+/** Where a capture goes: the row, and whether the name read is the row's exactly (else it waits for the player). */
+export interface CaptureMatch {
+  row: string
+  exact: boolean
+}
 
 /**
- * The row a capture from the game belongs to (phase 3): the row named exactly so, else the one row the
- * window's name matches through OCR's slips (`sameItem`); none when no row or several match.
+ * The row a capture from the game belongs to (phase 3): the row named exactly so (case, spaces and
+ * marks aside), filed at once; else the one row the window's name matches through OCR's slips
+ * (`sameItem`, against the other rows and `known`, the catalog's names near it), which waits for the
+ * player; none when no row or several match.
  */
-export function captureRow(name: string | undefined, rowNames: readonly string[]): string | undefined {
+export function captureRow(name: string | undefined, rowNames: readonly string[], known: readonly string[] = []): CaptureMatch | undefined {
   if (name === undefined) return undefined
   const exact = rowNames.find((r) => squash(r) === squash(name))
-  if (exact !== undefined) return exact
-  const near = rowNames.filter((r) => sameItem(name, r))
-  return near.length === 1 ? near[0] : undefined
+  if (exact !== undefined) return { row: exact, exact: true }
+  const others = [...known, ...rowNames]
+  const near = rowNames.filter((r) => sameItem(name, r, others))
+  return near.length === 1 ? { row: near[0], exact: false } : undefined
 }

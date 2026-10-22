@@ -13,9 +13,9 @@ import { type JSX, useCallback, useEffect, useState } from 'react'
 import { Box, Button, ButtonBase, Chip, Stack, TextField, Typography } from '@mui/material'
 import { formatCoin, type GapRow } from '@shared/gaps'
 import type { ItemShotReply } from '@shared/itemWindow'
-import { cleared, hasWindowPart, keptAfter, otherItemNote, PART_WORDS, shotKind, shotProblem, type ShotKind } from '@shared/itemShotKeep'
+import { cleared, hasWindowPart, isItemShotRow, keptAfter, otherItemNote, PART_WORDS, shotKind, shotProblem, type ShotKind } from '@shared/itemShotKeep'
 import type { ItemPageShot } from '@shared/wikiPage'
-import { itemShotNow, setItemShot, useItemShots, type StoredShot } from './itemShotsStore'
+import { itemRowNamesNow, itemShotNow, setItemShot, useItemShots, type StoredShot } from './itemShotsStore'
 import { Line, PasteZone, WrongItem } from './PasteZone'
 import SpellShot from './SpellShot'
 import MobPicture from './MobPicture'
@@ -172,8 +172,9 @@ function ItemShot({ row }: { row: GapRow }): JSX.Element {
           setFailed(kind === null ? shotProblem(r) : null)
           setReply(kind === null ? null : r)
           if (kind === null) return
-          // Another item's window or Lore tab, or one with no name read, waits for the player.
-          const note = kind === 'icon' ? undefined : otherItemNote(r.read.name, row.name, PART_WORDS[kind])
+          // Another item's window or Lore tab, or one with no name read, waits for the player; so does a
+          // slip when a known item or another row is as near (`sameItem`).
+          const note = kind === 'icon' ? undefined : otherItemNote(r.read.name, row.name, PART_WORDS[kind], [...(r.known ?? []), ...itemRowNamesNow()])
           if (note !== undefined) setPending({ reply: r, kind, note })
           else apply({ reply: r, kind, note: '' })
         })
@@ -216,7 +217,7 @@ function ItemShot({ row }: { row: GapRow }): JSX.Element {
 }
 
 export default function ShotPanel({ row }: { row: GapRow }): JSX.Element | null {
-  if (row.domain === 'item' && row.suggest === undefined) return <ItemShot key={row.name} row={row} />
+  if (isItemShotRow(row)) return <ItemShot key={row.name} row={row} />
   if (row.domain === 'spell' && row.suggest === undefined) return <SpellShot key={row.name} row={row} />
   if (row.domain === 'image' || row.domain === 'mob' || row.domain === 'merchant') return <MobPicture key={row.name} row={row} />
   return null

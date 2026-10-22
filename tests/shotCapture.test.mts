@@ -11,9 +11,9 @@ import { after, test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { readCapture } from '../src/main/shot/captureRead.ts'
+import { captureSize, gameWindow, MAX_CAPTURE_PIXELS, readCapture } from '../src/main/shot/captureRead.ts'
 import { tabLabels, windowAround } from '../src/main/shot/findWindow.ts'
-import { stopOcr } from '../src/main/shot/ocr.ts'
+import { stopOcr, withTimeout } from '../src/main/shot/ocr.ts'
 import type { Rgba } from '../src/main/shot/pixels.ts'
 import { readItemShot, type ShotReaders } from '../src/main/shot/readItemShot.ts'
 import { captureRow } from '../src/shared/itemShotKeep.ts'
@@ -105,13 +105,53 @@ test('A CAPTURE WITH NO ITEM WINDOW FINDS NONE (THE PLAYER IS SENT TO THE SNIP, 
   assert.equal(got.reply, undefined)
 })
 
-test('A CAPTURE IS FILED ON THE ONE ROW ITS NAME MATCHES; NONE WHEN NO ROW OR SEVERAL DO', () => {
+test('A CAPTURE IS FILED AT ONCE ON THE ROW NAMED SO; A SLIP WAITS FOR THE PLAYER; NONE WHEN NO ROW OR SEVERAL MATCH', () => {
   const rows = ['Black Lizard Scale', 'Vial of Swamp Water', 'Ruined Robe']
-  assert.equal(captureRow('BlackLizard Scale', rows), 'Black Lizard Scale')
-  assert.equal(captureRow('Vial of Swamp Water', rows), 'Vial of Swamp Water')
+  assert.deepEqual(captureRow('BlackLizard Scale', rows), { row: 'Black Lizard Scale', exact: true })
+  assert.deepEqual(captureRow('Vial of Swamp Water', rows), { row: 'Vial of Swamp Water', exact: true })
+  assert.deepEqual(captureRow('Ruined Rob', rows), { row: 'Ruined Robe', exact: false })
   assert.equal(captureRow('Windstriker', rows), undefined)
   assert.equal(captureRow('Robe A', ['Robe B', 'Robe C']), undefined)
   assert.equal(captureRow(undefined, rows), undefined)
+})
+
+test('A CAPTURE OF A REAL ITEM NEAR A ROW IS NOT FILED ON THAT ROW: CLOTH CAPE IS NOT CLOTH CAP, PAGE 2 IS NOT PAGE 3 (REVIEW, 2026-10-21)', () => {
+  // Cloth Cape is in the catalog (main hands its near names in `known`): the Cloth Cap row is not it.
+  assert.equal(captureRow('Cloth Cape', ['Cloth Cap'], ['Cloth Cape']), undefined)
+  // Two rows a slip apart: neither takes the other's window.
+  assert.deepEqual(captureRow('Cloth Cape', ['Cloth Cap', 'Cloth Cape']), { row: 'Cloth Cape', exact: true })
+  assert.equal(captureRow('Cloth Capx', ['Cloth Cap', 'Cloth Cape']), undefined)
+  // Digits are never a slip.
+  assert.equal(captureRow('Froggotten Page 2', ['Froggotten Page 3']), undefined)
+  assert.equal(captureRow("Salil's Writ Pg. 60", ["Salil's Writ Pg. 64", 'Rusty Axe']), undefined)
+  // A +N title files on the base item's row.
+  assert.deepEqual(captureRow('Windstriker + 10', ['Windstriker']), { row: 'Windstriker', exact: true })
+})
+
+test('THE CAPTURE ASKS FOR THE LARGEST DISPLAY AT FULL PIXELS, NEVER PAST 16 MP (AN EMPTY CAPTURE PAST IT)', () => {
+  assert.deepEqual(captureSize([{ size: { width: 1920, height: 1080 }, scaleFactor: 1 }]), { width: 1920, height: 1080 })
+  assert.deepEqual(captureSize([{ size: { width: 1920, height: 1080 }, scaleFactor: 1 }, { size: { width: 2560, height: 1440 }, scaleFactor: 1.5 }]), { width: 3840, height: 2160 })
+  const big = captureSize([{ size: { width: 3840, height: 2160 }, scaleFactor: 2 }])
+  assert.ok(big.width * big.height <= MAX_CAPTURE_PIXELS, JSON.stringify(big))
+  assert.ok(Math.abs(big.width / big.height - 16 / 9) < 0.01)
+})
+
+test("ONLY THE GAME'S OWN WINDOW IS CAPTURED: A BROWSER OR CHAT WINDOW THAT NAMES EVERQUEST IS NEVER TAKEN", () => {
+  const game = { name: 'EverQuest', id: 'window:1:0' }
+  assert.equal(gameWindow([{ name: 'EverQuest Wiki - Google Chrome', id: 'a' }, game]), game)
+  const none = gameWindow([{ name: 'EverQuest Legends Wiki - Google Chrome', id: 'a' }, { name: 'Discord - #everquest', id: 'b' }])
+  assert.ok('error' in none && /exactly "EverQuest"/.test(none.error) && /Google Chrome/.test(none.error), JSON.stringify(none))
+  assert.deepEqual(gameWindow([{ name: 'Notepad', id: 'n' }]), { error: 'No EverQuest window was found to capture.' })
+})
+
+test('A HUNG TEXT READER FAILS WITH A CLEAR MESSAGE AND IS RESTARTED, SO A CAPTURE NEVER STAYS BUSY', async () => {
+  let restarted = false
+  await assert.rejects(
+    withTimeout(new Promise<never>(() => undefined), 20, () => (restarted = true)),
+    /did not answer in 0 s and was restarted/
+  )
+  assert.equal(restarted, true)
+  assert.equal(await withTimeout(Promise.resolve(7), 1000, () => assert.fail('not late')), 7)
 })
 
 test("THE MACRO LINE: THE PLAYER'S OWN LINE ON AN EQC CHANNEL, ANY CASE; NO OTHER SPEAKER, NO PUBLIC SAY (THE OWNER'S LOG, 2026-10-21)", () => {

@@ -7,8 +7,11 @@ import { app, clipboard, ipcMain, nativeImage } from 'electron'
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { IPC } from '../../shared/ipc'
+import { nearNames } from '../../shared/itemShotKeep'
 import type { ItemShotReply } from '../../shared/itemWindow'
 import type { ShotTextReply } from '../../shared/spellWindow'
+import itemsJson from '../data/items.json'
+import type { ItemDbFile } from '../itemsDb'
 import { effectiveEqRoot } from '../log/config'
 import { decodeTga } from '../shot/gameTextures'
 import { buildIconIndex, iconSheets, readIconIndex, sheetsFingerprint, SheetCells, writeIconIndex, type IconIndex } from '../shot/iconIndex'
@@ -59,10 +62,19 @@ function skinTextures(): Rgba[] {
   return textures
 }
 
+let catalog: string[] | null = null
+
+/** The item catalog's names (items.json, already in this bundle), listed on the first read. */
+function catalogNames(): string[] {
+  catalog ??= [...new Set(Object.values((itemsJson as unknown as ItemDbFile).items).map((e) => e.name ?? e.page))]
+  return catalog
+}
+
 export const READERS: ShotReaders = {
   index: iconIndex,
   cell: (id) => cells?.cell(id) ?? null,
-  textures: skinTextures
+  textures: skinTextures,
+  known: (name) => nearNames(name, catalogNames())
 }
 
 async function readItem(png: unknown): Promise<ItemShotReply> {
@@ -73,7 +85,7 @@ async function readItem(png: unknown): Promise<ItemShotReply> {
     if (img === null) return { ...empty, error: 'Not a picture, or larger than a 4K screen.' }
     const shot = await readItemShot(img, READERS)
     const noIcons = shot.icons.length === 0 && (await iconIndex()) === null
-    return { read: shot.read, lines: shot.lines, icons: shot.icons, ms: shot.ms, ...(noIcons ? { iconNote: 'No EverQuest install found with icon sheets (uifiles/default/dragitem*.dds).' } : {}) }
+    return { read: shot.read, lines: shot.lines, icons: shot.icons, known: shot.known, ms: shot.ms, ...(noIcons ? { iconNote: 'No EverQuest install found with icon sheets (uifiles/default/dragitem*.dds).' } : {}) }
   } catch (e) {
     return { ...empty, error: `Could not read it: ${e instanceof Error ? e.message : String(e)}` }
   }
