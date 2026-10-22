@@ -96,10 +96,8 @@ export function allDone(rows: readonly GapRow[], done: ReadonlySet<string>): boo
   return rows.length > 0 && rows.every((r) => done.has(doneKey(r)))
 }
 
-/** The rows less the Mobs rows the player marked as players (lower-cased names). */
-export function withoutPlayers(rows: readonly GapRow[], players: ReadonlySet<string>): GapRow[] {
-  return players.size === 0 ? [...rows] : rows.filter((r) => r.domain !== 'mob' || !players.has(r.name.toLowerCase()))
-}
+/** The rows less the marked players' Mobs rows and every row named for an own character (gapPlayers.ts). */
+export { withoutPlayers } from './gapPlayers'
 
 /**
  * Whether the tab is unsure the row is a gap at all ("Hide uncertain", owner, 2026-10-19). Only a
