@@ -280,3 +280,9 @@ test('gaps: a Reward Chest leaves an item row’s sources across the join, the m
   assert.equal(skin?.details.sources, undefined, 'a chest-only item names no source')
   assert.deepEqual(skin?.details.zones?.all, ['Befallen'], 'its zone stands')
 })
+
+test('gaps: an archived row with no details passes the Reward Chest strip as it is', () => {
+  const bare = { domain: 'item', name: 'Old Widget', kinds: ['looted'], count: 1, first: '', last: '' } as unknown as Row
+  const merged = mergeGaps(snap([bare]), snap([row('item', 'Fetid Skin', 1)]))
+  assert.deepEqual(merged?.rows.map((r) => r.name).sort(), ['Fetid Skin', 'Old Widget'])
+})
