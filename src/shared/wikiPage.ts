@@ -346,6 +346,8 @@ export interface ItemPageShot {
   focusEffect?: string
   valueCopper?: number
   lore?: string
+  /** The window showed a Lore tab: the item has lore, so a page without it says `{{Item Lore Missing}}`. */
+  loreTab?: boolean
 }
 
 /** The fields a screenshot fills, in the page's order, around the log's merchant_value. */
@@ -354,7 +356,9 @@ function shotFields(shot: ItemPageShot, merchantValue: number | undefined): [str
   const fields: [string, string][] = []
   if (shot.iconId !== undefined) fields.push(['lucy_img_ID', String(shot.iconId)])
   if (value !== undefined) fields.push(['merchant_value', wikiCoin(value)])
+  // The wiki's own marker for lore not yet transcribed (466 pages), so the page is listed with them.
   if (shot.lore) fields.push(['notes', `{{Item Lore|${shot.lore}}}`])
+  else if (shot.loreTab === true) fields.push(['notes', '{{Item Lore Missing}}'])
   fields.push(['statsblock', shot.statsblock !== undefined && shot.statsblock !== '' ? shot.statsblock : STATS_SKELETON])
   if (shot.focusEffect) fields.push(['focus_effect', shot.focusEffect])
   return fields

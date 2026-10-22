@@ -57,7 +57,8 @@ function Parts({ name, kept }: { name: string; kept: StoredShot | undefined }): 
       {loreIn && kept !== undefined ? (
         <Chip size="small" color="success" label="Lore ✓" onDelete={() => keep(name, cleared(kept, 'lore'))} title="Clear lore data" data-testid="gaps-shot-clear-lore" />
       ) : (
-        <Chip size="small" variant="outlined" label="Lore tab: not pasted" />
+        // The window shows a Lore tab only when the item has lore; the page says {{Item Lore Missing}} until it is pasted.
+        <Chip size="small" variant="outlined" color={kept?.loreTab === true ? 'warning' : 'default'} label={kept?.loreTab === true ? 'Lore tab: not pasted (this item has one)' : 'Lore tab: not pasted'} />
       )}
     </Stack>
   )

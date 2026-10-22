@@ -22,6 +22,8 @@ export interface ItemWindowRead {
   valueCopper?: number
   /** The Lore tab's text, for `|notes = {{Item Lore|...}}`. */
   lore?: string
+  /** The window shows a Lore tab: the item has lore (the game draws the tab only then). */
+  loreTab?: boolean
   /** Lines with a label this reader does not place, to show the player. */
   unread: string[]
   /** What the reader corrected or doubts, in words, to show the player. */
@@ -64,13 +66,18 @@ const SLOT_WORDS = new Set([
   'charm', 'ear', 'ears', 'head', 'face', 'neck', 'shoulders', 'shoulder', 'arms', 'back', 'wrist', 'wrists', 'range',
   'hands', 'primary', 'secondary', 'finger', 'fingers', 'chest', 'legs', 'feet', 'waist', 'ammo', 'power', 'source'
 ])
+/** The game's slot word -> the wiki's where they differ (eqstr 571 `Fingers`; the wiki writes FINGER 218 times, FINGERS 5). */
+const SLOT_WIKI: Record<string, string> = { fingers: 'FINGER' }
 
 /** Window label -> the wiki's key. `kind` decides the line it lands on. */
-type Kind = 'attr' | 'save' | 'ac' | 'weapon' | 'wt' | 'size' | 'value' | 'effect' | 'effectInfo' | 'skip'
+type Kind = 'attr' | 'save' | 'ac' | 'weapon' | 'wt' | 'size' | 'value' | 'line' | 'effect' | 'effectInfo' | 'skip'
+// The window's own labels are the client's strings (eqstr_us.txt 12999-13045: `Weight:`, `End:`,
+// `Dmg Bon:`, `Rec Level:`, `Req Level:` ...). `line` kinds are written as the wiki's pages write them.
 const LABELS: readonly (readonly [string, string, Kind])[] = [
   ['Strength', 'STR', 'attr'], ['Stamina', 'STA', 'attr'], ['Agility', 'AGI', 'attr'], ['Dexterity', 'DEX', 'attr'],
   ['Wisdom', 'WIS', 'attr'], ['Intelligence', 'INT', 'attr'], ['Charisma', 'CHA', 'attr'],
   ['HP Regen', 'HP Regen', 'attr'], ['Mana Regen', 'Mana Regen', 'attr'], ['Endurance Regen', 'End Regen', 'attr'],
+  ['End Regen', 'End Regen', 'attr'], ['End', 'END', 'attr'],
   ['HP', 'HP', 'attr'], ['Mana', 'MANA', 'attr'], ['Endurance', 'END', 'attr'],
   ['Haste', 'Haste', 'attr'], ['Attack', 'Attack', 'attr'], ['Accuracy', 'Accuracy', 'attr'], ['Avoidance', 'Avoidance', 'attr'],
   ['Damage Shield', 'Damage Shield', 'attr'], ['Spell Shield', 'Spell Shield', 'attr'], ['DoT Shielding', 'DoT Shielding', 'attr'],
@@ -81,8 +88,9 @@ const LABELS: readonly (readonly [string, string, Kind])[] = [
   ['SV Poison', 'SV POISON', 'save'], ['SV Corruption', 'SV CORRUPTION', 'save'], ['SV Void', 'SV VOID', 'save'],
   ['AC', 'AC', 'ac'],
   ['Base Dmg', 'DMG', 'weapon'], ['Bane Dmg', 'Bane DMG', 'weapon'], ['Backstab', 'BACKSTAB', 'weapon'], ['Delay', 'Atk Delay', 'weapon'],
-  ['Skill', 'Skill', 'weapon'], ['Range', 'Range', 'weapon'], ['Ratio', 'Ratio', 'weapon'],
-  ['Weight', 'WT', 'wt'], ['Size', 'Size', 'size'], ['Value', 'Value', 'value'], ['Charges', 'Charges', 'attr'],
+  ['Skill', 'Skill', 'weapon'], ['Range', 'Range', 'weapon'], ['Ratio', 'Ratio', 'weapon'], ['Dmg Bon', 'Dmg Bon', 'weapon'],
+  ['Weight', 'WT', 'wt'], ['Size', 'Size', 'size'], ['Value', 'Value', 'value'], ['Charges', 'Charges', 'line'],
+  ['Rec Level', 'Recommended level', 'line'], ['Req Level', 'Required level', 'line'],
   ['Focus Effect', 'Focus', 'effect'], ['Click Effect', 'Click', 'effect'], ['Worn Effect', 'Worn', 'effect'],
   ['Proc Effect', 'Combat', 'effect'], ['Combat Effect', 'Combat', 'effect'],
   ['Cast Time', 'Casting Time', 'effectInfo'], ['Casting Time', 'Casting Time', 'effectInfo'],
@@ -164,9 +172,16 @@ function codesOf(line: string, label: string): string | undefined {
   return codes.length > 0 ? codes.join(' ').toUpperCase() : undefined
 }
 
-function slotOf(line: string): string | undefined {
-  const words = line.toLowerCase().split(/\s+/)
-  return words.length > 0 && words.every((w) => SLOT_WORDS.has(w)) ? line.toUpperCase() : undefined
+/**
+ * The slot line: bare slot words, every slot the item fits (`Chest`; `Primary, Secondary` or
+ * `Primary Secondary`), as the wiki writes them (`PRIMARY SECONDARY`). The window is the only source
+ * of Slot (owner, 2026-10-21: the inventory export names one worn slot of several).
+ */
+export function slotOf(line: string): string | undefined {
+  const words = line.toLowerCase().split(/[\s,/]+/).filter(Boolean)
+  if (words.length === 0 || !words.every((w) => SLOT_WORDS.has(w))) return undefined
+  const slots = words.join(' ').replace(/\bpower source\b/g, 'power_source').split(' ')
+  return [...new Set(slots.map((w) => SLOT_WIKI[w] ?? w.replace('_', ' ').toUpperCase()))].join(' ')
 }
 
 // ---- label pairs --------------------------------------------------------------------------------
@@ -204,6 +219,9 @@ interface Gathered {
   wt?: string
   size?: string
   value?: number
+  /** Whole lines in the wiki's words: `Charges: 5`, `Recommended level of 10.` */
+  lines: string[]
+  deity?: string
   effects: string[]
   focus?: string
   unread: string[]
@@ -220,42 +238,58 @@ function effectLine(kind: string, value: string, info: ReadonlyMap<string, strin
   return `Effect: [[${name}]]${notes.length > 0 ? ` (${notes.join(', ')})` : ''}${level === undefined ? '' : ` at Level ${level}`}`
 }
 
-function placePair(g: Gathered, p: Pair, lastEffect: { kind: string; value: string; info: Map<string, string> } | null): void {
-  if (p.kind === 'attr') g.attrs.push(`${p.key}: ${signed(p.value)}`)
-  else if (p.kind === 'save') g.saves.push(`${p.key}: ${signed(p.value)}`)
-  else if (p.kind === 'ac') g.ac = p.value
-  else if (p.kind === 'weapon') g.weapon.set(p.key, p.value)
-  else if (p.kind === 'wt') g.wt = weightValue(p.value)
-  else if (p.kind === 'size') g.size = p.value.split(/\s+/)[0]?.toUpperCase()
-  else if (p.kind === 'value') g.value = valueCopper(p.value)
-  else if (p.kind === 'effectInfo' && lastEffect !== null) lastEffect.info.set(p.key, p.value.replace(/\s+seconds?$/i, ''))
-}
-
 interface Effect {
   kind: string
   value: string
   info: Map<string, string>
 }
 
+/** `Rec Level: 10` -> `Recommended level of 10.` (the pages' words); `Charges: 5` as it stands. */
+const wikiLine = (p: Pair): string => (p.key.endsWith('level') ? `${p.key} of ${p.value.replace(/\.$/, '')}.` : `${p.key}: ${p.value}`)
+
+/** Each kind's place in the gathered lines. */
+const PLACE: Record<Kind, (g: Gathered, p: Pair, lastEffect: Effect | null) => void> = {
+  attr: (g, p) => g.attrs.push(`${p.key}: ${signed(p.value)}`),
+  save: (g, p) => g.saves.push(`${p.key}: ${signed(p.value)}`),
+  ac: (g, p) => (g.ac = p.value),
+  weapon: (g, p) => g.weapon.set(p.key, p.value),
+  wt: (g, p) => (g.wt = weightValue(p.value)),
+  size: (g, p) => (g.size = p.value.split(/\s+/)[0]?.toUpperCase()),
+  value: (g, p) => (g.value = valueCopper(p.value)),
+  line: (g, p) => g.lines.push(wikiLine(p)),
+  effectInfo: (_g, p, lastEffect) => lastEffect?.info.set(p.key, p.value.replace(/\s+seconds?$/i, '')),
+  effect: () => undefined,
+  skip: () => undefined
+}
+
+/** The slot line, or its wrapped second half (a long list of slots), before any stat. */
+function slotLine(g: Gathered, line: string): boolean {
+  if (g.attrs.length + g.saves.length > 0 || g.ac !== undefined) return false
+  const slot = slotOf(line)
+  if (slot === undefined) return false
+  g.slot = [...new Set(`${g.slot ?? ''} ${slot}`.trim().split(' '))].join(' ')
+  return true
+}
+
 /** One line of the stats region into `g`: the bare slot word, or its pairs, or an unread line. */
 function gatherLine(g: Gathered, effects: Effect[], line: string): void {
-  if (NOT_ITEM.test(line)) return
-  const slot = g.slot === undefined && g.attrs.length + g.saves.length === 0 ? slotOf(line) : undefined
-  if (slot !== undefined) {
-    g.slot = slot
+  if (NOT_ITEM.test(line) || slotLine(g, line)) return
+  const deity = /^Deity\s*[:;.]?\s+(.+)$/i.exec(line)
+  if (deity !== null) {
+    g.deity = deity[1]
     return
   }
   const pairs = pairsOf(line)
   if (pairs.length === 0 && /[A-Za-z]{3}/.test(line)) g.unread.push(line)
   for (const p of pairs) {
     if (p.kind === 'effect') effects.push({ kind: p.key, value: p.value, info: new Map() })
-    else placePair(g, p, effects.at(-1) ?? null)
+    else PLACE[p.kind](g, p, effects.at(-1) ?? null)
   }
 }
 
 /** The stats region, line by line: pairs placed, effects gathered with the info lines under them. */
 function gather(lines: readonly string[]): Gathered {
-  const g: Gathered = { attrs: [], saves: [], weapon: new Map(), effects: [], unread: [] }
+  const g: Gathered = { attrs: [], saves: [], weapon: new Map(), lines: [], effects: [], unread: [] }
   const effects: Effect[] = []
   for (const line of lines) gatherLine(g, effects, line)
   for (const e of effects) {
@@ -297,7 +331,7 @@ export function checkRatio(w: Map<string, string>): string | undefined {
 
 function weaponLines(w: ReadonlyMap<string, string>): string[] {
   const skill = [w.has('Skill') ? `Skill: ${w.get('Skill') ?? ''}` : '', w.has('Atk Delay') ? `Atk Delay: ${w.get('Atk Delay') ?? ''}` : ''].filter(Boolean)
-  const rest = ['DMG', 'Bane DMG', 'BACKSTAB', 'Range'].filter((k) => w.has(k)).map((k) => `${k}: ${w.get(k) ?? ''}`)
+  const rest = ['DMG', 'Dmg Bon', 'Bane DMG', 'BACKSTAB', 'Range'].filter((k) => w.has(k)).map((k) => `${k}: ${w.get(k) ?? ''}`)
   return [...(skill.length > 0 ? [skill.join('  ')] : []), ...rest]
 }
 
@@ -309,20 +343,34 @@ function statsLines(flags: readonly string[], g: Gathered, cls?: string, race?: 
   if (g.ac !== undefined) out.push(`AC: ${g.ac}`)
   if (g.attrs.length > 0) out.push(byAttrOrder(g.attrs).join('  '))
   if (g.saves.length > 0) out.push(g.saves.join('  '))
-  out.push(...g.effects)
+  out.push(...g.effects, ...g.lines)
   const wtSize = [g.wt === undefined ? '' : `WT: ${g.wt}`, g.size === undefined ? '' : `Size: ${g.size}`].filter(Boolean)
   if (wtSize.length > 0) out.push(wtSize.join('  '))
   if (cls !== undefined) out.push(`Class: ${cls}`)
   if (race !== undefined) out.push(`Race: ${race}`)
+  // The pages put Deity after Race (Deity: Cazic-Thule, 453 cached pages).
+  if (g.deity !== undefined) out.push(`Deity: ${g.deity}`)
   return out
 }
 
-/** The Lore tab: no Class line; its text is the longest line that is not a tab or the title. */
+/** The tab row reads as junk around `Description` (`| /~ SPDesciption 3, © [[ 4" “Lore`). */
+const TAB_ROW = /Des\w{0,4}ption/i
+
+/**
+ * The Lore tab: no Class line; its text is what follows the tab row, a wrapped lore joined back into
+ * one line. With no tab row read, the longest line that is not a tab word.
+ */
 function loreRead(lines: readonly string[]): ItemWindowRead {
-  // The tab row reads as junk around `Description` (`| /~ SPDesciption 3, © [[ 4" “Lore`): never the lore.
-  const text = lines.filter((l) => !/^Lore$/i.test(l) && !/Desc\w{0,3}ption/i.test(l) && /[a-z]{3}/i.test(l)).sort((a, b) => b.length - a.length)[0]
-  return { statsblock: '', unread: [], ...(text === undefined ? {} : { lore: text }) }
+  const tabAt = lines.findIndex((l) => TAB_ROW.test(l))
+  // Words, not OCR's junk off the frame: mostly letters and spaces.
+  const prose = (l: string): boolean => !/^Lore$/i.test(l) && !TAB_ROW.test(l) && /[a-z]{3}/i.test(l) && (l.match(/[A-Za-z ]/g) ?? []).length >= 0.8 * l.length
+  const text = tabAt >= 0 ? lines.slice(tabAt + 1).filter(prose).join(' ') : lines.filter(prose).sort((a, b) => b.length - a.length)[0]
+  return { statsblock: '', unread: [], ...(text === undefined || text === '' ? {} : { lore: text }) }
 }
+
+/** The tab row above the name names a Lore tab: the item has lore (Ruined Robe; Windstriker and Black Lizard Scale show none). */
+const hasLoreTab = (lines: readonly string[], before: number): boolean =>
+  lines.slice(0, before).some((l) => TAB_ROW.test(l) && /\bLore\b(?!\s*(Equipped|Item))/i.test(l))
 
 /** The name: the line above the flags line, else above Class; junk and a `+N` tier dropped. */
 function nameAbove(lines: readonly string[], at: number): string | undefined {
@@ -347,6 +395,7 @@ export function readItemWindow(raw: readonly string[]): ItemWindowRead {
     unread: g.unread,
     ...(ratio === undefined ? {} : { checks: [ratio] }),
     ...(name === undefined ? {} : { name }),
+    ...(hasLoreTab(lines, clsAt) ? { loreTab: true } : {}),
     ...(g.focus === undefined ? {} : { focusEffect: g.focus }),
     ...(g.value === undefined ? {} : { valueCopper: g.value })
   }

@@ -94,3 +94,12 @@ test('A BLANK OR ONE-COLOUR PICTURE IS NEAR SOLID; A REAL SCENE IS NOT', () => {
   assert.ok(isNearSolid(pic((x) => 120 + (x % 3))))
   assert.ok(!isNearSolid(pic((x, y) => ((x >> 3) + (y >> 3)) % 2 === 0 ? 30 : 200)))
 })
+
+test("A TWO-LINE LORE IS ONE LORE (SICKLY MAIDEN'S HAIR); A WINDOW PASTE KEEPS WHETHER THE WINDOW HAS A LORE TAB", () => {
+  const two = reply(["Sickly Maiden's Hair", '- Description Lore', 'This sample of long, golden', 'grass is tinged with disease'])
+  assert.equal(shotKind(two), 'lore')
+  assert.equal(keptAfter(undefined, two, 'lore').lore, 'This sample of long, golden grass is tinged with disease')
+  const robe = ['| Ruined Robe', '| Description Lore', ...WINDOW.slice(1)]
+  assert.equal(keptAfter(undefined, reply(robe), 'window').loreTab, true)
+  assert.equal(keptAfter(undefined, reply(WINDOW), 'window').loreTab, undefined)
+})
