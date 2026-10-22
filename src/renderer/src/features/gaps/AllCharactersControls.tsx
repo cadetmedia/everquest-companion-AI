@@ -1,6 +1,7 @@
 // The Gaps tab's All characters controls (owner, 2026-10-19): the box (off by default, with its
-// warning), the day window beside it while ticked, and one line naming whose data is in the list,
-// how old each saved part is, and which are older than two months.
+// warning), the day window beside it (every view since 2026-10-21: "days back should be for any
+// character yes"), and one line naming whose data is in the list, how old each saved part is, and
+// which are older than two months.
 
 import type { JSX } from 'react'
 import { Checkbox, CircularProgress, FormControlLabel, Stack, TextField, Typography } from '@mui/material'
@@ -23,7 +24,7 @@ function Working(): JSX.Element {
   )
 }
 
-/** The box, and while it is ticked the day window, and a spinner while the join is being made. */
+/** The box, the day window, and a spinner while the join is being made. */
 export function AllCharactersBox({
   on,
   onChange,
@@ -46,22 +47,20 @@ export function AllCharactersBox({
           label={<Typography variant="caption">All characters</Typography>}
         />
       </Tooltip>
-      {on && (
-        <Tooltip title="Only what was seen in this many days, for every character. A release can rename, move or change things, so older sightings drop out.">
-          <TextField
-            size="small"
-            type="number"
-            label="Days back"
-            value={days}
-            onChange={(e) => {
-              const n = Number(e.target.value)
-              if (Number.isFinite(n) && n >= 1) onDays(n)
-            }}
-            sx={{ width: 96 }}
-            slotProps={{ htmlInput: { min: 1, max: MAX_GAP_DAYS, 'data-testid': 'gaps-days' } }}
-          />
-        </Tooltip>
-      )}
+      <Tooltip title="Only what was seen in this many days, archived logs included: older rows, loot and kills drop out, for this character and, with All characters on, for every character. A release can rename, move or change things, so older sightings drop out.">
+        <TextField
+          size="small"
+          type="number"
+          label="Days back"
+          value={days}
+          onChange={(e) => {
+            const n = Number(e.target.value)
+            if (Number.isFinite(n) && n >= 1) onDays(n)
+          }}
+          sx={{ width: 96 }}
+          slotProps={{ htmlInput: { min: 1, max: MAX_GAP_DAYS, 'data-testid': 'gaps-days' } }}
+        />
+      </Tooltip>
       {on && working && <Working />}
     </Stack>
   )

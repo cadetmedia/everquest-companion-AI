@@ -184,6 +184,24 @@ export function killsSince(kills: KillsSnap, ms: number): KillsSnap {
   return { ...kills, mobs }
 }
 
+/** The attached character's inputs as the derivation reads them. */
+export interface OwnGaps {
+  gaps: GapsSnap
+  loot: LootSnap
+  kills: KillsSnap | null
+}
+
+/**
+ * The one-character view cut to the window (owner, 2026-10-21: "days back should be for any
+ * character yes"), the same cut the join makes per character: rows last seen before it, and loot
+ * and kills before it, are left out. The attached character's archive history is already folded
+ * into its modules, so a segment that ended before the cut drops out through its rows, loot and
+ * kills, all older than the cut; a row also seen since keeps its whole count, as in the join.
+ */
+export function ownSince(own: OwnGaps, cut: { stamp: string; ms: number }): OwnGaps {
+  return { gaps: gapsSince(own.gaps, cut.stamp), loot: lootSince(own.loot, cut.ms), kills: own.kills === null ? null : killsSince(own.kills, cut.ms) }
+}
+
 // ---- the join ----------------------------------------------------------------------------------
 
 /** One character's inputs, as the tab joins them. */

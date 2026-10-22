@@ -66,7 +66,9 @@ export interface AllCharactersState {
   liveLabel: string
   /** What useGapsData joins; null while off or loading, so the tab shows the one character meanwhile. */
   all: AllCharacters | null
-  /** The shown-count line's tail: ", every character, last 60 days" while ticked. */
+  /** The day window's cut-off, for every view (owner, 2026-10-21). */
+  cut: { stamp: string; ms: number }
+  /** The shown-count line's tail: ", every character, last 60 days" while ticked, else ", last 60 days". */
   caption: string
 }
 
@@ -78,5 +80,5 @@ export function useAllCharacters(me: CharacterRef | null): AllCharactersState {
   const others = useOtherCharacters(on, cut.stamp, me === null ? null : `${me.name}_${me.server}`.toLowerCase())
   const liveLabel = me?.name ?? 'This character'
   const all = useMemo(() => (others === undefined ? null : { others, liveLabel, cut }), [others, liveLabel, cut])
-  return { on, setOn, days, setDays, others, liveLabel, all, caption: on ? `, every character, last ${days} days` : '' }
+  return { on, setOn, days, setDays, others, liveLabel, all, cut, caption: on ? `, every character, last ${days} days` : `, last ${days} days` }
 }
