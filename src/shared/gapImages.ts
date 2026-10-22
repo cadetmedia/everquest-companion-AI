@@ -91,11 +91,8 @@ export function imageGaps(kills: KillMap, loot: readonly LootEvent[], catalog: r
     if ((byPage.get(page.page)?.count ?? -1) >= n) continue
     byPage.set(page.page, {
       domain: 'image',
-      // The game's spelling (owner, 2026-10-19: "a lesser kobold", not the title's forced capital
-      // "A lesser kobold"); the page's own title when it is another name (`A goblin (Feerrott)`).
-      name: met.name.toLowerCase() === page.page.toLowerCase() ? met.name : page.page,
+      ...imageNames(met.name, page),
       page: page.page,
-      image: page.image ?? npcImageName(page.name),
       kinds: met.kills > 0 ? ['killed'] : met.loots > 0 ? ['looted'] : ['considered'],
       count: n,
       ...spanStamps(met.span),
@@ -107,6 +104,30 @@ export function imageGaps(kills: KillMap, loot: readonly LootEvent[], catalog: r
     })
   }
   return [...byPage.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+}
+
+/** An image row's page title when the row is named otherwise (`A lizard man scout` beside `a lizardman scout`). */
+export function otherPageTitle(row: GapRow): string | undefined {
+  return row.domain === 'image' && row.page !== undefined && mobKey(row.page) !== mobKey(row.name) ? row.page : undefined
+}
+
+/** A title naming its page's place, `A goblin (Feerrott)`: several pages share the mob's name. */
+const QUALIFIED = /\s\([^()]+\)$/
+
+/**
+ * An image row's name and file. The name is the game's spelling (owner, 2026-10-19: "a lesser kobold",
+ * not the title's forced capital), the page's in-game `|name` when the log met another spelling. The
+ * file is named after that in-game name, never a misspelled title (owner, 2026-10-21: "yes name after
+ * real name not misspelling": `npc_a_lizardman_scout.png` for the page A lizard man scout); a page
+ * whose own `imagefilename` names another file keeps it in `pageImage`, so the row can say so. A
+ * qualified title (`A goblin (Feerrott)`) stays the row's name, and its page's file stands: the bare
+ * name's file may be another page's picture.
+ */
+function imageNames(metName: string, page: CatalogMob): Pick<GapRow, 'name' | 'image' | 'pageImage'> {
+  if (QUALIFIED.test(page.page)) return { name: page.page, image: page.image ?? npcImageName(page.name) }
+  const image = npcImageName(page.name)
+  const name = mobKey(metName) === mobKey(page.name) ? metName : page.name
+  return page.image === undefined || page.image.toLowerCase() === image ? { name, image } : { name, image, pageImage: page.image }
 }
 
 /** The served snapshot with the image rows joined in and counted, so the tab treats them as a domain. */

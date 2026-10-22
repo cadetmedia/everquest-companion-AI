@@ -45,6 +45,8 @@ import {
 } from '@shared/gaps'
 import { unfoldedEntries, type GapEntry } from '@shared/gapGroups'
 import { seenByKey } from '@shared/gapsAllCharacters'
+import { otherPageTitle } from '@shared/gapImages'
+import { replaceWhy } from '@shared/gapDrops'
 import { gapHeld, heldChipLabel, heldLine, heldTitle, type GapHeld, type HeldIndex } from '@shared/gapHeld'
 import { GAP_JOB_LABEL, GAP_JOB_TIP, gapJob, type GapJob } from '@shared/gapJob'
 import { wikiPageUrl } from '@shared/wiki'
@@ -63,6 +65,17 @@ const COLUMNS = 8
 const TABLE_MIN_WIDTH = 1100
 /** Every body cell: one line, clipped at its column's edge, so a cell can never widen the table. */
 const CLIP = { whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } as const
+
+/** Beside an image row named by the game: its page's title when that is spelled otherwise (owner, 2026-10-21). */
+function PageTitleCaption({ row }: { row: GapRow }): JSX.Element | null {
+  const title = otherPageTitle(row)
+  if (title === undefined) return null
+  return (
+    <Typography variant="caption" color="text.secondary" component="span" sx={{ ml: 1, fontWeight: 400 }} data-testid="gaps-page-title">
+      (wiki page: {title})
+    </Typography>
+  )
+}
 
 /** Beside the name: the one known name within reach, linked to its page so the owner can fix it. */
 function SuggestCaption({ s }: { s: GapSuggest }): JSX.Element {
@@ -152,6 +165,7 @@ const GapTableRow = memo(function GapTableRow({
         {/* Under its mob's heading a faction or drop row is the faction or item alone. */}
         {depth === 2 && onMobPage(row) ? factionOf(row) : row.name}
         {row.suggest !== undefined && <SuggestCaption s={row.suggest} />}
+        <PageTitleCaption row={row} />
         {row.maybePlayer === true && <Chip label="may be a player" size="small" color="warning" variant="outlined" sx={{ ml: 1 }} data-testid="gaps-maybe-player" />}
         {held !== undefined && held.length > 0 && <HeldChip held={held} />}
       </TableCell>
@@ -239,6 +253,16 @@ function DetailsPane({ row, actions }: { row: GapRow; actions: PaneActions }): J
       {row.fix !== undefined && (
         <Typography variant="body2" color="warning.main" component="div" data-testid="gaps-fix-line">
           The page lists it as {pageSaysText(row.pageSays ?? '')}; your log: {logSaysText(row)}.
+        </Typography>
+      )}
+      {row.replaces !== undefined && (
+        <Typography variant="body2" color="warning.main" component="div" data-testid="gaps-replace-line">
+          {replaceWhy(factionOf(row), row.replaces.lines)}
+        </Typography>
+      )}
+      {row.pageImage !== undefined && (
+        <Typography variant="body2" color="warning.main" component="div" data-testid="gaps-page-image-line">
+          The page&apos;s imagefilename says {row.pageImage}, not {row.image}: the page may need fixing.
         </Typography>
       )}
       {needed.length > 0 && (
