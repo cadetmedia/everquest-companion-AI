@@ -365,6 +365,19 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   `opencollective-postinstall` (`hasInstallScript`), suppressed by `ignore-scripts` and harmless
   (a donation banner), so the file's "SIX" install-time hooks are now seven. `.npmrc` is the
   creator's file: left as it is, recorded here.
+- The icon box is placed from the `Class`/`Race` word itself (`ocr.ts` `LABEL_WORD`): OCR junk off
+  the icon can be a real-looking word (`By`).
+- Auto-find anchor: the selected tab's yellow label, `max(r,g)>=100 && b*3<r && g>=0.6r`; its height
+  sets the scale. Sides are the strongest vertical edges within 24 label heights (often the inner
+  pane border, fine); the bottom is the first edge below which the sides stop. At most 4 candidate
+  reads through `readCapture`. A spell window has no yellow tab: no hotkey anchor for it yet.
+- The hotkey is `globalShortcut` (registers one key, no keyboard hook; `appBack.ts` avoids global
+  input hooks for anti-cheat reasons), off until the player sets one, Ctrl/Alt/Win required.
+- Spell icon = spells_us field 76; description id = field 86 into dbstr type 6; colour tags dropped,
+  `<BR>` to `<br>`.
+- D3: Weight's ceiling is many-to-one, so most +N items over 0.1 weight get the warning, not a guess.
+- Fixtures: 9 screenshots, all the owner's or Malkil's (`tests/fixtures/shots`).
+- Not built: the glyph-exact reader (D2); tesseract reads every fixture.
 
 ## Unassigned open items (no branch yet)
 
