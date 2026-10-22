@@ -79,11 +79,11 @@ export function cleared(kept: ItemPageShot, part: 'window' | 'lore'): ItemPageSh
   return Object.keys(next).length === 0 ? null : next
 }
 
-/** The Gaps item rows' names: where a hotkey capture can be filed. */
+/** The Gaps item rows' names: where a capture from the game can be filed. */
 export const itemRowNames = (rows: readonly GapRow[]): string[] => rows.filter((r) => r.domain === 'item' && r.suggest === undefined).map((r) => r.name)
 
 /**
- * The row a hotkey capture belongs to (phase 3): the row named exactly so, else the one row the
+ * The row a capture from the game belongs to (phase 3): the row named exactly so, else the one row the
  * window's name matches through OCR's slips (`sameItem`); none when no row or several match.
  */
 export function captureRow(name: string | undefined, rowNames: readonly string[]): string | undefined {

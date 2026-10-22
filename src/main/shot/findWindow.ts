@@ -1,5 +1,5 @@
 // findWindow.ts — find an item window in a capture of the whole EverQuest window (phase 3 of
-// screenshot to wiki; owner, 2026-10-21: the capture hotkey and auto-find).
+// screenshot to wiki; owner, 2026-10-21: capture from the game and auto-find).
 //
 // The anchor is the selected tab's label: the game draws it in yellow (`Description`, or `Lore` when
 // that tab is showing). Yellow is `max(r,g) >= 100 and b*3 < r` (the idea from

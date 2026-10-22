@@ -363,6 +363,9 @@ const overlayApi = {
    */
   unwatchRespawn: (key: string): Promise<boolean> => ipcRenderer.invoke(IPC.respawnUnwatch, key),
 
+  /** Capture the EverQuest window for screenshot to wiki (main/ipc/shotCapture.ts); the Gaps tab files it. */
+  shotCapture: (): void => ipcRenderer.send(IPC.shotCaptureNow),
+
   /**
    * CON CARD (JOS-383): one finished card for the creature just `/con`ed, pushed by main. Same law
    * as the two above — the overlay times and dismisses it locally and fetches nothing — and its own

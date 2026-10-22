@@ -95,10 +95,8 @@ export const knowledgeBridge = {
   shotReadItem: (png: Uint8Array): Promise<import('../shared/itemWindow').ItemShotReply> => ipcRenderer.invoke(IPC.shotReadItem, png),
   /** A pasted picture's text lines, read on this machine (a spell display window). */
   shotReadText: (png: Uint8Array): Promise<import('../shared/spellWindow').ShotTextReply> => ipcRenderer.invoke(IPC.shotReadText, png),
-  /** The capture hotkey: read it, or set it (null turns it off); a refused key comes back with why. */
-  shotHotkey: (action: 'get' | 'set', accel?: string | null): Promise<{ hotkey: string | null; message?: string }> => ipcRenderer.invoke(IPC.shotHotkey, action, accel),
-  /** The hotkey's captures waiting to be filed; the call takes them. */
-  shotCaptures: (): Promise<import('../shared/shotHotkey').Captured[]> => ipcRenderer.invoke(IPC.shotCaptures),
+  /** The captures (the macro's line, an overlay's button) waiting to be filed; the call takes them. */
+  shotCaptures: (): Promise<import('../shared/shotTrigger').Captured[]> => ipcRenderer.invoke(IPC.shotCaptures),
   /** A capture is waiting; the returned function stops listening. */
   onShotCaptured: (cb: () => void): (() => void) => {
     const listener = (): void => cb()

@@ -52,6 +52,7 @@ import { useOverlayChrome, type OverlayChrome } from './useOverlayChrome'
 import { OverlayHeader } from './OverlayHeader'
 import { useDoneKeys } from '../features/gaps/doneMarksStore'
 import { hiddenKeep, screenshotLabel } from './feedGapTags'
+import { SHOT_CAPTURE_ACTION } from './shotCaptureAction'
 
 const GOLD = '#d9b25f'
 
@@ -463,6 +464,8 @@ export default function EventLogOverlay(): JSX.Element {
         titleColor={GOLD}
         tail={String(feed.length)}
         tailColor="rgba(255,255,255,0.5)"
+        // The rows say "screenshot it"; the camera captures the item window for the wiki.
+        action={SHOT_CAPTURE_ACTION}
         chrome={{ locked, hovering, dragRegion, noDrag, toggleLock }}
       />
 
