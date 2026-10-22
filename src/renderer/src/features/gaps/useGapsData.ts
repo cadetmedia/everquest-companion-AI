@@ -23,7 +23,7 @@ import type { PageExtras, ZoneNamer } from '@shared/wikiPage'
 import dropGroupsJson from '../../data/eqlegends/dropGroups.json'
 import mobsJson from '../../data/eqlegends/mobs.json'
 import { MOB_CATALOG } from '../mobs/mobSearch'
-import { joinCharacters, otherInputs, type CharacterGaps } from '@shared/gapsAllCharacters'
+import { joinCharacters, otherInputs, ownSince, type CharacterGaps, type OwnGaps } from '@shared/gapsAllCharacters'
 import { useModule } from '../../lib/useModule'
 import { useItemMobs } from '../../lib/gapItemMobs'
 
@@ -45,6 +45,7 @@ const NO_CONS: ConsiderSnap = []
 const snapOf = lastGapsSnap()
 const lastLooted = memoLast<string[]>()
 const lastKills = memoLast<KillMap>()
+const lastOwnCut = memoLast<OwnGaps>()
 
 export interface GapsData {
   /** The engine's snapshot with the derived domains joined in; undefined until it lands. */
@@ -68,7 +69,24 @@ export interface AllCharacters {
   cut: { stamp: string; ms: number }
 }
 
-export function useGapsData(all: AllCharacters | null = null): GapsData {
+/** How the list is built. */
+export interface GapsDataOptions {
+  /** The day window (owner, 2026-10-21: every view, not only All characters); none when absent. */
+  cut?: { stamp: string; ms: number } | null
+}
+
+/**
+ * What the derivation reads for the attached character alone, cut to the day window when one is
+ * given. Kept across the tab's remounts while the inputs are the same objects: a cut builds new
+ * arrays, and a new array would miss every derivation cache keyed on it.
+ */
+function ownInputs(engine: GapsSnap | null | undefined, loot: LootSnap, kills: KillsSnap | null | undefined, cut: { stamp: string; ms: number } | null): { engine: GapsSnap | null | undefined; loot: LootSnap; killMobs: KillMap } {
+  if (engine == null || cut === null) return { engine, loot, killMobs: kills?.mobs ?? NO_KILLS }
+  const own = lastOwnCut([engine, loot, kills, cut.stamp], () => ownSince({ gaps: engine, loot, kills: kills ?? null }, cut))
+  return { engine: own.gaps, loot: own.loot, killMobs: own.kills?.mobs ?? NO_KILLS }
+}
+
+export function useGapsData(all: AllCharacters | null = null, opts: GapsDataOptions = {}): GapsData {
   const liveEngine = useModule<GapsSnap>(GAPS_MODULE_ID)
   const liveLoot = useModule<LootSnap>('loot') ?? NO_LOOT
   const liveKills = useModule<KillsSnap>('kills')
@@ -82,9 +100,8 @@ export function useGapsData(all: AllCharacters | null = null): GapsData {
     const live = { label: deferredAll.liveLabel, gaps: liveEngine, loot: liveLoot, kills: liveKills ?? null }
     return joinCharacters([live, ...otherInputs(deferredAll.others, IS_MOB)], deferredAll.cut)
   }, [deferredAll, liveEngine, liveLoot, liveKills])
-  const engine = joined === null ? liveEngine : joined.gaps
-  const loot = joined === null ? liveLoot : joined.loot
-  const killMobs = (joined === null ? liveKills?.mobs : joined.kills?.mobs) ?? NO_KILLS
+  const { engine, loot, killMobs } =
+    joined === null ? ownInputs(liveEngine, liveLoot, liveKills, opts.cut ?? null) : { engine: joined.gaps, loot: joined.loot, killMobs: joined.kills?.mobs ?? NO_KILLS }
   // The item pages' side of each drop, asked of main (the corpus is main-only). The same array while
   // the loot is the same, so useItemMobs' effect does not rerun on a remount.
   const looted = lastLooted([loot], () => lootedItemNames(loot))

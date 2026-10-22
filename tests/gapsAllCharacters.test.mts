@@ -20,6 +20,7 @@ import {
   nameFromId,
   otherCharacters,
   otherInputs,
+  ownSince,
   parseSavedGaps,
   seenByKey,
   stampKeyOf,
@@ -182,4 +183,20 @@ test('the window and the stale flag', () => {
   assert.equal(isStale('2026-08-20T12:00:00.000Z', now), false)
   const g = gaps([row('item', 'A', 1, '2026-10-01 00:00:00')])
   assert.equal(gapsSince(g, '2026-09-01 00:00:00'), g, 'nothing cut: the same object')
+})
+
+test('days back trims the one-character view the way the join trims each character (owner, 2026-10-21)', () => {
+  const cut = { stamp: '2026-10-01 00:00:00', ms: 2000 }
+  const own = { gaps: gaps([row('item', 'New', 1, '2026-10-05 00:00:00'), row('mob', 'an old rat', 1, '2026-09-05 00:00:00')]), loot: [...loot('New', 3000), ...loot('Old', 1000)], kills: kills('rat', 1000) }
+  const cutOwn = ownSince(own, cut)
+  assert.deepEqual(cutOwn.gaps.rows.map((r) => r.name), ['New'])
+  assert.equal(cutOwn.gaps.totals.mob, 0)
+  assert.deepEqual(cutOwn.loot.map((e) => e.item), ['New'])
+  assert.deepEqual(Object.keys(cutOwn.kills?.mobs ?? {}), [])
+  // The same rows the join keeps for the attached character alone.
+  assert.deepEqual(joinCharacters([{ label: 'K', ...own }], cut).gaps?.rows.map((r) => r.name), ['New'])
+  // Nothing older than the cut: the rows are the same object, and no kills is no kills.
+  const fresh = { gaps: gaps([row('item', 'New', 1, '2026-10-05 00:00:00')]), loot: [], kills: null }
+  assert.equal(ownSince(fresh, cut).gaps, fresh.gaps)
+  assert.equal(ownSince(fresh, cut).kills, null)
 })

@@ -222,7 +222,7 @@ export default function GapsView(): JSX.Element {
   // All characters (owner, 2026-10-19): every character's saved Gaps joined in, within a day window.
   const me = charSnap?.character ?? null
   const allChars = useAllCharacters(me)
-  const { snap, engine, loot, ownLoot, kills, seenBy, joining } = useGapsData(allChars.all)
+  const { snap, engine, loot, ownLoot, kills, seenBy, joining } = useGapsData(allChars.all, { cut: allChars.cut })
   const [domain, setDomain] = useState<GapDomain>('item')
   const [query, setQuery] = useState('')
   const [copied, setCopied] = useState<number | null>(null)
