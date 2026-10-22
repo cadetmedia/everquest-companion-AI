@@ -3,13 +3,16 @@
 //
 // The window is not the wiki's layout (plans/2026-10-20-screenshot-to-wiki.md, "First real
 // screenshot"): two or three columns, long names (`Charisma:`, `SV. Magic:`), the slot as a bare
-// word, the flags as the tooltip prints them. The target is the page the owner wrote for Ruined
-// Robe (2026-10-21): classic caps flags two spaces apart, `Slot: CHEST`, short stat names with a
-// sign, every SV on one line, `WT:` before `Size:`, Class and Race last.
+// word, the flags as the tooltip prints them. The target is the wiki's recent norm (owner,
+// 2026-10-21, D1; itemVocab.ts): the flag line as the window prints it (`Lore Equipped, No Trade`),
+// `Slot: CHEST`, short stat names with a sign, every SV on one line, `Size:` before `WT:`, Class and
+// Race last, values in caps.
 //
 // Labels are found anywhere in a line, never by position: each UI skin lays the window out its own
 // way, and OCR drops colons, joins columns and puts junk at line ends. A number is never guessed;
 // the one repair is Weight's decimal, which the game always prints and OCR loses (3 windows of 3).
+
+import { CLASS_CODES, codeWords, deityText, FLAG_WORDS, RACE_CODES, SIZES, slotWord, snap, type Snapped } from './itemVocab'
 
 export interface ItemWindowRead {
   /** The coloured name line, a `+N` tier dropped. OCR may run words together; the caller's name wins. */
@@ -46,28 +49,17 @@ export interface ItemShotReply {
 
 // ---- vocabulary ---------------------------------------------------------------------------------
 
-/** Tooltip flag words -> the classic caps the owner's page writes, in the window's order. */
-const FLAGS: readonly (readonly [RegExp, string])[] = [
-  [/\bmagic( item)?\b/i, 'MAGIC ITEM'],
-  [/\blore( equipped| item)?\b/i, 'LORE ITEM'],
-  [/\bno (trade|drop)\b/i, 'NO DROP'],
-  [/\b(temporary|no rent)\b/i, 'TEMPORARY'],
-  [/\bquest( item)?\b/i, 'QUEST ITEM'],
-  [/\bno storage\b/i, 'NO STORAGE'],
-  [/\battunable\b/i, 'ATTUNABLE'],
-  [/\bexpendable\b/i, 'EXPENDABLE'],
-  [/\bplaceable\b/i, 'PLACEABLE'],
-  [/\bheirloom\b/i, 'HEIRLOOM'],
-  [/\bartifact\b/i, 'ARTIFACT'],
-  [/\baugmentation\b/i, 'AUGMENTATION']
-]
+/**
+ * The window's flag words, found anywhere in a line, longest first (`Lore Equipped` before `Lore`).
+ * Written as the window prints them (owner, 2026-10-21, D1: `No Trade, Quest`, never `NO DROP`).
+ */
+const FLAG_RE = new RegExp(`\\b(${[...FLAG_WORDS].sort((a, b) => b.length - a.length).map((f) => f.replace(/ /g, '\\s+')).join('|')})\\b`, 'gi')
 
+/** The window's slot words (eqstr_us.txt 559-576, Charm, Power Source), the plurals it prints included. */
 const SLOT_WORDS = new Set([
   'charm', 'ear', 'ears', 'head', 'face', 'neck', 'shoulders', 'shoulder', 'arms', 'back', 'wrist', 'wrists', 'range',
   'hands', 'primary', 'secondary', 'finger', 'fingers', 'chest', 'legs', 'feet', 'waist', 'ammo', 'power', 'source'
 ])
-/** The game's slot word -> the wiki's where they differ (eqstr 571 `Fingers`; the wiki writes FINGER 218 times, FINGERS 5). */
-const SLOT_WIKI: Record<string, string> = { fingers: 'FINGER' }
 
 /** Window label -> the wiki's key. `kind` decides the line it lands on. */
 type Kind = 'attr' | 'save' | 'ac' | 'weapon' | 'wt' | 'size' | 'value' | 'line' | 'effect' | 'effectInfo' | 'skip'
@@ -156,20 +148,26 @@ function rankFix(name: string): string {
   return name.replace(/\s([lI1|]{2,3}|[lI|]l+)$/, (_m, r: string) => ` ${'I'.repeat(r.length)}`)
 }
 
+/** The flag words a line holds, in its order, in the window's spelling. */
 function flagsOf(line: string): string[] {
-  const hits = FLAGS.flatMap(([re, word]) => {
-    const m = re.exec(line)
-    return m === null ? [] : [{ at: m.index, word }]
-  })
-  return hits.sort((a, b) => a.at - b.at).map((h) => h.word)
+  return [...line.matchAll(FLAG_RE)].map((m) => FLAG_WORDS.find((f) => f.toLowerCase() === m[1].replace(/\s+/g, ' ').toLowerCase()) ?? m[1])
 }
 
-/** `Class: NEC WIZ MAG ENC` -> the codes upper-cased; `None` and `ALL` as the game prints them. */
-function codesOf(line: string, label: string): string | undefined {
+/**
+ * The flag line as the window prints it, `, ` between: each comma piece snapped to a flag word
+ * (an OCR slip within reach is noted); with its commas lost, the flag words found in it.
+ */
+function flagLine(line: string): Snapped[] {
+  const pieces = line.split(/\s*,\s*/).filter(Boolean).map((p) => snap(p, FLAG_WORDS, 'Flag'))
+  return pieces.every((p) => FLAG_WORDS.includes(p.value)) ? pieces : flagsOf(line).map((value) => ({ value }))
+}
+
+/** `Class: NEC WIZ MAG ENC`, `ALL except NEC`, `None` -> the page's words (itemVocab.ts `codeWords`). */
+function codesOf(line: string, label: 'Class' | 'Race'): { value: string; notes: string[] } | undefined {
   const m = new RegExp(`${label}\\s*[:;.]?\\s*(.+)$`, 'i').exec(line)
   if (m === null) return undefined
-  const codes = m[1].split(/\s+/).filter((w) => /^[A-Za-z]{2,4}$/.test(w))
-  return codes.length > 0 ? codes.join(' ').toUpperCase() : undefined
+  const words = m[1].split(/\s+/).map((w) => w.replace(/[^A-Za-z]/g, '')).filter((w) => /^[A-Za-z]{2,6}$/.test(w))
+  return words.length > 0 ? codeWords(words, label === 'Class' ? CLASS_CODES : RACE_CODES, label) : undefined
 }
 
 /**
@@ -181,7 +179,7 @@ export function slotOf(line: string): string | undefined {
   const words = line.toLowerCase().split(/[\s,/]+/).filter(Boolean)
   if (words.length === 0 || !words.every((w) => SLOT_WORDS.has(w))) return undefined
   const slots = words.join(' ').replace(/\bpower source\b/g, 'power_source').split(' ')
-  return [...new Set(slots.map((w) => SLOT_WIKI[w] ?? w.replace('_', ' ').toUpperCase()))].join(' ')
+  return [...new Set(slots.map((w) => slotWord(w.replace('_', ' ')).value))].join(' ')
 }
 
 // ---- label pairs --------------------------------------------------------------------------------
@@ -225,6 +223,14 @@ interface Gathered {
   effects: string[]
   focus?: string
   unread: string[]
+  /** Values kept as read or snapped to a known one (itemVocab.ts), for the player. */
+  notes: string[]
+}
+
+/** A snapped value's note into the gathered notes; the value back. */
+const noted = (g: Gathered, v: { value: string; note?: string }): string => {
+  if (v.note !== undefined) g.notes.push(v.note)
+  return v.value
 }
 
 /** `Firestrike (Must Equip)` + the info lines under it -> `[[Firestrike]] (Must Equip, Casting Time: Instant) at Level 40`. */
@@ -254,7 +260,7 @@ const PLACE: Record<Kind, (g: Gathered, p: Pair, lastEffect: Effect | null) => v
   ac: (g, p) => (g.ac = p.value),
   weapon: (g, p) => g.weapon.set(p.key, p.value),
   wt: (g, p) => (g.wt = weightValue(p.value)),
-  size: (g, p) => (g.size = p.value.split(/\s+/)[0]?.toUpperCase()),
+  size: (g, p) => (g.size = noted(g, snap(p.value.split(/\s+/)[0] ?? '', SIZES, 'Size'))),
   value: (g, p) => (g.value = valueCopper(p.value)),
   line: (g, p) => g.lines.push(wikiLine(p)),
   effectInfo: (_g, p, lastEffect) => lastEffect?.info.set(p.key, p.value.replace(/\s+seconds?$/i, '')),
@@ -276,7 +282,7 @@ function gatherLine(g: Gathered, effects: Effect[], line: string): void {
   if (NOT_ITEM.test(line) || slotLine(g, line)) return
   const deity = /^Deity\s*[:;.]?\s+(.+)$/i.exec(line)
   if (deity !== null) {
-    g.deity = deity[1]
+    g.deity = noted(g, deityText(deity[1]))
     return
   }
   const pairs = pairsOf(line)
@@ -289,7 +295,7 @@ function gatherLine(g: Gathered, effects: Effect[], line: string): void {
 
 /** The stats region, line by line: pairs placed, effects gathered with the info lines under them. */
 function gather(lines: readonly string[]): Gathered {
-  const g: Gathered = { attrs: [], saves: [], weapon: new Map(), lines: [], effects: [], unread: [] }
+  const g: Gathered = { attrs: [], saves: [], weapon: new Map(), lines: [], effects: [], unread: [], notes: [] }
   const effects: Effect[] = []
   for (const line of lines) gatherLine(g, effects, line)
   for (const e of effects) {
@@ -335,19 +341,36 @@ function weaponLines(w: ReadonlyMap<string, string>): string[] {
   return [...(skill.length > 0 ? [skill.join('  ')] : []), ...rest]
 }
 
-function statsLines(flags: readonly string[], g: Gathered, cls?: string, race?: string): string[] {
+/** The lines above the stats: the flags, the Class and Race words. */
+interface Head {
+  flags: string[]
+  cls?: string
+  race?: string
+}
+
+/** `EXPENDABLE` rides on the Charges line, as the pages write it (`EXPENDABLE Charges: 10`, owner D1). */
+function expendable(h: Head, g: Gathered): string[] {
+  const at = g.lines.findIndex((l) => l.startsWith('Charges: '))
+  if (!h.flags.includes('Expendable') || at < 0) return h.flags
+  g.lines[at] = `EXPENDABLE ${g.lines[at]}`
+  return h.flags.filter((f) => f !== 'Expendable')
+}
+
+function statsLines(h: Head, g: Gathered): string[] {
   const out: string[] = []
-  if (flags.length > 0) out.push(flags.join('  '))
+  const flags = expendable(h, g)
+  if (flags.length > 0) out.push(flags.join(', '))
   if (g.slot !== undefined) out.push(`Slot: ${g.slot}`)
   out.push(...weaponLines(g.weapon))
   if (g.ac !== undefined) out.push(`AC: ${g.ac}`)
   if (g.attrs.length > 0) out.push(byAttrOrder(g.attrs).join('  '))
   if (g.saves.length > 0) out.push(g.saves.join('  '))
   out.push(...g.effects, ...g.lines)
-  const wtSize = [g.wt === undefined ? '' : `WT: ${g.wt}`, g.size === undefined ? '' : `Size: ${g.size}`].filter(Boolean)
-  if (wtSize.length > 0) out.push(wtSize.join('  '))
-  if (cls !== undefined) out.push(`Class: ${cls}`)
-  if (race !== undefined) out.push(`Race: ${race}`)
+  // Size before WT, one space, as recent pages write it (owner D1: 752 pages; 642 converted to it, none back).
+  const sizeWt = [g.size === undefined ? '' : `Size: ${g.size}`, g.wt === undefined ? '' : `WT: ${g.wt}`].filter(Boolean)
+  if (sizeWt.length > 0) out.push(sizeWt.join(' '))
+  if (h.cls !== undefined) out.push(`Class: ${h.cls}`)
+  if (h.race !== undefined) out.push(`Race: ${h.race}`)
   // The pages put Deity after Race (Deity: Cazic-Thule, 453 cached pages).
   if (g.deity !== undefined) out.push(`Deity: ${g.deity}`)
   return out
@@ -378,22 +401,32 @@ function nameAbove(lines: readonly string[], at: number): string | undefined {
   return line?.replace(/\s*\+\d+$/, '').trim()
 }
 
+/** The flag line (the last line above Class naming a flag, never the tab row), Class and Race, with their notes. */
+function headOf(lines: readonly string[], clsAt: number, raceAt: number): Head & { flagAt: number; notes: string[] } {
+  const flagAt = lines.slice(0, clsAt).map((l) => !TAB_ROW.test(l) && flagsOf(l).length > 0).lastIndexOf(true)
+  const flags = flagAt < 0 ? [] : flagLine(lines[flagAt])
+  const cls = codesOf(lines[clsAt], 'Class')
+  const race = raceAt < 0 ? undefined : codesOf(lines[raceAt], 'Race')
+  const notes = [...flags.flatMap((f) => (f.note === undefined ? [] : [f.note])), ...(cls?.notes ?? []), ...(race?.notes ?? [])]
+  return { flagAt, flags: flags.map((f) => f.value), notes, ...(cls === undefined ? {} : { cls: cls.value }), ...(race === undefined ? {} : { race: race.value }) }
+}
+
 /** OCR lines of one item window (top to bottom) -> the page's fields. */
 export function readItemWindow(raw: readonly string[]): ItemWindowRead {
   const lines = raw.map(cleanLine).filter((l) => l !== '')
   const clsAt = lines.findIndex((l) => /\bClass\s*[:;.]?\s/i.test(l))
   if (clsAt < 0) return loreRead(lines)
-  const above = lines.slice(0, clsAt).map((l) => flagsOf(l).length > 0)
-  const flagAt = above.lastIndexOf(true)
   const raceAt = lines.findIndex((l, i) => i > clsAt && /\bRace\s*[:;.]?\s/i.test(l))
+  const head = headOf(lines, clsAt, raceAt)
   const g = gather(lines.slice((raceAt < 0 ? clsAt : raceAt) + 1))
   const ratio = checkRatio(g.weapon)
-  const block = statsLines(flagAt < 0 ? [] : flagsOf(lines[flagAt]), g, codesOf(lines[clsAt], 'Class'), raceAt < 0 ? undefined : codesOf(lines[raceAt], 'Race'))
-  const name = nameAbove(lines, flagAt < 0 ? clsAt : flagAt)
+  const block = statsLines(head, g)
+  const name = nameAbove(lines, head.flagAt < 0 ? clsAt : head.flagAt)
+  const checks = [...(ratio === undefined ? [] : [ratio]), ...head.notes, ...g.notes]
   return {
     statsblock: `\n${block.map((l) => `${l}<br>`).join('\n')}`,
     unread: g.unread,
-    ...(ratio === undefined ? {} : { checks: [ratio] }),
+    ...(checks.length === 0 ? {} : { checks }),
     ...(name === undefined ? {} : { name }),
     ...(hasLoreTab(lines, clsAt) ? { loreTab: true } : {}),
     ...(g.focus === undefined ? {} : { focusEffect: g.focus }),

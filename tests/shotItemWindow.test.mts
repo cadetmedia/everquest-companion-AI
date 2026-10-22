@@ -62,14 +62,17 @@ Weight 20
 PB Unmodified
 || Value: 3 silver 8 copper`.split('\n')
 
-/** The owner's own page for Ruined Robe (2026-10-21), its statsblock field. */
+/**
+ * The owner's own page for Ruined Robe (2026-10-21), its statsblock field, in the style the owner
+ * ruled the same day (D1, "follow the wiki norm"): the flags as the window prints them, Size before WT.
+ */
 const ROBE_PAGE_STATS = [
-  'LORE ITEM  NO DROP  TEMPORARY<br>',
+  'Lore Equipped, No Trade, Temporary<br>',
   'Slot: CHEST<br>',
   'AC: 1<br>',
   'CHA: -20<br>',
   'SV MAGIC: -15  SV FIRE: -15  SV COLD: -15  SV DISEASE: -15  SV POISON: -15<br>',
-  'WT: 2.0  Size: MEDIUM<br>',
+  'Size: MEDIUM WT: 2.0<br>',
   'Class: NEC WIZ MAG ENC<br>',
   'Race: ALL<br>'
 ]
@@ -85,7 +88,7 @@ test('WINDSTRIKER: THREE COLUMNS, WEAPON LINES, EFFECTS; THE FOCUS GOES OUTSIDE 
   const r = readItemWindow(WINDSTRIKER_OCR)
   const lines = r.statsblock.split('\n').filter(Boolean)
   assert.deepEqual(lines, [
-    'LORE ITEM  NO DROP  PLACEABLE<br>',
+    'Lore Equipped, No Trade, Placeable<br>',
     'Slot: RANGE<br>',
     'Skill: Archery  Atk Delay: 60<br>',
     'DMG: 90<br>',
@@ -93,7 +96,7 @@ test('WINDSTRIKER: THREE COLUMNS, WEAPON LINES, EFFECTS; THE FOCUS GOES OUTSIDE 
     'STR: +15  AGI: +15  DEX: +15  HP: +100  Accuracy: +25%<br>',
     'SV VOID: +10<br>',
     'Effect: [[Firestrike]] (Must Equip, Casting Time: Instant) at Level 40<br>',
-    'WT: 0.4  Size: MEDIUM<br>',
+    'Size: MEDIUM WT: 0.4<br>',
     'Class: RNG<br>',
     'Race: ALL<br>'
   ])
@@ -106,7 +109,7 @@ test('WINDSTRIKER: THREE COLUMNS, WEAPON LINES, EFFECTS; THE FOCUS GOES OUTSIDE 
 
 test('BLACK LIZARD SCALE: A QUEST FLAG, NO SLOT, THE VALUE LINE IN COPPER', () => {
   const r = readItemWindow(SCALE_OCR)
-  assert.equal(r.statsblock, '\nQUEST ITEM<br>\nWT: 2.0  Size: MEDIUM<br>\nClass: NONE<br>\nRace: NONE<br>')
+  assert.equal(r.statsblock, '\nQuest<br>\nSize: MEDIUM WT: 2.0<br>\nClass: NONE<br>\nRace: NONE<br>')
   assert.equal(r.valueCopper, 38)
 })
 
@@ -202,8 +205,8 @@ test("THE WINDOW'S OTHER LABELS (THE CLIENT'S OWN STRINGS): End, End Regen, Dmg 
   ])
   const lines = r.statsblock.split('\n').filter(Boolean)
   assert.deepEqual(lines, [
-    'MAGIC ITEM<br>', 'Slot: PRIMARY<br>', 'Atk Delay: 30<br>', 'DMG: 9<br>', 'Dmg Bon: 7<br>', 'END: +15  End Regen: +2<br>',
-    'Recommended level of 30.<br>', 'Required level of 20.<br>', 'Charges: 5<br>', 'WT: 7.5  Size: MEDIUM<br>', 'Class: WAR PAL<br>', 'Race: ALL<br>', 'Deity: Karana<br>'
+    'Magic<br>', 'Slot: PRIMARY<br>', 'Atk Delay: 30<br>', 'DMG: 9<br>', 'Dmg Bon: 7<br>', 'END: +15  End Regen: +2<br>',
+    'Recommended level of 30.<br>', 'Required level of 20.<br>', 'Charges: 5<br>', 'Size: MEDIUM WT: 7.5<br>', 'Class: WAR PAL<br>', 'Race: ALL<br>', 'Deity: Karana<br>'
   ])
   assert.deepEqual(r.unread, [])
 })
