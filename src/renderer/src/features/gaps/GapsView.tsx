@@ -87,7 +87,7 @@ function HeldPicker({ pick, onPick, domain }: { pick: HeldPick; onPick: (p: Held
       ? `Only the items you hold now, the rows marked held: your last inventory export (/outputfile inventory), plus what the log saw you loot since (in the bags), less destroys. No export, nothing shows. With All characters on, every character's own export counts, each holder named in the row. ${HELD_WHERE}`
       : 'Items only: shows only the items you hold now.'
   return (
-    <Tooltip title={title}>
+    <Tooltip title={title} placement="top">
       <span>
         <Picker label="I have it" value={pick} options={HELD_PICKS} onChange={onPick} disabled={domain !== 'item'} testId="gaps-held-only" />
       </span>
@@ -98,7 +98,7 @@ function HeldPicker({ pick, onPick, domain }: { pick: HeldPick; onPick: (p: Held
 /** "Show" (owner, 2026-10-21): every row, only the new pages, or only the updates to pages that exist. */
 function ShowPicker({ show, onShow }: { show: GapShow; onShow: (s: GapShow) => void }): JSX.Element {
   return (
-    <Tooltip title="New pages: the wiki has no page for it. Updates: the page exists and lacks something, a small edit.">
+    <Tooltip title="New pages: the wiki has no page for it. Updates: the page exists and lacks something, a small edit." placement="top">
       <span>
         <Picker label="Show" value={show} options={SHOW_PICKS} onChange={onShow} testId="gaps-show" />
       </span>
