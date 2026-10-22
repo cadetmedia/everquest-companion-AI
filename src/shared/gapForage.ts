@@ -119,6 +119,11 @@ function withoutProof<T extends Record<string, number>>(counts: T): T {
   return Object.fromEntries(Object.entries(counts).filter(([k]) => k !== FORAGE_PROOF)) as T
 }
 
+/** A forage update row's work buttons (GapRowButtons): its page exists, so the editor opens on it, and the copy is the lines to add. */
+export function forageButtons(u: ForageUpdate): { edit: string; page: string; copyTip: string } {
+  return { edit: 'Edit item page', page: u.page, copyTip: `The lines to add to the page ${u.page}, from your log's forages: paste them in where the page lists its forage zones and categories.` }
+}
+
 /** The chip's words: what the page lacks. */
 export function forageWhy(item: string, u: ForageUpdate): string {
   const zones = u.zones.length > 0 ? `does not list ${u.zones.join(', ')} under foraged` : ''

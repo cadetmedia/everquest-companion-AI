@@ -4,7 +4,8 @@
 // new-page copy uses. Fixtures, not the corpus: items.json gains the fields on local-data-refresh.
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { COMMON_FORAGE, forageAddText, forageUpdateOf, isCommonForage, withForageRows, type ItemPageForage } from '../src/shared/gapForage'
+import { readFileSync } from 'node:fs'
+import { COMMON_FORAGE, forageAddText, forageButtons, forageUpdateOf, isCommonForage, withForageRows, type ItemPageForage } from '../src/shared/gapForage'
 import { gapActions, type GapRow, type GapsSnap } from '../src/shared/gaps'
 import { itemPage, wikiPageText } from '../src/shared/wikiPage'
 import { catalogZoneCounts, wikiZoneNamer } from '../src/shared/gapWikiZone'
@@ -118,4 +119,15 @@ test('common forage (named default, COMMON_FORAGE): seen in 5+ places, or a page
   assert.equal(isCommonForage(['Qeynos Hills'], page({ page: 'Berries', zones: listed })), true)
   assert.equal(forageUpdateOf(berries, page({ page: 'Berries', zones: listed, category: true }), zoneName), null)
   assert.deepEqual(forageUpdateOf(berries, page({ page: 'Berries', zones: listed.slice(1), category: true }), zoneName)?.zones, ['Qeynos Hills'])
+})
+
+test("a forage update row's buttons open the item's own page in the editor and say the copy is lines to add, never Create page", () => {
+  const b = forageButtons({ page: 'Berries', zones: [], noField: false, category: true })
+  assert.deepEqual([b.edit, b.page], ['Edit item page', 'Berries'])
+  assert.match(b.copyTip, /lines to add to the page Berries/)
+  assert.doesNotMatch(b.copyTip, /Screenshot the item window/)
+  // GapRowButtons reads them: the editor link of an existing page, not a new page's.
+  const ui = readFileSync(new URL('../src/renderer/src/features/gaps/GapRowButtons.tsx', import.meta.url), 'utf8')
+  assert.match(ui, /forageButtons\(row\.forageUpdate\)/)
+  assert.match(ui, /existing \? wikiEditUrl\(target\) : wikiCreateUrl\(target\)/)
 })
