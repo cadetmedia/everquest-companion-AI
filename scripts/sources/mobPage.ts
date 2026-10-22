@@ -22,6 +22,7 @@ import { parseMobLoot, parseMobWikitext } from '../../src/main/mobLookupParse'
 import { factionNames } from './mobFaction'
 import { encodeFactionAmount, type MobFactionHit } from '../../src/shared/mobFactionAmounts'
 import type { MobEntry } from '../../src/shared/types'
+import { stripFormatChars } from '../../src/shared/wikiTitle'
 
 /**
  * The page templates that MAKE a page a mob page, verified against the live wiki (2026-08-03):
@@ -131,7 +132,8 @@ function gapsFacts(wikitext: string): Pick<MobEntry, 'merchant' | 'factions' | '
   // `|common_loot` lists drops as surely as `|known_loot`: on 195 pages, mostly shared tables (Classic
   // Raid Tier Treasures) and a zone's set loot (owner, 2026-10-19: Gaps read them as missing).
   const common = [...new Set(parseMobLoot(templateField(wikitext, 'common_loot') ?? '').map((d) => d.item))]
-  const image = /\|\s*imagefilename\s*=\s*([^\n|}]*)/i.exec(wikitext)?.[1].trim() ?? ''
+  // A bidi mark pasted after the name is not part of it: the wiki drops it from the title.
+  const image = stripFormatChars(/\|\s*imagefilename\s*=\s*([^\n|}]*)/i.exec(wikitext)?.[1] ?? '')
   return {
     ...(/\{\{\s*MerchantPage\b/i.test(wikitext) ? { merchant: true } : {}),
     ...(factions.length ? { factions, factionAmounts: factionAmountList(wikitext) } : {}),
