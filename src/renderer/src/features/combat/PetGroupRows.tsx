@@ -2,8 +2,8 @@
 // docs/community/plans/2026-10-20-meter-pet-split.md). A pair is two lines, master then pet, over
 // one shared bar at the pair's length; anything else is one line. Every bar is its own true length
 // and text never sizes one, so a near-zero pair stays a sliver below the rows that out-damage it.
-// Every row ends in the same fixed total box. The overlay draws the same rows in plain React
-// (overlay/petGroupBars.tsx): keep the two in step.
+// Every row ends in a total box, and the boxes share one column down the list. The overlay draws the
+// same rows in plain React (overlay/petGroupBars.tsx): keep the two in step.
 
 import { memo } from 'react'
 import { Box, Chip, Stack, Typography } from '@mui/material'
@@ -18,7 +18,12 @@ import type { SourceView } from '@shared/combat'
 /** The pair's third colour: the shared bar and every row's total box. The overlay's copy matches. */
 const GROUP_COLOR = '#4a4366'
 const LINE_H = 22
-const BOX_W = 132
+/**
+ * The list is one grid and each row a subgrid of it, so the box column is as wide as the widest
+ * box's text and no wider (Malkil, 2026-10-21: the fixed box was "much wider than it needs to be").
+ * Every bar track is the same width, so a row's own text never sizes its bar.
+ */
+const COLUMNS = 'minmax(0, 1fr) minmax(48px, max-content)'
 
 /** The same name-ambiguity badge `EntityRow` carries: it belongs to the number, on any line. */
 function AmbiguousChip({ e }: { e: SourceView }): React.JSX.Element {
@@ -93,13 +98,12 @@ function GroupLine({
   )
 }
 
-/** The fixed box every row ends in: a pair's dps over its damage, a lone row's on one line. */
+/** The box every row ends in: a pair's dps over its damage, a lone row's on one line. */
 function TotalBox({ row, pair }: { row: PetGroupRow; pair: boolean }): React.JSX.Element {
   return (
     <Box
       data-testid="meter-group-total"
       sx={{
-        flex: `0 0 ${BOX_W}px`,
         borderRadius: 0.5,
         bgcolor: GROUP_COLOR,
         px: 0.75,
@@ -140,11 +144,13 @@ const GroupRow = memo(
   }): React.JSX.Element {
     const pair = row.lines.length > 1
     return (
-      <Box data-testid="meter-group-row" sx={{ display: 'flex', gap: '2px', mb: '3px', height: LINE_H * row.lines.length }}>
+      <Box
+        data-testid="meter-group-row"
+        sx={{ display: 'grid', gridColumn: '1 / -1', gridTemplateColumns: 'subgrid', mb: '3px', height: LINE_H * row.lines.length }}
+      >
         <Box
           sx={{
             position: 'relative',
-            flex: '1 1 auto',
             minWidth: 0,
             borderRadius: 0.5,
             overflow: 'hidden',
@@ -188,10 +194,10 @@ export function PetGroupRows({
 }): React.JSX.Element {
   const onDrill = setDrill ? (e: SourceView) => setDrill({ kind: 'entity', entityId: e.id, name: e.name }) : undefined
   return (
-    <>
+    <Box data-testid="meter-group-list" sx={{ display: 'grid', gridTemplateColumns: COLUMNS, columnGap: '2px' }}>
       {groups.map((g, i) => (
         <GroupRow key={g.id} row={g} rank={i + 1} onDrill={onDrill} />
       ))}
-    </>
+    </Box>
   )
 }

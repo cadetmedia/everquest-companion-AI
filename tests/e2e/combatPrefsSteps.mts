@@ -85,11 +85,45 @@ export async function setPetLayout(page: Page, layout: PetLayout, back: string):
   const want = PREVIEW_SHAPE[layout]
   const got = await settle(() => previewShape(page), (s) => s === want, { timeoutMs: 8_000 })
   check(`the example under the pet layout control shows the ${layout} layout`, got === want, `${got}, want ${want}`)
+  // Its grouped rows are a lone row (Kyle) over a pair: the case where the two box shapes must line up.
+  if (layout === 'grouped') await checkBoxColumn(page, 'the Preferences example', '[data-testid="pref-pet-layout-preview"] ')
   await page.click(`[data-testid="${back}"]`, { timeout: 30_000 })
   return n === 1
 }
 
-const PREVIEW_SHAPE: Record<PetLayout, string> = { nested: 'bars 2', separate: 'bars 3', grouped: 'rows 2 lines 3' }
+/** Every total box's left edge and width, and its text's width (a Range over the box's contents). */
+interface BoxColumn {
+  lefts: number[]
+  widths: number[]
+  texts: number[]
+}
+
+/**
+ * THE BOX COLUMN of the grouped layout (Malkil, 2026-10-21: the fixed box was "much wider than it
+ * needs to be"). The boxes under `within` line up in one column, and the column is the widest box's
+ * text plus its padding (6 px a side), or the 48 px floor, and no wider.
+ */
+export async function checkBoxColumn(page: Page, where: string, within = ''): Promise<void> {
+  const col = await page.$$eval(`${within}[data-testid="meter-group-total"]`, (boxes) => {
+    const out: BoxColumn = { lefts: [], widths: [], texts: [] }
+    for (const b of boxes) {
+      const r = b.getBoundingClientRect()
+      const range = document.createRange()
+      range.selectNodeContents(b)
+      out.lefts.push(Math.round(r.left))
+      out.widths.push(Math.round(r.width))
+      out.texts.push(range.getBoundingClientRect().width)
+    }
+    return out
+  })
+  if (col.widths.length === 0) return
+  const fit = Math.max(48, Math.max(...col.texts) + 12)
+  const aligned = new Set(col.lefts).size === 1 && new Set(col.widths).size === 1
+  check(`every total box on ${where} sits in one column`, aligned, JSON.stringify(col))
+  check(`the box column on ${where} is as wide as its widest total needs`, Math.abs(col.widths[0] - fit) <= 2, `${String(col.widths[0])} px, text needs ${fit.toFixed(1)}`)
+}
+
+const PREVIEW_SHAPE: Record<PetLayout, string> ={ nested: 'bars 2', separate: 'bars 3', grouped: 'rows 2 lines 3' }
 
 /** What the example meter in Preferences draws: plain bars, or grouped rows and their lines. */
 function previewShape(page: Page): Promise<string> {

@@ -28,7 +28,7 @@
 import type { Page } from 'playwright-core'
 import { check, note, settle, settleStable, snapshot, type Snap } from './appHarness.mjs'
 import { drilled, meterRows } from './drill.mjs'
-import { setCombinePet, setPetLayout } from './combatPrefsSteps.mjs'
+import { checkBoxColumn, setCombinePet, setPetLayout } from './combatPrefsSteps.mjs'
 
 /** The bare total on the panel's header line — the number the ticket is about. */
 const TOTAL = '[data-testid="meter-total"]'
@@ -211,6 +211,7 @@ export async function stepPetGroupedLayout(page: Page): Promise<void> {
   check('every source of the separate list is one line of the grouped list', lines === sources, `${String(lines)} lines, ${String(sources)} sources`)
   check('every row ends in exactly one total box', shape.every((r) => r.totals === 1))
   check('only a pair has the shared bar', shape.every((r) => r.shared === (r.lines > 1 ? 1 : 0)))
+  await checkBoxColumn(page, 'the Combat tab')
   const mine = shape.findIndex((r) => r.first.split('|').includes('You'))
   if (totals) {
     check('your pet sits on the line under you, in one row', mine >= 0 && shape[mine].lines >= 2, JSON.stringify(shape[mine] ?? null))
