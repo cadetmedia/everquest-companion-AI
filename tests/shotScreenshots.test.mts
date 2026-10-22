@@ -16,6 +16,9 @@ import { readItemShot, type ItemShot, type ShotReaders } from '../src/main/shot/
 import { shotKind } from '../src/shared/itemShotKeep.ts'
 import { readSpellWindow } from '../src/shared/spellWindow.ts'
 import { readPng } from './shotPng.mts'
+import { imageGaps } from '../src/shared/gapImages.ts'
+import { pictureFile } from '../src/shared/mobPicture.ts'
+import { showsName } from '../src/main/shot/nameplate.ts'
 
 const SHOTS = join(import.meta.dirname, 'fixtures', 'shots')
 const EQ_ROOT = process.env.EQ_ROOT ?? 'C:/Users/Public/Daybreak Game Company/Installed Games/EverQuest Legends'
@@ -141,3 +144,14 @@ for (const [file, id, within] of ICONS) {
     assert.ok(rank >= 1 && rank <= within, `rank ${String(rank)}: ${JSON.stringify(s.icons)}`)
   })
 }
+
+test("A LIZARDMAN SCOUT (THE OWNER'S PICTURE): THE NAMEPLATE IS FOUND, AND THE FILE IS NAMED AFTER THE IN-GAME NAME, NOT THE PAGE TITLE", async () => {
+  // As mobs.json holds the page: title "A lizard man scout", its own imagefilename npc_a_lizard_man_scout.png.
+  const page = { page: 'A lizard man scout', name: 'a lizardman scout', image: 'npc_a_lizard_man_scout.png', noImage: true as const }
+  const [row] = imageGaps({ 'a lizardman scout': { display: 'a lizardman scout', count: 3 } } as never, [], [page])
+  assert.equal(pictureFile(row), 'npc_a_lizardman_scout.png')
+  // Read as it stands the busy scene gives noise; the near-white nameplate reading finds the name.
+  const img = readPng(join(SHOTS, 'a-lizardman-scout-npc.png'))
+  assert.equal(await showsName(img, row.name), true)
+  assert.equal(await showsName(img, 'a gnoll pup'), false)
+})
