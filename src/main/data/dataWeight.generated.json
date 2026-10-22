@@ -2,9 +2,9 @@
   "rows": [
     {
       "file": "src/main/data/items.json",
-      "bytes": 8867024,
-      "parseMs": 47.6,
-      "heapMb": 20.6
+      "bytes": 8877257,
+      "parseMs": 49.5,
+      "heapMb": 20.7
     },
     {
       "file": "src/main/data/messageOverlay.baseline.json",
