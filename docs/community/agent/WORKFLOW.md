@@ -154,6 +154,13 @@ disagree, RULES.md wins; fix this file.
   `whats-new` (TEST build) and `voice-alerts` pass. `maps` stays red as a stale spec (canvas
   vs pane height, and the pane-close width read before the map settles; the owner found the
   map fine, so it was not chased). Baseline a red against the last release tag before calling it a regression.
+  Measured 2026-10-21 (main_community 4f9062d8 vs test.29, 4 in parallel): 61/65 green on both, no
+  new reds. `voice-alerts` is red again on both (the telemetry notice covers the "custom" menu item
+  in `customPhraseSteps.mts` `rewordFromTheRow`; the spec never dismisses it, as alert-dialog-focus
+  does). `alert-dialog-focus`, `engine-boots` and `engine-absent` flake in parallel and pass alone
+  (no `wmic` on this machine: `engineTable()` falls back to `tasklist`, and engines from specs
+  running alongside count as new). Each worktree builds its own `engined.exe`: the engine embeds the
+  data files, so a shared binary cannot serve two trees.
 - **Headless look at an UNRELEASED tab:** temporarily set `UNRELEASED = true as boolean` in
   `devFlags.ts`, `electron-vite build --outDir=<worktree>/out-e2e`, `git checkout` the flag file,
   then a throwaway spec with `launchOnFixture(..., { env: { EQ_UNRELEASED: '1' } })`.
