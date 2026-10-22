@@ -85,16 +85,26 @@ function ZoneHere({ zone, checked, onChange }: { zone: string | null; checked: b
   )
 }
 
-/** A small labelled select, the toolbar's control for a choice of more than two. */
-function Picker<T extends string>({ label, value, options, onChange, testId, disabled }: { label: string; value: T; options: readonly (readonly [T, string])[]; onChange: (v: T) => void; testId: string; disabled?: boolean }): JSX.Element {
+/**
+ * A small labelled select, the toolbar's control for a choice of more than two. Its tooltip never
+ * shows while the menu is open (owner, 2026-10-21: "tooltip can't be ontop of the drop down").
+ */
+function Picker<T extends string>({ label, value, options, onChange, testId, disabled, tip }: { label: string; value: T; options: readonly (readonly [T, string])[]; onChange: (v: T) => void; testId: string; disabled?: boolean; tip: string }): JSX.Element {
+  const [hover, setHover] = useState(false)
+  const [menu, setMenu] = useState(false)
+  const select = { onOpen: () => setMenu(true), onClose: () => setMenu(false) }
   return (
-    <TextField select size="small" label={label} value={value} disabled={disabled} onChange={(e) => onChange(e.target.value as T)} sx={{ minWidth: 130 }} slotProps={{ htmlInput: { 'data-testid': testId } }}>
-      {options.map(([v, text]) => (
-        <MenuItem key={v} value={v}>
-          {text}
-        </MenuItem>
-      ))}
-    </TextField>
+    <Tooltip title={tip} placement="top" open={hover && !menu} onOpen={() => setHover(true)} onClose={() => setHover(false)}>
+      <span>
+        <TextField select size="small" label={label} value={value} disabled={disabled} onChange={(e) => onChange(e.target.value as T)} sx={{ minWidth: 130 }} slotProps={{ htmlInput: { 'data-testid': testId }, select }}>
+          {options.map(([v, text]) => (
+            <MenuItem key={v} value={v}>
+              {text}
+            </MenuItem>
+          ))}
+        </TextField>
+      </span>
+    </Tooltip>
   )
 }
 
@@ -110,22 +120,14 @@ function HeldPicker({ pick, onPick, domain }: { pick: HeldPick; onPick: (p: Held
       ? `Only the items you hold now, the rows marked held: your last inventory export (/outputfile inventory), plus what the log saw you loot since (in the bags), less destroys. No export, nothing shows. ${HELD_WHERE}`
       : 'Items only: shows only the items you hold now.'
   return (
-    <Tooltip title={title} placement="top">
-      <span>
-        <Picker label="I have it" value={pick} options={HELD_PICKS} onChange={onPick} disabled={domain !== 'item'} testId="gaps-held-only" />
-      </span>
-    </Tooltip>
+    <Picker label="I have it" value={pick} options={HELD_PICKS} onChange={onPick} disabled={domain !== 'item'} testId="gaps-held-only" tip={title} />
   )
 }
 
 /** "Show" (owner, 2026-10-21): every row, only the new pages, or only the updates to pages that exist. */
 function ShowPicker({ show, onShow }: { show: GapShow; onShow: (s: GapShow) => void }): JSX.Element {
   return (
-    <Tooltip title="New pages: the wiki has no page for it. Updates: the page exists and lacks something, a small edit." placement="top">
-      <span>
-        <Picker label="Show" value={show} options={SHOW_PICKS} onChange={onShow} testId="gaps-show" />
-      </span>
-    </Tooltip>
+    <Picker label="Show" value={show} options={SHOW_PICKS} onChange={onShow} testId="gaps-show" tip="New pages: the wiki has no page for it. Updates: the page exists and lacks something, a small edit." />
   )
 }
 
