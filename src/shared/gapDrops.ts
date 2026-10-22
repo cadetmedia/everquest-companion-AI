@@ -19,6 +19,7 @@ import { commonLootNames, pagesByMob, pickPage } from './gapMobPage'
 import { gapMobKey as mobKey, memoFold, perObject } from './gapMemo'
 import { itemBaseName } from './itemStats'
 import type { LootEvent } from './types'
+import { mobSourceOf } from './rewardChest'
 
 // SPEED (perf audit, 2026-10-20: each Gaps visit 400–500 ms): every index below that reads only the
 // catalog or the groups is built once per object (gapMemo.ts `perObject`), and the two folds are
@@ -172,17 +173,19 @@ export function dropGaps(loot: readonly LootEvent[], catalog: readonly CatalogMo
   const missing = new Map<string, Missing>()
   for (const e of loot) {
     const filed = filedAs(e, listed, inGroups)
-    if (filed === null || e.source === undefined) continue
-    addDrop(missing, e, e.source, filed)
+    const mob = mobSourceOf(e)
+    if (filed === null || mob === undefined) continue
+    addDrop(missing, e, mob, filed)
   }
   const kept = itemMobs === undefined ? [...missing.values()] : withoutServerWide([...missing.values()], catalog, groups, itemMobs)
   const field = (m: Missing): Partial<GapRow> => (common.has(m.name.toLowerCase()) ? { lootField: 'common_loot' } : {})
   return kept.map((m) => ({ ...rowOf(m, itemMobs, pickPage(pages.get(mobKey(m.mob)), m.zone)), ...field(m) })).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
 }
 
-/** What a looted item is filed as when its mob's page lists neither it nor a group holding it; null when listed or the mob is unknown. */
+/** What a looted item is filed as when its mob's page lists neither it nor a group holding it; null when listed, the mob is unknown or it was a chest payout. */
 function filedAs(e: LootEvent, listed: ReadonlyMap<string, ReadonlySet<string>>, inGroups: ReadonlyMap<string, readonly string[]>): { name: string; group: boolean } | null {
-  const page = e.source === undefined ? undefined : listed.get(mobKey(e.source))
+  const mob = mobSourceOf(e)
+  const page = mob === undefined ? undefined : listed.get(mobKey(mob))
   if (page === undefined || page.has(sourceItemKey(e.item)) || page.has(bareItemKey(e.item))) return null
   const its = inGroups.get(sourceItemKey(e.item)) ?? []
   if (its.some((g) => page.has(sourceItemKey(g)))) return null
@@ -263,6 +266,6 @@ function rowOf(m: Missing, itemMobs: ItemMobs | undefined, page: string | undefi
 /** The looted item names main should be asked about: one per item key. */
 export function lootedItemNames(loot: readonly LootEvent[]): string[] {
   const out = new Map<string, string>()
-  for (const e of loot) if (e.source !== undefined && !out.has(sourceItemKey(e.item))) out.set(sourceItemKey(e.item), itemBaseName(e.item))
+  for (const e of loot) if (mobSourceOf(e) !== undefined && !out.has(sourceItemKey(e.item))) out.set(sourceItemKey(e.item), itemBaseName(e.item))
   return [...out.values()]
 }

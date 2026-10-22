@@ -88,11 +88,17 @@ pub fn no_spell(name: &str) -> bool {
     matches!(name.trim(), "Use Ability" | "Enable Ability" | "Disable Ability")
 }
 
+/// The `Reward Chest` a Dungeon Crawl pays out of: no mob, and what it pays is no mob's drop, since
+/// it pays any item of any mob the crawl killed (owner, 2026-10-21).
+pub fn is_reward_chest(name: &str) -> bool {
+    name.trim().eq_ignore_ascii_case("Reward Chest")
+}
+
 /// The `Reward Chest`, a player's mount or familiar (`Malkil`s Mount`, `Revilus`s familiar`), and
 /// a summoned pet by its generated name (`Genekn`, `Zobektik`: see [`is_pet_name`]).
 pub fn no_mob(name: &str) -> bool {
     let n = fold_quotes(name);
-    if n == "Reward Chest" || is_pet_name(&n) {
+    if is_reward_chest(&n) || is_pet_name(&n) {
         return true;
     }
     let Some((owner, what)) = n.split_once("'s ") else {

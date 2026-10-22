@@ -20,6 +20,7 @@ import { killsFor } from './kills'
 import { derivedPrices, factionMob, factionOf, npcOnlySpell, type ClientSpellFacts, type GapDomain, type GapRow, type MobCoin } from './gaps'
 import { merchantValueOf } from './gapOffers'
 import { itemBaseName } from './itemStats'
+import { isRewardChest, mobSourceOf } from './rewardChest'
 import { wikiZoneLink } from './gapWikiZone'
 import type { VendorFinder } from './gapMobPage'
 import type { LootEvent } from './types'
@@ -53,8 +54,9 @@ export function wikiCoin(copper: number): string {
 export function zoneBlocks(byZone: ReadonlyMap<string, readonly string[]>): string {
   const zones = [...byZone].sort((a, b) => a[0].localeCompare(b[0]))
   const blocks = zones.map(([zone, mobs]) => {
-    const list = [...mobs].sort((a, b) => a.localeCompare(b)).map((m) => `* ${wikiLink(m)}`).join('\n')
-    return zone === '' ? list : `${wikiZoneLink(zone)}\n\n${list}`
+    const list = [...mobs].filter((m) => m !== '').sort((a, b) => a.localeCompare(b)).map((m) => `* ${wikiLink(m)}`).join('\n')
+    // A zone with no mob (a Reward Chest payout) stands alone, as the wiki's own zone-only blocks do (Tasty Candy).
+    return zone === '' ? list : list === '' ? wikiZoneLink(zone) : `${wikiZoneLink(zone)}\n\n${list}`
   })
   return `\n\n${blocks.join('\n\n')}\n`
 }
@@ -106,6 +108,7 @@ function page(template: string, cats: readonly string[]): string {
 /** One mob an item was looted from, where, and how often. */
 export interface DropSeen {
   zone: string
+  /** '' for a Reward Chest payout: its zone stands, no mob (owner, 2026-10-21) */
   mob: string
   drops: number
 }
@@ -179,14 +182,16 @@ function rowZones(row: GapRow, zoneName: ZoneNamer): string[] {
   return [...new Set(raw.map(zoneName).filter((z) => z !== ''))]
 }
 
-/** Every (zone, mob) the ledger looted the item from, at any tier, with the corpses that dropped it. */
+/** Every (zone, mob) the ledger looted the item from, at any tier, with the corpses that dropped it; a chest payout gives its zone and no mob. */
 export function dropsSeen(item: string, loot: readonly LootEvent[], zoneName: ZoneNamer = asPrinted): DropSeen[] {
   const byPair = new Map<string, DropSeen & { corpses: Set<string> }>()
   for (const e of loot) {
     if (e.source === undefined || itemKey(e.item) !== itemKey(item)) continue
+    const mob = mobSourceOf(e) ?? ''
     const zone = zoneName(e.zone ?? '')
-    const key = `${zone.toLowerCase()}|${e.source.toLowerCase()}`
-    const seen = byPair.get(key) ?? { zone, mob: e.source, drops: 0, corpses: new Set<string>() }
+    if (mob === '' && zone === '') continue
+    const key = `${zone.toLowerCase()}|${mob.toLowerCase()}`
+    const seen = byPair.get(key) ?? { zone, mob, drops: 0, corpses: new Set<string>() }
     seen.corpses.add(corpseOf(e))
     seen.drops = seen.corpses.size
     byPair.set(key, seen)
@@ -208,7 +213,7 @@ export function itemFacts(row: GapRow, loot: readonly LootEvent[], zoneName: Zon
   const drops = dropsSeen(row.name, loot, zoneName)
   const mobs = new Set(drops.map((d) => d.mob.toLowerCase()))
   const bought = row.kinds.includes('bought')
-  const vendors = bought ? (row.details.sources?.entries ?? []).map((e) => e.name).filter((n) => !mobs.has(n.toLowerCase())) : []
+  const vendors = bought ? (row.details.sources?.entries ?? []).map((e) => e.name).filter((n) => !mobs.has(n.toLowerCase()) && !isRewardChest(n)) : []
   const soldBy = vendors.map((v) => vendorSeen(v, rowZones(row, zoneName), zoneName, vendorAt))
   // A merchant's offer heard at ally wins over the instant-sale estimate; any other never stands in
   // for it (shared/gapOffers.ts `merchantValueOf`, owner ask 2026-10-20).
@@ -229,7 +234,8 @@ function conLevels(row: GapRow): number[] {
 function mobLoot(row: GapRow, loot: readonly LootEvent[]): MobFacts['loot'] {
   const byItem = new Map<string, { item: string; corpses: Set<string> }>()
   for (const e of loot) {
-    if (e.source === undefined || !same(e.source, row.name)) continue
+    const mob = mobSourceOf(e)
+    if (mob === undefined || !same(mob, row.name)) continue
     const seen = byItem.get(itemKey(e.item)) ?? { item: itemBaseName(e.item), corpses: new Set<string>() }
     seen.corpses.add(corpseOf(e))
     byItem.set(itemKey(e.item), seen)
