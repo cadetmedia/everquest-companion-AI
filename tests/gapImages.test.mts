@@ -90,6 +90,21 @@ test('a mob picture is named after the in-game name, not a misspelled page title
   assert.deepEqual([g?.name, g?.image, g?.pageImage], ['A goblin (Feerrott)', 'npc_a_goblin_feerrott.png', undefined])
 })
 
+test("an image row met by a page's title is the met mob's, not the other mob the page's |name says (A cave bat)", () => {
+  // As mobs.json holds them: the page A cave bat says `|name = a giant cave bat`; A giant cave bat has its own page.
+  const cat = [
+    { page: 'A cave bat', name: 'a giant cave bat', image: 'npc_a_cave_bat.png', noImage: true as const },
+    { page: 'A giant cave bat', name: 'a giant cave bat', image: 'npc_a_giant_cave_bat.png', noImage: true as const },
+    { page: 'A Goblin Overseer', name: 'a goblin', noImage: true as const }
+  ]
+  const rows = imageGaps({ 'a cave bat': kill('a cave bat', 3), 'a goblin overseer': kill('a goblin overseer', 2) }, [], cat)
+  assert.deepEqual(rows.map((r) => [r.name, r.image, r.page, r.pageImage]), [
+    ['a cave bat', 'npc_a_cave_bat.png', 'A cave bat', undefined],
+    ['a goblin overseer', 'npc_a_goblin_overseer.png', 'A Goblin Overseer', undefined]
+  ])
+  assert.doesNotMatch(gapActions(rows[0]!, 'unchecked')[0].why, /giant/)
+})
+
 test("a drop the page links under a qualified title (Large Ruby (Eye of Toque)) is listed; the bracketed game name still matches", () => {
   const cat = [{ page: 'Lynuga', name: 'Lynuga', drops: ['Club', 'Large Ruby (Eye of Toque)', "Salil's Writ Pg. 60 (Left)"] }]
   const loot = [
