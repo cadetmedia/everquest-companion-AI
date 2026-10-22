@@ -1,5 +1,5 @@
 // Screenshot to wiki on real screenshots (tests/fixtures/shots; owner ask, 2026-10-21: "use the ones
-// i gave you"): the owner's Ruined Robe window and its icon alone, Black Lizard Scale, and Malkil's
+// i gave you"): the owner's Ruined Robe window and its icon alone, Black Lizard Scale, Shrubbery's Lore tab, and Malkil's
 // Windstriker on his custom UI over the ground and over the sky. The text is read with the real OCR
 // (tesseract.js, local). The icon checks need the game's icon sheets, which are never committed: they
 // run where an EverQuest install is found (EQ_ROOT, else the default install path) and skip elsewhere.
@@ -13,6 +13,7 @@ import { decodeTga } from '../src/main/shot/gameTextures.ts'
 import { buildIconIndex, iconSheets, readIconIndex, sheetsFingerprint, SheetCells, writeIconIndex, type IconIndex } from '../src/main/shot/iconIndex.ts'
 import { stopOcr } from '../src/main/shot/ocr.ts'
 import { readItemShot, type ItemShot, type ShotReaders } from '../src/main/shot/readItemShot.ts'
+import { shotKind } from '../src/shared/itemShotKeep.ts'
 import { readPng } from './shotPng.mts'
 
 const SHOTS = join(import.meta.dirname, 'fixtures', 'shots')
@@ -85,6 +86,12 @@ for (const file of ['windstriker-ground.png', 'windstriker-sky.png']) {
     assert.equal(s.read.focusEffect, 'Improved Healing III')
   })
 }
+
+test("SHRUBBERY, THE LORE TAB (THE OWNER'S, 2026-10-21): A TWO-WORD LORE IS READ AND KEPT AS LORE", async () => {
+  const s = await read('shrubbery-lore.png', textOnly)
+  assert.equal(s.read.lore, 'Ordinary Plant')
+  assert.equal(shotKind({ read: s.read, lines: s.lines, icons: s.icons, ms: s.ms }), 'lore')
+})
 
 /** The icon each picture shows (the owner's pages and items.json), and the rank it must reach. */
 const ICONS: readonly [string, number, number][] = [

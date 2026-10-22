@@ -21,10 +21,26 @@ const TAB_RE = /\bLore\b/i
 /** Enough words and letters to be a sentence, not OCR noise. */
 const sentence = (s: string): boolean => s.split(/\s+/).length >= 3 && (s.match(/[a-z]/gi) ?? []).length >= 12
 
+/** Both tab words on one line: the window's tab row (`- Description Lore`), not a stray `Lore` in a picture. */
+const TAB_ROW_RE = /Des\w{0,4}ption.*\bLore\b/i
+/** The Description tab's own text: a lore read off it is a window whose Class line OCR missed. */
+const WINDOW_TEXT = /\b(Equipped|No Trade|Temporary|Class|Race|Size|Weight)\b/i
+
+/**
+ * A Lore tab: its text under the tab row. A short lore counts when the tab row was read (owner,
+ * 2026-10-21: Shrubbery's `Ordinary Plant` was refused by the sentence rule); without the row, a
+ * sentence and the tab word, as before.
+ */
+function isLore(r: ItemShotReply): boolean {
+  const lore = r.read.lore
+  if (lore === undefined || WINDOW_TEXT.test(lore) || !/[a-z]{3}/i.test(lore)) return false
+  return r.lines.some((l) => TAB_ROW_RE.test(l)) || (sentence(lore) && r.lines.some((l) => TAB_RE.test(l)))
+}
+
 export function shotKind(r: ItemShotReply): ShotKind | null {
   if (r.error !== undefined) return null
   if (r.read.statsblock !== '') return 'window'
-  if (r.read.lore !== undefined && sentence(r.read.lore) && r.lines.some((l) => TAB_RE.test(l))) return 'lore'
+  if (isLore(r)) return 'lore'
   const best = r.icons[0]
   if (r.lines.length === 0 && best !== undefined && best.score <= ICON_FIT_MAX) return 'icon'
   return null

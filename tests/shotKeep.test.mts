@@ -30,6 +30,16 @@ test('THE ITEM WINDOW, ITS LORE TAB AND AN ICON ALONE ARE EACH TOLD APART', () =
   assert.equal(shotKind(reply(['Malkil tells you, that sword looks great on you'])), null)
 })
 
+test('A SHORT LORE UNDER THE TAB ROW IS A LORE TAB (SHRUBBERY: "ORDINARY PLANT"); WITHOUT THE ROW IT IS NOT', () => {
+  // The OCR of the owner's Shrubbery Lore tab (2026-10-21), refused before by the sentence rule.
+  const shrub = ['Shrubbe', '. - — -', '- Description Lore ¥ s', 'Ordinary Plant t |', 'IR', 'EE']
+  assert.equal(shotKind(reply(shrub)), 'lore')
+  assert.equal(reply(shrub).read.lore, 'Ordinary Plant')
+  assert.equal(shotKind(reply(['Shrubbery', 'Lore', 'Ordinary Plant'])), null)
+  // the Description tab with its Class line missed is not lore
+  assert.equal(shotKind(reply(['Ruined Robe', 'Description Lore', 'Lore Equipped, No Trade, Temporary'])), null)
+})
+
 test("THE WINDOW'S NAME MATCHES THE ROW THROUGH OCR'S SMALL SLIPS, NOT ANOTHER ITEM", () => {
   assert.ok(sameItem('BlackLizard Scale', 'Black Lizard Scale'))
   assert.ok(sameItem('Windstiker', 'Windstriker'))
