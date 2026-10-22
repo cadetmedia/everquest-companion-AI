@@ -3,7 +3,7 @@
 // (owner, 2026-10-20: the overlay shows "the top 10 of whatever list they have on whatever tab they
 // have showing"). The steps, in order: every character joined when All characters is on
 // (useGapsData), the marked players dropped, the domain tab + search + Zone I'm in (visibleGaps),
-// Hide uncertain, the Done marks unless Show done, and the sort.
+// I have it (useHeldOnly), Hide uncertain, the Done marks unless Show done, and the sort.
 //
 // EVERY CHOICE THE LIST DEPENDS ON IS READ HERE, NOT IN THE TAB, so the publisher sees the tab's
 // choices with the tab closed: the checkboxes were per-viewer prefs already; the domain tab and the
@@ -21,6 +21,9 @@ import { GAPS_DATA_DATE, useGapsData, type GapsData } from './useGapsData'
 import { useDoneMarks, usePlayerList, type DoneMarks, type PlayerList } from './useDoneMarks'
 import { useAllCharacters, type AllCharactersState } from './useOtherCharacters'
 import { useHideUncertain, type HideUncertain } from './useHideUncertain'
+import { useAllHeld } from './useAllHeld'
+import { useHeldOnly, type HeldOnly } from './useHeldOnly'
+import type { HeldIndex } from '@shared/gapHeld'
 
 /** Where the "Zone I'm in" choice is remembered, per viewer, as the Achievements tab remembers its own. */
 const ZONE_HERE_KEY = 'eq.gaps.zoneHere'
@@ -86,6 +89,10 @@ export interface GapsList {
   marks: DoneMarks
   showDone: boolean
   setShowDone: (on: boolean) => void
+  /** what each character holds now (the held chip), every character's while All characters is on */
+  holding: HeldIndex
+  /** "I have it" (owner, 2026-10-21): the Items list narrowed to what is held */
+  mine: HeldOnly
   sure: HideUncertain
   /** the rows on the tab, before the sort */
   visible: GapRow[]
@@ -110,7 +117,8 @@ export function useGapsList(opts: { background?: boolean } = {}): GapsList {
   const me = charSnap?.character ?? null
   const allChars = useAllCharacters(me)
   const [domain, setDomain] = useGapDomain()
-  const data = useGapsData(allChars.all, opts.background === true ? { only: domain, holdMs: BACKGROUND_HOLD_MS } : undefined)
+  // Days back trims every view (owner, 2026-10-21), the one-character list too.
+  const data = useGapsData(allChars.all, opts.background === true ? { only: domain, holdMs: BACKGROUND_HOLD_MS, cut: allChars.cut } : { cut: allChars.cut })
   const shownQuery = useGapsQuery()
   // "Zone I'm in" (owner ask, 2026-10-17): only what was named where you stand, every tier of it.
   const [hereOnly, setHereOnly] = useBoolPref(ZONE_HERE_KEY, false)
@@ -125,8 +133,13 @@ export function useGapsList(opts: { background?: boolean } = {}): GapsList {
   // The list follows the query a beat behind the keystroke, so typing never waits on a filter.
   const deferredQuery = useDeferredValue(shownQuery)
   const inDomain = useMemo(() => visibleGaps(rows ?? [], domain, deferredQuery, zone), [rows, domain, deferredQuery, zone])
+  // An item a character holds right now needs only a screenshot (review C6; owner, 2026-10-19): each
+  // character's own export plus ITS loot since, named per holder while All characters is on.
+  const holding = useAllHeld(data.ownLoot, me, allChars)
+  // "I have it" (owner, 2026-10-21): the Items list narrowed to what the player holds.
+  const mine = useHeldOnly(inDomain, holding, domain)
   // "Hide uncertain" (owner, 2026-10-19): rows the tab is not sure are gaps, hidden on request.
-  const sure = useHideUncertain(inDomain)
+  const sure = useHideUncertain(mine.rows)
   const visible = useMemo(() => (showDone ? [...sure.rows] : withoutDone(sure.rows, marks.done)), [sure.rows, showDone, marks.done])
   // What the caches already say about the rows on screen: `unchecked` until the answer lands.
   const verdicts = useGapVerdicts(domain, visible)
@@ -134,5 +147,5 @@ export function useGapsList(opts: { background?: boolean } = {}): GapsList {
   // The table and Copy list read the same order, so a copied list matches what is on screen.
   const sorted = useMemo(() => sortGaps(visible, sort, verdicts), [visible, sort, verdicts])
   // prettier-ignore
-  return { me, allChars, data, domain, setDomain, query: shownQuery, setQuery, hereOnly, setHereOnly, current, zone, playerList, rows, marks, showDone, setShowDone, sure, visible, verdicts, sort, onSort, sorted }
+  return { me, allChars, data, domain, setDomain, query: shownQuery, setQuery, hereOnly, setHereOnly, current, zone, playerList, rows, marks, showDone, setShowDone, holding, mine, sure, visible, verdicts, sort, onSort, sorted }
 }
