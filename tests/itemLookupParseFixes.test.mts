@@ -101,3 +101,33 @@ test('Category:/File:/Special: links are not read as quests or recipes', () => {
   const wt = '{{Itempage\n|recipes =\n* [[Blacksmithing]]\n** Various recipes (see [[Special:WhatLinksHere/{{PAGENAME}}]])\n}}'
   assert.equal(parseItemWikitext('High Quality Folded Sheet Metal', wt).recipes, undefined)
 })
+
+// Trimmed from the cached Fruit and Pod of Water pages (2026-10-21).
+const FRUIT = `<onlyinclude>{{Itempage
+|itemname    = Fruit
+|foraged        = 
+
+* Various
+* [[Misty Thicket]]
+* [[Freeport|East Freeport]]
+* [[Dagnor's Cauldron]], possibly [[Kedge Keep]]
+* [[Misty Thicket]] ?
+}}</onlyinclude>
+
+[[Category:Foraged]]
+[[Category:Misty Thicket]]`
+
+test('|foraged reads every zone a line links, piped labels kept, and the lines naming none as prose', () => {
+  const k = parseItemWikitext('Fruit', FRUIT)
+  assert.deepEqual(k.foraged, ['Misty Thicket', 'East Freeport', "Dagnor's Cauldron", 'Kedge Keep'])
+  assert.equal(k.foragedNote, 'Various')
+  assert.equal(k.foragedCategory, true)
+})
+
+test('an empty |foraged and a page without the Foraged category state nothing', () => {
+  const k = parseItemWikitext('Fresh Fish', '<onlyinclude>{{Itempage\n|itemname = Fresh Fish\n|foraged = \n\n}}</onlyinclude>\n[[Category:Foraged Items]]')
+  assert.equal(k.foraged, undefined)
+  assert.equal(k.foragedNote, undefined)
+  assert.equal(k.foragedCategory, undefined)
+  assert.equal(parseItemWikitext('Lettuce', '{{Itempage\n|foraged = \n\n* ?\n}}').foragedNote, '?')
+})

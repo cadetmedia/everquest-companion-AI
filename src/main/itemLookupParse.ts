@@ -20,7 +20,8 @@
 //   |notes         = freeform prose (lore, quirks) — our one-line summary
 //   |recipes       = recipes that CONSUME this item (see shapes below)
 //   |playercrafted = how this item is itself made (see shapes below)
-//   |merchant_value, |soldby, |bookcontents, |foraged,
+//   |foraged       = * [[Zone]] bullets (PARSED — see `parseForaged`)
+//   |merchant_value, |soldby, |bookcontents,
 //   |second_image / |third_image  (present in the template; not consumed here)
 //
 // One piece of knowledge lives OUTSIDE the template: the page-top `{{Velious Era}}` banner that
@@ -536,6 +537,41 @@ function dropSourcesField(raw: string | null): ItemDropSource[] | undefined {
   return sources.length > 0 ? sources : undefined
 }
 
+// ---- forage zones (`|foraged`) --------------------------------------------------
+//
+// CENSUS, measured 2026-10-21 over the cached item pages (11,595): 145 carry the field, 139 of
+// them filled, 296 `* [[Zone]]` bullets. A piped link (`[[Freeport|East Freeport]]`) keeps its
+// label, as a `|dropsfrom` zone heading does; a note after the link (`(which?)`, `?`) and a second
+// link on the bullet (`[[Dagnor's Cauldron]], possibly [[Kedge Keep]]`) are both read as zones the
+// page names. Lines naming no zone (`* Various`, `* ?`, `''This item can be foraged in most
+// zones.''`, one prose line) are kept as prose. `[[Category:Foraged]]` sits after the template
+// (137 pages); 6 fill the field without it and 4 carry it with the field empty or absent.
+const FORAGED_CATEGORY_RE = /\[\[\s*Category\s*:\s*Foraged\s*(\|[^\]]*)?\]\]/i
+
+/** Parse `|foraged`: every zone a line links, page order, each once; the lines naming none as prose. */
+export function parseForaged(block: string): { zones: string[]; note?: string } {
+  const zones: string[] = []
+  const prose: string[] = []
+  for (const line of bulletLines(block)) {
+    const links = [...line.matchAll(/\[\[([^\]]+?)\]\]/g)].map((m) => firstLink(m[0])?.label).filter((z) => z !== undefined)
+    for (const z of links) if (!zones.includes(z)) zones.push(z)
+    if (links.length === 0) prose.push(line.replace(/^\*+\s*/, ''))
+  }
+  const note = prose.length > 0 ? cleanSummary(prose.join('; ')) : undefined
+  return note ? { zones, note } : { zones }
+}
+
+/** The forage half of the result; every field `undefined` unless the page stated it. */
+function foragedFields(wikitext: string): Pick<ItemKnowledge, 'foraged' | 'foragedNote' | 'foragedCategory'> {
+  const raw = templateField(wikitext, 'foraged')
+  const parsed = raw ? parseForaged(raw) : null
+  return {
+    foraged: parsed && parsed.zones.length > 0 ? parsed.zones : undefined,
+    foragedNote: parsed?.note,
+    foragedCategory: FORAGED_CATEGORY_RE.test(wikitext) ? true : undefined
+  }
+}
+
 // ---- the page-top era tag (`{{Velious Era}}`) -----------------------------------
 //
 // The one era signal the wiki actually carries, and it is NOT an {{Itempage}} field: it is a
@@ -887,6 +923,9 @@ export function parseItemWikitext(
   | 'craftedBy'
   | 'craftedNote'
   | 'eraTag'
+  | 'foraged'
+  | 'foragedNote'
+  | 'foragedCategory'
 > {
   const statsBlock = templateField(wikitext, 'statsblock') ?? undefined
   const relatedRaw = templateField(wikitext, 'relatedquests')
@@ -922,6 +961,7 @@ export function parseItemWikitext(
     iconId,
     eraTag: pageEraTag(wikitext),
     ...tradeskillFields(recipeParse, craftParse),
+    ...foragedFields(wikitext),
     statsBlock: statsBlock
       ? statsBlock.replace(/<br\s*\/?>/gi, '\n').replace(/[ \t]{2,}/g, ' ').trim()
       : undefined
