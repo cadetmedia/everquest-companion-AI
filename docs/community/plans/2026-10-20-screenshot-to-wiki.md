@@ -2,8 +2,8 @@
 
 Ask from the owner, 2026-10-20: the app reads a screenshot of an item, spell, mob or other game
 window and pulls out what it can, to fill the wiki facts the log never carries. A throwaway
-prototype was built outside the app first (section "Prototype"). Phases 1, 2 and 5 are built on
-`screenshot-to-wiki` (2026-10-21, section "Built"); the owner's questions 1 and 2 were answered by
+prototype was built outside the app first (section "Prototype"). Phases 1 to 5 are built on
+`screenshot-to-wiki` (2026-10-21, sections "Built"); the owner's questions 1 and 2 were answered by
 the ask to build it into a row's details. Rules first:
 `docs/community/RULES.md`, then `agent/INDEX.md`. What was asked:
 `requirements/screenshot-to-wiki.md` (rule 19).
@@ -323,5 +323,39 @@ screenshots are being gathered)
   with 597 on both of Malkil's shots. 0.5-2 s a paste; the index 4 s once.
 - Changed from the design above: the background view with the lowest best score wins (not the
   widest margin); OCR reads TSV at about 3 MP; DMG is checked against the window's Ratio.
-- Not built: phase 3 (hotkey, auto-find in a full screen), phase 4 (spell windows), local icons
-  app-wide (question 4).
+- Not built: local icons app-wide (question 4); the glyph-exact reader (D2); the hotkey for spell
+  windows (no tab label to anchor on).
+
+## Built, second round (2026-10-21, `screenshot-to-wiki`)
+
+- Item page facts phase 5 (`plans/2026-10-20-gaps-item-page-facts.md`): a Lore tab on the window
+  means the item has lore (the game draws the tab only then), so the page writes
+  `{{Item Lore Missing}}` until the Lore tab is pasted. Slot lists every slot the window prints;
+  the window is the only source of Slot. Labels taken from the client's strings
+  (`eqstr_us.txt` 12999-13045): `End`, `End Regen`, `Dmg Bon`, `Rec Level`/`Req Level` (pages:
+  `Recommended level of N.`), `Charges`, `Deity` (labelled or the god's name alone after Race),
+  container `Capacity` / `Size Cap` (pages: `Capacity: 8 Size Capacity: GIANT`).
+- D1 style (`shared/itemVocab.ts`): flags as the window prints them, `, ` between; `Size: X WT: Y`;
+  values in caps, `except` lower; EAR/WRIST/FINGER/SHOULDERS; known values a guide: a slip snaps
+  within edit distance 1 of one value (2 for 8+ letters), anything else kept and flagged.
+- D3 (`shared/itemDelevel.ts`): a `+N` window's numbers run back through `itemUpgrade.ts` over every
+  merge fraction; exact everywhere -> "Estimate +0 stats (a guess)"; else the lines that do not
+  invert are listed (Weight's ceiling is many-to-one, so most weighted items at +N get no guess).
+  Copy wiki page keeps the skeleton until the player takes the box to +0.
+- Phase 4, spells (`shared/spellWindow.ts`): `|spellicon` = spells_us.txt field 76 (741 of 749 cached
+  pages agree), `|description` = dbstr_us.txt type 6 at field 86 when it has no placeholder (621
+  cached pages word for word). 19,720 of 35,888 descriptions hold placeholders (`#1`, `@1`, `%z`):
+  the spell display window's numbers go into the file's words. No spell-window screenshot yet: the
+  window's labels are assumed from eqstr_us.txt; synthetic tests only.
+- Phase 3, hotkey and auto-find (`main/ipc/shotCapture.ts`, `main/shot/findWindow.ts`): the
+  EverQuest window is captured (desktopCapturer, window source); the item window is found by the
+  selected tab's yellow label (`max(r,g) >= 100, b*3 < r`, AustonZ's idea, MIT, no code), its height
+  the scale (any UI scale, owner D4); sides = strongest vertical edges, bottom = first edge below
+  which the sides stop. 10-30 ms on a 1920x1200 capture plus the read. Untested against a live
+  game window (title match `EverQuest`; an exclusive-fullscreen client may capture black).
+- Fixes from the owner's tests: a two-word lore was refused by the stray-picture sentence rule
+  (Shrubbery); a wrapped lore kept one line (Sickly Maiden's Hair); the icon box was placed from a
+  junk word OCR read off the icon (`By Class:`), Lizardman Mystic Scale's 1233 lost to its brown
+  recolour 6911; Malkil's container lost Capacity, Size Cap and its deity.
+- Fixtures now 9 (`tests/fixtures/shots`): the owner's Shrubbery Lore tab, Lizardman Mystic Scale,
+  Vial of Swamp Water, and Malkil's Surefall Fletching Kit added.
