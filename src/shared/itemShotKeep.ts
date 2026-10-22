@@ -4,6 +4,7 @@
 // its own clear). Pure, so the rules are tested apart from the panel (ShotPanel.tsx).
 
 import { editDistance } from './itemVocab'
+import type { GapRow } from './gaps'
 import type { ItemShotReply } from './itemWindow'
 import type { ItemPageShot } from './wikiPage'
 
@@ -76,4 +77,19 @@ export function keptAfter(kept: ItemPageShot | undefined, r: ItemShotReply, kind
 export function cleared(kept: ItemPageShot, part: 'window' | 'lore'): ItemPageShot | null {
   const next: ItemPageShot = part === 'lore' ? defined({ ...kept, lore: undefined }) : defined({ lore: kept.lore })
   return Object.keys(next).length === 0 ? null : next
+}
+
+/** The Gaps item rows' names: where a hotkey capture can be filed. */
+export const itemRowNames = (rows: readonly GapRow[]): string[] => rows.filter((r) => r.domain === 'item' && r.suggest === undefined).map((r) => r.name)
+
+/**
+ * The row a hotkey capture belongs to (phase 3): the row named exactly so, else the one row the
+ * window's name matches through OCR's slips (`sameItem`); none when no row or several match.
+ */
+export function captureRow(name: string | undefined, rowNames: readonly string[]): string | undefined {
+  if (name === undefined) return undefined
+  const exact = rowNames.find((r) => squash(r) === squash(name))
+  if (exact !== undefined) return exact
+  const near = rowNames.filter((r) => sameItem(name, r))
+  return near.length === 1 ? near[0] : undefined
 }

@@ -46,6 +46,8 @@ import { useHeld } from './useHeld'
 import { useHideUncertain, type HideUncertain } from './useHideUncertain'
 import { useGrouping } from './useGrouping'
 import { useItemShots, useSpellShots } from './itemShotsStore'
+import CaptureBar from './CaptureBar'
+import { itemRowNames } from '@shared/itemShotKeep'
 import GroupHeaderControls from './GroupHeaderControls'
 
 // One line (owner, 2026-10-11): the how is in the module header, not on the page. Since 2026-10-18
@@ -213,6 +215,8 @@ export default function GapsView(): JSX.Element {
   const itemShots = useItemShots()
   // And pasted spell display windows, for the spell pages (owner, 2026-10-21).
   const spellShots = useSpellShots()
+  // Where a hotkey capture can be filed (phase 3): every item row, not only the ones on screen.
+  const itemNames = useMemo(() => itemRowNames(rows ?? []), [rows])
   const sightings = useMemo(
     () => ({ killFactions: engine?.killFactions, mobLocs: engine?.mobLocs, mobSpecials: engine?.mobSpecials, mobCoin: engine?.mobCoin, ...PAGE_EXTRAS, spellFacts, itemShots, spellShots }),
     [engine, spellFacts, itemShots, spellShots]
@@ -269,6 +273,7 @@ export default function GapsView(): JSX.Element {
         <Box sx={{ flexGrow: 1 }} />
         <CopyList onCopy={() => void copy()} disabled={visible.length === 0} copied={copied} />
       </Stack>
+      {domain === 'item' && <CaptureBar rows={itemNames} />}
       <ShownLine counts={{ visible: visible.length, held, served, hidden, uncertain: sure.hidden }} domain={domain} zone={zone} />
       <GapsTable
         entries={group.entries}

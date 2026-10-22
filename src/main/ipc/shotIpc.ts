@@ -59,7 +59,7 @@ function skinTextures(): Rgba[] {
   return textures
 }
 
-const READERS: ShotReaders = {
+export const READERS: ShotReaders = {
   index: iconIndex,
   cell: (id) => cells?.cell(id) ?? null,
   textures: skinTextures

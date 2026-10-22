@@ -406,7 +406,9 @@ function loreRead(lines: readonly string[]): ItemWindowRead {
   // Words, not OCR's junk off the frame: mostly letters and spaces.
   const prose = (l: string): boolean => !/^Lore$/i.test(l) && !TAB_ROW.test(l) && /[a-z]{3}/i.test(l) && (l.match(/[A-Za-z ]/g) ?? []).length >= 0.8 * l.length
   const text = tabAt >= 0 ? lines.slice(tabAt + 1).filter(prose).join(' ') : lines.filter(prose).sort((a, b) => b.length - a.length)[0]
-  return { statsblock: '', unread: [], ...(text === undefined || text === '' ? {} : { lore: text }) }
+  // The title bar above the tab row names the item: a captured Lore tab finds its row by it.
+  const title = tabAt > 0 ? lines.slice(0, tabAt).reverse().find((l) => /[A-Za-z]{3}/.test(l))?.replace(/\s*\+\d+$/, '') : undefined
+  return { statsblock: '', unread: [], ...(text === undefined || text === '' ? {} : { lore: text }), ...(title === undefined ? {} : { name: title }) }
 }
 
 /** The tab row above the name names a Lore tab: the item has lore (Ruined Robe; Windstriker and Black Lizard Scale show none). */
