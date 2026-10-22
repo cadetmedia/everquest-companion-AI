@@ -99,6 +99,9 @@ import { graphicsBridge } from './graphics'
 // The buff externals allowlist (JOS-140), spread in below for the same file-size reason. Shape
 // and normalizer live together in shared/buffTrust.ts.
 import { buffTrustBridge } from './buffTrust'
+import { logArchiveBridge } from './logArchive'
+import { gapsCharactersBridge } from './gapsCharacters'
+import { presencePrefsBridge } from './presencePrefs'
 import { respawnBridge } from './respawn'
 // The main window's text size (JOS-123), split out for the same file-mass reason. Its shapes are
 // a single number; the ladder and the normalizer live in shared/uiScale.ts.
@@ -305,6 +308,8 @@ const api = {
   ...graphicsBridge,
   // …and the buff externals allowlist (./buffTrust.ts), likewise.
   ...buffTrustBridge,
+  ...logArchiveBridge,
+  ...gapsCharactersBridge,
   ...respawnBridge,
   // …and the main window's text size (./uiScale.ts), likewise.
   ...uiScaleBridge,
@@ -623,22 +628,8 @@ const api = {
   // snapshot. See roster.ts for why only one direction needs a channel.
   ...rosterApi,
 
-  // ---- cursor ring + overlay auto-hide (presence-driven settings) ----
-  // Both are main-owned store blobs, so Preferences has no other door. The setters take a
-  // PARTIAL patch (each panel owns one field and must not clobber its siblings by
-  // round-tripping a stale copy) and resolve to what was ACTUALLY stored — every field is
-  // re-clamped at the handler, so a slider that asks for more than the cap visibly lands on it.
-  /** The cursor-ring prefs: enabled + size + stroke width. */
-  getCursorRing: (): Promise<CursorRingPrefs> => ipcRenderer.invoke(IPC.cursorRingGet),
-  /** Merge-patch the cursor-ring prefs; the ring appears/resizes live. */
-  setCursorRing: (patch: Partial<CursorRingPrefs>): Promise<CursorRingPrefs> =>
-    ipcRenderer.invoke(IPC.cursorRingSet, patch),
-  /** The overlay auto-hide prefs: hide when EQ isn't running / isn't focused. */
-  getOverlayAutoHide: (): Promise<OverlayAutoHidePrefs> =>
-    ipcRenderer.invoke(IPC.overlayAutoHideGet),
-  /** Merge-patch the overlay auto-hide prefs; applies to the live overlays immediately. */
-  setOverlayAutoHide: (patch: Partial<OverlayAutoHidePrefs>): Promise<OverlayAutoHidePrefs> =>
-    ipcRenderer.invoke(IPC.overlayAutoHideSet, patch),
+  // ---- cursor ring + overlay auto-hide: preload/presencePrefs.ts (moved for the 400-line ceiling) ----
+  ...presencePrefsBridge,
 
 
   // ---- clipboard ----

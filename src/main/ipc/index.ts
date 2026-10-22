@@ -17,6 +17,7 @@ import { registerAlertsIpc } from './alerts'
 import { registerBuffAllowIpc } from './buffAllow'
 import { registerBuffTrustIpc } from './buffTrust'
 import { registerResistIpc } from './resist'
+import { registerLogArchiveIpc } from './logArchive'
 import { registerRespawnIpc } from './respawn'
 import { registerCharacterIpc } from './character'
 import { registerCharacterSheetIpc } from './characterSheet'
@@ -39,6 +40,7 @@ import { registerSpeechIpc } from './speech'
 import { registerTelemetryIpc } from './telemetry'
 import { registerUiScaleIpc } from './uiScale'
 import { registerGapVerdictsIpc } from './gapVerdicts'
+import { registerGapsCharactersIpc } from '../gapsCharacters'
 import { registerShotIpc } from './shotIpc'
 import { registerShotCaptureIpc } from './shotCapture'
 // The celebration toast's producer channel. It lives beside the window it feeds (src/main/toast.ts)
@@ -108,8 +110,10 @@ export function registerIpc(): void {
   registerBuffAllowIpc()
   registerRespawnIpc()
   registerResistIpc()
+  registerLogArchiveIpc()
   registerUiScaleIpc()
   registerGapVerdictsIpc()
+  registerGapsCharactersIpc()
   registerShotIpc()
   registerShotCaptureIpc()
   registerReleaseNotesIpc()

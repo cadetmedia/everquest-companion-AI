@@ -105,7 +105,10 @@ export function useCombat(): UseCombat {
         selectedId: selection === LIVE ? undefined : selection,
         showUnparsed,
         maxSegments,
-        timeline: wantTimeline
+        timeline: wantTimeline,
+        // Fights from archived logs follow the live ones (log archive, step 4.7). Inert unless
+        // Summarize and archive log is on and an archive is eligible.
+        archived: true
       })
       if (alive) setSnap(s)
     }

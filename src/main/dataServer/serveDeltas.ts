@@ -80,6 +80,7 @@ import { sendToModuleOverlays } from '../worldRebuilt'
 import { sendToMain } from '../windows'
 import { noteTailLine } from '../switchNudge'
 import { noteEventKind } from '../telemetry/breadcrumbs'
+import { noteModuleMoved } from '../gapSourceMoves'
 
 /**
  * THE GATE IS GONE (JOS-499 item 9). It was the second half of "does the engine answer this
@@ -107,6 +108,8 @@ function push(frame: ModuleChanged): void {
 export function pushModuleChanged(moduleId: string, seq: number): void {
   if (!SERVE_ASKED) return
   push({ moduleId, seq })
+  // The Gaps save asks the engine only for what moved (gapSourceMoves.ts).
+  noteModuleMoved(moduleId)
   // THE TWO LIVE SIGNALS THAT USED TO RIDE THE TAIL (JOS-499). Both were fed by
   // `session.ts startTailer`'s line handler — the app's hottest path — and both are questions
   // about whether the world is moving rather than about what it says. A cursor is that same

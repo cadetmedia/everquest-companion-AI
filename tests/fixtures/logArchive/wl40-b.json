@@ -1,0 +1,3392 @@
+{
+ "kills": {
+  "mobs": {
+   "a basalt gargoyle": {
+    "bestTier": -1,
+    "count": 3,
+    "credited": 3,
+    "display": "a basalt gargoyle",
+    "firstTs": 1785689653000,
+    "lastTs": 1785689705000,
+    "tiers": {
+     "-1": {
+      "count": 3,
+      "credited": 3,
+      "firstTs": 1785689653000,
+      "lastCreditedTs": 1785689705000,
+      "lastTs": 1785689705000
+     }
+    }
+   },
+   "a deadly black widow": {
+    "bestTier": -1,
+    "count": 8,
+    "credited": 8,
+    "display": "a deadly black widow",
+    "firstTs": 1785689471000,
+    "lastTs": 1785689602000,
+    "tiers": {
+     "-1": {
+      "count": 8,
+      "credited": 8,
+      "firstTs": 1785689471000,
+      "lastCreditedTs": 1785689602000,
+      "lastTs": 1785689602000
+     }
+    }
+   },
+   "a froglok gaz knight": {
+    "bestTier": -1,
+    "count": 1,
+    "credited": 0,
+    "display": "A froglok gaz knight",
+    "firstTs": 1785688890000,
+    "lastTs": 1785688890000,
+    "tiers": {
+     "-1": {
+      "count": 1,
+      "credited": 0,
+      "firstTs": 1785688890000,
+      "lastCreditedTs": 0,
+      "lastTs": 1785688890000
+     }
+    }
+   },
+   "a froglok vis knight": {
+    "bestTier": -1,
+    "count": 1,
+    "credited": 0,
+    "display": "A froglok vis knight",
+    "firstTs": 1785689003000,
+    "lastTs": 1785689003000,
+    "tiers": {
+     "-1": {
+      "count": 1,
+      "credited": 0,
+      "firstTs": 1785689003000,
+      "lastCreditedTs": 0,
+      "lastTs": 1785689003000
+     }
+    }
+   },
+   "a ghoul assassin": {
+    "bestTier": -1,
+    "count": 1,
+    "credited": 1,
+    "display": "a ghoul assassin",
+    "firstTs": 1785690050000,
+    "lastTs": 1785690050000,
+    "tiers": {
+     "-1": {
+      "count": 1,
+      "credited": 1,
+      "firstTs": 1785690050000,
+      "lastCreditedTs": 1785690050000,
+      "lastTs": 1785690050000
+     }
+    }
+   },
+   "a ghoul executioner": {
+    "bestTier": -1,
+    "count": 2,
+    "credited": 2,
+    "display": "a ghoul executioner",
+    "firstTs": 1785690471000,
+    "lastTs": 1785691325000,
+    "tiers": {
+     "-1": {
+      "count": 2,
+      "credited": 2,
+      "firstTs": 1785690471000,
+      "lastCreditedTs": 1785691325000,
+      "lastTs": 1785691325000
+     }
+    }
+   },
+   "a ghoul ritualist": {
+    "bestTier": -1,
+    "count": 1,
+    "credited": 1,
+    "display": "a ghoul ritualist",
+    "firstTs": 1785689905000,
+    "lastTs": 1785689905000,
+    "tiers": {
+     "-1": {
+      "count": 1,
+      "credited": 1,
+      "firstTs": 1785689905000,
+      "lastCreditedTs": 1785689905000,
+      "lastTs": 1785689905000
+     }
+    }
+   },
+   "a ghoul savant": {
+    "bestTier": -1,
+    "count": 2,
+    "credited": 2,
+    "display": "a ghoul savant",
+    "firstTs": 1785690259000,
+    "lastTs": 1785691189000,
+    "tiers": {
+     "-1": {
+      "count": 2,
+      "credited": 2,
+      "firstTs": 1785690259000,
+      "lastCreditedTs": 1785691189000,
+      "lastTs": 1785691189000
+     }
+    }
+   },
+   "a ghoul supplier": {
+    "bestTier": -1,
+    "count": 1,
+    "credited": 1,
+    "display": "a ghoul supplier",
+    "firstTs": 1785690030000,
+    "lastTs": 1785690030000,
+    "tiers": {
+     "-1": {
+      "count": 1,
+      "credited": 1,
+      "firstTs": 1785690030000,
+      "lastCreditedTs": 1785690030000,
+      "lastTs": 1785690030000
+     }
+    }
+   },
+   "a kor ghoul wizard": {
+    "bestTier": -1,
+    "count": 2,
+    "credited": 2,
+    "display": "a kor ghoul wizard",
+    "firstTs": 1785690612000,
+    "lastTs": 1785691724000,
+    "tiers": {
+     "-1": {
+      "count": 2,
+      "credited": 2,
+      "firstTs": 1785690612000,
+      "lastCreditedTs": 1785691724000,
+      "lastTs": 1785691724000
+     }
+    }
+   },
+   "a shadowknight": {
+    "bestTier": -2,
+    "count": 2,
+    "credited": 2,
+    "display": "a shadowknight",
+    "firstTs": 1785687335000,
+    "lastTs": 1785688108000,
+    "tiers": {
+     "-2": {
+      "count": 2,
+      "credited": 2,
+      "firstTs": 1785687335000,
+      "lastCreditedTs": 1785688108000,
+      "lastTs": 1785688108000
+     }
+    }
+   },
+   "a shadowknight pet": {
+    "bestTier": -2,
+    "count": 1,
+    "credited": 0,
+    "display": "a shadowknight pet",
+    "firstTs": 1785688099000,
+    "lastTs": 1785688099000,
+    "tiers": {
+     "-2": {
+      "count": 1,
+      "credited": 0,
+      "firstTs": 1785688099000,
+      "lastCreditedTs": 0,
+      "lastTs": 1785688099000
+     }
+    }
+   },
+   "a shin ghoul knight": {
+    "bestTier": -1,
+    "count": 11,
+    "credited": 10,
+    "display": "A shin ghoul knight",
+    "firstTs": 1785688985000,
+    "lastTs": 1785689313000,
+    "tiers": {
+     "-1": {
+      "count": 11,
+      "credited": 10,
+      "firstTs": 1785688985000,
+      "lastCreditedTs": 1785689313000,
+      "lastTs": 1785689313000
+     }
+    }
+   },
+   "a tal ghoul wizard": {
+    "bestTier": -1,
+    "count": 2,
+    "credited": 2,
+    "display": "a tal ghoul wizard",
+    "firstTs": 1785689893000,
+    "lastTs": 1785689920000,
+    "tiers": {
+     "-1": {
+      "count": 2,
+      "credited": 2,
+      "firstTs": 1785689893000,
+      "lastCreditedTs": 1785689920000,
+      "lastTs": 1785689920000
+     }
+    }
+   },
+   "a teir`dal priest": {
+    "bestTier": -2,
+    "count": 1,
+    "credited": 1,
+    "display": "a Teir`Dal priest",
+    "firstTs": 1785688337000,
+    "lastTs": 1785688337000,
+    "tiers": {
+     "-2": {
+      "count": 1,
+      "credited": 1,
+      "firstTs": 1785688337000,
+      "lastCreditedTs": 1785688337000,
+      "lastTs": 1785688337000
+     }
+    }
+   },
+   "a teir`dal priestess": {
+    "bestTier": -2,
+    "count": 2,
+    "credited": 2,
+    "display": "a Teir`Dal priestess",
+    "firstTs": 1785688160000,
+    "lastTs": 1785688296000,
+    "tiers": {
+     "-2": {
+      "count": 2,
+      "credited": 2,
+      "firstTs": 1785688160000,
+      "lastCreditedTs": 1785688296000,
+      "lastTs": 1785688296000
+     }
+    }
+   },
+   "a teir`dal ranger": {
+    "bestTier": -2,
+    "count": 13,
+    "credited": 13,
+    "display": "a Teir`Dal ranger",
+    "firstTs": 1785687144000,
+    "lastTs": 1785688315000,
+    "tiers": {
+     "-2": {
+      "count": 13,
+      "credited": 13,
+      "firstTs": 1785687144000,
+      "lastCreditedTs": 1785688315000,
+      "lastTs": 1785688315000
+     }
+    }
+   },
+   "a teir`dal rogue": {
+    "bestTier": -2,
+    "count": 6,
+    "credited": 6,
+    "display": "a Teir`Dal rogue",
+    "firstTs": 1785687098000,
+    "lastTs": 1785688178000,
+    "tiers": {
+     "-2": {
+      "count": 6,
+      "credited": 6,
+      "firstTs": 1785687098000,
+      "lastCreditedTs": 1785688178000,
+      "lastTs": 1785688178000
+     }
+    }
+   },
+   "a teir`dal shadowknight": {
+    "bestTier": -2,
+    "count": 14,
+    "credited": 13,
+    "display": "a Teir`Dal shadowknight",
+    "firstTs": 1785687072000,
+    "lastTs": 1785688328000,
+    "tiers": {
+     "-2": {
+      "count": 14,
+      "credited": 13,
+      "firstTs": 1785687072000,
+      "lastCreditedTs": 1785688328000,
+      "lastTs": 1785688328000
+     }
+    }
+   },
+   "a vampire bat": {
+    "bestTier": -1,
+    "count": 5,
+    "credited": 5,
+    "display": "a vampire bat",
+    "firstTs": 1785689322000,
+    "lastTs": 1785689552000,
+    "tiers": {
+     "-1": {
+      "count": 5,
+      "credited": 5,
+      "firstTs": 1785689322000,
+      "lastCreditedTs": 1785689552000,
+      "lastTs": 1785689552000
+     }
+    }
+   },
+   "a vis ghoul knight": {
+    "bestTier": -1,
+    "count": 8,
+    "credited": 8,
+    "display": "a vis ghoul knight",
+    "firstTs": 1785689177000,
+    "lastTs": 1785691930000,
+    "tiers": {
+     "-1": {
+      "count": 8,
+      "credited": 8,
+      "firstTs": 1785689177000,
+      "lastCreditedTs": 1785691930000,
+      "lastTs": 1785691930000
+     }
+    }
+   },
+   "a wan ghoul knight": {
+    "bestTier": -1,
+    "count": 35,
+    "credited": 35,
+    "display": "a wan ghoul knight",
+    "firstTs": 1785689989000,
+    "lastTs": 1785691951000,
+    "tiers": {
+     "-1": {
+      "count": 35,
+      "credited": 35,
+      "firstTs": 1785689989000,
+      "lastCreditedTs": 1785691951000,
+      "lastTs": 1785691951000
+     }
+    }
+   },
+   "a yun ghoul wizard": {
+    "bestTier": -1,
+    "count": 4,
+    "credited": 4,
+    "display": "a yun ghoul wizard",
+    "firstTs": 1785691038000,
+    "lastTs": 1785691898000,
+    "tiers": {
+     "-1": {
+      "count": 4,
+      "credited": 4,
+      "firstTs": 1785691038000,
+      "lastCreditedTs": 1785691898000,
+      "lastTs": 1785691898000
+     }
+    }
+   },
+   "a zol ghoul knight": {
+    "bestTier": -1,
+    "count": 19,
+    "credited": 19,
+    "display": "a zol ghoul knight",
+    "firstTs": 1785690370000,
+    "lastTs": 1785691883000,
+    "tiers": {
+     "-1": {
+      "count": 19,
+      "credited": 19,
+      "firstTs": 1785690370000,
+      "lastCreditedTs": 1785691883000,
+      "lastTs": 1785691883000
+     }
+    }
+   },
+   "an urd ghoul wizard": {
+    "bestTier": -1,
+    "count": 4,
+    "credited": 4,
+    "display": "an urd ghoul wizard",
+    "firstTs": 1785690181000,
+    "lastTs": 1785691962000,
+    "tiers": {
+     "-1": {
+      "count": 4,
+      "credited": 4,
+      "firstTs": 1785690181000,
+      "lastCreditedTs": 1785691962000,
+      "lastTs": 1785691962000
+     }
+    }
+   },
+   "baron telyx v`zher": {
+    "bestTier": -2,
+    "count": 2,
+    "credited": 2,
+    "display": "Baron Telyx V`Zher",
+    "firstTs": 1785687176000,
+    "lastTs": 1785688208000,
+    "tiers": {
+     "-2": {
+      "count": 2,
+      "credited": 2,
+      "firstTs": 1785687176000,
+      "lastCreditedTs": 1785688208000,
+      "lastTs": 1785688208000
+     }
+    }
+   },
+   "kahaptra z`taj": {
+    "bestTier": -2,
+    "count": 1,
+    "credited": 1,
+    "display": "Kahaptra Z`Taj",
+    "firstTs": 1785687736000,
+    "lastTs": 1785687736000,
+    "tiers": {
+     "-2": {
+      "count": 1,
+      "credited": 1,
+      "firstTs": 1785687736000,
+      "lastCreditedTs": 1785687736000,
+      "lastTs": 1785687736000
+     }
+    }
+   },
+   "knight v`tal": {
+    "bestTier": -2,
+    "count": 2,
+    "credited": 2,
+    "display": "Knight V`Tal",
+    "firstTs": 1785687357000,
+    "lastTs": 1785688118000,
+    "tiers": {
+     "-2": {
+      "count": 2,
+      "credited": 2,
+      "firstTs": 1785687357000,
+      "lastCreditedTs": 1785688118000,
+      "lastTs": 1785688118000
+     }
+    }
+   },
+   "korven nisere": {
+    "bestTier": -2,
+    "count": 2,
+    "credited": 2,
+    "display": "Korven Nisere",
+    "firstTs": 1785687204000,
+    "lastTs": 1785688281000,
+    "tiers": {
+     "-2": {
+      "count": 2,
+      "credited": 2,
+      "firstTs": 1785687204000,
+      "lastCreditedTs": 1785688281000,
+      "lastTs": 1785688281000
+     }
+    }
+   },
+   "soldier of v`zher": {
+    "bestTier": -2,
+    "count": 2,
+    "credited": 2,
+    "display": "Soldier of V`Zher",
+    "firstTs": 1785687189000,
+    "lastTs": 1785688193000,
+    "tiers": {
+     "-2": {
+      "count": 2,
+      "credited": 2,
+      "firstTs": 1785687189000,
+      "lastCreditedTs": 1785688193000,
+      "lastTs": 1785688193000
+     }
+    }
+   }
+  },
+  "v": 5
+ },
+ "loot": [
+  {
+   "disposition": "sold",
+   "item": "Fine Steel Rapier",
+   "source": "a Teir`Dal shadowknight",
+   "ts": 1785687072000
+  },
+  {
+   "item": "Mote of Infinitesimal Potential",
+   "source": "a Teir`Dal rogue",
+   "ts": 1785687098000
+  },
+  {
+   "item": "Mote of Infinitesimal Potential",
+   "source": "a Teir`Dal shadowknight",
+   "ts": 1785687109000
+  },
+  {
+   "disposition": "sold",
+   "item": "Ringmail Gloves",
+   "source": "a Teir`Dal rogue",
+   "ts": 1785687138000
+  },
+  {
+   "disposition": "sold",
+   "item": "Fine Steel Rapier",
+   "source": "a Teir`Dal ranger",
+   "ts": 1785687145000
+  },
+  {
+   "disposition": "sold",
+   "item": "Pristine Studded Leather Tunic",
+   "source": "Baron Telyx V`Zher",
+   "ts": 1785687177000
+  },
+  {
+   "disposition": "sold",
+   "item": "Pristine Studded Leather Leggings +1",
+   "source": "Soldier of V`Zher",
+   "ts": 1785687189000
+  },
+  {
+   "created": "Shimmering Ruby Stiletto +2",
+   "disposition": "combined",
+   "item": "Shimmering Ruby Stiletto +1",
+   "source": "Korven Nisere",
+   "ts": 1785687204000
+  },
+  {
+   "disposition": "sold",
+   "item": "Fine Steel Long Sword",
+   "source": "a Teir`Dal shadowknight",
+   "ts": 1785687215000
+  },
+  {
+   "disposition": "sold",
+   "item": "Splintered Wooden Key",
+   "source": "a shadowknight",
+   "ts": 1785687335000
+  },
+  {
+   "disposition": "sold",
+   "item": "Charred Bone Key",
+   "source": "a shadowknight",
+   "ts": 1785687335000
+  },
+  {
+   "disposition": "sold",
+   "item": "Smoked Glass Key",
+   "source": "a shadowknight",
+   "ts": 1785687335000
+  },
+  {
+   "disposition": "sold",
+   "item": "Barbed Legplates",
+   "source": "a shadowknight",
+   "ts": 1785687335000
+  },
+  {
+   "disposition": "sold",
+   "item": "Dark Elf Parts",
+   "source": "a shadowknight",
+   "ts": 1785687335000
+  },
+  {
+   "disposition": "sold",
+   "item": "Enchanted Fine Steel Long Sword",
+   "source": "Knight V`Tal",
+   "ts": 1785687357000
+  },
+  {
+   "item": "Mote of Infinitesimal Potential",
+   "source": "a Teir`Dal ranger",
+   "ts": 1785687374000
+  },
+  {
+   "disposition": "sold",
+   "item": "Fine Steel Scimitar",
+   "source": "a Teir`Dal rogue",
+   "ts": 1785687389000
+  },
+  {
+   "item": "Mote of Infinitesimal Potential",
+   "source": "a Teir`Dal ranger",
+   "ts": 1785687401000
+  },
+  {
+   "item": "Mote of Lesser Potential",
+   "source": "a Teir`Dal ranger",
+   "ts": 1785687437000
+  },
+  {
+   "created": "Golem Metal Wand +3",
+   "disposition": "combined",
+   "item": "Golem Metal Wand +1",
+   "source": "Kahaptra Z`Taj",
+   "ts": 1785687736000
+  },
+  {
+   "item": "Mote of Infinitesimal Potential",
+   "source": "Kahaptra Z`Taj",
+   "ts": 1785687736000
+  },
+  {
+   "disposition": "sold",
+   "item": "Splintered Wooden Key",
+   "source": "a shadowknight",
+   "ts": 1785688108000
+  },
+  {
+   "disposition": "sold",
+   "item": "Charred Bone Key",
+   "source": "a shadowknight",
+   "ts": 1785688108000
+  },
+  {
+   "disposition": "sold",
+   "item": "Smoked Glass Key",
+   "source": "a shadowknight",
+   "ts": 1785688108000
+  },
+  {
+   "disposition": "sold",
+   "item": "Barbed Legplates",
+   "source": "a shadowknight",
+   "ts": 1785688108000
+  },
+  {
+   "disposition": "sold",
+   "item": "Dark Elf Parts",
+   "source": "a shadowknight",
+   "ts": 1785688108000
+  },
+  {
+   "disposition": "sold",
+   "item": "Enchanted Fine Steel Long Sword",
+   "source": "Knight V`Tal",
+   "ts": 1785688118000
+  },
+  {
+   "disposition": "sold",
+   "item": "Fine Steel Short Sword",
+   "source": "a Teir`Dal ranger",
+   "ts": 1785688149000
+  },
+  {
+   "disposition": "sold",
+   "item": "Ringmail Coat",
+   "source": "a Teir`Dal ranger",
+   "ts": 1785688170000
+  },
+  {
+   "disposition": "sold",
+   "item": "Ringmail Neckguard",
+   "source": "a Teir`Dal rogue",
+   "ts": 1785688183000
+  },
+  {
+   "disposition": "sold",
+   "item": "Pristine Studded Leather Leggings",
+   "source": "Soldier of V`Zher",
+   "ts": 1785688193000
+  },
+  {
+   "disposition": "sold",
+   "item": "Pristine Studded Leather Tunic",
+   "source": "Baron Telyx V`Zher",
+   "ts": 1785688209000
+  },
+  {
+   "disposition": "sold",
+   "item": "Enchanted Fine Steel Rapier +1",
+   "source": "Korven Nisere",
+   "ts": 1785688281000
+  },
+  {
+   "disposition": "sold",
+   "item": "Ringmail Gloves",
+   "source": "a Teir`Dal priestess",
+   "ts": 1785688296000
+  },
+  {
+   "disposition": "sold",
+   "item": "Fine Steel Two Handed Sword",
+   "source": "a Teir`Dal ranger",
+   "ts": 1785688315000
+  },
+  {
+   "item": "Mote of Minor Potential",
+   "source": "a vis ghoul knight",
+   "ts": 1785689177000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Undead Froglok Tongue",
+   "source": "a shin ghoul knight",
+   "ts": 1785689182000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Shin Greaves",
+   "source": "a shin ghoul knight",
+   "ts": 1785689182000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Pearl Earring",
+   "source": "a shin ghoul knight",
+   "ts": 1785689186000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Undead Froglok Tongue",
+   "source": "a shin ghoul knight",
+   "ts": 1785689232000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Fine Steel Long Sword",
+   "source": "a shin ghoul knight",
+   "ts": 1785689245000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Undead Froglok Tongue",
+   "source": "a shin ghoul knight",
+   "ts": 1785689266000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Undead Froglok Tongue",
+   "source": "a shin ghoul knight",
+   "ts": 1785689286000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "item": "Mote of Infinitesimal Potential",
+   "source": "a shin ghoul knight",
+   "ts": 1785689303000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Spider Venom Sac",
+   "source": "a deadly black widow",
+   "ts": 1785689480000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Spider Silk",
+   "source": "a deadly black widow",
+   "ts": 1785689480000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Ivory",
+   "source": "a deadly black widow",
+   "ts": 1785689480000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Spider Silk",
+   "source": "a deadly black widow",
+   "ts": 1785689490000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Spider Venom Sac",
+   "source": "a deadly black widow",
+   "ts": 1785689490000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Jade Earring",
+   "source": "a deadly black widow",
+   "ts": 1785689490000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Spider Legs",
+   "source": "a deadly black widow",
+   "ts": 1785689490000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "count": 2,
+   "disposition": "sold",
+   "item": "Spider Silk",
+   "source": "a deadly black widow",
+   "ts": 1785689504000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Spider Venom Sac",
+   "source": "a deadly black widow",
+   "ts": 1785689514000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Spider Silk",
+   "source": "a deadly black widow",
+   "ts": 1785689514000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Jade",
+   "source": "a deadly black widow",
+   "ts": 1785689529000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Spider Legs",
+   "source": "a deadly black widow",
+   "ts": 1785689529000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "count": 2,
+   "disposition": "sold",
+   "item": "Spider Silk",
+   "source": "a deadly black widow",
+   "ts": 1785689574000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "count": 3,
+   "disposition": "sold",
+   "item": "Spider Silk",
+   "source": "a deadly black widow",
+   "ts": 1785689602000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Spider Venom Sac",
+   "source": "a deadly black widow",
+   "ts": 1785689602000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Gargoyle Eye",
+   "source": "a basalt gargoyle",
+   "ts": 1785689653000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Basalt Carapace",
+   "source": "a basalt gargoyle",
+   "ts": 1785689674000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "count": 2,
+   "disposition": "sold",
+   "item": "Phosphorous Powder",
+   "source": "a ghoul ritualist",
+   "ts": 1785689905000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "item": "Mote of Infinitesimal Potential",
+   "source": "a ghoul ritualist",
+   "ts": 1785689905000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Embroidered Black Cape",
+   "source": "a ghoul ritualist",
+   "ts": 1785689974000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "item": "Mote of Infinitesimal Potential",
+   "source": "a wan ghoul knight",
+   "ts": 1785689989000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Fine Steel Rapier",
+   "source": "a vis ghoul knight",
+   "ts": 1785690001000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Undead Froglok Tongue",
+   "source": "a ghoul supplier",
+   "ts": 1785690030000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "item": "Light Burlap Sack",
+   "source": "a ghoul supplier",
+   "ts": 1785690040000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "created": "Guise of the Deceiver +1",
+   "disposition": "combined",
+   "item": "Guise of the Deceiver",
+   "source": "a ghoul assassin",
+   "ts": 1785690055000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Undead Froglok Tongue",
+   "source": "a wan ghoul knight",
+   "ts": 1785690058000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Fine Steel Morning Star",
+   "source": "a wan ghoul knight",
+   "ts": 1785690132000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Undead Froglok Tongue",
+   "source": "an urd ghoul wizard",
+   "ts": 1785690181000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "count": 2,
+   "disposition": "sold",
+   "item": "Phosphorous Powder",
+   "source": "a ghoul savant",
+   "ts": 1785690259000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "item": "Mote of Infinitesimal Potential",
+   "source": "a ghoul savant",
+   "ts": 1785690259000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Enameled Black Mace",
+   "source": "a ghoul savant",
+   "ts": 1785690266000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Fine Steel Morning Star",
+   "source": "a zol ghoul knight",
+   "ts": 1785690370000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Undead Froglok Tongue",
+   "source": "a zol ghoul knight",
+   "ts": 1785690370000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Undead Froglok Tongue",
+   "source": "a wan ghoul knight",
+   "ts": 1785690433000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Executioner's Axe",
+   "source": "a ghoul executioner",
+   "ts": 1785690475000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Topaz",
+   "source": "a wan ghoul knight",
+   "ts": 1785690492000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Undead Froglok Tongue",
+   "source": "a wan ghoul knight",
+   "ts": 1785690492000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Fine Steel Long Sword",
+   "source": "a wan ghoul knight",
+   "ts": 1785690516000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Fine Steel Rapier",
+   "source": "a wan ghoul knight",
+   "ts": 1785690528000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Mithril Earring",
+   "source": "a wan ghoul knight",
+   "ts": 1785690584000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Pearl",
+   "source": "a kor ghoul wizard",
+   "ts": 1785690613000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "count": 2,
+   "disposition": "sold",
+   "item": "Phosphorous Powder",
+   "source": "a kor ghoul wizard",
+   "ts": 1785690613000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Undead Froglok Tongue",
+   "source": "a wan ghoul knight",
+   "ts": 1785690647000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Flame Agate",
+   "source": "a wan ghoul knight",
+   "ts": 1785690751000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "count": 2,
+   "disposition": "sold",
+   "item": "Phosphorous Powder",
+   "source": "a zol ghoul knight",
+   "ts": 1785690779000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Undead Froglok Tongue",
+   "source": "a zol ghoul knight",
+   "ts": 1785690851000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "count": 2,
+   "disposition": "sold",
+   "item": "Phosphorous Powder",
+   "source": "a zol ghoul knight",
+   "ts": 1785690866000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Jade Earring +1",
+   "source": "a zol ghoul knight",
+   "ts": 1785690884000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "count": 2,
+   "disposition": "sold",
+   "item": "Phosphorous Powder",
+   "source": "a zol ghoul knight",
+   "ts": 1785690884000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Mithril Earring",
+   "source": "a zol ghoul knight",
+   "ts": 1785690912000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "count": 2,
+   "disposition": "sold",
+   "item": "Phosphorous Powder",
+   "source": "a zol ghoul knight",
+   "ts": 1785690923000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Pearl",
+   "source": "a wan ghoul knight",
+   "ts": 1785690985000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Fine Steel Warhammer",
+   "source": "a wan ghoul knight",
+   "ts": 1785691015000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Ivory",
+   "source": "a wan ghoul knight",
+   "ts": 1785691015000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Fine Steel Spear",
+   "source": "a yun ghoul wizard",
+   "ts": 1785691038000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Undead Froglok Tongue",
+   "source": "a yun ghoul wizard",
+   "ts": 1785691038000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "count": 2,
+   "disposition": "sold",
+   "item": "Phosphorous Powder",
+   "source": "a yun ghoul wizard",
+   "ts": 1785691038000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Fine Steel Scimitar",
+   "source": "a wan ghoul knight",
+   "ts": 1785691121000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Undead Froglok Tongue",
+   "source": "a ghoul savant",
+   "ts": 1785691189000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Enameled Black Chestplate",
+   "source": "a ghoul savant",
+   "ts": 1785691197000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "count": 2,
+   "disposition": "sold",
+   "item": "Phosphorous Powder",
+   "source": "a zol ghoul knight",
+   "ts": 1785691240000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Fine Steel Morning Star",
+   "source": "a wan ghoul knight",
+   "ts": 1785691267000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Executioner's Axe",
+   "source": "a ghoul executioner",
+   "ts": 1785691325000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "count": 2,
+   "disposition": "sold",
+   "item": "Phosphorous Powder",
+   "source": "a ghoul executioner",
+   "ts": 1785691325000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Undead Froglok Tongue",
+   "source": "a zol ghoul knight",
+   "ts": 1785691380000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Jade",
+   "source": "a yun ghoul wizard",
+   "ts": 1785691391000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Ivory",
+   "source": "a yun ghoul wizard",
+   "ts": 1785691391000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Undead Froglok Tongue",
+   "source": "a yun ghoul wizard",
+   "ts": 1785691391000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "count": 2,
+   "disposition": "sold",
+   "item": "Phosphorous Powder",
+   "source": "a yun ghoul wizard",
+   "ts": 1785691391000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Jade",
+   "source": "a wan ghoul knight",
+   "ts": 1785691413000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Flawless Aquamarine",
+   "source": "a vis ghoul knight",
+   "ts": 1785691434000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "count": 2,
+   "disposition": "sold",
+   "item": "Phosphorous Powder",
+   "source": "a yun ghoul wizard",
+   "ts": 1785691453000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "count": 2,
+   "disposition": "sold",
+   "item": "Phosphorous Powder",
+   "source": "a zol ghoul knight",
+   "ts": 1785691481000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Fine Steel Dagger",
+   "source": "a wan ghoul knight",
+   "ts": 1785691515000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Undead Froglok Tongue",
+   "source": "a wan ghoul knight",
+   "ts": 1785691515000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Undead Froglok Tongue",
+   "source": "a wan ghoul knight",
+   "ts": 1785691636000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "count": 2,
+   "disposition": "sold",
+   "item": "Phosphorous Powder",
+   "source": "a zol ghoul knight",
+   "ts": 1785691650000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Fine Steel Scimitar",
+   "source": "a zol ghoul knight",
+   "ts": 1785691678000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Fine Steel Long Sword",
+   "source": "a zol ghoul knight",
+   "ts": 1785691698000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "count": 2,
+   "disposition": "sold",
+   "item": "Phosphorous Powder",
+   "source": "a zol ghoul knight",
+   "ts": 1785691698000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Mithril Earring +1",
+   "source": "a kor ghoul wizard",
+   "ts": 1785691724000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "count": 2,
+   "disposition": "sold",
+   "item": "Phosphorous Powder",
+   "source": "a kor ghoul wizard",
+   "ts": 1785691724000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "count": 2,
+   "disposition": "sold",
+   "item": "Phosphorous Powder",
+   "source": "a zol ghoul knight",
+   "ts": 1785691765000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Fine Steel Two Handed Sword",
+   "source": "a wan ghoul knight",
+   "ts": 1785691807000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Undead Froglok Tongue",
+   "source": "a wan ghoul knight",
+   "ts": 1785691807000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "item": "Mote of Infinitesimal Potential",
+   "source": "an urd ghoul wizard",
+   "ts": 1785691822000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "count": 2,
+   "disposition": "sold",
+   "item": "Phosphorous Powder",
+   "source": "a zol ghoul knight",
+   "ts": 1785691846000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Fine Steel Great Staff",
+   "source": "a zol ghoul knight",
+   "ts": 1785691861000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "count": 2,
+   "disposition": "sold",
+   "item": "Phosphorous Powder",
+   "source": "a zol ghoul knight",
+   "ts": 1785691861000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "count": 2,
+   "disposition": "sold",
+   "item": "Phosphorous Powder",
+   "source": "a zol ghoul knight",
+   "ts": 1785691883000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "disposition": "sold",
+   "item": "Flame Agate",
+   "source": "a yun ghoul wizard",
+   "ts": 1785691898000,
+   "zone": "The Ruins of Old Guk"
+  },
+  {
+   "count": 2,
+   "disposition": "sold",
+   "item": "Phosphorous Powder",
+   "source": "a yun ghoul wizard",
+   "ts": 1785691898000,
+   "zone": "The Ruins of Old Guk"
+  }
+ ],
+ "leveling": {
+  "aaGains": [
+   {
+    "amount": 2,
+    "nowHave": 11,
+    "ts": 1785687330000
+   },
+   {
+    "amount": 2,
+    "nowHave": 3,
+    "ts": 1785688328000
+   },
+   {
+    "amount": 2,
+    "nowHave": 5,
+    "ts": 1785689552000
+   },
+   {
+    "amount": 2,
+    "nowHave": 2,
+    "ts": 1785690181000
+   },
+   {
+    "amount": 1,
+    "nowHave": 3,
+    "ts": 1785690751000
+   },
+   {
+    "amount": 2,
+    "nowHave": 5,
+    "ts": 1785691325000
+   },
+   {
+    "amount": 2,
+    "nowHave": 7,
+    "ts": 1785691846000
+   }
+  ],
+  "aaPotions": [],
+  "aaSpends": [
+   {
+    "ability": "Innate Regeneration 4",
+    "cost": 2,
+    "rank": 4,
+    "ts": 1785687341000
+   },
+   {
+    "ability": "Innate Regeneration 5",
+    "cost": 3,
+    "rank": 5,
+    "ts": 1785687343000
+   },
+   {
+    "ability": "Innate Regeneration 6",
+    "cost": 5,
+    "rank": 6,
+    "ts": 1785687345000
+   },
+   {
+    "ability": "Innate Regeneration 7",
+    "cost": 5,
+    "rank": 7,
+    "ts": 1785689568000
+   },
+   {
+    "ability": "Double Riposte 2",
+    "cost": 6,
+    "rank": 2,
+    "ts": 1785691886000
+   }
+  ],
+  "levels": [
+   {
+    "level": 23,
+    "ts": 1785687215000
+   },
+   {
+    "level": 24,
+    "ts": 1785689266000
+   },
+   {
+    "level": 25,
+    "ts": 1785690030000
+   },
+   {
+    "level": 26,
+    "ts": 1785690647000
+   },
+   {
+    "level": 27,
+    "ts": 1785691353000
+   },
+   {
+    "level": 28,
+    "ts": 1785692006000
+   }
+  ]
+ },
+ "itemTiers": {
+  "golem metal wand": {
+   "firstAt": 1785687736000,
+   "key": "golem metal wand",
+   "lastAt": 1785687736000,
+   "lastTier": 3,
+   "merges": 1,
+   "name": "Golem Metal Wand",
+   "tier": 3
+  },
+  "guise of the deceiver": {
+   "firstAt": 1785690055000,
+   "key": "guise of the deceiver",
+   "lastAt": 1785690055000,
+   "lastTier": 1,
+   "merges": 1,
+   "name": "Guise of the Deceiver",
+   "tier": 1
+  },
+  "shimmering ruby stiletto": {
+   "firstAt": 1785687204000,
+   "key": "shimmering ruby stiletto",
+   "lastAt": 1785687204000,
+   "lastTier": 2,
+   "merges": 1,
+   "name": "Shimmering Ruby Stiletto",
+   "tier": 2
+  }
+ },
+ "respawn": {
+  "prefs": {
+   "watches": []
+  },
+  "recent": [
+   {
+    "display": "an urd ghoul wizard",
+    "key": "an urd ghoul wizard",
+    "kills": 4,
+    "lastTs": 1785691962000,
+    "watched": false,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "display": "a wan ghoul knight",
+    "key": "a wan ghoul knight",
+    "kills": 35,
+    "lastTs": 1785691951000,
+    "watched": false,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "display": "a vis ghoul knight",
+    "key": "a vis ghoul knight",
+    "kills": 8,
+    "lastTs": 1785691930000,
+    "watched": false,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "display": "a yun ghoul wizard",
+    "key": "a yun ghoul wizard",
+    "kills": 4,
+    "lastTs": 1785691898000,
+    "watched": false,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "display": "a zol ghoul knight",
+    "key": "a zol ghoul knight",
+    "kills": 19,
+    "lastTs": 1785691883000,
+    "watched": false,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "display": "a kor ghoul wizard",
+    "key": "a kor ghoul wizard",
+    "kills": 2,
+    "lastTs": 1785691724000,
+    "watched": false,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "display": "a ghoul executioner",
+    "key": "a ghoul executioner",
+    "kills": 2,
+    "lastTs": 1785691325000,
+    "watched": false,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "display": "a ghoul savant",
+    "key": "a ghoul savant",
+    "kills": 2,
+    "lastTs": 1785691189000,
+    "watched": false,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "display": "a ghoul assassin",
+    "key": "a ghoul assassin",
+    "kills": 1,
+    "lastTs": 1785690050000,
+    "watched": false,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "display": "a ghoul supplier",
+    "key": "a ghoul supplier",
+    "kills": 1,
+    "lastTs": 1785690030000,
+    "watched": false,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "display": "a tal ghoul wizard",
+    "key": "a tal ghoul wizard",
+    "kills": 2,
+    "lastTs": 1785689920000,
+    "watched": false,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "display": "a ghoul ritualist",
+    "key": "a ghoul ritualist",
+    "kills": 1,
+    "lastTs": 1785689905000,
+    "watched": false,
+    "wikiMs": 1680000,
+    "wikiText": "28 min 00 sec",
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "display": "a basalt gargoyle",
+    "key": "a basalt gargoyle",
+    "kills": 3,
+    "lastTs": 1785689705000,
+    "watched": false,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "display": "a deadly black widow",
+    "key": "a deadly black widow",
+    "kills": 8,
+    "lastTs": 1785689602000,
+    "watched": false,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "display": "a vampire bat",
+    "key": "a vampire bat",
+    "kills": 5,
+    "lastTs": 1785689552000,
+    "watched": false,
+    "wikiText": "12am",
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "display": "a shin ghoul knight",
+    "key": "a shin ghoul knight",
+    "kills": 11,
+    "lastTs": 1785689313000,
+    "watched": false,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "display": "A froglok vis knight",
+    "key": "a froglok vis knight",
+    "kills": 1,
+    "lastTs": 1785689003000,
+    "watched": false,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "display": "A froglok gaz knight",
+    "key": "a froglok gaz knight",
+    "kills": 1,
+    "lastTs": 1785688890000,
+    "watched": false,
+    "zone": "The City of Guk"
+   },
+   {
+    "display": "a Teir`Dal priest",
+    "key": "a teir`dal priest",
+    "kills": 1,
+    "lastTs": 1785688337000,
+    "watched": false,
+    "zone": ""
+   },
+   {
+    "display": "a Teir`Dal shadowknight",
+    "key": "a teir`dal shadowknight",
+    "kills": 14,
+    "lastTs": 1785688328000,
+    "watched": false,
+    "wikiMs": 267000,
+    "wikiText": "4:27",
+    "zone": ""
+   },
+   {
+    "display": "a Teir`Dal ranger",
+    "key": "a teir`dal ranger",
+    "kills": 13,
+    "lastTs": 1785688315000,
+    "watched": false,
+    "wikiMs": 267000,
+    "wikiText": "4:27",
+    "zone": ""
+   },
+   {
+    "display": "a Teir`Dal priestess",
+    "key": "a teir`dal priestess",
+    "kills": 2,
+    "lastTs": 1785688296000,
+    "watched": false,
+    "wikiMs": 267000,
+    "wikiText": "4:27",
+    "zone": ""
+   },
+   {
+    "display": "Korven Nisere",
+    "key": "korven nisere",
+    "kills": 2,
+    "lastTs": 1785688281000,
+    "watched": false,
+    "wikiMs": 270000,
+    "wikiText": "4:30",
+    "zone": ""
+   },
+   {
+    "display": "Baron Telyx V`Zher",
+    "key": "baron telyx v`zher",
+    "kills": 2,
+    "lastTs": 1785688208000,
+    "watched": false,
+    "wikiMs": 267000,
+    "wikiText": "4:27",
+    "zone": ""
+   },
+   {
+    "display": "Soldier of V`Zher",
+    "key": "soldier of v`zher",
+    "kills": 2,
+    "lastTs": 1785688193000,
+    "watched": false,
+    "wikiMs": 330000,
+    "wikiText": "5:30",
+    "zone": ""
+   },
+   {
+    "display": "a Teir`Dal rogue",
+    "key": "a teir`dal rogue",
+    "kills": 6,
+    "lastTs": 1785688178000,
+    "watched": false,
+    "wikiMs": 267000,
+    "wikiText": "4:27",
+    "zone": ""
+   },
+   {
+    "display": "Knight V`Tal",
+    "key": "knight v`tal",
+    "kills": 2,
+    "lastTs": 1785688118000,
+    "watched": false,
+    "wikiMs": 267000,
+    "wikiText": "4:27",
+    "zone": ""
+   },
+   {
+    "display": "a shadowknight",
+    "key": "a shadowknight",
+    "kills": 2,
+    "lastTs": 1785688108000,
+    "watched": false,
+    "zone": ""
+   },
+   {
+    "display": "a shadowknight pet",
+    "key": "a shadowknight pet",
+    "kills": 1,
+    "lastTs": 1785688099000,
+    "watched": false,
+    "zone": ""
+   },
+   {
+    "display": "Kahaptra Z`Taj",
+    "key": "kahaptra z`taj",
+    "kills": 1,
+    "lastTs": 1785687736000,
+    "watched": false,
+    "wikiMs": 267000,
+    "wikiText": "4:27",
+    "zone": ""
+   }
+  ],
+  "rows": [],
+  "v": 4,
+  "zone": "The Ruins of Old Guk"
+ },
+ "progression": {
+  "aaGainAmount": [
+   2,
+   2,
+   2,
+   2,
+   1,
+   2,
+   2
+  ],
+  "aaGainTs": [
+   1785687330000,
+   1785688328000,
+   1785689552000,
+   1785690181000,
+   1785690751000,
+   1785691325000,
+   1785691846000
+  ],
+  "dropped": 0,
+  "expFlag": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "expPct": [
+   2.65,
+   2.124,
+   2.124,
+   2.124,
+   2.124,
+   2.378,
+   3.593,
+   2.942,
+   2.124,
+   2.378,
+   2.171,
+   2.112,
+   2.356,
+   2.356,
+   2.112,
+   2.356,
+   1.885,
+   2.356,
+   2.112,
+   2.112,
+   2.356,
+   1.675,
+   2.356,
+   2.112,
+   2.112,
+   1.675,
+   2.112,
+   2.112,
+   2.112,
+   2.356,
+   2.112,
+   2.356,
+   2.112,
+   2.356,
+   1.675,
+   2.112,
+   1.885,
+   2.617,
+   3.196,
+   2.356,
+   2.112,
+   1.675,
+   2.112,
+   2.356,
+   1.885,
+   1.675,
+   4.022,
+   4.838,
+   3.196,
+   2.897,
+   3.519,
+   3.766,
+   2.93,
+   2.883,
+   3.484,
+   3.721,
+   3.484,
+   3.484,
+   3.172,
+   3.721,
+   3.964,
+   3.484,
+   3.964,
+   3.964,
+   3.484,
+   3.964,
+   2.611,
+   3.484,
+   3.721,
+   3.964,
+   4.216,
+   3.964,
+   3.721,
+   3.484,
+   3.964,
+   2.056,
+   4.475,
+   2.64,
+   4.743,
+   3.484,
+   4.616,
+   4.118,
+   4.616,
+   4.363,
+   3.879,
+   4.118,
+   4.363,
+   3.423,
+   2.705,
+   3.879,
+   4.363,
+   4.363,
+   4.876,
+   4.118,
+   4.118,
+   4.363,
+   4.616,
+   4.363,
+   4.363,
+   4.616,
+   4.363,
+   4.118,
+   3.955,
+   3.801,
+   4.501,
+   4.261,
+   4.261,
+   4.028,
+   5.001,
+   5.261,
+   4.261,
+   5.261,
+   5.261,
+   4.501,
+   4.501,
+   3.581,
+   3.801,
+   3.501,
+   3.801,
+   2.791,
+   4.501,
+   4.028,
+   4.748,
+   4.501,
+   4.028,
+   4.028,
+   4.028,
+   3.73,
+   3.946,
+   3.41,
+   4.168,
+   2.535,
+   3.41,
+   4.168,
+   3.73,
+   3.316,
+   3.946,
+   3.946,
+   3.52,
+   4.872,
+   4.631,
+   4.872,
+   3.736,
+   4.631,
+   3.946,
+   2.056,
+   4.872,
+   4.168,
+   4.872,
+   2.918,
+   3.52,
+   3.52,
+   2.056
+  ],
+  "expTs": [
+   1785687080000,
+   1785687098000,
+   1785687109000,
+   1785687126000,
+   1785687138000,
+   1785687144000,
+   1785687176000,
+   1785687189000,
+   1785687196000,
+   1785687204000,
+   1785687215000,
+   1785687230000,
+   1785687242000,
+   1785687271000,
+   1785687296000,
+   1785687313000,
+   1785687330000,
+   1785687335000,
+   1785687357000,
+   1785687374000,
+   1785687384000,
+   1785687389000,
+   1785687401000,
+   1785687412000,
+   1785687437000,
+   1785687736000,
+   1785687763000,
+   1785687775000,
+   1785688055000,
+   1785688062000,
+   1785688098000,
+   1785688108000,
+   1785688118000,
+   1785688149000,
+   1785688160000,
+   1785688170000,
+   1785688178000,
+   1785688193000,
+   1785688208000,
+   1785688271000,
+   1785688281000,
+   1785688296000,
+   1785688305000,
+   1785688315000,
+   1785688328000,
+   1785688337000,
+   1785689160000,
+   1785689177000,
+   1785689182000,
+   1785689228000,
+   1785689232000,
+   1785689245000,
+   1785689266000,
+   1785689275000,
+   1785689286000,
+   1785689303000,
+   1785689313000,
+   1785689322000,
+   1785689334000,
+   1785689346000,
+   1785689471000,
+   1785689480000,
+   1785689490000,
+   1785689504000,
+   1785689514000,
+   1785689529000,
+   1785689543000,
+   1785689552000,
+   1785689574000,
+   1785689602000,
+   1785689653000,
+   1785689674000,
+   1785689705000,
+   1785689727000,
+   1785689737000,
+   1785689893000,
+   1785689905000,
+   1785689920000,
+   1785689989000,
+   1785690001000,
+   1785690030000,
+   1785690050000,
+   1785690058000,
+   1785690086000,
+   1785690095000,
+   1785690132000,
+   1785690141000,
+   1785690163000,
+   1785690181000,
+   1785690199000,
+   1785690259000,
+   1785690333000,
+   1785690370000,
+   1785690378000,
+   1785690433000,
+   1785690471000,
+   1785690492000,
+   1785690516000,
+   1785690528000,
+   1785690557000,
+   1785690568000,
+   1785690583000,
+   1785690612000,
+   1785690647000,
+   1785690705000,
+   1785690721000,
+   1785690734000,
+   1785690751000,
+   1785690779000,
+   1785690851000,
+   1785690866000,
+   1785690884000,
+   1785690912000,
+   1785690923000,
+   1785690985000,
+   1785690996000,
+   1785691015000,
+   1785691038000,
+   1785691075000,
+   1785691097000,
+   1785691121000,
+   1785691189000,
+   1785691211000,
+   1785691240000,
+   1785691267000,
+   1785691296000,
+   1785691325000,
+   1785691353000,
+   1785691380000,
+   1785691391000,
+   1785691413000,
+   1785691434000,
+   1785691453000,
+   1785691481000,
+   1785691515000,
+   1785691573000,
+   1785691595000,
+   1785691616000,
+   1785691636000,
+   1785691650000,
+   1785691678000,
+   1785691698000,
+   1785691724000,
+   1785691765000,
+   1785691807000,
+   1785691822000,
+   1785691846000,
+   1785691861000,
+   1785691883000,
+   1785691898000,
+   1785691930000,
+   1785691951000,
+   1785691962000
+  ],
+  "killCredit": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "killTs": [
+   1785687072000,
+   1785687080000,
+   1785687098000,
+   1785687109000,
+   1785687126000,
+   1785687138000,
+   1785687144000,
+   1785687176000,
+   1785687189000,
+   1785687196000,
+   1785687204000,
+   1785687215000,
+   1785687230000,
+   1785687242000,
+   1785687271000,
+   1785687296000,
+   1785687313000,
+   1785687330000,
+   1785687335000,
+   1785687357000,
+   1785687374000,
+   1785687384000,
+   1785687389000,
+   1785687401000,
+   1785687412000,
+   1785687437000,
+   1785687736000,
+   1785687763000,
+   1785687775000,
+   1785688055000,
+   1785688062000,
+   1785688098000,
+   1785688099000,
+   1785688108000,
+   1785688118000,
+   1785688149000,
+   1785688160000,
+   1785688170000,
+   1785688178000,
+   1785688193000,
+   1785688208000,
+   1785688271000,
+   1785688281000,
+   1785688296000,
+   1785688305000,
+   1785688315000,
+   1785688328000,
+   1785688337000,
+   1785689160000,
+   1785689177000,
+   1785689182000,
+   1785689228000,
+   1785689232000,
+   1785689245000,
+   1785689266000,
+   1785689275000,
+   1785689286000,
+   1785689303000,
+   1785689313000,
+   1785689322000,
+   1785689334000,
+   1785689346000,
+   1785689471000,
+   1785689480000,
+   1785689490000,
+   1785689504000,
+   1785689514000,
+   1785689529000,
+   1785689543000,
+   1785689552000,
+   1785689574000,
+   1785689602000,
+   1785689653000,
+   1785689674000,
+   1785689705000,
+   1785689727000,
+   1785689737000,
+   1785689893000,
+   1785689905000,
+   1785689920000,
+   1785689989000,
+   1785690001000,
+   1785690030000,
+   1785690050000,
+   1785690058000,
+   1785690086000,
+   1785690095000,
+   1785690132000,
+   1785690141000,
+   1785690163000,
+   1785690181000,
+   1785690199000,
+   1785690259000,
+   1785690333000,
+   1785690370000,
+   1785690378000,
+   1785690433000,
+   1785690471000,
+   1785690492000,
+   1785690516000,
+   1785690528000,
+   1785690557000,
+   1785690568000,
+   1785690583000,
+   1785690612000,
+   1785690647000,
+   1785690705000,
+   1785690721000,
+   1785690734000,
+   1785690751000,
+   1785690779000,
+   1785690851000,
+   1785690866000,
+   1785690884000,
+   1785690912000,
+   1785690923000,
+   1785690985000,
+   1785690996000,
+   1785691015000,
+   1785691038000,
+   1785691075000,
+   1785691097000,
+   1785691121000,
+   1785691189000,
+   1785691211000,
+   1785691240000,
+   1785691267000,
+   1785691296000,
+   1785691325000,
+   1785691353000,
+   1785691380000,
+   1785691391000,
+   1785691413000,
+   1785691434000,
+   1785691453000,
+   1785691481000,
+   1785691515000,
+   1785691573000,
+   1785691595000,
+   1785691616000,
+   1785691636000,
+   1785691650000,
+   1785691678000,
+   1785691698000,
+   1785691724000,
+   1785691765000,
+   1785691807000,
+   1785691822000,
+   1785691846000,
+   1785691861000,
+   1785691883000,
+   1785691898000,
+   1785691930000,
+   1785691951000,
+   1785691962000
+  ],
+  "killZone": [
+   -1,
+   -1,
+   -1,
+   -1,
+   -1,
+   -1,
+   -1,
+   -1,
+   -1,
+   -1,
+   -1,
+   -1,
+   -1,
+   -1,
+   -1,
+   -1,
+   -1,
+   -1,
+   -1,
+   -1,
+   -1,
+   -1,
+   -1,
+   -1,
+   -1,
+   -1,
+   -1,
+   -1,
+   -1,
+   -1,
+   -1,
+   -1,
+   -1,
+   -1,
+   -1,
+   -1,
+   -1,
+   -1,
+   -1,
+   -1,
+   -1,
+   -1,
+   -1,
+   -1,
+   -1,
+   -1,
+   -1,
+   -1,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4
+  ],
+  "lastTs": 1785692006000,
+  "levelTs": [
+   1785687215000,
+   1785689266000,
+   1785690030000,
+   1785690647000,
+   1785691353000,
+   1785692006000
+  ],
+  "levelValue": [
+   23,
+   24,
+   25,
+   26,
+   27,
+   28
+  ],
+  "lootTs": [
+   1785687072000,
+   1785687098000,
+   1785687109000,
+   1785687138000,
+   1785687145000,
+   1785687177000,
+   1785687189000,
+   1785687204000,
+   1785687215000,
+   1785687335000,
+   1785687335000,
+   1785687335000,
+   1785687335000,
+   1785687335000,
+   1785687357000,
+   1785687374000,
+   1785687389000,
+   1785687401000,
+   1785687437000,
+   1785687736000,
+   1785687736000,
+   1785688108000,
+   1785688108000,
+   1785688108000,
+   1785688108000,
+   1785688108000,
+   1785688118000,
+   1785688149000,
+   1785688170000,
+   1785688183000,
+   1785688193000,
+   1785688209000,
+   1785688281000,
+   1785688296000,
+   1785688315000,
+   1785689177000,
+   1785689182000,
+   1785689182000,
+   1785689186000,
+   1785689232000,
+   1785689245000,
+   1785689266000,
+   1785689286000,
+   1785689303000,
+   1785689480000,
+   1785689480000,
+   1785689480000,
+   1785689490000,
+   1785689490000,
+   1785689490000,
+   1785689490000,
+   1785689504000,
+   1785689514000,
+   1785689514000,
+   1785689529000,
+   1785689529000,
+   1785689574000,
+   1785689602000,
+   1785689602000,
+   1785689653000,
+   1785689674000,
+   1785689905000,
+   1785689905000,
+   1785689974000,
+   1785689989000,
+   1785690001000,
+   1785690030000,
+   1785690040000,
+   1785690055000,
+   1785690058000,
+   1785690132000,
+   1785690181000,
+   1785690259000,
+   1785690259000,
+   1785690266000,
+   1785690370000,
+   1785690370000,
+   1785690433000,
+   1785690475000,
+   1785690492000,
+   1785690492000,
+   1785690516000,
+   1785690528000,
+   1785690584000,
+   1785690613000,
+   1785690613000,
+   1785690647000,
+   1785690751000,
+   1785690779000,
+   1785690851000,
+   1785690866000,
+   1785690884000,
+   1785690884000,
+   1785690912000,
+   1785690923000,
+   1785690985000,
+   1785691015000,
+   1785691015000,
+   1785691038000,
+   1785691038000,
+   1785691038000,
+   1785691121000,
+   1785691189000,
+   1785691197000,
+   1785691240000,
+   1785691267000,
+   1785691325000,
+   1785691325000,
+   1785691380000,
+   1785691391000,
+   1785691391000,
+   1785691391000,
+   1785691391000,
+   1785691413000,
+   1785691434000,
+   1785691453000,
+   1785691481000,
+   1785691515000,
+   1785691515000,
+   1785691636000,
+   1785691650000,
+   1785691678000,
+   1785691698000,
+   1785691698000,
+   1785691724000,
+   1785691724000,
+   1785691765000,
+   1785691807000,
+   1785691807000,
+   1785691822000,
+   1785691846000,
+   1785691861000,
+   1785691861000,
+   1785691883000,
+   1785691898000,
+   1785691898000
+  ],
+  "offlineCamped": [],
+  "offlineEnd": [],
+  "offlineStart": [],
+  "recentKills": [
+   {
+    "credit": 0,
+    "expFlag": 0,
+    "expPct": 3.801,
+    "name": "a wan ghoul knight",
+    "ts": 1785690647000,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "credit": 0,
+    "expFlag": 0,
+    "expPct": 4.501,
+    "name": "a zol ghoul knight",
+    "ts": 1785690705000,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "credit": 0,
+    "expFlag": 0,
+    "expPct": 4.261,
+    "name": "a wan ghoul knight",
+    "ts": 1785690721000,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "credit": 0,
+    "expFlag": 0,
+    "expPct": 4.261,
+    "name": "a wan ghoul knight",
+    "ts": 1785690734000,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "credit": 0,
+    "expFlag": 0,
+    "expPct": 4.028,
+    "name": "a wan ghoul knight",
+    "ts": 1785690751000,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "credit": 0,
+    "expFlag": 0,
+    "expPct": 5.001,
+    "name": "a zol ghoul knight",
+    "ts": 1785690779000,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "credit": 0,
+    "expFlag": 0,
+    "expPct": 5.261,
+    "name": "a zol ghoul knight",
+    "ts": 1785690851000,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "credit": 0,
+    "expFlag": 0,
+    "expPct": 4.261,
+    "name": "a zol ghoul knight",
+    "ts": 1785690866000,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "credit": 0,
+    "expFlag": 0,
+    "expPct": 5.261,
+    "name": "a zol ghoul knight",
+    "ts": 1785690884000,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "credit": 0,
+    "expFlag": 0,
+    "expPct": 5.261,
+    "name": "a zol ghoul knight",
+    "ts": 1785690912000,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "credit": 0,
+    "expFlag": 0,
+    "expPct": 4.501,
+    "name": "a zol ghoul knight",
+    "ts": 1785690923000,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "credit": 0,
+    "expFlag": 0,
+    "expPct": 4.501,
+    "name": "a wan ghoul knight",
+    "ts": 1785690985000,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "credit": 0,
+    "expFlag": 0,
+    "expPct": 3.581,
+    "name": "a wan ghoul knight",
+    "ts": 1785690996000,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "credit": 0,
+    "expFlag": 0,
+    "expPct": 3.801,
+    "name": "a wan ghoul knight",
+    "ts": 1785691015000,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "credit": 0,
+    "expFlag": 0,
+    "expPct": 3.501,
+    "name": "a yun ghoul wizard",
+    "ts": 1785691038000,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "credit": 0,
+    "expFlag": 0,
+    "expPct": 3.801,
+    "name": "a vis ghoul knight",
+    "ts": 1785691075000,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "credit": 0,
+    "expFlag": 0,
+    "expPct": 2.791,
+    "name": "an urd ghoul wizard",
+    "ts": 1785691097000,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "credit": 0,
+    "expFlag": 0,
+    "expPct": 4.501,
+    "name": "a wan ghoul knight",
+    "ts": 1785691121000,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "credit": 0,
+    "expFlag": 0,
+    "expPct": 4.028,
+    "name": "a ghoul savant",
+    "ts": 1785691189000,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "credit": 0,
+    "expFlag": 0,
+    "expPct": 4.748,
+    "name": "a zol ghoul knight",
+    "ts": 1785691211000,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "credit": 0,
+    "expFlag": 0,
+    "expPct": 4.501,
+    "name": "a zol ghoul knight",
+    "ts": 1785691240000,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "credit": 0,
+    "expFlag": 0,
+    "expPct": 4.028,
+    "name": "a wan ghoul knight",
+    "ts": 1785691267000,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "credit": 0,
+    "expFlag": 0,
+    "expPct": 4.028,
+    "name": "a wan ghoul knight",
+    "ts": 1785691296000,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "credit": 0,
+    "expFlag": 0,
+    "expPct": 4.028,
+    "name": "a ghoul executioner",
+    "ts": 1785691325000,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "credit": 0,
+    "expFlag": 0,
+    "expPct": 3.73,
+    "name": "a wan ghoul knight",
+    "ts": 1785691353000,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "credit": 0,
+    "expFlag": 0,
+    "expPct": 3.946,
+    "name": "a zol ghoul knight",
+    "ts": 1785691380000,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "credit": 0,
+    "expFlag": 0,
+    "expPct": 3.41,
+    "name": "a yun ghoul wizard",
+    "ts": 1785691391000,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "credit": 0,
+    "expFlag": 0,
+    "expPct": 4.168,
+    "name": "a wan ghoul knight",
+    "ts": 1785691413000,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "credit": 0,
+    "expFlag": 0,
+    "expPct": 2.535,
+    "name": "a vis ghoul knight",
+    "ts": 1785691434000,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "credit": 0,
+    "expFlag": 0,
+    "expPct": 3.41,
+    "name": "a yun ghoul wizard",
+    "ts": 1785691453000,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "credit": 0,
+    "expFlag": 0,
+    "expPct": 4.168,
+    "name": "a zol ghoul knight",
+    "ts": 1785691481000,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "credit": 0,
+    "expFlag": 0,
+    "expPct": 3.73,
+    "name": "a wan ghoul knight",
+    "ts": 1785691515000,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "credit": 0,
+    "expFlag": 0,
+    "expPct": 3.316,
+    "name": "a wan ghoul knight",
+    "ts": 1785691573000,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "credit": 0,
+    "expFlag": 0,
+    "expPct": 3.946,
+    "name": "a wan ghoul knight",
+    "ts": 1785691595000,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "credit": 0,
+    "expFlag": 0,
+    "expPct": 3.946,
+    "name": "a wan ghoul knight",
+    "ts": 1785691616000,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "credit": 0,
+    "expFlag": 0,
+    "expPct": 3.52,
+    "name": "a wan ghoul knight",
+    "ts": 1785691636000,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "credit": 0,
+    "expFlag": 0,
+    "expPct": 4.872,
+    "name": "a zol ghoul knight",
+    "ts": 1785691650000,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "credit": 0,
+    "expFlag": 0,
+    "expPct": 4.631,
+    "name": "a zol ghoul knight",
+    "ts": 1785691678000,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "credit": 0,
+    "expFlag": 0,
+    "expPct": 4.872,
+    "name": "a zol ghoul knight",
+    "ts": 1785691698000,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "credit": 0,
+    "expFlag": 0,
+    "expPct": 3.736,
+    "name": "a kor ghoul wizard",
+    "ts": 1785691724000,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "credit": 0,
+    "expFlag": 0,
+    "expPct": 4.631,
+    "name": "a zol ghoul knight",
+    "ts": 1785691765000,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "credit": 0,
+    "expFlag": 0,
+    "expPct": 3.946,
+    "name": "a wan ghoul knight",
+    "ts": 1785691807000,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "credit": 0,
+    "expFlag": 0,
+    "expPct": 2.056,
+    "name": "an urd ghoul wizard",
+    "ts": 1785691822000,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "credit": 0,
+    "expFlag": 0,
+    "expPct": 4.872,
+    "name": "a zol ghoul knight",
+    "ts": 1785691846000,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "credit": 0,
+    "expFlag": 0,
+    "expPct": 4.168,
+    "name": "a zol ghoul knight",
+    "ts": 1785691861000,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "credit": 0,
+    "expFlag": 0,
+    "expPct": 4.872,
+    "name": "a zol ghoul knight",
+    "ts": 1785691883000,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "credit": 0,
+    "expFlag": 0,
+    "expPct": 2.918,
+    "name": "a yun ghoul wizard",
+    "ts": 1785691898000,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "credit": 0,
+    "expFlag": 0,
+    "expPct": 3.52,
+    "name": "a vis ghoul knight",
+    "ts": 1785691930000,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "credit": 0,
+    "expFlag": 0,
+    "expPct": 3.52,
+    "name": "a wan ghoul knight",
+    "ts": 1785691951000,
+    "zone": "The Ruins of Old Guk"
+   },
+   {
+    "credit": 0,
+    "expFlag": 0,
+    "expPct": 2.056,
+    "name": "an urd ghoul wizard",
+    "ts": 1785691962000,
+    "zone": "The Ruins of Old Guk"
+   }
+  ],
+  "windowStart": 0,
+  "witnessTs": [
+   1785688890000,
+   1785688985000,
+   1785689003000
+  ],
+  "zoneEnd": [
+   1785688696000,
+   1785688932000,
+   1785689048000,
+   1785689141000,
+   0
+  ],
+  "zoneName": [
+   "Innothule Swamp",
+   "The City of Guk",
+   "The Ruins of Old Guk",
+   "The Ruins of Old Guk",
+   "The Ruins of Old Guk"
+  ],
+  "zoneStart": [
+   1785688445000,
+   1785688696000,
+   1785688932000,
+   1785689048000,
+   1785689141000
+  ]
+ }
+}

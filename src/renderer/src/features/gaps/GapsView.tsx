@@ -8,46 +8,24 @@
 // The domain toggle and the search box narrow those rows in shared/gaps.ts; "Copy list" puts the
 // visible rows on the clipboard as tab-separated text.
 
-import { type JSX, useCallback, useDeferredValue, useMemo, useState } from 'react'
+import { type JSX, useCallback, useMemo, useState } from 'react'
 import { Box, Button, Checkbox, CircularProgress, FormControlLabel, MenuItem, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
-import {
-  DEFAULT_GAP_SORT,
-  GAP_DOMAINS,
-  GAP_DOMAIN_HELP,
-  GAP_DOMAIN_LABELS,
-  GAP_SHOWN_NOUN,
-  firstGapSortDir,
-  gapsAsText,
-  hiddenBy,
-  sortGaps,
-  visibleGaps,
-  withoutDone,
-  withoutPlayers,
-  type GapDomain,
-  type GapRow,
-  type GapSort,
-  type GapSortKey,
-  type GapsSnap
-} from '@shared/gaps'
+import { GAP_DOMAINS, GAP_DOMAIN_HELP, GAP_DOMAIN_LABELS, GAP_SHOWN_NOUN, gapsAsText, hiddenBy, visibleGaps, type GapDomain, type GapRow, type GapsSnap } from '@shared/gaps'
 import { heldCaption, type HeldFilter, type HeldPick } from '@shared/gapHeld'
 import { GAP_SHOW_WORDS, jobCaption, type GapShow } from '@shared/gapJob'
-import type { CharacterSnap } from '@shared/types'
 import { stillNeeded, wikiPageText } from '@shared/wikiPage'
-import { useModule } from '../../lib/useModule'
 import { Tooltip } from '../../lib/Tooltip'
-import { useBoolPref } from '../combat/useCombatPrefs'
 import { copyText } from '../../lib/clipboard'
-import { useGapVerdicts } from '../../lib/gapVerdicts'
 import { useSpellFacts } from '../../lib/gapSpellFacts'
+import { useMarkGapsTabMounted } from '../../lib/gapsTabMounted'
 import GapsTable from './GapsTable'
-import { GAPS_DATA_DATE, PAGE_EXTRAS, useGapsData } from './useGapsData'
-import { useDoneMarks, usePlayerList } from './useDoneMarks'
-import { useHeld } from './useHeld'
-import { useHeldOnly } from './useHeldOnly'
-import { useGapShow } from './useGapShow'
-import { useHideUncertain, type HideUncertain } from './useHideUncertain'
+import { GAPS_DATA_DATE, PAGE_EXTRAS } from './useGapsData'
+import { AllCharactersBox, CharactersLine } from './AllCharactersControls'
+import type { HideUncertain } from './useHideUncertain'
 import { useGrouping } from './useGrouping'
+import { useGapsList } from './useGapsList'
+import { useGapsOverlayFeed } from './useGapsOverlayFeed'
 import { useItemShots, useSpellShots } from './itemShotsStore'
 import CaptureBar from './CaptureBar'
 import { itemRowNames } from '@shared/itemShotKeep'
@@ -57,10 +35,6 @@ import GroupHeaderControls from './GroupHeaderControls'
 // the line says what the chosen domain's rows are (GAP_DOMAIN_HELP).
 const CLICK_HINT = 'Click a row for where it was seen.'
 
-/** Where the "Zone I'm in" choice is remembered, per viewer, as the Achievements tab remembers its own. */
-const ZONE_HERE_KEY = 'eq.gaps.zoneHere'
-/** Where "Show done" is remembered. */
-const SHOW_DONE_KEY = 'eq.gaps.showDone'
 const CHIP_CONTEXT = { dataDate: GAPS_DATA_DATE, isMob: PAGE_EXTRAS.isMob }
 const NO_NAMES: readonly string[] = []
 /** The names of the rows on screen. */
@@ -103,14 +77,14 @@ function Picker<T extends string>({ label, value, options, onChange, testId, dis
 
 const HELD_PICKS = [['off', 'Off'], ['any', 'Anywhere'], ['bags', 'In bags'], ['bank', 'In bank']] as const
 const SHOW_PICKS = [['all', 'All'], ['new', 'New pages'], ['update', 'Updates']] as const
-const HELD_WORDS: Record<HeldPick, string> = { off: '', any: ', that you hold', bags: ', that you hold in your bags', bank: ', that you hold in the bank' }
+const HELD_PLACE: Record<HeldPick, string> = { off: '', any: '', bags: ' in the bags', bank: ' in the bank' }
 const HELD_WHERE = 'In bags is worn, the bags and the keyring; In bank is the bank, the shared bank and the tradeskill depot.'
 
 /** "I have it" (owner, 2026-10-21): only the Items rows the player holds now, anywhere, in the bags or in the bank. */
 function HeldPicker({ pick, onPick, domain }: { pick: HeldPick; onPick: (p: HeldPick) => void; domain: GapDomain }): JSX.Element {
   const title =
     domain === 'item'
-      ? `Only the items you hold now, the rows marked held: your last inventory export (/outputfile inventory), plus what the log saw you loot since (in the bags), less destroys. No export, nothing shows. ${HELD_WHERE}`
+      ? `Only the items you hold now, the rows marked held: your last inventory export (/outputfile inventory), plus what the log saw you loot since (in the bags), less destroys. No export, nothing shows. With All characters on, every character's own export counts, each holder named in the row. ${HELD_WHERE}`
       : 'Items only: shows only the items you hold now.'
   return (
     <Tooltip title={title}>
@@ -231,46 +205,26 @@ function ShownLine({
   )
 }
 
+/** What "I have it" adds to the shown line: with All characters on, held means by any of them; and where. */
+const mineWords = (pick: HeldPick, active: boolean, allCharacters: boolean): string =>
+  !active ? '' : `${allCharacters ? ', that one of your characters holds' : ', that you hold'}${HELD_PLACE[pick]}`
+
 /** What the pages read beside the ledgers, from the engine's snapshot (useGapsData). */
 function sightingsOf(engine: GapsSnap | null | undefined, spellFacts: ReturnType<typeof useSpellFacts>) {
   return { killFactions: engine?.killFactions, mobLocs: engine?.mobLocs, mobSpecials: engine?.mobSpecials, mobCoin: engine?.mobCoin, ...PAGE_EXTRAS, spellFacts }
 }
 
 export default function GapsView(): JSX.Element {
-  const { snap, engine, loot, kills } = useGapsData()
-  const [domain, setDomain] = useState<GapDomain>('item')
-  const [query, setQuery] = useState('')
+  // The list itself, from the engine's rows to the order on screen, is the hook the Wiki Gaps
+  // overlay's publisher runs too (useGapsList), so the overlay lists what this tab lists.
+  const list = useGapsList()
+  const { allChars, domain, setDomain, query, setQuery, hereOnly, setHereOnly, current, zone, playerList, rows, marks, showDone, setShowDone, holding, job, mine, sure, visible, verdicts, sort, onSort, sorted } = list
+  const { snap, engine, loot, kills, seenBy, joining } = list.data
+  // While this tab is mounted it feeds the overlay itself, and the headless publisher stands down.
+  useMarkGapsTabMounted()
+  useGapsOverlayFeed(list)
   const [copied, setCopied] = useState<number | null>(null)
-  // "Zone I'm in" (owner ask, 2026-10-17): only what was named where you stand, every tier of it.
-  const [hereOnly, setHereOnly] = useBoolPref(ZONE_HERE_KEY, false)
-  const charSnap = useModule<CharacterSnap>('character')
-  const current = charSnap?.zone ?? null
-  const zone = hereOnly ? current : null
-  // Mobs rows the player marked as players are gone for good (owner, 2026-10-19).
-  const playerList = usePlayerList()
-  const rows = useMemo(() => (snap ? withoutPlayers(snap.rows, playerList.players) : undefined), [snap, playerList.players])
-  const marks = useDoneMarks(new Date().toISOString().slice(0, 10), GAPS_DATA_DATE)
-  const [showDone, setShowDone] = useBoolPref(SHOW_DONE_KEY, false)
-  // The list follows the query a beat behind the keystroke, so typing never waits on a filter.
-  const deferredQuery = useDeferredValue(query)
-  const inDomain = useMemo(() => visibleGaps(rows ?? [], domain, deferredQuery, zone), [rows, domain, deferredQuery, zone])
-  // An item the player holds right now needs only a screenshot (review C6; owner, 2026-10-19).
-  const holding = useHeld(loot, charSnap?.character ?? null)
-  // "Show" (owner, 2026-10-21): new pages, updates or both; then "I have it", what the player holds.
-  const job = useGapShow(inDomain, CHIP_CONTEXT)
-  const mine = useHeldOnly(job.rows, holding, domain)
-  // "Hide uncertain" (owner, 2026-10-19): rows the tab is not sure are gaps, hidden on request.
-  const sure = useHideUncertain(mine.rows)
-  const visible = useMemo(() => (showDone ? [...sure.rows] : withoutDone(sure.rows, marks.done)), [sure.rows, showDone, marks.done])
   const hiddenRow = useMemo(() => hiddenBy(marks.done, showDone, sure.hide), [marks.done, showDone, sure.hide])
-  // What the caches already say about the rows on screen: `unchecked` until the answer lands.
-  const verdicts = useGapVerdicts(domain, visible)
-  const [sort, setSort] = useState<GapSort>(DEFAULT_GAP_SORT)
-  const onSort = useCallback((key: GapSortKey) => {
-    setSort((cur) => (cur.key === key ? { key, dir: cur.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: firstGapSortDir(key) }))
-  }, [])
-  // The table and Copy list read the same order, so a copied list matches what is on screen.
-  const sorted = useMemo(() => sortGaps(visible, sort, verdicts), [visible, sort, verdicts])
   // What the pages read beside the ledgers: each kill's factions, each mob's points, the wiki's spellings.
   // A spell page fills from the install's spell files (owner, 2026-10-19): asked for the spells on screen.
   const spellNames = useMemo(() => (domain === 'spell' ? spellNamesOf(visible) : NO_NAMES), [domain, visible])
@@ -331,11 +285,13 @@ export default function GapsView(): JSX.Element {
         <Pref label="Group by zone, then mob" checked={group.grouped} onChange={group.setGrouped} testId="gaps-grouped" />
         <Pref label="Show done" checked={showDone} onChange={setShowDone} testId="gaps-show-done" />
         <HideUncertainBox state={sure} />
+        <AllCharactersBox on={allChars.on} onChange={allChars.setOn} days={allChars.days} onDays={allChars.setDays} working={allChars.others === undefined || joining} />
         <Box sx={{ flexGrow: 1 }} />
         <CopyList onCopy={() => void copy()} disabled={visible.length === 0} copied={copied} />
       </Stack>
       {domain === 'item' && <CaptureBar rows={itemNames} />}
-      <ShownLine counts={{ visible: visible.length, held, served, hidden, uncertain: sure.hidden }} domain={domain} zone={zone} mine={(mine.active ? HELD_WORDS[mine.pick] : '') + GAP_SHOW_WORDS[job.show]} />
+      <ShownLine counts={{ visible: visible.length, held, served, hidden, uncertain: sure.hidden }} domain={domain} zone={zone} mine={mineWords(mine.pick, mine.active, allChars.on) + GAP_SHOW_WORDS[job.show]} tail={allChars.caption} />
+      {allChars.on && <CharactersLine live={allChars.liveLabel} others={allChars.others} />}
       <GapsTable
         entries={group.entries}
         verdicts={verdicts}
@@ -349,6 +305,7 @@ export default function GapsView(): JSX.Element {
         onPlayer={playerList.mark}
         holding={holding}
         chipContext={CHIP_CONTEXT}
+        seenBy={seenBy}
         hiddenByFilter={held > 0}
         {...group.folds}
         nameLead={<GroupHeaderControls group={group} />}

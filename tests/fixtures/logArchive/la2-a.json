@@ -1,0 +1,165 @@
+{
+ "consider": [
+  {
+   "cons": 1,
+   "difficulty": "You could probably win this fight.",
+   "faction": "indifferent",
+   "id": "a large rat",
+   "level": 1,
+   "mob": "A large rat",
+   "rare": false,
+   "ts": 1785549610000,
+   "zone": "West Freeport"
+  },
+  {
+   "cons": 1,
+   "difficulty": "You could probably win this fight.",
+   "faction": "indifferent",
+   "id": "sheldon",
+   "level": 10,
+   "mob": "Sheldon",
+   "rare": false,
+   "ts": 1785549620000,
+   "zone": "West Freeport"
+  },
+  {
+   "cons": 1,
+   "difficulty": "what would you like your tombstone to say?",
+   "faction": "indifferent",
+   "id": "a nisch val gnoll",
+   "level": 35,
+   "mob": "A Nisch Val Gnoll",
+   "rare": false,
+   "ts": 1785549780000,
+   "zone": "West Freeport"
+  }
+ ],
+ "loot": [
+  {
+   "item": "Rat Whisker",
+   "source": "a large rat",
+   "ts": 1785549725000,
+   "zone": "West Freeport"
+  },
+  {
+   "count": 2,
+   "item": "Bone Chips",
+   "source": "a large rat",
+   "ts": 1785549726000,
+   "zone": "West Freeport"
+  }
+ ],
+ "classUnlocks": [
+  {
+   "className": "Paladin",
+   "ts": 1785549630000
+  }
+ ],
+ "turnins": [
+  {
+   "items": [
+    "Sphinx Claw",
+    "Golden Hilt"
+   ],
+   "npc": "Dason Goldblade",
+   "ts": 1785549665000
+  }
+ ],
+ "itemTiers": {
+  "whitened treant fists": {
+   "firstAt": 1785549690000,
+   "key": "whitened treant fists",
+   "lastAt": 1785549690000,
+   "lastTier": 1,
+   "merges": 1,
+   "name": "Whitened Treant Fists",
+   "tier": 1
+  }
+ },
+ "progression": {
+  "aaGainAmount": [],
+  "aaGainTs": [],
+  "dropped": 0,
+  "expFlag": [],
+  "expPct": [],
+  "expTs": [],
+  "killCredit": [
+   0
+  ],
+  "killTs": [
+   1785549720000
+  ],
+  "killZone": [
+   0
+  ],
+  "lastTs": 1785549780000,
+  "levelTs": [],
+  "levelValue": [],
+  "lootTs": [
+   1785549725000,
+   1785549726000
+  ],
+  "offlineCamped": [],
+  "offlineEnd": [],
+  "offlineStart": [],
+  "recentKills": [
+   {
+    "credit": 0,
+    "name": "a large rat",
+    "ts": 1785549720000,
+    "zone": "West Freeport"
+   }
+  ],
+  "windowStart": 0,
+  "witnessTs": [],
+  "zoneEnd": [
+   0
+  ],
+  "zoneName": [
+   "West Freeport"
+  ],
+  "zoneStart": [
+   1785549600000
+  ]
+ },
+ "kills": {
+  "mobs": {
+   "a large rat": {
+    "bestTier": -1,
+    "count": 1,
+    "credited": 0,
+    "display": "a large rat",
+    "firstTs": 1785549720000,
+    "lastTs": 1785549720000,
+    "tiers": {
+     "-1": {
+      "count": 1,
+      "credited": 0,
+      "firstTs": 1785549720000,
+      "lastCreditedTs": 0,
+      "lastTs": 1785549720000
+     }
+    }
+   }
+  },
+  "v": 5
+ },
+ "respawn": {
+  "prefs": {
+   "watches": []
+  },
+  "recent": [
+   {
+    "display": "a large rat",
+    "key": "a large rat",
+    "kills": 1,
+    "lastTs": 1785549720000,
+    "watched": false,
+    "zone": "West Freeport"
+   }
+  ],
+  "rows": [],
+  "v": 4,
+  "zone": "West Freeport"
+ }
+}

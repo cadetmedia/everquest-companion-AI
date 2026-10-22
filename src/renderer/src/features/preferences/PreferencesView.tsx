@@ -139,6 +139,7 @@ import PrefSectionBlock, { FILL_COLUMN_SX, FILL_ROOT_SX, FILL_ROW_SX, paneFills,
 // THE HYDRATION GATE (JOS-340) — one batched read of everything this pane paints from main, and
 // nothing renders until it lands. Read that file's header before touching any card's state.
 import { PrefsGate, usePrefsSeed } from './prefsHydration'
+import { LogArchiveSetting } from './LogArchiveSetting'
 import { normalizeQuery } from '../../lib/search'
 
 // ------------------------------------------------------------------- the view
@@ -314,6 +315,13 @@ function buildSections({ version, status, onSendFeedback, onWhatsNew }: SectionI
           label: 'EverQuest install folder',
           keywords: 'path directory logs eqlog character detect override install location',
           content: <EqFolderSetting />
+        },
+        // SUMMARIZE AND ARCHIVE LOG (docs/plans/log-archive). Off until the player turns it on (step 6.3).
+        {
+          id: 'log-archive',
+          label: 'Summarize and archive log',
+          keywords: 'log archive rotate clear compress backup history size shrink large slow loading',
+          content: <LogArchiveSetting />
         }
       ]
     },

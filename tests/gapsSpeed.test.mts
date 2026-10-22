@@ -98,3 +98,18 @@ test('the memo helpers: a fold remembered, an index per object, the last answer 
   assert.equal(last([1, arr], () => ({})), a)
   assert.notEqual(last([1, [1, 2]], () => ({})), a)
 })
+
+test("one domain only (the Wiki Gaps overlay's background copy) gives the full derivation's rows of that domain", () => {
+  const { engine, met } = syntheticLog()
+  const wiki: GapsWiki = { catalog: MOB_CATALOG, groups: DROPS.groups, aliases: DROPS.aliases ?? {} }
+  const full = deriveGaps(engine, met, wiki)
+  for (const only of ['faction', 'drop', 'image'] as const) {
+    const one = deriveGaps(engine, met, wiki, only)
+    assert.deepEqual(one.rows, full.rows.filter((r) => r.domain === only), only)
+  }
+  // The one-domain answer is cached apart from the full one: the key carries `only`.
+  const snap = lastGapsSnap()
+  const image = snap(engine, met, wiki, 'image')
+  assert.notEqual(snap(engine, met, wiki), image)
+  assert.equal(snap(engine, met, wiki, 'image') === image, false, 'a one-entry cache: the full answer replaced it')
+})

@@ -5,7 +5,7 @@
 // long task). Pulled out here, it is pure and node-testable, and `lastGapsSnap` keeps the last
 // answer across remounts while every input is the same object.
 
-import type { GapsSnap } from './gaps'
+import type { GapDomain, GapsSnap } from './gaps'
 import type { KillMap } from './kills'
 import type { LootEvent } from './types'
 import { withFactionRows } from './gapFactions'
@@ -30,15 +30,22 @@ export interface GapsWiki {
   aliases: DropAliases
 }
 
-/** The engine's snapshot with the faction, drop and image rows joined in and counted. */
-export function deriveGaps(engine: GapsSnap, met: GapsMet, wiki: GapsWiki): GapsSnap {
-  const withFactions = withFactionRows(engine, wiki.catalog, met.kills)
-  const withDrops = withDropRows(withFactions, met.loot, { catalog: wiki.catalog, groups: wiki.groups, itemMobs: met.itemMobs, aliases: wiki.aliases })
-  return withImageRows(withDrops, { kills: met.kills, loot: met.loot, cons: met.cons }, wiki.catalog)
+/**
+ * The engine's snapshot with the faction, drop and image rows joined in and counted. `only` (the
+ * Wiki Gaps overlay's background copy, which shows one domain) derives that domain alone; the
+ * others are left out, not empty-counted.
+ */
+export function deriveGaps(engine: GapsSnap, met: GapsMet, wiki: GapsWiki, only?: GapDomain): GapsSnap {
+  const wants = (d: GapDomain): boolean => only === undefined || only === d
+  const withFactions = wants('faction') ? withFactionRows(engine, wiki.catalog, met.kills) : engine
+  const withDrops = wants('drop')
+    ? withDropRows(withFactions, met.loot, { catalog: wiki.catalog, groups: wiki.groups, itemMobs: met.itemMobs, aliases: wiki.aliases })
+    : withFactions
+  return wants('image') ? withImageRows(withDrops, { kills: met.kills, loot: met.loot, cons: met.cons }, wiki.catalog) : withDrops
 }
 
 /** The inputs' identities, in a fixed order: the cache key. */
-const keyOf = (engine: GapsSnap, met: GapsMet, wiki: GapsWiki): readonly unknown[] => [engine, met.loot, met.kills, met.cons, met.itemMobs, wiki.catalog, wiki.groups, wiki.aliases]
+const keyOf = (engine: GapsSnap, met: GapsMet, wiki: GapsWiki, only?: GapDomain): readonly unknown[] => [engine, met.loot, met.kills, met.cons, met.itemMobs, wiki.catalog, wiki.groups, wiki.aliases, only]
 
 /**
  * `deriveGaps` behind a one-entry cache, keyed by the IDENTITY of each input: the engine snapshot,
@@ -47,7 +54,7 @@ const keyOf = (engine: GapsSnap, met: GapsMet, wiki: GapsWiki): readonly unknown
  * with nothing new returns the last snapshot itself. A caller must pass stable objects: a fresh
  * `?? []` per render misses every time. An option added to the derivation joins the key.
  */
-export function lastGapsSnap(): (engine: GapsSnap, met: GapsMet, wiki: GapsWiki) => GapsSnap {
+export function lastGapsSnap(): (engine: GapsSnap, met: GapsMet, wiki: GapsWiki, only?: GapDomain) => GapsSnap {
   const last = memoLast<GapsSnap>()
-  return (engine, met, wiki) => last(keyOf(engine, met, wiki), () => deriveGaps(engine, met, wiki))
+  return (engine, met, wiki, only) => last(keyOf(engine, met, wiki, only), () => deriveGaps(engine, met, wiki, only))
 }

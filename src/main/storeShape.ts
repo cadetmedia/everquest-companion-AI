@@ -18,6 +18,7 @@ import type { ResistPrefs } from '../shared/resistPrefs'
 import type { GraphicsPrefs } from '../shared/graphicsPrefs'
 import type { BuffTrustPrefs } from '../shared/buffTrust'
 import type { BuffAllowPrefs } from '../shared/buffAllow'
+import type { LogArchivePrefs } from '../shared/logArchive/prefs'
 import type { RespawnPrefs } from '../shared/respawn'
 import type { SoundPackPrefs } from '../shared/soundPacks'
 import type { WindowBounds } from './store'
@@ -243,6 +244,12 @@ export interface StoreShape {
    * that predates the feature.
    */
   buffTrust?: BuffTrustPrefs
+  /**
+   * SUMMARIZE AND ARCHIVE LOG (docs/plans/log-archive, step 1.0; shared/logArchive/prefs.ts). OFF until
+   * the player turns it on. Absent means off, the shipped behaviour, so it is an additive optional
+   * key with no schema bump and no migration, on the `buffTrust` precedent above.
+   */
+  logArchive?: LogArchivePrefs
   /**
    * WHICH buffs and debuffs the two timer overlay windows may draw (JOS-168;
    * shared/buffAllow.ts): the opt-in mode switch, and the per-spell-line tri-state behind it.

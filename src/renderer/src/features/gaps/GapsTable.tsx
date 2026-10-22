@@ -44,6 +44,7 @@ import {
   type GapVerdicts
 } from '@shared/gaps'
 import { unfoldedEntries, type GapEntry } from '@shared/gapGroups'
+import { seenByKey } from '@shared/gapsAllCharacters'
 import { otherPageTitle } from '@shared/gapImages'
 import { replaceWhy } from '@shared/gapDrops'
 import { gapHeld, heldChipLabel, heldLine, heldTitle, type GapHeld, type HeldIndex } from '@shared/gapHeld'
@@ -204,6 +205,8 @@ interface PaneActions {
   onDone: (row: GapRow) => void
   /** add a "may be a player" name to the permanent players list */
   onPlayer: (name: string) => void
+  /** All characters: who saw each row */
+  seenBy?: ReadonlyMap<string, readonly string[]>
   /** what the player holds right now, for an Items row's held line */
   holding: HeldIndex
 }
@@ -212,6 +215,7 @@ interface PaneActions {
 function DetailsPane({ row, actions }: { row: GapRow; actions: PaneActions }): JSX.Element {
   const isDone = actions.done.has(doneKey(row))
   const needed = actions.needed(row)
+  const seen = actions.seenBy?.get(seenByKey(row))
   const held = gapHeld(row, actions.holding)
   return (
     <Paper variant="outlined" sx={{ px: 1.5, py: 0.5, flexShrink: 0, maxHeight: '40vh', overflow: 'auto' }} data-testid="gaps-details-pane">
@@ -226,6 +230,11 @@ function DetailsPane({ row, actions }: { row: GapRow; actions: PaneActions }): J
           </Tooltip>
         )}
       </Stack>
+      {seen !== undefined && (
+        <Typography variant="caption" color="text.secondary" component="div" data-testid="gaps-seen-by">
+          Seen by: {seen.join(', ')}.
+        </Typography>
+      )}
       {held.map((h) => (
         <Typography key={h.who ?? ''} variant="body2" color="success.main" component="div" data-testid="gaps-held-line">
           {heldLine(h)}
@@ -370,6 +379,7 @@ export default function GapsTable({
   onPlayer,
   holding,
   chipContext,
+  seenBy,
   hiddenByFilter = false,
   folded,
   onFold,
@@ -396,6 +406,8 @@ export default function GapsTable({
   chipContext: GapActionContext
   /** the domain HAS unknown names, so an empty list means the search or zone filter hid them */
   hiddenByFilter?: boolean
+  /** All characters: who saw each row, named in its details */
+  seenBy?: ReadonlyMap<string, readonly string[]>
   /** the folded headings' keys, held by the view so its Collapse all and Expand all reach them */
   folded: ReadonlySet<string>
   onFold: (key: string) => void
@@ -422,7 +434,7 @@ export default function GapsTable({
   const openedRow = opened?.kind === 'row' ? opened.row : undefined
   return (
     <Stack spacing={1.5} sx={{ flexGrow: 1, minHeight: 0 }}>
-      {openedRow !== undefined && <DetailsPane row={openedRow} actions={{ pageText, needed, done, onDone, onPlayer, holding }} />}
+      {openedRow !== undefined && <DetailsPane row={openedRow} actions={{ pageText, needed, done, onDone, onPlayer, seenBy, holding }} />}
       <Box ref={scrollRef} sx={{ flexGrow: 1, minHeight: 0, overflow: 'auto', overscrollBehavior: 'contain' }} data-testid="gaps-scroll">
         <Table size="small" stickyHeader sx={{ tableLayout: 'fixed', minWidth: TABLE_MIN_WIDTH }} data-testid="gaps-table">
           <SortHeader sort={sort} onSort={onSort} nameLead={nameLead} />

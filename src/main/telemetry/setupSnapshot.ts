@@ -37,6 +37,7 @@ import { cpus, totalmem } from 'os'
 import { resolveAlertAudio } from '../../shared/speechText'
 import { OVERLAY_KINDS } from '../../shared/types'
 import type { TelemetryOverlayKind, TelemetryVoiceEngine } from '../../shared/telemetry'
+import { isTelemetryOverlayKind } from '../../shared/telemetryOverlays'
 // ONE READER FOR `eqclient.ini` (JOS-368). It was private to this file until a second consumer
 // arrived — the perf block a feedback report carries (`feedback/perf.ts`) — and a second parse of
 // somebody else's settings file is how two answers to one question get born.
@@ -202,7 +203,7 @@ function logBytes(): number {
  *  (tests/telemetryContract.test.mts), so the app's own union assigns straight across — the day
  *  someone adds an overlay without teaching the schema, this stops compiling. */
 function openOverlays(): TelemetryOverlayKind[] {
-  return OVERLAY_KINDS.filter((kind) => getOverlayConfig(kind).open)
+  return OVERLAY_KINDS.filter(isTelemetryOverlayKind).filter((kind) => getOverlayConfig(kind).open)
 }
 
 /**

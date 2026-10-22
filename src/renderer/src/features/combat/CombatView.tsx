@@ -7,6 +7,7 @@ import { ProcessingLog } from './ProcessingLog'
 import { SegmentBody } from './SegmentPanel'
 import { DpsChartCard, MobDamageCard, type Ringless } from './CombatDashboard'
 import { ProcsCard } from './ProcsPanel'
+import { ArchivedFightPane } from './ArchivedFightPane'
 import {
   isLiveSelection,
   scopeOptions,
@@ -20,7 +21,7 @@ import { useDrillMemory, type DrillMemoryApi } from './useDrillMemory'
 import { AbilityExpandProvider } from './abilityExpand'
 import { EMPTY_ROSTER, type MeterScope, type RosterSnap } from '@shared/roster'
 import type { CombatFocus } from './combatFocus'
-import type { CombatSnapshot, SegmentView, TimelineView } from '@shared/combat'
+import type { CombatSnapshot, SegmentSummary, SegmentView, TimelineView } from '@shared/combat'
 
 /**
  * Stabilise the timeline's IDENTITY across snapshot ticks. Every poll rebuilds the payload,
@@ -415,6 +416,7 @@ export default function CombatView({
           live={live}
           ringless={ringless}
           scope={scope}
+          archived={archivedOf(snap)}
         />
       </AbilityExpandProvider>
 
@@ -445,6 +447,11 @@ function segmentOptions(
   }
 }
 
+/** The selected fight's summary when it is from an archived log (log archive, step 4.9). */
+function archivedOf(snap: CombatSnapshot | null): SegmentSummary | null {
+  return snap?.archivedSelected ?? null
+}
+
 /**
  * Why the event-derived panels have nothing to show: a zone session keeps no ring at all, an
  * older fight had its ring dropped at finalize. Both are quiet notes, never errors.
@@ -461,6 +468,7 @@ function CombatBody({
   seg,
   tl,
   scope,
+  archived,
   ...rest
 }: {
   hydrating: boolean
@@ -475,6 +483,8 @@ function CombatBody({
   live: boolean
   ringless: Ringless
   scope: 'fight' | 'overall'
+  /** the selected fight's summary when it is from an archived log (log archive, step 4.9). */
+  archived: SegmentSummary | null
 }): React.JSX.Element {
   if (hydrating) return <HydratingPanel />
   if (view === 'timeline') {
@@ -484,6 +494,6 @@ function CombatBody({
     // between renders.
     return tl ? <CombatTimeline tl={tl} /> : <NoTimelinePane />
   }
-  if (!seg) return <ScopeEmptyPane scope={scope} />
+  if (!seg) return archived ? <ArchivedFightPane fight={archived} /> : <ScopeEmptyPane scope={scope} />
   return <DashboardGrid seg={seg} tl={tl} {...rest} />
 }

@@ -49,6 +49,9 @@ import { stopEnginePerfWatch } from './enginePerfWatch'
 import { noteHeapAfterData } from './dataWeight'
 import { initProcessPriority } from './processPriority'
 import { startEngineSupervisor, stopEngineSupervisor } from './dataServer/engineHost'
+import { recoverLogArchiveAtLaunch } from './logArchive/actions'
+import { startAutoArchive } from './logArchive/autoArchive'
+import { startGapsCharacterSaves } from './gapsCharacters'
 import { getProcessPriorityPrefs } from './storeProcessPriority'
 import { initPresenceEffects, stopPresenceEffects } from './presenceEffects'
 import { provisionDefaultPacks } from './provisionPacks'
@@ -301,8 +304,17 @@ if (!gotSingleInstanceLock) {
     // call: the composition root's own step is handing the session its work, and everything the
     // scan then does belongs to the phase that names it. A failed attach still marks the phase
     // (with no count) rather than leaving the profile forever incomplete.
-    void startTailing()
+    // SUMMARIZE AND ARCHIVE LOG'S LAUNCH CHECK (docs/plans/log-archive, step 3.4) goes first: an archive
+    // interrupted mid-move is finished before the log is resolved, so the session never attaches to
+    // a log that is half way into the archive folder. Returns at once when the feature was never used.
+    void recoverLogArchiveAtLaunch((line) => {
+      logInfo(`[everquest-companion] ${line}`)
+    })
+      .then(() => startTailing())
       .then(() => {
+        startAutoArchive()
+        // Each character's Gaps inputs, kept apart for the Gaps tab's All characters (gapsCharacters.ts).
+        startGapsCharacterSaves()
         // THE PHASE SURVIVES, ITS NUMBERS DO NOT (JOS-499). `replayDone` used to carry what THIS
         // process's fold cost — events replayed, the slicer's duty cycle, bytes read, the
         // cold-read delta, the first megabyte. There is no fold here to measure, and reporting

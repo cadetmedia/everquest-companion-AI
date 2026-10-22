@@ -786,6 +786,11 @@ export interface SegmentSummary {
   active: boolean
   /** Healing received by hostile instances during this segment (annotation). */
   enemyHealTotal: number
+  /**
+   * Present only on a fight from an archived log (docs/plans/log-archive, step 4.7): the file name
+   * of the archive that holds its lines. Such a fight has a summary and no breakdown (ruling 0.4).
+   */
+  archive?: string
 }
 
 /**
@@ -1102,6 +1107,11 @@ export interface CombatSnapshot {
    * for nothing; the meter learns the pet only through the same three routes it always did.
    */
   petNudge?: PetSummonNudge
+  /**
+   * The selected fight's summary when the selection is an ARCHIVED fight (log archive, step 4.9).
+   * `selected` is then null: the breakdown stays in the archive, which `archive` names.
+   */
+  archivedSelected?: SegmentSummary
   // NOTE: there is deliberately NO `petClaims` here any more (JOS-49). The snapshot used to carry
   // "IS THIS THING YOURS?" — unbound pet-shaped entities for the meter to ask about, plus the
   // names the user had claimed. The owner cut the question: "if you just have to pet attack once,
@@ -1140,4 +1150,10 @@ export interface SnapshotOpts {
    * carry a timeline; older/evicted encounters return `timeline:null`.
    */
   timeline?: boolean
+  /**
+   * APP-SIDE, never sent to the engine: also list fights from archived logs after the live ones
+   * (docs/plans/log-archive, step 4.7). Asked for by the Combat tab only; the overlays keep the
+   * live log's fights.
+   */
+  archived?: boolean
 }

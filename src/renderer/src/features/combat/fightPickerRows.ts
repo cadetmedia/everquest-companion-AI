@@ -90,9 +90,12 @@ export function timingLabel(startTs: number, durationSec: number, now: number): 
   return bits.join(' · ')
 }
 
-/** The running zone session has no end yet, so it has no duration to disambiguate by. */
+/** The running zone session has no end yet, so it has no duration to disambiguate by. A fight
+ *  from an archived log says so first (log archive, step 4.9): it opens to a summary only. */
 export function rowTiming(o: ScopeOption, scope: CombatScope, now: number): string {
-  return o.live && scope === 'overall' ? 'live' : timingLabel(o.startTs, o.durationSec, now)
+  if (o.live && scope === 'overall') return 'live'
+  const timing = timingLabel(o.startTs, o.durationSec, now)
+  return o.archive === undefined ? timing : `archived · ${timing}`
 }
 
 /** Deep copy — ScopeOption is flat, so a per-row spread genuinely detaches from the live array. */
@@ -130,13 +133,14 @@ export function hitRow(h: FightHit): PickerRow {
     dps: s.dps,
     startTs: s.startTs,
     durationSec: s.durationSec,
-    live: s.kind === 'current'
+    live: s.kind === 'current',
+    ...(s.archive === undefined ? {} : { archive: s.archive })
   }
   return {
     value: opt.value,
     label: opt.label,
     rate: formatRate(opt.dps),
-    timing: timingLabel(opt.startTs, opt.durationSec, Date.now()),
+    timing: rowTiming(opt, 'fight', Date.now()),
     live: opt.live,
     zone: s.zone,
     opt

@@ -1,0 +1,146 @@
+{
+ "observedSpellRanks": {
+  "denon's disruptive discord": {
+   "castRank": 3,
+   "firstAt": 1785665040000,
+   "key": "denon's disruptive discord",
+   "lastAt": 1785665460000,
+   "mergedRank": 4,
+   "merges": 1,
+   "name": "Denon's Disruptive Discord",
+   "rank": 4
+  },
+  "shiftless deeds": {
+   "castRank": 6,
+   "firstAt": 1785664860000,
+   "key": "shiftless deeds",
+   "lastAt": 1785665400000,
+   "mergedRank": 5,
+   "merges": 1,
+   "name": "Shiftless Deeds",
+   "rank": 6
+  }
+ },
+ "spellSets": {
+  "memorized": [
+   "Shiftless Deeds IV"
+  ],
+  "sets": {
+   "primary": {
+    "observedAt": 1785665440000,
+    "source": "saved",
+    "spells": [
+     "Shiftless Deeds IV"
+    ]
+   },
+   "second": {
+    "observedAt": 1785664980000,
+    "source": "saved",
+    "spells": [
+     "Shiftless Deeds IV",
+     "Mesmerize"
+    ]
+   }
+  },
+  "v": 1
+ },
+ "combo": {
+  "current": {
+   "endHi": null,
+   "endLo": 1785665520000,
+   "endTs": null,
+   "evidenceCount": 5,
+   "expectedSlots": 3,
+   "id": "ci1",
+   "levelHi": 20,
+   "levelLo": 20,
+   "slots": [
+    {
+     "because": [
+      "who"
+     ],
+     "candidates": [
+      "PAL"
+     ],
+     "confidence": 1,
+     "provenance": "who"
+    },
+    {
+     "because": [
+      "who"
+     ],
+     "candidates": [
+      "ROG"
+     ],
+     "confidence": 1,
+     "provenance": "who"
+    },
+    {
+     "because": [
+      "who"
+     ],
+     "candidates": [
+      "ENC"
+     ],
+     "confidence": 1,
+     "provenance": "who"
+    }
+   ],
+   "startHi": 1785664805000,
+   "startLo": 1785664805000,
+   "startReason": "logStart",
+   "startTs": 1785664805000,
+   "userLocked": false
+  },
+  "intervals": [
+   {
+    "endHi": null,
+    "endLo": 1785665520000,
+    "endTs": null,
+    "evidenceCount": 5,
+    "expectedSlots": 3,
+    "id": "ci1",
+    "levelHi": 20,
+    "levelLo": 20,
+    "slots": [
+     {
+      "because": [
+       "who"
+      ],
+      "candidates": [
+       "PAL"
+      ],
+      "confidence": 1,
+      "provenance": "who"
+     },
+     {
+      "because": [
+       "who"
+      ],
+      "candidates": [
+       "ROG"
+      ],
+      "confidence": 1,
+      "provenance": "who"
+     },
+     {
+      "because": [
+       "who"
+      ],
+      "candidates": [
+       "ENC"
+      ],
+      "confidence": 1,
+      "provenance": "who"
+     }
+    ],
+    "startHi": 1785664805000,
+    "startLo": 1785664805000,
+    "startReason": "logStart",
+    "startTs": 1785664805000,
+    "userLocked": false
+   }
+  ],
+  "ready": true
+ }
+}

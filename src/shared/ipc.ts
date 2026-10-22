@@ -1030,6 +1030,25 @@ export const IPC = {
   // launch (spawn contract rule 5), so this is a fresh token, port and epoch world. Returns void.
   engineRetry: 'engine:retry',
 
+  // ---- Summarize and archive log (docs/plans/log-archive; main/ipc/logArchive.ts) ----
+  // renderer -> main. Every action returns LogArchiveReply (shared/logArchive/panel.ts): the
+  // outcome and the panel's whole state after it. Each action refuses while the switch is off.
+  logArchiveStatus: 'logArchive:status',
+  // Arg: boolean. The switch; only ever flipped by the player in the panel.
+  logArchiveSetEnabled: 'logArchive:setEnabled',
+  logArchiveBackup: 'logArchive:backup',
+  // Arg: segment id. Seal a backed-up segment so its history may be shown.
+  logArchiveKeep: 'logArchive:keep',
+  // Archive the live log and start a fresh one (phase 3). The panel confirms first.
+  logArchiveRotate: 'logArchive:rotate',
+  // Arg: segment id. Put an archived log back in front of the live one, then restart the app.
+  logArchiveRestore: 'logArchive:restore',
+  // Args: segment id, boolean (copy the client's tables beside the staged log). Developer-only,
+  // refused in a packaged build: refold the archive in a second engine and compare (step 5.4).
+  logArchiveRefoldTrial: 'logArchive:refoldTrial',
+  // Arg: segment id. Refold a segment an older build produced, and swap the new totals in (5.5).
+  logArchiveRefresh: 'logArchive:refresh',
+
   // ---- misc pushes ----
   onLine: 'log:line',
   onCharacter: 'log:character',
@@ -1049,6 +1068,10 @@ export const IPC = {
   // Spell names in, `{ [name]: what the install's spells_us.txt / spells_us_str.txt state }` out
   // (src/main/gapSpellFacts.ts), for a copied spell page. Payload: (names: string[]).
   gapSpellFacts: 'gaps:spellFacts',
+  // Every OTHER character's Gaps inputs (src/main/gapsCharacters.ts): its saved gaps, loot and kills
+  // with its eligible archives folded in. Payload: (sinceStamp: string | null), the day window's
+  // cut-off as a log stamp key. Answers CharacterGaps[].
+  gapsAllCharacters: 'gaps:allCharacters',
   // A pasted screenshot of an item window -> its page fields and icon id, read on this machine
   // (src/main/ipc/shotIpc.ts). Payload: (png: Uint8Array).
   shotReadItem: 'shot:readItem',
