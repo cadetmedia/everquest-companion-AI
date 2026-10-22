@@ -20,6 +20,7 @@ import type { ItemKnowledge, LootEvent } from '@shared/types'
 import type { ZoneShort } from '@shared/maps'
 import type { Timeslice } from '@shared/timeslice'
 import { isAcquisition } from '@shared/lootDisposition'
+import { mobSourceOf } from '@shared/rewardChest'
 import { formatDate } from '../../lib/formatDate'
 import { sourceItemKey } from '../../lib/itemSources'
 import { EQ_ITEM_COLORS } from '../../lib/ItemWindow'
@@ -161,7 +162,8 @@ function aggregateLoot(events: LootEvent[]): LootBreakdown {
   const bySource = new Map<string, number>()
   const byZone = new Map<string, number>()
   for (const e of events) {
-    const s = e.source ?? 'unknown'
+    // A Reward Chest pays any item of any mob the crawl killed: its mob is unknown, never the chest.
+    const s = mobSourceOf(e) ?? 'unknown'
     bySource.set(s, (bySource.get(s) ?? 0) + 1)
     if (e.zone) byZone.set(e.zone, (byZone.get(e.zone) ?? 0) + 1)
   }
