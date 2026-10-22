@@ -88,13 +88,12 @@ function Picker<T extends string>({ label, value, options, onChange, testId, dis
 const HELD_PICKS = [['off', 'Off'], ['any', 'Anywhere'], ['bags', 'In bags'], ['bank', 'In bank']] as const
 const SHOW_PICKS = [['all', 'All'], ['new', 'New pages'], ['update', 'Updates']] as const
 const HELD_PLACE: Record<HeldPick, string> = { off: '', any: '', bags: ' in the bags', bank: ' in the bank' }
-const HELD_WHERE = 'In bags is worn, the bags and the keyring; In bank is the bank, the shared bank and the tradeskill depot.'
 
 /** "I have it" (owner, 2026-10-21): only the Items rows the player holds now, anywhere, in the bags or in the bank. */
 function HeldPicker({ pick, onPick, domain }: { pick: HeldPick; onPick: (p: HeldPick) => void; domain: GapDomain }): JSX.Element {
   const title =
     domain === 'item'
-      ? `Only the items you hold now, the rows marked held: your last inventory export (/outputfile inventory), plus what the log saw you loot since (in the bags), less destroys. No export, nothing shows. With All characters on, every character's own export counts, each holder named in the row. ${HELD_WHERE}`
+      ? 'Show only items you hold, from your last /outputfile inventory plus loot since.'
       : 'Items only: shows only the items you hold now.'
   return (
     <Picker label="I have it" value={pick} options={HELD_PICKS} onChange={onPick} disabled={domain !== 'item'} testId="gaps-held-only" tip={title} />
