@@ -4,7 +4,7 @@
 // new-page copy uses. Fixtures, not the corpus: items.json gains the fields on local-data-refresh.
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { forageAddText, forageUpdateOf, withForageRows, type ItemPageForage } from '../src/shared/gapForage'
+import { COMMON_FORAGE, forageAddText, forageUpdateOf, isCommonForage, withForageRows, type ItemPageForage } from '../src/shared/gapForage'
 import { gapActions, type GapRow, type GapsSnap } from '../src/shared/gaps'
 import { itemPage, wikiPageText } from '../src/shared/wikiPage'
 import { catalogZoneCounts, wikiZoneNamer } from '../src/shared/gapWikiZone'
@@ -100,4 +100,22 @@ test('main answers each name from its page record, null when there is none', () 
     'Fresh Fish +2': { page: 'Fresh Fish', zones: [], category: false },
     'No Such Item': null
   })
+})
+
+test('common forage (named default, COMMON_FORAGE): seen in 5+ places, or a page listing 10+ zones, asks for no zone, only a missing category', () => {
+  const five = ['Qeynos Hills', 'Kedge Keep', 'The Overthere', 'Cazic Thule', 'Befallen']
+  // Five places, tiers folded: Kedge Keep 2 (Refined) is Kedge Keep, so four places is not common.
+  const four = proof('Fishing Grubs', ['Qeynos Hills', 'Kedge Keep', 'Kedge Keep 2 (Refined)', 'The Overthere', 'Cazic Thule'])
+  assert.equal(COMMON_FORAGE.seenPlaces, 5)
+  assert.deepEqual(forageUpdateOf(four, page({ page: 'Fishing Grubs', category: true }), zoneName)?.zones, ['Cazic Thule', 'Kedge Keep', 'Qeynos Hills', 'The Overthere'])
+  const pod = proof('Pod of Water', five)
+  assert.equal(forageUpdateOf(pod, page({ page: 'Pod of Water', zones: ['Qeynos Hills'], category: true }), zoneName), null)
+  // The category is still owed.
+  assert.deepEqual(forageUpdateOf(pod, page({ page: 'Pod of Water', zones: ['Qeynos Hills'] }), zoneName), { page: 'Pod of Water', zones: [], noField: false, category: true })
+  // A page that already lists ten zones: a new one is no update, even seen in one place.
+  const listed = Array.from({ length: COMMON_FORAGE.pageZones }, (_, i) => `Zone ${String(i)}`)
+  const berries = proof('Berries', ['Qeynos Hills'])
+  assert.equal(isCommonForage(['Qeynos Hills'], page({ page: 'Berries', zones: listed })), true)
+  assert.equal(forageUpdateOf(berries, page({ page: 'Berries', zones: listed, category: true }), zoneName), null)
+  assert.deepEqual(forageUpdateOf(berries, page({ page: 'Berries', zones: listed.slice(1), category: true }), zoneName)?.zones, ['Qeynos Hills'])
 })
