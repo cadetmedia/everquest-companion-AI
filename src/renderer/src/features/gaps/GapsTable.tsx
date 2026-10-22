@@ -45,6 +45,7 @@ import {
 } from '@shared/gaps'
 import { unfoldedEntries, type GapEntry } from '@shared/gapGroups'
 import { gapHeld, heldChipLabel, heldLine, heldTitle, type GapHeld, type HeldIndex } from '@shared/gapHeld'
+import { GAP_JOB_LABEL, GAP_JOB_TIP, gapJob, type GapJob } from '@shared/gapJob'
 import { wikiPageUrl } from '@shared/wiki'
 import { Tooltip } from '../../lib/Tooltip'
 import { useWindowedRows } from '../../lib/useWindowedRows'
@@ -100,6 +101,18 @@ function HeldChip({ held }: { held: readonly GapHeld[] }): JSX.Element {
   )
 }
 
+/** The theme colour of each job's tag: two that no other chip on a row wears. */
+const JOB_COLOR: Record<GapJob, 'secondary' | 'primary'> = { new: 'secondary', update: 'primary' }
+
+/** Before the name (owner, 2026-10-21): "New page" or "Update page", the row's job (shared/gapJob.ts). */
+function JobChip({ job }: { job: GapJob }): JSX.Element {
+  return (
+    <Tooltip title={GAP_JOB_TIP[job]}>
+      <Chip label={GAP_JOB_LABEL[job]} size="small" color={JOB_COLOR[job]} variant="outlined" sx={{ mr: 1, height: 20 }} data-testid={`gaps-job-${job}`} />
+    </Tooltip>
+  )
+}
+
 const GapTableRow = memo(function GapTableRow({
   row,
   open,
@@ -133,6 +146,7 @@ const GapTableRow = memo(function GapTableRow({
             •
           </Box>
         )}
+        <JobChip job={gapJob(row, chipContext)} />
         {/* Under its mob's heading a faction or drop row is the faction or item alone. */}
         {depth === 2 && onMobPage(row) ? factionOf(row) : row.name}
         {row.suggest !== undefined && <SuggestCaption s={row.suggest} />}

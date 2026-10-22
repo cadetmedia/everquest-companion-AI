@@ -25,6 +25,7 @@ import type { OwnershipEntry, OwnershipPlace } from './planner/ownership'
 export interface HeldPart {
   label: string
   count: number
+  place: OwnershipPlace
 }
 
 /** What one character holds of one item: in all, and by place. */
@@ -101,7 +102,7 @@ export function heldIndex(
   }
   for (const [key, by] of byKey) {
     takeOff(by, destroyedSince[key] ?? 0)
-    const parts = PLACE_ORDER.flatMap((p) => ((by.get(p) ?? 0) > 0 ? [{ label: PLACE_WORD[p], count: by.get(p) ?? 0 }] : []))
+    const parts = PLACE_ORDER.flatMap((p) => ((by.get(p) ?? 0) > 0 ? [{ label: PLACE_WORD[p], count: by.get(p) ?? 0, place: p }] : []))
     const total = parts.reduce((s, p) => s + p.count, 0)
     if (total > 0) out.set(key, [{ total, parts, exportedAt: dump.loadedAt, ...(who === undefined ? {} : { who }) }])
   }
@@ -123,18 +124,71 @@ export function gapHeld(row: GapRow, index: HeldIndex): readonly GapHeld[] {
 }
 
 /**
- * The "I have it" filter (owner, 2026-10-21: "see all items i have ... knock all those out in 1 easy
- * swoop"): the Items rows someone in `index` holds. Only Items rows can be held, so the filter is
- * the Items list's; another domain's rows pass untouched.
+ * Where "I have it" looks (owner, 2026-10-21: "In bags or In bank? depending on what we know"): any
+ * place, or one side of the export's places. Bags is what is on the character: worn, the bags and
+ * the keyring (`General N`, the equipment slots, the keyring table). Bank is what waits at a banker
+ * or in storage: `BankN`, `SharedBankN` (its name says bank, and the Character tab gives both banks
+ * one chip) and `Personal-DepotN`, the tradeskill depot, which the loot model calls bank-type
+ * storage. A row the export could not place counts only under Anywhere. Loot since the export is in
+ * the bags, as the held count always read it.
  */
-export function onlyHeld(rows: readonly GapRow[], index: HeldIndex): GapRow[] {
-  return rows.filter((r) => r.domain !== 'item' || gapHeld(r, index).length > 0)
+export type HeldWhere = 'any' | 'bags' | 'bank'
+/** The picker's choice: off, or where to look. */
+export type HeldPick = 'off' | HeldWhere
+
+const SIDE_OF: Record<OwnershipPlace, Exclude<HeldWhere, 'any'> | null> = {
+  equipped: 'bags',
+  inventory: 'bags',
+  keyring: 'bags',
+  bank: 'bank',
+  sharedBank: 'bank',
+  personalDepot: 'bank',
+  unknown: null
 }
 
-/** The Items toggle's caption while "I have it" is on: `3 held`, in the zone when one is given, hidden rows left out. */
-export function heldCaption(rows: readonly GapRow[], zone: string | null, hidden: (row: GapRow) => boolean, index: HeldIndex): string {
-  const n = visibleGaps(rows, 'item', '', zone).filter((r) => !hidden(r) && gapHeld(r, index).length > 0).length
-  return `${n.toLocaleString()} held`
+/** Does this holder have a copy in `where`? */
+function holdsIn(h: GapHeld, where: HeldWhere): boolean {
+  return where === 'any' ? h.total > 0 : h.parts.some((p) => p.count > 0 && SIDE_OF[p.place] === where)
+}
+
+/** Is the row held by anyone in `index`, in `where`? */
+const heldIn = (row: GapRow, index: HeldIndex, where: HeldWhere): boolean => gapHeld(row, index).some((h) => holdsIn(h, where))
+
+/**
+ * The "I have it" filter (owner, 2026-10-21: "see all items i have ... knock all those out in 1 easy
+ * swoop"): the Items rows someone in `index` holds, in `where`. Only Items rows can be held, so the
+ * filter is the Items list's; another domain's rows pass untouched.
+ */
+export function onlyHeld(rows: readonly GapRow[], index: HeldIndex, where: HeldWhere = 'any'): GapRow[] {
+  return rows.filter((r) => r.domain !== 'item' || heldIn(r, index, where))
+}
+
+const CAPTION_WORD: Record<HeldWhere, string> = { any: 'held', bags: 'in bags', bank: 'in bank' }
+
+/** What "I have it" reads: the holders, and where to look. */
+export interface HeldFilter {
+  index: HeldIndex
+  where: HeldWhere
+}
+
+/** The Items toggle's caption while "I have it" is on: `3 held` (`3 in bags`), in the zone when one is given, hidden rows left out. */
+export function heldCaption(rows: readonly GapRow[], zone: string | null, hidden: (row: GapRow) => boolean, held: HeldFilter): string {
+  const n = visibleGaps(rows, 'item', '', zone).filter((r) => !hidden(r) && heldIn(r, held.index, held.where)).length
+  return `${n.toLocaleString()} ${CAPTION_WORD[held.where]}`
+}
+
+/**
+ * The stored pick, read back. The box this picker replaces stored `1` and `0`: `1` (on) reads as
+ * Anywhere, which is also what Anywhere writes, so either build reads the other's choice.
+ */
+export function heldPickOf(raw: string | null): HeldPick {
+  if (raw === '1') return 'any'
+  return raw === 'bags' || raw === 'bank' ? raw : 'off'
+}
+
+/** The pick as stored. */
+export function heldPickText(pick: HeldPick): string {
+  return pick === 'any' ? '1' : pick === 'off' ? '0' : pick
 }
 
 /** The row chip: `held`, or `held by Drywrought, Kaltinril` when the holders are named. */
