@@ -304,10 +304,13 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
 - "I have it" (`eq.gaps.heldOnly`, off by default): Items only; filters through `useHeldOnly` before
   Hide uncertain; on gaps-overlay that lives in `useGapsList`, so the overlay follows it. No
   export, no Items row.
-- Days back (gaps-all-characters) cuts the one-character view through `ownSince`; a row also seen
-  since the cut keeps its whole count, as in the join. The cut is memoised per slot (`lastOwnCut`,
-  `lastOwnCutOnly` on gaps-overlay): a fresh array misses `snapOf` and a Gaps visit costs
-  400-500 ms again. Held is never cut.
+- Days back (gaps-all-characters) chooses rows only: `ownSince` cuts the engine rows, the join cuts
+  each character's rows, loot and kills stay whole, and `useGapsData` `inWindow` applies `gapsSince`
+  to the derived list (drops, factions, images) once built. Counts and drop rates read the whole
+  log; an archive that ended before the window is still left out whole. One memo slot per copy
+  (`lastShown`, `lastShownOnly` on gaps-overlay): a fresh array misses `snapOf` and a Gaps visit
+  costs 400-500 ms again. Held is never cut.
+- All characters "Seen by": engine forage rows are noted under `item|name`, the Items row they become.
 - Forage update rows (`shared/gapForage.ts`): the engine files a KNOWN item's forage under domain
   `forage` (served after the four, no total); `withForageRows` always removes those rows, and an
   Items row with `forageUpdate` stands in for each page that lacks something. Zones compare by
@@ -325,8 +328,11 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   listing members one by one gets `replaces {lines, rate}` on that group's row only when it lacks a
   looted member, as an optional cleanup; never a row of its own (no edits for formatting alone).
   `CatalogMob.dropRates` (parallel to `drops`) is read when present; no data carries it yet.
-- Images: named after the page's in-game `|name`; `pageImage` when the page's imagefilename
-  differs; qualified titles keep the page's file. `imageAction` sits below `factionAction`, as on
+- Images: named and filed after the log's spelling of the mob met (`npc_a_cave_bat.png` for met
+  `a cave bat`, though the page A cave bat says `|name = a giant cave bat`); never after the page's
+  `|name`. When two spellings reach one page, the one that is its title or `|name` names the row.
+  `pageImage` when the page's imagefilename differs; qualified titles keep the page's file. Row
+  names equal the con title, so a Done mark also quiets the Event log tag. `imageAction` sits below `factionAction`, as on
   gaps-item-facts; merging gaps-tab into main_community replays a rerere resolution in `gaps.ts`.
 - Common forage: `gapForage.ts COMMON_FORAGE`; 6 -> 2 rows on the owner's logs.
 - Saved Gaps files carry `rows` (SAVED_ROWS). Raise it whenever the engine serves a new kind of row
@@ -405,6 +411,15 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
 - Nameplate check (`shot/nameplate.ts`): the picture as it stands, then near-white, then bright text.
 - Spell rank read against the row's name (`rankAfter`); `Resist: X -N` writes X.
 - A filled exaltation slot keeps its kind of effect off the page (no catalog at read time).
+- Review fixes (2026-10-21): the Class line = line start plus a colon or a code, a window needs
+  Class/Race codes, a Lore's prose may say "class"; Range +10 per tier is inverted in
+  `itemDelevel.ts` by key (catch_all's `scaleRange` is not on this branch); a classic numeral spell
+  (Clarity II) is told from an upgraded rank by the install's spells_us (upgraded ranks are not rows
+  there); the name check allows two OCR slips but never a digit change and never when another known
+  name is as near, and a capture files at once only on an exact name; forage update rows take no
+  shot (`isItemShotRow`); capture takes only a window titled exactly `EverQuest Legends` or
+  `EverQuest` (the owner's client: "EverQuest Legends"), the thumbnail is at most 16 MP from the
+  largest display, and an OCR read times out at 60 s and restarts the worker.
 - Every failed paste goes through `shotProblem` / `spellProblem`; every name check through
   `otherItemNote` (an unread name asks, never passes).
 - Spell icon = spells_us field 76; description id = field 86 into dbstr type 6; colour tags dropped,
@@ -419,6 +434,11 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
 - Not built: the glyph-exact reader (D2); tesseract reads every fixture.
 
 ## Unassigned open items (no branch yet)
+
+- A chest-only item's Dropped by column still says "You have not looted this yet." while Times
+  looted counts the payouts (catch_all (68) notes them on the Distinct mobs card). The line is in
+  `ItemDroppedBy.tsx` on gear-tab-improvements; the dialog that knows the chest count is catch_all's.
+  A small two-branch change: an optional empty-state prop there, passed from the dialog here.
 
 - The Recommended tab ignores layer-3 era derivations on purpose (`progressionPlan.ts`
   `eraLegal`).
