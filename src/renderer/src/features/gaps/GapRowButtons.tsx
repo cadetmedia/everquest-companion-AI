@@ -13,6 +13,7 @@ import UndoIcon from '@mui/icons-material/Undo'
 import NoteAddIcon from '@mui/icons-material/NoteAdd'
 import SearchIcon from '@mui/icons-material/Search'
 import { GAP_CAPTURE, mobPageOf, onMobPage, wikiCreateUrl, wikiEditUrl, wikiSearchUrl, type GapRow } from '@shared/gaps'
+import { forageButtons } from '@shared/gapForage'
 import { copyText } from '../../lib/clipboard'
 import { Tooltip } from '../../lib/Tooltip'
 
@@ -71,30 +72,39 @@ function CopyPageButton({ text, row, compact }: { text: () => string; row: GapRo
   const redirect = row.suggest !== undefined && (row.domain === 'item' || row.domain === 'spell')
   const tip = redirect
     ? `A redirect from the game's spelling to ${row.suggest?.page ?? ''}, so both spellings reach one page.`
-    : `Wiki markup from what your log saw. ${GAP_CAPTURE[row.domain]}`
+    : row.forageUpdate !== undefined
+      ? forageButtons(row.forageUpdate).copyTip
+      : `Wiki markup from what your log saw. ${GAP_CAPTURE[row.domain]}`
   const label = copied ? 'Copied' : redirect ? 'Copy redirect' : 'Copy wiki page'
   const icon = copied && compact ? <DoneIcon fontSize="small" color="success" /> : <ContentCopyIcon fontSize="small" />
   return <ActionButton compact={compact} label={label} tip={tip} icon={icon} onClick={() => void copyText(text()).then(setCopied)} testId="gaps-copy-page" />
 }
 
+/** The page the editor opens and its button's words: a page that exists, or a new one. */
+function editorOf(row: GapRow): { target: string; create: string; existing: boolean } {
+  if (row.forageUpdate !== undefined) {
+    const f = forageButtons(row.forageUpdate)
+    return { target: f.page, create: f.edit, existing: true }
+  }
+  if (onMobPage(row)) return { target: mobPageOf(row), create: 'Edit mob page', existing: true }
+  return { target: row.name, create: row.suggest !== undefined ? 'Create redirect' : 'Create page', existing: false }
+}
+
 /**
  * Into the wiki in one click: its search, and its editor on a new page of this name; for a faction
- * row, the editor on the mob page the faction belongs on.
+ * row, the editor on the mob page the faction belongs on; for a forage update, the item's own page.
  */
 function WikiLinks({ row, compact }: { row: GapRow; compact: boolean }): JSX.Element {
-  const faction = onMobPage(row)
-  const target = faction ? mobPageOf(row) : row.name
-  const redirect = !faction && row.suggest !== undefined
-  const create = faction ? 'Edit mob page' : redirect ? 'Create redirect' : 'Create page'
+  const { target, create, existing } = editorOf(row)
   return (
     <>
       <ActionButton compact={compact} label="Search wiki" tip={`The wiki's search for ${target}.`} icon={<SearchIcon fontSize="small" />} href={wikiSearchUrl(target)} testId="gaps-wiki-search" />
       <ActionButton
         compact={compact}
         label={create}
-        tip={faction ? `The wiki's editor on ${target}.` : `The wiki's editor on a new page named ${target}.`}
+        tip={existing ? `The wiki's editor on ${target}.` : `The wiki's editor on a new page named ${target}.`}
         icon={<NoteAddIcon fontSize="small" />}
-        href={faction ? wikiEditUrl(target) : wikiCreateUrl(target)}
+        href={existing ? wikiEditUrl(target) : wikiCreateUrl(target)}
         testId="gaps-wiki-create"
       />
     </>
