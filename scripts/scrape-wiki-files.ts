@@ -14,16 +14,15 @@ import { dirname, resolve } from 'path'
 import { fileURLToPath } from 'url'
 import { isMain } from './sources/isMain'
 import { wikiGet } from './sources/wikiApi'
+import { wikiFileKey } from '../src/shared/wikiTitle'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const CACHE = resolve(ROOT, 'scripts/sources/cache/files/files.json')
 const MOBS = resolve(ROOT, 'src/renderer/src/data/eqlegends/mobs.json')
 
-/** A file name as the wiki keys it: no `File:`, underscores for spaces, the first letter capital. */
-export function fileKey(name: string): string {
-  const bare = name.trim().replace(/^File:/i, '').replace(/ /g, '_')
-  return bare.charAt(0).toUpperCase() + bare.slice(1)
-}
+/** A file name as the wiki keys it (`wikiFileKey`): a page's `npc_an_alligator.png` + U+200E is
+ *  the wiki's `Npc_an_alligator.png`. */
+export const fileKey = wikiFileKey
 
 /** Each record marked `noImage` when its page names no image, or one `files` lacks. */
 export function markNoImage(mobs: { image?: string; noImage?: true }[], files: ReadonlySet<string>): number {

@@ -174,6 +174,7 @@ import { itemBaseName, parseStatsBlock, type ItemStatBlock } from '../shared/ite
 // The ONE question this parser asks the era tables: "is this a token you name?" — the guard on the
 // category reader below. What a token MEANS is still decided only in shared/planner/era.ts.
 import { namesEra } from '../shared/planner/era'
+import { stripFormatChars } from '../shared/wikiTitle'
 
 /** Strip a trailing ` +N` upgrade suffix. Applied before lookup + as the cache key. ONE
  *  definition of the rule for every main-side caller — see shared/itemStats.itemBaseName. */
@@ -240,7 +241,7 @@ export function parseQuestLinks(block: string): ItemQuestUse[] {
   const linkRe = /\[\[([^\]]+?)\]\]/g
   let m: RegExpExecArray | null
   while ((m = linkRe.exec(block)) !== null) {
-    const inner = m[1].trim()
+    const inner = stripFormatChars(m[1])
     const pipe = inner.indexOf('|')
     const page = (pipe >= 0 ? inner.slice(0, pipe) : inner).trim()
     const label = (pipe >= 0 ? inner.slice(pipe + 1) : inner).trim()
@@ -871,9 +872,10 @@ function loreQuestFlags(statsBlock: string | undefined, stats: ItemStatBlock | u
   }
 }
 
-/** `|lucy_img_ID` → File:Item <id>.png. A bare integer or nothing at all. */
+/** `|lucy_img_ID` → File:Item <id>.png. A bare integer (a pasted bidi mark aside) or nothing at all. */
 function parseIconId(iconRaw: string | null): number | undefined {
-  return iconRaw && /^\d+$/.test(iconRaw.trim()) ? Number(iconRaw.trim()) : undefined
+  const id = stripFormatChars(iconRaw ?? '')
+  return /^\d+$/.test(id) ? Number(id) : undefined
 }
 
 /**
