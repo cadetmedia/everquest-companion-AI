@@ -181,6 +181,12 @@ disagree, RULES.md wins; fix this file.
   the branch's COMMITTED file, not a worktree's uncommitted edit; a scraper copied that way had no
   `--offline` flag and ran its revision check. Copy from the worktree path, and before running any
   scraper check the flag is in the file you are about to run (`grep -c offline`).
+- **Wiki edits: what the player meets, never cleanup for its own sake** (owner, 2026-10-21: "we are
+  not wiki admins, lets focus on things we notice while playing, and not as much on 100% cleanup,
+  but we should always leave a wiki page better than we found it, as long as we aren't editing it
+  for formatting sake alone"). The app suggests an edit only for what the player's log shows a page
+  lacks; a formatting change (group lines, layout) rides along with a real change, never alone; no
+  wiki-wide cleanup lists or bot requests.
 - **Scraping is wiki-only; the log is the truth** (owner, 2026-10-10). The game's own files may
   be parsed once, at dev time, to find wiki errors; nothing shipped or scraped depends on them.
   DATA_REFRESH.md, "The ETL".
