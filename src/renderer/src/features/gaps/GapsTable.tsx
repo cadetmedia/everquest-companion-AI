@@ -387,7 +387,7 @@ export default function GapsTable({
     return (
       <Typography variant="body2" color="text.secondary" sx={{ py: 2 }} data-testid="gaps-empty">
         {hiddenByFilter
-          ? 'No unknown names match the search or the zone filter.'
+          ? 'No unknown names match the search or the filters.'
           : "Nothing here: every name the log mentioned in this domain is in the app's data."}
       </Typography>
     )

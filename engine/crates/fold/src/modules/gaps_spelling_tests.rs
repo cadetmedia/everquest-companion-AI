@@ -2,6 +2,7 @@
 //! parent test file's corpus.
 
 use super::{feed, module, rows};
+use crate::EqModule;
 use serde_json::json;
 
 #[test]
@@ -87,6 +88,28 @@ fn a_known_mobs_pet_is_known_and_a_players_pet_or_mount_is_no_mob() {
     );
     // Filed under its mob: the wiki pages the mob, never its pet.
     assert_eq!(rows(&m), ["mob a nameless thing x1 [killed]"]);
+}
+
+/// A Dungeon Crawl's Reward Chest pays out any item from any mob of the crawl (owner, 2026-10-21):
+/// the item is looted and keeps its zone and disposition, but the chest is no source of it.
+#[test]
+fn a_reward_chest_payout_files_the_item_and_no_source() {
+    let mut m = module();
+    feed(&mut m, 1, json!({ "kind": "zone", "zone": "Befallen 4 (Refined)" }));
+    let raw = "[Tue Oct 06 18:12:26 2026] You looted a Glowing Widget from Reward Chest and sold it for free.";
+    feed(
+        &mut m,
+        2,
+        json!({ "kind": "loot", "item": "Glowing Widget", "source": "Reward Chest", "disposition": "sold", "raw": raw }),
+    );
+    assert_eq!(rows(&m), ["item Glowing Widget x1 [looted]"]);
+    let details = &m.snapshot()["state"]["rows"][0]["details"];
+    assert!(details.get("sources").is_none(), "{details}");
+    assert_eq!(details["zones"]["all"], json!(["Befallen 4 (Refined)"]));
+    assert_eq!(details["dispositions"]["entries"][0]["name"], "sold");
+    feed(&mut m, 3, json!({ "kind": "loot", "item": "Glowing Widget", "source": "a decaying skeleton" }));
+    let details = &m.snapshot()["state"]["rows"][0]["details"];
+    assert_eq!(details["sources"], json!({ "entries": [{ "name": "a decaying skeleton", "n": 1 }], "distinct": 1 }));
 }
 
 #[test]
