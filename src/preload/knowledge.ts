@@ -122,6 +122,12 @@ export const knowledgeBridge = {
     ipcRenderer.on(IPC.onShotCaptured, listener)
     return () => ipcRenderer.removeListener(IPC.onShotCaptured, listener)
   },
+  /** A capture started; the returned function stops listening. */
+  onShotCapturing: (cb: () => void): (() => void) => {
+    const listener = (): void => cb()
+    ipcRenderer.on(IPC.onShotCapturing, listener)
+    return () => ipcRenderer.removeListener(IPC.onShotCapturing, listener)
+  },
   /** An item icon drawn from the install's own sheets, as a data URL; null when it is not there. */
   shotIcon: (id: number): Promise<string | null> => ipcRenderer.invoke(IPC.shotIcon, id),
   /** Save a pasted mob picture under the wiki's file name: the auto-save folder, else a save dialog. */

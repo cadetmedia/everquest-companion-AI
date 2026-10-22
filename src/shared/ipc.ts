@@ -1168,6 +1168,8 @@ export const IPC = {
   shotChannels: 'shot:channels',
   // main -> renderer: a capture is waiting. Payload: none.
   onShotCaptured: 'shot:captured',
+  // main -> renderer: a capture started (the capture bar's spinner). Payload: none.
+  onShotCapturing: 'shot:capturing',
   // The clipboard's picture as PNG bytes, or null (a click on the paste box). Payload: none.
   shotClipboard: 'shot:clipboard',
   // An item icon drawn from the install's own sheets, as a data URL. Payload: (id: number).

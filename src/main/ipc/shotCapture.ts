@@ -62,6 +62,7 @@ async function capture(via: 'macro' | 'overlay'): Promise<void> {
   const t0 = performance.now()
   const ms = (): number => Math.round(performance.now() - t0)
   busy = true
+  tellMain(IPC.onShotCapturing)
   try {
     const got = await grabGame()
     if ('error' in got || got.img === null) {
@@ -69,7 +70,7 @@ async function capture(via: 'macro' | 'overlay'): Promise<void> {
       return
     }
     const read = await readCapture(got.img, READERS)
-    if (read.windows.length === 0) keep({ at: new Date().toISOString(), via, window: got.name, ms: ms(), error: 'No item window was found in the capture: snip it (Win+Shift+S) and paste it on the row instead.' })
+    if (read.windows.length === 0) keep({ at: new Date().toISOString(), via, window: got.name, ms: ms(), error: 'No item window found: snip it and paste on the row.' })
     // Two windows open side by side are two readings, each filed on its own row.
     for (const w of read.windows) keep({ at: new Date().toISOString(), via, window: got.name, ms: ms(), reply: w.reply })
   } catch (e) {
@@ -101,8 +102,13 @@ function takeMacroFire(fire: FireMessage): boolean {
 function keep(c: Captured): void {
   waiting.push(c)
   if (waiting.length > KEEP) waiting.splice(0, waiting.length - KEEP)
+  tellMain(IPC.onShotCaptured)
+}
+
+/** A notice to the main window (the Gaps tab's capture bar), when it is open. */
+function tellMain(channel: string): void {
   const w = getMainWindow()
-  if (w && !w.isDestroyed()) w.webContents.send(IPC.onShotCaptured)
+  if (w && !w.isDestroyed()) w.webContents.send(channel)
 }
 
 export function registerShotCaptureIpc(): void {

@@ -49,17 +49,18 @@ export interface CaptureHowTo {
 
 /**
  * The macro for a character, from the latest Channels line (the number depends on join order). With
- * no number known yet, the shape of the line and where its number comes from.
+ * no number known yet, where its number comes from. A few words (owner, 2026-10-21: "we just hit
+ * them with so much text to read"); the bar's tooltip says the rest.
  */
 export function captureHowTo(character: string | null, channels: Readonly<Record<string, number>>): CaptureHowTo {
   const channel = character === null || character === '' ? 'eqc<yourname>' : captureChannel(character)
   const join = `/join ${channel}`
   const n = channels[channel]
   if (n === undefined) {
-    return { join, text: `Type ${join} once, then make a social macro: /<channel number> ${CAPTURE_MARKER}. The number is ${channel}'s in the Channels: line the game prints after /join (type /list to see it again).` }
+    return { join, text: `${join}, then /list for its number` }
   }
   const macro = `/${String(n)} ${CAPTURE_MARKER}`
-  return { join, macro, text: `Type ${join} once, then make a social macro: ${macro}` }
+  return { join, macro, text: `${join}, then macro ${macro}` }
 }
 
 /** A marker line further than this from the clock is not the player pressing the macro now. */

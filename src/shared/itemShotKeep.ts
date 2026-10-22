@@ -166,3 +166,6 @@ export function captureRow(name: string | undefined, rowNames: readonly string[]
   const near = rowNames.filter((r) => sameItem(name, r, others))
   return near.length === 1 ? { row: near[0], exact: false } : undefined
 }
+
+/** The lines read but not placed, less OCR junk of under four letters (`EEE`; owner, 2026-10-21). */
+export const unplaced = (r: ItemShotReply): string[] => r.read.unread.filter((u) => (u.match(/[a-z]/gi) ?? []).length >= 4)

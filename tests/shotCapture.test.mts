@@ -16,7 +16,7 @@ import { tabLabels, windowAround } from '../src/main/shot/findWindow.ts'
 import { stopOcr, withTimeout } from '../src/main/shot/ocr.ts'
 import type { Rgba } from '../src/main/shot/pixels.ts'
 import { readItemShot, type ShotReaders } from '../src/main/shot/readItemShot.ts'
-import { captureRow } from '../src/shared/itemShotKeep.ts'
+import { captureRow, unplaced } from '../src/shared/itemShotKeep.ts'
 import { captureChannel, captureGate, captureHowTo, channelNumbers, isCaptureLine, RECENT_MS } from '../src/shared/shotTrigger.ts'
 import { readPng } from './shotPng.mts'
 
@@ -115,6 +115,11 @@ test('A CAPTURE IS FILED AT ONCE ON THE ROW NAMED SO; A SLIP WAITS FOR THE PLAYE
   assert.equal(captureRow(undefined, rows), undefined)
 })
 
+test("A READING'S NOT-PLACED JUNK UNDER FOUR LETTERS IS DROPPED (OWNER, 2026-10-21: 'EEE')", () => {
+  const r = { read: { statsblock: '', unread: ['EEE', 'Rgx 1', 'Haste: 21%'] }, lines: [], icons: [], ms: 1 }
+  assert.deepEqual(unplaced(r), ['Haste: 21%'])
+})
+
 test('A CAPTURE OF A REAL ITEM NEAR A ROW IS NOT FILED ON THAT ROW: CLOTH CAPE IS NOT CLOTH CAP, PAGE 2 IS NOT PAGE 3 (REVIEW, 2026-10-21)', () => {
   // Cloth Cape is in the catalog (main hands its near names in `known`): the Cloth Cap row is not it.
   assert.equal(captureRow('Cloth Cape', ['Cloth Cap'], ['Cloth Cape']), undefined)
@@ -189,12 +194,12 @@ test("THE CHANNEL'S NUMBER FROM THE LATEST CHANNELS LINE, AND THE MACRO THE PLAY
   assert.deepEqual(captureHowTo('Kaltinril', channels ?? {}), {
     join: '/join eqckaltinril',
     macro: '/2 eqc capture',
-    text: 'Type /join eqckaltinril once, then make a social macro: /2 eqc capture'
+    text: '/join eqckaltinril, then macro /2 eqc capture'
   })
-  // No Channels line seen yet: the shape, and where the number comes from.
+  // No Channels line seen yet: where the number comes from.
   const unknown = captureHowTo('Kaltinril', {})
   assert.equal(unknown.macro, undefined)
-  assert.match(unknown.text, /^Type \/join eqckaltinril once, then make a social macro: \/<channel number> eqc capture\. The number is eqckaltinril's in the Channels: line/)
+  assert.equal(unknown.text, '/join eqckaltinril, then /list for its number')
   assert.equal(captureHowTo(null, {}).join, '/join eqc<yourname>')
 })
 

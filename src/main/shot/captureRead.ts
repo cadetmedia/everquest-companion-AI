@@ -56,7 +56,7 @@ export function gameWindow<T extends { name: string }>(sources: readonly T[]): T
   if (eq !== undefined) return eq
   const near = sources.filter((s) => /EverQuest/i.test(s.name)).map((s) => `"${s.name}"`)
   if (near.length === 0) return { error: 'No EverQuest window was found to capture.' }
-  return { error: `No window titled exactly "EverQuest Legends" or "EverQuest" was found (seen: ${near.slice(0, 3).join(', ')}): only the game's own window is captured.` }
+  return { error: `No window titled exactly "EverQuest Legends" or "EverQuest" (seen: ${near.slice(0, 3).join(', ')}).` }
 }
 
 /** A label inside a window already read is that window's (a second yellow word in it), not another. */

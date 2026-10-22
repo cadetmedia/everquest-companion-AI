@@ -13,9 +13,9 @@ import { type JSX, useCallback, useEffect, useState } from 'react'
 import { Box, Button, ButtonBase, Chip, Stack, TextField, Typography } from '@mui/material'
 import { formatCoin, type GapRow } from '@shared/gaps'
 import type { ItemShotReply } from '@shared/itemWindow'
-import { cleared, hasWindowPart, isItemShotRow, keptAfter, otherItemNote, PART_WORDS, shotKind, shotProblem, type ShotKind } from '@shared/itemShotKeep'
+import { cleared, hasWindowPart, isItemShotRow, keptAfter, otherItemNote, PART_WORDS, shotKind, shotProblem, unplaced, type ShotKind } from '@shared/itemShotKeep'
 import type { ItemPageShot } from '@shared/wikiPage'
-import { itemRowNamesNow, itemShotNow, setItemShot, useItemShots, type StoredShot } from './itemShotsStore'
+import { itemRowNamesNow, itemShotNow, setCapturedRead, setItemShot, useCapturedRead, useItemShots, type StoredShot } from './itemShotsStore'
 import { Line, PasteZone, WrongItem } from './PasteZone'
 import SpellShot from './SpellShot'
 import MobPicture from './MobPicture'
@@ -121,7 +121,7 @@ function TierChoice({ name, kept }: { name: string; kept: StoredShot }): JSX.Ele
 
 /** The kept reading: icon, Value, focus, lore, the editable statsblock. */
 function KeptShot({ name, kept, reply }: { name: string; kept: StoredShot; reply: ItemShotReply | null }): JSX.Element {
-  const unread = reply?.read.unread ?? []
+  const unread = reply === null ? [] : unplaced(reply)
   return (
     <>
       <IconPicker key={reply?.ms ?? 0} name={name} kept={kept} matches={reply?.icons.map((h) => h.id) ?? []} />
@@ -149,6 +149,18 @@ interface Pending {
   kind: ShotKind
   /** Why it waits: another item's part, or no name read. */
   note: string
+}
+
+/**
+ * A capture from the game on this row: its question when it is a near match, else its reading. A newer
+ * capture clears what a paste showed (`clear`).
+ */
+function useCaptured(name: string, clear: () => void): { ask: Pending | null; reply: ItemShotReply | null } {
+  const c = useCapturedRead(name)
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- `clear` only sets state; a new capture is the trigger
+  useEffect(clear, [c])
+  if (c === undefined) return { ask: null, reply: null }
+  return c.note === undefined ? { ask: null, reply: c.reply } : { ask: { reply: c.reply, kind: c.kind, note: c.note }, reply: null }
 }
 
 function ItemShot({ row }: { row: GapRow }): JSX.Element {
@@ -183,7 +195,15 @@ function ItemShot({ row }: { row: GapRow }): JSX.Element {
     },
     [row.name, apply]
   )
-  const checks = [...(reply?.read.checks ?? []), ...(reply?.iconNote === undefined ? [] : [reply.iconNote])]
+  // A capture from the game lands here, not on the capture bar: its checks, or its question when it
+  // is a near match. A newer capture replaces what a paste showed.
+  const captured = useCaptured(row.name, () => {
+    setReply(null)
+    setPending(null)
+  })
+  const ask = pending ?? captured.ask
+  const shown = reply ?? captured.reply
+  const checks = [...(shown?.read.checks ?? []), ...(shown?.iconNote === undefined ? [] : [shown.iconNote])]
   return (
     <Stack spacing={0.75} data-testid="gaps-shot">
       <PasteZone label="Click here and paste an image to read it" busy={busy} onPicture={read} />
@@ -192,14 +212,16 @@ function ItemShot({ row }: { row: GapRow }): JSX.Element {
           ERROR: unable to read image. {failed}
         </Typography>
       )}
-      {pending !== null && (
+      {ask !== null && (
         <WrongItem
-          note={pending.note}
+          note={ask.note}
           onUse={() => {
-            apply(pending)
+            apply(ask)
+            if (pending === null) setCapturedRead(row.name, { reply: ask.reply, kind: ask.kind })
             setPending(null)
           }}
           onDiscard={() => {
+            if (pending === null) setCapturedRead(row.name, null)
             setPending(null)
             setReply(null)
           }}
@@ -211,7 +233,7 @@ function ItemShot({ row }: { row: GapRow }): JSX.Element {
           {c}
         </Line>
       ))}
-      {kept !== undefined && <KeptShot name={row.name} kept={kept} reply={pending === null ? reply : null} />}
+      {kept !== undefined && <KeptShot name={row.name} kept={kept} reply={ask === null ? shown : null} />}
     </Stack>
   )
 }

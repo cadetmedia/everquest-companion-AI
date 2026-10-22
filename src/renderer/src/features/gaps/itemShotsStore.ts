@@ -7,6 +7,8 @@
 import { useSyncExternalStore } from 'react'
 import type { ItemPageShot } from '@shared/wikiPage'
 import type { SpellPageShot } from '@shared/spellWindow'
+import type { ItemShotReply } from '@shared/itemWindow'
+import type { ShotKind } from '@shared/itemShotKeep'
 
 export const SHOTS_KEY = 'eq.gaps.itemShots'
 export const SPELL_SHOTS_KEY = 'eq.gaps.spellShots'
@@ -100,3 +102,30 @@ export const setItemRowNames = (names: readonly string[]): void => {
   rowNames = names
 }
 export const itemRowNamesNow = (): readonly string[] => rowNames
+
+/** A capture from the game for one row; `note` while it waits for the player (a near match). */
+export interface CapturedRead {
+  reply: ItemShotReply
+  kind: ShotKind
+  note?: string
+}
+
+/**
+ * The last capture for each row, for this run only: the row shows its checks, or its question, never
+ * the capture bar (owner, 2026-10-21: "can't the individual area for the item/mob/whatever just 'get'
+ * the data?").
+ */
+let captured: Readonly<Record<string, CapturedRead>> = {}
+const capturedListeners = new Set<() => void>()
+export const setCapturedRead = (name: string, read: CapturedRead | null): void => {
+  captured = read === null ? Object.fromEntries(Object.entries(captured).filter(([k]) => k !== name)) : { ...captured, [name]: read }
+  for (const l of capturedListeners) l()
+}
+const subscribeCaptured = (onChange: () => void): (() => void) => {
+  capturedListeners.add(onChange)
+  return () => {
+    capturedListeners.delete(onChange)
+  }
+}
+/** The last capture for this row, or undefined. */
+export const useCapturedRead = (name: string): CapturedRead | undefined => useSyncExternalStore(subscribeCaptured, () => captured[name])
