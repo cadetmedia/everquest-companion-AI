@@ -13,8 +13,10 @@
 // archives and no snapshot yet is its archives alone.
 //
 // HOW FAR BACK is a player setting in days (owner: default 60): an archive that ended before the
-// cut-off is left out whole, and a row, loot line or kill last seen before it is dropped. A row's
-// count still holds what one stretch saw before the cut-off; the stretch is the unit the log keeps.
+// cut-off is left out whole, and a row last seen before it is dropped. A row's count still holds
+// what one stretch saw before the cut-off; the stretch is the unit the log keeps. Loot and kills are
+// never cut line by line: the window only chooses which rows show, so a drop's count and its rate
+// (corpses over kills) are both whole, never drops in the window over kills of all time.
 
 import { eligibleSegments } from './logArchive/eligible'
 import { mergeGaps } from './logArchive/mergeGaps'
@@ -23,7 +25,7 @@ import { mergeLoot } from './logArchive/mergeLoot'
 import { mergeModule } from './logArchive/mergeRules'
 import type { Segment } from './logArchive/segment'
 import type { GapDomain, GapRow, GapsSnap } from './gaps'
-import type { KillMap, KillsSnap } from './kills'
+import type { KillsSnap } from './kills'
 import type { OwnershipPayload } from './planner/ownership'
 import type { LootSnap } from './types'
 
@@ -188,16 +190,6 @@ export function gapsSince(snap: GapsSnap, stamp: string): GapsSnap {
   return { ...snap, rows, totals }
 }
 
-export function lootSince(loot: LootSnap, ms: number): LootSnap {
-  return loot.filter((e) => e.ts >= ms)
-}
-
-export function killsSince(kills: KillsSnap, ms: number): KillsSnap {
-  const mobs: KillMap = {}
-  for (const [k, info] of Object.entries(kills.mobs)) if (info.lastTs >= ms) mobs[k] = info
-  return { ...kills, mobs }
-}
-
 /** The attached character's inputs as the derivation reads them. */
 export interface OwnGaps {
   gaps: GapsSnap
@@ -207,13 +199,13 @@ export interface OwnGaps {
 
 /**
  * The one-character view cut to the window (owner, 2026-10-21: "days back should be for any
- * character yes"), the same cut the join makes per character: rows last seen before it, and loot
- * and kills before it, are left out. The attached character's archive history is already folded
- * into its modules, so a segment that ended before the cut drops out through its rows, loot and
- * kills, all older than the cut; a row also seen since keeps its whole count, as in the join.
+ * character yes"), the same cut the join makes per character: rows last seen before it are left
+ * out; a row also seen since keeps its whole count, as in the join. Loot and kills stay whole: the
+ * rows derived from them (drops, factions, images) are cut after they are built (`gapsSince` on the
+ * derived list, useGapsData), so their counts and rates read the whole log.
  */
 export function ownSince(own: OwnGaps, cut: { stamp: string; ms: number }): OwnGaps {
-  return { gaps: gapsSince(own.gaps, cut.stamp), loot: lootSince(own.loot, cut.ms), kills: own.kills === null ? null : killsSince(own.kills, cut.ms) }
+  return { ...own, gaps: gapsSince(own.gaps, cut.stamp) }
 }
 
 // ---- the join ----------------------------------------------------------------------------------
@@ -241,7 +233,8 @@ export const seenByKey = (r: Pick<GapRow, 'domain' | 'name'>): string => `${r.do
 /** Each row of one character's cut snapshot noted as seen by it. */
 function noteSeen(seenBy: Map<string, string[]>, rows: readonly GapRow[], label: string): void {
   for (const r of rows) {
-    const k = seenByKey(r)
+    // A known item's forage proof (domain `forage`, gaps-item-facts) is shown as its Items row.
+    const k = seenByKey((r.domain as string) === 'forage' ? { ...r, domain: 'item' } : r)
     const had = seenBy.get(k)
     if (had === undefined) seenBy.set(k, [label])
     else if (!had.includes(label)) had.push(label)
@@ -260,9 +253,10 @@ function joinStep<T>(acc: T | null, next: T | null, rule: (a: unknown, b: unknow
 }
 
 /**
- * The characters joined one after another with the archive's merge rules, each cut to the window
- * first. A character whose state the rule will not join (a kills shape from another build) adds
- * nothing to that module and is not counted twice. Loot is put back in time order.
+ * The characters joined one after another with the archive's merge rules, each one's rows cut to
+ * the window first; loot and kills join whole, as in `ownSince`. A character whose state the rule
+ * will not join (a kills shape from another build) adds nothing to that module and is not counted
+ * twice. Loot is put back in time order.
  */
 export function joinCharacters(inputs: readonly CharacterInputs[], cut: { stamp: string; ms: number } | null): JoinedGaps {
   let gaps: GapsSnap | null = null
@@ -275,9 +269,8 @@ export function joinCharacters(inputs: readonly CharacterInputs[], cut: { stamp:
     if (cutG !== null) noteSeen(seenBy, cutG.rows, c.label)
     gaps = joinStep(gaps, cutG, mergeGaps)
     const l = Array.isArray(c.loot) ? (c.loot as LootSnap) : null
-    loot = joinStep(loot, l === null || cut === null ? l : lootSince(l, cut.ms), mergeLoot) ?? loot
-    const k = asKills(c.kills)
-    kills = joinStep(kills, k === null || cut === null ? k : killsSince(k, cut.ms), mergeKills)
+    loot = joinStep(loot, l, mergeLoot) ?? loot
+    kills = joinStep(kills, asKills(c.kills), mergeKills)
   }
   return { gaps, loot: inputs.length > 1 ? [...loot].sort((x, y) => x.ts - y.ts) : loot, kills, seenBy }
 }

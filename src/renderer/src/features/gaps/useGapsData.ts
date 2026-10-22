@@ -23,7 +23,7 @@ import type { PageExtras, ZoneNamer } from '@shared/wikiPage'
 import dropGroupsJson from '../../data/eqlegends/dropGroups.json'
 import mobsJson from '../../data/eqlegends/mobs.json'
 import { MOB_CATALOG } from '../mobs/mobSearch'
-import { joinCharacters, otherInputs, ownSince, type CharacterGaps, type OwnGaps } from '@shared/gapsAllCharacters'
+import { gapsSince, joinCharacters, otherInputs, ownSince, type CharacterGaps, type OwnGaps } from '@shared/gapsAllCharacters'
 import { useModule } from '../../lib/useModule'
 import { useItemMobs } from '../../lib/gapItemMobs'
 
@@ -46,6 +46,7 @@ const snapOf = lastGapsSnap()
 const lastLooted = memoLast<string[]>()
 const lastKills = memoLast<KillMap>()
 const lastOwnCut = memoLast<OwnGaps>()
+const lastShown = memoLast<GapsSnap | null | undefined>()
 
 export interface GapsData {
   /** The engine's snapshot with the derived domains joined in; undefined until it lands. */
@@ -86,6 +87,11 @@ function ownInputs(engine: GapsSnap | null | undefined, loot: LootSnap, kills: K
   return { engine: own.gaps, loot: own.loot, killMobs: own.kills?.mobs ?? NO_KILLS }
 }
 
+/** The rows the day window keeps: it chooses rows only, each derived from whole loot and kills (ownSince). */
+function inWindow(snap: GapsSnap | null | undefined, cut: { stamp: string } | null | undefined): GapsSnap | null | undefined {
+  return lastShown([snap, cut?.stamp], () => (snap && cut ? gapsSince(snap, cut.stamp) : snap))
+}
+
 export function useGapsData(all: AllCharacters | null = null, opts: GapsDataOptions = {}): GapsData {
   const liveEngine = useModule<GapsSnap>(GAPS_MODULE_ID)
   const liveLoot = useModule<LootSnap>('loot') ?? NO_LOOT
@@ -94,7 +100,7 @@ export function useGapsData(all: AllCharacters | null = null, opts: GapsDataOpti
   // The join runs a beat behind the box, so the tab stays live and can say it is working (owner, 2026-10-19).
   const deferredAll = useDeferredValue(all)
   // All characters (owner, 2026-10-19): the attached character's live inputs joined with every other
-  // character's saved ones, each cut to the day window, before anything is derived from them.
+  // character's saved ones, each one's rows cut to the day window (loot and kills join whole).
   const joined = useMemo(() => {
     if (deferredAll === null || liveEngine == null) return null
     const live = { label: deferredAll.liveLabel, gaps: liveEngine, loot: liveLoot, kills: liveKills ?? null }
@@ -108,5 +114,5 @@ export function useGapsData(all: AllCharacters | null = null, opts: GapsDataOpti
   const itemMobs = useItemMobs(looted)
   const snap = useMemo(() => (engine ? snapOf(engine, { loot, kills: killMobs, cons, itemMobs }, WIKI) : engine), [engine, loot, killMobs, itemMobs, cons])
   const kills = lastKills([killMobs], () => killIndex(killMobs))
-  return { snap, engine, loot, ownLoot: liveLoot, kills, seenBy: joined?.seenBy, joining: all !== deferredAll }
+  return { snap: inWindow(snap, joined === null ? opts.cut : deferredAll?.cut), engine, loot, ownLoot: liveLoot, kills, seenBy: joined?.seenBy, joining: all !== deferredAll }
 }
