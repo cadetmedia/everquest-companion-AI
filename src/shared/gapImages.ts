@@ -136,8 +136,17 @@ const QUALIFIED = /\s\([^()]+\)$/
 function imageNames(metName: string, page: CatalogMob): Pick<GapRow, 'name' | 'image' | 'pageImage'> {
   if (QUALIFIED.test(page.page)) return { name: page.page, image: page.image ?? npcImageName(page.name) }
   const image = npcImageName(metName)
-  return page.image === undefined || page.image.toLowerCase() === image ? { name: metName, image } : { name: metName, image, pageImage: page.image }
+  return page.image === undefined || sameWikiFile(page.image, image) ? { name: metName, image } : { name: metName, image, pageImage: page.image }
 }
+
+/** The wiki's one file: a space is `_`, a run of them one, and only the first letter's case is free. */
+const wikiFileKey = (file: string): string => {
+  const f = file.trim().replace(/[\s_]+/g, '_')
+  return f.charAt(0).toUpperCase() + f.slice(1)
+}
+
+/** Whether two file names name one file on the wiki (`Npc_guard_e`tru.png` is `npc_guard_e`tru.png`). */
+export const sameWikiFile = (a: string, b: string): boolean => wikiFileKey(a) === wikiFileKey(b)
 
 /** The served snapshot with the image rows joined in and counted, so the tab treats them as a domain. */
 export function withImageRows<S extends { rows: GapRow[]; totals: Record<string, number> }>(

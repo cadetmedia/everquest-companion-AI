@@ -165,6 +165,9 @@ impl GapsModule {
                 self.zone = ev.str("zone").map(str::to_string);
                 false
             }
+            // The player's own `/who` row, parsed apart, names a player like any /who row (gaps_players.rs),
+            // so a self-con (a /con with nothing targeted) is never a row (owner, 2026-10-22: "this is me").
+            "selfWho" => self.unparsed(ev),
             "loot" | "itemReceived" | "itemMerge" => self.item_event(ev),
             "purchase" | "coin" | "unknown" => self.trade(ev),
             "death" => self.kill_factions_of(ev) | self.death(ev),

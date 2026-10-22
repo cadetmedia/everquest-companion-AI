@@ -43,12 +43,16 @@ fn chatter(text: &str) -> Option<&str> {
     (one_word && text.contains('\'')).then_some(name)
 }
 
-/// `X has joined the group.` and a `/who` row, `[50 Warrior] X (Ogre)` / `[ANONYMOUS] X`.
+/// `X has joined the group.` and a `/who` row, `[50 Warrior] X (Ogre)` / `[ANONYMOUS] X`, which may
+/// open `AFK ` or `* RIP * ` (eqlog who.rs).
 fn joined_or_listed(text: &str) -> Option<&str> {
     if let Some(name) = text.strip_suffix(" has joined the group.") {
         return (!name.contains(' ')).then_some(name);
     }
-    let rest = text.strip_prefix('[')?.split_once("] ")?.1;
+    let row = text.trim_start();
+    let row = row.strip_prefix("* RIP *").map_or(row, str::trim_start);
+    let row = row.strip_prefix("AFK ").map_or(row, str::trim_start);
+    let rest = row.strip_prefix('[')?.split_once("] ")?.1;
     let name = rest.split([' ', '<']).next()?;
     (!name.is_empty() && name.chars().all(char::is_alphabetic)).then_some(name)
 }
@@ -180,6 +184,8 @@ mod tests {
             Some("Kasobn")
         );
         assert_eq!(joined_or_listed("[ANONYMOUS] Squiz"), Some("Squiz"));
+        assert_eq!(joined_or_listed("AFK [50 WAR/MNK/SHM] Drywrought (Iksar)  ZONE: Oggok (oggok)"), Some("Drywrought"));
+        assert_eq!(joined_or_listed(" * RIP * [12 CLR] Kamas (Ogre)  ZONE: Oggok (oggok)"), Some("Kamas"));
         assert_eq!(hail_of("You say, 'Hail, Grapok'"), Some("Grapok"));
     }
 
