@@ -4,9 +4,12 @@
 // group's members. The owner's rule: an item in a group is filed as the group, "Rusty Weapons
 // (a bandit)", with the members the player saw, since a mob that drops one member drops the set.
 // Drop groups are standardized (owner, 2026-10-21: "we really need the app to standardize rusty
-// weapons vs listing all these random rusty weapons"): only the group line is ever offered, and a
-// page that writes a group out member by member (A Cracked Skeleton, A lizard man scout) gets a row
-// to replace those lines with the group line, rated by the members' own `[Overall: x%]` summed.
+// weapons vs listing all these random rusty weapons"): only the group line is ever offered, never a
+// member's. A page that writes the group out member by member (A Cracked Skeleton, A lizard man
+// scout) and lacks the member looted gets the group's row, which also names those lines as an
+// optional while-you-edit cleanup, the group line rated by their own `[Overall: x%]` summed. A page
+// that lacks nothing gets no row: collapsing lines alone is formatting (owner, same day: "we are not
+// wiki admins ... as long as we aren't editing it for formatting sake alone").
 // A mob the catalog does not have at all is a mob row already, so its drops are not repeated here.
 //
 // The wiki ties a drop to a mob on two pages, each typed by hand: the mob page's `|known_loot` and
@@ -183,12 +186,16 @@ export function dropGaps(loot: readonly LootEvent[], catalog: readonly CatalogMo
   const common = commonLootNames(catalog)
   const inGroups = groupsByItem(groups)
   const missing = new Map<string, Missing>()
+  const listedMembers: [LootEvent, string, Filed][] = []
   for (const e of loot) {
     const filed = filedAs(e, listed, inGroups)
     const mob = mobSourceOf(e)
     if (filed === null || mob === undefined) continue
-    addDrop(missing, e, mob, filed)
+    if (filed.listed === true) listedMembers.push([e, mob, filed])
+    else addDrop(missing, e, mob, filed)
   }
+  // A member the page lists makes no row, but counts toward a group row the page lacks: its rate is any member.
+  for (const [e, mob, filed] of listedMembers) if (missing.has(`${mobKey(mob)}|${sourceItemKey(filed.name)}`)) addDrop(missing, e, mob, filed)
   const kept = itemMobs === undefined ? [...missing.values()] : withoutServerWide([...missing.values()], catalog, groups, itemMobs)
   const field = (m: Missing): Partial<GapRow> => (common.has(m.name.toLowerCase()) ? { lootField: 'common_loot' } : {})
   const members = memberKeys(groups)
@@ -201,21 +208,28 @@ export function dropGaps(loot: readonly LootEvent[], catalog: readonly CatalogMo
   return kept.map(rowFor).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
 }
 
+/** What a loot line is filed as; `listed` for a group member the page lists by itself. */
+interface Filed {
+  name: string
+  group: boolean
+  listed?: true
+}
+
 /**
  * What a looted item is filed as when its mob's page lists neither it nor a group holding it; null
- * when listed, the mob is unknown or it was a chest payout. An item in a group is always its group,
- * even when the page lists the item by itself: that row then replaces the page's member lines.
+ * when listed, the mob is unknown or it was a chest payout. An item in a group the page lacks is
+ * filed as the group, even when the page lists other members one by one (never a member's line).
  */
-function filedAs(e: LootEvent, listed: ReadonlyMap<string, ReadonlySet<string>>, inGroups: ReadonlyMap<string, readonly string[]>): { name: string; group: boolean } | null {
+function filedAs(e: LootEvent, listed: ReadonlyMap<string, ReadonlySet<string>>, inGroups: ReadonlyMap<string, readonly string[]>): Filed | null {
   const mob = mobSourceOf(e)
   const page = mob === undefined ? undefined : listed.get(mobKey(mob))
   if (page === undefined) return null
   const its = inGroups.get(sourceItemKey(e.item)) ?? []
   if (its.some((g) => page.has(sourceItemKey(g)))) return null
-  if (its.length > 0) return { name: its[0], group: true }
-  if (page.has(sourceItemKey(e.item)) || page.has(bareItemKey(e.item))) return null
+  const onPage = page.has(sourceItemKey(e.item)) || page.has(bareItemKey(e.item))
+  if (its.length > 0) return onPage ? { name: its[0], group: true, listed: true } : { name: its[0], group: true }
   // The item's own page is the base item's: `Barbed Legplates +4` is filed as `Barbed Legplates`.
-  return { name: itemBaseName(e.item), group: false }
+  return onPage ? null : { name: itemBaseName(e.item), group: false }
 }
 
 /**
@@ -237,10 +251,10 @@ function memberLines(pages: readonly CatalogMob[], keys: ReadonlySet<string>): R
   return { lines: [...names.values()], rate: Math.round(stated.reduce((a: number, r) => a + (r ?? 0), 0) * 10) / 10 }
 }
 
-/** A replace row's chip text: the member lines named, and the one group line that stands for them. */
-export function replaceWhy(mob: string, group: string, lines: readonly string[]): string {
+/** The optional cleanup beside a group's row: the page's member lines, and the one group line that stands for them. */
+export function replaceWhy(group: string, lines: readonly string[]): string {
   const n = lines.length
-  return `The wiki page for ${mob} lists ${group} item by item. Replace ${n === 1 ? 'this line' : `these ${String(n)} lines`} (${lines.join(', ')}) with the one [[${group}]] line.`
+  return `While you're editing (optional): ${n === 1 ? 'this line' : `these ${String(n)} lines`} (${lines.join(', ')}) can become the one [[${group}]] line.`
 }
 
 /** The pairs less the server-wide drops (see the header): looted from many mobs, tied by the wiki to almost none. */

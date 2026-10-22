@@ -110,7 +110,7 @@ function pageOf(title: string, file: string): Parameters<typeof dropGaps>[1][num
   return { ...page, dropRates: (page.drops ?? []).map((d) => rates.get(d) ?? null) }
 }
 
-test('drop groups are standardized: a page listing members one by one gets one row to replace them with the group line (A Cracked Skeleton)', () => {
+test('drop groups are standardized: only the group line is offered, with the page member lines as an optional cleanup (A Cracked Skeleton)', () => {
   // The cached wiki page, cut to its name and four of its loot lines: Bone Chips and three Rusty weapons, one by one.
   const text = readFileSync(new URL('./fixtures/mob-page-a-cracked-skeleton.wikitext', import.meta.url), 'utf8')
   const page = parseMobPage('A Cracked Skeleton', text) ?? assert.fail('a mob page')
@@ -118,7 +118,7 @@ test('drop groups are standardized: a page listing members one by one gets one r
   const sets = { 'Rusty Weapons': ['Rusty Axe', 'Rusty Halberd', 'Rusty Mace', 'Rusty Short Sword', 'Worn Great Staff'], 'Cloth Armor': ['Cloth Cap', 'Cloth Gloves'] }
   const rows = dropGaps(
     [
-      loot('Rusty Axe +1', 'a cracked skeleton'), // listed by name
+      loot('Rusty Axe +1', 'a cracked skeleton'), // listed by name: nothing missing
       loot('Rusty Halberd', 'a cracked skeleton'), // a member the page lacks
       loot('Worn Great Staff', 'a cracked skeleton'),
       loot('Cloth Cap', 'a cracked skeleton') // its group has no member on the page: the group's own line
@@ -126,32 +126,36 @@ test('drop groups are standardized: a page listing members one by one gets one r
     [page],
     sets
   )
-  // Only the group line is offered (owner, 2026-10-21); the Rusty row names the three lines to replace.
+  // Only the group line (owner, 2026-10-21), never a member's; the Rusty row names the page's three lines.
   assert.deepEqual(rows.map((r) => [r.name, r.details.drops?.entries.map((e) => e.name), r.replaces?.lines]).sort(), [
     ['Cloth Armor (a cracked skeleton)', ['Cloth Cap'], undefined],
-    ['Rusty Weapons (a cracked skeleton)', ['Rusty Axe +1', 'Rusty Halberd', 'Worn Great Staff'], ['Rusty Short Sword', 'Rusty Axe', 'Rusty Mace']]
+    ['Rusty Weapons (a cracked skeleton)', ['Rusty Halberd', 'Worn Great Staff', 'Rusty Axe +1'], ['Rusty Short Sword', 'Rusty Axe', 'Rusty Mace']]
   ])
-  const rusty = rows.find((r) => r.replaces !== undefined) ?? assert.fail('a replace row')
+  const rusty = rows.find((r) => r.replaces !== undefined) ?? assert.fail('a group row')
   assert.equal(gapJob(rusty), 'update')
-  assert.deepEqual(
-    gapActions(rusty, 'unchecked').map((a) => [a.label, a.why]),
-    [['Replace on mob page', 'The wiki page for A Cracked Skeleton lists Rusty Weapons item by item. Replace these 3 lines (Rusty Short Sword, Rusty Axe, Rusty Mace) with the one [[Rusty Weapons]] line.']]
-  )
+  assert.deepEqual(gapActions(rusty, 'unchecked').map((a) => [a.label, a.why]), [
+    [
+      'Add to mob page',
+      "The wiki page for A Cracked Skeleton lists neither Rusty Weapons nor the one you looted. While you're editing (optional): these 3 lines (Rusty Short Sword, Rusty Axe, Rusty Mace) can become the one [[Rusty Weapons]] line."
+    ]
+  ])
   // Its page states no `[Overall: x%]` (the older `[2] 1x 25% (7%)` shape): the log's rate, here none.
   assert.equal(rusty.replaces?.rate, undefined)
   const lines = rows.map((r) => wikiPageText(r, [], {})).sort()
   assert.deepEqual(lines, ['<li> [[Cloth Armor]] </li>\n', '<li> [[Rusty Weapons]] </li>\n'])
+  // A page that lacks nothing gets no row: collapsing its lines alone is formatting (owner, 2026-10-21).
+  assert.deepEqual(dropGaps([loot('Rusty Axe', 'a cracked skeleton'), loot('Rusty Mace', 'a cracked skeleton')], [page], sets), [])
 })
 
-test("a replace row's group line takes the page's member rates summed (A lizard man scout: Large Cloth 12.4%, Rusty 22.9%)", () => {
+test("a group row's line takes the page's member rates summed (A lizard man scout: Large Cloth 12.4%, Rusty 22.9%)", () => {
   const page = pageOf('A lizard man scout', 'mob-page-a-lizard-man-scout.wikitext')
   const sets = {
     'Rusty Weapons': ['Cracked Staff', 'Rusty Axe', 'Rusty Battle Axe', 'Rusty Long Sword', 'Rusty Mace', 'Rusty Rapier', 'Rusty Scythe', 'Rusty Shortened Spear', 'Rusty Spear', 'Rusty Two Handed Sword', 'Rusty Warhammer', 'Worn Great Staff'],
     'Large Cloth Armor': ['Large Cloth Cap', 'Large Cloth Cape', 'Large Cloth Choker', 'Large Cloth Cord', 'Large Cloth Gloves', 'Large Cloth Pants', 'Large Cloth Sandals', 'Large Cloth Shawl', 'Large Cloth Shirt', 'Large Cloth Sleeves', 'Large Cloth Veil', 'Large Cloth Wristband']
   }
   const at = (item: string): LootEvent => loot(item, 'a lizardman scout')
-  // Rusty Knuckles is in no group and is listed: no row. Lizard Meat is listed: no row.
-  const rows = dropGaps([at('Rusty Mace'), at('Large Cloth Cape'), at('Rusty Knuckles'), at('Lizard Meat')], [page], sets)
+  // Rusty Axe and Large Cloth Cape are not on the page; Rusty Mace, Rusty Knuckles (in no group) and Lizard Meat are.
+  const rows = dropGaps([at('Rusty Axe'), at('Rusty Mace'), at('Large Cloth Cape'), at('Rusty Knuckles'), at('Lizard Meat')], [page], sets)
   const by = new Map(rows.map((r) => [r.name, r]))
   assert.deepEqual([...by.keys()].sort(), ['Large Cloth Armor (a lizardman scout)', 'Rusty Weapons (a lizardman scout)'])
   const cloth = by.get('Large Cloth Armor (a lizardman scout)')!
@@ -163,8 +167,10 @@ test("a replace row's group line takes the page's member rates summed (A lizard 
   assert.equal(wikiPageText(cloth, [], {}), "<li> [[Large Cloth Armor]] <span class='drare'>(Rare)</span> <span class='ddb'>[Overall: ~12.4%]</span> </li>\n")
   assert.equal(wikiPageText(rusty, [], {}), "<li> [[Rusty Weapons]] <span class='drare'>(Rare)</span> <span class='ddb'>[Overall: ~22.9%]</span> </li>\n")
   // Without the page's rates (data that does not carry them yet), the log's rate: 1 corpse over 10 kills.
-  const bare = dropGaps([at('Rusty Mace')], [{ ...page, dropRates: undefined }], sets)[0]
+  const bare = dropGaps([at('Rusty Axe')], [{ ...page, dropRates: undefined }], sets)[0]
   assert.equal(bare.replaces?.rate, undefined)
   const kills = killIndex({ 'a lizardman scout': { display: 'a lizardman scout', count: 10 } } as unknown as KillMap)
   assert.equal(wikiPageText(bare, [], kills), "<li> [[Rusty Weapons]] <span class='drare'>(Rare)</span> <span class='ddb'>[Overall: ~10%]</span> </li>\n")
+  // Only listed members looted: nothing missing, no row.
+  assert.deepEqual(dropGaps([at('Rusty Mace'), at('Large Cloth Cap')], [page], sets), [])
 })
