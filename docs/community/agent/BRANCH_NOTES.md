@@ -420,6 +420,11 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
 
 ## Unassigned open items (no branch yet)
 
+- A chest-only item's Dropped by column still says "You have not looted this yet." while Times
+  looted counts the payouts (catch_all (68) notes them on the Distinct mobs card). The line is in
+  `ItemDroppedBy.tsx` on gear-tab-improvements; the dialog that knows the chest count is catch_all's.
+  A small two-branch change: an optional empty-state prop there, passed from the dialog here.
+
 - The Recommended tab ignores layer-3 era derivations on purpose (`progressionPlan.ts`
   `eraLegal`).
 - The Exaltations browser has no deity gate; the bagged-gem `where` label is unclear.
