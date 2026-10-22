@@ -25,6 +25,17 @@ test('a name the wiki has no page for is a new page; a line for a page that exis
   assert.equal(gapJob(row('merchant', 'Klok Koglin'), { isMob }), 'update')
   assert.equal(gapJob(row('merchant', 'Elder Jantiz'), { isMob }), 'new')
   assert.equal(gapJob(row('merchant', 'Klok Koglin')), 'new', 'no catalog test: a new page')
+  // A known item whose page lacks a forage zone or the Foraged category (gapForage.ts).
+  const forage = { ...row('item', 'Fishing Grubs'), forageUpdate: { page: 'Fishing Grubs', zones: ['Qeynos Hills'], noField: false, category: false } }
+  assert.equal(gapJob(forage), 'update')
+})
+
+test('Items with forage update rows splits: 53 missing · 6 to update (the owner example)', () => {
+  const pages = Array.from({ length: 6 }, (_, i) => ({ ...row('item', `Known ${String(i)}`), forageUpdate: { page: `Known ${String(i)}`, zones: [], noField: false, category: true } }))
+  const rows = [...Array.from({ length: 53 }, (_, i) => row('item', `Unknown ${String(i)}`)), ...pages]
+  const snap: GapsSnap = { rows, totals: { item: 59, mob: 0, spell: 0, merchant: 0, faction: 0, drop: 0, image: 0 }, seen: { item: 0, mob: 0, spell: 0, merchant: 0, faction: 0, drop: 0, image: 0 } }
+  assert.equal(jobCaption(snap, 'item', { zone: null, hidden: () => false }), '53 missing · 6 to update')
+  assert.equal(onlyJob(rows, 'update').length, 6)
 })
 
 test('Show keeps one job, All keeps the same rows; an unreadable stored choice is All', () => {

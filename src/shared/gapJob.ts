@@ -1,7 +1,7 @@
 // shared/gapJob.ts — what job a Gaps row is (owner, 2026-10-21: "we just need to somehow indicate to
 // the person it's a small update needed vs a missing item"): a NEW page, where the wiki has no page
 // for the name, or an UPDATE to a page that exists and lacks something (a drop, a faction, a
-// picture). One rule, read by the row's tag, the domain counts, the Show picker and the overlay.
+// picture, a forage zone). One rule, read by the row's tag, the domain counts, the Show picker and the overlay.
 
 import { gapsCaption, visibleGaps, type GapActionContext, type GapDomain, type GapRow, type GapsSnap } from './gaps'
 
@@ -15,10 +15,11 @@ const UPDATE_DOMAINS: ReadonlySet<GapDomain> = new Set<GapDomain>(['faction', 'd
 /**
  * A row's job. A faction row whose mob the data has no page for stays an update: its chip asks to
  * check the page, and the mob's own row, if the wiki lacks it, is the new page. A trader the catalog
- * has as a mob (`ctx.isMob`) has a page that only lacks the merchant layout.
+ * has as a mob (`ctx.isMob`) has a page that only lacks the merchant layout. An Items row standing
+ * for a known item's page that lacks a forage zone or the category (shared/gapForage.ts) is an update.
  */
 export function gapJob(row: GapRow, ctx: GapActionContext = {}): GapJob {
-  if (UPDATE_DOMAINS.has(row.domain)) return 'update'
+  if (UPDATE_DOMAINS.has(row.domain) || row.forageUpdate !== undefined) return 'update'
   if (row.domain === 'merchant' && ctx.isMob?.(row.name) === true) return 'update'
   return 'new'
 }
