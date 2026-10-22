@@ -1,5 +1,5 @@
 {
-  "scrapedAt": "2026-10-21T02:01:29.353Z",
+  "scrapedAt": "2026-10-22T04:07:42.386Z",
   "quests": [
     {
       "className": "Bard",
@@ -184,7 +184,7 @@
           "where": "",
           "count": 1,
           "page": "Efreeti War Spear",
-          "stats": "Lore Equipped, Attunable, Quest, Placeable\nSlot: PRIMARY\nSkill: Piercing Atk Delay: 40\nDMG: 15\nBACKSTAB: 15\nWT: 5.0 Size: MEDIUM\nClass: WAR BRD ROG SHM BST\nRace: ALL\nDMG Bonus: 20 @ lvl 50"
+          "stats": "Lore Equipped, Attunable, Quest, Placeable\nSlot: PRIMARY\nSkill: 1H Piercing Atk Delay: 40\nDMG: 15 BACKSTAB: 15\nSize: MEDIUM WT: 5.0\nClass: WAR BRD ROG SHM BST\nRace: ALL\nDMG Bonus: 20 @ lvl 50\nMerchant resale value: absolutely nothing"
         },
         {
           "name": "Wind Rune Heda",
@@ -933,7 +933,7 @@
       "giver": "Strandar Pinemist",
       "rune": "Wind Rune Izah",
       "reward": "Espri",
-      "rewardStats": "MAGIC ITEM LORE ITEM NO DROP\nSlot: PRIMARY\nSkill: 1H Slashing Atk Delay: 23\nDMG: 10\nDEX: +9 WIS: +9 MANA: +50\nEffect: Combust (Combat, Casting Time: Instant) at Level 45\nWT: 2.0 Size: MEDIUM\nClass: DRU\nRace: ALL\nDMG Bonus: 11 @ lvl 50",
+      "rewardStats": "Lore Equipped, No Trade, Placeable\nSlot: PRIMARY\nSkill: 1H Slashing Atk Delay: 23\nDMG: 10\nWIS: +9 DEX: +9 MANA: +50\nEffect: Combust (Combat) at Level 45\nSize: MEDIUM WT: 2.0\nClass: DRU\nRace: ALL\nDMG Bonus: 11 @ lvl 50\nItem Lore : Espri, Sword of Fire",
       "rewardPage": "Espri",
       "items": [
         {
@@ -2487,7 +2487,7 @@
       "giver": "Sarkis Ebonblade",
       "rune": "Wind Rune Kala",
       "reward": "Khyldorn the Blood Drinker",
-      "rewardStats": "Lore Equipped, No Trade, Placeable\nSlot: PRIMARY\nSkill: 2H Slashing Atk Delay: 43\nDMG: 36\nSTR: +10 INT: +7\nEffect: Siphon (Combat, Casting Time: Instant) at Level 50\nSize: GIANT WT: 8.0\nClass: SHD\nRace: ALL\nDMG Bonus: 29 @ lvl 50",
+      "rewardStats": "Lore Equipped, No Trade, Placeable\nSlot: PRIMARY\nSkill: 2H Slashing Atk Delay: 43\nDMG: 36\nSTR: +10 INT: +7\nEffect: Siphon (Combat) at Level 50\nSize: GIANT WT: 8.0\nClass: SHD\nRace: ALL\nDMG Bonus: 29 @ lvl 50",
       "rewardPage": "Khyldorn the Blood Drinker",
       "items": [
         {
