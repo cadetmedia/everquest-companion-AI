@@ -192,6 +192,11 @@ disagree, RULES.md wins; fix this file.
   the branch's COMMITTED file, not a worktree's uncommitted edit; a scraper copied that way had no
   `--offline` flag and ran its revision check. Copy from the worktree path, and before running any
   scraper check the flag is in the file you are about to run (`grep -c offline`).
+- **Screen text is short** (owner, 2026-10-21: "Do we really need them to checkout a book from the
+  library to understand the drop down? ... a single 7-15 word sentence"; "we just hit them with so
+  much text to read"). A tooltip is one sentence of 7-15 words; a caption or status line says the one
+  thing the player acts on, in a few words, with detail behind a tooltip or an info icon. A tooltip
+  never covers the control it explains (a picker's tooltip hides while its menu is open).
 - **Wiki edits: what the player meets, never cleanup for its own sake** (owner, 2026-10-21: "we are
   not wiki admins, lets focus on things we notice while playing, and not as much on 100% cleanup,
   but we should always leave a wiki page better than we found it, as long as we aren't editing it
