@@ -281,10 +281,11 @@ function mergeMobLocs(older: Snap, newer: Snap): MobLoc[] {
 
 /**
  * The row without a Reward Chest among its sources (shared/rewardChest.ts, owner 2026-10-21: the
- * chest is no mob): a state folded before gaps_details.rs left it out still names it.
+ * chest is no mob): a state folded before gaps_details.rs left it out still names it. A row with no
+ * details (a state from before them) passes as it is, as it did before this ran on every row.
  */
 function withoutChest(r: Row): Row {
-  const t = r.details.sources
+  const t = (r.details as Details | undefined)?.sources
   if (!t?.entries.some((e) => isRewardChest(e.name))) return r
   const entries = t.entries.filter((e) => !isRewardChest(e.name))
   const details: Details = { ...r.details }
