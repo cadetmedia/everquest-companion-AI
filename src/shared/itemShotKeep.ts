@@ -69,7 +69,7 @@ const defined = <T extends object>(o: T): Partial<T> => Object.fromEntries(Objec
 export function keptAfter(kept: ItemPageShot | undefined, r: ItemShotReply, kind: ShotKind): ItemPageShot {
   if (kind === 'lore') return { ...kept, lore: r.read.lore }
   if (kind === 'icon') return { ...kept, iconId: r.icons[0]?.id }
-  return defined({ lore: kept?.lore, statsblock: r.read.statsblock, iconId: r.icons[0]?.id, valueCopper: r.read.valueCopper, focusEffect: r.read.focusEffect, loreTab: r.read.loreTab })
+  return defined({ lore: kept?.lore, statsblock: r.read.statsblock, iconId: r.icons[0]?.id, valueCopper: r.read.valueCopper, focusEffect: r.read.focusEffect, loreTab: r.read.loreTab, tier: r.read.tier, baseStatsblock: r.read.baseStatsblock })
 }
 
 /** One part cleared; null when nothing is left to keep. */

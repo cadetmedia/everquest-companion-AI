@@ -96,6 +96,29 @@ function KeptFacts({ kept }: { kept: StoredShot }): JSX.Element {
   )
 }
 
+/**
+ * A +N window: the page keeps its skeleton until the player takes the box to +0 (owner, 2026-10-21,
+ * D3): the upgrade rule's guess when it inverts exactly, or the box as the player corrected it.
+ */
+function TierChoice({ name, kept }: { name: string; kept: StoredShot }): JSX.Element | null {
+  const { tier, baseStatsblock } = kept
+  if (tier === undefined || tier === 0) return null
+  const atBase = (statsblock: string | undefined): void => keep(name, { ...kept, statsblock, tier: undefined, baseStatsblock: undefined })
+  return (
+    <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap data-testid="gaps-shot-tier">
+      <Line warn>+{tier}: Copy wiki page leaves the stats out until they are the +0 item's.</Line>
+      {baseStatsblock !== undefined && (
+        <Button size="small" onClick={() => atBase(baseStatsblock)} data-testid="gaps-shot-estimate">
+          Estimate +0 stats (a guess)
+        </Button>
+      )}
+      <Button size="small" onClick={() => atBase(kept.statsblock)}>
+        The box is +0 now
+      </Button>
+    </Stack>
+  )
+}
+
 /** The kept reading: icon, Value, focus, lore, the editable statsblock. */
 function KeptShot({ name, kept, reply }: { name: string; kept: StoredShot; reply: ItemShotReply | null }): JSX.Element {
   const unread = reply?.read.unread ?? []
@@ -103,6 +126,7 @@ function KeptShot({ name, kept, reply }: { name: string; kept: StoredShot; reply
     <>
       <IconPicker key={reply?.ms ?? 0} name={name} kept={kept} matches={reply?.icons.map((h) => h.id) ?? []} />
       <KeptFacts kept={kept} />
+      <TierChoice name={name} kept={kept} />
       {kept.statsblock !== undefined && (
         <TextField
           label="statsblock (check it against the window; Copy wiki page uses this)"

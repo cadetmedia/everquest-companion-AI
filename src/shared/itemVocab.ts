@@ -90,6 +90,12 @@ export function codeWords(words: readonly string[], codes: readonly string[], wh
 
 const DEITY_RE = new RegExp(`\\b(${DEITIES.map((d) => d.replace(/[- ]/g, '[-\\s]?')).join('|')})\\b`, 'gi')
 
+/** A line that is gods' names and nothing else: the window prints the deity without a label. */
+export function isDeityLine(line: string): boolean {
+  DEITY_RE.lastIndex = 0
+  return DEITY_RE.test(line) && deityText(line).note === undefined
+}
+
 /** `Deity:` text with every god in the pages' spelling (`Cazic Thule` -> `Cazic-Thule`); a leftover word is flagged. */
 export function deityText(read: string): Snapped {
   const value = read.replace(DEITY_RE, (m) => DEITIES.find((d) => fold(d) === fold(m)) ?? m)

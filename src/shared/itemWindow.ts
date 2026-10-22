@@ -12,7 +12,8 @@
 // way, and OCR drops colons, joins columns and puts junk at line ends. A number is never guessed;
 // the one repair is Weight's decimal, which the game always prints and OCR loses (3 windows of 3).
 
-import { CLASS_CODES, codeWords, deityText, FLAG_WORDS, RACE_CODES, SIZES, slotWord, snap, type Snapped } from './itemVocab'
+import { delevel } from './itemDelevel'
+import { CLASS_CODES, codeWords, deityText, FLAG_WORDS, isDeityLine, RACE_CODES, SIZES, slotWord, snap, type Snapped } from './itemVocab'
 
 export interface ItemWindowRead {
   /** The coloured name line, a `+N` tier dropped. OCR may run words together; the caller's name wins. */
@@ -27,6 +28,10 @@ export interface ItemWindowRead {
   lore?: string
   /** The window shows a Lore tab: the item has lore (the game draws the tab only then). */
   loreTab?: boolean
+  /** The `+N` the name carries: `statsblock` holds that tier's numbers, not the base item's. */
+  tier?: number
+  /** `statsblock` taken back to +0 by the upgrade rule, when it inverts exactly (itemDelevel.ts). */
+  baseStatsblock?: string
   /** Lines with a label this reader does not place, to show the player. */
   unread: string[]
   /** What the reader corrected or doubts, in words, to show the player. */
@@ -62,7 +67,7 @@ const SLOT_WORDS = new Set([
 ])
 
 /** Window label -> the wiki's key. `kind` decides the line it lands on. */
-type Kind = 'attr' | 'save' | 'ac' | 'weapon' | 'wt' | 'size' | 'value' | 'line' | 'effect' | 'effectInfo' | 'skip'
+type Kind = 'attr' | 'save' | 'ac' | 'weapon' | 'wt' | 'size' | 'value' | 'line' | 'bag' | 'effect' | 'effectInfo' | 'skip'
 // The window's own labels are the client's strings (eqstr_us.txt 12999-13045: `Weight:`, `End:`,
 // `Dmg Bon:`, `Rec Level:`, `Req Level:` ...). `line` kinds are written as the wiki's pages write them.
 const LABELS: readonly (readonly [string, string, Kind])[] = [
@@ -83,6 +88,8 @@ const LABELS: readonly (readonly [string, string, Kind])[] = [
   ['Skill', 'Skill', 'weapon'], ['Range', 'Range', 'weapon'], ['Ratio', 'Ratio', 'weapon'], ['Dmg Bon', 'Dmg Bon', 'weapon'],
   ['Weight', 'WT', 'wt'], ['Size', 'Size', 'size'], ['Value', 'Value', 'value'], ['Charges', 'Charges', 'line'],
   ['Rec Level', 'Recommended level', 'line'], ['Req Level', 'Required level', 'line'],
+  // A container: the pages write `Weight Reduction: 0%` and `Capacity: 6 Size Capacity: SMALL` (205 pages).
+  ['Capacity', 'Capacity', 'bag'], ['Size Cap', 'Size Capacity', 'bag'], ['Size Capacity', 'Size Capacity', 'bag'], ['Weight Reduction', 'Weight Reduction', 'bag'],
   ['Focus Effect', 'Focus', 'effect'], ['Click Effect', 'Click', 'effect'], ['Worn Effect', 'Worn', 'effect'],
   ['Proc Effect', 'Combat', 'effect'], ['Combat Effect', 'Combat', 'effect'],
   ['Cast Time', 'Casting Time', 'effectInfo'], ['Casting Time', 'Casting Time', 'effectInfo'],
@@ -101,7 +108,7 @@ const labelOf = (hit: string): readonly [string, string, Kind] | undefined => {
 }
 
 /** A line about the window, not the item: tabs, upgrade widgets, exaltation slots, placement. */
-const NOT_ITEM = /\b(Exaltation|O\w{0,2}amentation|Unmodified|Modified|Merge|Place\s*Item|Tier|upgraded|placeable in|Description)\b/i
+const NOT_ITEM = /\b(Exaltation|O\w{0,2}amentation|Unmodified|Modified|Merge|Place\s*Item|Tier|upgraded|placeable in|Description|Container\W+(?:OPEN|CLOSED))\b/i
 
 // ---- small readers ------------------------------------------------------------------------------
 
@@ -219,6 +226,8 @@ interface Gathered {
   value?: number
   /** Whole lines in the wiki's words: `Charges: 5`, `Recommended level of 10.` */
   lines: string[]
+  /** A container's Capacity, Size Capacity, Weight Reduction. */
+  bag: Map<string, string>
   deity?: string
   effects: string[]
   focus?: string
@@ -263,6 +272,7 @@ const PLACE: Record<Kind, (g: Gathered, p: Pair, lastEffect: Effect | null) => v
   size: (g, p) => (g.size = noted(g, snap(p.value.split(/\s+/)[0] ?? '', SIZES, 'Size'))),
   value: (g, p) => (g.value = valueCopper(p.value)),
   line: (g, p) => g.lines.push(wikiLine(p)),
+  bag: (g, p) => g.bag.set(p.key, p.key === 'Size Capacity' ? noted(g, snap(p.value.split(/\s+/)[0] ?? '', SIZES, 'Size Capacity')) : p.value),
   effectInfo: (_g, p, lastEffect) => lastEffect?.info.set(p.key, p.value.replace(/\s+seconds?$/i, '')),
   effect: () => undefined,
   skip: () => undefined
@@ -280,9 +290,10 @@ function slotLine(g: Gathered, line: string): boolean {
 /** One line of the stats region into `g`: the bare slot word, or its pairs, or an unread line. */
 function gatherLine(g: Gathered, effects: Effect[], line: string): void {
   if (NOT_ITEM.test(line) || slotLine(g, line)) return
+  // `Deity: Karana`, or the god's name alone on its line (Malkil's Surefall Fletching Kit, 2026-10-21).
   const deity = /^Deity\s*[:;.]?\s+(.+)$/i.exec(line)
-  if (deity !== null) {
-    g.deity = noted(g, deityText(deity[1]))
+  if (deity !== null || isDeityLine(line)) {
+    g.deity = noted(g, deityText(deity?.[1] ?? line))
     return
   }
   const pairs = pairsOf(line)
@@ -295,7 +306,7 @@ function gatherLine(g: Gathered, effects: Effect[], line: string): void {
 
 /** The stats region, line by line: pairs placed, effects gathered with the info lines under them. */
 function gather(lines: readonly string[]): Gathered {
-  const g: Gathered = { attrs: [], saves: [], weapon: new Map(), lines: [], effects: [], unread: [], notes: [] }
+  const g: Gathered = { attrs: [], saves: [], weapon: new Map(), lines: [], bag: new Map(), effects: [], unread: [], notes: [] }
   const effects: Effect[] = []
   for (const line of lines) gatherLine(g, effects, line)
   for (const e of effects) {
@@ -341,6 +352,12 @@ function weaponLines(w: ReadonlyMap<string, string>): string[] {
   return [...(skill.length > 0 ? [skill.join('  ')] : []), ...rest]
 }
 
+/** A container's lines as the pages write them, under Size and WT. */
+function bagLines(bag: ReadonlyMap<string, string>): string[] {
+  const cap = ['Capacity', 'Size Capacity'].filter((k) => bag.has(k)).map((k) => `${k}: ${bag.get(k) ?? ''}`)
+  return [...(bag.has('Weight Reduction') ? [`Weight Reduction: ${bag.get('Weight Reduction') ?? ''}`] : []), ...(cap.length > 0 ? [cap.join(' ')] : [])]
+}
+
 /** The lines above the stats: the flags, the Class and Race words. */
 interface Head {
   flags: string[]
@@ -369,6 +386,7 @@ function statsLines(h: Head, g: Gathered): string[] {
   // Size before WT, one space, as recent pages write it (owner D1: 752 pages; 642 converted to it, none back).
   const sizeWt = [g.size === undefined ? '' : `Size: ${g.size}`, g.wt === undefined ? '' : `WT: ${g.wt}`].filter(Boolean)
   if (sizeWt.length > 0) out.push(sizeWt.join(' '))
+  out.push(...bagLines(g.bag))
   if (h.cls !== undefined) out.push(`Class: ${h.cls}`)
   if (h.race !== undefined) out.push(`Race: ${h.race}`)
   // The pages put Deity after Race (Deity: Cazic-Thule, 453 cached pages).
@@ -395,10 +413,23 @@ function loreRead(lines: readonly string[]): ItemWindowRead {
 const hasLoreTab = (lines: readonly string[], before: number): boolean =>
   lines.slice(0, before).some((l) => TAB_ROW.test(l) && /\bLore\b(?!\s*(Equipped|Item))/i.test(l))
 
-/** The name: the line above the flags line, else above Class; junk and a `+N` tier dropped. */
-function nameAbove(lines: readonly string[], at: number): string | undefined {
+/** The name: the line above the flags line, else above Class; junk dropped, a `+N` tier apart. */
+function nameAbove(lines: readonly string[], at: number): { name?: string; tier?: number } {
   const line = lines.slice(0, at).reverse().find((l) => /[A-Za-z]{2}/.test(l) && !NOT_ITEM.test(l))
-  return line?.replace(/\s*\+\d+$/, '').trim()
+  if (line === undefined) return {}
+  const tier = /\s*\+(\d{1,2})$/.exec(line)
+  return { name: line.replace(/\s*\+\d+$/, '').trim(), ...(tier === null || tier[1] === '0' ? {} : { tier: Number(tier[1]) }) }
+}
+
+/**
+ * A `+N` window shows the upgraded numbers; the page is the base item (owner, 2026-10-21, D3). The
+ * planner's upgrade rule taken back where it inverts exactly (itemDelevel.ts), offered as a guess.
+ */
+function tierParts(tier: number | undefined, statsblock: string): Partial<ItemWindowRead> {
+  if (tier === undefined) return {}
+  const back = delevel(statsblock, tier)
+  const why = back.block === undefined ? ` These do not take back to one +0 value: ${back.inexact.join(', ')}.` : ' "Estimate +0 stats" takes them back by the upgrade rule, a guess for you to check.'
+  return { tier, ...(back.block === undefined ? {} : { baseStatsblock: back.block }), checks: [`This window is +${String(tier)}: its numbers are the upgraded item's, not the page's.${why}`] }
 }
 
 /** The flag line (the last line above Class naming a flag, never the tab row), Class and Race, with their notes. */
@@ -420,12 +451,14 @@ export function readItemWindow(raw: readonly string[]): ItemWindowRead {
   const head = headOf(lines, clsAt, raceAt)
   const g = gather(lines.slice((raceAt < 0 ? clsAt : raceAt) + 1))
   const ratio = checkRatio(g.weapon)
-  const block = statsLines(head, g)
-  const name = nameAbove(lines, head.flagAt < 0 ? clsAt : head.flagAt)
-  const checks = [...(ratio === undefined ? [] : [ratio]), ...head.notes, ...g.notes]
+  const statsblock = `\n${statsLines(head, g).map((l) => `${l}<br>`).join('\n')}`
+  const { name, tier } = nameAbove(lines, head.flagAt < 0 ? clsAt : head.flagAt)
+  const up = tierParts(tier, statsblock)
+  const checks = [...(up.checks ?? []), ...(ratio === undefined ? [] : [ratio]), ...head.notes, ...g.notes]
   return {
-    statsblock: `\n${block.map((l) => `${l}<br>`).join('\n')}`,
+    statsblock,
     unread: g.unread,
+    ...up,
     ...(checks.length === 0 ? {} : { checks }),
     ...(name === undefined ? {} : { name }),
     ...(hasLoreTab(lines, clsAt) ? { loreTab: true } : {}),

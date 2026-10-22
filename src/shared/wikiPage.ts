@@ -351,6 +351,10 @@ export interface ItemPageShot {
   lore?: string
   /** The window showed a Lore tab: the item has lore, so a page without it says `{{Item Lore Missing}}`. */
   loreTab?: boolean
+  /** A `+N` window: `statsblock` is that tier's numbers, so the page keeps the skeleton until the player takes it to +0 (D3). */
+  tier?: number
+  /** The upgrade rule's +0 guess for `statsblock`, offered to the player (shared/itemDelevel.ts). */
+  baseStatsblock?: string
 }
 
 /** The fields a screenshot fills, in the page's order, around the log's merchant_value. */
@@ -362,7 +366,9 @@ function shotFields(shot: ItemPageShot, merchantValue: number | undefined): [str
   // The wiki's own marker for lore not yet transcribed (466 pages), so the page is listed with them.
   if (shot.lore) fields.push(['notes', `{{Item Lore|${shot.lore}}}`])
   else if (shot.loreTab === true) fields.push(['notes', '{{Item Lore Missing}}'])
-  fields.push(['statsblock', shot.statsblock !== undefined && shot.statsblock !== '' ? shot.statsblock : STATS_SKELETON])
+  // Never a +N number as a base one (owner, 2026-10-21, D3).
+  const base = (shot.tier ?? 0) === 0 && shot.statsblock !== undefined && shot.statsblock !== ''
+  fields.push(['statsblock', base ? (shot.statsblock ?? STATS_SKELETON) : STATS_SKELETON])
   if (shot.focusEffect) fields.push(['focus_effect', shot.focusEffect])
   return fields
 }
@@ -587,7 +593,11 @@ const PAGE_OF: Record<GapDomain, (row: GapRow, c: PageContext) => string> = {
 
 /** The domains whose page needs the same thing whatever the log saw; mobs and merchants are read below. */
 const NEEDED_OF: Partial<Record<GapDomain, (row: GapRow, seen: PageExtras) => string[]>> = {
-  item: (row, seen) => (seen.itemShots?.[row.name]?.statsblock ? [] : ['stats (paste a screenshot of the item window below)']),
+  item: (row, seen) => {
+    const shot = seen.itemShots?.[row.name]
+    if ((shot?.tier ?? 0) > 0) return ['stats at +0 (the window pasted is upgraded)']
+    return shot?.statsblock ? [] : ['stats (paste a screenshot of the item window below)']
+  },
   spell: (row, seen) => (spellPageValues(seen.spellFacts?.[row.name], seen.spellShots?.[row.name]).description === undefined ? ['description (paste the spell display window below)'] : []),
   faction: (row) => (row.adjust === undefined ? ['the amount (a kill that is not capped)'] : []),
   drop: () => [],

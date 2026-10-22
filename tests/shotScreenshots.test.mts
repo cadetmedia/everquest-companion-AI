@@ -80,6 +80,12 @@ test('VIAL OF SWAMP WATER (THE OWNER\'S, D1): THE FLAGS AS THE WINDOW PRINTS THE
   assert.deepEqual(lines(s), ['No Trade, Quest<br>', 'Size: TINY WT: 1.0<br>', 'Class: NONE<br>', 'Race: NONE<br>'])
 })
 
+test("SUREFALL FLETCHING KIT (MALKIL'S CONTAINER, 2026-10-21): CAPACITY, SIZE CAPACITY, AND THE DEITY PRINTED WITHOUT ITS LABEL", async () => {
+  const s = await read('surefall-fletching-kit.png', textOnly)
+  assert.deepEqual(lines(s), ['No Trade<br>', 'Size: SMALL WT: 0.1<br>', 'Capacity: 8 Size Capacity: GIANT<br>', 'Class: ALL<br>', 'Race: ALL<br>', 'Deity: Karana<br>'])
+  assert.deepEqual(s.read.unread, [])
+})
+
 for (const file of ['windstriker-ground.png', 'windstriker-sky.png']) {
   test(`WINDSTRIKER, MALKIL'S UI (${file}): THE WEAPON, STATS AND EFFECT LINES; DMG 90; THE FOCUS APART`, async () => {
     const s = await read(file, textOnly)
@@ -109,6 +115,8 @@ const ICONS: readonly [string, number, number][] = [
   ['lizardman-mystic-scale.png', 1233, 1],
   // 95 against 1,015 for the runner-up (the owner's window, 2026-10-21)
   ['vial-of-swamp-water.png', 705, 1],
+  // a translucent window over the scene at a larger UI scale (Malkil's): 212 against 1,020
+  ['surefall-fletching-kit.png', 883, 1],
   // 597 and 1104 are one bow in two colours: a tie the picker shows, top two.
   ['windstriker-ground.png', 1104, 2],
   ['windstriker-sky.png', 1104, 2]

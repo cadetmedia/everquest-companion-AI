@@ -103,7 +103,12 @@ test('WINDSTRIKER: THREE COLUMNS, WEAPON LINES, EFFECTS; THE FOCUS GOES OUTSIDE 
   assert.equal(r.name, 'Windstriker')
   assert.equal(r.focusEffect, 'Improved Healing III')
   // DMG 920 is corrected by the window's own Ratio and Delay, and the player is told.
-  assert.deepEqual(r.checks, ['DMG read as 920; the window\'s Ratio (1.5) and Delay (60) say 90.'])
+  // ... and the window is +10 (D3): Weight's ceiling keeps it from one +0 value, so no guess is offered.
+  assert.deepEqual(r.checks, [
+    "This window is +10: its numbers are the upgraded item's, not the page's. These do not take back to one +0 value: WT: 0.4.",
+    'DMG read as 920; the window\'s Ratio (1.5) and Delay (60) say 90.'
+  ])
+  assert.equal(r.tier, 10)
   assert.deepEqual(r.unread, [])
 })
 
