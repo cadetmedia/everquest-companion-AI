@@ -93,6 +93,8 @@ export const knowledgeBridge = {
   shotClipboard: (): Promise<Uint8Array | null> => ipcRenderer.invoke(IPC.shotClipboard),
   /** A pasted item-window screenshot, read on this machine: page fields and icon ids (src/main/ipc/shotIpc.ts). */
   shotReadItem: (png: Uint8Array): Promise<import('../shared/itemWindow').ItemShotReply> => ipcRenderer.invoke(IPC.shotReadItem, png),
+  /** A pasted picture's text lines, read on this machine (a spell display window). */
+  shotReadText: (png: Uint8Array): Promise<import('../shared/spellWindow').ShotTextReply> => ipcRenderer.invoke(IPC.shotReadText, png),
   /** An item icon drawn from the install's own sheets, as a data URL; null when it is not there. */
   shotIcon: (id: number): Promise<string | null> => ipcRenderer.invoke(IPC.shotIcon, id),
   /** Save a pasted mob picture under the wiki's file name: the auto-save folder, else a save dialog. */

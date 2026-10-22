@@ -123,6 +123,10 @@ export interface ClientSpellFacts {
   msgOnYou?: string
   msgOnOther?: string
   msgWearsOff?: string
+  /** `|spellicon`: spells_us.txt field 76 (the wiki's number on 741 of 749 cached pages that write one). */
+  icon?: number
+  /** dbstr_us.txt's description, placeholders (`#1`, `%z`) as the file has them; the window fills them. */
+  description?: string
 }
 
 /** Item name → the mobs its own item page names under `|dropsfrom`; null when the wiki has no page. */

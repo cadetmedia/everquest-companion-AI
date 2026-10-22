@@ -3,7 +3,7 @@
 // dropped on it.
 
 import { type JSX, type ReactNode, useCallback, useEffect, useState } from 'react'
-import { ButtonBase, CircularProgress, Stack, Typography } from '@mui/material'
+import { Button, ButtonBase, CircularProgress, Stack, Typography } from '@mui/material'
 
 /** The picture on the clipboard event or in the dropped files, as PNG/JPEG bytes. */
 async function pictureFrom(items: DataTransferItemList | null, files: FileList | null): Promise<Uint8Array | null> {
@@ -68,5 +68,22 @@ export function Line({ children, warn = false }: { children: ReactNode; warn?: b
     <Typography variant="caption" color={warn ? 'warning.main' : 'text.secondary'} component="div">
       {children}
     </Typography>
+  )
+}
+
+/** A window whose name is another row's (item or spell): nothing is kept until the player says (owner, 2026-10-21). */
+export function WrongItem({ read, row, onUse, onDiscard }: { read: string; row: string; onUse: () => void; onDiscard: () => void }): JSX.Element {
+  return (
+    <Stack direction="row" spacing={1} alignItems="center" data-testid="gaps-shot-wrong-item">
+      <Line warn>
+        This window is “{read}”, not {row}.
+      </Line>
+      <Button size="small" onClick={onUse}>
+        Use it anyway
+      </Button>
+      <Button size="small" onClick={onDiscard}>
+        Discard
+      </Button>
+    </Stack>
   )
 }

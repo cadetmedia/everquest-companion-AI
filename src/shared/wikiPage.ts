@@ -23,6 +23,7 @@ import { itemBaseName } from './itemStats'
 import { wikiZoneLink } from './gapWikiZone'
 import type { VendorFinder } from './gapMobPage'
 import type { LootEvent } from './types'
+import { SPELL_HEAD, SPELL_TAIL, spellPageValues, type SpellPageShot } from './spellWindow'
 
 /** A log zone name as the wiki spells it (shared/gapWikiZone.ts); as printed when none is given. */
 export type ZoneNamer = (raw: string) => string
@@ -165,6 +166,8 @@ export interface SpellFacts {
   npcOnly: boolean
   /** What the install's spell files state (src/main/gapSpellFacts.ts); absent when not asked or not found. */
   client?: ClientSpellFacts
+  /** What a pasted spell window gave (shared/spellWindow.ts). */
+  shot?: SpellPageShot
 }
 
 const same = (a: string, b: string): boolean => a.toLowerCase() === b.toLowerCase()
@@ -495,20 +498,10 @@ export function mobPage(f: MobFacts, commonLoot: ReadonlySet<string> = new Set()
   return page(layoutBlock('Namedmobpage', NPC_LAYOUT, { ...npcValues(f), known_loot: own, common_loot: shared }), f.zones)
 }
 
-/** The client facts as Spell Page Blueprint fields, in its order; only what the files stated. */
-function clientFields(c: ClientSpellFacts | undefined): string[] {
-  if (c === undefined) return []
-  const one = (k: string, v: string | number | undefined): string[] => (v === undefined || v === '' ? [] : [`| ${k} = ${String(v)}`])
-  return [
-    ...one('mana', c.mana),
-    ...one('range', c.range),
-    ...one('casting_time', c.castTime),
-    ...one('recast_time', c.recastTime),
-    ...one('resist', c.resist),
-    ...one('msg_cast_on_you', c.msgOnYou),
-    ...one('msg_cast_on_other', c.msgOnOther),
-    ...one('msg_wears_off', c.msgWearsOff)
-  ]
+/** The files' facts and the spell window's as Spell Page Blueprint fields (shared/spellWindow.ts), in its order. */
+function clientFields(f: SpellFacts, keys: readonly string[]): string[] {
+  const v = spellPageValues(f.client, f.shot)
+  return keys.flatMap((k) => (v[k] === undefined ? [] : [`| ${k} = ${v[k]}`]))
 }
 
 /** `| classes =` with each class and level the files state, or the NPC-only line when none can scribe it. */
@@ -520,7 +513,7 @@ function classesField(f: SpellFacts): string[] {
 
 /** The wiki's Spell Page Blueprint layout: `{{Spellpage|`, blank lines between, `| key = value`. */
 export function spellPage(f: SpellFacts): string {
-  const fields = [`| spellname = ${f.name}`, ...classesField(f), ...clientFields(f.client)]
+  const fields = [`| spellname = ${f.name}`, ...clientFields(f, SPELL_HEAD), ...classesField(f), ...clientFields(f, SPELL_TAIL)]
   const body = `{{Spellpage|\n\n${fields.join('\n\n')}\n\n}}`
   const npcOnly = f.npcOnly && (f.client?.classes.length ?? 0) === 0
   return page(`\n${body}`, npcOnly ? ['NPC Only Spells'] : [])
@@ -547,6 +540,8 @@ export interface PageExtras {
   vendorAt?: VendorFinder
   /** What pasted screenshots of item windows gave, by the row's name (ItemPageShot). */
   itemShots?: Readonly<Record<string, ItemPageShot>>
+  /** What pasted spell display windows gave, by the row's name (SpellPageShot). */
+  spellShots?: Readonly<Record<string, SpellPageShot>>
 }
 
 /**
@@ -557,7 +552,7 @@ export interface PageExtras {
 export function wikiPageText(row: GapRow, loot: readonly LootEvent[], kills: KillMap, seen: MobSightings & PageExtras = {}): string {
   const extras = seen
   if (row.suggest !== undefined && (row.domain === 'item' || row.domain === 'spell')) return `#REDIRECT [[${row.suggest.page}]]\n`
-  return PAGE_OF[row.domain](row, { loot, kills, seen, zoneName: extras.zoneName ?? asPrinted, isMob: extras.isMob, commonLoot: extras.commonLoot, spellFacts: extras.spellFacts, vendorAt: extras.vendorAt, itemShots: extras.itemShots })
+  return PAGE_OF[row.domain](row, { loot, kills, seen, zoneName: extras.zoneName ?? asPrinted, isMob: extras.isMob, commonLoot: extras.commonLoot, spellFacts: extras.spellFacts, vendorAt: extras.vendorAt, itemShots: extras.itemShots, spellShots: extras.spellShots })
 }
 
 interface PageContext {
@@ -570,6 +565,8 @@ interface PageContext {
   spellFacts?: Readonly<Record<string, ClientSpellFacts>>
   vendorAt?: VendorFinder
   itemShots?: Readonly<Record<string, ItemPageShot>>
+  /** What pasted spell display windows gave, by the row's name (SpellPageShot). */
+  spellShots?: Readonly<Record<string, SpellPageShot>>
 }
 
 /**
@@ -580,7 +577,7 @@ const PAGE_OF: Record<GapDomain, (row: GapRow, c: PageContext) => string> = {
   item: (row, c) => itemPage(itemFacts(row, c.loot, c.zoneName, c.vendorAt), c.itemShots?.[row.name]),
   mob: (row, c) => mobPage(mobFacts(row, c.loot, c.kills, { ...c.seen, zoneName: c.zoneName }), c.commonLoot),
   merchant: (row, c) => merchantPage(mobFacts(row, [], c.kills, { ...c.seen, zoneName: c.zoneName })),
-  spell: (row, c) => spellPage({ name: row.name, npcOnly: npcOnlySpell(row, c.isMob), client: c.spellFacts?.[row.name] }),
+  spell: (row, c) => spellPage({ name: row.name, npcOnly: npcOnlySpell(row, c.isMob), client: c.spellFacts?.[row.name], shot: c.spellShots?.[row.name] }),
   faction: (row) => `${factionLine({ faction: factionOf(row), adjust: row.adjust, raised: row.raised })}\n`,
   image: (row) => `| ${'imagefilename'.padEnd(17)} = ${row.image ?? ''}\n`,
   // A drop: its group's link (`[[Rusty Weapons]]`), else the item; each with the rate seen, a
@@ -591,7 +588,7 @@ const PAGE_OF: Record<GapDomain, (row: GapRow, c: PageContext) => string> = {
 /** The domains whose page needs the same thing whatever the log saw; mobs and merchants are read below. */
 const NEEDED_OF: Partial<Record<GapDomain, (row: GapRow, seen: PageExtras) => string[]>> = {
   item: (row, seen) => (seen.itemShots?.[row.name]?.statsblock ? [] : ['stats (paste a screenshot of the item window below)']),
-  spell: () => ['spell details (its description window)'],
+  spell: (row, seen) => (spellPageValues(seen.spellFacts?.[row.name], seen.spellShots?.[row.name]).description === undefined ? ['description (paste the spell display window below)'] : []),
   faction: (row) => (row.adjust === undefined ? ['the amount (a kill that is not capped)'] : []),
   drop: () => [],
   image: () => []

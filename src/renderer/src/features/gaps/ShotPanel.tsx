@@ -16,7 +16,8 @@ import type { ItemShotReply } from '@shared/itemWindow'
 import { cleared, hasWindowPart, keptAfter, sameItem, shotKind, type ShotKind } from '@shared/itemShotKeep'
 import type { ItemPageShot } from '@shared/wikiPage'
 import { itemShotNow, setItemShot, useItemShots, type StoredShot } from './itemShotsStore'
-import { Line, PasteZone } from './PasteZone'
+import { Line, PasteZone, WrongItem } from './PasteZone'
+import SpellShot from './SpellShot'
 import MobPicture from './MobPicture'
 
 /** One icon choice, drawn from the install's own sheets. */
@@ -60,23 +61,6 @@ function Parts({ name, kept }: { name: string; kept: StoredShot | undefined }): 
         // The window shows a Lore tab only when the item has lore; the page says {{Item Lore Missing}} until it is pasted.
         <Chip size="small" variant="outlined" color={kept?.loreTab === true ? 'warning' : 'default'} label={kept?.loreTab === true ? 'Lore tab: not pasted (this item has one)' : 'Lore tab: not pasted'} />
       )}
-    </Stack>
-  )
-}
-
-/** A window whose name is another item's: nothing is kept until the player says (owner, 2026-10-21). */
-function WrongItem({ read, row, onUse, onDiscard }: { read: string; row: string; onUse: () => void; onDiscard: () => void }): JSX.Element {
-  return (
-    <Stack direction="row" spacing={1} alignItems="center" data-testid="gaps-shot-wrong-item">
-      <Line warn>
-        This window is “{read}”, not {row}.
-      </Line>
-      <Button size="small" onClick={onUse}>
-        Use it anyway
-      </Button>
-      <Button size="small" onClick={onDiscard}>
-        Discard
-      </Button>
     </Stack>
   )
 }
@@ -206,6 +190,7 @@ function ItemShot({ row }: { row: GapRow }): JSX.Element {
 
 export default function ShotPanel({ row }: { row: GapRow }): JSX.Element | null {
   if (row.domain === 'item' && row.suggest === undefined) return <ItemShot key={row.name} row={row} />
+  if (row.domain === 'spell' && row.suggest === undefined) return <SpellShot key={row.name} row={row} />
   if (row.domain === 'image' || row.domain === 'mob' || row.domain === 'merchant') return <MobPicture key={row.name} row={row} />
   return null
 }
