@@ -216,16 +216,19 @@ function ShownLine({
   tail?: string
 }): JSX.Element {
   const { visible, held, served, hidden, uncertain } = counts
+  // A few words (owner, 2026-10-21: "we just hit them with so much text to read"); the why in the tooltip.
   return (
-    <Typography variant="caption" color="text.secondary" data-testid="gaps-shown">
-      Showing {visible} of {held} {GAP_SHOWN_NOUN[domain]}
-      {mine}
-      {zone !== null ? `, seen in ${zone} or another tier of it` : ''}
-      {hidden > 0 ? `, ${hidden} marked done hidden` : ''}
-      {uncertain > 0 ? `, ${uncertain} uncertain hidden` : ''}
-      {held > served ? ` (the engine serves the ${served} most mentioned)` : ''}
-      {tail}. Wiki data from {GAPS_DATA_DATE}.
-    </Typography>
+    <Tooltip title="The engine lists the most mentioned names; Show done brings done rows back.">
+      <Typography variant="caption" color="text.secondary" data-testid="gaps-shown">
+        Showing {visible} of {held} {GAP_SHOWN_NOUN[domain]}
+        {mine}
+        {zone !== null ? `, in ${zone}` : ''}
+        {hidden > 0 ? `, ${hidden} done hidden` : ''}
+        {uncertain > 0 ? `, ${uncertain} uncertain hidden` : ''}
+        {held > served ? `, top ${served} listed` : ''}
+        {tail}. Wiki data from {GAPS_DATA_DATE}.
+      </Typography>
+    </Tooltip>
   )
 }
 

@@ -8,9 +8,8 @@ import { Checkbox, CircularProgress, FormControlLabel, Stack, TextField, Typogra
 import { MAX_GAP_DAYS, isStale, type CharacterGaps } from '@shared/gapsAllCharacters'
 import { Tooltip } from '../../lib/Tooltip'
 
-const WARNING =
-  "Joins every character's saved Gaps, on every account and server, with their archived logs when Summarize and archive log is on. " +
-  'With many characters this can be a lot of data and take a moment. A character is saved while it is logged in here; one never logged in since this was added shows only its archives. Each log stays separate: only this list is joined.'
+// Screen text is one short sentence (owner, 2026-10-21: "we just hit them with so much text to read").
+const WARNING = "Joins every character's saved Gaps across accounts and servers: can be a lot of data."
 
 /** While main reads every character's saves or the tab joins them: a spinner and what it is doing. */
 function Working(): JSX.Element {
@@ -47,7 +46,7 @@ export function AllCharactersBox({
           label={<Typography variant="caption">All characters</Typography>}
         />
       </Tooltip>
-      <Tooltip title="Only what was seen in this many days, archived logs included: older rows, loot and kills drop out, for this character and, with All characters on, for every character. A release can rename, move or change things, so older sightings drop out.">
+      <Tooltip title="Only rows seen in this many days; a release can change older sightings.">
         <TextField
           size="small"
           type="number"
@@ -66,14 +65,15 @@ export function AllCharactersBox({
   )
 }
 
-function savedWords(c: CharacterGaps, now: Date): { text: string; stale: boolean } {
-  const archives = c.archives > 0 ? `, ${c.archives} archive${c.archives === 1 ? '' : 's'}` : ''
-  if (c.savedAt === null) return { text: `${c.name} (archives only${archives})`, stale: false }
-  const old = isStale(c.savedAt, now)
+/** A character's few words on the line, and the one sentence behind them (its date, what to do). */
+function savedWords(c: CharacterGaps, now: Date): { text: string; tip: string; stale: boolean } {
+  const archives = `${c.archives} archived log${c.archives === 1 ? '' : 's'}`
+  if (c.savedAt === null) return { text: `${c.name} (archives only)`, tip: `Not logged in here since this was added: only its ${archives}.`, stale: false }
   const date = c.savedAt.slice(0, 10)
-  // An older build's save lacks rows this one serves (a known item's forages): logging in saves it again.
-  const why = old ? ': over 2 months old, log in to refresh it' : c.olderRows === true ? ': saved by an older version, log in to refresh it' : ''
-  return { text: `${c.name} (saved ${date}${archives}${why})`, stale: why !== '' }
+  // Over two months old, or an older build's save that lacks rows this one serves (a known item's forages).
+  if (isStale(c.savedAt, now)) return { text: `${c.name} (over 2 months old)`, tip: `Saved ${date}, over two months ago; log in on ${c.name} to refresh it.`, stale: true }
+  if (c.olderRows === true) return { text: `${c.name} (needs refresh)`, tip: `Saved ${date} by an older version; log in on ${c.name} to refresh it.`, stale: true }
+  return { text: c.name, tip: `${c.name}'s Gaps saved ${date}, plus ${archives}.`, stale: false }
 }
 
 /** Whose data the list holds: the attached character live, then each other one with its saved date. */
@@ -94,9 +94,11 @@ export function CharactersLine({ live, others }: { live: string; others: readonl
         return (
           <span key={c.character}>
             {', '}
-            <Typography component="span" variant="caption" color={w.stale ? 'warning.main' : 'text.secondary'}>
-              {w.text}
-            </Typography>
+            <Tooltip title={w.tip}>
+              <Typography component="span" variant="caption" color={w.stale ? 'warning.main' : 'text.secondary'}>
+                {w.text}
+              </Typography>
+            </Tooltip>
           </span>
         )
       })}
