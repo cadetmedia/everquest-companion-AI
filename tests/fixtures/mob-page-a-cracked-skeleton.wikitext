@@ -1,0 +1,13 @@
+{{Namedmobpage
+
+| name              = a cracked skeleton
+
+| known_loot = 
+
+<ul><li>  {{:Bone Chips}}                    <span class='drare'>(Always)</span> <span class='ddb'>[1] 4x 55% (100%)</span>
+</li><li> {{:Rusty Short Sword}}             <span class='drare'>(Ultra Rare)</span> <span class='ddb'>[2] 1x 25% (7%)</span>
+</li><li> {{:Rusty Axe}}                     <span class='drare'>(Ultra Rare)</span> <span class='ddb'>[2] 1x 25% (7%)</span>
+</li><li> {{:Rusty Mace}}                    <span class='drare'>(Ultra Rare)</span> <span class='ddb'>[2] 1x 25% (6%)</span>
+</li></ul>
+
+}}
