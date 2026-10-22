@@ -8,6 +8,7 @@
 // rows (owner ruling 4); the Copy list text is rendered here for the same reason.
 
 import type { FactionFix, KillFaction } from './gapFactions'
+import { forageWhy, type ForageUpdate } from './gapForage'
 import { offerCheckText, offerText } from './gapOffers'
 import { decodeFactionAmount } from './mobFactionAmounts'
 import { wikiPageUrl } from './wiki'
@@ -257,6 +258,8 @@ export interface GapRow {
   /** A faction row for a faction the page LISTS: what to fix, and what the page says (`-30..-10?`). */
   fix?: FactionFix
   pageSays?: string
+  /** An Items row for a page that exists: the forage zones or category it lacks (shared/gapForage.ts). */
+  forageUpdate?: ForageUpdate
 }
 
 export interface GapsSnap {
@@ -544,13 +547,17 @@ function factionAction(row: GapRow): GapAction {
   return { kind: 'checkWiki', label: 'Fix on mob page', why, href: wikiEditUrl(page) }
 }
 
+/** An image row's chip: upload the screenshot under the file name its page names or would take. */
+function imageAction(row: GapRow): GapAction {
+  const file = row.image ?? ''
+  const why = `The wiki has no image for ${row.name}. Upload a screenshot as ${file}; if the page names no image, add its imagefilename line too.`
+  return { kind: 'addToWiki', label: 'Upload image', why, href: wikiUploadUrl(file) }
+}
+
 export function gapActions(row: GapRow, verdict: GapVerdict, ctx: GapActionContext = {}): GapAction[] {
-  if (row.domain === 'image') {
-    const file = row.image ?? ''
-    const why = `The wiki has no image for ${row.name}. Upload a screenshot as ${file}; if the page names no image, add its imagefilename line too.`
-    return [{ kind: 'addToWiki', label: 'Upload image', why, href: wikiUploadUrl(file) }]
-  }
+  if (row.domain === 'image') return [imageAction(row)]
   if (row.domain === 'drop') return dropActions(row)
+  if (row.forageUpdate !== undefined) return [{ kind: 'addToWiki', label: 'Add to item page', why: forageWhy(row.name, row.forageUpdate), href: wikiEditUrl(row.forageUpdate.page) }]
   if (onMobPage(row)) return [factionAction(row)]
   const actions: GapAction[] = []
   const asOf = ctx.dataDate === undefined ? 'the app' : `the wiki data from ${ctx.dataDate}`

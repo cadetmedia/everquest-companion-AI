@@ -21,6 +21,7 @@ import { derivedPrices, factionMob, factionOf, npcOnlySpell, type ClientSpellFac
 import { merchantValueOf } from './gapOffers'
 import { itemBaseName } from './itemStats'
 import { wikiZoneLink } from './gapWikiZone'
+import { forageAddText } from './gapForage'
 import type { VendorFinder } from './gapMobPage'
 import type { LootEvent } from './types'
 
@@ -591,7 +592,8 @@ interface PageContext {
  * so a new domain is one entry, and a domain without one does not compile.
  */
 const PAGE_OF: Record<GapDomain, (row: GapRow, c: PageContext) => string> = {
-  item: (row, c) => itemPage(itemFacts(row, c.loot, c.zoneName, c.vendorAt)),
+  // A page that exists and lacks a forage zone or the category: only the lines to add (gapForage.ts).
+  item: (row, c) => (row.forageUpdate ? forageAddText(row.forageUpdate) : itemPage(itemFacts(row, c.loot, c.zoneName, c.vendorAt))),
   mob: (row, c) => mobPage(mobFacts(row, c.loot, c.kills, { ...c.seen, zoneName: c.zoneName }), c.commonLoot),
   merchant: (row, c) => merchantPage(mobFacts(row, [], c.kills, { ...c.seen, zoneName: c.zoneName })),
   spell: (row, c) => spellPage({ name: row.name, npcOnly: npcOnlySpell(row, c.isMob), client: c.spellFacts?.[row.name] }),
@@ -604,7 +606,7 @@ const PAGE_OF: Record<GapDomain, (row: GapRow, c: PageContext) => string> = {
 
 /** The domains whose page needs the same thing whatever the log saw; mobs and merchants are read below. */
 const NEEDED_OF: Partial<Record<GapDomain, (row: GapRow) => string[]>> = {
-  item: () => ['stats (the item window)'],
+  item: (row) => (row.forageUpdate ? [] : ['stats (the item window)']),
   spell: () => ['spell details (its description window)'],
   faction: (row) => (row.adjust === undefined ? ['the amount (a kill that is not capped)'] : []),
   drop: () => [],

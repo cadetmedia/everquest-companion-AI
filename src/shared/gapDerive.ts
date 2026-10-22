@@ -11,6 +11,7 @@ import type { LootEvent } from './types'
 import { withFactionRows } from './gapFactions'
 import { withDropRows, type DropAliases, type DropGroups, type ItemMobs } from './gapDrops'
 import { withImageRows, type ConMet } from './gapImages'
+import { withForageRows, type ItemForage } from './gapForage'
 import { memoLast } from './gapMemo'
 import type { MobEntry } from './mobTypes'
 
@@ -21,6 +22,8 @@ export interface GapsMet {
   cons: readonly ConMet[]
   /** Absent until main has answered (gapItemMobs.ts). */
   itemMobs?: ItemMobs
+  /** What each foraged item's own page states of foraging; absent until main has answered (gapForage.ts). */
+  itemForage?: ItemForage
 }
 
 /** The wiki data, fixed for the session: the mob catalog and dropGroups.json. */
@@ -34,11 +37,12 @@ export interface GapsWiki {
 export function deriveGaps(engine: GapsSnap, met: GapsMet, wiki: GapsWiki): GapsSnap {
   const withFactions = withFactionRows(engine, wiki.catalog, met.kills)
   const withDrops = withDropRows(withFactions, met.loot, { catalog: wiki.catalog, groups: wiki.groups, itemMobs: met.itemMobs, aliases: wiki.aliases })
-  return withImageRows(withDrops, { kills: met.kills, loot: met.loot, cons: met.cons }, wiki.catalog)
+  const withForage = withForageRows(withDrops, met.itemForage, wiki.catalog)
+  return withImageRows(withForage, { kills: met.kills, loot: met.loot, cons: met.cons }, wiki.catalog)
 }
 
 /** The inputs' identities, in a fixed order: the cache key. */
-const keyOf = (engine: GapsSnap, met: GapsMet, wiki: GapsWiki): readonly unknown[] => [engine, met.loot, met.kills, met.cons, met.itemMobs, wiki.catalog, wiki.groups, wiki.aliases]
+const keyOf = (engine: GapsSnap, met: GapsMet, wiki: GapsWiki): readonly unknown[] => [engine, met.loot, met.kills, met.cons, met.itemMobs, met.itemForage, wiki.catalog, wiki.groups, wiki.aliases]
 
 /**
  * `deriveGaps` behind a one-entry cache, keyed by the IDENTITY of each input: the engine snapshot,

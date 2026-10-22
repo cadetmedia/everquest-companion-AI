@@ -25,6 +25,8 @@ import mobsJson from '../../data/eqlegends/mobs.json'
 import { MOB_CATALOG } from '../mobs/mobSearch'
 import { useModule } from '../../lib/useModule'
 import { useItemMobs } from '../../lib/gapItemMobs'
+import { useItemForage } from '../../lib/gapItemForage'
+import { forageProofNames } from '@shared/gapForage'
 
 /** Each drop group's members, and the drop-list links that redirect to an item (scrape-drop-groups.ts). */
 const DROPS = dropGroupsJson as { groups: DropGroups; aliases?: DropAliases }
@@ -43,6 +45,7 @@ const NO_KILLS: KillMap = {}
 const NO_CONS: ConsiderSnap = []
 const snapOf = lastGapsSnap()
 const lastLooted = memoLast<string[]>()
+const lastForaged = memoLast<string[]>()
 const lastKills = memoLast<KillMap>()
 
 export interface GapsData {
@@ -63,7 +66,13 @@ export function useGapsData(): GapsData {
   // the loot is the same, so useItemMobs' effect does not rerun on a remount.
   const looted = lastLooted([loot], () => lootedItemNames(loot))
   const itemMobs = useItemMobs(looted)
-  const snap = useMemo(() => (engine ? snapOf(engine, { loot, kills: killMobs, cons, itemMobs }, WIKI) : engine), [engine, loot, killMobs, itemMobs, cons])
+  // The foraged known items' own pages, asked of main the same way (shared/gapForage.ts).
+  const foraged = lastForaged([engine], () => (engine ? forageProofNames(engine) : []))
+  const itemForage = useItemForage(foraged)
+  const snap = useMemo(
+    () => (engine ? snapOf(engine, { loot, kills: killMobs, cons, itemMobs, itemForage }, WIKI) : engine),
+    [engine, loot, killMobs, itemMobs, itemForage, cons]
+  )
   const kills = lastKills([killMobs], () => killIndex(killMobs))
   return { snap, engine, loot, kills }
 }

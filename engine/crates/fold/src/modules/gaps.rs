@@ -58,6 +58,10 @@ pub enum Domain {
     Spell,
     /// An NPC the log saw trading whom the wiki does not list as a merchant (`gaps_trade.rs`).
     Merchant,
+    /// A KNOWN item the player foraged, with where (`gaps_craft.rs`): no unknown name, but the proof
+    /// its page's `|foraged` is checked against (shared/gapForage.ts). Served after the four, with
+    /// no total of its own.
+    Forage,
 }
 
 impl Domain {
@@ -69,6 +73,7 @@ impl Domain {
             Domain::Mob => "mob",
             Domain::Spell => "spell",
             Domain::Merchant => "merchant",
+            Domain::Forage => "forage",
         }
     }
 }
@@ -454,7 +459,7 @@ impl GapsModule {
         let candidates: &[Candidate] = match domain {
             Domain::Item => &self.item_candidates,
             Domain::Spell => spell_candidates(),
-            Domain::Mob | Domain::Merchant => return None,
+            Domain::Mob | Domain::Merchant | Domain::Forage => return None,
         };
         let mut cache = self.suggests.lock().ok()?;
         cache
@@ -503,6 +508,7 @@ impl EqModule for GapsModule {
             let checked = self.seen.get(&d).map_or(0, HashSet::len);
             seen.insert(d.as_str().to_string(), json!(checked));
         }
+        rows.extend(self.served(Domain::Forage).into_iter().map(|(k, r)| self.serve_row(Domain::Forage, k, r)));
         let kill_factions = self.kill_factions.serve();
         let mob_locs = self.mob_locs.serve();
         let mob_specials = self.specials.serve();
