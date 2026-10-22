@@ -27,9 +27,14 @@ import {
   SAVED_GAPS_VERSION,
   SAVED_ROWS,
   type CharacterGaps,
+  type OwnGaps,
   type SavedGaps
 } from '../src/shared/gapsAllCharacters'
 import type { GapRow, GapsSnap } from '../src/shared/gaps'
+import { deriveGaps } from '../src/shared/gapDerive'
+import type { ConMet } from '../src/shared/gapImages'
+import { killIndex } from '../src/shared/kills'
+import { wikiPageText } from '../src/shared/wikiPage'
 
 const sha = (s: string): string => createHash('sha256').update(s).digest('hex')
 
@@ -149,14 +154,14 @@ test('the join: rows add up across characters and each row names who saw it', ()
   assert.equal(j.kills?.mobs.gnoll.count, 2)
 })
 
-test('the join cuts every character to the window', () => {
+test("the join cuts every character's rows to the window; loot and kills join whole", () => {
   const cut = { stamp: '2026-10-01 00:00:00', ms: 2000 }
   const k = { label: 'K', gaps: gaps([row('item', 'New', 1, '2026-10-05 00:00:00'), row('item', 'Old', 1, '2026-09-05 00:00:00')]), loot: [...loot('New', 3000), ...loot('Old', 1000)], kills: kills('rat', 1000) }
   const j = joinCharacters([k], cut)
   assert.deepEqual(j.gaps?.rows.map((r) => r.name), ['New'])
   assert.equal(j.gaps?.totals.item, 1)
-  assert.deepEqual(j.loot.map((e) => e.item), ['New'])
-  assert.deepEqual(Object.keys(j.kills?.mobs ?? {}), [])
+  assert.deepEqual(j.loot.map((e) => e.item), ['New', 'Old'])
+  assert.deepEqual(Object.keys(j.kills?.mobs ?? {}), ['rat'])
 })
 
 test('a kills shape from another build is not joined, and nothing is counted twice', () => {
@@ -192,8 +197,9 @@ test('days back trims the one-character view the way the join trims each charact
   const cutOwn = ownSince(own, cut)
   assert.deepEqual(cutOwn.gaps.rows.map((r) => r.name), ['New'])
   assert.equal(cutOwn.gaps.totals.mob, 0)
-  assert.deepEqual(cutOwn.loot.map((e) => e.item), ['New'])
-  assert.deepEqual(Object.keys(cutOwn.kills?.mobs ?? {}), [])
+  // Loot and kills stay whole: the rows derived from them are cut once built (see the rate test).
+  assert.equal(cutOwn.loot, own.loot)
+  assert.equal(cutOwn.kills, own.kills)
   // The same rows the join keeps for the attached character alone.
   assert.deepEqual(joinCharacters([{ label: 'K', ...own }], cut).gaps?.rows.map((r) => r.name), ['New'])
   // Nothing older than the cut: the rows are the same object, and no kills is no kills.
@@ -216,5 +222,45 @@ test('a save from before forage rows says so; the join keeps a forage row from a
   const joined = joinCharacters([live, ...otherInputs(other === null ? [] : [other], () => false)], null)
   const pod = joined.gaps?.rows.find((r) => r.name === 'Pod of Water')
   assert.equal(pod?.domain, 'forage')
-  assert.deepEqual(joined.seenBy.get(seenByKey(forage)), ['Drywrought'])
+  // Seen by is looked up under the Items row the forage row becomes (withForageRows, gaps-item-facts).
+  assert.deepEqual(joined.seenBy.get(seenByKey({ domain: 'item', name: 'Pod of Water' })), ['Drywrought'])
+})
+
+// Days back chooses rows only; the derived rows read whole loot and kills, then the window cuts them (useGapsData).
+const DAY = 86_400_000
+const NOW = new Date(2026, 9, 21, 12, 0, 0)
+const CUT = cutoffOf(60, NOW)
+const noRows = (): GapsSnap => ({ rows: [], totals: { item: 0, mob: 0, spell: 0, merchant: 0 }, seen: {} })
+const shownWith = (own: OwnGaps, cons: ConMet[], catalog: readonly Record<string, unknown>[]): GapsSnap => {
+  const cut = ownSince(own, CUT)
+  return gapsSince(deriveGaps(cut.gaps, { loot: cut.loot, kills: cut.kills?.mobs ?? {}, cons }, { catalog: catalog as never, groups: {}, aliases: {} }), CUT.stamp)
+}
+
+test("days back keeps a drop's rate whole: corpses over kills of the whole log, never the window's drops over all kills", () => {
+  // 20 kills of a skeleton, 10 at 90 days back and 10 at 10 days back; every corpse dropped Bone Chips.
+  const old = NOW.getTime() - 90 * DAY
+  const recent = NOW.getTime() - 10 * DAY
+  const lootOf = (from: number) => Array.from({ length: 10 }, (_, i) => ({ ts: from + i * 60_000, item: 'Bone Chips', source: 'a skeleton', zone: 'Befallen' }))
+  const loot = [...lootOf(old), ...lootOf(recent)]
+  const last = recent + 9 * 60_000
+  const kills = { v: 5, mobs: { 'a skeleton': { display: 'a skeleton', count: 20, bestTier: -1, firstTs: old, lastTs: last, credited: 20, tiers: { '-1': { count: 20, firstTs: old, lastTs: last } } } } }
+  const own: OwnGaps = { gaps: noRows(), loot, kills: kills as never }
+  const row = shownWith(own, [], [{ name: 'a skeleton', page: 'A skeleton', drops: ['Rusty Dagger'], zones: ['Befallen'] }]).rows.find((r) => r.domain === 'drop')
+  assert.equal(row?.count, 20)
+  assert.match(wikiPageText(row!, ownSince(own, CUT).loot, killIndex(kills.mobs as never)), /\[Overall: ~100%\]/)
+})
+
+test('days back leaves out a Factions row and an Images row the log last met before the window', () => {
+  const old = NOW.getTime() - 200 * DAY
+  const kills = { v: 5, mobs: { 'a gnoll': { display: 'a gnoll', count: 3, bestTier: -1, firstTs: old, lastTs: old, credited: 3, tiers: {} } } }
+  const engine = { ...noRows(), killFactions: [{ mob: 'a gnoll', faction: 'Sabertooths of Blackburrow', n: 3, zone: 'Blackburrow', adjust: -5, raised: false }] }
+  const catalog = [{ name: 'a gnoll', page: 'A gnoll', zones: ['Blackburrow'], factions: [] }, { name: 'a kobold', page: 'A kobold', zones: ['Blackburrow'], noImage: true }]
+  const own: OwnGaps = { gaps: engine as never, loot: [], kills: kills as never }
+  const conOld: ConMet = { mob: 'a kobold', zone: 'Blackburrow', cons: 2, ts: old }
+  const domainsOf = (cons: ConMet[], cut: boolean): string[] => (cut ? shownWith(own, cons, catalog) : deriveGaps(engine as never, { loot: [], kills: kills.mobs as never, cons }, { catalog: catalog as never, groups: {}, aliases: {} })).rows.map((r) => `${r.domain}:${r.name}`)
+  // Without a window both rows stand; with it, neither was met since.
+  assert.deepEqual(domainsOf([conOld], false).map((d) => d.split(':')[0]), ['faction', 'image'])
+  assert.deepEqual(domainsOf([conOld], true), [])
+  // Met again inside the window, the image row is back.
+  assert.deepEqual(domainsOf([{ ...conOld, ts: NOW.getTime() - DAY }], true), ['image:a kobold'])
 })
