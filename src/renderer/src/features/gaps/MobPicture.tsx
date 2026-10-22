@@ -10,6 +10,7 @@ import { wikiUploadUrl, type GapRow } from '@shared/gaps'
 import { pictureFile, type PictureSave } from '@shared/mobPicture'
 import { Line, PasteZone } from './PasteZone'
 import { latestOnly } from './latestOnly'
+import { setMobPicture } from './itemShotsStore'
 
 type NameCheck = 'checking' | 'found' | 'missing' | 'deleted' | null
 
@@ -102,6 +103,8 @@ export default function MobPicture({ row }: { row: GapRow }): JSX.Element {
         .then((r) => {
           if (!mine()) return
           setResult(r)
+          // A picture under this name, saved now or already in the folder, makes the row Ready.
+          if (r.status === 'saved' || r.status === 'exists') setMobPicture(file, r.path)
           if (r.status !== 'saved') return
           // The nameplate check runs after the save: OCR of a full screenshot can take seconds.
           setCheck('checking')
@@ -132,7 +135,10 @@ export default function MobPicture({ row }: { row: GapRow }): JSX.Element {
           onDelete={() =>
             void window.eq
               .shotSavedFile('delete', result.path)
-              .then((ok) => setCheck(ok ? 'deleted' : 'missing'))
+              .then((ok) => {
+                setCheck(ok ? 'deleted' : 'missing')
+                if (ok) setMobPicture(file, null)
+              })
               .catch(() => setCheck('missing'))
           }
         />

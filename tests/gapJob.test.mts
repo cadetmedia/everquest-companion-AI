@@ -45,6 +45,7 @@ test('Show keeps one job, All keeps the same rows; an unreadable stored choice i
   assert.deepEqual(onlyJob(rows, 'update', { isMob }).map((r) => r.name), ['Klok Koglin', 'Rat Ear (a rat)'])
   assert.equal(gapShowOf(null), 'all')
   assert.equal(gapShowOf('update'), 'update')
+  assert.equal(gapShowOf('ready'), 'ready')
   assert.equal(gapShowOf('nonsense'), 'all')
 })
 

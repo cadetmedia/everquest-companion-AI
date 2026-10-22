@@ -658,13 +658,18 @@ const PAGE_OF: Record<GapDomain, (row: GapRow, c: PageContext) => string> = {
   }
 }
 
+/** A mob's picture, the one need a saved picture meets (shared/gapReady.ts). */
+export const IMAGE_NEED = 'image (a screenshot)'
+
 /** The domains whose page needs the same thing whatever the log saw; mobs and merchants are read below. */
 const NEEDED_OF: Partial<Record<GapDomain, (row: GapRow, seen: PageExtras) => string[]>> = {
   item: (row, seen) => {
     if (row.forageUpdate) return []
     const shot = seen.itemShots?.[row.name]
-    if ((shot?.tier ?? 0) > 0) return ['stats at +0 (the window pasted is upgraded)']
-    return shot?.statsblock ? [] : ['stats (paste a screenshot of the item window below)']
+    // The window showed a Lore tab: the page wants its text (owner, 2026-10-21: "item data and/or lore").
+    const lore = shot?.loreTab === true && !shot.lore ? ['lore (paste the Lore tab below)'] : []
+    if ((shot?.tier ?? 0) > 0) return ['stats at +0 (the window pasted is upgraded)', ...lore]
+    return [...(shot?.statsblock ? [] : ['stats (paste a screenshot of the item window below)']), ...lore]
   },
   spell: (row, seen) => (spellPageValues(seen.spellFacts?.[row.name], seen.spellShots?.[row.name]).description === undefined ? ['description (paste the spell display window below)'] : []),
   faction: (row) => (row.adjust === undefined ? ['the amount (a kill that is not capped)'] : []),
@@ -684,6 +689,6 @@ export function stillNeeded(row: GapRow, loot: readonly LootEvent[], kills: Kill
     ...(f.levels.length === 0 ? ['level (/con)'] : []),
     ...(f.points.length === 0 ? ['location (/loc beside a hail or /con)'] : []),
     ...(row.domain === 'mob' && f.credited === 0 ? ['factions (a kill of your own)'] : []),
-    'image (a screenshot)'
+    IMAGE_NEED
   ]
 }

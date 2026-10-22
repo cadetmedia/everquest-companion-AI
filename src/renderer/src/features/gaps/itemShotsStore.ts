@@ -12,6 +12,8 @@ import type { ShotKind } from '@shared/itemShotKeep'
 
 export const SHOTS_KEY = 'eq.gaps.itemShots'
 export const SPELL_SHOTS_KEY = 'eq.gaps.spellShots'
+/** The mob pictures saved from the tab, by file name, so a row knows it is Ready (shared/gapReady.ts). */
+export const PICTURES_KEY = 'eq.gaps.mobPictures'
 /** The newest this many are kept: a page a day for most of a year. */
 const KEEP = 300
 
@@ -92,6 +94,12 @@ export const useItemShots = (): Readonly<Record<string, StoredShot>> => items.us
 export const setSpellShot = (name: string, shot: SpellPageShot | null): void => spells.set(name, shot)
 /** Every kept spell window reading by spell name. */
 export const useSpellShots = (): Readonly<Record<string, StoredSpellShot>> => spells.use()
+
+const pictures = shotStore<{ path: string }>(PICTURES_KEY)
+/** Note a mob picture saved under `file` (MobPicture); `null` when it was deleted. */
+export const setMobPicture = (file: string, path: string | null): void => pictures.set(file, path === null ? null : { path })
+/** Every saved mob picture by file name. */
+export const useMobPictures = (): Readonly<Record<string, Stored<{ path: string }>>> => pictures.use()
 
 /**
  * The Gaps Items rows' names as the list last held them (CaptureBar keeps this current): a paste's name
