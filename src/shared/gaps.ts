@@ -8,6 +8,7 @@
 // rows (owner ruling 4); the Copy list text is rendered here for the same reason.
 
 import type { FactionFix, KillFaction } from './gapFactions'
+import { replaceWhy } from './gapDrops'
 import { offerCheckText, offerText } from './gapOffers'
 import { decodeFactionAmount } from './mobFactionAmounts'
 import { wikiPageUrl } from './wiki'
@@ -49,7 +50,7 @@ export const GAP_DOMAIN_HELP: Record<GapDomain, string> = {
   spell: 'Spells cast near you that the wiki has no page for.',
   merchant: 'NPCs who traded with you that the wiki does not list as a merchant.',
   faction: "Factions a kill changed that the mob's wiki page does not list, or lists with another amount or side.",
-  drop: "Items you looted from a mob whose wiki page lists neither the item nor a group holding it. Drops that fall from almost any mob (the Motes) are left out.",
+  drop: "Items you looted from a mob whose wiki page lists neither the item nor a group holding it, or lists a group's items one by one (replace them with the group's line). Drops that fall from almost any mob (the Motes) are left out.",
   image: 'Mobs you met whose wiki page has no picture: take a screenshot and upload it.'
 }
 
@@ -250,8 +251,10 @@ export interface GapRow {
   suggest?: GapSuggest
   /** A drop row of one item: whether that item's own page names the mob (shared/gapDrops.ts). */
   itemPage?: 'namesMob' | 'lacksMob'
-  /** An image row: the file its page names, or the name it would take (shared/gapImages.ts). */
+  /** An image row: the file its in-game name gives (shared/gapImages.ts). */
   image?: string
+  /** An image row whose page's own `imagefilename` names another file: that file (the page may need fixing). */
+  pageImage?: string
   /** A faction, drop or image row: the wiki page of its mob, when the catalog could pick one. */
   page?: string
   /** A faction row: the amount most kills stated, and whether the kill raised the faction. */
@@ -259,6 +262,11 @@ export interface GapRow {
   raised?: boolean
   /** A drop row whose item or group the wiki files under a mob page's `|common_loot`, not `|known_loot`. */
   lootField?: 'common_loot'
+  /**
+   * A group's drop row whose mob page lists members one by one (owner, 2026-10-21): those lines, to
+   * replace with the group's, and their `[Overall: x%]` summed when every one states it.
+   */
+  replaces?: { lines: string[]; rate?: number }
   /** A one-word name only hailed or conned that the log has not shown to be an NPC (gaps_players.rs). */
   maybePlayer?: boolean
   /** A faction row whose mob the wiki data has no page for: unchecked, since a newer page may list it. */
@@ -521,13 +529,14 @@ export interface GapActionContext {
 function dropActions(row: GapRow): GapAction[] {
   const mob = mobPageOf(row)
   const item = factionOf(row)
+  const field = row.lootField === 'common_loot' ? ' It belongs under common_loot: the wiki files it as loot shared across mobs.' : ''
+  if (row.replaces !== undefined) return [{ kind: 'checkWiki', label: 'Replace on mob page', why: replaceWhy(mob, item, row.replaces.lines) + field, href: wikiEditUrl(mob) }]
   const why =
     row.details.drops !== undefined
       ? `The wiki page for ${mob} lists neither ${item} nor any item in it.`
       : row.itemPage === 'namesMob'
         ? `The page for ${item} names ${mob} as a source, but ${mob}'s page does not list it.`
         : `The wiki page for ${mob} does not list ${item}.`
-  const field = row.lootField === 'common_loot' ? ' It belongs under common_loot: the wiki files it as loot shared across mobs.' : ''
   const actions: GapAction[] = [{ kind: 'checkWiki', label: 'Add to mob page', why: why + field, href: wikiEditUrl(mob) }]
   if (row.itemPage === 'lacksMob') {
     actions.push({ kind: 'addToWiki', label: 'Add to item page', why: `The page for ${item} does not name ${mob} under dropsfrom.`, href: wikiEditUrl(item) })
@@ -542,6 +551,13 @@ function dropActions(row: GapRow): GapAction[] {
  * lacks it (check the wiki: a cache miss, not a verdict, owner 2026-10-19) — plus "fix parser"
  * when the name itself carries a parser's leftover.
  */
+/** An image row's chip: upload the file; the page's imagefilename line added, or fixed when it names another file. */
+function imageAction(row: GapRow): GapAction {
+  const file = row.image ?? ''
+  const fix = row.pageImage === undefined ? 'if the page names no image, add its imagefilename line too' : `the page's imagefilename says ${row.pageImage}: change it to ${file}`
+  return { kind: 'addToWiki', label: 'Upload image', why: `The wiki has no image for ${row.name}. Upload a screenshot as ${file}; ${fix}.`, href: wikiUploadUrl(file) }
+}
+
 /** A faction row's chip: add the faction to the mob page, or fix what the page says of it. */
 function factionAction(row: GapRow): GapAction {
   const page = mobPageOf(row)
@@ -552,11 +568,7 @@ function factionAction(row: GapRow): GapAction {
 }
 
 export function gapActions(row: GapRow, verdict: GapVerdict, ctx: GapActionContext = {}): GapAction[] {
-  if (row.domain === 'image') {
-    const file = row.image ?? ''
-    const why = `The wiki has no image for ${row.name}. Upload a screenshot as ${file}; if the page names no image, add its imagefilename line too.`
-    return [{ kind: 'addToWiki', label: 'Upload image', why, href: wikiUploadUrl(file) }]
-  }
+  if (row.domain === 'image') return [imageAction(row)]
   if (row.domain === 'drop') return dropActions(row)
   if (onMobPage(row)) return [factionAction(row)]
   const actions: GapAction[] = []

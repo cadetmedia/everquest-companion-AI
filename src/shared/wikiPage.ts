@@ -317,6 +317,15 @@ export function groupLine(group: string, drops: number, kills: number): string {
 }
 
 /**
+ * A group line replacing a page's member lines (owner, 2026-10-21): rated by the page's own member
+ * rates summed when it states them all (`replaces.rate`), else by the log as any group line.
+ */
+function replaceLine(row: GapRow, kills: number): string {
+  const rate = row.replaces?.rate
+  return rate === undefined ? groupLine(factionOf(row), row.count, kills) : pctLine(wikiLink(factionOf(row)), rate)
+}
+
+/**
  * Kills of a mob before its loot lines carry a rate and a rarity word (owner, 2026-10-20: "are we a
  * bit overconfident ... I killed this guy 1 time and you have things listed as rare and always?").
  * The same bar as `* None`: under it the line is the item alone.
@@ -327,7 +336,10 @@ export const RATE_MIN_KILLS = 10
 function rateLine(link: string, drops: number, kills: number): string {
   // More drops than kills means kills the log never showed (a groupmate's far kill): no rate beats a false "Always".
   if (kills < RATE_MIN_KILLS || drops > kills) return `<li> ${link} </li>`
-  const pct = Math.round((drops / kills) * 1000) / 10
+  return pctLine(link, Math.round((drops / kills) * 1000) / 10)
+}
+
+function pctLine(link: string, pct: number): string {
   return `<li> ${link} <span class='drare'>(${rarityWord(pct)})</span> <span class='ddb'>[Overall: ~${String(pct)}%]</span> </li>`
 }
 
@@ -561,7 +573,10 @@ const PAGE_OF: Record<GapDomain, (row: GapRow, c: PageContext) => string> = {
   image: (row) => `| ${'imagefilename'.padEnd(17)} = ${row.image ?? ''}\n`,
   // A drop: its group's link (`[[Rusty Weapons]]`), else the item; each with the rate seen, a
   // group's being the corpses that dropped any member (the row's count) over the mob's kills.
-  drop: (row, c) => `${(row.details.drops ? groupLine : lootLine)(factionOf(row), row.count, killsFor(c.kills, factionMob(row))?.count ?? 0)}\n`
+  drop: (row, c) => {
+    const kills = killsFor(c.kills, factionMob(row))?.count ?? 0
+    return `${row.replaces ? replaceLine(row, kills) : (row.details.drops ? groupLine : lootLine)(factionOf(row), row.count, kills)}\n`
+  }
 }
 
 /** The domains whose page needs the same thing whatever the log saw; mobs and merchants are read below. */

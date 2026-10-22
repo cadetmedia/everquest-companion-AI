@@ -2,7 +2,7 @@
 // and no such file existed). Fixtures only.
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { imageGaps } from '../src/shared/gapImages'
+import { imageGaps, otherPageTitle } from '../src/shared/gapImages'
 import { dropGaps } from '../src/shared/gapDrops'
 import { factionGaps } from '../src/shared/gapFactions'
 import { gapActions } from '../src/shared/gaps'
@@ -70,6 +70,24 @@ test("an image row is named as the game spells the mob, its page kept; a con's t
   assert.equal(r?.name, 'a lesser kobold')
   assert.equal(r?.page, 'A lesser kobold')
   assert.deepEqual([r?.first, r?.last], ['2026-10-19 22:01:02', '2026-10-19 22:01:02'])
+})
+
+test('a mob picture is named after the in-game name, not a misspelled page title (A lizard man scout)', () => {
+  // As mobs.json holds the page: its title and its own imagefilename spell "lizard man"; the game says "lizardman".
+  const cat = [{ page: 'A lizard man scout', name: 'a lizardman scout', image: 'npc_a_lizard_man_scout.png', noImage: true as const }]
+  const [r] = imageGaps({ 'a lizardman scout': kill('a lizardman scout', 4) }, [], cat)
+  assert.deepEqual([r?.name, r?.image, r?.page, r?.pageImage], ['a lizardman scout', 'npc_a_lizardman_scout.png', 'A lizard man scout', 'npc_a_lizard_man_scout.png'])
+  assert.equal(otherPageTitle(r!), 'A lizard man scout')
+  assert.equal(wikiPageText(r!, [], {}), '| imagefilename     = npc_a_lizardman_scout.png\n')
+  const [action] = gapActions(r!, 'unchecked')
+  assert.equal(action.href, 'https://eqlwiki.com/index.php?title=Special:Upload&wpDestFile=npc_a_lizardman_scout.png')
+  assert.match(action.why, /imagefilename says npc_a_lizard_man_scout\.png: change it to npc_a_lizardman_scout\.png/)
+  // A page whose file already matches the game's name says nothing more; its title is the row's name.
+  const [m] = imageGaps({ marda: kill('Marda', 1) }, [], catalog)
+  assert.deepEqual([m?.name, m?.image, m?.pageImage, otherPageTitle(m!)], ['Marda', 'npc_marda.png', undefined, undefined])
+  // A qualified title stays the name, and its page's file stands (the bare name's file is another page's).
+  const [g] = imageGaps({ 'a goblin': kill('a goblin', 1) }, [], [{ page: 'A goblin (Feerrott)', name: 'a goblin', image: 'npc_a_goblin_feerrott.png', noImage: true as const }])
+  assert.deepEqual([g?.name, g?.image, g?.pageImage], ['A goblin (Feerrott)', 'npc_a_goblin_feerrott.png', undefined])
 })
 
 test("a drop the page links under a qualified title (Large Ruby (Eye of Toque)) is listed; the bracketed game name still matches", () => {
