@@ -57,7 +57,7 @@ export default function SpellShot({ row }: { row: GapRow }): JSX.Element {
       window.eq
         .shotReadText(png)
         .then((reply) => {
-          const r = reply.error === undefined ? readSpellWindow(reply.lines, facts?.description) : null
+          const r = reply.error === undefined ? readSpellWindow(reply.lines, facts?.description, row.name) : null
           const ok = r !== null && isSpellWindow(r)
           setFailed(ok ? null : spellProblem(reply))
           setRead(ok ? r : null)

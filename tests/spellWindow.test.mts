@@ -128,3 +128,50 @@ test('A SPELL PASTE THAT KEEPS NOTHING SAYS WHY', () => {
   assert.match(spellProblem({ lines: ['|', '['], ms: 0 }), /^No text was found/)
   assert.match(spellProblem({ lines: ['meow', 'a cat on a mat'], ms: 0 }), /^Text was read \("a cat on a mat"\), but not a spell display window/)
 })
+
+// The owner's Burst of Flame upgraded once with a Mote of Infinitesimal Potential (tier 1), as OCR read
+// it (2026-10-21, tests/fixtures/shots/burst-of-flame-i-tier1.png): the rank's `I` read as a bar, the
+// rank's cast time and timers in brackets, its resist adjustment after the type, the upgrade block junk-led.
+const BURST_I = [
+  '| © Spell: Burst of Flame | = N',
+  'Spell: Burst of Flame | t',
+  'SHM(1)',
+  'Duration: Instant',
+  'Level: 1',
+  'Skill: Evocation',
+  'Mana: 4 ¥',
+  'Cast 1.5 sec (1.47)',
+  'Recovery: 1.5 sec (1.5 sec)',
+  'Reuse: 1 sec (11sec) ¢',
+  'Resist Fire -15 J',
+  'Target Single',
+  'Reflectable: Yes',
+  'Range: 200',
+  'Creates a ball of fire that bums your target, doing between 4 and 5 damage. ©',
+  'On You: You feel your skin singe as the Burst of Flame hits you.',
+  'On Other: Soandso singes as the Burst of Flame hits them.',
+  'ET',
+  'ots This spell can be upgraded.'
+]
+
+test('AN UPGRADED RANK (BURST OF FLAME I, TIER 1): THE BASE SPELL\'S PAGE, THE ROW MATCHED, THE RESIST TYPE ALONE, THE PLAYER TOLD', () => {
+  const r = readSpellWindow(BURST_I, BURST_TEMPLATE, 'Burst of Flame')
+  assert.equal(r.name, 'Burst of Flame')
+  assert.equal(r.rank, 'I')
+  assert.equal(r.fields.casting_time, '1.50')
+  assert.equal(r.fields.resist, 'Fire')
+  assert.equal(r.description, 'Creates a ball of fire that burns your target, doing between 4 and 5 damage.')
+  assert.deepEqual(r.checks, [
+    "An upgraded rank was read (Burst of Flame I): the page is the base spell, Burst of Flame. The rank's own values are not written.",
+    "Resist Fire -15: -15 is a resist adjustment (the rank's), not part of the type; the page writes Fire.",
+    'The rank or a modifier changed values (Cast 1.47, Recovery 1.5 sec, Reuse 11sec): the page keeps the base values.'
+  ])
+  // Read cleanly, the numeral itself; any rank up to X.
+  assert.equal(readSpellWindow(['Spell: Burst of Flame III', 'Mana: 4', 'Cast: 1.5 sec'], undefined, 'Burst of Flame').rank, 'III')
+  // A spell whose own name ends in a numeral is never cut, and an unranked window has no rank (`t` is frame junk).
+  assert.equal(readSpellWindow(['Spell: Cannibalize II', 'Mana: 0', 'Cast: 1.0 sec'], undefined, 'Cannibalize II').rank, undefined)
+  assert.equal(readSpellWindow(['Spell: Burst of Flame t', 'Mana: 4', 'Cast: 1.5 sec'], undefined, 'Burst of Flame').rank, undefined)
+  // Nothing from the upgrade block reaches the page, even with no file to follow.
+  assert.doesNotMatch(readSpellWindow(BURST_I, undefined, 'Burst of Flame').description ?? '', /upgraded|Tier|Mote/)
+  assert.equal(readSpellWindow(['Spell: Burst of Flame', 'Mana: 4', 'Uporade. Place Tier0 0/1', 'Mots This spell can be upgraded.']).description, undefined)
+})

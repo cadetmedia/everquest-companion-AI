@@ -155,3 +155,27 @@ test("A LIZARDMAN SCOUT (THE OWNER'S PICTURE): THE NAMEPLATE IS FOUND, AND THE F
   assert.equal(await showsName(img, row.name), true)
   assert.equal(await showsName(img, 'a gnoll pup'), false)
 })
+
+/** The owner's upgraded and invoked Burst of Flame windows (2026-10-21): each is the base spell's page. */
+const BURST_SHOTS: readonly [string, string | undefined, RegExp][] = [
+  // tier 0, a cast-speed invocation on: Cast 1.5 sec (0.5), Recovery 1.5 sec (2.5 sec)
+  ['burst-of-flame-invocation.png', undefined, /^A modifier was active \(Cast 0\.5, Recovery 2\.5 sec\)/],
+  // tier 1, no invocation: Cast 1.5 sec (1.47), Resist Fire -15
+  ['burst-of-flame-i-tier1.png', 'I', /^The rank or a modifier changed values \(Cast 1\.47/],
+  // tier 1 and the invocation: Cast 1.5 sec (0.49), Recovery 1.5 sec (2.4 sec)
+  ['burst-of-flame-i-tier1-invocation.png', 'I', /^The rank or a modifier changed values \(Cast 0\.49, Recovery 2\.4 sec/]
+]
+
+for (const [file, rank, modifier] of BURST_SHOTS) {
+  test(`BURST OF FLAME, ${file.toUpperCase()}: THE BASE SPELL'S PAGE (CAST 1.50, RESIST FIRE), THE RANK AND THE MODIFIER NOTED`, async () => {
+    const lines = (await readLines(readPng(join(SHOTS, file)))).map((l) => l.text)
+    const r = readSpellWindow(lines, 'Creates a ball of fire that burns your target, doing between #1 and @1 damage.', 'Burst of Flame')
+    assert.equal(r.name, 'Burst of Flame')
+    assert.equal(r.rank, rank, JSON.stringify(lines))
+    assert.equal(r.fields.casting_time, '1.50')
+    assert.equal(r.fields.resist, 'Fire')
+    assert.equal(r.description, 'Creates a ball of fire that burns your target, doing between 4 and 5 damage.')
+    assert.ok(r.checks.some((c) => modifier.test(c)), r.checks.join(' | '))
+    assert.equal(r.checks.some((c) => c.startsWith('An upgraded rank was read')), rank !== undefined)
+  })
+}
