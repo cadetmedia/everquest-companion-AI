@@ -316,6 +316,18 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   `main/gapItemForage.ts` declares them locally so gaps-item-facts builds without them.
 - `itemLookupParse.ts` is 421 code lines: red on wiki-scraper-fixes alone against its old 400 bar,
   green on `main_community` (catch_all's 440).
+- Job rule: `shared/gapJob.ts gapJob` is the one classification. Faction, drop and image rows are
+  updates; a merchant is an update when `isMob`; a `forageUpdate` row is an update; a faction row
+  with `noPage` stays an update (the mob's own row is the new page).
+- Held picker places: `gapHeld.ts SIDE_OF`; `HeldPart.place`; `heldCaption` takes `{ index, where }`;
+  stored values `1` (Anywhere), `0`, `bags`, `bank`.
+- Drops: `filedAs` files the item itself when the page lists any member of its group (`memberKeys`).
+- Common forage: `gapForage.ts COMMON_FORAGE`; 6 -> 2 rows on the owner's logs.
+- Saved Gaps files carry `rows` (SAVED_ROWS). Raise it whenever the engine serves a new kind of row
+  an older save cannot hold.
+- gaps-item-facts alone: `gaps.ts` is 404 code lines against its old 400 bar; green merged.
+- The app has only a dark theme: the job tags use palette `secondary` (New page) and `primary`
+  (Update page).
 - Merging gaps-item-facts forward conflicts in `gapDerive.ts` (keep `only`, always run
   `withForageRows`, add `met.itemForage` to `keyOf`), `wikiPage.ts` (`row.forageUpdate ?
   forageAddText(...) : itemPage(...)`; NEEDED_OF `[]` for a forage row) and `useGapsData.ts` (forage
