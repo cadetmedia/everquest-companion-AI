@@ -398,7 +398,12 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
 - Spell icon = spells_us field 76; description id = field 86 into dbstr type 6; colour tags dropped,
   `<BR>` to `<br>`.
 - D3: Weight's ceiling is many-to-one, so most +N items over 0.1 weight get the warning, not a guess.
-- Fixtures: 9 screenshots, all the owner's or Malkil's (`tests/fixtures/shots`).
+- Fixtures: every game screenshot the owner or a tester sends (item, Lore tab, spell window, mob
+  picture) is committed to `tests/fixtures/shots/` on this branch with a test (owner, 2026-10-21:
+  "they should be saved into the repo for test images for unit/regression testing"). Screenshots of
+  the app itself are not fixtures. An image sent while the agent is mid-reply is not written to the
+  session's `images` folder (Claude Code in VS Code): describe it to the agent and ask the owner to
+  re-send it after the reply, or to save the snip as a file and give its path.
 - Not built: the glyph-exact reader (D2); tesseract reads every fixture.
 
 ## Unassigned open items (no branch yet)
