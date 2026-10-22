@@ -551,12 +551,6 @@ function dropActions(row: GapRow): GapAction[] {
  * lacks it (check the wiki: a cache miss, not a verdict, owner 2026-10-19) — plus "fix parser"
  * when the name itself carries a parser's leftover.
  */
-/** An image row's chip: upload the file; the page's imagefilename line added, or fixed when it names another file. */
-function imageAction(row: GapRow, file = row.image ?? ''): GapAction {
-  const fix = row.pageImage === undefined ? 'if the page names no image, add its imagefilename line too' : `the page's imagefilename says ${row.pageImage}: change it to ${file}`
-  return { kind: 'addToWiki', label: 'Upload image', why: `The wiki has no image for ${row.name}. Upload a screenshot as ${file}; ${fix}.`, href: wikiUploadUrl(file) }
-}
-
 /** A faction row's chip: add the faction to the mob page, or fix what the page says of it. */
 function factionAction(row: GapRow): GapAction {
   const page = mobPageOf(row)
@@ -564,6 +558,12 @@ function factionAction(row: GapRow): GapAction {
   if (row.fix === undefined) return { kind: 'checkWiki', label: 'Edit mob page', why: `The wiki page for ${page} does not name this faction among those a kill moves.`, href: wikiEditUrl(page) }
   const why = `The wiki page for ${page} lists this faction as ${pageSaysText(row.pageSays ?? '')}; your log: ${logSaysText(row)}.`
   return { kind: 'checkWiki', label: 'Fix on mob page', why, href: wikiEditUrl(page) }
+}
+
+/** An image row's chip: upload the file; the page's imagefilename line added, or fixed when it names another file. */
+function imageAction(row: GapRow, file = row.image ?? ''): GapAction {
+  const fix = row.pageImage === undefined ? 'if the page names no image, add its imagefilename line too' : `the page's imagefilename says ${row.pageImage}: change it to ${file}`
+  return { kind: 'addToWiki', label: 'Upload image', why: `The wiki has no image for ${row.name}. Upload a screenshot as ${file}; ${fix}.`, href: wikiUploadUrl(file) }
 }
 
 export function gapActions(row: GapRow, verdict: GapVerdict, ctx: GapActionContext = {}): GapAction[] {
