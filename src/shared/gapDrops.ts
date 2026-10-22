@@ -3,6 +3,10 @@
 // (`[[Rusty Weapons]]`) instead of its items; dropGroups.json (scrape-drop-groups.ts) holds each
 // group's members. The owner's rule: an item in a group is filed as the group, "Rusty Weapons
 // (a bandit)", with the members the player saw, since a mob that drops one member drops the set.
+// Drop groups are standardized (owner, 2026-10-21: "we really need the app to standardize rusty
+// weapons vs listing all these random rusty weapons"): only the group line is ever offered, and a
+// page that writes a group out member by member (A Cracked Skeleton, A lizard man scout) gets a row
+// to replace those lines with the group line, rated by the members' own `[Overall: x%]` summed.
 // A mob the catalog does not have at all is a mob row already, so its drops are not repeated here.
 //
 // The wiki ties a drop to a mob on two pages, each typed by hand: the mob page's `|known_loot` and
@@ -19,6 +23,7 @@ import { commonLootNames, pagesByMob, pickPage } from './gapMobPage'
 import { gapMobKey as mobKey, memoFold, perObject } from './gapMemo'
 import { itemBaseName } from './itemStats'
 import type { LootEvent } from './types'
+import { mobSourceOf } from './rewardChest'
 
 // SPEED (perf audit, 2026-10-20: each Gaps visit 400–500 ms): every index below that reads only the
 // catalog or the groups is built once per object (gapMemo.ts `perObject`), and the two folds are
@@ -49,6 +54,8 @@ interface CatalogMob {
   drops?: string[]
   /** the page's `|common_loot`, which lists a drop as surely as `|known_loot` (owner, 2026-10-19) */
   commonDrops?: string[]
+  /** each `drops` entry's `[Overall: x%]`, null where its line states none; absent until the data carries it */
+  dropRates?: readonly (number | null)[]
 }
 
 /** Group name → its member items, as dropGroups.json states them. */
@@ -105,6 +112,9 @@ const groupsByItem = perObject((groups: DropGroups): ReadonlyMap<string, readonl
   return out
 })
 
+/** Group name → its members' keys; built once per groups table. */
+const memberKeys = perObject((groups: DropGroups): ReadonlyMap<string, readonly string[]> => new Map(Object.entries(groups).map(([g, ms]) => [g, ms.map(sourceItemKey)])))
+
 /** Each group as `ties` reads it, keys folded, in the table's order: (group key, member keys). Once per table. */
 const groupTies = perObject((groups: DropGroups): readonly (readonly [string, readonly string[]])[] =>
   Object.entries(groups).map(([g, ms]) => [sourceItemKey(g), ms.map(sourceItemKey)] as const)
@@ -142,6 +152,9 @@ interface Missing {
   span?: Span
 }
 
+/** A page's member lines and, when every one states it, their summed `[Overall: x%]`. */
+type Replaces = NonNullable<GapRow['replaces']>
+
 /** The (mob, item or group) pairs no page of the mob lists, as Gaps rows, most looted first. */
 /** What the wiki says beside the mob pages: each item page's mobs (main's answer) and the redirect titles. */
 export interface DropSide {
@@ -172,22 +185,62 @@ export function dropGaps(loot: readonly LootEvent[], catalog: readonly CatalogMo
   const missing = new Map<string, Missing>()
   for (const e of loot) {
     const filed = filedAs(e, listed, inGroups)
-    if (filed === null || e.source === undefined) continue
-    addDrop(missing, e, e.source, filed)
+    const mob = mobSourceOf(e)
+    if (filed === null || mob === undefined) continue
+    addDrop(missing, e, mob, filed)
   }
   const kept = itemMobs === undefined ? [...missing.values()] : withoutServerWide([...missing.values()], catalog, groups, itemMobs)
   const field = (m: Missing): Partial<GapRow> => (common.has(m.name.toLowerCase()) ? { lootField: 'common_loot' } : {})
-  return kept.map((m) => ({ ...rowOf(m, itemMobs, pickPage(pages.get(mobKey(m.mob)), m.zone)), ...field(m) })).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+  const members = memberKeys(groups)
+  const rowFor = (m: Missing): GapRow => {
+    const mobPages = pages.get(mobKey(m.mob))
+    const page = pickPage(mobPages, m.zone)
+    const replaces = m.group ? memberLines(mobPages?.filter((p) => page === undefined || p.page === page) ?? [], new Set(members.get(m.name))) : undefined
+    return { ...rowOf(m, itemMobs, page), ...field(m), ...(replaces === undefined ? {} : { replaces }) }
+  }
+  return kept.map(rowFor).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
 }
 
-/** What a looted item is filed as when its mob's page lists neither it nor a group holding it; null when listed or the mob is unknown. */
+/**
+ * What a looted item is filed as when its mob's page lists neither it nor a group holding it; null
+ * when listed, the mob is unknown or it was a chest payout. An item in a group is always its group,
+ * even when the page lists the item by itself: that row then replaces the page's member lines.
+ */
 function filedAs(e: LootEvent, listed: ReadonlyMap<string, ReadonlySet<string>>, inGroups: ReadonlyMap<string, readonly string[]>): { name: string; group: boolean } | null {
-  const page = e.source === undefined ? undefined : listed.get(mobKey(e.source))
-  if (page === undefined || page.has(sourceItemKey(e.item)) || page.has(bareItemKey(e.item))) return null
+  const mob = mobSourceOf(e)
+  const page = mob === undefined ? undefined : listed.get(mobKey(mob))
+  if (page === undefined) return null
   const its = inGroups.get(sourceItemKey(e.item)) ?? []
   if (its.some((g) => page.has(sourceItemKey(g)))) return null
+  if (its.length > 0) return { name: its[0], group: true }
+  if (page.has(sourceItemKey(e.item)) || page.has(bareItemKey(e.item))) return null
   // The item's own page is the base item's: `Barbed Legplates +4` is filed as `Barbed Legplates`.
-  return its.length > 0 ? { name: its[0], group: true } : { name: itemBaseName(e.item), group: false }
+  return { name: itemBaseName(e.item), group: false }
+}
+
+/**
+ * The lines of a mob's pages naming a group member by itself (`{{:Rusty Mace}}`), as the page spells
+ * them, and their `[Overall: x%]` summed when every one states it; undefined when the page has none.
+ */
+function memberLines(pages: readonly CatalogMob[], keys: ReadonlySet<string>): Replaces | undefined {
+  const names = new Map<string, string>()
+  const rates = new Map<string, number | null>()
+  for (const p of pages) {
+    ;(p.drops ?? []).forEach((d, i) => {
+      if (keys.has(sourceItemKey(d)) && !rates.has(sourceItemKey(d))) rates.set(sourceItemKey(d), p.dropRates?.[i] ?? null)
+    })
+    for (const d of [...(p.drops ?? []), ...(p.commonDrops ?? [])]) if (keys.has(sourceItemKey(d)) && !names.has(sourceItemKey(d))) names.set(sourceItemKey(d), d)
+  }
+  if (names.size === 0) return undefined
+  const stated = [...names.keys()].map((k) => rates.get(k) ?? null)
+  if (stated.some((r) => r === null)) return { lines: [...names.values()] }
+  return { lines: [...names.values()], rate: Math.round(stated.reduce((a: number, r) => a + (r ?? 0), 0) * 10) / 10 }
+}
+
+/** A replace row's chip text: the member lines named, and the one group line that stands for them. */
+export function replaceWhy(mob: string, group: string, lines: readonly string[]): string {
+  const n = lines.length
+  return `The wiki page for ${mob} lists ${group} item by item. Replace ${n === 1 ? 'this line' : `these ${String(n)} lines`} (${lines.join(', ')}) with the one [[${group}]] line.`
 }
 
 /** The pairs less the server-wide drops (see the header): looted from many mobs, tied by the wiki to almost none. */
@@ -263,6 +316,6 @@ function rowOf(m: Missing, itemMobs: ItemMobs | undefined, page: string | undefi
 /** The looted item names main should be asked about: one per item key. */
 export function lootedItemNames(loot: readonly LootEvent[]): string[] {
   const out = new Map<string, string>()
-  for (const e of loot) if (e.source !== undefined && !out.has(sourceItemKey(e.item))) out.set(sourceItemKey(e.item), itemBaseName(e.item))
+  for (const e of loot) if (mobSourceOf(e) !== undefined && !out.has(sourceItemKey(e.item))) out.set(sourceItemKey(e.item), itemBaseName(e.item))
   return [...out.values()]
 }

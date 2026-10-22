@@ -20,6 +20,7 @@ import { killsFor } from './kills'
 import { derivedPrices, factionMob, factionOf, npcOnlySpell, type ClientSpellFacts, type GapDomain, type GapRow, type MobCoin } from './gaps'
 import { merchantValueOf } from './gapOffers'
 import { itemBaseName } from './itemStats'
+import { isRewardChest, mobSourceOf } from './rewardChest'
 import { wikiZoneLink } from './gapWikiZone'
 import type { VendorFinder } from './gapMobPage'
 import type { LootEvent } from './types'
@@ -54,8 +55,9 @@ export function wikiCoin(copper: number): string {
 export function zoneBlocks(byZone: ReadonlyMap<string, readonly string[]>): string {
   const zones = [...byZone].sort((a, b) => a[0].localeCompare(b[0]))
   const blocks = zones.map(([zone, mobs]) => {
-    const list = [...mobs].sort((a, b) => a.localeCompare(b)).map((m) => `* ${wikiLink(m)}`).join('\n')
-    return zone === '' ? list : `${wikiZoneLink(zone)}\n\n${list}`
+    const list = [...mobs].filter((m) => m !== '').sort((a, b) => a.localeCompare(b)).map((m) => `* ${wikiLink(m)}`).join('\n')
+    // A zone with no mob (a Reward Chest payout) stands alone, as the wiki's own zone-only blocks do (Tasty Candy).
+    return zone === '' ? list : list === '' ? wikiZoneLink(zone) : `${wikiZoneLink(zone)}\n\n${list}`
   })
   return `\n\n${blocks.join('\n\n')}\n`
 }
@@ -107,6 +109,7 @@ function page(template: string, cats: readonly string[]): string {
 /** One mob an item was looted from, where, and how often. */
 export interface DropSeen {
   zone: string
+  /** '' for a Reward Chest payout: its zone stands, no mob (owner, 2026-10-21) */
   mob: string
   drops: number
 }
@@ -182,14 +185,16 @@ function rowZones(row: GapRow, zoneName: ZoneNamer): string[] {
   return [...new Set(raw.map(zoneName).filter((z) => z !== ''))]
 }
 
-/** Every (zone, mob) the ledger looted the item from, at any tier, with the corpses that dropped it. */
+/** Every (zone, mob) the ledger looted the item from, at any tier, with the corpses that dropped it; a chest payout gives its zone and no mob. */
 export function dropsSeen(item: string, loot: readonly LootEvent[], zoneName: ZoneNamer = asPrinted): DropSeen[] {
   const byPair = new Map<string, DropSeen & { corpses: Set<string> }>()
   for (const e of loot) {
     if (e.source === undefined || itemKey(e.item) !== itemKey(item)) continue
+    const mob = mobSourceOf(e) ?? ''
     const zone = zoneName(e.zone ?? '')
-    const key = `${zone.toLowerCase()}|${e.source.toLowerCase()}`
-    const seen = byPair.get(key) ?? { zone, mob: e.source, drops: 0, corpses: new Set<string>() }
+    if (mob === '' && zone === '') continue
+    const key = `${zone.toLowerCase()}|${mob.toLowerCase()}`
+    const seen = byPair.get(key) ?? { zone, mob, drops: 0, corpses: new Set<string>() }
     seen.corpses.add(corpseOf(e))
     seen.drops = seen.corpses.size
     byPair.set(key, seen)
@@ -211,7 +216,7 @@ export function itemFacts(row: GapRow, loot: readonly LootEvent[], zoneName: Zon
   const drops = dropsSeen(row.name, loot, zoneName)
   const mobs = new Set(drops.map((d) => d.mob.toLowerCase()))
   const bought = row.kinds.includes('bought')
-  const vendors = bought ? (row.details.sources?.entries ?? []).map((e) => e.name).filter((n) => !mobs.has(n.toLowerCase())) : []
+  const vendors = bought ? (row.details.sources?.entries ?? []).map((e) => e.name).filter((n) => !mobs.has(n.toLowerCase()) && !isRewardChest(n)) : []
   const soldBy = vendors.map((v) => vendorSeen(v, rowZones(row, zoneName), zoneName, vendorAt))
   // A merchant's offer heard at ally wins over the instant-sale estimate; any other never stands in
   // for it (shared/gapOffers.ts `merchantValueOf`, owner ask 2026-10-20).
@@ -232,7 +237,8 @@ function conLevels(row: GapRow): number[] {
 function mobLoot(row: GapRow, loot: readonly LootEvent[]): MobFacts['loot'] {
   const byItem = new Map<string, { item: string; corpses: Set<string> }>()
   for (const e of loot) {
-    if (e.source === undefined || !same(e.source, row.name)) continue
+    const mob = mobSourceOf(e)
+    if (mob === undefined || !same(mob, row.name)) continue
     const seen = byItem.get(itemKey(e.item)) ?? { item: itemBaseName(e.item), corpses: new Set<string>() }
     seen.corpses.add(corpseOf(e))
     byItem.set(itemKey(e.item), seen)
@@ -314,6 +320,15 @@ export function groupLine(group: string, drops: number, kills: number): string {
 }
 
 /**
+ * A group line replacing a page's member lines (owner, 2026-10-21): rated by the page's own member
+ * rates summed when it states them all (`replaces.rate`), else by the log as any group line.
+ */
+function replaceLine(row: GapRow, kills: number): string {
+  const rate = row.replaces?.rate
+  return rate === undefined ? groupLine(factionOf(row), row.count, kills) : pctLine(wikiLink(factionOf(row)), rate)
+}
+
+/**
  * Kills of a mob before its loot lines carry a rate and a rarity word (owner, 2026-10-20: "are we a
  * bit overconfident ... I killed this guy 1 time and you have things listed as rare and always?").
  * The same bar as `* None`: under it the line is the item alone.
@@ -324,7 +339,10 @@ export const RATE_MIN_KILLS = 10
 function rateLine(link: string, drops: number, kills: number): string {
   // More drops than kills means kills the log never showed (a groupmate's far kill): no rate beats a false "Always".
   if (kills < RATE_MIN_KILLS || drops > kills) return `<li> ${link} </li>`
-  const pct = Math.round((drops / kills) * 1000) / 10
+  return pctLine(link, Math.round((drops / kills) * 1000) / 10)
+}
+
+function pctLine(link: string, pct: number): string {
   return `<li> ${link} <span class='drare'>(${rarityWord(pct)})</span> <span class='ddb'>[Overall: ~${String(pct)}%]</span> </li>`
 }
 
@@ -588,7 +606,10 @@ const PAGE_OF: Record<GapDomain, (row: GapRow, c: PageContext) => string> = {
   image: (row) => `| ${'imagefilename'.padEnd(17)} = ${row.image ?? ''}\n`,
   // A drop: its group's link (`[[Rusty Weapons]]`), else the item; each with the rate seen, a
   // group's being the corpses that dropped any member (the row's count) over the mob's kills.
-  drop: (row, c) => `${(row.details.drops ? groupLine : lootLine)(factionOf(row), row.count, killsFor(c.kills, factionMob(row))?.count ?? 0)}\n`
+  drop: (row, c) => {
+    const kills = killsFor(c.kills, factionMob(row))?.count ?? 0
+    return `${row.replaces ? replaceLine(row, kills) : (row.details.drops ? groupLine : lootLine)(factionOf(row), row.count, kills)}\n`
+  }
 }
 
 /** The domains whose page needs the same thing whatever the log saw; mobs and merchants are read below. */

@@ -9,7 +9,7 @@ import { factionGaps, factionKey } from '../src/shared/gapFactions'
 import { groupGaps } from '../src/shared/gapGroups'
 import { imageGaps } from '../src/shared/gapImages'
 import { pickPage } from '../src/shared/gapMobPage'
-import { doneKey, gapActions, gapsCaption, hiddenBy, keptDoneMarks, npcOnlySpell, uncertainGap, withoutDone, withoutUncertain, type GapRow } from '../src/shared/gaps'
+import { allDone, doneKey, gapActions, gapsCaption, hiddenBy, keptDoneMarks, npcOnlySpell, uncertainGap, withDoneMarks, withoutDone, withoutUncertain, type GapRow } from '../src/shared/gaps'
 import { killIndex, type KillMap } from '../src/shared/kills'
 import type { LootEvent } from '../src/shared/types'
 
@@ -220,6 +220,17 @@ test('Done marks clear when the wiki data is newer than them, whatever rows are 
   assert.deepEqual(Object.keys(keptDoneMarks(marks, '2026-10-19')).sort(), ['drop:Rat Ear (a rat)', 'item:Bat Wing'])
   // After a scrape: every older mark is cleared, so a row the wiki still lacks comes back.
   assert.deepEqual(Object.keys(keptDoneMarks(marks, '2026-11-02')), [])
+})
+
+test("a mob heading's Done marks every row under it, keeps an older mark's day, and clears them all again (owner ask, 2026-10-21)", () => {
+  const rows = [row('drop', 'Ruined Robe (Eleann Morkul)'), row('drop', 'Rusty Dagger (Eleann Morkul)')]
+  const marks = { [doneKey(rows[0])]: '2026-10-20', 'item:Bat Wing': '2026-10-20' }
+  assert.equal(allDone(rows, new Set(Object.keys(marks))), false)
+  const on = withDoneMarks(marks, rows, true, '2026-10-21')
+  assert.deepEqual(on, { [doneKey(rows[0])]: '2026-10-20', [doneKey(rows[1])]: '2026-10-21', 'item:Bat Wing': '2026-10-20' })
+  assert.equal(allDone(rows, new Set(Object.keys(on))), true)
+  assert.deepEqual(withDoneMarks(on, rows, false, '2026-10-21'), { 'item:Bat Wing': '2026-10-20' })
+  assert.equal(allDone([], new Set()), false, 'an empty heading is never all done')
 })
 
 test('the list buttons count only what the player sees: Done and, when hidden, uncertain rows are left out', () => {

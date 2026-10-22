@@ -23,6 +23,7 @@
 //! to one spelling. A SALE ON LOOT IS NOT THE REAL PRICE: an item sold instantly, to no vendor, is
 //! sold at a discount, so its amount is a floor, and the list is named so wherever it is shown.
 
+use super::gaps_names::is_reward_chest;
 use super::gaps_offers::{Offer, Offers};
 use crate::event::Event;
 use crate::jsfn::item_base_name;
@@ -178,7 +179,9 @@ impl Details {
     fn item(&mut self, ev: &Event) {
         match ev.kind() {
             "loot" => {
-                self.sources.add(ev.str("source").unwrap_or_default());
+                // A chest payout is still looted, but the chest is no source (`is_reward_chest`).
+                let source = ev.str("source").filter(|s| !is_reward_chest(s));
+                self.sources.add(source.unwrap_or_default());
                 self.dispositions.add(ev.str("disposition").unwrap_or_default());
                 if let Some((coin, copper)) = price_of(ev.raw(), " and sold it for ") {
                     self.sales.add(&coin);
