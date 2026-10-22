@@ -64694,8 +64694,7 @@
         "Torn Page of Mastery Wind",
         "Chunk of Meat"
       ],
-      "image": "npc_an_alligator.png‎",
-      "noImage": true
+      "image": "npc_an_alligator.png"
     },
     {
       "page": "An alluring siren",
@@ -236171,7 +236170,7 @@
         "-30",
         "-30"
       ],
-      "image": "Npc_vessel_spirit_companion.jpg‎",
+      "image": "Npc_vessel_spirit_companion.jpg",
       "noImage": true
     },
     {
