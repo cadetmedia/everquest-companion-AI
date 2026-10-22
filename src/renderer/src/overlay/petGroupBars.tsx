@@ -2,8 +2,8 @@
 // docs/community/plans/2026-10-20-meter-pet-split.md). The same rows the Combat tab draws
 // (features/combat/PetGroupRows.tsx), in plain React because this bundle has no MUI: a pair is two
 // lines, master then pet, over one shared bar at the pair's length; anything else is one line.
-// Every bar is its own true length and text never sizes one; every row ends in the same fixed
-// total box. No hover, as on every overlay bar (JOS-358).
+// Every bar is its own true length and text never sizes one; every row ends in a total box, the
+// boxes in one column down the list. No hover, as on every overlay bar (JOS-358).
 
 import type { JSX } from 'react'
 import type { OverlayDrill } from '@shared/types'
@@ -14,7 +14,8 @@ import { KIND_COLOR, KIND_SUFFIX } from './meterBars'
 /** The pair's third colour: the shared bar and every row's total box. The Combat tab's copy matches. */
 const GROUP_COLOR = '#4a4366'
 const LINE_H = 18
-const BOX_W = 96
+/** One grid, a subgrid per row: the box column is as wide as the widest box's text (the tab's rule). */
+const COLUMNS = 'minmax(0, 1fr) minmax(40px, max-content)'
 
 /** One line: its own fill, its name, and (in a pair) its own figures. Rank and kind word: first line only. */
 function Line({
@@ -75,13 +76,12 @@ function Line({
   )
 }
 
-/** The fixed box every row ends in: a pair's dps over its damage, a lone row's on one line. */
+/** The box every row ends in: a pair's dps over its damage, a lone row's on one line. */
 function TotalBox({ row, pair }: { row: PetGroupRow; pair: boolean }): JSX.Element {
   return (
     <div
       data-testid="overlay-group-total"
       style={{
-        flex: `0 0 ${BOX_W}px`,
         borderRadius: 3,
         background: GROUP_COLOR,
         padding: '0 6px',
@@ -119,11 +119,13 @@ function GroupRow({
 }): JSX.Element {
   const pair = row.lines.length > 1
   return (
-    <div data-testid="overlay-group-row" style={{ display: 'flex', gap: 2, height: LINE_H * row.lines.length, marginBottom: 2 }}>
+    <div
+      data-testid="overlay-group-row"
+      style={{ display: 'grid', gridColumn: '1 / -1', gridTemplateColumns: 'subgrid', height: LINE_H * row.lines.length, marginBottom: 2 }}
+    >
       <div
         style={{
           position: 'relative',
-          flex: '1 1 auto',
           minWidth: 0,
           borderRadius: 3,
           overflow: 'hidden',
@@ -160,10 +162,10 @@ export function PetGroupBars({
   setDrill: ((d: OverlayDrill | null) => void) | null
 }): JSX.Element {
   return (
-    <>
+    <div data-testid="overlay-group-list" style={{ display: 'grid', gridTemplateColumns: COLUMNS, columnGap: 2 }}>
       {groups.map((g, i) => (
         <GroupRow key={g.id} row={g} rank={i + 1} setDrill={setDrill} />
       ))}
-    </>
+    </div>
   )
 }
