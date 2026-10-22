@@ -57,7 +57,7 @@ full scrapers). A 3-week window was ~1,200 pages in ~25 batched requests.
 5. Each changed file to its branch: quests and the quest cache to faction-tab, mobFactions and
    mobRaces to slayer-tab, the spell overlay to catch_all, everything else (items, mobs, spells and
    their cache, classes and its cache, pageEra and its cache, respawns, posky, images, the ledger)
-   to local-data-refresh.
+   to local-data-refresh; dropGroups.json and `cache/drop-groups` to gaps-tab.
 6. Gate the merged result in a second scratch tree and compare `^✖` lines against
    `main_community`'s head; clear the census reds (next section).
 7. Remove the junctions first (`(Get-Item <wt>\node_modules).Delete()`, the same for the three cache
@@ -75,9 +75,10 @@ full scrapers). A 3-week window was ~1,200 pages in ~25 batched requests.
 - Mob redirects after a full `scrape:mobs` (which writes records without them):
   `npx tsx scripts/scrape-mob-redirects.ts` (2026-10-18: 4,482 redirects in 19 requests, 516 on
   463 mobs). Since 2026-10-19 the list is cached at `cache/redirects/redirects.json` and
-  `--offline` re-applies it at zero requests; the delta keeps it current. The cache does not exist
-  yet: the first real run (about 19 requests) is the owner's call, after which mobs.json re-derives
-  fully offline.
+  `--offline` re-applies it at zero requests; the delta keeps it current. First real run
+  2026-10-21 (owner, "yes P3a"): 19 requests, 4,485 redirects, 517 on 464 mob pages, committed on
+  local-data-refresh; the full list matched the delta-kept otherNames byte for byte. mobs.json now
+  re-derives fully offline.
 - A new field from an existing parser (2026-10-19, `commonDrops`): re-parse the cached pages with
   the fixed parser and take the field into a record only where the re-parse reproduces the record's
   other parser fields exactly; a full `scrape:mobs` would drop `otherNames` until the redirect
@@ -86,6 +87,10 @@ full scrapers). A 3-week window was ~1,200 pages in ~25 batched requests.
 ## Expect new reds, and clear them
 
 New wiki content turns the creator's census tests red. Each failing test names its tokens.
+
+- `itemsResearch.json`'s instrument table is pinned both ways against the corpus: a page that stops
+  stating an instrument loses its entry, and the floor drops with it, on local-data-refresh
+  (2026-10-21: Unfinished Lute Neck, 47 to 46).
 
 - gearIndex family ("slots/classes/sockets/tiers tokens are canonical", "class/slot table covers
   the corpus", "unindexed stat keys are exactly the five", `eraFromTag` token-for-token, layer-3
