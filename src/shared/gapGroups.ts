@@ -8,6 +8,7 @@
 
 import { factionOf, onMobPage, type GapRow } from './gaps'
 import { itemBaseName } from './itemStats'
+import { mobSourceOf } from './rewardChest'
 import type { LootEvent } from './types'
 import { zoneKey } from './zones'
 
@@ -70,19 +71,20 @@ function zonesOf(row: GapRow): string[] {
   return row.details.zones?.all ?? row.details.zones?.entries.map((e) => e.name) ?? []
 }
 
-/** Every (zone, mob) each item was looted from, by lowercase item name: one pass over the ledger. */
+/** Every (zone, mob) each item was looted from, by lowercase item name: one pass over the ledger. A chest payout has no mob. */
 function lootPlaces(loot: readonly LootEvent[]): Map<string, Place[]> {
   const out = new Map<string, Place[]>()
   const seen = new Set<string>()
   for (const e of loot) {
-    if (e.source === undefined) continue
+    const mob = mobSourceOf(e)
+    if (mob === undefined) continue
     // An item at any tier is one item (owner, 2026-10-19).
     const key = itemBaseName(e.item).toLowerCase()
-    const pair = `${key}|${(e.zone ?? '').toLowerCase()}|${e.source.toLowerCase()}`
+    const pair = `${key}|${(e.zone ?? '').toLowerCase()}|${mob.toLowerCase()}`
     if (seen.has(pair)) continue
     seen.add(pair)
     const places = out.get(key) ?? []
-    places.push({ zone: e.zone ?? '', mob: e.source })
+    places.push({ zone: e.zone ?? '', mob })
     out.set(key, places)
   }
   return out

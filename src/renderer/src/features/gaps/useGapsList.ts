@@ -3,7 +3,8 @@
 // (owner, 2026-10-20: the overlay shows "the top 10 of whatever list they have on whatever tab they
 // have showing"). The steps, in order: every character joined when All characters is on
 // (useGapsData), the marked players dropped, the domain tab + search + Zone I'm in (visibleGaps),
-// I have it (useHeldOnly), Hide uncertain, the Done marks unless Show done, and the sort.
+// Show (useGapShow), I have it (useHeldOnly), Hide uncertain, the Done marks unless Show done, and
+// the sort.
 //
 // EVERY CHOICE THE LIST DEPENDS ON IS READ HERE, NOT IN THE TAB, so the publisher sees the tab's
 // choices with the tab closed: the checkboxes were per-viewer prefs already; the domain tab and the
@@ -17,18 +18,21 @@ import type { CharacterRef, CharacterSnap } from '@shared/types'
 import { useModule } from '../../lib/useModule'
 import { useBoolPref, useRawPref } from '../combat/useCombatPrefs'
 import { useGapVerdicts } from '../../lib/gapVerdicts'
-import { GAPS_DATA_DATE, useGapsData, type GapsData } from './useGapsData'
+import { GAPS_DATA_DATE, PAGE_EXTRAS, useGapsData, type GapsData } from './useGapsData'
 import { useDoneMarks, usePlayerList, type DoneMarks, type PlayerList } from './useDoneMarks'
 import { useAllCharacters, type AllCharactersState } from './useOtherCharacters'
 import { useHideUncertain, type HideUncertain } from './useHideUncertain'
 import { useAllHeld } from './useAllHeld'
 import { useHeldOnly, type HeldOnly } from './useHeldOnly'
+import { useGapShow, type GapShowState } from './useGapShow'
 import type { HeldIndex } from '@shared/gapHeld'
 
 /** Where the "Zone I'm in" choice is remembered, per viewer, as the Achievements tab remembers its own. */
 const ZONE_HERE_KEY = 'eq.gaps.zoneHere'
 /** Where "Show done" is remembered. */
 const SHOW_DONE_KEY = 'eq.gaps.showDone'
+/** What a row's job reads beyond the row: which names are catalog mobs (a merchant with a page). */
+const JOB_CONTEXT = { isMob: PAGE_EXTRAS.isMob }
 
 // ---- the search, kept for the session ----
 
@@ -91,7 +95,9 @@ export interface GapsList {
   setShowDone: (on: boolean) => void
   /** what each character holds now (the held chip), every character's while All characters is on */
   holding: HeldIndex
-  /** "I have it" (owner, 2026-10-21): the Items list narrowed to what is held */
+  /** "Show" (owner, 2026-10-21): new pages, updates to pages that exist, or both */
+  job: GapShowState
+  /** "I have it" (owner, 2026-10-21): the Items list narrowed to what is held, and where */
   mine: HeldOnly
   sure: HideUncertain
   /** the rows on the tab, before the sort */
@@ -136,8 +142,9 @@ export function useGapsList(opts: { background?: boolean } = {}): GapsList {
   // An item a character holds right now needs only a screenshot (review C6; owner, 2026-10-19): each
   // character's own export plus ITS loot since, named per holder while All characters is on.
   const holding = useAllHeld(data.ownLoot, me, allChars)
-  // "I have it" (owner, 2026-10-21): the Items list narrowed to what the player holds.
-  const mine = useHeldOnly(inDomain, holding, domain)
+  // "Show" (owner, 2026-10-21): new pages, updates or both; then "I have it", what the player holds.
+  const job = useGapShow(inDomain, JOB_CONTEXT)
+  const mine = useHeldOnly(job.rows, holding, domain)
   // "Hide uncertain" (owner, 2026-10-19): rows the tab is not sure are gaps, hidden on request.
   const sure = useHideUncertain(mine.rows)
   const visible = useMemo(() => (showDone ? [...sure.rows] : withoutDone(sure.rows, marks.done)), [sure.rows, showDone, marks.done])
@@ -147,5 +154,5 @@ export function useGapsList(opts: { background?: boolean } = {}): GapsList {
   // The table and Copy list read the same order, so a copied list matches what is on screen.
   const sorted = useMemo(() => sortGaps(visible, sort, verdicts), [visible, sort, verdicts])
   // prettier-ignore
-  return { me, allChars, data, domain, setDomain, query: shownQuery, setQuery, hereOnly, setHereOnly, current, zone, playerList, rows, marks, showDone, setShowDone, holding, mine, sure, visible, verdicts, sort, onSort, sorted }
+  return { me, allChars, data, domain, setDomain, query: shownQuery, setQuery, hereOnly, setHereOnly, current, zone, playerList, rows, marks, showDone, setShowDone, holding, job, mine, sure, visible, verdicts, sort, onSort, sorted }
 }
