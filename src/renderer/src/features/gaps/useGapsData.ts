@@ -23,7 +23,7 @@ import type { PageExtras, ZoneNamer } from '@shared/wikiPage'
 import dropGroupsJson from '../../data/eqlegends/dropGroups.json'
 import mobsJson from '../../data/eqlegends/mobs.json'
 import { MOB_CATALOG } from '../mobs/mobSearch'
-import { joinCharacters, otherInputs, type CharacterGaps, type JoinedGaps } from '@shared/gapsAllCharacters'
+import { joinCharacters, otherInputs, ownSince, type CharacterGaps, type JoinedGaps, type OwnGaps } from '@shared/gapsAllCharacters'
 import { useModule } from '../../lib/useModule'
 import { useItemMobs } from '../../lib/gapItemMobs'
 import { useThrottled } from '../../lib/useThrottled'
@@ -47,6 +47,8 @@ const snapOf = lastGapsSnap()
 const snapOfOnly = lastGapsSnap()
 const lastLooted = memoLast<readonly string[]>()
 const lastKills = memoLast<KillMap>()
+const lastOwnCut = memoLast<OwnGaps>()
+const lastOwnCutOnly = memoLast<OwnGaps>()
 
 export interface GapsData {
   /** The engine's snapshot with the derived domains joined in; undefined until it lands. */
@@ -78,6 +80,8 @@ export interface GapsDataOptions {
   only?: GapDomain
   /** Take the game's new data at most this often, in ms; 0 (the tab) takes every push. */
   holdMs?: number
+  /** The day window (owner, 2026-10-21: every view, not only All characters); none when absent. */
+  cut?: { stamp: string; ms: number } | null
 }
 
 /**
@@ -97,9 +101,21 @@ function useGapsFeeds(holdMs: number): { engine: GapsSnap | null; loot: LootSnap
   return useThrottled(fresh, holdMs)
 }
 
-/** What the derivation reads for the attached character alone. */
-function ownInputs(engine: GapsSnap | null, loot: LootSnap, kills: KillsSnap | null): { engine: GapsSnap | null; loot: LootSnap; killMobs: KillMap } {
-  return { engine, loot, killMobs: kills?.mobs ?? NO_KILLS }
+/**
+ * What the derivation reads for the attached character alone, cut to the day window when one is
+ * given. Kept across the tab's remounts while the inputs are the same objects: a cut builds new
+ * arrays, and a new array would miss every derivation cache keyed on it. The overlay's one-domain
+ * copy passes its own `memo`, so it and the tab never evict each other.
+ */
+function ownInputs(
+  feeds: { engine: GapsSnap | null; loot: LootSnap; kills: KillsSnap | null },
+  cut: { stamp: string; ms: number } | null,
+  memo: ReturnType<typeof memoLast<OwnGaps>>
+): { engine: GapsSnap | null; loot: LootSnap; killMobs: KillMap } {
+  const { engine, loot, kills } = feeds
+  if (engine == null || cut === null) return { engine, loot, killMobs: kills?.mobs ?? NO_KILLS }
+  const own = memo([engine, loot, kills, cut.stamp], () => ownSince({ gaps: engine, loot, kills }, cut))
+  return { engine: own.gaps, loot: own.loot, killMobs: own.kills?.mobs ?? NO_KILLS }
 }
 
 /** What the derivation reads with All characters joined. */
@@ -108,7 +124,7 @@ function joinedInputs(joined: JoinedGaps): { engine: GapsSnap | null; loot: Loot
 }
 
 export function useGapsData(all: AllCharacters | null = null, opts: GapsDataOptions = {}): GapsData {
-  const { only, holdMs = 0 } = opts
+  const { only, holdMs = 0, cut = null } = opts
   const { engine: liveEngine, loot: liveLoot, kills: liveKills, cons } = useGapsFeeds(holdMs)
   // The join runs a beat behind the box, so the tab stays live and can say it is working (owner, 2026-10-19).
   const deferredAll = useDeferredValue(all)
@@ -119,7 +135,8 @@ export function useGapsData(all: AllCharacters | null = null, opts: GapsDataOpti
     const live = { label: deferredAll.liveLabel, gaps: liveEngine, loot: liveLoot, kills: liveKills ?? null }
     return joinCharacters([live, ...otherInputs(deferredAll.others, IS_MOB)], deferredAll.cut)
   }, [deferredAll, liveEngine, liveLoot, liveKills])
-  const { engine, loot, killMobs } = joined === null ? ownInputs(liveEngine, liveLoot, liveKills) : joinedInputs(joined)
+  const feeds = { engine: liveEngine, loot: liveLoot, kills: liveKills }
+  const { engine, loot, killMobs } = joined === null ? ownInputs(feeds, cut, only === undefined ? lastOwnCut : lastOwnCutOnly) : joinedInputs(joined)
   // The item pages' side of each drop, asked of main (the corpus is main-only), and only when Drops
   // is derived. The same array while the loot is the same, so useItemMobs' effect does not rerun.
   const wantDrops = only === undefined || only === 'drop'

@@ -18,7 +18,7 @@
 // by Drywrought"), each from that character's own export and loot.
 
 import { itemTierKey } from './itemStats'
-import type { GapRow } from './gaps'
+import { visibleGaps, type GapRow } from './gaps'
 import type { OwnershipEntry, OwnershipPlace } from './planner/ownership'
 
 /** One place and how many copies it holds. */
@@ -120,6 +120,21 @@ const NOBODY: readonly GapHeld[] = []
 /** An Items row's holders, at any tier and any case; none for another domain or none held. */
 export function gapHeld(row: GapRow, index: HeldIndex): readonly GapHeld[] {
   return row.domain === 'item' ? (index.get(itemTierKey(row.name)) ?? NOBODY) : NOBODY
+}
+
+/**
+ * The "I have it" filter (owner, 2026-10-21: "see all items i have ... knock all those out in 1 easy
+ * swoop"): the Items rows someone in `index` holds. Only Items rows can be held, so the filter is
+ * the Items list's; another domain's rows pass untouched.
+ */
+export function onlyHeld(rows: readonly GapRow[], index: HeldIndex): GapRow[] {
+  return rows.filter((r) => r.domain !== 'item' || gapHeld(r, index).length > 0)
+}
+
+/** The Items toggle's caption while "I have it" is on: `3 held`, in the zone when one is given, hidden rows left out. */
+export function heldCaption(rows: readonly GapRow[], zone: string | null, hidden: (row: GapRow) => boolean, index: HeldIndex): string {
+  const n = visibleGaps(rows, 'item', '', zone).filter((r) => !hidden(r) && gapHeld(r, index).length > 0).length
+  return `${n.toLocaleString()} held`
 }
 
 /** The row chip: `held`, or `held by Drywrought, Kaltinril` when the holders are named. */
