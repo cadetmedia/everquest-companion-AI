@@ -420,6 +420,14 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   shot (`isItemShotRow`); capture takes only a window titled exactly `EverQuest Legends` or
   `EverQuest` (the owner's client: "EverQuest Legends"), the thumbnail is at most 16 MP from the
   largest display, and an OCR read times out at 60 s and restarts the worker.
+- Ready (`shared/gapReady.ts openNeeds`): a row's `stillNeeded`, less a mob picture saved from the tab
+  (`eq.gaps.mobPictures`, keyed by `pictureFile`); an Images row needs its picture; a redirect needs
+  nothing; `stillNeeded` asks for the Lore tab when a kept window showed one. `useGapReady` (inside
+  `useGapsList`) reads every page input once; readiness is read only under Show: Ready, so a kept
+  shot never re-filters the other choices; it never reads the loot ledger.
+- Capture results (2026-10-21): the bar is one line of instructions plus a status mark
+  (`IPC.onShotCapturing` drives the spinner); a reading's checks live on its row
+  (`setCapturedRead` / `useCapturedRead`, in memory); `unplaced()` drops junk under 4 letters.
 - Every failed paste goes through `shotProblem` / `spellProblem`; every name check through
   `otherItemNote` (an unread name asks, never passes).
 - Spell icon = spells_us field 76; description id = field 86 into dbstr type 6; colour tags dropped,
