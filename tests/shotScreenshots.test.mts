@@ -11,9 +11,10 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { decodeTga } from '../src/main/shot/gameTextures.ts'
 import { buildIconIndex, iconSheets, readIconIndex, sheetsFingerprint, SheetCells, writeIconIndex, type IconIndex } from '../src/main/shot/iconIndex.ts'
-import { stopOcr } from '../src/main/shot/ocr.ts'
+import { readLines, stopOcr } from '../src/main/shot/ocr.ts'
 import { readItemShot, type ItemShot, type ShotReaders } from '../src/main/shot/readItemShot.ts'
 import { shotKind } from '../src/shared/itemShotKeep.ts'
+import { readSpellWindow } from '../src/shared/spellWindow.ts'
 import { readPng } from './shotPng.mts'
 
 const SHOTS = join(import.meta.dirname, 'fixtures', 'shots')
@@ -103,6 +104,17 @@ test("SHRUBBERY, THE LORE TAB (THE OWNER'S, 2026-10-21): A TWO-WORD LORE IS READ
   const s = await read('shrubbery-lore.png', textOnly)
   assert.equal(s.read.lore, 'Ordinary Plant')
   assert.equal(shotKind({ read: s.read, lines: s.lines, icons: s.icons, ms: s.ms }), 'lore')
+})
+
+test("BURST OF FLAME, THE SPELL DISPLAY WINDOW (THE OWNER'S, 2026-10-21): NAME, FIELDS AND THE FILE'S WORDS WITH THE WINDOW'S NUMBERS", async () => {
+  const lines = (await readLines(readPng(join(SHOTS, 'burst-of-flame-spell.png')))).map((l) => l.text)
+  const r = readSpellWindow(lines, 'Creates a ball of fire that burns your target, doing between #1 and @1 damage.')
+  assert.equal(r.name, 'Burst of Flame')
+  assert.equal(r.description, 'Creates a ball of fire that burns your target, doing between 4 and 5 damage.')
+  for (const [k, v] of Object.entries({ duration: 'Instant', mana: '4', casting_time: '1.50', range: '200', target_type: 'Single', resist: 'Fire', skill: '[[Skill Evocation | Evocation]]' })) {
+    assert.equal(r.fields[k], v, `${k} in ${JSON.stringify(lines)}`)
+  }
+  assert.equal(r.fields.msg_cast_on_other, 'Someone singes as the Burst of Flame hits them.')
 })
 
 /** The icon each picture shows (the owner's pages and items.json), and the rank it must reach. */

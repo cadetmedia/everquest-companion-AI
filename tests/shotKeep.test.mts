@@ -4,7 +4,7 @@
 
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { cleared, hasWindowPart, keptAfter, sameItem, shotKind } from '../src/shared/itemShotKeep.ts'
+import { cleared, hasWindowPart, keptAfter, otherItemNote, sameItem, shotKind, shotProblem } from '../src/shared/itemShotKeep.ts'
 import { readItemWindow, type ItemShotReply } from '../src/shared/itemWindow.ts'
 import { nameInLines } from '../src/shared/mobPicture.ts'
 import { isNearSolid } from '../src/main/shot/pixels.ts'
@@ -102,4 +102,26 @@ test("A TWO-LINE LORE IS ONE LORE (SICKLY MAIDEN'S HAIR); A WINDOW PASTE KEEPS W
   const robe = ['| Ruined Robe', '| Description Lore', ...WINDOW.slice(1)]
   assert.equal(keptAfter(undefined, reply(robe), 'window').loreTab, true)
   assert.equal(keptAfter(undefined, reply(WINDOW), 'window').loreTab, undefined)
+})
+
+test("ANOTHER ITEM'S PART, OR ONE WITH NO NAME READ, WAITS FOR THE PLAYER (OWNER, 2026-10-21: TUNIC FACTS ON GRAY WOLF SKULL)", () => {
+  // A snip below the title reads the window but no name: it was kept on whatever row it was pasted on.
+  const noTitle = reply(['Lore Equipped, No Trade', 'Class: WAR', 'Race: ALL', 'Chest', 'Size: MEDIUM AC: 4', 'Weight: 1.6'])
+  assert.equal(shotKind(noTitle), 'window')
+  assert.equal(noTitle.read.name, undefined)
+  assert.equal(otherItemNote(noTitle.read.name, 'Gray Wolf Skull', 'item window'), "No name was found in this item window: is it Gray Wolf Skull's?")
+  // The window's `*` is not part of the name.
+  const tunic = reply(['Mud Stained Skin Tunic*', 'Lore Equipped, No Trade', 'Class: WAR', 'Race: ALL', 'Chest'])
+  assert.equal(tunic.read.name, 'Mud Stained Skin Tunic')
+  assert.equal(otherItemNote(tunic.read.name, 'Gray Wolf Skull', 'item window'), "This is Mud Stained Skin Tunic's item window, not Gray Wolf Skull's.")
+  // A Lore tab is checked too: Shrubbery's (its title cut to `Shrubbe`) is not Gray Wolf Skull's, and is Shrubbery's.
+  assert.equal(otherItemNote('Shrubbe', 'Gray Wolf Skull', 'Lore tab'), "This is Shrubbe's Lore tab, not Gray Wolf Skull's.")
+  assert.equal(otherItemNote('Shrubbe', 'Shrubbery', 'Lore tab'), undefined)
+})
+
+test('A PASTE THAT KEEPS NOTHING SAYS WHY, IN WORDS, WITH WHAT TO DO (OWNER, 2026-10-21: "JUST SAYS ERROR WITHOUT A REASON")', () => {
+  assert.match(shotProblem({ ...reply([]), error: 'Not a picture.' }), /^Not a picture\. Paste a screenshot/)
+  assert.match(shotProblem(reply([])), /^No text was found in this picture/)
+  assert.match(shotProblem(reply([], [{ id: 1126, score: 1900 }])), /icon alone, but no game icon matches it closely \(the nearest is 1126\)/)
+  assert.match(shotProblem(reply(['meow', 'a soft orange cat sitting on a warm windowsill'])), /^Text was read \("a soft orange cat sitting on a warm wind…"\), but no item window/)
 })

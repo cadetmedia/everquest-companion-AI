@@ -109,6 +109,9 @@ export interface OverlayHeaderAction {
   /** One character. It sits in a 20px box at 11px, beside 📌 and ✕. */
   glyph: string
   onClick: () => void
+  /** Also drawn on a locked overlay's hover. A locked window cannot take focus, so the click
+   *  leaves the game focused (the screenshot capture's camera, owner 2026-10-21). */
+  whileLocked?: boolean
 }
 
 const TAIL_COLOR = 'rgba(255,255,255,0.7)'
@@ -122,6 +125,14 @@ const NO_CAPTURE: HeaderCapture = () => undefined
 
 /** The IconButton's box (IconButton.tsx: 20 x 20), so the slot below can hold its shape. */
 const CONTROL_PX = 20
+
+/** The action a locked overlay's hover shows too: only one that asked (`whileLocked`). */
+const lockedActionOf = (action?: OverlayHeaderAction): OverlayHeaderAction | undefined => (action?.whileLocked === true ? action : undefined)
+
+/** The hidden controls' box: the unlock pin, and a locked-hover action beside it. */
+function ControlsPlaceholder({ slots }: { slots: number }): JSX.Element {
+  return <div aria-hidden style={{ width: slots * CONTROL_PX + (slots - 1) * 2, height: CONTROL_PX, marginLeft: 2, flexShrink: 0 }} />
+}
 
 /**
  * Lock/close, shown when interactive or while a locked overlay has captured the mouse.
@@ -149,8 +160,10 @@ function HeaderControls({
   action?: OverlayHeaderAction
 }): JSX.Element | null {
   const { locked, hovering, noDrag, toggleLock } = chrome
+  const lockedAction = lockedActionOf(action)
   if (locked && !hovering) {
-    return <div aria-hidden style={{ width: CONTROL_PX, height: CONTROL_PX, marginLeft: 2, flexShrink: 0 }} />
+    // Sized for every control the hover reveals, so the title keeps its width too.
+    return <ControlsPlaceholder slots={lockedAction ? 2 : 1} />
   }
   return (
     <div style={{ ...noDrag, display: 'flex', alignItems: 'center', gap: 2, marginLeft: 2 }}>
@@ -159,7 +172,8 @@ function HeaderControls({
           that one control — so an action that appeared on hover while pinned would put back the
           title-bar height jump the owner had removed. It is also an irreversible-ish action on a
           click-through window: a split you did not mean to make is one you have to press again to
-          live with (the undo is API-only, by ruling). */}
+          live with (the undo is API-only, by ruling). An action that asks (`whileLocked`) shows
+          on the hover too, and the placeholder above is sized for it. */}
       <IconButton
         label={locked ? 'Unlock (interactive)' : 'Lock (click-through)'}
         onClick={toggleLock}
@@ -171,6 +185,11 @@ function HeaderControls({
       {!locked && action && (
         <IconButton label={action.label} onClick={action.onClick} accentBg={iconAccentBg}>
           {action.glyph}
+        </IconButton>
+      )}
+      {locked && lockedAction && (
+        <IconButton label={lockedAction.label} onClick={lockedAction.onClick} accentBg={iconAccentBg}>
+          {lockedAction.glyph}
         </IconButton>
       )}
       {!locked && (

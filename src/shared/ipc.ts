@@ -1160,8 +1160,8 @@ export const IPC = {
   // A pasted screenshot read as text lines (a spell display window; shared/spellWindow.ts maps them).
   // Payload: (png: Uint8Array). Answers ShotTextReply.
   shotReadText: 'shot:readText',
-  // The capture hotkey (shotCapture.ts): ('get') or ('set', accelerator | null). Answers { hotkey, message? }.
-  shotHotkey: 'shot:hotkey',
+  // overlay -> main: capture the EverQuest window now (an overlay's camera button; shotCapture.ts). Payload: none.
+  shotCaptureNow: 'shot:captureNow',
   // The captures waiting for the Gaps tab, taken (emptied) by the call. Payload: none.
   shotCaptures: 'shot:captures',
   // main -> renderer: a capture is waiting. Payload: none.

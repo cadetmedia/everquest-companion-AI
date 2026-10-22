@@ -33,13 +33,11 @@ interface PictureSettings {
   lastDir?: string
   /** Save straight here, with no dialog; unset = the dialog. */
   autoDir?: string
-  /** The capture hotkey (an Electron accelerator); unset = off (shotCapture.ts). */
-  hotkey?: string
 }
 
 const SETTINGS = (): string => join(app.getPath('userData'), 'shot-settings.json')
 
-export function settings(): PictureSettings {
+function settings(): PictureSettings {
   try {
     const s: unknown = JSON.parse(readFileSync(SETTINGS(), 'utf8'))
     return s !== null && typeof s === 'object' ? s : {}
@@ -48,11 +46,11 @@ export function settings(): PictureSettings {
   }
 }
 
-export function setSettings(patch: PictureSettings): void {
+function setSettings(patch: PictureSettings): void {
   try {
     writeFileSync(SETTINGS(), JSON.stringify({ ...settings(), ...patch }))
   } catch {
-    // Only the remembered settings are lost.
+    // Only the remembered folders are lost.
   }
 }
 

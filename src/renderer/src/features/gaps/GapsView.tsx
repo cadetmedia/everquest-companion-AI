@@ -233,7 +233,7 @@ export default function GapsView(): JSX.Element {
   const itemShots = useItemShots()
   // And pasted spell display windows, for the spell pages (owner, 2026-10-21).
   const spellShots = useSpellShots()
-  // Where a hotkey capture can be filed (phase 3): every item row, not only the ones on screen.
+  // Where a capture from the game can be filed (phase 3): every item row, not only the ones on screen.
   const itemNames = useMemo(() => itemRowNames(rows ?? []), [rows])
   const sightings = useMemo(() => ({ ...sightingsOf(engine, spellFacts), itemShots, spellShots }), [engine, spellFacts, itemShots, spellShots])
   const pageText = useCallback((row: GapRow) => wikiPageText(row, loot, kills, sightings), [loot, kills, sightings])

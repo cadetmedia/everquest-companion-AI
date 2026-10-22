@@ -1,13 +1,15 @@
-// The capture hotkey's half that needs no Electron (phase 3 of screenshot to wiki; owner, 2026-10-21):
-// finding an item window in a capture of the whole game window by its yellow tab label
+// Capturing from the game, the half that needs no Electron (phase 3 of screenshot to wiki; owner,
+// 2026-10-21): finding an item window in a capture of the whole game window by its yellow tab label
 // (src/main/shot/findWindow.ts), reading it (captureRead.ts), filing it on a row (itemShotKeep.ts
-// captureRow), and the hotkey's rules (shared/shotHotkey.ts). The captures are built from the owner's
+// captureRow), and what starts a capture (shared/shotTrigger.ts: the macro's log line, the debounce;
+// owner: "i like the macro log thing ... avoid C", C a system-wide hotkey). The captures are built from the owner's
 // and Malkil's window screenshots set into a noisy scene with yellow that is not a tab; the owner's
 // ruling (D4: "we can not force users to use a specific UI scale") is tested with a window resized
 // by a non-whole factor.
 
 import { after, test } from 'node:test'
 import assert from 'node:assert/strict'
+import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { readCapture } from '../src/main/shot/captureRead.ts'
 import { tabLabels, windowAround } from '../src/main/shot/findWindow.ts'
@@ -15,7 +17,7 @@ import { stopOcr } from '../src/main/shot/ocr.ts'
 import type { Rgba } from '../src/main/shot/pixels.ts'
 import { readItemShot, type ShotReaders } from '../src/main/shot/readItemShot.ts'
 import { captureRow } from '../src/shared/itemShotKeep.ts'
-import { acceleratorOf, hotkeyProblem } from '../src/shared/shotHotkey.ts'
+import { CAPTURE_MACRO, captureGate, isCaptureLine, RECENT_MS } from '../src/shared/shotTrigger.ts'
 import { readPng } from './shotPng.mts'
 
 const SHOTS = join(import.meta.dirname, 'fixtures', 'shots')
@@ -80,6 +82,24 @@ for (const [file, k] of [['vial-of-swamp-water.png', 1], ['surefall-fletching-ki
   })
 }
 
+test("TWO ITEM WINDOWS SIDE BY SIDE (THE OWNER'S, 2026-10-21) ARE TWO READINGS, EACH ONLY ITS OWN LINES", async () => {
+  const got = await readCapture(readPng(join(SHOTS, 'mud-stained-tunic-and-rusty-axe.png')), textOnly)
+  assert.deepEqual(got.windows.map((w) => w.reply.read.name), ['Mud Stained Skin Tunic', 'Rusty Battle Axe'])
+  const block = (i: number): string[] => got.windows[i].reply.read.statsblock.split('\n').filter(Boolean)
+  assert.deepEqual(block(0), ['Lore Equipped, No Trade<br>', 'Slot: CHEST<br>', 'AC: 4<br>', 'Size: MEDIUM WT: 1.6<br>', 'Class: WAR<br>', 'Race: ALL<br>'])
+  // The Legends lines (Base Dmg, Delay, Ratio, Tier, Modified, Ornamentation) map or stay out.
+  assert.deepEqual(block(1), [
+    'No Trade, Placeable<br>',
+    'Slot: PRIMARY SECONDARY<br>',
+    'Skill: 1H Slashing  Atk Delay: 42<br>',
+    'DMG: 6<br>',
+    'Size: MEDIUM WT: 8.5<br>',
+    'Class: WAR PAL RNG SHD BRD ROG<br>',
+    'Race: ALL<br>'
+  ])
+  assert.equal(got.windows[0].reply.read.loreTab, true)
+})
+
 test('A CAPTURE WITH NO ITEM WINDOW FINDS NONE (THE PLAYER IS SENT TO THE SNIP, NEVER TO A GAME SETTING)', async () => {
   const got = await readCapture(capture({ w: 1, h: 1, data: new Uint8Array(4) }, 0, 0), textOnly)
   assert.equal(got.reply, undefined)
@@ -94,14 +114,51 @@ test('A CAPTURE IS FILED ON THE ONE ROW ITS NAME MATCHES; NONE WHEN NO ROW OR SE
   assert.equal(captureRow(undefined, rows), undefined)
 })
 
-test('THE HOTKEY: CTRL, ALT OR WIN WITH ONE KEY; A KEY ALONE OR WITH SHIFT ONLY IS THE GAME\'S', () => {
-  const press = (code: string, mods: Partial<Record<'ctrlKey' | 'altKey' | 'shiftKey' | 'metaKey', boolean>>): string | undefined =>
-    acceleratorOf({ ctrlKey: false, altKey: false, shiftKey: false, metaKey: false, code, ...mods })
-  assert.equal(press('KeyS', { ctrlKey: true, altKey: true }), 'Ctrl+Alt+S')
-  assert.equal(press('F9', { altKey: true }), 'Alt+F9')
-  assert.equal(press('ShiftLeft', { shiftKey: true }), undefined)
-  assert.equal(hotkeyProblem('Ctrl+Alt+S'), undefined)
-  assert.match(hotkeyProblem('Shift+S') ?? '', /Ctrl, Alt or Win/)
-  assert.match(hotkeyProblem('S') ?? '', /Ctrl, Alt or Win/)
-  assert.match(hotkeyProblem('Ctrl+Alt') ?? '', /one key/)
+test('THE MACRO LINE: THE MARKER ALONE AFTER THE TIMESTAMP, ANY CASE; NO SPEAKER LINE COUNTS', () => {
+  const ts = '[Wed Oct 21 18:20:00 2026] '
+  // What `/echo eqc capture` writes: the text alone after the timestamp.
+  assert.equal(CAPTURE_MACRO, '/echo eqc capture')
+  assert.equal(isCaptureLine(ts + CAPTURE_MACRO.replace(/^\/echo /, '')), true)
+  assert.equal(isCaptureLine(`${ts}EQC Capture`), true)
+  assert.equal(isCaptureLine(`${ts}eqc capture `), true)
+  // Another player saying, telling, shouting or emoting it never starts a capture.
+  for (const line of [
+    "Bob says, 'eqc capture'",
+    "Bob tells you, 'eqc capture'",
+    "You say, 'eqc capture'",
+    "Bob says out of character, 'eqc capture'",
+    'Bob eqc capture',
+    'eqc capture now',
+    'eqc captured'
+  ]) {
+    assert.equal(isCaptureLine(ts + line), false, line)
+  }
+  assert.equal(isCaptureLine('eqc capture'), false)
+})
+
+test('THE GATE: PRESSES WITHIN THE DEBOUNCE ARE ONE; AN OLD MARKER LINE NEVER CAPTURES', () => {
+  const gate = captureGate(1500)
+  const t = 1_800_000_000_000
+  assert.equal(gate(t, t - 2000), true)
+  assert.equal(gate(t + 1000, t + 1000), false)
+  assert.equal(gate(t + 1600), true)
+  // A line from before the clock's window (a replayed or late line) is refused, and spends nothing.
+  assert.equal(gate(t + 10_000, t + 10_000 - RECENT_MS - 1), false)
+  assert.equal(gate(t + 10_001, t + 10_000), true)
+  // A line stamped ahead of the clock by more than the window is refused too.
+  assert.equal(gate(t + 20_000, t + 20_000 + RECENT_MS + 1), false)
+})
+
+test('NO SYSTEM-WIDE KEY: the app registers no globalShortcut (owner, 2026-10-21: "avoid C")', () => {
+  const under = (dir: URL): URL[] =>
+    readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
+      e.isDirectory() ? under(new URL(`${e.name}/`, dir)) : /\.tsx?$/.test(e.name) ? [new URL(e.name, dir)] : []
+    )
+  for (const dir of ['main', 'preload', 'renderer', 'shared']) {
+    for (const file of under(new URL(`../src/${dir}/`, import.meta.url))) {
+      // Comments may say what was removed and why; code may not use it.
+      const code = readFileSync(file, 'utf8').replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\/\/[^\n]*/g, ' ')
+      assert.equal(/\bglobalShortcut\b/.test(code), false, file.pathname)
+    }
+  }
 })

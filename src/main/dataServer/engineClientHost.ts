@@ -71,6 +71,7 @@ import type {
 // every fire and prints what it decided. A launch that turned it off (`EQC_ENGINE_ALERTS=0`, or
 // `EQC_ENGINE_SERVE=0` above it) finds `armed` false and pays one boolean read per fire.
 import { playEngineFire } from './alertsAudio'
+import { takeOwnFire, withOwnDefs } from './ownFires'
 // THE CON-CARD CUTOVER (JOS-496). Same shape as the audio one above and behind the serve flag
 // rather than a fourth of its own; this file simply offers every card and prints what was decided.
 import { conCardServeLine, noteConCardServe, openEngineConCard } from './conCardServe'
@@ -435,7 +436,7 @@ async function pushDefine(mine: number, op: DefineOp): Promise<void> {
   const l = live
   if (l === null || gen !== mine) return
   try {
-    const ack = await l.client.request(op, readDefine(op))
+    const ack = await l.client.request(op, withOwnDefs(op, readDefine(op)))
     if (gen !== mine) return
     const count = ack.count === undefined ? '' : ` (${String(ack.count)})`
     debug(`data-server define: ${op}${count}`)
@@ -522,6 +523,11 @@ let firesHeard = 0
  * key is right there, so the app needs nothing else to play it.
  */
 function noteFire(fire: FireMessage): void {
+  // The app's own line watch (ownFires.ts: the screenshot macro) is a command, not an alert: no sound.
+  if (takeOwnFire(fire)) {
+    debug(`data-server fire: ${fire.rule} taken by the app`)
+    return
+  }
   firesHeard += 1
   const outcome = playEngineFire(fire) ? 'PLAYED from the engine' : 'logged, not played'
   debug(

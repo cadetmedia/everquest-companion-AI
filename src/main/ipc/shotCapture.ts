@@ -1,32 +1,46 @@
-// IPC: the capture hotkey (phase 3 of screenshot to wiki; owner, 2026-10-21). In the game, the
-// player presses the hotkey over an open item window; main grabs the EverQuest window (the window,
-// not the screen: Electron's desktopCapturer, no cursor), finds the item window by its yellow tab
-// label (shot/findWindow.ts), reads it on this machine, and keeps the reading for the Gaps tab, which
-// files it on the item's row by name. Nothing touches the game: a picture of its window, as a
-// screenshot tool takes one.
+// IPC: capturing the EverQuest window (phase 3 of screenshot to wiki; owner, 2026-10-21). Main grabs
+// the EverQuest window (the window, not the screen: Electron's desktopCapturer, no cursor), finds the
+// item window by its yellow tab label (shot/findWindow.ts), reads it on this machine, and keeps the
+// reading for the Gaps tab, which files it on the item's row by name. Nothing touches the game: a
+// picture of its window, as a screenshot tool takes one.
 //
-// The hotkey is Electron's globalShortcut (Windows RegisterHotKey: a registered key, not a keyboard
-// hook). Off until the player sets one; Ctrl, Alt or Win required (shared/shotHotkey.ts). A new key
-// is registered before the old one is let go, so a refused key leaves the old one working.
+// Two ways in, one capture (owner: "lets do both? and avoid C", C being a system-wide hotkey, which
+// the app no longer registers): (A) the player's social macro writes `/echo eqc capture`, and the
+// engine, which reads the live log, reports the line (ownFires.ts); (B) the camera button on an
+// overlay. Both pass shared/shotTrigger.ts's gate.
 
-import { desktopCapturer, globalShortcut, ipcMain, screen } from 'electron'
+import { desktopCapturer, ipcMain, screen } from 'electron'
 import { IPC } from '../../shared/ipc'
-import { hotkeyProblem, type Captured } from '../../shared/shotHotkey'
+import { CAPTURE_LINE_REGEX, CAPTURE_MACRO, captureGate, DEBOUNCE_MS, isCaptureLine, type Captured } from '../../shared/shotTrigger'
+import type { AlertDef } from '../../shared/types'
+import type { FireMessage } from '../../shared/dataServer/protocol.generated'
+import { DEFAULT_ALERT_PACK_ID, DEFAULT_ALERT_SOUNDS } from '../data/defaultPacks'
+import { setOwnFires } from '../dataServer/ownFires'
 import { readCapture } from '../shot/captureRead'
 import { bgraToRgba } from '../shot/pixels'
+import { UNRELEASED } from '../unreleased'
 import { getMainWindow } from '../windows'
-import { setSettings, settings } from './shotPicture'
 import { READERS } from './shotIpc'
 
 /** Kept until the Gaps tab takes them; the oldest go past this many. */
 const KEEP = 20
-/** A held key repeats: presses closer than this are one. */
-const DEBOUNCE_MS = 1500
+/** From the macro's line to the picture: the game draws the frame after the hotbar press. */
+const MACRO_DELAY_MS = 300
+
+/** The engine's watch for the macro's line. Never in the store, never played (ownFires.ts). */
+const MACRO_DEF: AlertDef = {
+  id: 'eqc-shot-capture',
+  name: `EQ Companion screenshot capture (${CAPTURE_MACRO})`,
+  enabled: true,
+  trigger: { type: 'raw', regex: CAPTURE_LINE_REGEX },
+  // Required by the def's shape; a taken fire plays nothing.
+  sound: { packId: DEFAULT_ALERT_PACK_ID, soundId: DEFAULT_ALERT_SOUNDS.buffWearsOff },
+  cooldownMs: DEBOUNCE_MS
+}
 
 const waiting: Captured[] = []
-let current: string | null = null
+const gate = captureGate()
 let busy = false
-let last = 0
 
 /** The EverQuest window's picture at the display's full size, or why there is none. */
 async function grabGame(): Promise<{ name: string; img: ReturnType<typeof bgraToRgba> } | { error: string }> {
@@ -39,25 +53,39 @@ async function grabGame(): Promise<{ name: string; img: ReturnType<typeof bgraTo
   return { name: eq.name, img: bgraToRgba(new Uint8Array(eq.thumbnail.toBitmap()), width, height) }
 }
 
-async function capture(): Promise<void> {
-  const now = Date.now()
-  if (busy || now - last < DEBOUNCE_MS) return
-  busy = true
-  last = now
+async function capture(via: 'macro' | 'overlay'): Promise<void> {
   const t0 = performance.now()
+  const ms = (): number => Math.round(performance.now() - t0)
+  busy = true
   try {
     const got = await grabGame()
     if ('error' in got || got.img === null) {
-      keep({ at: new Date().toISOString(), error: 'error' in got ? got.error : 'The capture was empty.', ms: Math.round(performance.now() - t0) })
+      keep({ at: new Date().toISOString(), via, error: 'error' in got ? got.error : 'The capture was empty.', ms: ms() })
       return
     }
     const read = await readCapture(got.img, READERS)
-    keep({ at: new Date().toISOString(), window: got.name, ms: Math.round(performance.now() - t0), ...(read.reply === undefined ? { error: 'No item window was found in the capture: snip it (Win+Shift+S) and paste it on the row instead.' } : { reply: read.reply }) })
+    if (read.windows.length === 0) keep({ at: new Date().toISOString(), via, window: got.name, ms: ms(), error: 'No item window was found in the capture: snip it (Win+Shift+S) and paste it on the row instead.' })
+    // Two windows open side by side are two readings, each filed on its own row.
+    for (const w of read.windows) keep({ at: new Date().toISOString(), via, window: got.name, ms: ms(), reply: w.reply })
   } catch (e) {
-    keep({ at: new Date().toISOString(), error: `Could not capture: ${e instanceof Error ? e.message : String(e)}`, ms: Math.round(performance.now() - t0) })
+    keep({ at: new Date().toISOString(), via, error: `Could not capture: ${e instanceof Error ? e.message : String(e)}`, ms: ms() })
   } finally {
     busy = false
   }
+}
+
+/** Start a capture unless one is running or one just ran; a macro line must be recent. */
+function start(via: 'macro' | 'overlay', lineAt?: number): void {
+  if (busy || !gate(Date.now(), lineAt)) return
+  if (via === 'overlay') void capture(via)
+  else setTimeout(() => void capture(via), MACRO_DELAY_MS)
+}
+
+/** The engine's fire for the macro's line: taken (true) and captured; any other fire is not ours. */
+function takeMacroFire(fire: FireMessage): boolean {
+  if (fire.rule !== MACRO_DEF.name || !isCaptureLine(fire.message)) return false
+  start('macro', fire.at)
+  return true
 }
 
 function keep(c: Captured): void {
@@ -67,37 +95,9 @@ function keep(c: Captured): void {
   if (w && !w.isDestroyed()) w.webContents.send(IPC.onShotCaptured)
 }
 
-/** Set (or turn off, null) the hotkey; the answer says what is in force and why a key was refused. */
-export function setHotkey(accel: string | null): { hotkey: string | null; message?: string } {
-  if (accel === null) {
-    if (current !== null) globalShortcut.unregister(current)
-    current = null
-    setSettings({ hotkey: undefined })
-    return { hotkey: null }
-  }
-  const problem = hotkeyProblem(accel)
-  if (problem !== undefined) return { hotkey: current, message: problem }
-  if (accel === current) return { hotkey: current }
-  let ok = false
-  try {
-    ok = globalShortcut.register(accel, () => void capture())
-  } catch {
-    ok = false
-  }
-  if (!ok) return { hotkey: current, message: `${accel} could not be taken: another program or Windows holds it.` }
-  if (current !== null) globalShortcut.unregister(current)
-  current = accel
-  setSettings({ hotkey: accel })
-  return { hotkey: current }
-}
-
 export function registerShotCaptureIpc(): void {
-  // The key the player set last time, taken again at start; a key now held elsewhere stays off.
-  const saved = settings().hotkey
-  if (typeof saved === 'string') setHotkey(saved)
-  ipcMain.handle(IPC.shotHotkey, (_e, action: unknown, accel: unknown) => {
-    if (action === 'set' && (typeof accel === 'string' || accel === null)) return setHotkey(accel)
-    return { hotkey: current }
-  })
+  // The Gaps tab that files a capture is behind the same gate.
+  if (UNRELEASED) setOwnFires([MACRO_DEF], takeMacroFire)
+  ipcMain.on(IPC.shotCaptureNow, () => start('overlay'))
   ipcMain.handle(IPC.shotCaptures, () => waiting.splice(0, waiting.length))
 }

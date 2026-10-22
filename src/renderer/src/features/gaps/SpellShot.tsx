@@ -7,8 +7,8 @@
 import { type JSX, useCallback, useMemo, useState } from 'react'
 import { Chip, Stack, TextField, Typography } from '@mui/material'
 import type { GapRow } from '@shared/gaps'
-import { sameItem } from '@shared/itemShotKeep'
-import { fileDescription, isSpellWindow, readSpellWindow, type SpellPageShot, type SpellWindowRead } from '@shared/spellWindow'
+import { otherItemNote } from '@shared/itemShotKeep'
+import { fileDescription, isSpellWindow, readSpellWindow, spellProblem, type SpellPageShot, type SpellWindowRead } from '@shared/spellWindow'
 import { useSpellFacts } from '../../lib/gapSpellFacts'
 import { setSpellShot, useSpellShots } from './itemShotsStore'
 import { Line, PasteZone, WrongItem } from './PasteZone'
@@ -46,9 +46,10 @@ export default function SpellShot({ row }: { row: GapRow }): JSX.Element {
   const names = useMemo(() => [row.name], [row.name])
   const facts = useSpellFacts(names)[row.name]
   const [busy, setBusy] = useState(false)
-  const [failed, setFailed] = useState(false)
+  /** Why the last paste kept nothing, in words; null when it kept something. */
+  const [failed, setFailed] = useState<string | null>(null)
   const [read, setRead] = useState<SpellWindowRead | null>(null)
-  const [pending, setPending] = useState<SpellWindowRead | null>(null)
+  const [pending, setPending] = useState<{ read: SpellWindowRead; note: string } | null>(null)
   const onPicture = useCallback(
     (png: Uint8Array) => {
       setBusy(true)
@@ -58,14 +59,15 @@ export default function SpellShot({ row }: { row: GapRow }): JSX.Element {
         .then((reply) => {
           const r = reply.error === undefined ? readSpellWindow(reply.lines, facts?.description) : null
           const ok = r !== null && isSpellWindow(r)
-          setFailed(!ok)
+          setFailed(ok ? null : spellProblem(reply))
           setRead(ok ? r : null)
           if (!ok) return
-          // A window that names another spell waits for the player, as an item's does.
-          if (sameItem(r.name, row.name)) setSpellShot(row.name, keepOf(r))
-          else setPending(r)
+          // A window that names another spell, or whose name was not read, waits for the player, as an item's does.
+          const note = otherItemNote(r.name, row.name, 'spell window')
+          if (note === undefined) setSpellShot(row.name, keepOf(r))
+          else setPending({ read: r, note })
         })
-        .catch(() => setFailed(true))
+        .catch((e: unknown) => setFailed(`The reader did not answer (${e instanceof Error ? e.message : String(e)}). Try the paste again.`))
         .finally(() => setBusy(false))
     },
     [row.name, facts]
@@ -73,17 +75,16 @@ export default function SpellShot({ row }: { row: GapRow }): JSX.Element {
   return (
     <Stack spacing={0.75} data-testid="gaps-shot">
       <PasteZone label="Click here and paste the spell display window to read it" busy={busy} onPicture={onPicture} />
-      {failed && (
+      {failed !== null && (
         <Typography variant="body2" color="error.main" data-testid="gaps-shot-error">
-          ERROR: unable to read image
+          ERROR: unable to read image. {failed}
         </Typography>
       )}
       {pending !== null && (
         <WrongItem
-          read={pending.name ?? ''}
-          row={row.name}
+          note={pending.note}
           onUse={() => {
-            setSpellShot(row.name, keepOf(pending))
+            setSpellShot(row.name, keepOf(pending.read))
             setPending(null)
           }}
           onDiscard={() => {
