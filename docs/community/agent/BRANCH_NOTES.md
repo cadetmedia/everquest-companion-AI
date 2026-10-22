@@ -371,8 +371,18 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   sets the scale. Sides are the strongest vertical edges within 24 label heights (often the inner
   pane border, fine); the bottom is the first edge below which the sides stop. At most 4 candidate
   reads through `readCapture`. A spell window has no yellow tab: no hotkey anchor for it yet.
-- The hotkey is `globalShortcut` (registers one key, no keyboard hook; `appBack.ts` avoids global
-  input hooks for anti-cheat reasons), off until the player sets one, Ctrl/Alt/Win required.
+- Capture triggers: no `globalShortcut` (a test sweeps the source). Macro `/echo eqc capture`: main
+  adds an alert definition of its own, `eqc-shot-capture`, to `alerts.define`
+  (`dataServer/ownFires.ts`, `withOwnDefs` at the engine host's send site) and takes its fire in
+  `noteFire` before any sound. Line rule and gate in `shared/shotTrigger.ts`. Overlay:
+  `SHOT_CAPTURE_ACTION` with `OverlayHeaderAction.whileLocked`.
+- `/echo` is not yet seen in any of the owner's logs; the bare-text line format is assumed. First
+  live test: check the line appears.
+- `readCapture` returns `windows[]`, every window found (at most 4 labels read).
+- Spell window: Reuse is never written (whole seconds on the window); a bracketed value is the
+  modified one and never written.
+- Every failed paste goes through `shotProblem` / `spellProblem`; every name check through
+  `otherItemNote` (an unread name asks, never passes).
 - Spell icon = spells_us field 76; description id = field 86 into dbstr type 6; colour tags dropped,
   `<BR>` to `<br>`.
 - D3: Weight's ceiling is many-to-one, so most +N items over 0.1 weight get the warning, not a guess.
