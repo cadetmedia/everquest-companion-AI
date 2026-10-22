@@ -84,3 +84,25 @@ fn an_alternate_product_is_a_crafted_item() {
     feed(&mut m, 1, line("You have fashioned the items together to create alternate product: Empty Bottle."));
     assert_eq!(item_row(&m, "Empty Bottle")["kinds"], json!(["crafted"]));
 }
+
+/// A known item's forage (owner, 2026-10-21): no Items row, but a `forage` row with the zones, so
+/// the tab can check its page's `|foraged`; the four totals stay as they were.
+#[test]
+fn a_known_item_foraged_is_served_as_proof_and_never_as_an_unknown_item() {
+    let mut m = module();
+    feed(&mut m, 1, json!({ "kind": "zone", "zone": "Qeynos Hills" }));
+    feed(&mut m, 2, line("You have scrounged up a Rat Meat."));
+    feed(&mut m, 3, json!({ "kind": "zone", "zone": "Kedge Keep" }));
+    feed(&mut m, 4, line("You have scrounged up a Rat Meat."));
+    feed(&mut m, 5, json!({ "kind": "loot", "item": "Rat Meat", "source": "a large rat" }));
+    let state = m.snapshot()["state"].clone();
+    let rows = state["rows"].as_array().cloned().unwrap_or_default();
+    let forage: Vec<&Value> = rows.iter().filter(|r| r["domain"] == "forage").collect();
+    assert_eq!(forage.len(), 1);
+    assert_eq!(forage[0]["name"], json!("Rat Meat"));
+    assert_eq!(forage[0]["kinds"], json!(["foraged"]));
+    assert_eq!(forage[0]["count"], json!(2), "the loot is not a forage");
+    assert_eq!(forage[0]["details"]["forageZones"]["all"], json!(["Kedge Keep", "Qeynos Hills"]));
+    assert!(item_row(&m, "Rat Meat").is_null());
+    assert_eq!(state["totals"], json!({ "item": 0, "mob": 1, "spell": 0, "merchant": 0 }));
+}

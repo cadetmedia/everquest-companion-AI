@@ -13,6 +13,7 @@
 
 use super::{Domain, GapsModule};
 use crate::event::Event;
+use crate::jsfn::item_base_name;
 use crate::modules::gaps_keys::item_gap_key;
 use crate::modules::gaps_players::forage_of;
 
@@ -37,10 +38,14 @@ impl GapsModule {
         failed_combine_of(text).map(|item| self.combine(item, "failed-combine", ev))
     }
 
-    /// A forage: the row filed (`record` counted the zone among `zones`), then the zone apart.
+    /// A forage: the row filed (`record` counted the zone among `zones`), then the zone apart. A
+    /// known item is filed under `Domain::Forage`, so its page's `|foraged` can be checked
+    /// (owner, 2026-10-21: "if we can prove it was foraged").
     fn foraged(&mut self, item: &str, ev: &Event) -> bool {
-        let filed = self.item_named(item, "foraged", ev);
-        let row = self.rows.get_mut(&(Domain::Item, item_gap_key(item)));
+        let unknown = self.item_named(item, "foraged", ev);
+        let domain = if unknown { Domain::Item } else { Domain::Forage };
+        let filed = unknown || self.note(domain, item_gap_key(item), &item_base_name(item), false, "foraged", ev);
+        let row = self.rows.get_mut(&(domain, item_gap_key(item)));
         if let (true, Some(row), Some(zone)) = (filed, row, self.zone.as_deref()) {
             row.details.foraged(zone);
         }

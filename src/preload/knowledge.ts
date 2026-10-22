@@ -99,6 +99,9 @@ export const knowledgeBridge = {
     ipcRenderer.invoke(IPC.gapVerdicts, domain, [...names]),
   /** The Drops domain's other side: the mobs each item page names (src/main/gapItemMobs.ts). */
   gapItemMobs: (names: readonly string[]): Promise<Record<string, string[] | null>> => ipcRenderer.invoke(IPC.gapItemMobs, [...names]),
+  /** The forage rows' other side: what each item page states of foraging (src/main/gapItemForage.ts). */
+  gapItemForage: (names: readonly string[]): Promise<Record<string, import('../shared/gapForage').ItemPageForage | null>> =>
+    ipcRenderer.invoke(IPC.gapItemForage, [...names]),
   /** A copied spell page's fill: what the install's spell files state (src/main/gapSpellFacts.ts). */
   // The type is named inline so the import line spell-upgrades also edits stays untouched.
   gapSpellFacts: (names: readonly string[]): Promise<Record<string, import('../shared/gaps').ClientSpellFacts>> =>

@@ -1144,6 +1144,9 @@ export const IPC = {
   // Item names in, `{ [name]: mobs its item page names | null }` out, off the committed corpus
   // (src/main/gapItemMobs.ts), for the Drops domain. Payload: (names: string[]).
   gapItemMobs: 'gaps:itemMobs',
+  // Item names in, `{ [name]: what its item page states of foraging | null }` out, off the committed
+  // corpus (src/main/gapItemForage.ts), for the forage rows. Payload: (names: string[]).
+  gapItemForage: 'gaps:itemForage',
   // Spell names in, `{ [name]: what the install's spells_us.txt / spells_us_str.txt state }` out
   // (src/main/gapSpellFacts.ts), for a copied spell page. Payload: (names: string[]).
   gapSpellFacts: 'gaps:spellFacts',

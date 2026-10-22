@@ -11,6 +11,7 @@ import type { LootEvent } from './types'
 import { withFactionRows } from './gapFactions'
 import { withDropRows, type DropAliases, type DropGroups, type ItemMobs } from './gapDrops'
 import { withImageRows, type ConMet } from './gapImages'
+import { withForageRows, type ItemForage } from './gapForage'
 import { memoLast } from './gapMemo'
 import type { MobEntry } from './mobTypes'
 
@@ -21,6 +22,8 @@ export interface GapsMet {
   cons: readonly ConMet[]
   /** Absent until main has answered (gapItemMobs.ts). */
   itemMobs?: ItemMobs
+  /** What each foraged item's own page states of foraging; absent until main has answered (gapForage.ts). */
+  itemForage?: ItemForage
 }
 
 /** The wiki data, fixed for the session: the mob catalog and dropGroups.json. */
@@ -33,7 +36,8 @@ export interface GapsWiki {
 /**
  * The engine's snapshot with the faction, drop and image rows joined in and counted. `only` (the
  * Wiki Gaps overlay's background copy, which shows one domain) derives that domain alone; the
- * others are left out, not empty-counted.
+ * others are left out, not empty-counted. The forage rows always run: they also remove the
+ * engine's hidden `forage` rows.
  */
 export function deriveGaps(engine: GapsSnap, met: GapsMet, wiki: GapsWiki, only?: GapDomain): GapsSnap {
   const wants = (d: GapDomain): boolean => only === undefined || only === d
@@ -41,11 +45,12 @@ export function deriveGaps(engine: GapsSnap, met: GapsMet, wiki: GapsWiki, only?
   const withDrops = wants('drop')
     ? withDropRows(withFactions, met.loot, { catalog: wiki.catalog, groups: wiki.groups, itemMobs: met.itemMobs, aliases: wiki.aliases })
     : withFactions
-  return wants('image') ? withImageRows(withDrops, { kills: met.kills, loot: met.loot, cons: met.cons }, wiki.catalog) : withDrops
+  const withForage = withForageRows(withDrops, met.itemForage, wiki.catalog)
+  return wants('image') ? withImageRows(withForage, { kills: met.kills, loot: met.loot, cons: met.cons }, wiki.catalog) : withForage
 }
 
 /** The inputs' identities, in a fixed order: the cache key. */
-const keyOf = (engine: GapsSnap, met: GapsMet, wiki: GapsWiki, only?: GapDomain): readonly unknown[] => [engine, met.loot, met.kills, met.cons, met.itemMobs, wiki.catalog, wiki.groups, wiki.aliases, only]
+const keyOf = (engine: GapsSnap, met: GapsMet, wiki: GapsWiki, only?: GapDomain): readonly unknown[] => [engine, met.loot, met.kills, met.cons, met.itemMobs, met.itemForage, wiki.catalog, wiki.groups, wiki.aliases, only]
 
 /**
  * `deriveGaps` behind a one-entry cache, keyed by the IDENTITY of each input: the engine snapshot,

@@ -12,6 +12,7 @@ import { itemTierKey } from '../../shared/itemStats'
 import { mobKey } from '../../shared/mobKey'
 import { verdictsFrom, type KnowledgeCacheFile } from '../gapVerdictsRead'
 import { itemPageMobs } from '../gapItemMobs'
+import { itemPageForage } from '../gapItemForage'
 import { spellFactsFrom } from '../gapSpellFacts'
 import type { ClientSpellFacts } from '../../shared/gaps'
 import { effectiveEqRoot } from '../log/config'
@@ -65,5 +66,8 @@ export function registerGapVerdictsIpc(): void {
   )
   ipcMain.handle(IPC.gapItemMobs, (_e, names: unknown) =>
     Array.isArray(names) ? itemPageMobs(names.filter((n): n is string => typeof n === 'string').slice(0, MAX_NAMES)) : {}
+  )
+  ipcMain.handle(IPC.gapItemForage, (_e, names: unknown) =>
+    Array.isArray(names) ? itemPageForage(names.filter((n): n is string => typeof n === 'string').slice(0, MAX_NAMES)) : {}
   )
 }

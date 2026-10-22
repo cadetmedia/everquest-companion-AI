@@ -27,6 +27,8 @@ import { joinCharacters, otherInputs, type CharacterGaps, type JoinedGaps } from
 import { useModule } from '../../lib/useModule'
 import { useItemMobs } from '../../lib/gapItemMobs'
 import { useThrottled } from '../../lib/useThrottled'
+import { useItemForage } from '../../lib/gapItemForage'
+import { forageProofNames } from '@shared/gapForage'
 
 /** Each drop group's members, and the drop-list links that redirect to an item (scrape-drop-groups.ts). */
 const DROPS = dropGroupsJson as { groups: DropGroups; aliases?: DropAliases }
@@ -46,6 +48,7 @@ const NO_CONS: ConsiderSnap = []
 const snapOf = lastGapsSnap()
 const snapOfOnly = lastGapsSnap()
 const lastLooted = memoLast<readonly string[]>()
+const lastForaged = memoLast<string[]>()
 const lastKills = memoLast<KillMap>()
 
 export interface GapsData {
@@ -125,11 +128,14 @@ export function useGapsData(all: AllCharacters | null = null, opts: GapsDataOpti
   const wantDrops = only === undefined || only === 'drop'
   const looted = lastLooted([loot, wantDrops], () => (wantDrops ? lootedItemNames(loot) : NO_NAMES))
   const itemMobs = useItemMobs(looted)
+  // The foraged known items' own pages, asked of main the same way (shared/gapForage.ts).
+  const foraged = lastForaged([engine], () => (engine ? forageProofNames(engine) : []))
+  const itemForage = useItemForage(foraged)
   // The overlay's one-domain copy keeps its own cache slot, so it and the tab never evict each other.
   const derive = only === undefined ? snapOf : snapOfOnly
   const snap = useMemo(
-    () => (engine ? derive(engine, { loot, kills: killMobs, cons, itemMobs }, WIKI, only) : engine),
-    [derive, engine, loot, killMobs, itemMobs, cons, only]
+    () => (engine ? derive(engine, { loot, kills: killMobs, cons, itemMobs, itemForage }, WIKI, only) : engine),
+    [derive, engine, loot, killMobs, itemMobs, itemForage, cons, only]
   )
   const kills = lastKills([killMobs], () => killIndex(killMobs))
   return { snap, engine, loot, ownLoot: liveLoot, kills, seenBy: joined?.seenBy, joining: all !== deferredAll }
