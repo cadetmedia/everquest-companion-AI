@@ -2,7 +2,8 @@
 // so it runs under node:test. A nameplate is bright text over a busy scene: OCR of the picture as it
 // stands read only noise on the owner's lizardman scout, and read the name at once with everything
 // but the near-white pixels blanked. So the picture is read as it is, then as near-white text, then as
-// any bright text (a nameplate tinted by its con colour), stopping at the first that names the mob.
+// any bright text (a nameplate tinted by its con colour), then as mid-grey text (a grey con), stopping
+// at the first that names the mob.
 
 import { nameInLines } from '../../shared/mobPicture'
 import { readLines } from './ocr'
@@ -14,6 +15,8 @@ type Keep = (r: number, g: number, b: number) => boolean
 const WHITE: Keep = (r, g, b) => Math.min(r, g, b) >= 200 && Math.max(r, g, b) - Math.min(r, g, b) <= 40
 /** Any bright text, a tinted nameplate. */
 const BRIGHT: Keep = (r, g, b) => Math.max(r, g, b) >= 220
+/** Mid grey, little colour: a grey-con nameplate (the owner's white wolf over snow, 2026-10-22). */
+const GREY: Keep = (r, g, b) => Math.max(r, g, b) - Math.min(r, g, b) <= 18 && Math.min(r, g, b) >= 90 && Math.max(r, g, b) <= 190
 
 /** The kept pixels black on white, as OCR reads best. */
 export function textMask(img: Rgba, keep: Keep): Rgba {
@@ -26,7 +29,7 @@ export function textMask(img: Rgba, keep: Keep): Rgba {
 
 /** Whether the picture shows the mob's name, in any of the three readings. */
 export async function showsName(img: Rgba, name: string): Promise<boolean> {
-  for (const view of [() => img, () => textMask(img, WHITE), () => textMask(img, BRIGHT)]) {
+  for (const view of [() => img, () => textMask(img, WHITE), () => textMask(img, BRIGHT), () => textMask(img, GREY)]) {
     if (nameInLines(name, (await readLines(view())).map((l) => l.text))) return true
   }
   return false

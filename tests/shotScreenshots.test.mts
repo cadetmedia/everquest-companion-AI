@@ -160,6 +160,13 @@ test("A LIZARDMAN SCOUT (THE OWNER'S PICTURE): THE NAMEPLATE IS FOUND, AND THE F
   assert.equal(await showsName(img, 'a gnoll pup'), false)
 })
 
+/** The owner's white wolf over snow (2026-10-22): a grey-con nameplate, grey letters, dark outline. */
+test('A GREY NAMEPLATE OVER SNOW IS FOUND (a white wolf)', async () => {
+  const img = readPng(join(SHOTS, 'a-white-wolf-npc.png'))
+  assert.equal(await showsName(img, 'a white wolf'), true)
+  assert.equal(await showsName(img, 'a gnoll pup'), false)
+})
+
 /** The owner's upgraded and invoked Burst of Flame windows (2026-10-21): each is the base spell's page. */
 const BURST_SHOTS: readonly [string, string | undefined, RegExp][] = [
   // tier 0, a cast-speed invocation on: Cast 1.5 sec (0.5), Recovery 1.5 sec (2.5 sec)
