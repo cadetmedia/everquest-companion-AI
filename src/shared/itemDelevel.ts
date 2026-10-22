@@ -31,6 +31,14 @@ type Rule = (base: number, s: ItemUpgradeState) => number
 
 const RULES: Partial<Record<ReturnType<typeof upgradeStatClass>, Rule>> = { primary: scalePrimary, flat: scaleFlat, damage: scaleDamage, weight: scaleWeight }
 
+/**
+ * RANGE: +10 a whole tier, the fraction ignored (the planner's `scaleRange`, measured on Mithril
+ * Champion Arrows, base 150: 220 at +7 in the game). Stated here by key: this branch's
+ * itemUpgrade.ts predates that rule, and a +N Range must never pass as the base one.
+ */
+const scaleRangeBack: Rule = (base, s) => (base <= 0 ? base : base + 10 * s.full)
+const ruleOf = (key: string): Rule | undefined => (normalizeStatKey(key) === 'RANGE' ? scaleRangeBack : RULES[upgradeStatClass(key)])
+
 /** Every base the rule takes to `read` at some state: whole numbers, or tenths for Weight. */
 function basesOf(rule: Rule, read: number, states: readonly ItemUpgradeState[], tenths: boolean): number[] {
   const step = tenths ? 0.1 : 1
@@ -52,7 +60,7 @@ const PAIR = /(?<![A-Za-z])((?:(?:SV|HP|Mana|End|Atk|Dmg|Bane|Heal|Spell|Damage|
 function lineBack(line: string, states: readonly ItemUpgradeState[], inexact: string[]): string {
   return line.replace(PAIR, (whole, key: string, num: string, pct: string) => {
     const cls = upgradeStatClass(key)
-    const rule = RULES[cls]
+    const rule = ruleOf(key)
     if (rule === undefined) return whole
     const bases = basesOf(rule, Number(num), states, cls === 'weight')
     if (bases.length !== 1) {

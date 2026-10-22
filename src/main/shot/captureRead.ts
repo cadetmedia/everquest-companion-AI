@@ -32,6 +32,33 @@ export interface CaptureRead {
   ms: number
 }
 
+/**
+ * The thumbnail a window capture asks for: the largest display at its full pixels (the game's window
+ * fits in it on any display; Electron does not say which display another app's window is on), at
+ * most `MAX_CAPTURE_PIXELS`, past which the capture comes back empty (review, 2026-10-21).
+ */
+export const MAX_CAPTURE_PIXELS = 16_000_000
+export function captureSize(displays: readonly { size: { width: number; height: number }; scaleFactor: number }[]): { width: number; height: number } {
+  const px = displays.map((d) => ({ width: Math.round(d.size.width * d.scaleFactor), height: Math.round(d.size.height * d.scaleFactor) }))
+  const big = px.reduce((a, b) => (b.width * b.height > a.width * a.height ? b : a), { width: 1920, height: 1080 })
+  const k = Math.min(1, Math.sqrt(MAX_CAPTURE_PIXELS / (big.width * big.height)))
+  return { width: Math.floor(big.width * k), height: Math.floor(big.height * k) }
+}
+
+/**
+ * The game's own window among the capturable ones: titled exactly `EverQuest Legends` or `EverQuest`. Electron names no
+ * window's process, so a title is all there is, and one that merely contains the word (a browser on
+ * the wiki, a chat channel) is never taken. The error says what was seen instead.
+ */
+export function gameWindow<T extends { name: string }>(sources: readonly T[]): T | { error: string } {
+  // The Legends client titles its window `EverQuest Legends` (measured, 2026-10-21); the classic client `EverQuest`.
+  const eq = sources.find((s) => /^EverQuest(?: Legends)?$/i.test(s.name.trim()))
+  if (eq !== undefined) return eq
+  const near = sources.filter((s) => /EverQuest/i.test(s.name)).map((s) => `"${s.name}"`)
+  if (near.length === 0) return { error: 'No EverQuest window was found to capture.' }
+  return { error: `No window titled exactly "EverQuest Legends" or "EverQuest" was found (seen: ${near.slice(0, 3).join(', ')}): only the game's own window is captured.` }
+}
+
 /** A label inside a window already read is that window's (a second yellow word in it), not another. */
 const within = (b: Box, l: Box): boolean => l.x + l.w / 2 >= b.x && l.x + l.w / 2 <= b.x + b.w && l.y >= b.y && l.y <= b.y + b.h
 
@@ -45,7 +72,7 @@ export async function readCapture(img: Rgba, readers: ShotReaders): Promise<Capt
     if (box === null) continue
     tried++
     const shot = await readItemShot(cropRgba(img, box), readers)
-    const reply: ItemShotReply = { read: shot.read, lines: shot.lines, icons: shot.icons, ms: shot.ms }
+    const reply: ItemShotReply = { read: shot.read, lines: shot.lines, icons: shot.icons, known: shot.known, ms: shot.ms }
     if (shotKind(reply) !== null) windows.push({ reply, box })
   }
   return { windows, ...(windows.length === 0 ? {} : { reply: windows[0].reply, box: windows[0].box }), tried, ms: Math.round(performance.now() - t0) }

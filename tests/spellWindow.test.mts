@@ -9,6 +9,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { descriptionsById, spellFactsFrom } from '../src/main/gapSpellFacts.ts'
 import { baseValue, fileDescription, fillTemplate, isSpellWindow, readSpellWindow, spellPageValues, spellProblem } from '../src/shared/spellWindow.ts'
+import { otherItemNote } from '../src/shared/itemShotKeep.ts'
 import { spellPage, stillNeeded } from '../src/shared/wikiPage.ts'
 import type { GapRow } from '../src/shared/gaps.ts'
 
@@ -174,4 +175,32 @@ test('AN UPGRADED RANK (BURST OF FLAME I, TIER 1): THE BASE SPELL\'S PAGE, THE R
   // Nothing from the upgrade block reaches the page, even with no file to follow.
   assert.doesNotMatch(readSpellWindow(BURST_I, undefined, 'Burst of Flame').description ?? '', /upgraded|Tier|Mote/)
   assert.equal(readSpellWindow(['Spell: Burst of Flame', 'Mana: 4', 'Uporade. Place Tier0 0/1', 'Mots This spell can be upgraded.']).description, undefined)
+})
+
+test('A CLASSIC SPELL NAMED WITH A NUMERAL IS ANOTHER SPELL, NOT A RANK: CLARITY II PASTED ON CLARITY WAITS (REVIEW, 2026-10-21)', () => {
+  const win = ['Spell: Clarity II', 'ENC(29)', 'Duration: 27 min', 'Mana: 115', 'Cast: 5.0 sec', 'Target: Single', 'Range: 100', 'Increases your mana regeneration by 9 points.']
+  const known = new Set(['Clarity', 'Clarity II'])
+  const r = readSpellWindow(win, 'Increases your mana regeneration by #1 points.', 'Clarity', (n) => known.has(n))
+  assert.equal(r.name, 'Clarity II')
+  assert.equal((r as { rank?: string }).rank, undefined)
+  assert.equal(otherItemNote(r.name, 'Clarity', 'spell window', ['Clarity II']), `This spell window reads "Clarity II": is it Clarity's?`)
+  // An upgraded rank is no spell of its own in the install (spells_us.txt has no Burst of Flame I): still the base spell.
+  const up = readSpellWindow(['Spell: Burst of Flame I', 'This spell can be upgraded.', 'Mana: 4'], undefined, 'Burst of Flame', (n) => n === 'Burst of Flame')
+  assert.equal(up.name, 'Burst of Flame')
+  assert.equal((up as { rank?: string }).rank, 'I')
+})
+
+test('A WRAPPED DESCRIPTION LINE THAT STARTS WITH A LABEL WORD IS THE DESCRIPTION, NOT THE LABEL', () => {
+  const w = ['Spell: Minor Healing', 'Mana: 10', 'Cast: 1.5 sec', 'Range: 100', 'This spell heals your', 'target for 50 hit points.']
+  const r = readSpellWindow(w, 'This spell heals your target for #1 hit points.', 'Minor Healing')
+  assert.equal(r.description, 'This spell heals your target for 50 hit points.')
+  assert.equal(r.fields.target_type, undefined)
+})
+
+test("A FRAME BAR AFTER AN UN-UPGRADED NAME IS NOT RANK I; WITH THE WINDOW'S UPGRADE BLOCK IT IS", () => {
+  const plain = readSpellWindow(['Spell: Burst of Flame |', 'Mana: 4', 'Cast: 1.5 sec'], undefined, 'Burst of Flame')
+  assert.equal((plain as { rank?: string }).rank, undefined)
+  assert.ok(!plain.checks.some((c) => /upgraded rank/.test(c)), JSON.stringify(plain.checks))
+  const tiered = readSpellWindow(['Spell: Burst of Flame |', 'Mana: 4', 'Cast: 1.5 sec', 'Upgrade. Place Tier 1 0/2'], undefined, 'Burst of Flame')
+  assert.equal((tiered as { rank?: string }).rank, 'I')
 })

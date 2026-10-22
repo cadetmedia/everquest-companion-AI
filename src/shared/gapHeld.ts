@@ -209,6 +209,11 @@ export function heldLine(h: GapHeld): string {
   return `${holder(h)} ${String(h.total)} (${placesText(h)}): screenshot it for the wiki now.`
 }
 
+/** An update row's line: where it is, no screenshot asked (its page copies no reading). */
+export function heldWhere(h: GapHeld): string {
+  return `${holder(h)} ${String(h.total)} (${placesText(h)}).`
+}
+
 /** The row chip's tooltip, a line per holder: where each count comes from. */
 export function heldTitle(holders: readonly GapHeld[]): string {
   return holders

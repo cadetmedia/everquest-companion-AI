@@ -248,3 +248,37 @@ test('AN (AUGMENTED) TITLE IS THE +N PATH; A FILLED EXALTATION SLOT KEEPS ITS KI
   assert.ok(!lines.some((l) => /Pillage|Lifebite|Exaltation/.test(l)), JSON.stringify(lines))
   assert.equal(r.checks?.filter((c) => / not written: /.test(c)).length, 2)
 })
+
+test('A CLASS OR RACE LIST THE WINDOW WRAPPED ONTO A SECOND LINE IS READ WHOLE, NOT LEFT IN NOT PLACED', () => {
+  const r = readItemWindow(['Leather Tunic', 'Magic', 'Class: WAR CLR PAL RNG SHD DRU MNK', 'BRD ROG SHM BST', 'Race: HUM BAR ERU ELF HIE DEF HEF DWF', 'TRL OGR HFL GNM', 'Chest', 'AC: 10', 'Size: MEDIUM', 'Weight: 5.0'])
+  const lines = r.statsblock.split('\n').filter(Boolean)
+  assert.ok(lines.includes('Class: WAR CLR PAL RNG SHD DRU MNK BRD ROG SHM BST<br>'), JSON.stringify(lines))
+  assert.ok(lines.includes('Race: HUM BAR ERU ELF HIE DEF HEF DWF TRL OGR HFL GNM<br>'), JSON.stringify(lines))
+  assert.ok(lines.includes('Slot: CHEST<br>'), JSON.stringify(lines))
+  assert.deepEqual(r.unread, [])
+})
+
+test("A NAME'S OWN FIRST WORD IS KEPT: A ONE-LETTER ARTICLE OR A NUMBER IS NOT THE ICON'S JUNK", () => {
+  assert.equal(readItemWindow(["A Faded Salil's Writ Page", 'Lore, No Trade', 'Class: ALL', 'Race: ALL', 'Size: SMALL', 'Weight: 0.1']).name, "A Faded Salil's Writ Page")
+  assert.equal(readItemWindow(['5 Dose Potion of Cold', 'Magic', 'Class: ALL', 'Race: ALL', 'Size: SMALL', 'Weight: 0.1']).name, '5 Dose Potion of Cold')
+  assert.equal(readItemWindow(['++ Ruined Robe', 'Magic', 'Class: ALL', 'Race: ALL']).name, 'Ruined Robe')
+  assert.equal(cleanLine("A Faded Salil's Writ Page", true), "A Faded Salil's Writ Page")
+  assert.equal(cleanLine('| Ruined Robe', true), 'Ruined Robe')
+})
+
+test('THE NAME LINE IS NEVER THE FLAG LINE: LORE OF MALIGNANCY HAS NO LORE FLAG; ITS FLAG LINE UNDER IT IS READ', () => {
+  const r = readItemWindow(['| Lore of Malignancy', 'Description', 'Lore of Malignancy', 'Class: ALL', 'Race: ALL', 'Size: TINY', 'Weight: 0.0'])
+  assert.equal(r.name, 'Lore of Malignancy')
+  assert.ok(!r.statsblock.includes('Lore<br>'), r.statsblock)
+  const flagged = readItemWindow(['Lore of Malignancy', 'Lore, No Trade', 'Class: ALL', 'Race: ALL'])
+  assert.equal(flagged.name, 'Lore of Malignancy')
+  assert.ok(flagged.statsblock.includes('Lore, No Trade<br>'), flagged.statsblock)
+})
+
+test("AN EXALTATION SLOT WITH NO VALUE READ, OR EMPTY WITH AN OCR SLIP, IS EMPTY: THE ITEM'S OWN CLICK IS WRITTEN", () => {
+  for (const slot of ['Click Exaltation:', 'Click Exaltation: empty', 'Click Exaltation: Empty |', 'Click Exaltation: emply']) {
+    const r = readItemWindow(['Ring of Gates', 'Magic', 'Class: ALL', 'Race: ALL', 'Fingers', 'Size: TINY Weight: 0.1', slot, 'Click Effect: Gate (Any Slot)', 'Cast Time: 10.0 seconds'])
+    assert.ok(r.statsblock.includes('[[Gate]]'), `${slot}: ${r.statsblock}`)
+    assert.ok(!(r.checks ?? []).some((c) => /not written/.test(c)), `${slot}: ${JSON.stringify(r.checks)}`)
+  }
+})

@@ -47,7 +47,7 @@ import { unfoldedEntries, type GapEntry } from '@shared/gapGroups'
 import { seenByKey } from '@shared/gapsAllCharacters'
 import { otherPageTitle } from '@shared/gapImages'
 import { replaceWhy } from '@shared/gapDrops'
-import { gapHeld, heldChipLabel, heldLine, heldTitle, type GapHeld, type HeldIndex } from '@shared/gapHeld'
+import { gapHeld, heldChipLabel, heldLine, heldTitle, heldWhere, type GapHeld, type HeldIndex } from '@shared/gapHeld'
 import { GAP_JOB_LABEL, GAP_JOB_TIP, gapJob, type GapJob } from '@shared/gapJob'
 import { wikiPageUrl } from '@shared/wiki'
 import { Tooltip } from '../../lib/Tooltip'
@@ -237,7 +237,7 @@ function DetailsPane({ row, actions }: { row: GapRow; actions: PaneActions }): J
       )}
       {held.map((h) => (
         <Typography key={h.who ?? ''} variant="body2" color="success.main" component="div" data-testid="gaps-held-line">
-          {heldLine(h)}
+          {gapJob(row) === 'update' ? heldWhere(h) : heldLine(h)}
         </Typography>
       ))}
       {row.suggest !== undefined && (

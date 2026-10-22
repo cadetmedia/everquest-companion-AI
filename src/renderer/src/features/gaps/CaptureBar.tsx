@@ -7,44 +7,83 @@
 // item's row by name, the same keep rules as a paste (shared/itemShotKeep.ts). A window it cannot
 // find or a name no row has is said here, never guessed.
 
-import { type JSX, useCallback, useEffect, useState } from 'react'
+import { type JSX, useCallback, useEffect, useRef, useState } from 'react'
 import { Button, Stack, Typography } from '@mui/material'
-import { captureRow, keptAfter, shotKind } from '@shared/itemShotKeep'
+import { captureRow, keptAfter, shotKind, type ShotKind } from '@shared/itemShotKeep'
+import type { ItemShotReply } from '@shared/itemWindow'
 import { captureHowTo, type Captured } from '@shared/shotTrigger'
 import type { CharacterSnap } from '@shared/types'
 import { copyText } from '../../lib/clipboard'
 import { useModule } from '../../lib/useModule'
-import { itemShotNow, setItemShot } from './itemShotsStore'
-import { Line } from './PasteZone'
+import { itemShotNow, setItemRowNames, setItemShot } from './itemShotsStore'
+import { Line, WrongItem } from './PasteZone'
 
 /** The newest lines kept on the bar. */
 const NOTES = 4
 
-/** One capture filed on its row, or why not, in the player's words. */
-function file(c: Captured, rows: readonly string[]): string {
+/** One capture's line on the bar, with what the reader doubts or did not place (as a paste shows them). */
+interface Note {
+  text: string
+  warn: string[]
+}
+
+/** A capture whose name is the row's only through an OCR slip: nothing is filed until the player says. */
+interface Waiting {
+  row: string
+  reply: ItemShotReply
+  kind: ShotKind
+  note: string
+}
+
+const partOf = (kind: ShotKind): string => (kind === 'lore' ? 'Lore tab' : 'item window')
+
+/** The reader's checks and the lines it did not place. */
+const doubts = (r: ItemShotReply): string[] => [...(r.read.checks ?? []), ...(r.read.unread.length > 0 ? [`Not placed: ${r.read.unread.join(' · ')}`] : [])]
+
+const fileOn = (w: Pick<Waiting, 'row' | 'reply' | 'kind'>): void => setItemShot(w.row, keptAfter(itemShotNow(w.row), w.reply, w.kind))
+
+/** One capture filed on its row, or why not, in the player's words: the name read and the row. */
+function file(c: Captured, rows: readonly string[]): { note: Note; wait?: Waiting } {
   const from = c.via === 'overlay' ? 'Overlay capture' : 'Macro capture'
-  if (c.reply === undefined) return `${from}: ${c.error ?? 'nothing was read.'}`
+  if (c.reply === undefined) return { note: { text: `${from}: ${c.error ?? 'nothing was read.'}`, warn: [] } }
   const kind = shotKind(c.reply)
-  const row = captureRow(c.reply.read.name, rows)
-  const name = c.reply.read.name ?? 'an item'
-  if (kind === null) return `${from}: ${name}, but nothing usable was read.`
-  if (row === undefined) return `${from}: ${name}, no Items row by that name.`
-  setItemShot(row, keptAfter(itemShotNow(row), c.reply, kind))
-  return `${from}: ${row} (${kind === 'lore' ? 'Lore tab' : 'item window'}) in ${(c.ms / 1000).toFixed(1)} s, filed on its row.`
+  const read = c.reply.read.name === undefined ? 'no name read' : `read "${c.reply.read.name}"`
+  if (kind === null) return { note: { text: `${from}: ${read}, but nothing usable was read.`, warn: [] } }
+  const match = captureRow(c.reply.read.name, rows, c.reply.known)
+  const warn = doubts(c.reply)
+  if (match === undefined) return { note: { text: `${from}: ${read}, no Items row by that name.`, warn } }
+  if (!match.exact) {
+    const ask = `${from}: ${read} (${partOf(kind)}), not filed: is it ${match.row}'s?`
+    return { note: { text: ask, warn }, wait: { row: match.row, reply: c.reply, kind, note: ask } }
+  }
+  fileOn({ row: match.row, reply: c.reply, kind })
+  return { note: { text: `${from}: ${read}, filed on ${match.row} (${partOf(kind)}) in ${(c.ms / 1000).toFixed(1)} s.`, warn } }
 }
 
 export default function CaptureBar({ rows }: { rows: readonly string[] }): JSX.Element {
-  const [notes, setNotes] = useState<string[]>([])
-  const [copied, setCopied] = useState(false)
+  const [notes, setNotes] = useState<Note[]>([])
+  const [waiting, setWaiting] = useState<Waiting[]>([])
+  const [copied, setCopied] = useState<string | null>(null)
   const [channels, setChannels] = useState<Record<string, number>>({})
   const how = captureHowTo(useModule<CharacterSnap>('character')?.character?.name ?? null, channels)
-  const say = useCallback((lines: string[]) => setNotes((n) => [...lines, ...n].slice(0, NOTES)), [])
+  // The rows through a ref: engine pushes change them often, and the capture listener stays subscribed.
+  const rowsRef = useRef(rows)
+  useEffect(() => {
+    rowsRef.current = rows
+    setItemRowNames(rows)
+  }, [rows])
   const drain = useCallback(() => {
     window.eq
       .shotCaptures()
-      .then((cs) => cs.length > 0 && say(cs.map((c) => file(c, rows)).reverse()))
+      .then((cs) => {
+        if (cs.length === 0) return
+        const filed = cs.map((c) => file(c, rowsRef.current)).reverse()
+        setNotes((n) => [...filed.map((f) => f.note), ...n].slice(0, NOTES))
+        const asks = filed.flatMap((f) => (f.wait === undefined ? [] : [f.wait]))
+        if (asks.length > 0) setWaiting((w) => [...asks, ...w].slice(0, NOTES))
+      })
       .catch(() => undefined)
-  }, [rows, say])
+  }, [])
   useEffect(() => {
     drain()
     return window.eq.onShotCaptured(drain)
@@ -56,8 +95,14 @@ export default function CaptureBar({ rows }: { rows: readonly string[] }): JSX.E
     window.addEventListener('focus', ask)
     return () => window.removeEventListener('focus', ask)
   }, [])
+  // "Copied" stands for the text copied: a new macro (another channel number) offers the copy again.
+  const text = how.macro ?? how.join
   const copy = (): void => {
-    void copyText(how.macro ?? how.join).then(setCopied)
+    void copyText(text).then((ok) => setCopied(ok ? text : null))
+  }
+  const settle = (w: Waiting, use: boolean): void => {
+    if (use) fileOn(w)
+    setWaiting((all) => all.filter((x) => x !== w))
   }
   return (
     <Stack spacing={0.5} data-testid="gaps-capture">
@@ -66,14 +111,24 @@ export default function CaptureBar({ rows }: { rows: readonly string[] }): JSX.E
           Capture from the game: {how.text}
         </Typography>
         <Button size="small" onClick={copy} data-testid="gaps-capture-copy">
-          {copied ? 'Copied' : how.macro === undefined ? 'Copy /join' : 'Copy macro'}
+          {copied === text ? 'Copied' : how.macro === undefined ? 'Copy /join' : 'Copy macro'}
         </Button>
         <Typography variant="body2" color="text.secondary">
           Or the 📷 on the Event log or Wiki Gaps overlay, with an item window open.
         </Typography>
       </Stack>
+      {waiting.map((w) => (
+        <WrongItem key={`${w.row}-${String(w.reply.ms)}-${w.note}`} note={w.note} onUse={() => settle(w, true)} onDiscard={() => settle(w, false)} />
+      ))}
       {notes.map((n, i) => (
-        <Line key={`${String(i)}-${n}`}>{n}</Line>
+        <Stack key={`${String(i)}-${n.text}`}>
+          <Line>{n.text}</Line>
+          {n.warn.map((c) => (
+            <Line key={c} warn>
+              {c}
+            </Line>
+          ))}
+        </Stack>
       ))}
     </Stack>
   )

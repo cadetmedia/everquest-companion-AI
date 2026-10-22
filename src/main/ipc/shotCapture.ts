@@ -17,7 +17,7 @@ import type { AlertDef } from '../../shared/types'
 import type { FireMessage } from '../../shared/dataServer/protocol.generated'
 import { DEFAULT_ALERT_PACK_ID, DEFAULT_ALERT_SOUNDS } from '../data/defaultPacks'
 import { setOwnFires } from '../dataServer/ownFires'
-import { readCapture } from '../shot/captureRead'
+import { captureSize, gameWindow, readCapture } from '../shot/captureRead'
 import { bgraToRgba } from '../shot/pixels'
 import { UNRELEASED } from '../unreleased'
 import { getMainWindow } from '../windows'
@@ -49,13 +49,11 @@ const waiting: Captured[] = []
 const gate = captureGate()
 let busy = false
 
-/** The EverQuest window's picture at the display's full size, or why there is none. */
+/** The EverQuest window's picture at its full size (capped, `captureSize`), or why there is none. */
 async function grabGame(): Promise<{ name: string; img: ReturnType<typeof bgraToRgba> } | { error: string }> {
-  const d = screen.getPrimaryDisplay()
-  const size = { width: Math.round(d.size.width * d.scaleFactor), height: Math.round(d.size.height * d.scaleFactor) }
-  const sources = await desktopCapturer.getSources({ types: ['window'], thumbnailSize: size, fetchWindowIcons: false })
-  const eq = sources.find((s) => /^EverQuest/i.test(s.name)) ?? sources.find((s) => /EverQuest/i.test(s.name))
-  if (eq === undefined) return { error: 'No EverQuest window was found to capture.' }
+  const sources = await desktopCapturer.getSources({ types: ['window'], thumbnailSize: captureSize(screen.getAllDisplays()), fetchWindowIcons: false })
+  const eq = gameWindow(sources)
+  if ('error' in eq) return eq
   const { width, height } = eq.thumbnail.getSize()
   return { name: eq.name, img: bgraToRgba(new Uint8Array(eq.thumbnail.toBitmap()), width, height) }
 }

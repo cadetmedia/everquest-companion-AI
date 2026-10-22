@@ -8,7 +8,7 @@ import { type JSX, useCallback, useMemo, useState } from 'react'
 import { Chip, Stack, TextField, Typography } from '@mui/material'
 import type { GapRow } from '@shared/gaps'
 import { otherItemNote } from '@shared/itemShotKeep'
-import { fileDescription, isSpellWindow, readSpellWindow, spellProblem, type SpellPageShot, type SpellWindowRead } from '@shared/spellWindow'
+import { fileDescription, isSpellWindow, RANKS, readSpellWindow, spellProblem, type SpellPageShot, type SpellWindowRead } from '@shared/spellWindow'
 import { useSpellFacts } from '../../lib/gapSpellFacts'
 import { setSpellShot, useSpellShots } from './itemShotsStore'
 import { Line, PasteZone, WrongItem } from './PasteZone'
@@ -43,8 +43,10 @@ function Kept({ name, kept, fromFile }: { name: string; kept: SpellPageShot; fro
 
 export default function SpellShot({ row }: { row: GapRow }): JSX.Element {
   const kept = useSpellShots()[row.name]
-  const names = useMemo(() => [row.name], [row.name])
-  const facts = useSpellFacts(names)[row.name]
+  // The row's name with each rank after it too: `Clarity II` in the install is a spell of its own, not Clarity's rank.
+  const names = useMemo(() => [row.name, ...RANKS.map((r) => `${row.name} ${r}`)], [row.name])
+  const known = useSpellFacts(names)
+  const facts = known[row.name]
   const [busy, setBusy] = useState(false)
   /** Why the last paste kept nothing, in words; null when it kept something. */
   const [failed, setFailed] = useState<string | null>(null)
@@ -57,20 +59,21 @@ export default function SpellShot({ row }: { row: GapRow }): JSX.Element {
       window.eq
         .shotReadText(png)
         .then((reply) => {
-          const r = reply.error === undefined ? readSpellWindow(reply.lines, facts?.description, row.name) : null
+          const isSpell = (n: string): boolean => known[n] !== undefined
+          const r = reply.error === undefined ? readSpellWindow(reply.lines, facts?.description, row.name, isSpell) : null
           const ok = r !== null && isSpellWindow(r)
           setFailed(ok ? null : spellProblem(reply))
           setRead(ok ? r : null)
           if (!ok) return
           // A window that names another spell, or whose name was not read, waits for the player, as an item's does.
-          const note = otherItemNote(r.name, row.name, 'spell window')
+          const note = otherItemNote(r.name, row.name, 'spell window', names.slice(1).filter(isSpell))
           if (note === undefined) setSpellShot(row.name, keepOf(r))
           else setPending({ read: r, note })
         })
         .catch((e: unknown) => setFailed(`The reader did not answer (${e instanceof Error ? e.message : String(e)}). Try the paste again.`))
         .finally(() => setBusy(false))
     },
-    [row.name, facts]
+    [row.name, facts, known, names]
   )
   return (
     <Stack spacing={0.75} data-testid="gaps-shot">

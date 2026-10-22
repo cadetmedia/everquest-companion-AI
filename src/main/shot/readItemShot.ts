@@ -22,6 +22,8 @@ export interface ShotReaders {
   cell: (id: number) => Uint8Array | null
   /** The skins' window background textures, for opaque windows. */
   textures: () => Rgba[]
+  /** The catalog's item names within OCR's slips of a name read (itemShotKeep.ts `sameItem`). */
+  known?: (name: string) => string[]
 }
 
 export interface ItemShot {
@@ -32,6 +34,8 @@ export interface ItemShot {
   icons: IconHit[]
   /** How clearly the first icon wins (runner-up over winner). */
   iconMargin: number
+  /** The catalog's names near the name read (`ShotReaders.known`). */
+  known: string[]
   ms: number
 }
 
@@ -94,11 +98,13 @@ export async function readItemShot(img: Rgba, r: ShotReaders): Promise<ItemShot>
   const lines = iconOnly ? [] : await readLines(img)
   const region = iconOnly ? { x: 0, y: 0, w: img.w, h: img.h } : iconRegion(lines, img.w, img.h)
   const icons = await iconsIn(img, region, r)
+  const read: ItemWindowRead = iconOnly ? { statsblock: '', unread: [] } : readItemWindow(lines.map((l) => l.text))
   return {
-    read: iconOnly ? { statsblock: '', unread: [] } : readItemWindow(lines.map((l) => l.text)),
+    read,
     lines: lines.map((l) => l.text),
     icons,
     iconMargin: margin(icons),
+    known: read.name === undefined ? [] : (r.known?.(read.name) ?? []),
     ms: Math.round(performance.now() - t0)
   }
 }
