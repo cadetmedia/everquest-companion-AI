@@ -16,7 +16,7 @@ import CloseIcon from '@mui/icons-material/Close'
 import type { ItemKnowledge, LootEvent } from '@shared/types'
 import type { Timeslice } from '@shared/timeslice'
 import { isAcquisition } from '@shared/lootDisposition'
-import { mobSourceOf } from '@shared/rewardChest'
+import { rewardChestNote, tallyDroppedBy } from '@shared/droppedBy'
 import { formatDate } from '../../lib/formatDate'
 import { EQ_ITEM_COLORS } from '../../lib/ItemWindow'
 import { ObservedItemWindow } from '../../lib/ObservedItemWindow'
@@ -172,24 +172,20 @@ interface LootTally {
 interface LootBreakdown {
   sources: LootTally[]
   zones: LootTally[]
+  /** Reward Chest payouts: looted and in their zone, but no mob's drop */
+  chest: number
 }
 
 // Who dropped it and where, most-seen first. A loot row with no `source` still counts —
 // it happened — so it tallies under `unknown` rather than vanishing from the breakdown.
+// A Reward Chest payout is no mob's drop: shared/droppedBy.ts counts it apart.
 function aggregateLoot(events: LootEvent[]): LootBreakdown {
-  const bySource = new Map<string, number>()
   const byZone = new Map<string, number>()
   for (const e of events) {
-    // A Reward Chest pays any item of any mob the crawl killed: its mob is unknown, never the chest.
-    const s = mobSourceOf(e) ?? 'unknown'
-    bySource.set(s, (bySource.get(s) ?? 0) + 1)
     if (e.zone) byZone.set(e.zone, (byZone.get(e.zone) ?? 0) + 1)
   }
-  const sources = [...bySource.entries()]
-    .map(([name, count]) => ({ name, count }))
-    .sort((a, b) => b.count - a.count)
   const zones = [...byZone.entries()].map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count)
-  return { sources, zones }
+  return { ...tallyDroppedBy(events), zones }
 }
 
 /* The item as the GAME shows it: wiki base data, drawn in the item-window language.
@@ -288,7 +284,7 @@ function ObservedColumn({
         {owned !== undefined && owned > 0 && (
           <StatCard label="In your inventory export" value={String(owned)} hint="from /outputfile inventory" />
         )}
-        <StatCard label="Distinct mobs" value={String(agg.sources.length)} />
+        <StatCard label="Distinct mobs" value={String(agg.sources.length)} hint={rewardChestNote(agg.chest)} />
         <StatCard label="Zones seen" value={String(agg.zones.length)} />
       </Stack>
 
