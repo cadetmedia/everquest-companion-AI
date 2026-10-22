@@ -102,20 +102,38 @@ function unlockKind(kind: string): UnlockSkill['kind'] | null {
   return kind === 'skill' || kind === 'disc' || kind === 'innate' || kind === 'aa' ? kind : null
 }
 
-/** classes.json `aas` rows: the classes whose table lists the AA, and the level each rank needs. */
-type AaTable = Record<string, { classes?: string[]; levels?: number[] }>
+/** classes.json `aas` rows: the wiki's group, the classes whose table lists the AA, and the level each rank needs. */
+type AaTable = Record<string, { group?: string; classes?: string[]; levels?: number[] }>
+
+/** `Harm Touch`, then `Harm Touch (rank 2)`... */
+function rankName(name: string, i: number): string {
+  return i === 0 ? name : `${name} (rank ${String(i + 1)})`
+}
 
 /**
- * A class's AAs, one row per rank at the level that rank needs (`Harm Touch`, then `Harm Touch
- * (rank 2)`...). Only AAs the wiki names classes for; a name the class's own tables list is skipped.
+ * A class's AAs, one row per rank at the level that rank needs. Only AAs the wiki names classes
+ * for; a name the class's own tables list is skipped.
  */
 export function aaUnlocks(aas: AaTable, cls: string, listed: readonly RawUnlock[]): RawUnlock[] {
   const out: RawUnlock[] = []
   for (const [name, aa] of Object.entries(aas)) {
     if (!aa.classes?.includes(cls) || listed.some((r) => r.name === name)) continue
-    aa.levels?.forEach((level, i) => out.push({ name: i === 0 ? name : `${name} (rank ${String(i + 1)})`, level, kind: 'aa' }))
+    aa.levels?.forEach((level, i) => out.push({ name: rankName(name, i), level, kind: 'aa' }))
   }
   return out
+}
+
+/**
+ * The General AAs, one row per rank at the level it needs. The wiki says every class can buy them.
+ * Archetype AAs stay out: the wiki's table names no archetype or class for them.
+ */
+export function generalAaUnlocks(aas: AaTable): UnlockSkill[] {
+  const out: UnlockSkill[] = []
+  for (const [name, aa] of Object.entries(aas)) {
+    if (aa.group !== 'general') continue
+    aa.levels?.forEach((level, i) => out.push({ name: rankName(name, i), level, kind: 'aa' }))
+  }
+  return out.sort((a, b) => a.level - b.level || a.name.localeCompare(b.name))
 }
 
 /**
@@ -627,7 +645,7 @@ export function buildLevelUnlocks(client: SpellResistTable | null = null): Level
     const listed = [...(skillTable[code] ?? []), ...(discTable[code] ?? [])]
     skills[code] = skillsFor(code, [...(skillTable[code] ?? []), ...aaUnlocks(aas, code, listed)], discTable[code] ?? [], disputed)
   }
-  cached = { spells: unlockSpells(client), skills, scrapedAt: classesJson.scrapedAt }
+  cached = { spells: unlockSpells(client), skills, general: generalAaUnlocks(aas), scrapedAt: classesJson.scrapedAt }
   cachedWithClient = client !== null
   return cached
 }

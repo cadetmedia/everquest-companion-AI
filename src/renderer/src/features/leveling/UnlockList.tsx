@@ -393,7 +393,7 @@ const Row = memo(function Row({
       {row.kind !== 'spell' && (
         <Chip
           size="small"
-          label={KIND_LABEL[row.kind]}
+          label={row.general ? 'General AA' : KIND_LABEL[row.kind]}
           sx={{
             height: 17,
             fontSize: 10,
