@@ -162,3 +162,10 @@ test('NO SYSTEM-WIDE KEY: the app registers no globalShortcut (owner, 2026-10-21
     }
   }
 })
+
+test('the camera sits on the Event log overlay and the Wiki Gaps overlay (owner, 2026-10-21: "sure it can be on wiki gaps, overlay")', () => {
+  for (const name of ['EventLogOverlay.tsx', 'GapsOverlay.tsx']) {
+    const code = readFileSync(new URL(`../src/renderer/src/overlay/${name}`, import.meta.url), 'utf8')
+    assert.match(code, /action=\{SHOT_CAPTURE_ACTION\}/, name)
+  }
+})

@@ -15,6 +15,7 @@ import { type JSX, useEffect, useState } from 'react'
 import { BG_ALPHA_MAX, BG_ALPHA_MIN, BG_ALPHA_STEP } from '@shared/overlayBgAlpha'
 import { EMPTY_GAPS_OVERLAY, GAPS_OVERLAY_KEY, parseGapsOverlay, type GapsOverlayPayload, type GapsOverlayRow } from '@shared/gapsOverlay'
 import { OverlayHeader } from './OverlayHeader'
+import { SHOT_CAPTURE_ACTION } from './shotCaptureAction'
 import { FOOTER_ROW, OverlayContent } from './overlayScale'
 import { TextScaleStepper } from './TextScaleStepper'
 import { type OverlayChrome, useOverlayChrome } from './useOverlayChrome'
@@ -123,6 +124,8 @@ export default function GapsOverlay(): JSX.Element {
         tail={payload.loaded ? `${String(rows.length)} of ${payload.total.toLocaleString()}` : undefined}
         tailTitle="The first rows of the Wiki Gaps tab's list, with its filters and order"
         iconAccentBg={ACCENT_BG}
+        // The camera here too (owner, 2026-10-21: "sure it can be on wiki gaps, overlay").
+        action={SHOT_CAPTURE_ACTION}
         chrome={{ locked, hovering, dragRegion, noDrag, toggleLock, capture }}
       />
 
