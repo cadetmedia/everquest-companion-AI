@@ -546,29 +546,47 @@ function dropSourcesField(raw: string | null): ItemDropSource[] | undefined {
 // page names. Lines naming no zone (`* Various`, `* ?`, `''This item can be foraged in most
 // zones.''`, one prose line) are kept as prose. `[[Category:Foraged]]` sits after the template
 // (137 pages); 6 fill the field without it and 4 carry it with the field empty or absent.
+// Only a bullet that opens with a link names zones (`* with the [[Forage]] skill` is prose), and an
+// HTML comment is never read. Whatever names no zone (`{{Zone|X}}` included) stays in the note.
 const FORAGED_CATEGORY_RE = /\[\[\s*Category\s*:\s*Foraged\s*(\|[^\]]*)?\]\]/i
+/** `<!-- … -->`, an unclosed one running to the end, as MediaWiki reads it. */
+const HTML_COMMENT_RE = /<!--[\s\S]*?(?:-->|$)/g
+const ZONE_BULLET_RE = /^\*+\s*\[\[/
 
-/** Parse `|foraged`: every zone a line links, page order, each once; the lines naming none as prose. */
+/** A zone link's name: a piped label, else the page (`_` is a space, `#anchor` dropped). */
+function forageZone(inner: string): string | undefined {
+  const pipe = inner.indexOf('|')
+  const page = (pipe >= 0 ? inner.slice(0, pipe) : inner).replace(/_/g, ' ').replace(/#.*/, '').replace(/\s+/g, ' ').trim()
+  if (!page || EXCLUDED_NS.test(page)) return undefined
+  return (pipe >= 0 ? inner.slice(pipe + 1).trim() : '') || page
+}
+
+/** Parse `|foraged`: every zone a bullet links, page order, each once (any case); the rest as prose. */
 export function parseForaged(block: string): { zones: string[]; note?: string } {
   const zones: string[] = []
   const prose: string[] = []
-  for (const line of bulletLines(block)) {
-    const links = [...line.matchAll(/\[\[([^\]]+?)\]\]/g)].map((m) => firstLink(m[0])?.label).filter((z) => z !== undefined)
-    for (const z of links) if (!zones.includes(z)) zones.push(z)
-    if (links.length === 0) prose.push(line.replace(/^\*+\s*/, ''))
+  for (const line of bulletLines(block.replace(HTML_COMMENT_RE, ''))) {
+    const links = ZONE_BULLET_RE.test(line) ? [...line.matchAll(/\[\[([^[\]]+)\]\]/g)].map((m) => forageZone(m[1])) : []
+    const found = links.filter((z) => z !== undefined)
+    for (const z of found) if (!zones.some((x) => x.toLowerCase() === z.toLowerCase())) zones.push(z)
+    if (found.length === 0) {
+      const text = line.replace(/^\*+\s*/, '')
+      prose.push(cleanSummary(text) ?? text)
+    }
   }
-  const note = prose.length > 0 ? cleanSummary(prose.join('; ')) : undefined
+  const note = prose.join('; ') || undefined
   return note ? { zones, note } : { zones }
 }
 
 /** The forage half of the result; every field `undefined` unless the page stated it. */
 function foragedFields(wikitext: string): Pick<ItemKnowledge, 'foraged' | 'foragedNote' | 'foragedCategory'> {
-  const raw = templateField(wikitext, 'foraged')
+  const page = wikitext.replace(HTML_COMMENT_RE, '')
+  const raw = templateField(page, 'foraged')
   const parsed = raw ? parseForaged(raw) : null
   return {
     foraged: parsed && parsed.zones.length > 0 ? parsed.zones : undefined,
     foragedNote: parsed?.note,
-    foragedCategory: FORAGED_CATEGORY_RE.test(wikitext) ? true : undefined
+    foragedCategory: FORAGED_CATEGORY_RE.test(page) ? true : undefined
   }
 }
 

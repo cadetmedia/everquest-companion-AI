@@ -131,3 +131,20 @@ test('an empty |foraged and a page without the Foraged category state nothing', 
   assert.equal(k.foragedCategory, undefined)
   assert.equal(parseItemWikitext('Lettuce', '{{Itempage\n|foraged = \n\n* ?\n}}').foragedNote, '?')
 })
+
+test('|foraged: only a bullet opening with a link names zones, comments are never read, links fold as the wiki does', () => {
+  const wt = `{{Itempage
+|foraged =
+<!-- list zones like * [[Zone Name]] -->
+* Can be foraged anywhere with the [[Forage]] skill
+* [[Misty_Thicket#Foraging]]
+* [[misty thicket]]
+* [[Kedge Keep|]]
+* {{Zone|Lake Rathetear}}
+}}
+<!-- [[Category:Foraged]] -->`
+  const k = parseItemWikitext('Forage Fixture', wt)
+  assert.deepEqual(k.foraged, ['Misty Thicket', 'Kedge Keep'])
+  assert.equal(k.foragedNote, 'Can be foraged anywhere with the Forage skill; {{Zone|Lake Rathetear}}')
+  assert.equal(k.foragedCategory, undefined)
+})
