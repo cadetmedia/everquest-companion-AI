@@ -49,6 +49,15 @@ export interface SavedLog {
 
 export const SAVED_GAPS_VERSION = 1
 
+/**
+ * What a saved file's `gaps` rows hold, raised when the engine starts serving a kind of row an
+ * older build's save never had. 2: a known item's forages, the proof its page's forage zones are
+ * checked against (gaps-item-facts, 2026-10-21). A file without it was saved by an older build:
+ * the rows cannot be rebuilt from the file (forage lines are not in the loot), so the tab says to
+ * log that character in once, which saves it again.
+ */
+export const SAVED_ROWS = 2
+
 /** One character's saved Gaps inputs, one file per character. */
 export interface SavedGaps {
   v: number
@@ -60,6 +69,8 @@ export interface SavedGaps {
   savedAt: string
   log: SavedLog
   modules: Record<GapSourceModule, { seq: number; state: unknown }>
+  /** SAVED_ROWS when it was saved; absent on a file from before it. */
+  rows?: number
 }
 
 /** One other character's Gaps inputs, its archives joined in, as main serves them to the tab. */
@@ -76,6 +87,8 @@ export interface CharacterGaps {
   kills: unknown
   /** Its OWN latest inventory export (`Name_server-Inventory.txt`), for "held by"; null when it has none. */
   inventory?: OwnershipPayload | null
+  /** Saved by an older build whose rows lack a kind this one serves (SAVED_ROWS). */
+  olderRows?: true
 }
 
 /** A saved file as read back, or null when it is not one this build understands. */
@@ -121,6 +134,7 @@ export function characterGaps(character: string, saved: SavedGaps | null, segmen
     character,
     ...who,
     savedAt: saved?.savedAt ?? null,
+    ...(saved !== null && (saved.rows ?? 1) < SAVED_ROWS ? { olderRows: true as const } : {}),
     archives: shown.length,
     gaps: foldModule('gaps', shown, saved),
     loot: foldModule('loot', shown, saved),

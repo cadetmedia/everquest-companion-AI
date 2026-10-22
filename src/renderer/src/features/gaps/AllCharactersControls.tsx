@@ -69,9 +69,11 @@ export function AllCharactersBox({
 function savedWords(c: CharacterGaps, now: Date): { text: string; stale: boolean } {
   const archives = c.archives > 0 ? `, ${c.archives} archive${c.archives === 1 ? '' : 's'}` : ''
   if (c.savedAt === null) return { text: `${c.name} (archives only${archives})`, stale: false }
-  const stale = isStale(c.savedAt, now)
+  const old = isStale(c.savedAt, now)
   const date = c.savedAt.slice(0, 10)
-  return { text: `${c.name} (saved ${date}${archives}${stale ? ': over 2 months old, log in to refresh it' : ''})`, stale }
+  // An older build's save lacks rows this one serves (a known item's forages): logging in saves it again.
+  const why = old ? ': over 2 months old, log in to refresh it' : c.olderRows === true ? ': saved by an older version, log in to refresh it' : ''
+  return { text: `${c.name} (saved ${date}${archives}${why})`, stale: why !== '' }
 }
 
 /** Whose data the list holds: the attached character live, then each other one with its saved date. */

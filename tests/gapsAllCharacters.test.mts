@@ -25,6 +25,7 @@ import {
   seenByKey,
   stampKeyOf,
   SAVED_GAPS_VERSION,
+  SAVED_ROWS,
   type CharacterGaps,
   type SavedGaps
 } from '../src/shared/gapsAllCharacters'
@@ -199,4 +200,21 @@ test('days back trims the one-character view the way the join trims each charact
   const fresh = { gaps: gaps([row('item', 'New', 1, '2026-10-05 00:00:00')]), loot: [], kills: null }
   assert.equal(ownSince(fresh, cut).gaps, fresh.gaps)
   assert.equal(ownSince(fresh, cut).kills, null)
+})
+
+test('a save from before forage rows says so; the join keeps a forage row from a save that has them (owner report, 2026-10-21)', () => {
+  // Drywrought saved by an older build: no rows marker, and its rows can hold no forage proof.
+  const before = saved('drywrought_oggok', 'HEAD-D', { gaps: gaps([row('item', 'Gray Wolf Skull', 1)]), loot: [], kills: null })
+  assert.equal(characterGaps('drywrought_oggok', before, [], null)?.olderRows, true)
+  // The same character saved by this build: the marker is current, nothing to say.
+  const forage = { ...row('item', 'Pod of Water', 3), domain: 'forage' as GapRow['domain'] }
+  const after: SavedGaps = { ...saved('drywrought_oggok', 'HEAD-D', { gaps: { ...gaps([row('item', 'Gray Wolf Skull', 1)]), rows: [row('item', 'Gray Wolf Skull', 1), forage] }, loot: [], kills: null }), rows: SAVED_ROWS }
+  const other = characterGaps('drywrought_oggok', after, [], null)
+  assert.equal(other?.olderRows, undefined)
+  // Another character live (Kaltinril, no forages), Drywrought's saved forage row joined in, seen by Drywrought.
+  const live = { label: 'Kaltinril', gaps: gaps([row('item', 'Bone Chips', 1)]), loot: [], kills: null }
+  const joined = joinCharacters([live, ...otherInputs(other === null ? [] : [other], () => false)], null)
+  const pod = joined.gaps?.rows.find((r) => r.name === 'Pod of Water')
+  assert.equal(pod?.domain, 'forage')
+  assert.deepEqual(joined.seenBy.get(seenByKey(forage)), ['Drywrought'])
 })

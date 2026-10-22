@@ -32,6 +32,7 @@ import type { CharacterRef } from '../shared/types'
 import {
   GAP_SOURCE_MODULES,
   SAVED_GAPS_VERSION,
+  SAVED_ROWS,
   characterGaps,
   otherCharacters,
   parseSavedGaps,
@@ -117,7 +118,7 @@ export async function saveAttachedGaps(): Promise<void> {
     const log = logIdentity(c.logPath)
     if (log === null) return
     const modules = Object.fromEntries(GAP_SOURCE_MODULES.map((m, i) => [m, got[i]])) as SavedGaps['modules']
-    const saved: SavedGaps = { v: SAVED_GAPS_VERSION, character: id, name: c.name, server: c.server, savedAt: new Date().toISOString(), log, modules }
+    const saved: SavedGaps = { v: SAVED_GAPS_VERSION, character: id, name: c.name, server: c.server, savedAt: new Date().toISOString(), log, modules, rows: SAVED_ROWS }
     await writeFileDurableAsync(savedDir(), join(savedDir(), `${id}.json`), JSON.stringify(saved))
     lastSeqs.set(id, seqs)
   } catch (err) {
