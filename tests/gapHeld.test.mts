@@ -2,7 +2,7 @@
 // where each copy was, the log's loot since it lands in the bags, its destroys come off. Fixtures only.
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { gapHeld, heldChipLabel, heldIndex, heldLine, heldTitle, isOwnExport, joinHeld } from '../src/shared/gapHeld'
+import { gapHeld, heldCaption, heldChipLabel, heldIndex, heldLine, heldTitle, isOwnExport, joinHeld, onlyHeld } from '../src/shared/gapHeld'
 import type { GapRow } from '../src/shared/gaps'
 import type { OwnershipEntry, OwnershipRow } from '../src/shared/planner/ownership'
 import type { LootEvent } from '../src/shared/types'
@@ -72,4 +72,19 @@ test("only a character's own export counts, and with All characters each holder 
     'Drywrought holds 2 (bags): screenshot it for the wiki now.',
     'Kaltinril holds 1 (bank): screenshot it for the wiki now.'
   ])
+})
+
+test('"I have it" keeps the Items rows someone holds; another domain passes; the caption counts the held, in the zone, less hidden', () => {
+  const dry = heldIndex({ entries: [['minotaur blood', [own('minotaur blood', 'inventory', 2)]], ['rat ear', [own('rat ear', 'bank', 1)]]], loadedAt: EXPORTED }, {}, {}, 'Drywrought')
+  const kal = heldIndex({ entries: [['glowing stone', [own('glowing stone', 'bank', 1)]]], loadedAt: EXPORTED }, {}, {}, 'Kaltinril')
+  const inZone = (name: string, zone: string): GapRow => ({ ...row(name), details: { samples: [], zones: { distinct: 1, entries: [{ name: zone, n: 1 }] } } })
+  const rows = [inZone('Minotaur Blood +2', 'Befallen'), inZone('Rat Ear', 'Oggok'), row('Bat Wing'), row('Glowing Stone'), row('a minotaur blood', 'mob')]
+  assert.deepEqual(onlyHeld(rows, dry).map((r) => r.name), ['Minotaur Blood +2', 'Rat Ear', 'a minotaur blood'])
+  // All characters: held by any character whose own export was read.
+  assert.deepEqual(onlyHeld(rows, joinHeld([dry, kal])).map((r) => r.name), ['Minotaur Blood +2', 'Rat Ear', 'Glowing Stone', 'a minotaur blood'])
+  // No export: nothing is held, so no Items row stays.
+  assert.deepEqual(onlyHeld(rows, new Map()).map((r) => r.name), ['a minotaur blood'])
+  assert.equal(heldCaption(rows, null, () => false, dry), '2 held')
+  assert.equal(heldCaption(rows, 'Befallen 4 (Refined)', () => false, dry), '1 held')
+  assert.equal(heldCaption(rows, null, (r) => r.name === 'Rat Ear', dry), '1 held')
 })

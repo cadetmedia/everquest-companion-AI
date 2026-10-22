@@ -175,9 +175,22 @@ export function groupGaps(
   return uniqueKeys(out)
 }
 
-/** Every heading's key: what "Collapse all" folds (owner ask, 2026-10-20). */
-export function headingKeys(entries: readonly GapEntry[]): string[] {
-  return entries.filter((e) => e.kind !== 'row').map((e) => e.key)
+/**
+ * Every heading's key: what "Collapse all" folds (owner ask, 2026-10-20). With `kind`, that level's
+ * alone: the mobs fold at once while the zones stay as they are (owner ask, 2026-10-21).
+ */
+export function headingKeys(entries: readonly GapEntry[], kind?: 'zone' | 'mob'): string[] {
+  return entries.filter((e) => e.kind !== 'row' && (kind === undefined || e.kind === kind)).map((e) => e.key)
+}
+
+/** `folded` with every one of `keys` folded, or every one unfolded; the other headings keep theirs. */
+export function withFolds(folded: ReadonlySet<string>, keys: readonly string[], fold: boolean): Set<string> {
+  const next = new Set(folded)
+  for (const k of keys) {
+    if (fold) next.add(k)
+    else next.delete(k)
+  }
+  return next
 }
 
 /**

@@ -1,7 +1,7 @@
 // The Gaps list grouped as a hunting plan (owner ask, 2026-10-18): zone, then mob, then what is missing.
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { gapGroupOrderOf, groupGaps, headingKeys, rowEntries, unfoldedEntries, ZONE_NOT_SEEN, type GapEntry } from '../src/shared/gapGroups'
+import { gapGroupOrderOf, groupGaps, headingKeys, rowEntries, unfoldedEntries, withFolds, ZONE_NOT_SEEN, type GapEntry } from '../src/shared/gapGroups'
 import type { GapRow } from '../src/shared/gaps'
 import type { LootEvent } from '../src/shared/types'
 
@@ -131,6 +131,24 @@ test('collapse all folds every heading, leaving the zones alone on screen', () =
   assert.equal(keys.length, 4)
   assert.deepEqual(unfoldedEntries(all, new Set(keys)).map((e) => e.kind), ['zone', 'zone'])
   assert.deepEqual(headingKeys(rowEntries([row('item', 'x')])), [], 'ungrouped has no headings')
+})
+
+test('the mobs fold at once while the zones stay as they are (owner ask, 2026-10-21)', () => {
+  const loot: LootEvent[] = [
+    { ts: 1, item: 'Spider Fang', source: 'a jungle spider', zone: 'The Feerrott' },
+    { ts: 2, item: 'Lizard Scale', source: 'a lizardman scout', zone: 'The Feerrott' },
+    { ts: 3, item: 'Bone Chips', source: 'a skeleton', zone: 'Befallen' }
+  ]
+  const all = groupGaps([row('item', 'Spider Fang'), row('item', 'Lizard Scale'), row('item', 'Bought Thing', ['The Feerrott']), row('item', 'Bone Chips')], loot)
+  const mobs = headingKeys(all, 'mob')
+  assert.equal(mobs.length, 3)
+  assert.equal(headingKeys(all, 'zone').length, 2)
+  // Befallen folded by hand stays folded; every mob folds, so the open zone shows its mobs alone.
+  const befallen = 'zone|Befallen'
+  const folded = withFolds(new Set([befallen]), mobs, true)
+  assert.deepEqual(shape(unfoldedEntries(all, folded)), ['# Befallen (1)', '# The Feerrott (3)', '    Bought Thing', '  a jungle spider (1)', '  a lizardman scout (1)'])
+  // Unfolding them gives the rows back and leaves Befallen folded.
+  assert.deepEqual([...withFolds(folded, mobs, false)], [befallen])
 })
 
 test("Zone I'm in keeps the headings to the zone you stand in (owner, 2026-10-20)", () => {

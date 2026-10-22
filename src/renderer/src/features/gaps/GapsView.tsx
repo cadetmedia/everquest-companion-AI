@@ -31,6 +31,7 @@ import {
   type GapSortKey,
   type GapsSnap
 } from '@shared/gaps'
+import { heldCaption, type HeldIndex } from '@shared/gapHeld'
 import type { CharacterSnap } from '@shared/types'
 import { stillNeeded, wikiPageText } from '@shared/wikiPage'
 import { useModule } from '../../lib/useModule'
@@ -45,6 +46,7 @@ import { useDoneMarks, usePlayerList } from './useDoneMarks'
 import { useAllCharacters } from './useOtherCharacters'
 import { AllCharactersBox, CharactersLine } from './AllCharactersControls'
 import { useAllHeld } from './useAllHeld'
+import { useHeldOnly } from './useHeldOnly'
 import { useHideUncertain, type HideUncertain } from './useHideUncertain'
 import { useGrouping } from './useGrouping'
 import GroupHeaderControls from './GroupHeaderControls'
@@ -84,6 +86,21 @@ function ZoneHere({ zone, checked, onChange }: { zone: string | null; checked: b
   )
 }
 
+/** "I have it" (owner, 2026-10-21): only the Items rows the player holds now, the rows with the held chip. */
+function HeldOnlyBox({ on, onChange, domain }: { on: boolean; onChange: (on: boolean) => void; domain: GapDomain }): JSX.Element {
+  const title =
+    domain === 'item'
+      ? "Only the items you hold now, the rows marked held: your last inventory export (/outputfile inventory), plus what the log saw you loot since, less destroys. No export, nothing shows. With All characters on, every character's own export counts, each holder named in the row."
+      : 'Items only: shows only the items you hold now.'
+  return (
+    <Tooltip title={title}>
+      <span>
+        <Pref label="I have it" checked={on} onChange={onChange} disabled={domain !== 'item'} testId="gaps-held-only" />
+      </span>
+    </Tooltip>
+  )
+}
+
 /** "Hide uncertain": the rows whose very existence as a gap is in doubt (shared/gaps.ts `uncertainGap`). */
 function HideUncertainBox({ state }: { state: HideUncertain }): JSX.Element {
   return (
@@ -116,7 +133,8 @@ function DomainToggle({
   domain,
   zone,
   onPick,
-  hidden
+  hidden,
+  heldOnly
 }: {
   snap: GapsSnap
   domain: GapDomain
@@ -124,6 +142,8 @@ function DomainToggle({
   onPick: (d: GapDomain) => void
   /** rows the player hid, left out of each count */
   hidden: (row: GapRow) => boolean
+  /** "I have it" on: the Items count is what the player holds */
+  heldOnly: HeldIndex | null
 }): JSX.Element {
   return (
     <ToggleButtonGroup
@@ -142,7 +162,7 @@ function DomainToggle({
               {GAP_DOMAIN_LABELS[d]}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              {gapsCaption(snap, d, zone, hidden)}
+              {d === 'item' && heldOnly !== null ? heldCaption(snap.rows, zone, hidden, heldOnly) : gapsCaption(snap, d, zone, hidden)}
             </Typography>
           </Stack>
         </ToggleButton>
@@ -156,17 +176,21 @@ function ShownLine({
   counts,
   domain,
   zone,
+  mine = '',
   tail = ''
 }: {
   counts: { visible: number; held: number; served: number; hidden: number; uncertain: number }
   domain: GapDomain
   zone: string | null
+  /** what "I have it" adds: `, that you hold`, or '' when off */
+  mine?: string
   tail?: string
 }): JSX.Element {
   const { visible, held, served, hidden, uncertain } = counts
   return (
     <Typography variant="caption" color="text.secondary" data-testid="gaps-shown">
       Showing {visible} of {held} {GAP_SHOWN_NOUN[domain]}
+      {mine}
       {zone !== null ? `, seen in ${zone} or another tier of it` : ''}
       {hidden > 0 ? `, ${hidden} marked done hidden` : ''}
       {uncertain > 0 ? `, ${uncertain} uncertain hidden` : ''}
@@ -175,6 +199,9 @@ function ShownLine({
     </Typography>
   )
 }
+
+/** What "I have it" adds to the shown line: with All characters on, held means by any of them. */
+const mineWords = (active: boolean, allCharacters: boolean): string => (!active ? '' : allCharacters ? ', that one of your characters holds' : ', that you hold')
 
 /** What the pages read beside the ledgers, from the engine's snapshot (useGapsData). */
 function sightingsOf(engine: GapsSnap | null | undefined, spellFacts: ReturnType<typeof useSpellFacts>) {
@@ -211,8 +238,13 @@ export default function GapsView(): JSX.Element {
   // The list follows the query a beat behind the keystroke, so typing never waits on a filter.
   const deferredQuery = useDeferredValue(query)
   const inDomain = useMemo(() => visibleGaps(rows ?? [], domain, deferredQuery, zone), [rows, domain, deferredQuery, zone])
+  // An item a character holds right now needs only a screenshot (review C6; owner, 2026-10-19): each
+  // character's own export plus ITS loot since, named per holder while All characters is on.
+  const holding = useAllHeld(ownLoot, me, allChars)
+  // "I have it" (owner, 2026-10-21): the Items list narrowed to what the player holds.
+  const mine = useHeldOnly(inDomain, holding, domain)
   // "Hide uncertain" (owner, 2026-10-19): rows the tab is not sure are gaps, hidden on request.
-  const sure = useHideUncertain(inDomain)
+  const sure = useHideUncertain(mine.rows)
   const visible = useMemo(() => (showDone ? [...sure.rows] : withoutDone(sure.rows, marks.done)), [sure.rows, showDone, marks.done])
   const hiddenRow = useMemo(() => hiddenBy(marks.done, showDone, sure.hide), [marks.done, showDone, sure.hide])
   // What the caches already say about the rows on screen: `unchecked` until the answer lands.
@@ -229,9 +261,6 @@ export default function GapsView(): JSX.Element {
   const needed = useCallback((row: GapRow) => stillNeeded(row, loot, kills, sightings), [loot, kills, sightings])
   // "Group by zone, then mob" (owner ask, 2026-10-18), its heading order and its folds (useGrouping).
   const group = useGrouping(sorted, loot, zone)
-  // An item a character holds right now needs only a screenshot (review C6; owner, 2026-10-19): each
-  // character's own export plus ITS loot since, named per holder while All characters is on.
-  const holding = useAllHeld(ownLoot, me, allChars)
 
   if (!snap) return <CircularProgress size={20} />
 
@@ -251,7 +280,7 @@ export default function GapsView(): JSX.Element {
       </Typography>
       {/* Two rows (owner, 2026-10-20: "put search and all the values after that on the next row
           instead of next to the tabs"): the domains alone, then what narrows them, Copy list last. */}
-      <DomainToggle snap={snap} domain={domain} zone={zone} onPick={setDomain} hidden={hiddenRow} />
+      <DomainToggle snap={snap} domain={domain} zone={zone} onPick={setDomain} hidden={hiddenRow} heldOnly={mine.on ? holding : null} />
       <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" useFlexGap>
         <TextField
           size="small"
@@ -272,6 +301,7 @@ export default function GapsView(): JSX.Element {
             setCopied(null)
           }}
         />
+        <HeldOnlyBox on={mine.on} onChange={mine.setOn} domain={domain} />
         <Pref label="Group by zone, then mob" checked={group.grouped} onChange={group.setGrouped} testId="gaps-grouped" />
         <Pref label="Show done" checked={showDone} onChange={setShowDone} testId="gaps-show-done" />
         <HideUncertainBox state={sure} />
@@ -279,7 +309,7 @@ export default function GapsView(): JSX.Element {
         <Box sx={{ flexGrow: 1 }} />
         <CopyList onCopy={() => void copy()} disabled={visible.length === 0} copied={copied} />
       </Stack>
-      <ShownLine counts={{ visible: visible.length, held, served, hidden, uncertain: sure.hidden }} domain={domain} zone={zone} tail={allChars.caption} />
+      <ShownLine counts={{ visible: visible.length, held, served, hidden, uncertain: sure.hidden }} domain={domain} zone={zone} mine={mineWords(mine.active, allChars.on)} tail={allChars.caption} />
       {allChars.on && <CharactersLine live={allChars.liveLabel} others={allChars.others} />}
       <GapsTable
         entries={group.entries}
@@ -290,6 +320,7 @@ export default function GapsView(): JSX.Element {
         needed={needed}
         done={marks.done}
         onDone={marks.toggle}
+        onDoneAll={marks.setMany}
         onPlayer={playerList.mark}
         holding={holding}
         chipContext={CHIP_CONTEXT}
