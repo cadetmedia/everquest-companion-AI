@@ -23,7 +23,7 @@ import type { PageExtras, ZoneNamer } from '@shared/wikiPage'
 import dropGroupsJson from '../../data/eqlegends/dropGroups.json'
 import mobsJson from '../../data/eqlegends/mobs.json'
 import { MOB_CATALOG } from '../mobs/mobSearch'
-import { joinCharacters, otherInputs, ownSince, type CharacterGaps, type JoinedGaps, type OwnGaps } from '@shared/gapsAllCharacters'
+import { gapsSince, joinCharacters, otherInputs, ownSince, type CharacterGaps, type JoinedGaps, type OwnGaps } from '@shared/gapsAllCharacters'
 import { useModule } from '../../lib/useModule'
 import { useItemMobs } from '../../lib/gapItemMobs'
 import { useThrottled } from '../../lib/useThrottled'
@@ -49,6 +49,8 @@ const lastLooted = memoLast<readonly string[]>()
 const lastKills = memoLast<KillMap>()
 const lastOwnCut = memoLast<OwnGaps>()
 const lastOwnCutOnly = memoLast<OwnGaps>()
+const lastShown = memoLast<GapsSnap | null | undefined>()
+const lastShownOnly = memoLast<GapsSnap | null | undefined>()
 
 export interface GapsData {
   /** The engine's snapshot with the derived domains joined in; undefined until it lands. */
@@ -123,13 +125,21 @@ function joinedInputs(joined: JoinedGaps): { engine: GapsSnap | null; loot: Loot
   return { engine: joined.gaps, loot: joined.loot, killMobs: joined.kills?.mobs ?? NO_KILLS }
 }
 
+/**
+ * The rows the day window keeps: it chooses rows only, each derived from whole loot and kills
+ * (ownSince). The overlay's one-domain copy keeps its own slot.
+ */
+function inWindow(snap: GapsSnap | null | undefined, cut: { stamp: string } | null | undefined, only: GapDomain | undefined): GapsSnap | null | undefined {
+  return (only === undefined ? lastShown : lastShownOnly)([snap, cut?.stamp], () => (snap && cut ? gapsSince(snap, cut.stamp) : snap))
+}
+
 export function useGapsData(all: AllCharacters | null = null, opts: GapsDataOptions = {}): GapsData {
   const { only, holdMs = 0, cut = null } = opts
   const { engine: liveEngine, loot: liveLoot, kills: liveKills, cons } = useGapsFeeds(holdMs)
   // The join runs a beat behind the box, so the tab stays live and can say it is working (owner, 2026-10-19).
   const deferredAll = useDeferredValue(all)
   // All characters (owner, 2026-10-19): the attached character's live inputs joined with every other
-  // character's saved ones, each cut to the day window, before anything is derived from them.
+  // character's saved ones, each one's rows cut to the day window (loot and kills join whole).
   const joined = useMemo(() => {
     if (deferredAll === null || liveEngine == null) return null
     const live = { label: deferredAll.liveLabel, gaps: liveEngine, loot: liveLoot, kills: liveKills ?? null }
@@ -149,5 +159,6 @@ export function useGapsData(all: AllCharacters | null = null, opts: GapsDataOpti
     [derive, engine, loot, killMobs, itemMobs, cons, only]
   )
   const kills = lastKills([killMobs], () => killIndex(killMobs))
-  return { snap, engine, loot, ownLoot: liveLoot, kills, seenBy: joined?.seenBy, joining: all !== deferredAll }
+  const shown = inWindow(snap, joined === null ? cut : deferredAll?.cut, only)
+  return { snap: shown, engine, loot, ownLoot: liveLoot, kills, seenBy: joined?.seenBy, joining: all !== deferredAll }
 }
