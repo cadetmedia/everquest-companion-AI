@@ -153,8 +153,11 @@ const SLOT_LINE = /^(?:Slot\s*)?\d{1,2}\s*[:.]/i
 const titleOf = (l: string | undefined): string | undefined =>
   l !== undefined && l.split(/\s+/).length <= 6 && pairsOf(l).length === 0 && !/[.!?]$/.test(l) && /[A-Za-z]{3}/.test(l) ? l.replace(/^[^A-Za-z]+|[^A-Za-z)]+$/g, '') : undefined
 
-/** Lines of the window that are not the spell's: the upgrade block a Legends spell shows. */
-const NOT_SPELL = /^This spell can be upgraded|^Tier\s*\d|^Upgrade\b|^Place Mote\b/i
+/**
+ * Lines of the window that are not the spell's: the upgrade block a Legends spell shows. OCR puts junk
+ * before them (`Mots This spell can be upgraded.`, `Uporade. Place Tier0 0/1`), so they match anywhere.
+ */
+const NOT_SPELL = /This spell can be upgraded|\bTier\s*\d|^\W*Up\w{0,2}ade\b|\bPlace Mote\b/i
 
 const SPELL_LINE = /\bSpell\s*[:;]\s*(.+)$/i
 
@@ -165,13 +168,35 @@ function spellLabelName(lines: readonly string[]): string | undefined {
   return name === '' ? undefined : name
 }
 
-/** OCR lines of one spell display window (top to bottom) -> the page's fields. `template`: the file's description. */
-export function readSpellWindow(raw: readonly string[], template?: string): SpellWindowRead {
+/** OCR's reading of a rank after the name: `I`..`X`, or the `I` read as a bar, an l, a one (`Burst of Flame | t`). */
+const RANK_TOKEN = /^\s*([IVX]{1,4}|[|l1!]{1,3})(?=\s|$)/
+
+/**
+ * An upgraded rank after the row's name on the `Spell:` line (owner, 2026-10-21: `Burst of Flame I`,
+ * a Mote of Potential's tier 1): the page is the base spell's. Read against the row's own name, so a
+ * spell whose name ends in a numeral (`Cannibalize II`) is never cut.
+ */
+export function rankAfter(lines: readonly string[], rowName: string): string | undefined {
+  const spell = lines.map((l) => SPELL_LINE.exec(l)?.[1]).find((n) => n !== undefined) ?? ''
+  const words = rowName.trim().split(/\s+/).map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+  const own = new RegExp(`^\\W*${words.join('\\s*')}`, 'i').exec(spell)
+  const token = own === null ? null : RANK_TOKEN.exec(spell.slice(own[0].length))
+  return token === null ? undefined : token[1].replace(/[|l1!]/g, 'I')
+}
+
+/** A resist with an adjustment after its type (`Fire -15`): the type, and the adjustment. */
+const RESIST_ADJUST = /^(.*?[A-Za-z])\s*([-+−]\s*\d+)$/
+
+/**
+ * OCR lines of one spell display window (top to bottom) -> the page's fields. `template`: the file's
+ * description; `rowName`: the spell the paste is for, which an upgraded rank's name is read against.
+ */
+export function readSpellWindow(raw: readonly string[], template?: string, rowName?: string): SpellWindowRead {
   const all = raw.map((l) => l.replace(/\s+/g, ' ').trim()).filter((l) => l !== '')
   // What is above the first `Spell:` line is the title bar and the frame's junk.
   const lines = all.slice(Math.max(0, all.findIndex((l) => SPELL_LINE.test(l))))
   const titled = titleOf(lines[0])
-  const name = spellLabelName(lines) ?? titled
+  const { name, rank } = nameOf(lines, titled, rowName)
   const fields: Record<string, string> = {}
   const modified: string[] = []
   const text: string[] = []
@@ -184,8 +209,30 @@ export function readSpellWindow(raw: readonly string[], template?: string): Spel
     if (wrapping) text.push(line)
   }
   const told = describe(text.join(' '), template)
-  const checks = modified.length === 0 ? told.checks : [...told.checks, `A modifier was active (${modified.join(', ')}): the page keeps the base values.`]
-  return { fields, ...(name === undefined ? {} : { name }), ...told, checks }
+  const checks = [...told.checks, ...rankChecks({ name, rank }, fields, modified)]
+  return { fields, ...(name === undefined ? {} : { name }), ...(rank === undefined ? {} : { rank }), ...told, checks }
+}
+
+/** The window's name, the row's when an upgraded rank follows it (`Burst of Flame I` -> `Burst of Flame`, `I`). */
+function nameOf(lines: readonly string[], titled: string | undefined, rowName: string | undefined): { name?: string; rank?: string } {
+  const rank = rowName === undefined ? undefined : rankAfter(lines, rowName)
+  return rank === undefined ? { name: spellLabelName(lines) ?? titled } : { name: rowName, rank }
+}
+
+/**
+ * What the player is told of an upgraded rank, a resist adjustment taken off the resist type (owner,
+ * 2026-10-21: `Resist: Fire -15` writes `Fire`; the spell file states a spell's own adjustment), and
+ * the bracketed values left out.
+ */
+function rankChecks({ name, rank }: { name?: string; rank?: string }, fields: Record<string, string>, modified: readonly string[]): string[] {
+  const out = rank === undefined ? [] : [`An upgraded rank was read (${name ?? ''} ${rank}): the page is the base spell, ${name ?? ''}. The rank's own values are not written.`]
+  const adj = RESIST_ADJUST.exec(fields.resist ?? '')
+  if (adj !== null) {
+    fields.resist = adj[1]
+    out.push(`Resist ${adj[1]} ${adj[2]}: ${adj[2]} is a resist adjustment${rank === undefined ? '' : " (the rank's)"}, not part of the type; the page writes ${adj[1]}.`)
+  }
+  if (modified.length > 0) out.push(`${rank === undefined ? 'A modifier was active' : 'The rank or a modifier changed values'} (${modified.join(', ')}): the page keeps the base values.`)
+  return out
 }
 
 /** A line's labelled values into the page's fields (the base value); the modified values it showed into `modified`. */

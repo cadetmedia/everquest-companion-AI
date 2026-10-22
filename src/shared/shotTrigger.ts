@@ -1,28 +1,66 @@
 // shotTrigger.ts — what starts a capture of the EverQuest window (phase 3 of screenshot to wiki;
 // owner, 2026-10-21: "i like the macro log thing, it makes it so that we don't touch the keyboard
 // or game and stay faithful to the log reading only. I also like B too, lets do both? and avoid C").
-// No system-wide key: (A) the player's own social macro writes a marker line with /echo and the app
-// captures when the LIVE log shows it; (B) a button on an overlay. Both run one capture
+// No system-wide key: (A) the player's own social macro says a marker on a private chat channel and
+// the app captures when the LIVE log shows it; (B) a button on an overlay. Both run one capture
 // (main/ipc/shotCapture.ts). Pure, so the line rule and the debounce are tested apart from Electron.
+//
+// The channel (owner, 2026-10-21, measured in the owner's log): the game has no /echo; `/tell` to
+// oneself prints only "Talking to yourself again?"; `/say` is public. After `/join eqckaltinril` the
+// log prints `Channels: 1=General(214), 2=eqckaltinril(1)` and the macro's line logs as
+// `You tell eqckaltinril:2, 'eqc capture'`. One channel per character (`eqc` + the name): a shared
+// name would show every app user's captures to each other.
 
 import type { ItemShotReply } from './itemWindow'
 
-/** The words the macro writes; matched whole, any case. */
+/** The words the macro says; matched whole, any case. */
 export const CAPTURE_MARKER = 'eqc capture'
 
-/** The one line of the social macro the player makes. */
-export const CAPTURE_MACRO = `/echo ${CAPTURE_MARKER}`
+/** The private channel the character joins for the macro: `eqckaltinril`. */
+export const captureChannel = (character: string): string => `eqc${character.toLowerCase().replace(/[^a-z]/g, '')}`
 
 /**
- * The marker alone after the timestamp, as /echo writes it. A say, tell, emote or channel line
- * starts with its speaker, so no other player can start a capture.
+ * The player's OWN line on an eqc channel, as the game logs a channel message: `You tell
+ * eqckaltinril:2, 'eqc capture'`. Another player's line starts with their name (`Soandso tells
+ * eqckaltinril:2, ...`), so no one else can start a capture.
  */
-export const CAPTURE_LINE_REGEX = '^\\[[^\\]]+\\] eqc capture\\s*$'
+export const CAPTURE_LINE_REGEX = "^\\[[^\\]]+\\] You tell eqc[^:,' ]*:\\d+, 'eqc capture'\\s*$"
 
 const CAPTURE_LINE = new RegExp(CAPTURE_LINE_REGEX, 'i')
 
 /** Whether a raw log line (timestamp included) is the macro's marker. */
 export const isCaptureLine = (line: string): boolean => CAPTURE_LINE.test(line)
+
+/** The line the game prints on /join and /list (and at login): every channel with its number. */
+export const CHANNELS_LINE_REGEX = '^\\[[^\\]]+\\] Channels: '
+
+/** A Channels line's numbers by channel name, lower-cased: `{ general: 1, eqckaltinril: 2 }`; null for another line. */
+export function channelNumbers(line: string): Record<string, number> | null {
+  if (!new RegExp(CHANNELS_LINE_REGEX, 'i').test(line)) return null
+  return Object.fromEntries([...line.matchAll(/(\d+)=([^(,\s]+)\(/g)].map((m) => [m[2].toLowerCase(), Number(m[1])]))
+}
+
+/** What the player is shown: the join command, the macro line when the channel's number is known, and the words. */
+export interface CaptureHowTo {
+  join: string
+  macro?: string
+  text: string
+}
+
+/**
+ * The macro for a character, from the latest Channels line (the number depends on join order). With
+ * no number known yet, the shape of the line and where its number comes from.
+ */
+export function captureHowTo(character: string | null, channels: Readonly<Record<string, number>>): CaptureHowTo {
+  const channel = character === null || character === '' ? 'eqc<yourname>' : captureChannel(character)
+  const join = `/join ${channel}`
+  const n = channels[channel]
+  if (n === undefined) {
+    return { join, text: `Type ${join} once, then make a social macro: /<channel number> ${CAPTURE_MARKER}. The number is ${channel}'s in the Channels: line the game prints after /join (type /list to see it again).` }
+  }
+  const macro = `/${String(n)} ${CAPTURE_MARKER}`
+  return { join, macro, text: `Type ${join} once, then make a social macro: ${macro}` }
+}
 
 /** A marker line further than this from the clock is not the player pressing the macro now. */
 export const RECENT_MS = 60_000

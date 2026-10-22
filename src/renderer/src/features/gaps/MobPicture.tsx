@@ -7,8 +7,7 @@
 import { type JSX, useCallback, useEffect, useRef, useState } from 'react'
 import { Button, Stack, Typography } from '@mui/material'
 import { wikiUploadUrl, type GapRow } from '@shared/gaps'
-import type { PictureSave } from '@shared/mobPicture'
-import { npcImageName } from '@shared/wikiPage'
+import { pictureFile, type PictureSave } from '@shared/mobPicture'
 import { Line, PasteZone } from './PasteZone'
 import { latestOnly } from './latestOnly'
 
@@ -83,7 +82,7 @@ function NotSaved({ result, onReplace, onCancel }: { result: PictureSave; onRepl
 }
 
 export default function MobPicture({ row }: { row: GapRow }): JSX.Element {
-  const file = row.domain === 'image' && row.image !== undefined ? row.image : npcImageName(row.name)
+  const file = pictureFile(row)
   const [busy, setBusy] = useState(false)
   const [png, setPng] = useState<Uint8Array | null>(null)
   const [result, setResult] = useState<PictureSave | null>(null)

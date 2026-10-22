@@ -12,8 +12,8 @@ import { app, BrowserWindow, dialog, ipcMain, nativeImage, shell } from 'electro
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { IPC } from '../../shared/ipc'
-import { nameInLines, pictureFileName, type PictureSave } from '../../shared/mobPicture'
-import { readLines } from '../shot/ocr'
+import { pictureFileName, type PictureSave } from '../../shared/mobPicture'
+import { showsName } from '../shot/nameplate'
 import { deleteSafely, writeSafely } from '../shot/pictureFiles'
 import { bgraToRgba, isNearSolid, type Rgba } from '../shot/pixels'
 
@@ -111,7 +111,7 @@ async function hasMobName(checkId: unknown, name: unknown): Promise<boolean | nu
   const slot = checkSlot
   if (slot === null || slot.id !== checkId || typeof name !== 'string') return null
   try {
-    return nameInLines(name, (await readLines(slot.rgba)).map((l) => l.text))
+    return await showsName(slot.rgba, name)
   } catch {
     return null
   } finally {

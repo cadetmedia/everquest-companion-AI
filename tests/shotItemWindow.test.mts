@@ -101,12 +101,15 @@ test('WINDSTRIKER: THREE COLUMNS, WEAPON LINES, EFFECTS; THE FOCUS GOES OUTSIDE 
     'Race: ALL<br>'
   ])
   assert.equal(r.name, 'Windstriker')
-  assert.equal(r.focusEffect, 'Improved Healing III')
+  // The focus is the Focus Exaltation's (Idol of the Underking grants Improved Healing III, items.json):
+  // a filled slot's kind of effect is never written as the item's own (owner, 2026-10-21).
+  assert.equal(r.focusEffect, undefined)
   // DMG 920 is corrected by the window's own Ratio and Delay, and the player is told.
   // ... and the window is +10 (D3): Weight's ceiling keeps it from one +0 value, so no guess is offered.
   assert.deepEqual(r.checks, [
     "This window is +10: its numbers are the upgraded item's, not the page's. These do not take back to one +0 value: WT: 0.4.",
-    'DMG read as 920; the window\'s Ratio (1.5) and Delay (60) say 90.'
+    'DMG read as 920; the window\'s Ratio (1.5) and Delay (60) say 90.',
+    "Focus effect Improved Healing III not written: the item's Focus Exaltation slot holds Idol of the Underking (Exaltation), and the window cannot tell its effect from the item's own. Check the item's page."
   ])
   assert.equal(r.tier, 10)
   assert.deepEqual(r.unread, [])
@@ -214,4 +217,34 @@ test("THE WINDOW'S OTHER LABELS (THE CLIENT'S OWN STRINGS): End, End Regen, Dmg 
     'Recommended level of 30.<br>', 'Required level of 20.<br>', 'Charges: 5<br>', 'Size: MEDIUM WT: 7.5<br>', 'Class: WAR PAL<br>', 'Race: ALL<br>', 'Deity: Karana<br>'
   ])
   assert.deepEqual(r.unread, [])
+})
+
+test('AN (AUGMENTED) TITLE IS THE +N PATH; A FILLED EXALTATION SLOT KEEPS ITS KIND OF EFFECT OFF THE PAGE, AN EMPTY ONE DOES NOT', () => {
+  const r = readItemWindow([
+    "Wu's Fist of Mastery +10 (Augmented)",
+    'No Trade, Placeable',
+    'Class: MNK',
+    'Race: ALL',
+    'Primary Secondary',
+    'Size: TINY Accuracy: +25% Base Dmg: 32',
+    'Weight 0.1 Delay: 22',
+    'Skill: Hand to Hand Dmg Bon: 10',
+    'Ornamentation: empty',
+    'Focus Exaltation: empty',
+    'Click Exaltation: Golem Metal Wand (Exaltation)',
+    'Worn Exaltation: empty',
+    "Proc Exaltation: Cherista's Fangs (Exaltation)",
+    'Click Effect Pillage Enchantment (Must Equip)',
+    'Cast Time: 4.0 seconds',
+    'Cooldown: 240 seconds',
+    'Combat Effect Lifebite',
+    'Worn Effect: Spirit of Wolf'
+  ])
+  assert.equal(r.name, "Wu's Fist of Mastery")
+  assert.equal(r.tier, 10)
+  const lines = r.statsblock.split('\n').filter(Boolean)
+  // The Worn slot is empty: a worn effect is the item's own.
+  assert.ok(lines.includes('Effect: [[Spirit of Wolf]] (Worn)<br>'), JSON.stringify(lines))
+  assert.ok(!lines.some((l) => /Pillage|Lifebite|Exaltation/.test(l)), JSON.stringify(lines))
+  assert.equal(r.checks?.filter((c) => / not written: /.test(c)).length, 2)
 })

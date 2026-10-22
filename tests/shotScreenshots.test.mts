@@ -16,6 +16,9 @@ import { readItemShot, type ItemShot, type ShotReaders } from '../src/main/shot/
 import { shotKind } from '../src/shared/itemShotKeep.ts'
 import { readSpellWindow } from '../src/shared/spellWindow.ts'
 import { readPng } from './shotPng.mts'
+import { imageGaps } from '../src/shared/gapImages.ts'
+import { pictureFile } from '../src/shared/mobPicture.ts'
+import { showsName } from '../src/main/shot/nameplate.ts'
 
 const SHOTS = join(import.meta.dirname, 'fixtures', 'shots')
 const EQ_ROOT = process.env.EQ_ROOT ?? 'C:/Users/Public/Daybreak Game Company/Installed Games/EverQuest Legends'
@@ -88,15 +91,19 @@ test("SUREFALL FLETCHING KIT (MALKIL'S CONTAINER, 2026-10-21): CAPACITY, SIZE CA
 })
 
 for (const file of ['windstriker-ground.png', 'windstriker-sky.png']) {
-  test(`WINDSTRIKER, MALKIL'S UI (${file}): THE WEAPON, STATS AND EFFECT LINES; DMG 90; THE FOCUS APART`, async () => {
+  test(`WINDSTRIKER, MALKIL'S UI (${file}): THE WEAPON AND STATS; DMG 90; NO EXALTATION'S EFFECT AS THE BOW'S OWN`, async () => {
     const s = await read(file, textOnly)
     const got = lines(s)
     for (const want of ['Slot: RANGE<br>', 'Skill: Archery  Atk Delay: 60<br>', 'DMG: 90<br>', 'Range: 300<br>', 'SV VOID: +10<br>', 'Size: MEDIUM WT: 0.4<br>', 'Class: RNG<br>', 'Race: ALL<br>']) {
       assert.ok(got.includes(want), `${want} in ${JSON.stringify(got)}`)
     }
     assert.ok(got.some((l) => l.startsWith('STR: +15  AGI: +15  DEX: +15  HP: +100')), JSON.stringify(got))
-    assert.ok(got.includes('Effect: [[Firestrike]] (Must Equip, Casting Time: Instant) at Level 40<br>'), JSON.stringify(got))
-    assert.equal(s.read.focusEffect, 'Improved Healing III')
+    // The Focus and Click Exaltation slots hold Idol of the Underking and Rain Caller, which grant
+    // Improved Healing III and Firestrike (items.json): neither is written as the bow's own, and both are said.
+    assert.ok(!got.some((l) => l.includes('Firestrike')), JSON.stringify(got))
+    assert.equal(s.read.focusEffect, undefined)
+    assert.ok(s.read.checks?.some((c) => c.startsWith('Focus effect Improved Healing III not written')), JSON.stringify(s.read.checks))
+    assert.ok(s.read.checks?.some((c) => c.startsWith('Click effect Firestrike not written') && c.includes('Rain Caller')), JSON.stringify(s.read.checks))
   })
 }
 
@@ -141,3 +148,62 @@ for (const [file, id, within] of ICONS) {
     assert.ok(rank >= 1 && rank <= within, `rank ${String(rank)}: ${JSON.stringify(s.icons)}`)
   })
 }
+
+test("A LIZARDMAN SCOUT (THE OWNER'S PICTURE): THE NAMEPLATE IS FOUND, AND THE FILE IS NAMED AFTER THE IN-GAME NAME, NOT THE PAGE TITLE", async () => {
+  // As mobs.json holds the page: title "A lizard man scout", its own imagefilename npc_a_lizard_man_scout.png.
+  const page = { page: 'A lizard man scout', name: 'a lizardman scout', image: 'npc_a_lizard_man_scout.png', noImage: true as const }
+  const [row] = imageGaps({ 'a lizardman scout': { display: 'a lizardman scout', count: 3 } } as never, [], [page])
+  assert.equal(pictureFile(row), 'npc_a_lizardman_scout.png')
+  // Read as it stands the busy scene gives noise; the near-white nameplate reading finds the name.
+  const img = readPng(join(SHOTS, 'a-lizardman-scout-npc.png'))
+  assert.equal(await showsName(img, row.name), true)
+  assert.equal(await showsName(img, 'a gnoll pup'), false)
+})
+
+/** The owner's upgraded and invoked Burst of Flame windows (2026-10-21): each is the base spell's page. */
+const BURST_SHOTS: readonly [string, string | undefined, RegExp][] = [
+  // tier 0, a cast-speed invocation on: Cast 1.5 sec (0.5), Recovery 1.5 sec (2.5 sec)
+  ['burst-of-flame-invocation.png', undefined, /^A modifier was active \(Cast 0\.5, Recovery 2\.5 sec\)/],
+  // tier 1, no invocation: Cast 1.5 sec (1.47), Resist Fire -15
+  ['burst-of-flame-i-tier1.png', 'I', /^The rank or a modifier changed values \(Cast 1\.47/],
+  // tier 1 and the invocation: Cast 1.5 sec (0.49), Recovery 1.5 sec (2.4 sec)
+  ['burst-of-flame-i-tier1-invocation.png', 'I', /^The rank or a modifier changed values \(Cast 0\.49, Recovery 2\.4 sec/]
+]
+
+for (const [file, rank, modifier] of BURST_SHOTS) {
+  test(`BURST OF FLAME, ${file.toUpperCase()}: THE BASE SPELL'S PAGE (CAST 1.50, RESIST FIRE), THE RANK AND THE MODIFIER NOTED`, async () => {
+    const lines = (await readLines(readPng(join(SHOTS, file)))).map((l) => l.text)
+    const r = readSpellWindow(lines, 'Creates a ball of fire that burns your target, doing between #1 and @1 damage.', 'Burst of Flame')
+    assert.equal(r.name, 'Burst of Flame')
+    assert.equal(r.rank, rank, JSON.stringify(lines))
+    assert.equal(r.fields.casting_time, '1.50')
+    assert.equal(r.fields.resist, 'Fire')
+    assert.equal(r.description, 'Creates a ball of fire that burns your target, doing between 4 and 5 damage.')
+    assert.ok(r.checks.some((c) => modifier.test(c)), r.checks.join(' | '))
+    assert.equal(r.checks.some((c) => c.startsWith('An upgraded rank was read')), rank !== undefined)
+  })
+}
+
+test("SICKLY MAIDEN'S HAIR, THE LORE TAB (THE OWNER'S, 2026-10-21): TWO WRAPPED LINES ARE ONE LORE; THE TITLE BAR'S JUNK IS NOT THE NAME", async () => {
+  const s = await read('sickly-maidens-hair-lore.png', textOnly)
+  assert.equal(s.read.lore, 'This sample of long, golden grass is tinged with disease')
+  assert.equal(s.read.name, "Sickly Maiden's Hair")
+  assert.equal(s.read.statsblock, '')
+})
+
+test("WU'S FIST OF MASTERY +10 (AUGMENTED) (THE OWNER'S, 2026-10-21): THE +10 PATH, NO EXALTATION LINE, NO EFFECT AN EXALTATION GRANTS", async () => {
+  const s = await read('wus-fist-of-mastery-10-augmented.png', textOnly)
+  assert.equal(s.read.name, "Wu's Fist of Mastery")
+  assert.equal(s.read.tier, 10)
+  const got = lines(s)
+  for (const want of ['No Trade, Placeable<br>', 'Slot: PRIMARY SECONDARY<br>', 'Size: TINY WT: 0.1<br>', 'Class: MNK<br>', 'Race: ALL<br>']) assert.ok(got.includes(want), `${want} in ${JSON.stringify(got)}`)
+  // The Click and Proc slots hold Golem Metal Wand and Cherista's Fangs, which grant Pillage Enchantment
+  // and Lifebite (items.json; Wu's Fist's own page has no effect): neither is written as the item's.
+  assert.ok(!got.some((l) => /Exaltation|Ornamentation|Effect:/.test(l)), JSON.stringify(got))
+  const checks = s.read.checks ?? []
+  assert.ok(checks.some((c) => c.startsWith('Click effect Pillage Enchantment not written') && c.includes('Golem Metal Wand (Exaltation)')), JSON.stringify(checks))
+  assert.ok(checks.some((c) => c.startsWith('Combat effect Lifebite not written') && c.includes("Proc Exaltation slot holds Cherista's Fangs (Exaltation)")), JSON.stringify(checks))
+  // The +10 numbers are the upgraded item's: no +0 guess where they do not take back exactly.
+  assert.ok(checks.some((c) => c.startsWith('This window is +10')), JSON.stringify(checks))
+  assert.equal(s.read.baseStatsblock, undefined)
+})

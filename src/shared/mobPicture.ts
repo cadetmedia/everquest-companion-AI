@@ -2,6 +2,19 @@
 // save answers, and whether the picture shows the mob's nameplate. Pure; main does the saving and
 // the OCR (src/main/ipc/shotPicture.ts).
 
+import type { GapRow } from './gaps'
+import { npcImageName } from './wikiPage'
+
+/**
+ * A row's picture file: an Images row's, named after the mob's in-game name (gapImages.ts; owner,
+ * 2026-10-21: "yes name after real name not misspelling", `npc_a_lizardman_scout.png` for the page
+ * A lizard man scout), else `npc_<the row's name>.png`. The nameplate check reads the row's name,
+ * which for an Images row is the in-game one too.
+ */
+export function pictureFile(row: Pick<GapRow, 'domain' | 'name' | 'image'>): string {
+  return row.domain === 'image' && row.image !== undefined ? row.image : npcImageName(row.name)
+}
+
 /**
  * The file name a picture is written under: no folder parts, no characters Windows refuses, and always
  * `.png` (main writes PNG bytes, and a renderer that asked for `x.bat` must not get one).

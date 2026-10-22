@@ -114,6 +114,8 @@ export const knowledgeBridge = {
   shotReadText: (png: Uint8Array): Promise<import('../shared/spellWindow').ShotTextReply> => ipcRenderer.invoke(IPC.shotReadText, png),
   /** The captures (the macro's line, an overlay's button) waiting to be filed; the call takes them. */
   shotCaptures: (): Promise<import('../shared/shotTrigger').Captured[]> => ipcRenderer.invoke(IPC.shotCaptures),
+  /** The latest Channels line's numbers by channel name, for the capture macro. */
+  shotChannels: (): Promise<Record<string, number>> => ipcRenderer.invoke(IPC.shotChannels),
   /** A capture is waiting; the returned function stops listening. */
   onShotCaptured: (cb: () => void): (() => void) => {
     const listener = (): void => cb()

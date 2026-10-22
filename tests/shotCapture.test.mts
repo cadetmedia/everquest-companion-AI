@@ -17,7 +17,7 @@ import { stopOcr } from '../src/main/shot/ocr.ts'
 import type { Rgba } from '../src/main/shot/pixels.ts'
 import { readItemShot, type ShotReaders } from '../src/main/shot/readItemShot.ts'
 import { captureRow } from '../src/shared/itemShotKeep.ts'
-import { CAPTURE_MACRO, captureGate, isCaptureLine, RECENT_MS } from '../src/shared/shotTrigger.ts'
+import { captureChannel, captureGate, captureHowTo, channelNumbers, isCaptureLine, RECENT_MS } from '../src/shared/shotTrigger.ts'
 import { readPng } from './shotPng.mts'
 
 const SHOTS = join(import.meta.dirname, 'fixtures', 'shots')
@@ -114,26 +114,44 @@ test('A CAPTURE IS FILED ON THE ONE ROW ITS NAME MATCHES; NONE WHEN NO ROW OR SE
   assert.equal(captureRow(undefined, rows), undefined)
 })
 
-test('THE MACRO LINE: THE MARKER ALONE AFTER THE TIMESTAMP, ANY CASE; NO SPEAKER LINE COUNTS', () => {
-  const ts = '[Wed Oct 21 18:20:00 2026] '
-  // What `/echo eqc capture` writes: the text alone after the timestamp.
-  assert.equal(CAPTURE_MACRO, '/echo eqc capture')
-  assert.equal(isCaptureLine(ts + CAPTURE_MACRO.replace(/^\/echo /, '')), true)
-  assert.equal(isCaptureLine(`${ts}EQC Capture`), true)
-  assert.equal(isCaptureLine(`${ts}eqc capture `), true)
-  // Another player saying, telling, shouting or emoting it never starts a capture.
+test("THE MACRO LINE: THE PLAYER'S OWN LINE ON AN EQC CHANNEL, ANY CASE; NO OTHER SPEAKER, NO PUBLIC SAY (THE OWNER'S LOG, 2026-10-21)", () => {
+  // The owner's log, eqlog_Drywrought_oggok.txt: after /join eqckaltinril, the macro's line.
+  assert.equal(isCaptureLine("[Wed Oct 21 19:24:38 2026] You tell eqckaltinril:2, 'eqc capture'"), true)
+  assert.equal(isCaptureLine("[Wed Oct 21 19:24:38 2026] You tell eqckaltinril:2, 'EQC Capture'"), true)
+  assert.equal(isCaptureLine("[Wed Oct 21 19:24:38 2026] You tell eqcdrywrought:11, 'eqc capture' "), true)
+  const ts = '[Wed Oct 21 19:24:38 2026] '
   for (const line of [
-    "Bob says, 'eqc capture'",
-    "Bob tells you, 'eqc capture'",
+    // another player on the same channel: their line starts with their name
+    "Bob tells eqckaltinril:2, 'eqc capture'",
+    // public, or no text at all
     "You say, 'eqc capture'",
-    "Bob says out of character, 'eqc capture'",
-    'Bob eqc capture',
-    'eqc capture now',
-    'eqc captured'
+    'Talking to yourself again?',
+    // another channel, another phrase
+    "You tell general:1, 'eqc capture'",
+    "You tell eqckaltinril:2, 'eqc capture now'",
+    "Bob tells you, 'eqc capture'",
+    'eqc capture'
   ]) {
     assert.equal(isCaptureLine(ts + line), false, line)
   }
-  assert.equal(isCaptureLine('eqc capture'), false)
+  assert.equal(isCaptureLine("You tell eqckaltinril:2, 'eqc capture'"), false)
+})
+
+test("THE CHANNEL'S NUMBER FROM THE LATEST CHANNELS LINE, AND THE MACRO THE PLAYER IS SHOWN", () => {
+  assert.equal(captureChannel('Kaltinril'), 'eqckaltinril')
+  const channels = channelNumbers('[Wed Oct 21 19:24:18 2026] Channels: 1=General(214), 2=eqckaltinril(1)')
+  assert.deepEqual(channels, { general: 1, eqckaltinril: 2 })
+  assert.equal(channelNumbers("[Wed Oct 21 19:24:38 2026] You tell eqckaltinril:2, 'eqc capture'"), null)
+  assert.deepEqual(captureHowTo('Kaltinril', channels ?? {}), {
+    join: '/join eqckaltinril',
+    macro: '/2 eqc capture',
+    text: 'Type /join eqckaltinril once, then make a social macro: /2 eqc capture'
+  })
+  // No Channels line seen yet: the shape, and where the number comes from.
+  const unknown = captureHowTo('Kaltinril', {})
+  assert.equal(unknown.macro, undefined)
+  assert.match(unknown.text, /^Type \/join eqckaltinril once, then make a social macro: \/<channel number> eqc capture\. The number is eqckaltinril's in the Channels: line/)
+  assert.equal(captureHowTo(null, {}).join, '/join eqc<yourname>')
 })
 
 test('THE GATE: PRESSES WITHIN THE DEBOUNCE ARE ONE; AN OLD MARKER LINE NEVER CAPTURES', () => {
@@ -160,5 +178,12 @@ test('NO SYSTEM-WIDE KEY: the app registers no globalShortcut (owner, 2026-10-21
       const code = readFileSync(file, 'utf8').replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\/\/[^\n]*/g, ' ')
       assert.equal(/\bglobalShortcut\b/.test(code), false, file.pathname)
     }
+  }
+})
+
+test('the camera sits on the Event log overlay and the Wiki Gaps overlay (owner, 2026-10-21: "sure it can be on wiki gaps, overlay")', () => {
+  for (const name of ['EventLogOverlay.tsx', 'GapsOverlay.tsx']) {
+    const code = readFileSync(new URL(`../src/renderer/src/overlay/${name}`, import.meta.url), 'utf8')
+    assert.match(code, /action=\{SHOT_CAPTURE_ACTION\}/, name)
   }
 })

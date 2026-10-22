@@ -1164,6 +1164,8 @@ export const IPC = {
   shotCaptureNow: 'shot:captureNow',
   // The captures waiting for the Gaps tab, taken (emptied) by the call. Payload: none.
   shotCaptures: 'shot:captures',
+  // The latest Channels line's numbers by channel name (the capture macro's channel). Payload: none.
+  shotChannels: 'shot:channels',
   // main -> renderer: a capture is waiting. Payload: none.
   onShotCaptured: 'shot:captured',
   // The clipboard's picture as PNG bytes, or null (a click on the paste box). Payload: none.

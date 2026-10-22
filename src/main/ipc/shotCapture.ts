@@ -5,13 +5,14 @@
 // picture of its window, as a screenshot tool takes one.
 //
 // Two ways in, one capture (owner: "lets do both? and avoid C", C being a system-wide hotkey, which
-// the app no longer registers): (A) the player's social macro writes `/echo eqc capture`, and the
-// engine, which reads the live log, reports the line (ownFires.ts); (B) the camera button on an
-// overlay. Both pass shared/shotTrigger.ts's gate.
+// the app no longer registers): (A) the player's social macro says `eqc capture` on the character's
+// private eqc channel, and the engine, which reads the live log, reports the line (ownFires.ts); (B)
+// the camera button on an overlay. Both pass shared/shotTrigger.ts's gate. The latest Channels line
+// is kept too, so the Gaps tab can show the macro with the channel's number.
 
 import { desktopCapturer, ipcMain, screen } from 'electron'
 import { IPC } from '../../shared/ipc'
-import { CAPTURE_LINE_REGEX, CAPTURE_MACRO, captureGate, DEBOUNCE_MS, isCaptureLine, type Captured } from '../../shared/shotTrigger'
+import { CAPTURE_LINE_REGEX, CAPTURE_MARKER, captureGate, channelNumbers, CHANNELS_LINE_REGEX, DEBOUNCE_MS, isCaptureLine, type Captured } from '../../shared/shotTrigger'
 import type { AlertDef } from '../../shared/types'
 import type { FireMessage } from '../../shared/dataServer/protocol.generated'
 import { DEFAULT_ALERT_PACK_ID, DEFAULT_ALERT_SOUNDS } from '../data/defaultPacks'
@@ -30,13 +31,19 @@ const MACRO_DELAY_MS = 300
 /** The engine's watch for the macro's line. Never in the store, never played (ownFires.ts). */
 const MACRO_DEF: AlertDef = {
   id: 'eqc-shot-capture',
-  name: `EQ Companion screenshot capture (${CAPTURE_MACRO})`,
+  name: `EQ Companion screenshot capture (${CAPTURE_MARKER} on an eqc channel)`,
   enabled: true,
   trigger: { type: 'raw', regex: CAPTURE_LINE_REGEX },
   // Required by the def's shape; a taken fire plays nothing.
   sound: { packId: DEFAULT_ALERT_PACK_ID, soundId: DEFAULT_ALERT_SOUNDS.buffWearsOff },
   cooldownMs: DEBOUNCE_MS
 }
+
+/** The engine's watch for the Channels line (/join, /list, login): which number each channel has. */
+const CHANNELS_DEF: AlertDef = { ...MACRO_DEF, id: 'eqc-shot-channels', name: 'EQ Companion chat channel numbers', trigger: { type: 'raw', regex: CHANNELS_LINE_REGEX }, cooldownMs: 0 }
+
+/** The latest Channels line's numbers, by channel name. */
+let channels: Record<string, number> = {}
 
 const waiting: Captured[] = []
 const gate = captureGate()
@@ -81,8 +88,13 @@ function start(via: 'macro' | 'overlay', lineAt?: number): void {
   else setTimeout(() => void capture(via), MACRO_DELAY_MS)
 }
 
-/** The engine's fire for the macro's line: taken (true) and captured; any other fire is not ours. */
+/** The engine's fire for the macro's line: taken (true) and captured; a Channels line kept; any other fire is not ours. */
 function takeMacroFire(fire: FireMessage): boolean {
+  const seen = fire.rule === CHANNELS_DEF.name ? channelNumbers(fire.message) : null
+  if (seen !== null) {
+    channels = seen
+    return true
+  }
   if (fire.rule !== MACRO_DEF.name || !isCaptureLine(fire.message)) return false
   start('macro', fire.at)
   return true
@@ -97,7 +109,8 @@ function keep(c: Captured): void {
 
 export function registerShotCaptureIpc(): void {
   // The Gaps tab that files a capture is behind the same gate.
-  if (UNRELEASED) setOwnFires([MACRO_DEF], takeMacroFire)
+  if (UNRELEASED) setOwnFires([MACRO_DEF, CHANNELS_DEF], takeMacroFire)
   ipcMain.on(IPC.shotCaptureNow, () => start('overlay'))
   ipcMain.handle(IPC.shotCaptures, () => waiting.splice(0, waiting.length))
+  ipcMain.handle(IPC.shotChannels, () => channels)
 }
