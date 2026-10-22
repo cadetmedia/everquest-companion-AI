@@ -157,7 +157,9 @@ impl GapsModule {
                 self.zone = ev.str("zone").map(str::to_string);
                 false
             }
-            "selfWho" => self.own_who(ev),
+            // The player's own `/who` row, parsed apart, names a player like any /who row (gaps_players.rs),
+            // so a self-con (a /con with nothing targeted) is never a row (owner, 2026-10-22: "this is me").
+            "selfWho" => self.unparsed(ev),
             "loot" | "itemReceived" | "itemMerge" => self.item_event(ev),
             "purchase" | "coin" | "unknown" => self.trade(ev),
             "death" => self.kill_factions_of(ev) | self.death(ev),
@@ -371,20 +373,6 @@ impl GapsModule {
         };
         self.players.insert(key.clone());
         self.rows.remove(&(Domain::Mob, key)).is_some()
-    }
-
-    /// The player's own `/who` row, which the parser files as `selfWho`, so the unparsed `/who` rule
-    /// never saw it: the player's name is a player's, and a self-con (`Drywrought regards you
-    /// indifferently -- looks like quite a gamble. (Lvl: 50)`, a /con with nothing targeted) or a
-    /// self-hail is never a row (owner, 2026-10-22: "this is me").
-    fn own_who(&mut self, ev: &Event) -> bool {
-        // From the `[`: the row may open `AFK ` or `* RIP * ` (eqlog who.rs).
-        let text = message_text_of(ev.raw());
-        let row = text.find('[').map_or(text, |at| &text[at..]);
-        match self.who.line(row, ev.ts()) {
-            Some(me) => self.rows.remove(&(Domain::Mob, mob_key(&me))).is_some(),
-            None => false,
-        }
     }
 
     fn spell(&mut self, ev: &Event) -> bool {
