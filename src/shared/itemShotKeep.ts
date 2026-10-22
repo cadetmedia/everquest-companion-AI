@@ -3,6 +3,8 @@
 // anyway"; a window paste replaces every window field, a Lore paste only the lore; each part has
 // its own clear). Pure, so the rules are tested apart from the panel (ShotPanel.tsx).
 
+import { editDistance } from './itemVocab'
+import type { GapRow } from './gaps'
 import type { ItemShotReply } from './itemWindow'
 import type { ItemPageShot } from './wikiPage'
 
@@ -21,26 +23,32 @@ const TAB_RE = /\bLore\b/i
 /** Enough words and letters to be a sentence, not OCR noise. */
 const sentence = (s: string): boolean => s.split(/\s+/).length >= 3 && (s.match(/[a-z]/gi) ?? []).length >= 12
 
+/** Both tab words on one line: the window's tab row (`- Description Lore`), not a stray `Lore` in a picture. */
+const TAB_ROW_RE = /Des\w{0,4}ption.*\bLore\b/i
+/** The Description tab's own text: a lore read off it is a window whose Class line OCR missed. */
+const WINDOW_TEXT = /\b(Equipped|No Trade|Temporary|Class|Race|Size|Weight)\b/i
+
+/**
+ * A Lore tab: its text under the tab row. A short lore counts when the tab row was read (owner,
+ * 2026-10-21: Shrubbery's `Ordinary Plant` was refused by the sentence rule); without the row, a
+ * sentence and the tab word, as before.
+ */
+function isLore(r: ItemShotReply): boolean {
+  const lore = r.read.lore
+  if (lore === undefined || WINDOW_TEXT.test(lore) || !/[a-z]{3}/i.test(lore)) return false
+  return r.lines.some((l) => TAB_ROW_RE.test(l)) || (sentence(lore) && r.lines.some((l) => TAB_RE.test(l)))
+}
+
 export function shotKind(r: ItemShotReply): ShotKind | null {
   if (r.error !== undefined) return null
   if (r.read.statsblock !== '') return 'window'
-  if (r.read.lore !== undefined && sentence(r.read.lore) && r.lines.some((l) => TAB_RE.test(l))) return 'lore'
+  if (isLore(r)) return 'lore'
   const best = r.icons[0]
   if (r.lines.length === 0 && best !== undefined && best.score <= ICON_FIT_MAX) return 'icon'
   return null
 }
 
 const squash = (s: string): string => s.toLowerCase().replace(/[^a-z0-9]/g, '')
-
-function editDistance(a: string, b: string): number {
-  let prev = Array.from({ length: b.length + 1 }, (_, j) => j)
-  for (let i = 1; i <= a.length; i++) {
-    const cur = [i]
-    for (let j = 1; j <= b.length; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1))
-    prev = cur
-  }
-  return prev[b.length]
-}
 
 /**
  * Whether the window's name is the row's item: letters and digits only, case ignored, two slips
@@ -62,11 +70,26 @@ const defined = <T extends object>(o: T): Partial<T> => Object.fromEntries(Objec
 export function keptAfter(kept: ItemPageShot | undefined, r: ItemShotReply, kind: ShotKind): ItemPageShot {
   if (kind === 'lore') return { ...kept, lore: r.read.lore }
   if (kind === 'icon') return { ...kept, iconId: r.icons[0]?.id }
-  return defined({ lore: kept?.lore, statsblock: r.read.statsblock, iconId: r.icons[0]?.id, valueCopper: r.read.valueCopper, focusEffect: r.read.focusEffect })
+  return defined({ lore: kept?.lore, statsblock: r.read.statsblock, iconId: r.icons[0]?.id, valueCopper: r.read.valueCopper, focusEffect: r.read.focusEffect, loreTab: r.read.loreTab, tier: r.read.tier, baseStatsblock: r.read.baseStatsblock })
 }
 
 /** One part cleared; null when nothing is left to keep. */
 export function cleared(kept: ItemPageShot, part: 'window' | 'lore'): ItemPageShot | null {
   const next: ItemPageShot = part === 'lore' ? defined({ ...kept, lore: undefined }) : defined({ lore: kept.lore })
   return Object.keys(next).length === 0 ? null : next
+}
+
+/** The Gaps item rows' names: where a hotkey capture can be filed. */
+export const itemRowNames = (rows: readonly GapRow[]): string[] => rows.filter((r) => r.domain === 'item' && r.suggest === undefined).map((r) => r.name)
+
+/**
+ * The row a hotkey capture belongs to (phase 3): the row named exactly so, else the one row the
+ * window's name matches through OCR's slips (`sameItem`); none when no row or several match.
+ */
+export function captureRow(name: string | undefined, rowNames: readonly string[]): string | undefined {
+  if (name === undefined) return undefined
+  const exact = rowNames.find((r) => squash(r) === squash(name))
+  if (exact !== undefined) return exact
+  const near = rowNames.filter((r) => sameItem(name, r))
+  return near.length === 1 ? near[0] : undefined
 }

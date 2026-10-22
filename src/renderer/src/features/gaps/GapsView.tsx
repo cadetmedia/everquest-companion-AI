@@ -25,7 +25,9 @@ import type { HideUncertain } from './useHideUncertain'
 import { useGrouping } from './useGrouping'
 import { useGapsList } from './useGapsList'
 import { useGapsOverlayFeed } from './useGapsOverlayFeed'
-import { useItemShots } from './itemShotsStore'
+import { useItemShots, useSpellShots } from './itemShotsStore'
+import CaptureBar from './CaptureBar'
+import { itemRowNames } from '@shared/itemShotKeep'
 import GroupHeaderControls from './GroupHeaderControls'
 
 // One line (owner, 2026-10-11): the how is in the module header, not on the page. Since 2026-10-18
@@ -198,7 +200,11 @@ export default function GapsView(): JSX.Element {
   const spellFacts = useSpellFacts(spellNames)
   // What pasted item screenshots gave (ShotPanel), for the item pages (owner ask, 2026-10-21).
   const itemShots = useItemShots()
-  const sightings = useMemo(() => ({ ...sightingsOf(engine, spellFacts), itemShots }), [engine, spellFacts, itemShots])
+  // And pasted spell display windows, for the spell pages (owner, 2026-10-21).
+  const spellShots = useSpellShots()
+  // Where a hotkey capture can be filed (phase 3): every item row, not only the ones on screen.
+  const itemNames = useMemo(() => itemRowNames(rows ?? []), [rows])
+  const sightings = useMemo(() => ({ ...sightingsOf(engine, spellFacts), itemShots, spellShots }), [engine, spellFacts, itemShots, spellShots])
   const pageText = useCallback((row: GapRow) => wikiPageText(row, loot, kills, sightings), [loot, kills, sightings])
   const needed = useCallback((row: GapRow) => stillNeeded(row, loot, kills, sightings), [loot, kills, sightings])
   // "Group by zone, then mob" (owner ask, 2026-10-18), its heading order and its folds (useGrouping).
@@ -251,6 +257,7 @@ export default function GapsView(): JSX.Element {
         <Box sx={{ flexGrow: 1 }} />
         <CopyList onCopy={() => void copy()} disabled={visible.length === 0} copied={copied} />
       </Stack>
+      {domain === 'item' && <CaptureBar rows={itemNames} />}
       <ShownLine counts={{ visible: visible.length, held, served, hidden, uncertain: sure.hidden }} domain={domain} zone={zone} mine={mineWords(mine.active, allChars.on)} tail={allChars.caption} />
       {allChars.on && <CharactersLine live={allChars.liveLabel} others={allChars.others} />}
       <GapsTable

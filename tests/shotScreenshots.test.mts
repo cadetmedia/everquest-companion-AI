@@ -1,5 +1,5 @@
 // Screenshot to wiki on real screenshots (tests/fixtures/shots; owner ask, 2026-10-21: "use the ones
-// i gave you"): the owner's Ruined Robe window and its icon alone, Black Lizard Scale, and Malkil's
+// i gave you"): the owner's Ruined Robe window and its icon alone, Black Lizard Scale, Shrubbery's Lore tab, and Malkil's
 // Windstriker on his custom UI over the ground and over the sky. The text is read with the real OCR
 // (tesseract.js, local). The icon checks need the game's icon sheets, which are never committed: they
 // run where an EverQuest install is found (EQ_ROOT, else the default install path) and skip elsewhere.
@@ -13,6 +13,7 @@ import { decodeTga } from '../src/main/shot/gameTextures.ts'
 import { buildIconIndex, iconSheets, readIconIndex, sheetsFingerprint, SheetCells, writeIconIndex, type IconIndex } from '../src/main/shot/iconIndex.ts'
 import { stopOcr } from '../src/main/shot/ocr.ts'
 import { readItemShot, type ItemShot, type ShotReaders } from '../src/main/shot/readItemShot.ts'
+import { shotKind } from '../src/shared/itemShotKeep.ts'
 import { readPng } from './shotPng.mts'
 
 const SHOTS = join(import.meta.dirname, 'fixtures', 'shots')
@@ -55,12 +56,12 @@ after(() => stopOcr())
 test("RUINED ROBE (THE OWNER'S WINDOW): THE STATSBLOCK IS THE OWNER'S PAGE, LINE FOR LINE", async () => {
   const s = await read('ruined-robe.png', textOnly)
   assert.deepEqual(lines(s), [
-    'LORE ITEM  NO DROP  TEMPORARY<br>',
+    'Lore Equipped, No Trade, Temporary<br>',
     'Slot: CHEST<br>',
     'AC: 1<br>',
     'CHA: -20<br>',
     'SV MAGIC: -15  SV FIRE: -15  SV COLD: -15  SV DISEASE: -15  SV POISON: -15<br>',
-    'WT: 2.0  Size: MEDIUM<br>',
+    'Size: MEDIUM WT: 2.0<br>',
     'Class: NEC WIZ MAG ENC<br>',
     'Race: ALL<br>'
   ])
@@ -69,15 +70,27 @@ test("RUINED ROBE (THE OWNER'S WINDOW): THE STATSBLOCK IS THE OWNER'S PAGE, LINE
 
 test('BLACK LIZARD SCALE: QUEST FLAG, WEIGHT, AND THE VALUE LINE (3s 8c)', async () => {
   const s = await read('black-lizard-scale.png', textOnly)
-  assert.deepEqual(lines(s), ['QUEST ITEM<br>', 'WT: 2.0  Size: MEDIUM<br>', 'Class: NONE<br>', 'Race: NONE<br>'])
+  assert.deepEqual(lines(s), ['Quest<br>', 'Size: MEDIUM WT: 2.0<br>', 'Class: NONE<br>', 'Race: NONE<br>'])
   assert.equal(s.read.valueCopper, 38)
+})
+
+test('VIAL OF SWAMP WATER (THE OWNER\'S, D1): THE FLAGS AS THE WINDOW PRINTS THEM, SIZE BEFORE WT, NONE IN CAPS', async () => {
+  // The owner asked why No Trade became NO DROP (2026-10-21); the ruling: follow the wiki's recent norm.
+  const s = await read('vial-of-swamp-water.png', textOnly)
+  assert.deepEqual(lines(s), ['No Trade, Quest<br>', 'Size: TINY WT: 1.0<br>', 'Class: NONE<br>', 'Race: NONE<br>'])
+})
+
+test("SUREFALL FLETCHING KIT (MALKIL'S CONTAINER, 2026-10-21): CAPACITY, SIZE CAPACITY, AND THE DEITY PRINTED WITHOUT ITS LABEL", async () => {
+  const s = await read('surefall-fletching-kit.png', textOnly)
+  assert.deepEqual(lines(s), ['No Trade<br>', 'Size: SMALL WT: 0.1<br>', 'Capacity: 8 Size Capacity: GIANT<br>', 'Class: ALL<br>', 'Race: ALL<br>', 'Deity: Karana<br>'])
+  assert.deepEqual(s.read.unread, [])
 })
 
 for (const file of ['windstriker-ground.png', 'windstriker-sky.png']) {
   test(`WINDSTRIKER, MALKIL'S UI (${file}): THE WEAPON, STATS AND EFFECT LINES; DMG 90; THE FOCUS APART`, async () => {
     const s = await read(file, textOnly)
     const got = lines(s)
-    for (const want of ['Slot: RANGE<br>', 'Skill: Archery  Atk Delay: 60<br>', 'DMG: 90<br>', 'Range: 300<br>', 'SV VOID: +10<br>', 'WT: 0.4  Size: MEDIUM<br>', 'Class: RNG<br>', 'Race: ALL<br>']) {
+    for (const want of ['Slot: RANGE<br>', 'Skill: Archery  Atk Delay: 60<br>', 'DMG: 90<br>', 'Range: 300<br>', 'SV VOID: +10<br>', 'Size: MEDIUM WT: 0.4<br>', 'Class: RNG<br>', 'Race: ALL<br>']) {
       assert.ok(got.includes(want), `${want} in ${JSON.stringify(got)}`)
     }
     assert.ok(got.some((l) => l.startsWith('STR: +15  AGI: +15  DEX: +15  HP: +100')), JSON.stringify(got))
@@ -86,11 +99,24 @@ for (const file of ['windstriker-ground.png', 'windstriker-sky.png']) {
   })
 }
 
+test("SHRUBBERY, THE LORE TAB (THE OWNER'S, 2026-10-21): A TWO-WORD LORE IS READ AND KEPT AS LORE", async () => {
+  const s = await read('shrubbery-lore.png', textOnly)
+  assert.equal(s.read.lore, 'Ordinary Plant')
+  assert.equal(shotKind({ read: s.read, lines: s.lines, icons: s.icons, ms: s.ms }), 'lore')
+})
+
 /** The icon each picture shows (the owner's pages and items.json), and the rank it must reach. */
 const ICONS: readonly [string, number, number][] = [
   ['ruined-robe.png', 1126, 1],
   ['ruined-robe-icon.png', 1126, 1],
   ['black-lizard-scale.png', 1225, 1],
+  // OCR read the icon's edge as a word (`By Class: ALL`) and placed the box over the pane's border:
+  // 6911 (the same lump in brown) won until the Class word itself placed it (owner, 2026-10-21).
+  ['lizardman-mystic-scale.png', 1233, 1],
+  // 95 against 1,015 for the runner-up (the owner's window, 2026-10-21)
+  ['vial-of-swamp-water.png', 705, 1],
+  // a translucent window over the scene at a larger UI scale (Malkil's): 212 against 1,020
+  ['surefall-fletching-kit.png', 883, 1],
   // 597 and 1104 are one bow in two colours: a tie the picker shows, top two.
   ['windstriker-ground.png', 1104, 2],
   ['windstriker-sky.png', 1104, 2]

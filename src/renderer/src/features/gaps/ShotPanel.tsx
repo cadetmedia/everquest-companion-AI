@@ -16,7 +16,8 @@ import type { ItemShotReply } from '@shared/itemWindow'
 import { cleared, hasWindowPart, keptAfter, sameItem, shotKind, type ShotKind } from '@shared/itemShotKeep'
 import type { ItemPageShot } from '@shared/wikiPage'
 import { itemShotNow, setItemShot, useItemShots, type StoredShot } from './itemShotsStore'
-import { Line, PasteZone } from './PasteZone'
+import { Line, PasteZone, WrongItem } from './PasteZone'
+import SpellShot from './SpellShot'
 import MobPicture from './MobPicture'
 
 /** One icon choice, drawn from the install's own sheets. */
@@ -57,25 +58,9 @@ function Parts({ name, kept }: { name: string; kept: StoredShot | undefined }): 
       {loreIn && kept !== undefined ? (
         <Chip size="small" color="success" label="Lore ✓" onDelete={() => keep(name, cleared(kept, 'lore'))} title="Clear lore data" data-testid="gaps-shot-clear-lore" />
       ) : (
-        <Chip size="small" variant="outlined" label="Lore tab: not pasted" />
+        // The window shows a Lore tab only when the item has lore; the page says {{Item Lore Missing}} until it is pasted.
+        <Chip size="small" variant="outlined" color={kept?.loreTab === true ? 'warning' : 'default'} label={kept?.loreTab === true ? 'Lore tab: not pasted (this item has one)' : 'Lore tab: not pasted'} />
       )}
-    </Stack>
-  )
-}
-
-/** A window whose name is another item's: nothing is kept until the player says (owner, 2026-10-21). */
-function WrongItem({ read, row, onUse, onDiscard }: { read: string; row: string; onUse: () => void; onDiscard: () => void }): JSX.Element {
-  return (
-    <Stack direction="row" spacing={1} alignItems="center" data-testid="gaps-shot-wrong-item">
-      <Line warn>
-        This window is “{read}”, not {row}.
-      </Line>
-      <Button size="small" onClick={onUse}>
-        Use it anyway
-      </Button>
-      <Button size="small" onClick={onDiscard}>
-        Discard
-      </Button>
     </Stack>
   )
 }
@@ -111,6 +96,29 @@ function KeptFacts({ kept }: { kept: StoredShot }): JSX.Element {
   )
 }
 
+/**
+ * A +N window: the page keeps its skeleton until the player takes the box to +0 (owner, 2026-10-21,
+ * D3): the upgrade rule's guess when it inverts exactly, or the box as the player corrected it.
+ */
+function TierChoice({ name, kept }: { name: string; kept: StoredShot }): JSX.Element | null {
+  const { tier, baseStatsblock } = kept
+  if (tier === undefined || tier === 0) return null
+  const atBase = (statsblock: string | undefined): void => keep(name, { ...kept, statsblock, tier: undefined, baseStatsblock: undefined })
+  return (
+    <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap data-testid="gaps-shot-tier">
+      <Line warn>+{tier}: Copy wiki page leaves the stats out until they are the +0 item's.</Line>
+      {baseStatsblock !== undefined && (
+        <Button size="small" onClick={() => atBase(baseStatsblock)} data-testid="gaps-shot-estimate">
+          Estimate +0 stats (a guess)
+        </Button>
+      )}
+      <Button size="small" onClick={() => atBase(kept.statsblock)}>
+        The box is +0 now
+      </Button>
+    </Stack>
+  )
+}
+
 /** The kept reading: icon, Value, focus, lore, the editable statsblock. */
 function KeptShot({ name, kept, reply }: { name: string; kept: StoredShot; reply: ItemShotReply | null }): JSX.Element {
   const unread = reply?.read.unread ?? []
@@ -118,6 +126,7 @@ function KeptShot({ name, kept, reply }: { name: string; kept: StoredShot; reply
     <>
       <IconPicker key={reply?.ms ?? 0} name={name} kept={kept} matches={reply?.icons.map((h) => h.id) ?? []} />
       <KeptFacts kept={kept} />
+      <TierChoice name={name} kept={kept} />
       {kept.statsblock !== undefined && (
         <TextField
           label="statsblock (check it against the window; Copy wiki page uses this)"
@@ -205,6 +214,7 @@ function ItemShot({ row }: { row: GapRow }): JSX.Element {
 
 export default function ShotPanel({ row }: { row: GapRow }): JSX.Element | null {
   if (row.domain === 'item' && row.suggest === undefined) return <ItemShot key={row.name} row={row} />
+  if (row.domain === 'spell' && row.suggest === undefined) return <SpellShot key={row.name} row={row} />
   if (row.domain === 'image' || row.domain === 'mob' || row.domain === 'merchant') return <MobPicture key={row.name} row={row} />
   return null
 }

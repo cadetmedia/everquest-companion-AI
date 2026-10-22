@@ -52,8 +52,9 @@ function clientSpellFacts(names: readonly string[]): Record<string, ClientSpellF
   try {
     const root = effectiveEqRoot()
     const us = readFileSync(join(root, 'spells_us.txt'), 'latin1')
-    const str = existsSync(join(root, 'spells_us_str.txt')) ? readFileSync(join(root, 'spells_us_str.txt'), 'latin1') : ''
-    return spellFactsFrom(us, str, names)
+    const optional = (file: string): string => (existsSync(join(root, file)) ? readFileSync(join(root, file), 'latin1') : '')
+    // dbstr_us.txt: the descriptions (phase 4 of screenshot to wiki), read at rest like the others.
+    return spellFactsFrom(us, optional('spells_us_str.txt'), names, optional('dbstr_us.txt'))
   } catch {
     return {}
   }

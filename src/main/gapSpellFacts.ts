@@ -8,6 +8,10 @@
 // levels WAR..BER (255 = cannot use). spells_us_str.txt: id, caster-me, caster-other, cast on you,
 // cast on other, wears off. Duration (level-dependent formulas), target type and spell type have no
 // measured mapping here, so they stay blank for the screenshot.
+// Phase 4 of screenshot to wiki (2026-10-21): 76 is the icon (`|spellicon`, 741 of 749 cached pages
+// that write a number agree), 86 the description's id in dbstr_us.txt (`<id>^6^<text>`; the text
+// matched the wiki word for word on 621 pages, the rest add editors' notes). 19,720 of 35,888 texts
+// hold placeholders the client fills; those wait for the spell window's screenshot (shared/spellWindow.ts).
 //
 // ELECTRON-FREE: the file read is the caller's; tests drive `spellFactsFrom` on strings.
 
@@ -29,6 +33,20 @@ function messagesById(strText: string): Map<string, string[]> {
   for (const line of strText.split(/\r?\n/)) {
     const f = line.split('^')
     if (f.length >= 6) out.set(f[0], [f[3], f[4], f[5]])
+  }
+  return out
+}
+
+/**
+ * dbstr_us.txt's spell descriptions (type 6) for these ids, as the wiki writes text: the client's
+ * colour tags dropped, `<BR>` as `<br>`.
+ */
+export function descriptionsById(dbText: string, ids: ReadonlySet<string>): Map<string, string> {
+  const out = new Map<string, string>()
+  for (const line of dbText.split(/\r?\n/)) {
+    const f = line.split('^')
+    if (f[1] !== '6' || !ids.has(f[0]) || f[2] === undefined) continue
+    out.set(f[0], f[2].replace(/<c\s+"[^"]*">|<\/c>/gi, '').replace(/<br\s*\/?>/gi, '<br>').trim())
   }
   return out
 }
@@ -62,7 +80,7 @@ function factsOf(f: readonly string[], msgs: string[] | undefined): ClientSpellF
  * The asked names' facts, by the name as asked: the first row (lowest id) named exactly so, case
  * folded, else the first named `<name> I` (a ranked spell). A name the files lack is left out.
  */
-export function spellFactsFrom(usText: string, strText: string, names: readonly string[]): Record<string, ClientSpellFacts> {
+export function spellFactsFrom(usText: string, strText: string, names: readonly string[], dbText = ''): Record<string, ClientSpellFacts> {
   const keys = new Set(names.flatMap((n) => [n.trim().toLowerCase(), `${n.trim().toLowerCase()} i`]))
   // The first row (lowest id) per lower-cased name; the file is in id order.
   const firstRow = new Map<string, string[]>()
@@ -72,11 +90,16 @@ export function spellFactsFrom(usText: string, strText: string, names: readonly 
     if (keys.has(name) && !firstRow.has(name)) firstRow.set(name, line.split('^'))
   }
   const msgs = messagesById(strText)
+  const descs = descriptionsById(dbText, new Set([...firstRow.values()].map((f) => f[86] ?? '')))
   const out: Record<string, ClientSpellFacts> = {}
   for (const n of names) {
     const key = n.trim().toLowerCase()
     const f = firstRow.get(key) ?? firstRow.get(`${key} i`)
-    if (f !== undefined) out[n] = factsOf(f, msgs.get(f[0]))
+    if (f === undefined) continue
+    const description = descs.get(f[86] ?? '')
+    // 0 is the file's blank, as in the other fields read here.
+    const icon = positive(f[76]) === undefined ? {} : { icon: Number(f[76]) }
+    out[n] = { ...factsOf(f, msgs.get(f[0])), ...icon, ...(description ? { description } : {}) }
   }
   return out
 }

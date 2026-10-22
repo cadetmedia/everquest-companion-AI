@@ -5,7 +5,7 @@
 
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { checkRatio, cleanLine, readItemWindow, valueCopper, weightValue } from '../src/shared/itemWindow.ts'
+import { checkRatio, cleanLine, readItemWindow, slotOf, valueCopper, weightValue } from '../src/shared/itemWindow.ts'
 import { itemPage } from '../src/shared/wikiPage.ts'
 
 const ROBE_OCR = `| Ruined Robe =
@@ -62,14 +62,17 @@ Weight 20
 PB Unmodified
 || Value: 3 silver 8 copper`.split('\n')
 
-/** The owner's own page for Ruined Robe (2026-10-21), its statsblock field. */
+/**
+ * The owner's own page for Ruined Robe (2026-10-21), its statsblock field, in the style the owner
+ * ruled the same day (D1, "follow the wiki norm"): the flags as the window prints them, Size before WT.
+ */
 const ROBE_PAGE_STATS = [
-  'LORE ITEM  NO DROP  TEMPORARY<br>',
+  'Lore Equipped, No Trade, Temporary<br>',
   'Slot: CHEST<br>',
   'AC: 1<br>',
   'CHA: -20<br>',
   'SV MAGIC: -15  SV FIRE: -15  SV COLD: -15  SV DISEASE: -15  SV POISON: -15<br>',
-  'WT: 2.0  Size: MEDIUM<br>',
+  'Size: MEDIUM WT: 2.0<br>',
   'Class: NEC WIZ MAG ENC<br>',
   'Race: ALL<br>'
 ]
@@ -85,7 +88,7 @@ test('WINDSTRIKER: THREE COLUMNS, WEAPON LINES, EFFECTS; THE FOCUS GOES OUTSIDE 
   const r = readItemWindow(WINDSTRIKER_OCR)
   const lines = r.statsblock.split('\n').filter(Boolean)
   assert.deepEqual(lines, [
-    'LORE ITEM  NO DROP  PLACEABLE<br>',
+    'Lore Equipped, No Trade, Placeable<br>',
     'Slot: RANGE<br>',
     'Skill: Archery  Atk Delay: 60<br>',
     'DMG: 90<br>',
@@ -93,20 +96,25 @@ test('WINDSTRIKER: THREE COLUMNS, WEAPON LINES, EFFECTS; THE FOCUS GOES OUTSIDE 
     'STR: +15  AGI: +15  DEX: +15  HP: +100  Accuracy: +25%<br>',
     'SV VOID: +10<br>',
     'Effect: [[Firestrike]] (Must Equip, Casting Time: Instant) at Level 40<br>',
-    'WT: 0.4  Size: MEDIUM<br>',
+    'Size: MEDIUM WT: 0.4<br>',
     'Class: RNG<br>',
     'Race: ALL<br>'
   ])
   assert.equal(r.name, 'Windstriker')
   assert.equal(r.focusEffect, 'Improved Healing III')
   // DMG 920 is corrected by the window's own Ratio and Delay, and the player is told.
-  assert.deepEqual(r.checks, ['DMG read as 920; the window\'s Ratio (1.5) and Delay (60) say 90.'])
+  // ... and the window is +10 (D3): Weight's ceiling keeps it from one +0 value, so no guess is offered.
+  assert.deepEqual(r.checks, [
+    "This window is +10: its numbers are the upgraded item's, not the page's. These do not take back to one +0 value: WT: 0.4.",
+    'DMG read as 920; the window\'s Ratio (1.5) and Delay (60) say 90.'
+  ])
+  assert.equal(r.tier, 10)
   assert.deepEqual(r.unread, [])
 })
 
 test('BLACK LIZARD SCALE: A QUEST FLAG, NO SLOT, THE VALUE LINE IN COPPER', () => {
   const r = readItemWindow(SCALE_OCR)
-  assert.equal(r.statsblock, '\nQUEST ITEM<br>\nWT: 2.0  Size: MEDIUM<br>\nClass: NONE<br>\nRace: NONE<br>')
+  assert.equal(r.statsblock, '\nQuest<br>\nSize: MEDIUM WT: 2.0<br>\nClass: NONE<br>\nRace: NONE<br>')
   assert.equal(r.valueCopper, 38)
 })
 
@@ -163,4 +171,47 @@ test("COPY WIKI PAGE: THE WINDOW'S VALUE LINE WINS OVER THE LOG'S ESTIMATE", () 
   const facts = { name: 'Black Lizard Scale', drops: [], soldBy: [], crafted: false, merchantValue: 40 }
   assert.ok(itemPage(facts, { valueCopper: 38 }).includes('|merchant_value = 3s 8c'))
   assert.ok(itemPage(facts).includes('|merchant_value = 4s'))
+})
+
+test('A LORE THAT WRAPS JOINS INTO ONE LINE; THE TITLE ABOVE THE TAB ROW IS NOT LORE (SICKLY MAIDEN\'S HAIR, OWNER 2026-10-21)', () => {
+  const r = readItemWindow(["Sickly Maiden's Hair", '- Description Lore ¥ s', 'This sample of long, golden |', 'grass is tinged with disease'])
+  assert.equal(r.lore, 'This sample of long, golden grass is tinged with disease')
+  assert.equal(readItemWindow(['Shrubbe', '- Description Lore ¥ s', 'Ordinary Plant t |', 'IR', 'EE']).lore, 'Ordinary Plant')
+})
+
+test('A LORE TAB ON THE WINDOW IS NOTED (THE ITEM HAS LORE); NO TAB, NO NOTE', () => {
+  assert.equal(readItemWindow(ROBE_OCR).loreTab, true)
+  assert.equal(readItemWindow(WINDSTRIKER_OCR).loreTab, undefined)
+  assert.equal(readItemWindow(SCALE_OCR).loreTab, undefined)
+})
+
+test('COPY WIKI PAGE: A LORE TAB NOT YET PASTED IS {{Item Lore Missing}}; THE PASTED LORE REPLACES IT; NO TAB, NO NOTES', () => {
+  const facts = { name: 'Ruined Robe', drops: [], soldBy: [], crafted: false }
+  assert.ok(itemPage(facts, { statsblock: 's', loreTab: true }).includes('|notes = {{Item Lore Missing}}'))
+  const pasted = itemPage(facts, { statsblock: 's', loreTab: true, lore: 'The Cloth Seems To Be Moving' })
+  assert.ok(pasted.includes('|notes = {{Item Lore|The Cloth Seems To Be Moving}}') && !pasted.includes('Missing'))
+  assert.ok(!itemPage(facts, { statsblock: 's' }).includes('|notes'))
+})
+
+test('SLOT: EVERY SLOT THE WINDOW LISTS, AS THE WIKI WRITES THEM; A WRAPPED LIST JOINS', () => {
+  assert.equal(slotOf('Primary, Secondary'), 'PRIMARY SECONDARY')
+  assert.equal(slotOf('Fingers'), 'FINGER')
+  assert.equal(slotOf('Ear, Neck, Face'), 'EAR NECK FACE')
+  assert.equal(slotOf('Power Source'), 'POWER SOURCE')
+  assert.equal(slotOf('Range: 300'), undefined)
+  const r = readItemWindow(['Some Ring', 'Magic', 'Class: ALL', 'Race: ALL', 'Fingers, Ear', 'Wrist', 'Size: TINY', 'Weight: 0.1'])
+  assert.ok(r.statsblock.includes('Slot: FINGER EAR WRIST<br>'), r.statsblock)
+})
+
+test("THE WINDOW'S OTHER LABELS (THE CLIENT'S OWN STRINGS): End, End Regen, Dmg Bon, Rec/Req Level, Charges, Deity", () => {
+  const r = readItemWindow([
+    'Test Blade', 'Magic', 'Class: WAR PAL', 'Race: ALL', 'Deity: Karana', 'Primary',
+    'Size: MEDIUM Base Dmg: 9 Delay: 30', 'Weight: 7.5 Dmg Bon: 7', 'End: 15 End Regen: 2', 'Rec Level: 30 Req Level: 20', 'Charges: 5'
+  ])
+  const lines = r.statsblock.split('\n').filter(Boolean)
+  assert.deepEqual(lines, [
+    'Magic<br>', 'Slot: PRIMARY<br>', 'Atk Delay: 30<br>', 'DMG: 9<br>', 'Dmg Bon: 7<br>', 'END: +15  End Regen: +2<br>',
+    'Recommended level of 30.<br>', 'Required level of 20.<br>', 'Charges: 5<br>', 'Size: MEDIUM WT: 7.5<br>', 'Class: WAR PAL<br>', 'Race: ALL<br>', 'Deity: Karana<br>'
+  ])
+  assert.deepEqual(r.unread, [])
 })

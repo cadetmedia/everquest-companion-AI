@@ -1157,6 +1157,15 @@ export const IPC = {
   // A pasted screenshot of an item window -> its page fields and icon id, read on this machine
   // (src/main/ipc/shotIpc.ts). Payload: (png: Uint8Array).
   shotReadItem: 'shot:readItem',
+  // A pasted screenshot read as text lines (a spell display window; shared/spellWindow.ts maps them).
+  // Payload: (png: Uint8Array). Answers ShotTextReply.
+  shotReadText: 'shot:readText',
+  // The capture hotkey (shotCapture.ts): ('get') or ('set', accelerator | null). Answers { hotkey, message? }.
+  shotHotkey: 'shot:hotkey',
+  // The captures waiting for the Gaps tab, taken (emptied) by the call. Payload: none.
+  shotCaptures: 'shot:captures',
+  // main -> renderer: a capture is waiting. Payload: none.
+  onShotCaptured: 'shot:captured',
   // The clipboard's picture as PNG bytes, or null (a click on the paste box). Payload: none.
   shotClipboard: 'shot:clipboard',
   // An item icon drawn from the install's own sheets, as a data URL. Payload: (id: number).

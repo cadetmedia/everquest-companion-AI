@@ -171,6 +171,9 @@ test("OCR TSV: WORDS JOIN INTO LINES; A LINE'S LEAD IS ITS FIRST REAL WORD, NOT 
   assert.deepEqual(lines.map((l) => l.text), ['| Class: RNG', 'Race:'])
   assert.deepEqual(lines[0].lead, { x: 73, y: 93, w: 50, h: 10 })
   assert.equal(lines[0].box.x, 10)
+  // A junk word that looks real (`By`, the icon's edge on Lizardman Mystic Scale): the Class word still leads.
+  const by = linesFromTsv([tsv.split('\n')[0], '5\t1\t1\t1\t1\t1\t81\t264\t69\t51\t40\tBy', '5\t1\t1\t1\t1\t2\t219\t279\t150\t30\t90\tClass:'].join('\n'), 3)
+  assert.deepEqual(by[0].lead, { x: 73, y: 93, w: 50, h: 10 })
 })
 
 test('THE ICON SITS LEFT OF THE CLASS WORD, ITS TOP AT THE NAME LINE, SIZED BY THE LINE PITCH', () => {

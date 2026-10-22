@@ -8,9 +8,11 @@ import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { IPC } from '../../shared/ipc'
 import type { ItemShotReply } from '../../shared/itemWindow'
+import type { ShotTextReply } from '../../shared/spellWindow'
 import { effectiveEqRoot } from '../log/config'
 import { decodeTga } from '../shot/gameTextures'
 import { buildIconIndex, iconSheets, readIconIndex, sheetsFingerprint, SheetCells, writeIconIndex, type IconIndex } from '../shot/iconIndex'
+import { readLines } from '../shot/ocr'
 import type { Rgba } from '../shot/pixels'
 import { readItemShot, type ShotReaders } from '../shot/readItemShot'
 import { decodePicture, MAX_PICTURE_BYTES as MAX_BYTES, registerShotPictureIpc } from './shotPicture'
@@ -57,7 +59,7 @@ function skinTextures(): Rgba[] {
   return textures
 }
 
-const READERS: ShotReaders = {
+export const READERS: ShotReaders = {
   index: iconIndex,
   cell: (id) => cells?.cell(id) ?? null,
   textures: skinTextures
@@ -74,6 +76,20 @@ async function readItem(png: unknown): Promise<ItemShotReply> {
     return { read: shot.read, lines: shot.lines, icons: shot.icons, ms: shot.ms, ...(noIcons ? { iconNote: 'No EverQuest install found with icon sheets (uifiles/default/dragitem*.dds).' } : {}) }
   } catch (e) {
     return { ...empty, error: `Could not read it: ${e instanceof Error ? e.message : String(e)}` }
+  }
+}
+
+/** A picture's text lines (a spell display window), for shared/spellWindow.ts to map in the renderer. */
+async function readText(png: unknown): Promise<ShotTextReply> {
+  if (!(png instanceof Uint8Array) || png.length === 0 || png.length > MAX_BYTES) return { lines: [], ms: 0, error: 'Not a picture.' }
+  const t0 = performance.now()
+  try {
+    const img = decodePicture(png)
+    if (img === null) return { lines: [], ms: 0, error: 'Not a picture, or larger than a 4K screen.' }
+    const lines = (await readLines(img)).map((l) => l.text)
+    return { lines, ms: Math.round(performance.now() - t0) }
+  } catch (e) {
+    return { lines: [], ms: 0, error: `Could not read it: ${e instanceof Error ? e.message : String(e)}` }
   }
 }
 
@@ -97,6 +113,7 @@ function clipboardPng(): Uint8Array | null {
 export function registerShotIpc(): void {
   ipcMain.handle(IPC.shotClipboard, () => clipboardPng())
   ipcMain.handle(IPC.shotReadItem, (_e, png: unknown) => readItem(png))
+  ipcMain.handle(IPC.shotReadText, (_e, png: unknown) => readText(png))
   ipcMain.handle(IPC.shotIcon, (_e, id: unknown) => iconUrl(id))
   registerShotPictureIpc()
 }

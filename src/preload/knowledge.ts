@@ -110,6 +110,18 @@ export const knowledgeBridge = {
   shotClipboard: (): Promise<Uint8Array | null> => ipcRenderer.invoke(IPC.shotClipboard),
   /** A pasted item-window screenshot, read on this machine: page fields and icon ids (src/main/ipc/shotIpc.ts). */
   shotReadItem: (png: Uint8Array): Promise<import('../shared/itemWindow').ItemShotReply> => ipcRenderer.invoke(IPC.shotReadItem, png),
+  /** A pasted picture's text lines, read on this machine (a spell display window). */
+  shotReadText: (png: Uint8Array): Promise<import('../shared/spellWindow').ShotTextReply> => ipcRenderer.invoke(IPC.shotReadText, png),
+  /** The capture hotkey: read it, or set it (null turns it off); a refused key comes back with why. */
+  shotHotkey: (action: 'get' | 'set', accel?: string | null): Promise<{ hotkey: string | null; message?: string }> => ipcRenderer.invoke(IPC.shotHotkey, action, accel),
+  /** The hotkey's captures waiting to be filed; the call takes them. */
+  shotCaptures: (): Promise<import('../shared/shotHotkey').Captured[]> => ipcRenderer.invoke(IPC.shotCaptures),
+  /** A capture is waiting; the returned function stops listening. */
+  onShotCaptured: (cb: () => void): (() => void) => {
+    const listener = (): void => cb()
+    ipcRenderer.on(IPC.onShotCaptured, listener)
+    return () => ipcRenderer.removeListener(IPC.onShotCaptured, listener)
+  },
   /** An item icon drawn from the install's own sheets, as a data URL; null when it is not there. */
   shotIcon: (id: number): Promise<string | null> => ipcRenderer.invoke(IPC.shotIcon, id),
   /** Save a pasted mob picture under the wiki's file name: the auto-save folder, else a save dialog. */

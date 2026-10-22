@@ -14,12 +14,17 @@ export interface OcrLine {
   text: string
   /** In the source picture's pixels. */
   box: Box
-  /** The first real word's box: OCR reads the icon beside the text as junk (`8 Quest`, `| Class`). */
+  /**
+   * The `Class` or `Race` word's box when the line has one, else the first real word's: OCR reads the
+   * icon beside the text as junk (`8 Quest`, `| Class`, and `By Class: ALL` on Lizardman Mystic Scale).
+   */
   lead: Box
 }
 
 /** A word of two or more letters or digits: not the junk OCR makes of the icon's edge. */
 const REAL_WORD = /[A-Za-z0-9]{2}/
+/** The words the icon is placed from (readItemShot.ts `iconRegion`). */
+const LABEL_WORD = /^(Class|Race)\b/i
 
 /** Upscale for small UI text (prototype: 3x beat 2x on 10 px text). */
 const SCALE = 3
@@ -65,7 +70,7 @@ export async function stopOcr(): Promise<void> {
  * "Too many properties to enumerate").
  */
 export function linesFromTsv(tsv: string, k: number): OcrLine[] {
-  const lines = new Map<string, { words: string[]; x0: number; y0: number; x1: number; y1: number; lead?: Box }>()
+  const lines = new Map<string, { words: string[]; x0: number; y0: number; x1: number; y1: number; lead?: Box; label?: Box }>()
   for (const row of tsv.split('\n')) {
     const f = row.split('\t')
     if (f[0] !== '5' || f.length < 12 || f[11].trim() === '') continue
@@ -77,12 +82,14 @@ export function linesFromTsv(tsv: string, k: number): OcrLine[] {
     l.y0 = Math.min(l.y0, top)
     l.x1 = Math.max(l.x1, left + width)
     l.y1 = Math.max(l.y1, top + height)
-    if (l.lead === undefined && REAL_WORD.test(f[11])) l.lead = { x: left / k, y: top / k, w: width / k, h: height / k }
+    const at = { x: left / k, y: top / k, w: width / k, h: height / k }
+    if (l.lead === undefined && REAL_WORD.test(f[11])) l.lead = at
+    if (l.label === undefined && LABEL_WORD.test(f[11])) l.label = at
     lines.set(key, l)
   }
   return [...lines.values()].map((l) => {
     const box = { x: l.x0 / k, y: l.y0 / k, w: (l.x1 - l.x0) / k, h: (l.y1 - l.y0) / k }
-    return { text: l.words.join(' '), box, lead: l.lead ?? box }
+    return { text: l.words.join(' '), box, lead: l.label ?? l.lead ?? box }
   })
 }
 

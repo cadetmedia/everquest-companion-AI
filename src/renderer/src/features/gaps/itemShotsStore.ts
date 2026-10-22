@@ -1,77 +1,92 @@
 // itemShotsStore — what pasted screenshots of item windows gave, as the player kept them, by item name
 // (owner ask, 2026-10-21). Per viewer, in localStorage beside the Done marks (doneMarksStore.ts), so
 // a reading survives a tab switch and a restart until the page is made. Copy wiki page reads it
-// (shared/wikiPage.ts `ItemPageShot`).
+// (shared/wikiPage.ts `ItemPageShot`). Spell display windows keep theirs the same way, under their
+// own key (shared/spellWindow.ts `SpellPageShot`).
 
 import { useSyncExternalStore } from 'react'
 import type { ItemPageShot } from '@shared/wikiPage'
+import type { SpellPageShot } from '@shared/spellWindow'
 
 export const SHOTS_KEY = 'eq.gaps.itemShots'
+export const SPELL_SHOTS_KEY = 'eq.gaps.spellShots'
 /** The newest this many are kept: a page a day for most of a year. */
 const KEEP = 300
 
-export type StoredShot = ItemPageShot & { at: string }
+type Stored<T> = T & { at: string }
+export type StoredShot = Stored<ItemPageShot>
+export type StoredSpellShot = Stored<SpellPageShot>
 
-function load(): Record<string, StoredShot> {
-  try {
-    const raw = localStorage.getItem(SHOTS_KEY)
-    const parsed: unknown = raw === null ? {} : JSON.parse(raw)
-    return parsed !== null && typeof parsed === 'object' ? (parsed as Record<string, StoredShot>) : {}
-  } catch {
-    return {}
+/** One kind of kept reading, by row name, in localStorage under `key`. */
+function shotStore<T extends object>(key: string): {
+  now: (name: string) => Stored<T> | undefined
+  set: (name: string, shot: T | null) => void
+  use: () => Readonly<Record<string, Stored<T>>>
+} {
+  const load = (): Record<string, Stored<T>> => {
+    try {
+      const raw = localStorage.getItem(key)
+      const parsed: unknown = raw === null ? {} : JSON.parse(raw)
+      return parsed !== null && typeof parsed === 'object' ? (parsed as Record<string, Stored<T>>) : {}
+    } catch {
+      return {}
+    }
   }
-}
-
-const listeners = new Set<() => void>()
-let cached: { raw: string | null; shots: Readonly<Record<string, StoredShot>> } = { raw: null, shots: {} }
-
-function snapshot(): Readonly<Record<string, StoredShot>> {
-  let raw: string | null = null
-  try {
-    raw = localStorage.getItem(SHOTS_KEY)
-  } catch {
+  const listeners = new Set<() => void>()
+  let cached: { raw: string | null; shots: Readonly<Record<string, Stored<T>>> } = { raw: null, shots: {} }
+  const snapshot = (): Readonly<Record<string, Stored<T>>> => {
+    let raw: string | null = null
+    try {
+      raw = localStorage.getItem(key)
+    } catch {
+      return cached.shots
+    }
+    if (raw !== cached.raw) cached = { raw, shots: load() }
     return cached.shots
   }
-  if (raw !== cached.raw) cached = { raw, shots: load() }
-  return cached.shots
+  const subscribe = (onChange: () => void): (() => void) => {
+    const onStorage = (e: StorageEvent): void => {
+      if (e.key === null || e.key === key) onChange()
+    }
+    listeners.add(onChange)
+    window.addEventListener('storage', onStorage)
+    return () => {
+      listeners.delete(onChange)
+      window.removeEventListener('storage', onStorage)
+    }
+  }
+  const save = (shots: Record<string, Stored<T>>): void => {
+    const newest = Object.entries(shots)
+      .sort((a, b) => b[1].at.localeCompare(a[1].at))
+      .slice(0, KEEP)
+    try {
+      localStorage.setItem(key, JSON.stringify(Object.fromEntries(newest)))
+    } catch {
+      // A blocked store keeps nothing; the reading stays on screen for this paste.
+    }
+    for (const l of listeners) l()
+  }
+  return {
+    now: (name) => load()[name],
+    set: (name, shot) => {
+      const others = Object.fromEntries(Object.entries(load()).filter(([k]) => k !== name))
+      save(shot === null ? others : { ...others, [name]: { ...shot, at: new Date().toISOString() } })
+    },
+    use: () => useSyncExternalStore(subscribe, snapshot, snapshot)
+  }
 }
 
-function subscribe(onChange: () => void): () => void {
-  const onStorage = (e: StorageEvent): void => {
-    if (e.key === null || e.key === SHOTS_KEY) onChange()
-  }
-  listeners.add(onChange)
-  window.addEventListener('storage', onStorage)
-  return () => {
-    listeners.delete(onChange)
-    window.removeEventListener('storage', onStorage)
-  }
-}
-
-function save(shots: Record<string, StoredShot>): void {
-  const newest = Object.entries(shots)
-    .sort((a, b) => b[1].at.localeCompare(a[1].at))
-    .slice(0, KEEP)
-  try {
-    localStorage.setItem(SHOTS_KEY, JSON.stringify(Object.fromEntries(newest)))
-  } catch {
-    // A blocked store keeps nothing; the reading stays on screen for this paste.
-  }
-  for (const l of listeners) l()
-}
+const items = shotStore<ItemPageShot>(SHOTS_KEY)
+const spells = shotStore<SpellPageShot>(SPELL_SHOTS_KEY)
 
 /** The reading kept for one item right now (not a render's copy: a paste merges against this). */
-export function itemShotNow(name: string): StoredShot | undefined {
-  return load()[name]
-}
-
+export const itemShotNow = (name: string): StoredShot | undefined => items.now(name)
 /** Keep (or replace) the reading for one item; `null` forgets it. */
-export function setItemShot(name: string, shot: ItemPageShot | null): void {
-  const others = Object.fromEntries(Object.entries(load()).filter(([k]) => k !== name))
-  save(shot === null ? others : { ...others, [name]: { ...shot, at: new Date().toISOString() } })
-}
-
+export const setItemShot = (name: string, shot: ItemPageShot | null): void => items.set(name, shot)
 /** Every kept reading by item name, current across windows. */
-export function useItemShots(): Readonly<Record<string, StoredShot>> {
-  return useSyncExternalStore(subscribe, snapshot, snapshot)
-}
+export const useItemShots = (): Readonly<Record<string, StoredShot>> => items.use()
+
+/** Keep (or replace) the reading for one spell; `null` forgets it. */
+export const setSpellShot = (name: string, shot: SpellPageShot | null): void => spells.set(name, shot)
+/** Every kept spell window reading by spell name. */
+export const useSpellShots = (): Readonly<Record<string, StoredSpellShot>> => spells.use()
