@@ -211,7 +211,9 @@ rest alias pages and NPC spells; before the re-derive, 118.
 - Pages sometimes carry an invisible left-to-right mark (U+200E) after a file name or link title;
   the wiki ignores it. Readers strip it with `stripFormatChars` and `wikiFileKey`
   (`src/shared/wikiTitle.ts`). On 2026-10-22 six cached pages carried one and two reached shipped
-  data (An alligator, Vessel Spirit Companion). Not yet using the helper: gaps-tab's `gapImages.ts`
+  data (An alligator, Vessel Spirit Companion). The owner removed An alligator's mark on the wiki
+  (read back by the 2026-10-22 second delta); Vessel Spirit Companion's file is still missing from
+  the wiki's file list. Not yet using the helper: gaps-tab's `gapImages.ts`
   and `wikiPage.ts`, `scrape-drop-groups.ts`, faction-tab's `questPage.ts`.
 
 - `{{Sky Era}}` was retired: ~107 pages became `{{Classic Era}}`, ~45 have no banner. Pre-upgrade
