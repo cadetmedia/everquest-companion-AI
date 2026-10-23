@@ -30,7 +30,8 @@ import { itemRowNames } from '@shared/itemShotKeep'
 import GroupHeaderControls from './GroupHeaderControls'
 
 // One line (owner, 2026-10-11): the how is in the module header, not on the page. Since 2026-10-18
-// the line says what the chosen domain's rows are (GAP_DOMAIN_HELP).
+// the line says what the chosen domain's rows are (GAP_DOMAIN_HELP); since 2026-10-21 the hint is its
+// tooltip (owner: "we just hit them with so much text to read").
 const CLICK_HINT = 'Click a row for where it was seen.'
 
 const CHIP_CONTEXT = { dataDate: GAPS_DATA_DATE, isMob: PAGE_EXTRAS.isMob }
@@ -49,7 +50,7 @@ function Pref({ label, checked, onChange, testId, disabled }: { label: string; c
 /** "Zone I'm in (<zone>)", the Achievements tab's control: only the rows seen in that place, any tier. */
 function ZoneHere({ zone, checked, onChange }: { zone: string | null; checked: boolean; onChange: (on: boolean) => void }): JSX.Element {
   return (
-    <Tooltip title={zone === null ? 'The log has not named a zone yet. Zone once and this fills in.' : `Only what was seen in ${zone} or another tier of it.`}>
+    <Tooltip title={zone === null ? 'No zone in the log yet; zone once and this fills in.' : `Only what was seen in ${zone} or another tier of it.`}>
       <span>
         <Pref label={zone === null ? "Zone I'm in" : `Zone I'm in (${zone})`} checked={checked} onChange={onChange} disabled={zone === null} testId="gaps-zone-here" />
       </span>
@@ -57,16 +58,26 @@ function ZoneHere({ zone, checked, onChange }: { zone: string | null; checked: b
   )
 }
 
-/** A small labelled select, the toolbar's control for a choice of more than two. */
-function Picker<T extends string>({ label, value, options, onChange, testId, disabled }: { label: string; value: T; options: readonly (readonly [T, string])[]; onChange: (v: T) => void; testId: string; disabled?: boolean }): JSX.Element {
+/**
+ * A small labelled select, the toolbar's control for a choice of more than two. Its tooltip never
+ * shows while the menu is open (owner, 2026-10-21: "tooltip can't be ontop of the drop down").
+ */
+function Picker<T extends string>({ label, value, options, onChange, testId, disabled, tip }: { label: string; value: T; options: readonly (readonly [T, string])[]; onChange: (v: T) => void; testId: string; disabled?: boolean; tip: string }): JSX.Element {
+  const [hover, setHover] = useState(false)
+  const [menu, setMenu] = useState(false)
+  const select = { onOpen: () => setMenu(true), onClose: () => setMenu(false) }
   return (
-    <TextField select size="small" label={label} value={value} disabled={disabled} onChange={(e) => onChange(e.target.value as T)} sx={{ minWidth: 130 }} slotProps={{ htmlInput: { 'data-testid': testId } }}>
-      {options.map(([v, text]) => (
-        <MenuItem key={v} value={v}>
-          {text}
-        </MenuItem>
-      ))}
-    </TextField>
+    <Tooltip title={tip} placement="top" open={hover && !menu} onOpen={() => setHover(true)} onClose={() => setHover(false)}>
+      <span>
+        <TextField select size="small" label={label} value={value} disabled={disabled} onChange={(e) => onChange(e.target.value as T)} sx={{ minWidth: 130 }} slotProps={{ htmlInput: { 'data-testid': testId }, select }}>
+          {options.map(([v, text]) => (
+            <MenuItem key={v} value={v}>
+              {text}
+            </MenuItem>
+          ))}
+        </TextField>
+      </span>
+    </Tooltip>
   )
 }
 
@@ -82,29 +93,21 @@ function HeldPicker({ pick, onPick, domain }: { pick: HeldPick; onPick: (p: Held
       ? `Only the items you hold now, the rows marked held: your last inventory export (/outputfile inventory), plus what the log saw you loot since (in the bags), less destroys. No export, nothing shows. With All characters on, every character's own export counts, each holder named in the row. ${HELD_WHERE}`
       : 'Items only: shows only the items you hold now.'
   return (
-    <Tooltip title={title}>
-      <span>
-        <Picker label="I have it" value={pick} options={HELD_PICKS} onChange={onPick} disabled={domain !== 'item'} testId="gaps-held-only" />
-      </span>
-    </Tooltip>
+    <Picker label="I have it" value={pick} options={HELD_PICKS} onChange={onPick} disabled={domain !== 'item'} testId="gaps-held-only" tip={title} />
   )
 }
 
 /** "Show" (owner, 2026-10-21): every row, only the new pages, or only the updates to pages that exist. */
 function ShowPicker({ show, onShow }: { show: GapShow; onShow: (s: GapShow) => void }): JSX.Element {
   return (
-    <Tooltip title="New pages: the wiki has no page for it. Updates: the page exists and lacks something, a small edit.">
-      <span>
-        <Picker label="Show" value={show} options={SHOW_PICKS} onChange={onShow} testId="gaps-show" />
-      </span>
-    </Tooltip>
+    <Picker label="Show" value={show} options={SHOW_PICKS} onChange={onShow} testId="gaps-show" tip="New pages are missing from the wiki; updates are small edits to existing pages." />
   )
 }
 
 /** "Hide uncertain": the rows whose very existence as a gap is in doubt (shared/gaps.ts `uncertainGap`). */
 function HideUncertainBox({ state }: { state: HideUncertain }): JSX.Element {
   return (
-    <Tooltip title="Hides the rows the tab is not sure are gaps at all: one-word names you only hailed or conned that may be players.">
+    <Tooltip title="Hides one-word names you only hailed or conned, which may be players.">
       <span>
         <Pref label="Hide uncertain" checked={state.hide} onChange={state.setHide} testId="gaps-hide-uncertain" />
       </span>
@@ -237,9 +240,11 @@ export default function GapsView(): JSX.Element {
   return (
     // A full-height column whose last child, the table box, is the page's only scroller (GapsTable).
     <Stack spacing={2} data-testid="gaps-view" sx={{ height: '100%', minHeight: 0 }}>
-      <Typography variant="body2" color="text.secondary">
-        {GAP_DOMAIN_HELP[domain]} {CLICK_HINT}
-      </Typography>
+      <Tooltip title={CLICK_HINT}>
+        <Typography variant="body2" color="text.secondary" sx={{ alignSelf: 'flex-start' }}>
+          {GAP_DOMAIN_HELP[domain]}
+        </Typography>
+      </Tooltip>
       {/* Two rows (owner, 2026-10-20: "put search and all the values after that on the next row
           instead of next to the tabs"): the domains alone, then what narrows them, Copy list last. */}
       <DomainToggle snap={snap} domain={domain} zone={zone} onPick={setDomain} hidden={hiddenRow} heldOnly={mine.pick === 'off' ? null : { index: holding, where: mine.pick }} />

@@ -41,6 +41,14 @@ test('listed items and listed groups are no gap; a group the page lacks is filed
   ])
 })
 
+test('a member the page lists counts toward every group row of its, not only its first group', () => {
+  // Fine Axe is in both groups and listed by itself; Bronze Axe (second group only) is not listed.
+  const sets = { 'Fine Weapons': ['Fine Axe'], 'Bronze Weapons': ['Bronze Axe', 'Fine Axe'] }
+  const page = [{ page: 'An orc', name: 'an orc', drops: ['Fine Axe'] }]
+  const rows = dropGaps([loot('Bronze Axe', 'an orc'), loot('Fine Axe', 'an orc')], page, sets)
+  assert.deepEqual(rows.map((r) => [r.name, r.count]), [['Bronze Weapons (an orc)', 2]])
+})
+
 test('a drop row copies its known_loot line and points at the mob page', () => {
   const kills = killIndex({ 'a gnoll': { display: 'a gnoll', count: 16 } } as unknown as KillMap)
   const [group, item] = dropGaps([loot('Bronze Axe', 'a gnoll'), loot('Hide Mask', 'a gnoll'), loot('Hide Mask', 'a gnoll')], catalog, groups).sort((a, b) => a.name.localeCompare(b.name))
@@ -136,7 +144,7 @@ test('drop groups are standardized: only the group line is offered, with the pag
   assert.deepEqual(gapActions(rusty, 'unchecked').map((a) => [a.label, a.why]), [
     [
       'Add to mob page',
-      "The wiki page for A Cracked Skeleton lists neither Rusty Weapons nor the one you looted. While you're editing (optional): these 3 lines (Rusty Short Sword, Rusty Axe, Rusty Mace) can become the one [[Rusty Weapons]] line."
+      "The wiki page for A Cracked Skeleton lists neither Rusty Weapons nor the one you looted. Optional: merge its 3 lines (Rusty Short Sword, Rusty Axe, Rusty Mace) into one [[Rusty Weapons]] line."
     ]
   ])
   // Its page states no `[Overall: x%]` (the older `[2] 1x 25% (7%)` shape): the log's rate, here none.
@@ -173,4 +181,22 @@ test("a group row's line takes the page's member rates summed (A lizard man scou
   assert.equal(wikiPageText(bare, [], kills), "<li> [[Rusty Weapons]] <span class='drare'>(Rare)</span> <span class='ddb'>[Overall: ~10%]</span> </li>\n")
   // Only listed members looted: nothing missing, no row.
   assert.deepEqual(dropGaps([at('Rusty Mace'), at('Large Cloth Cap')], [page], sets), [])
+})
+
+test("A LOOTED NAME THE WIKI REDIRECTS IS THE ITEM ITS PAGE LISTS (OWNER, 2026-10-22: HALFLING BLOOD IS VIAL OF HALFLING BLOOD)", () => {
+  const mobs = [{ page: 'Leatherfoot Captain', name: 'Leatherfoot Captain', drops: ['Vial of Halfling Blood', 'Rusty Weapons'] }]
+  const aliases = { 'Halfling Blood': 'Vial of Halfling Blood', 'Blunt Thing': 'Rusty Axe' }
+  const rows = dropGaps(
+    [
+      loot('Halfling Blood', 'Leatherfoot Captain'), // redirects to a listed item
+      loot('Blunt Thing', 'Leatherfoot Captain'), // redirects to a member of a listed group
+      loot('Halfling Toe', 'Leatherfoot Captain') // no redirect: still a gap
+    ],
+    mobs,
+    groups,
+    { aliases }
+  )
+  assert.deepEqual(rows.map((r) => r.name), ['Halfling Toe (Leatherfoot Captain)'])
+  // Without the redirect it is a gap, under the looted name.
+  assert.deepEqual(dropGaps([loot('Halfling Blood', 'Leatherfoot Captain')], mobs, groups).map((r) => r.name), ['Halfling Blood (Leatherfoot Captain)'])
 })

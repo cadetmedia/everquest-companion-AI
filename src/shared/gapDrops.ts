@@ -85,6 +85,9 @@ function listedDrops(m: CatalogMob, aliases: DropAliases): string[] {
   return [...named, ...bare, ...named.flatMap((d) => (aliases[d] === undefined ? [] : [aliases[d]]))]
 }
 
+/** The aliases by the drop key of the redirecting name, for the looted side; built once per aliases table. */
+const aliasKeys = perObject((aliases: DropAliases): ReadonlyMap<string, string> => new Map(Object.entries(aliases).map(([from, to]) => [sourceItemKey(from), to])))
+
 /** The aliases when none are given: one object, so the per-(catalog, aliases) index below is found again. */
 const NO_ALIASES: DropAliases = {}
 
@@ -186,16 +189,17 @@ export function dropGaps(loot: readonly LootEvent[], catalog: readonly CatalogMo
   const common = commonLootNames(catalog)
   const inGroups = groupsByItem(groups)
   const missing = new Map<string, Missing>()
-  const listedMembers: [LootEvent, string, Filed][] = []
+  const listedMembers: [LootEvent, string, readonly string[]][] = []
+  const redirected = aliasKeys(aliases)
   for (const e of loot) {
-    const filed = filedAs(e, listed, inGroups)
+    const filed = filedAs(e, listed, inGroups, redirected)
     const mob = mobSourceOf(e)
     if (filed === null || mob === undefined) continue
-    if (filed.listed === true) listedMembers.push([e, mob, filed])
+    if (filed.listed !== undefined) listedMembers.push([e, mob, filed.listed])
     else addDrop(missing, e, mob, filed)
   }
-  // A member the page lists makes no row, but counts toward a group row the page lacks: its rate is any member.
-  for (const [e, mob, filed] of listedMembers) if (missing.has(`${mobKey(mob)}|${sourceItemKey(filed.name)}`)) addDrop(missing, e, mob, filed)
+  // A member the page lists makes no row, but counts toward each of its group rows the page lacks: its rate is any member.
+  for (const [e, mob, its] of listedMembers) for (const g of its) if (missing.has(`${mobKey(mob)}|${sourceItemKey(g)}`)) addDrop(missing, e, mob, { name: g, group: true })
   const kept = itemMobs === undefined ? [...missing.values()] : withoutServerWide([...missing.values()], catalog, groups, itemMobs)
   const field = (m: Missing): Partial<GapRow> => (common.has(m.name.toLowerCase()) ? { lootField: 'common_loot' } : {})
   const members = memberKeys(groups)
@@ -208,11 +212,11 @@ export function dropGaps(loot: readonly LootEvent[], catalog: readonly CatalogMo
   return kept.map(rowFor).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
 }
 
-/** What a loot line is filed as; `listed` for a group member the page lists by itself. */
+/** What a loot line is filed as; `listed` (its groups) for a group member the page lists by itself. */
 interface Filed {
   name: string
   group: boolean
-  listed?: true
+  listed?: readonly string[]
 }
 
 /**
@@ -220,14 +224,18 @@ interface Filed {
  * when listed, the mob is unknown or it was a chest payout. An item in a group the page lacks is
  * filed as the group, even when the page lists other members one by one (never a member's line).
  */
-function filedAs(e: LootEvent, listed: ReadonlyMap<string, ReadonlySet<string>>, inGroups: ReadonlyMap<string, readonly string[]>): Filed | null {
+function filedAs(e: LootEvent, listed: ReadonlyMap<string, ReadonlySet<string>>, inGroups: ReadonlyMap<string, readonly string[]>, redirected: ReadonlyMap<string, string>): Filed | null {
   const mob = mobSourceOf(e)
   const page = mob === undefined ? undefined : listed.get(mobKey(mob))
   if (page === undefined) return null
-  const its = inGroups.get(sourceItemKey(e.item)) ?? []
+  // The looted name and, when the wiki redirects it, the item page it lands on (owner, 2026-10-22:
+  // a looted Halfling Blood is the Vial of Halfling Blood a mob page lists).
+  const to = redirected.get(sourceItemKey(e.item))
+  const names = to === undefined ? [e.item] : [e.item, to]
+  const its = names.flatMap((n) => inGroups.get(sourceItemKey(n)) ?? [])
   if (its.some((g) => page.has(sourceItemKey(g)))) return null
-  const onPage = page.has(sourceItemKey(e.item)) || page.has(bareItemKey(e.item))
-  if (its.length > 0) return onPage ? { name: its[0], group: true, listed: true } : { name: its[0], group: true }
+  const onPage = names.some((n) => page.has(sourceItemKey(n)) || page.has(bareItemKey(n)))
+  if (its.length > 0) return onPage ? { name: its[0], group: true, listed: its } : { name: its[0], group: true }
   // The item's own page is the base item's: `Barbed Legplates +4` is filed as `Barbed Legplates`.
   return onPage ? null : { name: itemBaseName(e.item), group: false }
 }
@@ -255,7 +263,7 @@ function memberLines(pages: readonly CatalogMob[], keys: ReadonlySet<string>): R
 export function replaceWhy(group: string, lines: readonly string[] | undefined): string {
   if (lines === undefined) return ''
   const n = lines.length
-  return ` While you're editing (optional): ${n === 1 ? 'this line' : `these ${String(n)} lines`} (${lines.join(', ')}) can become the one [[${group}]] line.`
+  return ` Optional: merge ${n === 1 ? 'its line' : `its ${String(n)} lines`} (${lines.join(', ')}) into one [[${group}]] line.`
 }
 
 /** The pairs less the server-wide drops (see the header): looted from many mobs, tied by the wiki to almost none. */

@@ -161,6 +161,8 @@ export interface MobSightings {
   mobLocs?: readonly { mob: string; points: number[][] }[]
   mobSpecials?: readonly { mob: string; specials: readonly string[] }[]
   mobCoin?: readonly MobCoin[]
+  /** The player's own pets: a kill by one is a kill of the player's (owner, 2026-10-22: Gonekn). */
+  ownPets?: readonly string[]
 }
 
 export interface SpellFacts {
@@ -258,8 +260,12 @@ function mobLoot(row: GapRow, loot: readonly LootEvent[]): MobFacts['loot'] {
  * kills with no experience line printed faction lines), so it proves none as a credited kill does;
  * a gray mob never credits.
  */
-function ownKills(row: GapRow): number {
-  return row.details.killers?.entries.find((e) => e.name.toLowerCase() === 'you')?.n ?? 0
+function ownKills(row: GapRow, pets: readonly string[] = []): number {
+  // A kill by the player's own pet is the player's: it moves the player's factions and its corpse is
+  // the player's to loot (owner, 2026-10-22: "A Deathfist templar has been slain by Gonekn!", then
+  // five faction lines).
+  const mine = new Set(['you', ...pets.map((p) => p.toLowerCase())])
+  return (row.details.killers?.entries ?? []).filter((e) => mine.has(e.name.toLowerCase())).reduce((n, e) => n + e.n, 0)
 }
 
 /** `kills` must be a `killIndex` result, as `killsFor` asks. */
@@ -273,8 +279,8 @@ export function mobFacts(row: GapRow, loot: readonly LootEvent[], kills: KillMap
     levels: conLevels(row),
     loot: mobLoot(row, loot),
     kills: killed?.count ?? 0,
-    credited: Math.max(killed?.credited ?? 0, ownKills(row)),
-    ownKills: ownKills(row),
+    credited: Math.max(killed?.credited ?? 0, ownKills(row, seen.ownPets)),
+    ownKills: ownKills(row, seen.ownPets),
     points: (seen.mobLocs ?? []).filter(mine).flatMap((m) => m.points),
     specials: [...new Set((seen.mobSpecials ?? []).filter(mine).flatMap((m) => m.specials))],
     ...coinOf(seen.mobCoin, row.name),
@@ -428,8 +434,14 @@ export function layoutBlock(template: string, layout: readonly string[], values:
   return `{{${template}\n\n${lines.join('\n')}\n}}`
 }
 
-/** The wiki's image name for an NPC: `npc_drizda_tunesinger.png`. */
-export const npcImageName = (name: string): string => `npc_${name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')}.png`
+/**
+ * The wiki's image name for an NPC: `npc_drizda_tunesinger.png`. A backtick stays, as the wiki's own
+ * files keep it (Guard E`tru, `npc_guard_e`tru.png`: 397 of the 428 backtick mobs' files; owner,
+ * 2026-10-22); only a character Windows (`\/:*?"<>|`) or a wiki title (`#[]{}`) refuses becomes `_`,
+ * and a run of spaces or `_` is one `_`.
+ */
+export const npcImageName = (name: string): string =>
+  `npc_${name.trim().toLowerCase().replace(/[\\/:*?"<>|#[\]{}]/g, '_').replace(/[\s_]+/g, '_').replace(/^_|_$/g, '')}.png`
 
 /** `/loc` points as the wiki writes `|location`: `(-791, 173), (10, -21)`. */
 const locationText = (points: readonly number[][]): string => points.map((p) => `(${String(p[0])}, ${String(p[1])})`).join(', ')
@@ -641,7 +653,8 @@ export function stillNeeded(row: GapRow, loot: readonly LootEvent[], kills: Kill
   return [
     ...(f.levels.length === 0 ? ['level (/con)'] : []),
     ...(f.points.length === 0 ? ['location (/loc beside a hail or /con)'] : []),
-    ...(row.domain === 'mob' && f.credited === 0 ? ['factions (a kill of your own)'] : []),
+    // Faction lines seen at a kill of the mob are the proof itself, whoever's kill it was.
+    ...(row.domain === 'mob' && f.credited === 0 && f.factions.length === 0 ? ['factions (a kill of your own)'] : []),
     IMAGE_NEED
   ]
 }

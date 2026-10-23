@@ -170,3 +170,27 @@ fn an_npc_only_traded_with_or_heard_speaking_is_a_mobs_row_but_a_one_word_speake
     assert!(kinds("A swamp hermit's corpse").is_empty());
     assert!(kinds("Xober's warder").is_empty());
 }
+
+#[test]
+fn the_players_own_name_conned_or_hailed_is_never_a_row_and_another_one_word_name_still_may_be_a_player() {
+    let mut m = module();
+    let line = |text: &str| json!({ "kind": "unknown", "raw": format!("[Wed Oct 21 22:20:17 2026] {text}") });
+    let own_who = |text: &str| json!({ "kind": "selfWho", "level": 50, "raw": format!("[Wed Oct 21 22:20:17 2026] {text}") });
+    feed(&mut m, 1, json!({ "kind": "zone", "zone": "Oggok" }));
+    // A /con with nothing targeted cons the player: `Drywrought regards you indifferently -- looks
+    // like quite a gamble. (Lvl: 50)` (the owner's log, 2026-10-21). Filed first, withdrawn by the row.
+    feed(&mut m, 2, json!({ "kind": "consider", "mob": "Drywrought", "level": 50 }));
+    feed(&mut m, 3, own_who("[50 WAR/MNK/SHM] Drywrought (Iksar) <Neon Knights> ZONE: Oggok (oggok)  "));
+    feed(&mut m, 4, json!({ "kind": "consider", "mob": "Drywrought", "level": 50 }));
+    feed(&mut m, 5, line("You say, 'Hail, Drywrought'"));
+    // An AFK row is the player's too.
+    feed(&mut m, 6, own_who("AFK [50 WAR/MNK/SHM] Kaltinril (Human)  ZONE: Oggok (oggok)"));
+    feed(&mut m, 7, json!({ "kind": "consider", "mob": "Kaltinril", "level": 12 }));
+    // Another one-word name conned keeps its "may be a player" row.
+    feed(&mut m, 8, json!({ "kind": "consider", "mob": "Kamas", "level": 50 }));
+    let served = m.snapshot()["state"]["rows"].clone();
+    let rows = served.as_array().expect("rows");
+    assert!(!rows.iter().any(|r| r["name"] == "Drywrought" || r["name"] == "Kaltinril"), "{served}");
+    let kamas = rows.iter().find(|r| r["name"] == "Kamas").expect("Kamas stays a row");
+    assert_eq!(kamas["maybePlayer"], true);
+}

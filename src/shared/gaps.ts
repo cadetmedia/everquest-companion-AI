@@ -46,12 +46,12 @@ export const GAP_SHOWN_NOUN: Record<GapDomain, string> = {
 /** One line under the toggle saying what the chosen domain's rows are (owner ask, 2026-10-18). */
 export const GAP_DOMAIN_HELP: Record<GapDomain, string> = {
   item: 'Items your log names that the wiki has no page for.',
-  mob: 'Mobs you looted, killed or considered that the wiki has no page for.',
+  mob: 'Mobs you looted, killed or conned that the wiki has no page for.',
   spell: 'Spells cast near you that the wiki has no page for.',
-  merchant: 'NPCs who traded with you that the wiki does not list as a merchant.',
-  faction: "Factions a kill changed that the mob's wiki page does not list, or lists with another amount or side.",
-  drop: "Items you looted from a mob whose wiki page lists neither the item nor a group holding it,. Drops that fall from almost any mob (the Motes) are left out.",
-  image: 'Mobs you met whose wiki page has no picture: take a screenshot and upload it.'
+  merchant: 'Traders the wiki does not list as a merchant.',
+  faction: "Factions a kill changed that the mob's page lacks or gets wrong.",
+  drop: "Items you looted that the mob's wiki page does not list; Motes excluded.",
+  image: 'Mobs you met whose wiki page has no picture.'
 }
 
 /**
@@ -59,13 +59,13 @@ export const GAP_DOMAIN_HELP: Record<GapDomain, string> = {
  * says it, since a page the log could not fill needs a second trip otherwise.
  */
 export const GAP_CAPTURE: Record<GapDomain, string> = {
-  item: 'Screenshot the item window while you still hold it (its stats, slot and icon), then paste this and type the stats.',
-  mob: '/con it (level), /loc then hail or /con it within 10 s (location), kill it (loot and factions), and screenshot it for its image.',
-  merchant: '/con it (level), /loc then hail it within 10 s (location), and screenshot it for its image.',
-  spell: "Screenshot the spell's description window (classes, mana, timings).",
-  faction: "Kill the mob once more if the amount is missing; paste the line into the mob page's faction list.",
-  drop: "Paste the line into the mob page's known_loot list.",
-  image: 'Screenshot the mob, then upload it under the file name shown.'
+  item: 'Paste an item window screenshot for its stats.',
+  mob: '/con, /loc then hail within 10 s, kill.',
+  merchant: '/con, /loc then hail within 10 s.',
+  spell: 'Paste the spell window for mana and timings.',
+  faction: 'Paste into factions; kill again if no amount.',
+  drop: "Paste it into the mob page's known_loot list.",
+  image: 'Screenshot it; upload under the file name shown.'
 }
 
 /** A row's key in the Done marks (owner ask, 2026-10-19). */
@@ -96,10 +96,8 @@ export function allDone(rows: readonly GapRow[], done: ReadonlySet<string>): boo
   return rows.length > 0 && rows.every((r) => done.has(doneKey(r)))
 }
 
-/** The rows less the Mobs rows the player marked as players (lower-cased names). */
-export function withoutPlayers(rows: readonly GapRow[], players: ReadonlySet<string>): GapRow[] {
-  return players.size === 0 ? [...rows] : rows.filter((r) => r.domain !== 'mob' || !players.has(r.name.toLowerCase()))
-}
+/** The rows less the marked players' Mobs rows and every row named for an own character (gapPlayers.ts). */
+export { withoutPlayers } from './gapPlayers'
 
 /**
  * Whether the tab is unsure the row is a gap at all ("Hide uncertain", owner, 2026-10-19). Only a
@@ -295,6 +293,8 @@ export interface GapsSnap {
   mobSpecials?: { mob: string; specials: string[] }[]
   /** What each mob's corpse paid at the player's kills: how many paid, each coin's least and most (gaps_coin.rs). */
   mobCoin?: MobCoin[]
+  /** The player's own pets by name (gaps.rs `own_pets`): a kill by one is the player's. */
+  ownPets?: string[]
 }
 
 /** One mob's corpse coin, `[platinum, gold, silver, copper]` (gaps_coin.rs). */
@@ -534,7 +534,7 @@ export interface GapActionContext {
 function dropActions(row: GapRow): GapAction[] {
   const mob = mobPageOf(row)
   const item = factionOf(row)
-  const field = row.lootField === 'common_loot' ? ' It belongs under common_loot: the wiki files it as loot shared across mobs.' : ''
+  const field = row.lootField === 'common_loot' ? ' File it under common_loot.' : ''
   const why =
     row.details.drops !== undefined
       ? `The wiki page for ${mob} lists neither ${item} nor ${row.replaces === undefined ? 'any item in it' : 'the one you looted'}.`
@@ -558,16 +558,16 @@ function dropActions(row: GapRow): GapAction[] {
 /** A faction row's chip: add the faction to the mob page, or fix what the page says of it. */
 function factionAction(row: GapRow): GapAction {
   const page = mobPageOf(row)
-  if (row.noPage === true) return { kind: 'checkWiki', label: 'Check mob page', why: `The wiki data has no page for ${page}; a newer page may already list this faction. Check it before adding the line.`, href: wikiPageUrl(page) }
-  if (row.fix === undefined) return { kind: 'checkWiki', label: 'Edit mob page', why: `The wiki page for ${page} does not name this faction among those a kill moves.`, href: wikiEditUrl(page) }
+  if (row.noPage === true) return { kind: 'checkWiki', label: 'Check mob page', why: `No page for ${page} in the wiki data; check the wiki before adding this faction.`, href: wikiPageUrl(page) }
+  if (row.fix === undefined) return { kind: 'checkWiki', label: 'Edit mob page', why: `The wiki page for ${page} does not list this faction.`, href: wikiEditUrl(page) }
   const why = `The wiki page for ${page} lists this faction as ${pageSaysText(row.pageSays ?? '')}; your log: ${logSaysText(row)}.`
   return { kind: 'checkWiki', label: 'Fix on mob page', why, href: wikiEditUrl(page) }
 }
 
 /** An image row's chip: upload the file; the page's imagefilename line added, or fixed when it names another file. */
 function imageAction(row: GapRow, file = row.image ?? ''): GapAction {
-  const fix = row.pageImage === undefined ? 'if the page names no image, add its imagefilename line too' : `the page's imagefilename says ${row.pageImage}: change it to ${file}`
-  return { kind: 'addToWiki', label: 'Upload image', why: `The wiki has no image for ${row.name}. Upload a screenshot as ${file}; ${fix}.`, href: wikiUploadUrl(file) }
+  const fix = row.pageImage === undefined ? 'add an imagefilename line if the page has none' : `the page's imagefilename says ${row.pageImage}: change it to ${file}`
+  return { kind: 'addToWiki', label: 'Upload image', why: `Upload a screenshot as ${file}; ${fix}.`, href: wikiUploadUrl(file) }
 }
 
 export function gapActions(row: GapRow, verdict: GapVerdict, ctx: GapActionContext = {}): GapAction[] {
@@ -580,15 +580,15 @@ export function gapActions(row: GapRow, verdict: GapVerdict, ctx: GapActionConte
     actions.push({
       kind: 'fixTitle',
       label: 'Fix wiki title',
-      why: `The wiki has this page under another spelling: ${row.suggest.name}. Copy wiki page gives a redirect from the game's spelling.`,
+      why: `The wiki spells it ${row.suggest.name}; Copy wiki page gives a redirect.`,
       href: wikiPageUrl(row.suggest.page)
     })
   } else if (verdict === 'noPage') {
     actions.push({ kind: 'addToWiki', label: 'Add to wiki', why: 'The app asked the wiki for this name and it had no page.' })
   } else if (verdict === 'hasPage') {
-    actions.push({ kind: 'rescrape', label: 'Re-scrape', why: `The wiki has this page; ${asOf} predates it, and the next data refresh picks it up.` })
+    actions.push({ kind: 'rescrape', label: 'Re-scrape', why: `Newer than ${asOf}; the next data refresh picks it up.` })
   } else if (npcOnlySpell(row, ctx.isMob)) {
-    actions.push({ kind: 'npcSpell', label: 'NPC spell', why: `Only mobs were seen casting it, and ${asOf} has no page for it: an NPC Only Spells page.`, href: wikiSearchUrl(row.name) })
+    actions.push({ kind: 'npcSpell', label: 'NPC spell', why: `Only mobs cast it, and ${asOf} lacks it: an NPC spell page.`, href: wikiSearchUrl(row.name) })
   } else {
     actions.push({ kind: 'checkWiki', label: 'Check wiki', why: `Not in ${asOf}: search the wiki before creating the page.`, href: wikiSearchUrl(row.name) })
   }

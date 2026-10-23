@@ -78,32 +78,41 @@ function metMobs(kills: KillMap, loot: readonly LootEvent[], cons: readonly ConM
   return out
 }
 
+/** One met spelling's row for a page, before it is named: its tallies, its times, its zone. */
+function metRow(met: Met, page: string, n: number): GapRow {
+  return {
+    domain: 'image',
+    name: met.name,
+    page,
+    kinds: met.kills > 0 ? ['killed'] : met.loots > 0 ? ['looted'] : ['considered'],
+    count: n,
+    ...spanStamps(met.span),
+    details: {
+      samples: [],
+      sources: { entries: [{ name: page, n }], distinct: 1 },
+      ...(met.zone === '' ? {} : { zones: { entries: [{ name: met.zone, n }], distinct: 1, all: [met.zone] } })
+    }
+  }
+}
+
 /** The met mobs whose pages have no image, as Gaps rows named by the page, the file on the row. */
 export function imageGaps(kills: KillMap, loot: readonly LootEvent[], catalog: readonly CatalogMob[], cons: readonly ConMet[] = []): GapRow[] {
   const imageless = imagelessByMob(catalog)
   // One row per PAGE: two spellings met (a name and a redirect, say) can lead to one page, and two
   // rows of one name broke the table (owner, 2026-10-19). The busiest spelling's tallies stand.
-  const byPage = new Map<string, GapRow>()
+  // The row is named by the spelling that is the page's title or in-game name, when the log met it.
+  const byPage = new Map<string, { row: GapRow; page: CatalogMob }>()
+  const named = new Map<string, string>()
   for (const [key, met] of metMobs(kills, loot, cons)) {
     const page = imageless.get(key)
     if (page === undefined) continue
+    if ([page.page, page.name].map(mobKey).includes(key)) named.set(page.page, met.name)
     const n = Math.max(met.kills, met.loots, met.cons)
-    if ((byPage.get(page.page)?.count ?? -1) >= n) continue
-    byPage.set(page.page, {
-      domain: 'image',
-      ...imageNames(met.name, page),
-      page: page.page,
-      kinds: met.kills > 0 ? ['killed'] : met.loots > 0 ? ['looted'] : ['considered'],
-      count: n,
-      ...spanStamps(met.span),
-      details: {
-        samples: [],
-        sources: { entries: [{ name: page.page, n }], distinct: 1 },
-        ...(met.zone === '' ? {} : { zones: { entries: [{ name: met.zone, n }], distinct: 1, all: [met.zone] } })
-      }
-    })
+    if ((byPage.get(page.page)?.row.count ?? -1) >= n) continue
+    byPage.set(page.page, { row: metRow(met, page.page, n), page })
   }
-  return [...byPage.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+  const rows = [...byPage].map(([title, { row, page }]) => ({ ...row, ...imageNames(named.get(title) ?? row.name, page) }))
+  return rows.sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
 }
 
 /** An image row's page title when the row is named otherwise (`A lizard man scout` beside `a lizardman scout`). */
@@ -115,20 +124,29 @@ export function otherPageTitle(row: GapRow): string | undefined {
 const QUALIFIED = /\s\([^()]+\)$/
 
 /**
- * An image row's name and file. The name is the game's spelling (owner, 2026-10-19: "a lesser kobold",
- * not the title's forced capital), the page's in-game `|name` when the log met another spelling. The
- * file is named after that in-game name, never a misspelled title (owner, 2026-10-21: "yes name after
- * real name not misspelling": `npc_a_lizardman_scout.png` for the page A lizard man scout); a page
- * whose own `imagefilename` names another file keeps it in `pageImage`, so the row can say so. A
- * qualified title (`A goblin (Feerrott)`) stays the row's name, and its page's file stands: the bare
- * name's file may be another page's picture.
+ * An image row's name and file. The name is the game's spelling as the log met it (owner, 2026-10-19:
+ * "a lesser kobold", not the title's forced capital), and the file is named after it, never a
+ * misspelled title (owner, 2026-10-21: "yes name after real name not misspelling":
+ * `npc_a_lizardman_scout.png` for the page A lizard man scout). Never the page's `|name`: a page
+ * reached by its title can name another mob there (A cave bat says `a giant cave bat`), and that
+ * file is another page's. A page whose own `imagefilename` names another file keeps it in
+ * `pageImage`, so the row can say so. A qualified title (`A goblin (Feerrott)`) stays the row's
+ * name, and its page's file stands: the bare name's file may be another page's picture.
  */
 function imageNames(metName: string, page: CatalogMob): Pick<GapRow, 'name' | 'image' | 'pageImage'> {
   if (QUALIFIED.test(page.page)) return { name: page.page, image: page.image ?? npcImageName(page.name) }
-  const image = npcImageName(page.name)
-  const name = mobKey(metName) === mobKey(page.name) ? metName : page.name
-  return page.image === undefined || page.image.toLowerCase() === image ? { name, image } : { name, image, pageImage: page.image }
+  const image = npcImageName(metName)
+  return page.image === undefined || sameWikiFile(page.image, image) ? { name: metName, image } : { name: metName, image, pageImage: page.image }
 }
+
+/** The wiki's one file: a space is `_`, a run of them one, and only the first letter's case is free. */
+const wikiFileKey = (file: string): string => {
+  const f = file.trim().replace(/[\s_]+/g, '_')
+  return f.charAt(0).toUpperCase() + f.slice(1)
+}
+
+/** Whether two file names name one file on the wiki (`Npc_guard_e`tru.png` is `npc_guard_e`tru.png`). */
+export const sameWikiFile = (a: string, b: string): boolean => wikiFileKey(a) === wikiFileKey(b)
 
 /** The served snapshot with the image rows joined in and counted, so the tab treats them as a domain. */
 export function withImageRows<S extends { rows: GapRow[]; totals: Record<string, number> }>(

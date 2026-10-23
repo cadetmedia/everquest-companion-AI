@@ -56,6 +56,10 @@
   "content": "{{Classic Era}}\n<onlyinclude>{{Itempage\n|itemname       = Spider Venom Sac\n|lucy_img_ID    = 819\n|statsblock     = \nQuest<br>\nSize: SMALL  WT: 0.2<br>\nClass: ALL<br>\nRace: ALL<br>\n|merchant_value = 4g 7s 6c\n|notes          = {{Item Lore|A Spider Venom Sac}}\n|dropsfrom      = \n\n[[Butcherblock Mountains]]\n\n* [[a large spider]]\n\n[[Commonlands]]\n\n* [[a giant spider]]\n\n[[Dreadlands]]\n\n* [[a dread widow]]\n\n[[Eastern Plains of Karana]]\n\n* [[a crag spider]]\n\n[[Everfrost Peaks]]\n\n* [[a giant wooly spider]]\n* [[a large wooly spider]]\n\n[[Field of Bone]]\n\n* [[a bonebinder]]\n* [[bonecrawler]]\n\n[[Firiona Vie]]\n\n* [[a drachnid silklurker]]\n* [[a drachnid silkspinner]]\n* [[a drachnid silkstrander]]\n* [[a drachnid weblurker]]\n\n[[Kaesora]]\n\n* [[Briarweb Spider]]\n* [[strathbone healer]]\n\n[[Lesser Faydark]]\n\n* [[a giant spider]]\n\n[[Lower Guk]]\n\n* [[a deadly black widow]]\n\n[[Nagafen's Lair]]\n\n* [[lava duct crawler]]\n\n[[Nektulos Forest]]\n\n* [[a large arachneidae]]\n\n[[Northern Desert of Ro]]\n\n* [[a desert tarantula]]\n* [[a dune tarantula]]\n\n[[Southern Desert of Ro]]\n\n* [[a dune tarantula]]\n\n[[Toxxulia Forest]]\n\n* [[a large widow]]\n\n[[Upper Guk]]\n\n* [[a heart spider]]\n* [[a large heart spider]]\n\n|relatedquests  = \n\n* [[Zimel's Blades (SoulFire)]]\n* [[Gindlin's Poison]]\n* [[Track, Stalk, Hunt]]\n\n}}</onlyinclude>\n\n\n[[Category:Quest Items]]\n[[Category:Tradeskill Ingredient]]"
  },
  {
+  "title": "A Split Paw",
+  "content": "{{Disambig3|[[Splitpaw Lair]]}}\n{{Classic Era}}\n<onlyinclude>{{Itempage\n|itemname       = Split Paw\n|lucy_img_ID    = 743\n|statsblock     = \nQuest<br>\nEffect: [[Dance of the Fireflies|<span class='itemeff'>Dance of the Fireflies</span>]] (Charge Clicky, Casting Time: Instant)<br>\nCharges: 5<br>\nSize: TINY  WT: 0.0<br>\nClass: ALL<br>\nRace: ALL<br>\n|merchant_value = 1s\n|notes          = \n{{Item Lore|A Split Paw}}<br>\nSpell only cast at night (between 7PM and 5AM).<br>\n|dropsfrom      = \n\n[[Splitpaw Lair]]\n\n* [[a Rosch Val Gnoll]]\n* [[Nisch Val Torash Mashk]]\n\n[[South Karana]]\n\n* [[a Tesch Mas Gnoll]]\n\n}}</onlyinclude>\n\n\n[[Category:Splitpaw Lair]]"
+ },
+ {
   "title": "A Stein",
   "content": "{{Classic Era}}{{disambig3|[[Stein]]}}\n\n<onlyinclude>{{Itempage\n|notes       = This item is just called \"Stein\". <br> {{Item Lore|Stein of Water}}\n|itemname    = Stein (of Water)\n|lucy_img_ID = 708\n|statsblock  = \nMAGIC ITEM  LORE ITEM<br>\nWT: 1.0  Size: SMALL<br>\nClass: ALL except<br>\nRace: ALL<br>\n\n|dropsfrom = \n\n[[Najena]]\n\n* [[a magician]]\n* [[a goblin magician]]\n* [[dark-boned skeleton]]\n\n[[Cazic Thule]]\n\n* [[an alligator]]\n\n|relatedquests = \n\n* [[Stein Of Ulissa Quest]]\n\n}}</onlyinclude>\n\n[[Category:Najena]]\n[[Category:Cazic Thule]]\n\n[[Category:Quest Items]]"
  },
@@ -898,10 +902,6 @@
  {
   "title": "Spell:Wandering Mind",
   "content": ""
- },
- {
-  "title": "Split Paw",
-  "content": "{{Disambig3|[[Splitpaw Lair]]}}{{Classic Era}}\n\n<onlyinclude>{{Itempage\n|itemname    = A Split Paw\n|merchant_value = 9c\n|lucy_img_ID = 743\n|statsblock  = \nMAGIC ITEM  QUEST ITEM<br>\nCharges: 5<br>\nEffect:  [[Dance of the Fireflies]] (Any Slot, Casting Time: Instant)<br>\nWT: 0.0  Size: TINY<br>\nClass: ALL<br>\nRace: ALL<br>\n|notes = Spell only cast at night (between 7PM and 5AM).<br>\n|dropsfrom = \n\n[[Splitpaw Lair]]\n\n* [[a Rosch Val Gnoll]]\n* [[Nisch Val Torash Mashk]]\n\n[[South Karana]]\n\n* [[a Tesch Mas Gnoll]]\n\n}}</onlyinclude>\n\n\n[[Category:Splitpaw Lair]]"
  },
  {
   "title": "Stronghorn`s Horn",

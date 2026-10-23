@@ -113,6 +113,9 @@ pub struct GapsModule {
     seen: HashMap<Domain, HashSet<String>>,
     /// Mob keys the log showed dying to a mob: players and pets, never rows again.
     players: HashSet<String>,
+    /// The player's own pets, as the log spells them (`petClaim`/`petSay`): their kills are the
+    /// player's (owner, 2026-10-22: Gonekn's kill moved the player's factions). Served as `ownPets`.
+    own_pets: std::collections::BTreeSet<String>,
     /// The last `zone` event: the label a mention is filed under.
     zone: Option<String>,
     /// Which factions each kill moved, for the tab's check against the mob pages.
@@ -140,6 +143,7 @@ impl GapsModule {
         self.rows.clear();
         self.seen.clear();
         self.players.clear();
+        self.own_pets.clear();
         self.kill_factions.clear();
         self.kill_coin.clear();
         self.mob_locs.clear();
@@ -157,13 +161,16 @@ impl GapsModule {
                 self.zone = ev.str("zone").map(str::to_string);
                 false
             }
+            // The player's own `/who` row, parsed apart, names a player like any /who row (gaps_players.rs),
+            // so a self-con (a /con with nothing targeted) is never a row (owner, 2026-10-22: "this is me").
+            "selfWho" => self.unparsed(ev),
             "loot" | "itemReceived" | "itemMerge" => self.item_event(ev),
             "purchase" | "coin" | "unknown" => self.trade(ev),
             "death" => self.kill_factions_of(ev) | self.death(ev),
             "consider" => self.considered(ev),
             "damage" | "miss" => self.specials.event(ev),
             "castBegin" | "otherCastBegin" => self.spell(ev),
-            "petClaim" | "petSay" => self.player_pet(ev.str("name")),
+            "petClaim" | "petSay" => self.own_pet(ev.str("name")),
             // Handing an item to it is meeting it (owner, 2026-10-19: a fallen froglok, only traded with).
             "offer" => self.npc_met(ev.str("npc"), "offered", ev),
             "allyPetLeader" => self.player_pet(ev.str("pet")),
@@ -364,6 +371,12 @@ impl GapsModule {
     }
 
     /// A player's pet, by its own words: filed as a player, and any row it had withdrawn.
+    /// The player's own pet: never a row, and its kills count as the player's.
+    fn own_pet(&mut self, name: Option<&str>) -> bool {
+        let added = name.is_some_and(|n| self.own_pets.insert(n.to_string()));
+        self.player_pet(name) | added
+    }
+
     fn player_pet(&mut self, name: Option<&str>) -> bool {
         let Some(key) = name.map(mob_key) else {
             return false;
@@ -509,7 +522,7 @@ impl EqModule for GapsModule {
         let kill_factions = self.kill_factions.serve();
         let mob_locs = self.mob_locs.serve();
         let mob_specials = self.specials.serve();
-        json!({ "seq": self.seq, "state": { "rows": rows, "totals": totals, "seen": seen, "killFactions": kill_factions, "mobLocs": mob_locs, "mobSpecials": mob_specials, "mobCoin": self.kill_coin.serve() } })
+        json!({ "seq": self.seq, "state": { "rows": rows, "totals": totals, "seen": seen, "killFactions": kill_factions, "mobLocs": mob_locs, "mobSpecials": mob_specials, "mobCoin": self.kill_coin.serve(), "ownPets": self.own_pets } })
     }
 
     fn install_knowledge(&mut self, k: &Arc<dyn Knowledge>) {
