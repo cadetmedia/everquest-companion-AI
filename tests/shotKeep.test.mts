@@ -8,7 +8,7 @@ import { cleared, hasWindowPart, isItemShotRow, itemRowNames, keptAfter, nearNam
 import type { GapRow } from '../src/shared/gaps.ts'
 import { gapJob } from '../src/shared/gapJob.ts'
 import { readItemWindow, type ItemShotReply } from '../src/shared/itemWindow.ts'
-import { nameInLines } from '../src/shared/mobPicture.ts'
+import { nameInLines, subtitleInLines } from '../src/shared/mobPicture.ts'
 import { isNearSolid } from '../src/main/shot/pixels.ts'
 
 const reply = (lines: string[], icons: { id: number; score: number }[] = []): ItemShotReply => ({ read: readItemWindow(lines), lines, icons, ms: 1 })
@@ -84,6 +84,14 @@ test("A MOB'S NAMEPLATE IS FOUND LOOSELY: LETTERS ONLY, NO (ZONE), WITH OR WITHO
   assert.ok(nameInLines('Hoptor Thaggelum', ['Hoptor Thagge1um']))
   assert.ok(!nameInLines('a lesser kobold', ['a decaying skeleton', 'You have slain a gnoll!']))
   assert.ok(!nameInLines('Marda', []))
+})
+
+test("A NAMEPLATE'S SUBTITLE IS THE PARENTHESIZED LINE RIGHT UNDER THE NAME, ITS WORDS ONLY", () => {
+  assert.equal(subtitleInLines('Trooni Thimblethumb', ['Trooni Thimblethumb', '(Tailoring Supplies)']), 'Tailoring Supplies')
+  assert.equal(subtitleInLines('Raul', ['LT Raul', '{Tailoring Supplies) |']), 'Tailoring Supplies', 'an OCR slip for the opening one')
+  assert.equal(subtitleInLines('Raul', ['Raul', 'Tailoring Supplies']), undefined, 'no parenthesis, no subtitle')
+  assert.equal(subtitleInLines('Raul', ['(Tailoring Supplies)', 'Raul']), undefined, 'above the name is not under it')
+  assert.equal(subtitleInLines('a white wolf', ['A white wolf']), undefined)
 })
 
 test('A BLANK OR ONE-COLOUR PICTURE IS NEAR SOLID; A REAL SCENE IS NOT', () => {

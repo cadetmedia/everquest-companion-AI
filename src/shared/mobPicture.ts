@@ -171,6 +171,19 @@ function targets(name: string): string[] {
 }
 
 /**
+ * The role a nameplate prints under the name, in parentheses (owner, 2026-10-23: "Trooni
+ * Thimblethumb" over "(Tailoring Supplies)"): the line right after the one that names the mob, read
+ * only when it holds a parenthesis, and only its words. Undefined when there is none.
+ */
+export function subtitleInLines(name: string, lines: readonly string[]): string | undefined {
+  const at = lines.findIndex((l) => nameInLines(name, [l]))
+  const next = at < 0 ? undefined : lines[at + 1]
+  if (next === undefined || !/[()]/.test(next)) return undefined
+  const words = /\(\s*([A-Za-z][A-Za-z' &-]*[A-Za-z])\s*\)?/.exec(next)?.[1] ?? /([A-Za-z][A-Za-z' &-]*[A-Za-z])\s*\)/.exec(next)?.[1]
+  return words === undefined || words.length < 3 ? undefined : words.replace(/\s+/g, ' ')
+}
+
+/**
  * Whether the OCR'd text of a picture holds the mob's name, loosely (owner, 2026-10-21): letters
  * only, case and spaces ignored, the `(Zone)` qualifier dropped, a slip or two allowed in a long name.
  */

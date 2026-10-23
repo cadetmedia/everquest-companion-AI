@@ -1181,8 +1181,9 @@ export const IPC = {
   // Save a pasted mob picture under the wiki's file name: the auto-save folder, else a save dialog
   // opened in the last folder (src/main/ipc/shotPicture.ts). Payload: (png, fileName, overwrite?: boolean).
   shotSaveImage: 'shot:saveImage',
-  // Whether a mob's name shows in the picture just saved (its nameplate), by OCR. Payload: (checkId from
-  // the save, name). Answers boolean | null (null also when a newer save replaced it).
+  // Whether a mob's name shows in the picture just saved (its nameplate), by OCR, and the role printed
+  // under it for a merchant. Payload: (checkId from the save, name, wantSubtitle?: boolean). Answers
+  // { shown, subtitle? } | null (null also when a newer save replaced it).
   shotCheckMob: 'shot:checkMob',
   // The mob-picture auto-save folder. Payload: ('get' | 'pick' | 'clear'). Answers the folder or null.
   shotAutoDir: 'shot:autoDir',

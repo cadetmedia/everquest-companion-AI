@@ -120,6 +120,17 @@ export const setMobPicture = (file: string, path: string | null): void => pictur
 export const useMobPictures = (): Readonly<Record<string, Stored<{ path: string }>>> => pictures.use()
 
 /**
+ * The role a pasted picture's nameplate printed under a merchant's name (`Tailoring Supplies`), by the
+ * lower-cased name (owner, 2026-10-23): its new page's description (shared/gapMerchantDescription.ts).
+ */
+export const NAMEPLATES_KEY = 'eq.gaps.mobNameplates'
+const nameplates = shotStore<{ subtitle: string }>(NAMEPLATES_KEY)
+/** Keep the subtitle a nameplate check read for `name`. */
+export const setMobNameplate = (name: string, subtitle: string): void => nameplates.set(name.toLowerCase(), { subtitle })
+/** Every kept nameplate subtitle, by lower-cased name. */
+export const useMobNameplates = (): Readonly<Record<string, Stored<{ subtitle: string }>>> => nameplates.use()
+
+/**
  * The Gaps Items rows' names as the list last held them (CaptureBar keeps this current): a paste's name
  * read through an OCR slip is checked against the other rows too (shared/itemShotKeep.ts `sameItem`).
  */

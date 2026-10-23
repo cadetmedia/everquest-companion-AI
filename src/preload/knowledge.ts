@@ -137,8 +137,9 @@ export const knowledgeBridge = {
   /** Save a pasted mob picture under the wiki's file name: the auto-save folder, else a save dialog. */
   shotSaveImage: (png: Uint8Array, fileName: string, overwrite = false): Promise<import('../shared/mobPicture').PictureSave> =>
     ipcRenderer.invoke(IPC.shotSaveImage, png, fileName, overwrite),
-  /** Whether the mob's name shows in the saved picture (`checkId` from the save); null when it could not be read. */
-  shotCheckMob: (checkId: number, name: string): Promise<boolean | null> => ipcRenderer.invoke(IPC.shotCheckMob, checkId, name),
+  /** Whether the mob's name shows in the saved picture (`checkId` from the save), and for a merchant the role under it; null when it could not be read. */
+  shotCheckMob: (checkId: number, name: string, wantSubtitle = false): Promise<{ shown: boolean; subtitle?: string } | null> =>
+    ipcRenderer.invoke(IPC.shotCheckMob, checkId, name, wantSubtitle),
   /** The mob-picture auto-save folder: read, pick (a folder dialog) or turn off; the folder or null. */
   shotAutoDir: (action: 'get' | 'pick' | 'clear'): Promise<string | null> => ipcRenderer.invoke(IPC.shotAutoDir, action),
   /** A picture this run saved: show it in its folder, or delete it. A picture found in a picture folder: show only. */

@@ -156,7 +156,7 @@ export function useGapsList(opts: { background?: boolean } = {}): GapsList {
   // "Show" (owner, 2026-10-21): new pages, updates or both; then "I have it", what the player holds.
   // Ready (owner, 2026-10-21): nothing left to capture; the install's spell files asked for the domain's spells.
   const spellNames = useMemo(() => (domain === 'spell' ? inDomain.map((r) => r.name) : NO_NAMES), [domain, inDomain])
-  const readiness = useGapReady(data, spellNames)
+  const readiness = useGapReady(data, spellNames, inDomain)
   const job = useGapShow(inDomain, JOB_CONTEXT, readiness.isReady)
   const mine = useHeldOnly(job.rows, holding, domain)
   // "Hide uncertain" (owner, 2026-10-19): rows the tab is not sure are gaps, hidden on request.
