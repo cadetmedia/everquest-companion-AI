@@ -182,7 +182,7 @@ function PlainView({
       {/* Respawn clocks (JOS-194). Character-scoped like the rest: the remount `key` is the
           whole contract, since the watch list lives in the store and the clocks are re-derived
           by the fold the character switch kicks off. */}
-      {view === 'timers' && <TimersView key={viewKey} />}
+      {view === 'timers' && <TimersView key={viewKey} onOpenMob={routing.openMob} onOpenMapZone={routing.openMapZone} />}
       {view === 'alerts' && <AlertsView key={viewKey} {...{ onOpenVoicePrefs, onOpenOverlayPrefs }} />}
       {/* CHARACTER (JOS-45, released JOS-327). It sits HERE, below the no-characters gate, and not
           beside the triage branch: unlike triage this tab reads the game log (name, level, loadout)

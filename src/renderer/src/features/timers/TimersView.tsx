@@ -105,12 +105,15 @@ import {
   type RespawnRow
 } from '@shared/respawn'
 import { respawnClearPlan } from '@shared/respawnWatchList'
+import type { ZoneShort } from '@shared/maps'
+import type { MobTarget } from '../mobs/mobTarget'
 import Tooltip from '../../lib/Tooltip'
 import { MOB_CARD_SLOT_PROPS, MobCard } from '../../lib/hoverCards'
 import { mainMobLookup } from './mobLookup'
 import { RespawnRowBar } from './RespawnRowBar'
 import { RESPAWN_TOGGLE_SX, UnwatchButton } from './UnwatchButton'
 import { ClearAllClocks } from './ClearAllClocks'
+import { MobNameLink, ZoneLink, type TimerLinks } from './timerLinks'
 import {
   useConfirmSighting,
   useRespawnSnap,
@@ -136,11 +139,13 @@ type Scope = 'zone' | 'all'
 const CandidateRow = memo(function CandidateRow({
   cand,
   onWatch,
-  onUnwatch
+  onUnwatch,
+  links
 }: {
   cand: RespawnCandidate
   onWatch: (key: string, display: string) => void
   onUnwatch: (key: string) => void
+  links?: TimerLinks | undefined
 }): JSX.Element {
   return (
     <Tooltip
@@ -162,10 +167,10 @@ const CandidateRow = memo(function CandidateRow({
       >
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Typography variant="body2" noWrap>
-            {cand.display}
+            <MobNameLink name={cand.display} links={links} />
           </Typography>
           <Typography variant="caption" color="text.secondary" noWrap>
-            {cand.zone.length > 0 ? cand.zone : 'unknown zone'} · {cand.kills} kill
+            <ZoneLink zone={cand.zone} links={links} /> · {cand.kills} kill
             {cand.kills === 1 ? '' : 's'}
             {cand.wikiText !== undefined ? ` · wiki: ${cand.wikiText}` : ''}
           </Typography>
@@ -241,7 +246,8 @@ function ClocksPanel({
   zoneName,
   onConfirmSighting,
   onUnwatch,
-  onSetCustom
+  onSetCustom,
+  links
 }: {
   rows: RespawnRow[]
   nowMs: number
@@ -253,6 +259,7 @@ function ClocksPanel({
   onUnwatch: (key: string) => void
   /** Round 7: rung 1, typed on the clock — the other half of what the retired list used to hold. */
   onSetCustom: (key: string, display: string, sec?: number) => void
+  links?: TimerLinks | undefined
 }): JSX.Element {
   if (rows.length === 0) {
     return (
@@ -278,6 +285,7 @@ function ClocksPanel({
           onConfirmSighting={onConfirmSighting}
           onUnwatch={onUnwatch}
           onSetCustom={onSetCustom}
+          links={links}
         />
       ))}
     </Stack>
@@ -365,7 +373,8 @@ function DiscoveryPanel({
   scoped,
   zoneName,
   onWatch,
-  onUnwatch
+  onUnwatch,
+  links
 }: {
   recent: RespawnCandidate[]
   /** How many candidates the fold holds in total, so the scoped empty state can say where they are. */
@@ -374,6 +383,7 @@ function DiscoveryPanel({
   zoneName: string
   onWatch: (key: string, display: string) => void
   onUnwatch: (key: string) => void
+  links?: TimerLinks | undefined
 }): JSX.Element {
   const [query, setQuery] = useState('')
   // ONE PASS PER KEYSTROKE, memoized on identity: an empty query returns the SAME array the module
@@ -395,7 +405,13 @@ function DiscoveryPanel({
       ) : (
         <Stack data-testid="respawn-recent" divider={<Divider flexItem />}>
           {shown.map((c) => (
-            <CandidateRow key={`${c.zone}::${c.key}`} cand={c} onWatch={onWatch} onUnwatch={onUnwatch} />
+            <CandidateRow
+              key={`${c.zone}::${c.key}`}
+              cand={c}
+              onWatch={onWatch}
+              onUnwatch={onUnwatch}
+              links={links}
+            />
           ))}
         </Stack>
       )}
@@ -403,7 +419,23 @@ function DiscoveryPanel({
   )
 }
 
-export default function TimersView(): JSX.Element {
+export default function TimersView({
+  onOpenMob,
+  onOpenMapZone
+}: {
+  /** A name's door to its Mobs page (App's `openMob`); absent, plain text. */
+  onOpenMob?: (t: MobTarget) => void
+  /** A zone's door to the Maps tab (App's `openMapZone`); absent, plain text. */
+  onOpenMapZone?: (zone: ZoneShort) => void
+}): JSX.Element {
+  // One stable object, so the memoized Recently-killed rows still skip a re-render.
+  const links = useMemo<TimerLinks | undefined>(
+    () =>
+      onOpenMob === undefined || onOpenMapZone === undefined
+        ? undefined
+        : { openMob: onOpenMob, openMapZone: onOpenMapZone },
+    [onOpenMob, onOpenMapZone]
+  )
   const snap = useRespawnSnap()
   const nowMs = useSecondsClock()
   const confirmSighting = useConfirmSighting()
@@ -465,6 +497,7 @@ export default function TimersView(): JSX.Element {
             onConfirmSighting={confirmSighting}
             onUnwatch={unwatch}
             onSetCustom={onSetCustom}
+            links={links}
           />
         </Box>
 
@@ -475,6 +508,7 @@ export default function TimersView(): JSX.Element {
           zoneName={zoneName}
           onWatch={onWatch}
           onUnwatch={unwatch}
+          links={links}
         />
       </Stack>
     </Box>
