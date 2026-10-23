@@ -181,3 +181,37 @@ fn a_met_mob_or_item_whose_page_says_not_legends_is_a_notices_row() {
     assert_eq!(citizen["subject"], "mob");
     assert_eq!(state["totals"]["notice"], 2);
 }
+
+/// A name known only through a wiki redirect is a row to check, with the page the redirect sends it
+/// to (owner, 2026-10-22: Halfling Blood was sent to Vial of Halfling Blood, a different item); a
+/// redirect that only respells (an article, a space) and a name with its own record stay silent.
+#[test]
+fn a_name_known_only_through_a_redirect_is_a_row_to_check() {
+    let mut m = module();
+    feed(&mut m, 1, json!({ "kind": "zone", "zone": "Nektulos Forest" }));
+    feed(&mut m, 2, json!({ "kind": "loot", "item": "Halfling Blood", "source": "Leatherfoot Scout" }));
+    feed(&mut m, 3, json!({ "kind": "loot", "item": "A Wooden Heart", "source": "Leatherfoot Scout" }));
+    feed(&mut m, 4, json!({ "kind": "loot", "item": "Bone Chips", "source": "a decaying skeleton" }));
+    feed(&mut m, 5, json!({ "kind": "consider", "mob": "Hoptor Thaggelum" }));
+    feed(&mut m, 6, json!({ "kind": "consider", "mob": "a lizardman warrior" }));
+    let state = m.snapshot()["state"].clone();
+    let checks: Vec<(String, String, String)> = state["rows"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|r| r["viaRedirect"].is_string())
+        .map(|r| (r["domain"].as_str().unwrap().into(), r["name"].as_str().unwrap().into(), r["viaRedirect"].as_str().unwrap().into()))
+        .collect();
+    assert_eq!(
+        checks,
+        [
+            ("item".to_string(), "Halfling Blood".to_string(), "Vial of Halfling Blood".to_string()),
+            ("mob".to_string(), "Hoptor Thaggelum".to_string(), "The Ghoul Lord".to_string())
+        ]
+    );
+    // The respelled and the owned names are no rows at all.
+    let names: Vec<&str> = state["rows"].as_array().unwrap().iter().filter_map(|r| r["name"].as_str()).collect();
+    for silent in ["A Wooden Heart", "Wooden Heart", "Bone Chips", "a lizardman warrior"] {
+        assert!(!names.contains(&silent), "{silent} in {names:?}");
+    }
+}

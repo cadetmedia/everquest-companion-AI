@@ -18,7 +18,8 @@ const UPDATE_DOMAINS: ReadonlySet<GapDomain> = new Set<GapDomain>(['faction', 'd
  * has as a mob (`ctx.isMob`) has a page that only lacks the merchant layout.
  */
 export function gapJob(row: GapRow, ctx: GapActionContext = {}): GapJob {
-  if (UPDATE_DOMAINS.has(row.domain)) return 'update'
+  // A name known only through a redirect: the page exists; the job is to check the redirect.
+  if (UPDATE_DOMAINS.has(row.domain) || row.viaRedirect !== undefined) return 'update'
   if (row.domain === 'merchant' && ctx.isMob?.(row.name) === true) return 'update'
   return 'new'
 }

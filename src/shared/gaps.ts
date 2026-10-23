@@ -9,7 +9,7 @@
 
 import type { FactionFix, KillFaction } from './gapFactions'
 import { replaceWhy } from './gapDrops'
-import { noticeAction } from './gapNotices'
+import { pageCheckAction } from './gapRedirects'
 import { offerCheckText, offerText } from './gapOffers'
 import { decodeFactionAmount } from './mobFactionAmounts'
 import { wikiPageUrl } from './wiki'
@@ -106,7 +106,8 @@ export { withoutPlayers } from './gapPlayers'
 export function uncertainGap(row: GapRow): boolean {
   // A faction row for a mob the data has no page for: its page may be newer and list it (owner,
   // 2026-10-20: Peltin Funter's factions were already on the wiki).
-  return row.maybePlayer === true || row.noPage === true
+  // A name known only through a wiki redirect: the redirect may be wrong (owner, 2026-10-22).
+  return row.maybePlayer === true || row.noPage === true || row.viaRedirect !== undefined
 }
 
 /** The rows the tab is sure of. */
@@ -271,6 +272,8 @@ export interface GapRow {
   maybePlayer?: boolean
   /** A faction row whose mob the wiki data has no page for: unchecked, since a newer page may list it. */
   noPage?: true
+  /** A name the data knows only through a wiki redirect: the page it sends the name to (gapRedirects.ts). */
+  viaRedirect?: string
   /** A faction row for a faction the page LISTS: what to fix, and what the page says (`-30..-10?`). */
   fix?: FactionFix
   pageSays?: string
@@ -568,7 +571,8 @@ function imageAction(row: GapRow, file = row.image ?? ''): GapAction {
 }
 
 export function gapActions(row: GapRow, verdict: GapVerdict, ctx: GapActionContext = {}): GapAction[] {
-  if (row.domain === 'notice') return [noticeAction(row)]
+  const check = pageCheckAction(row)
+  if (check !== undefined) return [check]
   if (row.domain === 'image') return [imageAction(row)]
   if (row.domain === 'drop') return dropActions(row)
   if (onMobPage(row)) return [factionAction(row)]

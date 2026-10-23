@@ -69,6 +69,18 @@ impl Knowledge for Corpus {
             // A page that says it may not be in Legends (owner, 2026-10-22: A Rotting Citizen).
             item_notices: vec![("old wand".into(), "Old Wand".into(), vec!["delete: No longer in game".into()])],
             mob_notices: vec![("a rotting citizen".into(), "A Rotting Citizen".into(), vec!["delete".into(), "DNE".into()])],
+            // Wiki redirects (owner, 2026-10-22): a wrong one (Halfling Blood is no vial), one that only
+            // drops an article, and one onto a name that has its own record.
+            item_redirects: vec![
+                ("halfling blood".into(), "Vial of Halfling Blood".into()),
+                ("a wooden heart".into(), "Wooden Heart".into()),
+                ("bone chips".into(), "Rat Meat".into()),
+            ],
+            mob_redirects: vec![
+                ("Hoptor Thaggelum".into(), "The Ghoul Lord".into()),
+                ("a lizardman warrior".into(), "A lizard man warrior".into()),
+                ("a decaying skeleton".into(), "Cazic-Thule (God)".into()),
+            ],
         }
     }
 }

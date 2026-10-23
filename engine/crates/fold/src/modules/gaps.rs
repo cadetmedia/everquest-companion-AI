@@ -27,7 +27,7 @@
 
 use super::gaps_coin::KillCoin;
 use super::gaps_details::{stamp_of, Details};
-use super::gaps_keys::{aa_known, item_gap_key, loose_key, spell_gap_key, spell_known, ItemIndex};
+use super::gaps_keys::{aa_known, item_gap_key, loose_key, spell_gap_key, spell_known, spell_via_redirect, ItemIndex};
 use super::gaps_names::{no_mob, no_spell, owner_of_pet, MobNames};
 use super::gaps_offers::{offer_of, Offer, Standings};
 use super::gaps_players::{forage_of, hail_of, speaker_of, Players};
@@ -99,6 +99,9 @@ pub struct GapRow {
     /// A Notices row's page and notices (`gaps_notices.rs`).
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
     notice: Option<Noticed>,
+    /// The page a wiki redirect sends this name to, when only that redirect knows it (`gaps_redirects.rs`).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    via_redirect: Option<String>,
 }
 
 #[derive(Default)]
@@ -225,6 +228,9 @@ impl GapsModule {
     fn item_named(&mut self, name: &str, kind: &'static str, ev: &Event) -> bool {
         // A known scroll is an item the log named and we could place: checked, never a row.
         let known = self.items.known(name);
+        if let Some(page) = self.items.via_redirect(name) {
+            return self.redirected(Domain::Item, item_gap_key(name), &item_base_name(name), page, kind, ev);
+        }
         self.note(Domain::Item, item_gap_key(name), &item_base_name(name), known, kind, ev)
     }
 
@@ -250,6 +256,9 @@ impl GapsModule {
             return false;
         }
         let known = (self.knowledge.as_ref()).is_some_and(|k| self.mob_names.known(k.as_ref(), name));
+        if let Some(page) = (self.knowledge.as_ref()).and_then(|k| self.mob_names.via_redirect(k.as_ref(), name)) {
+            return self.redirected(Domain::Mob, mob_key(name), name, page, kind, ev);
+        }
         let name = if known { name } else { owner_of_pet(name) };
         self.note(Domain::Mob, mob_key(name), name, known, kind, ev)
     }
@@ -401,6 +410,10 @@ impl GapsModule {
         let known =
             spell_known(name) || aa_known(name) || self.item_effects.contains(&loose_key(&key));
         let display = strip_rank_tail(name);
+        let effect = self.item_effects.contains(&loose_key(&key));
+        if let Some(spell) = spell_via_redirect(name).filter(|_| !aa_known(name) && !effect) {
+            return self.redirected(Domain::Spell, key, display.trim(), spell, "cast", ev);
+        }
         self.note(Domain::Spell, key, display.trim(), known, "cast", ev)
     }
 
@@ -429,6 +442,7 @@ impl GapsModule {
             details: Details::default(),
             maybe_player: false,
             notice: None,
+            via_redirect: None,
         });
         // An offer is a sale's start: it says where the item went, not where it came from.
         let zone = if kind == "appraised" { None } else { self.zone.as_deref() };
@@ -536,11 +550,11 @@ impl EqModule for GapsModule {
 
     fn install_knowledge(&mut self, k: &Arc<dyn Knowledge>) {
         let index = k.gap_index();
-        self.items = ItemIndex::new(&index.item_pages);
+        self.items = ItemIndex::new(&index.item_pages).with_redirects(&index.item_redirects);
         self.item_candidates = item_candidates(&index.item_pages);
         let effect_key = |n: &String| loose_key(&spell_gap_key(n));
         self.item_effects = index.item_effects.iter().map(|(n, _)| effect_key(n)).collect();
-        self.mob_names = MobNames::new(&index.mob_names);
+        self.mob_names = MobNames::new(&index.mob_names).with_redirects(&index.mob_redirects);
         self.notices = Notices::new(&index);
         self.knowledge = Some(Arc::clone(k));
     }
@@ -548,6 +562,8 @@ impl EqModule for GapsModule {
 
 #[path = "gaps_notices.rs"]
 mod notices;
+#[path = "gaps_redirects.rs"]
+mod redirects;
 use notices::{Noticed, Notices};
 
 #[cfg(test)]
