@@ -13,6 +13,7 @@ import { mobKey } from '../../shared/mobKey'
 import { verdictsFrom, type KnowledgeCacheFile } from '../gapVerdictsRead'
 import { itemPageMobs } from '../gapItemMobs'
 import { itemPageForage } from '../gapItemForage'
+import { unknownItems } from '../gapUnknownItems'
 import { spellFactsFrom } from '../gapSpellFacts'
 import type { ClientSpellFacts } from '../../shared/gaps'
 import { effectiveEqRoot } from '../log/config'
@@ -64,6 +65,9 @@ export function registerGapVerdictsIpc(): void {
   ipcMain.handle(IPC.gapVerdicts, (_e, domain: unknown, names: unknown) => gapVerdicts(domain, names))
   ipcMain.handle(IPC.gapSpellFacts, (_e, names: unknown) =>
     Array.isArray(names) ? clientSpellFacts(names.filter((n): n is string => typeof n === 'string').slice(0, MAX_NAMES)) : {}
+  )
+  ipcMain.handle(IPC.gapUnknownItems, (_e, names: unknown) =>
+    Array.isArray(names) ? unknownItems(names.filter((n): n is string => typeof n === 'string').slice(0, MAX_NAMES)) : []
   )
   ipcMain.handle(IPC.gapItemMobs, (_e, names: unknown) =>
     Array.isArray(names) ? itemPageMobs(names.filter((n): n is string => typeof n === 'string').slice(0, MAX_NAMES)) : {}

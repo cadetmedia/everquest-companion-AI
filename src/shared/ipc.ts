@@ -1147,6 +1147,9 @@ export const IPC = {
   // Item names in, `{ [name]: what its item page states of foraging | null }` out, off the committed
   // corpus (src/main/gapItemForage.ts), for the forage rows. Payload: (names: string[]).
   gapItemForage: 'gaps:itemForage',
+  // Which item names the wiki data has no page for (src/main/gapUnknownItems.ts), for the rows of
+  // items no log line names: the inventory export's, a capture's. Payload: (names: string[]).
+  gapUnknownItems: 'gaps:unknownItems',
   // Spell names in, `{ [name]: what the install's spells_us.txt / spells_us_str.txt state }` out
   // (src/main/gapSpellFacts.ts), for a copied spell page. Payload: (names: string[]).
   gapSpellFacts: 'gaps:spellFacts',
