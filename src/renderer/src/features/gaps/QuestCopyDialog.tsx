@@ -3,7 +3,7 @@
 // was added in words, and anything the log says otherwise (shown, never changed), then copies it.
 // No page on the wiki: the new-page draft. The read failed: the offline text, said so.
 
-import { createContext, useCallback, useContext, useState, type JSX, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useMemo, useState, type JSX, type ReactNode } from 'react'
 import { Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Stack, Typography } from '@mui/material'
 import type { GapRow } from '@shared/gaps'
 import { questRowLiveCopy, type LiveQuestPage, type QuestLiveCopy } from '@shared/gapQuestMerge'
@@ -84,8 +84,11 @@ function Summary({ copy }: { copy: QuestLiveCopy }): JSX.Element {
 export function QuestCopyDialog({ row, read, offline, onClose }: { row: GapRow; read: QuestRead; offline: () => string; onClose: () => void }): JSX.Element {
   const merge = useContext(QuestCopyContext)
   const [copied, setCopied] = useState(false)
-  const copy: QuestLiveCopy | undefined =
-    read.state === 'reading' ? undefined : merge !== null ? merge(row, read.live) : { kind: 'offline', title: row.name, text: offline(), added: [], changes: [], notes: [] }
+  // Merged once per answer, not on every render (the Copied flag re-renders it).
+  const copy = useMemo<QuestLiveCopy | undefined>(
+    () => (read.state === 'reading' ? undefined : merge !== null ? merge(row, read.live) : { kind: 'offline', title: row.name, text: offline(), added: [], changes: [], notes: [] }),
+    [read, merge, row, offline]
+  )
   const exists = copy?.kind === 'merged'
   const title = copy?.title ?? row.page ?? questPageTitle(row.name)
   return (
