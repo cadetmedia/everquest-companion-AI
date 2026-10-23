@@ -37,8 +37,10 @@ import type { MobDrop, MobKnowledge } from '../shared/types'
 // ES-imported so electron-vite INLINES it into the main bundle — a path-relative readFile would
 // miss in out/main/ (AGENTS.md toolchain note). Same module instance as itemLookup.ts's import.
 import itemsJson from './data/items.json'
+import { itemsByAnyName } from './itemOtherNames'
 
-const items = (itemsJson as unknown as ItemDbFile).items
+// By any name the wiki gives the page: a mob page's link that is a redirect finds the item (itemOtherNames.ts).
+const items = itemsByAnyName((itemsJson as unknown as ItemDbFile).items)
 
 /**
  * ONE drop, annotated with what the ITEM PAGE says about its era. Returns the drop UNCHANGED when

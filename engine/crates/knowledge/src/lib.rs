@@ -61,6 +61,8 @@ pub const SEARCH_MAX_LIMIT: usize = 100;
 #[derive(Default)]
 pub struct Corpus {
     items: OnceLock<Map<String, Value>>,
+    /// An item record's `otherNames` key → that record's own key. See [`Corpus::item_db_key`].
+    item_other_names: OnceLock<HashMap<String, String>>,
     quests: OnceLock<Vec<Value>>,
     local_quests: OnceLock<LocalQuests>,
     mob_index: OnceLock<MobIndex>,
@@ -71,6 +73,26 @@ pub struct Corpus {
     pending: Mutex<Vec<Miss>>,
     /// Names already announced — the at-most-once law.
     announced: Mutex<HashSet<(String, String)>>,
+}
+
+/// Each record's `otherNames` under [`item_key`] → that record's own key, where the name is no key
+/// of its own (a redirect never displaces a record).
+fn other_name_keys(items: &Map<String, Value>) -> HashMap<String, String> {
+    let mut out = HashMap::new();
+    for (own, e) in items {
+        for other in e["otherNames"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter_map(Value::as_str)
+        {
+            let k = item_key(other);
+            if !k.is_empty() && !items.contains_key(&k) {
+                out.entry(k).or_insert_with(|| own.clone());
+            }
+        }
+    }
+    out
 }
 
 /// The process's corpus, built lazily and shared. A respawn is a launch, so there is no state to
@@ -91,6 +113,19 @@ impl Corpus {
 
     fn items(&self) -> &Map<String, Value> {
         self.items.get_or_init(load_item_db)
+    }
+
+    /// The database key a name answers under: its own, else the key of the record whose
+    /// `otherNames` (the wiki redirects that land on its page) hold it, filling only free keys, as
+    /// the mob index does (owner, 2026-10-22: `Halfling Blood` is `Vial of Halfling Blood`).
+    fn item_db_key(&self, key: String) -> String {
+        if self.items().contains_key(&key) {
+            return key;
+        }
+        let others = self
+            .item_other_names
+            .get_or_init(|| other_name_keys(self.items()));
+        others.get(&key).cloned().unwrap_or(key)
     }
 
     fn quests(&self) -> &Vec<Value> {
@@ -357,7 +392,7 @@ impl Knowledge for Corpus {
     fn item(&self, name: &str) -> Answer {
         let display = display_of(name);
         let local = self.local_quests().for_item(name);
-        let key = item_key(name);
+        let key = self.item_db_key(item_key(name));
         // Primary: the committed database. Answered here, an item costs no overlay read and no
         // announcement, so a miss describes only names the corpus lacks.
         if let Some(entry) = self.items().get(&key) {
@@ -433,9 +468,26 @@ impl Knowledge for Corpus {
 
 #[cfg(test)]
 mod tests {
-    use super::{shared, Corpus, SEARCH_MAX_LIMIT};
+    use super::{other_name_keys, shared, Corpus, SEARCH_MAX_LIMIT};
     use fold::knowledge::{Knowledge, NoOwnLoot, OwnLoot, SeenDrop};
     use serde_json::json;
+
+    #[test]
+    fn a_wiki_redirect_to_an_item_page_answers_for_the_item_but_never_displaces_another() {
+        // Owner, 2026-10-22: Halfling Blood redirects to Vial of Halfling Blood.
+        let items = serde_json::from_value(json!({
+            "vial of halfling blood": {"page": "Vial of Halfling Blood", "otherNames": ["Halfling Blood", "Rusty Mace"]},
+            "rusty mace": {"page": "Rusty Mace"}
+        }))
+        .unwrap();
+        let keys = other_name_keys(&items);
+        assert_eq!(
+            keys.get("halfling blood").map(String::as_str),
+            Some("vial of halfling blood")
+        );
+        assert_eq!(keys.get("rusty mace"), None);
+        assert_eq!(keys.len(), 1);
+    }
 
     struct Looted(Vec<SeenDrop>);
     impl OwnLoot for Looted {

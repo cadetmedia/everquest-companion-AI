@@ -35,6 +35,7 @@ import type { InventoryDump } from '../../shared/outputs/inventory'
 import { parseWornFocus, type WornFocus } from '../../shared/wornFocus'
 import type { ItemDbEntry, ItemDbFile } from '../itemsDb'
 import { itemKey } from '../itemsDb'
+import { itemsByAnyName } from '../itemOtherNames'
 import type { SpellDbFile, SpellEntry } from '../../shared/types'
 // The two committed corpora, imported RAW. `effectIndex.ts COMMITTED_SPELL_FACTS` imports the spell
 // catalog the same way and for the same reason: this is the effect-name-to-page join and the two
@@ -101,7 +102,8 @@ export function wornFocusFor(
 ): WornFocus[] {
   const byEffect = new Map<string, WornFocus>()
   for (const bearer of focusBearers(dump)) {
-    const entry = items.items[itemKey(bearer.name)]
+    // The inventory spells the game's name; the wiki may title the page otherwise (itemOtherNames.ts).
+    const entry = itemsByAnyName(items.items)[itemKey(bearer.name)]
     if (entry === undefined) continue
     for (const focus of focusOfItem(entry, bearerLabel(bearer.name, bearer.exaltation), lines)) {
       const key = focus.effect.toLowerCase()

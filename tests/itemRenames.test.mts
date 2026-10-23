@@ -118,15 +118,19 @@ test('the Shimmering Bracer rename is upstream in every scrape that names the it
   const index = buildItemDbIndex(ITEMS)
   const renamed = index.get(itemKey('Shimmering Bracer of Protection'))
   assert.ok(renamed, 'the new page is in items.json')
-  assert.equal(index.get(itemKey('Scintillating Bracer of Protection')), undefined, 'old page dropped with the redirect')
+  // The old title is a wiki redirect: it answers only as the new page's otherNames (owner, 2026-10-22).
+  const old = index.get(itemKey('Scintillating Bracer of Protection'))
+  assert.ok(old === undefined || old === renamed, 'old page dropped with the redirect; the old name finds only the new page')
   // posky.json: the Rogue Test of Stealth reward carries the new spelling on both fields.
   const rogue = POSKY.quests.find((q) => q.name === 'Rogue Test of Stealth')
   assert.ok(rogue, 'Rogue Test of Stealth is in the committed scrape')
   assert.equal(rogue.reward, 'Shimmering Bracer of Protection')
   assert.equal(rogue.rewardPage, 'Shimmering Bracer of Protection')
-  // And nothing anywhere still writes the old spelling.
+  // And nothing anywhere still writes the old spelling as a name: the wiki's redirect from it, kept as
+  // the new page's otherNames, is how a log line spelling the old name finds the item.
   for (const s of SCRAPES) {
-    assert.ok(!s.text.includes('Scintillating Bracer'), `${s.rel} still carries the retired spelling`)
+    const names = s.text.replace(/"otherNames":\s*\[[^\]]*\]/g, '')
+    assert.ok(!names.includes('Scintillating Bracer'), `${s.rel} still carries the retired spelling`)
   }
 })
 
