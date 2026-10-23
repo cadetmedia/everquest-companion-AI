@@ -225,3 +225,20 @@ test('the read plan: each change is read only when a window that could use it ho
   assert.equal(all.byOwner.get('spells'), 2)
   assert.equal(all.byOwner.get('unknown'), 3)
 })
+
+test("A REDIRECT LANDING ON AN ITEM OR SPELL PAGE IS ITS OTHER NAME AFTER A RUN, NOT ONLY ON A MOB (OWNER, 2026-10-22)", async (t) => {
+  const { root } = stubbed(t)
+  const p = seed(root)
+  // The cached list a full run made: a redirect to a spell page and one to an item page.
+  put(p.redirectCache, JSON.stringify({ updatedAt: ITEMS_AT, redirects: [
+    { from: 'Healing Water Spell', to: 'Healing Water' },
+    { from: 'Gone Alias', to: 'Old Item' }
+  ] }))
+  await run(p, parseArgs(['--spell-titles', '--since-quests=2026-08-22T19:51:37.602Z']))
+  const items = json<{ items: Record<string, { page: string; otherNames?: string[] }> }>(p.items).items
+  // Rusty Dagger moved to Rusty Blade: its title is a redirect now, so Rusty Blade answers to it.
+  assert.deepEqual(items['rusty blade']?.otherNames, ['Rusty Dagger'])
+  assert.deepEqual(items['old item']?.otherNames, ['Gone Alias'])
+  const spells = json<SpellDbFile>(p.spells).spells as (SpellDbFile['spells'][number] & { otherNames?: string[] })[]
+  assert.deepEqual(spells.find((s) => s.name === 'Healing Water')?.otherNames, ['Healing Water Spell'])
+})

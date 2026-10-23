@@ -42,7 +42,6 @@ import { foldItems, isItemPage, type ItemFold } from './sources/deltaItems'
 import {
   foldMobs,
   foldRedirects,
-  keepRedirectCache,
   nextScrapedAt,
   QUESTS_FILE,
   SPELLS_FILE,
@@ -91,6 +90,7 @@ import {
 import { FOLLOWED, followDelta } from './sources/deltaFollow'
 import { isMobPage } from './sources/mobPage'
 import type { NamedMob } from './sources/mobRedirects'
+import { redirectsOntoData } from './sources/deltaRedirects'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 
@@ -332,6 +332,8 @@ async function applyDelta(ctx: DeltaCtx): Promise<void> {
   const stamp = (prev: string, more: string[] = []): string =>
     nextScrapedAt(prev, [...reads.unapplied, ...more], now)
 
+  // Every redirect that lands on an item or spell page is that record's otherNames (deltaRedirects.ts).
+  redirectsOntoData(paths, mobPages, itemFold.items, spellRun?.file.spells)
   const distinctPages = new Set(Object.values(itemFold.items).map((e) => e.page)).size
   const items = Object.entries(itemFold.items).sort((a, b) => a[0].localeCompare(b[0]))
   writeAtomic(paths.items, JSON.stringify({
@@ -342,7 +344,6 @@ async function applyDelta(ctx: DeltaCtx): Promise<void> {
   }))
   const mobs = ([...mobFold.byPage.values()] as NamedMob[]).sort((a, b) => a.page.localeCompare(b.page))
   const redirected = foldRedirects(db.mobs.mobs, mobs, mobPages)
-  keepRedirectCache(paths.redirectCache, mobPages)
   writeAtomic(paths.mobs, JSON.stringify({
     scrapedAt: stamp(db.mobs.scrapedAt),
     source: deltaSource(db.mobs.source),
