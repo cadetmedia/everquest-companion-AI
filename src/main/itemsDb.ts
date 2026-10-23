@@ -51,6 +51,8 @@ export function itemKey(name: string): string {
  */
 export interface ItemDbEntry extends Partial<Omit<ItemKnowledge, 'cached' | 'page'>> {
   page: string
+  /** the wiki redirects that land on this page (`Halfling Blood` on `Vial of Halfling Blood`): the same item */
+  otherNames?: string[]
 }
 
 /** The committed file: `src/main/data/items.json`. */
@@ -98,5 +100,15 @@ export function buildItemDbIndex(file: ItemDbFile): Map<string, ItemDbEntry> {
   // Through the rename overlay, which keeps the OLD key as an alias onto the renamed record — a
   // loot line or a share bundle spelling the old name still resolves, and resolves to the current
   // name (shared/itemRenames.ts states why).
-  return new Map(Object.entries(renamedItems(file.items ?? {})))
+  const index = new Map(Object.entries(renamedItems(file.items ?? {})))
+  // Then each record's otherNames, the wiki redirects that land on its page, filling only free keys
+  // (owner, 2026-10-22: Halfling Blood is Vial of Halfling Blood; the mobs' rule, mobLookupLocal.ts).
+  // The rule of itemOtherNames.ts, here because that file imports `itemKey` from this one.
+  for (const entry of Object.values(file.items ?? {})) {
+    for (const name of entry.otherNames ?? []) {
+      const key = itemKey(name)
+      if (key !== '' && !index.has(key)) index.set(key, entry)
+    }
+  }
+  return index
 }
