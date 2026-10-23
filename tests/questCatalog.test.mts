@@ -446,3 +446,10 @@ test('the committed catalog carries the era banners, key right after page, and D
   assert.equal(data.quests.find((q) => q.page === 'Dragon Scales Quest')?.eraTag, 'Kunark')
   assert.equal(data.quests.find((q) => q.page === 'Ale for Beur')?.eraTag, 'Classic')
 })
+
+test("a top table labelled 'Starts In' gives the start zone too (6 cached pages write it)", () => {
+  const wt = "{| class=\"questTopTable\"\n! ''' Starts In: '''\n| [[West Freeport]]\n|-\n! ''' Quest Giver: '''\n| [[Guard Jup]]\n|}\n"
+  const q = parseQuestPage('Militia Seals', wt, isItem)
+  assert.equal(q.startZone, 'West Freeport')
+  assert.equal(q.giver, 'Guard Jup')
+})

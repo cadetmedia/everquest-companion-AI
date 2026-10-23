@@ -192,7 +192,7 @@ export function parseTopTable(wikitext: string): QuestTopTable | null {
   const minNum = minText ? Number(/(\d+)/.exec(minText)?.[1]) : NaN
 
   return {
-    startZone: cellText(pick('start zone')),
+    startZone: cellText(pick('start zone', 'starts in')),
     giver: cellText(pick('quest giver', 'giver')),
     minLevel: Number.isFinite(minNum) ? minNum : undefined,
     minLevelText: minText && !/^\d+$/.test(minText) ? minText : undefined,

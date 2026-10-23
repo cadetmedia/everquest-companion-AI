@@ -16599,6 +16599,7 @@
       "name": "Hollow Skull Quest",
       "page": "Hollow Skull Quest",
       "eraTag": "Classic",
+      "startZone": "Western Karana",
       "giver": "Yiz Pon",
       "minLevel": 25,
       "classes": [
@@ -21249,6 +21250,7 @@
       "name": "Militia Seals",
       "page": "Militia Seals",
       "eraTag": "Velious",
+      "startZone": "West Freeport",
       "giver": "Guard Jup",
       "minLevel": 35,
       "classes": [
@@ -27358,6 +27360,7 @@
       "name": "Renouncing Your Faith",
       "page": "Renouncing Your Faith",
       "eraTag": "Classic",
+      "startZone": "Oasis of Marr",
       "giver": "Emissary of Zebuxoruk",
       "minLevel": 46,
       "classes": [
