@@ -95,6 +95,8 @@ interface Snap {
   mobSpecials?: MobSpecial[]
   /** What each mob's corpse paid at the player's kills: how many paid, each coin's least and most. */
   mobCoin?: MobCoin[]
+  /** The player's own pets by name (gaps.rs `own_pets`): a kill by one is the player's (owner, 2026-10-22). */
+  ownPets?: string[]
 }
 
 /** The fold's own caps (gaps.rs `CAP_PER_DOMAIN`, gaps_details.rs `LIST_CAP` and `SAMPLES`). */
@@ -304,5 +306,5 @@ export function mergeGaps(older: unknown, newer: unknown): Snap | null {
     out.set(k, had === undefined ? { ...r } : mergeRow(had, r))
   }
   const { rows, counted } = served(out.values())
-  return { rows, ...perDomain(older, newer, counted), killFactions: mergeKillFactions(older, newer), mobLocs: mergeMobLocs(older, newer), mobSpecials: mergeMobSpecials(older, newer), mobCoin: mergeMobCoin(older, newer) }
+  return { rows, ...perDomain(older, newer, counted), killFactions: mergeKillFactions(older, newer), mobLocs: mergeMobLocs(older, newer), mobSpecials: mergeMobSpecials(older, newer), mobCoin: mergeMobCoin(older, newer), ownPets: [...new Set([...(older.ownPets ?? []), ...(newer.ownPets ?? [])])].sort() }
 }

@@ -286,3 +286,10 @@ test('gaps: an archived row with no details passes the Reward Chest strip as it 
   const merged = mergeGaps(snap([bare]), snap([row('item', 'Fetid Skin', 1)]))
   assert.deepEqual(merged?.rows.map((r) => r.name).sort(), ['Fetid Skin', 'Old Widget'])
 })
+
+test("THE PLAYER'S OWN PETS SURVIVE THE ARCHIVE MERGE, BOTH SIDES' (OWNER, 2026-10-22: GONEKN'S KILLS STILL ASKED FOR FACTIONS)", () => {
+  const older = { ...snap([]), ownPets: ['Gonekn'] }
+  const newer = { ...snap([]), ownPets: ['Zobektik', 'Gonekn'] }
+  assert.deepEqual((mergeGaps(older, newer) as Snap & { ownPets?: string[] }).ownPets, ['Gonekn', 'Zobektik'])
+  assert.deepEqual((mergeGaps(snap([]), snap([])) as Snap & { ownPets?: string[] }).ownPets, [])
+})
