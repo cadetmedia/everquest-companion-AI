@@ -289,6 +289,8 @@ export interface GapsSnap {
   mobSpecials?: { mob: string; specials: string[] }[]
   /** What each mob's corpse paid at the player's kills: how many paid, each coin's least and most (gaps_coin.rs). */
   mobCoin?: MobCoin[]
+  /** The player's own pets by name (gaps.rs `own_pets`): a kill by one is the player's. */
+  ownPets?: string[]
 }
 
 /** One mob's corpse coin, `[platinum, gold, silver, copper]` (gaps_coin.rs). */

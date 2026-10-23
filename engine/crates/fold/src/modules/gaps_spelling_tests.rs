@@ -134,3 +134,30 @@ fn an_aa_an_item_effect_and_a_spell_that_ends_in_a_numeral_are_known() {
     );
     assert!(rows(&m).is_empty(), "{:?}", rows(&m));
 }
+
+/// The player's own pet (it calls the player Master, `petClaim`/`petSay`) is served as `ownPets`, so
+/// the tab counts its kills as the player's (owner, 2026-10-22: Gonekn's kill moved five factions);
+/// another player's pet (`allyPetLeader`) is not.
+#[test]
+fn the_players_own_pets_are_served_and_another_players_are_not() {
+    let mut m = module();
+    feed(&mut m, 1, json!({ "kind": "petSay", "name": "Gonekn", "say": "attack" }));
+    feed(&mut m, 2, json!({ "kind": "petClaim", "name": "Gonekn" }));
+    feed(&mut m, 3, json!({ "kind": "allyPetLeader", "pet": "Ztik", "owner": "Malkil" }));
+    assert_eq!(m.snapshot()["state"]["ownPets"], json!(["Gonekn"]));
+}
+
+/// A store purchase arrives as `X has been placed in your inventory!` (owner's log, 2026-10-22:
+/// Petamorph Wand: Werewolf, bought from the in-game store): the item is received, and an item the
+/// wiki has no page for is an Items row like a looted one.
+#[test]
+fn a_store_delivery_is_a_received_item_and_an_unknown_one_is_a_row() {
+    let mut m = module();
+    feed(&mut m, 1, json!({ "kind": "zone", "zone": "Nektulos Forest" }));
+    feed(
+        &mut m,
+        2,
+        json!({ "kind": "itemReceived", "item": "Petamorph Wand: Werewolf", "via": "inventory" }),
+    );
+    assert_eq!(rows(&m), ["item Petamorph Wand: Werewolf x1 [received]"]);
+}

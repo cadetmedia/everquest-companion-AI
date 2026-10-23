@@ -232,7 +232,7 @@ function ShownLine({
 
 /** What the pages read beside the ledgers, from the engine's snapshot (useGapsData). */
 function sightingsOf(engine: GapsSnap | null | undefined, spellFacts: ReturnType<typeof useSpellFacts>) {
-  return { killFactions: engine?.killFactions, mobLocs: engine?.mobLocs, mobSpecials: engine?.mobSpecials, mobCoin: engine?.mobCoin, ...PAGE_EXTRAS, spellFacts }
+  return { killFactions: engine?.killFactions, mobLocs: engine?.mobLocs, mobSpecials: engine?.mobSpecials, mobCoin: engine?.mobCoin, ownPets: engine?.ownPets, ...PAGE_EXTRAS, spellFacts }
 }
 
 export default function GapsView(): JSX.Element {
