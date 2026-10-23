@@ -55,6 +55,7 @@ import { annotateDropEras } from './mobDropEra'
 import { knowledgeFromCatalog, localMobEntry, mergeLocalKnowledge } from './mobLookupLocal'
 import { type MobIdentity, poisonedAliasKeys, resolveMobIdentity } from './mobAliases'
 import type { MobKnowledge } from '../shared/types'
+import { hasMobTemplate } from '../shared/wikiTemplates'
 
 export { MobLootIndex, mobKey, parseMobWikitext }
 
@@ -212,7 +213,8 @@ export async function lookupMob(name: string): Promise<MobKnowledge> {
     // cousin's drop table off this mob would be inventing loot (law 1). "Is this mob" now spans
     // the roster's stated spellings, which for an unaliased name is the one key it always was.
     if (!res.exact && !identityMatches(id, facts.pageName ?? res.title)) return finish({ notFound: true })
-    return finish({ page: res.title, ...facts })
+    // A page of free text (no mob template) is a page all the same: the Gaps tab says fix it, never create another.
+    return finish({ page: res.title, ...facts, ...(hasMobTemplate(wt) ? {} : { notMobPage: true }) })
   })
 
   try {

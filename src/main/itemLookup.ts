@@ -50,6 +50,7 @@ export { normalizeItemName, parseItemWikitext }
 // Imported directly, like posky/quests/spells, so electron-vite INLINES it into the main
 // bundle; a path-relative read would miss it in out/main/ in production.
 import itemsJson from './data/items.json'
+import { hasItemTemplate } from '../shared/wikiTemplates'
 // The scraped Plane of Sky dataset is the local-first source. Imported directly so
 // electron-vite INLINES it into the main bundle (same reason spells.json is imported,
 // not readFileSync'd — a path-relative read misses it in out/main/ in production).
@@ -367,7 +368,8 @@ export async function lookupItem(name: string): Promise<ItemKnowledge> {
     const wt = await wiki.fetchWikitext(res.title)
     if (wt === null) return finish({ offline: true }) // network failed on the page fetch
     if (wt === '') return finish({ notFound: true }) // page missing
-    return finish({ page: res.title, ...parseItemWikitext(display, wt) })
+    // A page of free text (no {{Itempage}}) is a page all the same: the Gaps tab says fix it, never create another.
+    return finish({ page: res.title, ...parseItemWikitext(display, wt), ...(hasItemTemplate(wt) ? {} : { notItemPage: true }) })
   })
 
   try {
