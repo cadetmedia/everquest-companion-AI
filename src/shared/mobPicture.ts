@@ -89,6 +89,18 @@ export function heldPicture(file: string, saved: Readonly<Record<string, unknown
   return path !== undefined && listed(folder, path) ? undefined : (path ?? file)
 }
 
+/**
+ * The picture a row's details show beside its text (owner, 2026-10-22: "can we show the picture if we
+ * have it?"): a mob's or Images row's held picture, an item's kept window (`item_<name>.png`), a
+ * spell's kept window (`spell_<name>.png`), each as the folders list it. Undefined: nothing to show.
+ */
+export function rowPicture(row: Pick<GapRow, 'domain' | 'name' | 'image'>, saved: Readonly<Record<string, unknown>>, folder: FolderPictures): string | undefined {
+  if (row.domain === 'mob' || row.domain === 'image') return heldPicture(pictureFile(row), saved, folder)
+  if (row.domain === 'item') return folder.files[keptPictureFile('item', row.name)]
+  if (row.domain === 'spell') return folder.files[keptPictureFile('spell', row.name)]
+  return undefined
+}
+
 /** Whether `path` sits directly in one of the folders the listing read (Windows: any case, either slash). */
 function listed(folder: FolderPictures, path: string): boolean {
   const norm = (p: string): string => p.replace(/[\\/]+/g, '/').replace(/\/$/, '').toLowerCase()

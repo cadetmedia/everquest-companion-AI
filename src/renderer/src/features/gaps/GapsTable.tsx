@@ -56,6 +56,7 @@ import { useWindowedRows } from '../../lib/useWindowedRows'
 import GapActionChips from './GapActionChips'
 import GapDetailsPanel from './GapDetailsPanel'
 import ShotPanel from './ShotPanel'
+import { WithRowPicture } from './RowPicture'
 import GapRowButtons from './GapRowButtons'
 import MobHeadingButtons from './MobHeadingButtons'
 
@@ -258,48 +259,51 @@ function DetailsPane({ row, actions }: { row: GapRow; actions: PaneActions }): J
           </Tooltip>
         )}
       </Stack>
-      {seen !== undefined && (
-        <Typography variant="caption" color="text.secondary" component="div" data-testid="gaps-seen-by">
-          Seen by: {seen.join(', ')}.
-        </Typography>
-      )}
-      {held.map((h) => (
-        <Typography key={h.who ?? ''} variant="body2" color="success.main" component="div" data-testid="gaps-held-line">
-          {gapJob(row) === 'update' ? heldWhere(h) : heldLine(h)}
-        </Typography>
-      ))}
-      {row.suggest !== undefined && (
-        <Typography variant="body2" color="text.secondary" component="div" data-testid="gaps-suggest-line">
-          <SuggestCaption s={row.suggest} />
-        </Typography>
-      )}
-      {row.noPage === true && (
-        <Typography variant="body2" color="warning.main" component="div" data-testid="gaps-no-page-line">
-          No page for {mobPageOf(row)} in the wiki data: check the wiki first.
-        </Typography>
-      )}
-      {row.fix !== undefined && (
-        <Typography variant="body2" color="warning.main" component="div" data-testid="gaps-fix-line">
-          The page lists it as {pageSaysText(row.pageSays ?? '')}; your log: {logSaysText(row)}.
-        </Typography>
-      )}
-      {row.replaces !== undefined && (
-        <Typography variant="body2" color="warning.main" component="div" data-testid="gaps-replace-line">
-          {replaceWhy(factionOf(row), row.replaces.lines)}
-        </Typography>
-      )}
-      {row.pageImage !== undefined && (
-        <Typography variant="body2" color="warning.main" component="div" data-testid="gaps-page-image-line">
-          The page&apos;s imagefilename says {row.pageImage}, not {row.image}: the page may need fixing.
-        </Typography>
-      )}
-      {needed.length > 0 && (
-        <Typography variant="caption" color="text.secondary" data-testid="gaps-needed">
-          Still needed for the page: {needed.join(', ')}.
-        </Typography>
-      )}
-      <ShotPanel row={row} />
-      <GapDetailsPanel details={row.details} />
+      {/* The text, and the row's picture beside it when wide, under it when narrow (RowPicture.tsx). */}
+      <WithRowPicture row={row}>
+        {seen !== undefined && (
+          <Typography variant="caption" color="text.secondary" component="div" data-testid="gaps-seen-by">
+            Seen by: {seen.join(', ')}.
+          </Typography>
+        )}
+        {held.map((h) => (
+          <Typography key={h.who ?? ''} variant="body2" color="success.main" component="div" data-testid="gaps-held-line">
+            {gapJob(row) === 'update' ? heldWhere(h) : heldLine(h)}
+          </Typography>
+        ))}
+        {row.suggest !== undefined && (
+          <Typography variant="body2" color="text.secondary" component="div" data-testid="gaps-suggest-line">
+            <SuggestCaption s={row.suggest} />
+          </Typography>
+        )}
+        {row.noPage === true && (
+          <Typography variant="body2" color="warning.main" component="div" data-testid="gaps-no-page-line">
+            No page for {mobPageOf(row)} in the wiki data: check the wiki first.
+          </Typography>
+        )}
+        {row.fix !== undefined && (
+          <Typography variant="body2" color="warning.main" component="div" data-testid="gaps-fix-line">
+            The page lists it as {pageSaysText(row.pageSays ?? '')}; your log: {logSaysText(row)}.
+          </Typography>
+        )}
+        {row.replaces !== undefined && (
+          <Typography variant="body2" color="warning.main" component="div" data-testid="gaps-replace-line">
+            {replaceWhy(factionOf(row), row.replaces.lines)}
+          </Typography>
+        )}
+        {row.pageImage !== undefined && (
+          <Typography variant="body2" color="warning.main" component="div" data-testid="gaps-page-image-line">
+            The page&apos;s imagefilename says {row.pageImage}, not {row.image}: the page may need fixing.
+          </Typography>
+        )}
+        {needed.length > 0 && (
+          <Typography variant="caption" color="text.secondary" data-testid="gaps-needed">
+            Still needed for the page: {needed.join(', ')}.
+          </Typography>
+        )}
+        <ShotPanel row={row} />
+        <GapDetailsPanel details={row.details} />
+      </WithRowPicture>
     </Paper>
   )
 }

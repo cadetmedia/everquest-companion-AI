@@ -5,7 +5,9 @@
 // only: main lists the folders and writes the files (main/ipc/shotPicture.ts).
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { folderPictures, heldPicture, keptPictureFile, NO_FOLDER_PICTURES, partPicture, PICTURE_FOLDER, pictureFile, pictureRoot } from '../src/shared/mobPicture'
+import { join } from 'node:path'
+import { folderPictures, heldPicture, keptPictureFile, NO_FOLDER_PICTURES, partPicture, PICTURE_FOLDER, pictureFile, pictureRoot, rowPicture } from '../src/shared/mobPicture'
+import { pictureIn } from '../src/main/shot/pictureFiles'
 import { openNeeds } from '../src/shared/gapReady'
 import { IMAGE_NEED } from '../src/shared/wikiPage'
 import { screenshotLabel, PICTURED_LABEL } from '../src/renderer/src/overlay/feedGapTags'
@@ -87,4 +89,34 @@ test("A KIND'S FOLDER STANDS FOR ITS ROOT, SO THE LAST FOLDER SAVED TO NEVER NES
   assert.equal(pictureRoot(ROOT), ROOT)
   assert.equal(pictureRoot('C:\\npc'), 'C:\\')
   assert.equal(pictureRoot('npc'), 'npc')
+})
+
+test("A ROW'S DETAILS SHOW ITS PICTURE: A MOB'S HELD ONE, AN ITEM'S OR SPELL'S KEPT WINDOW; NONE FOR THE REST (OWNER, 2026-10-22)", () => {
+  const ITEM = `${ROOT}\\item`
+  const SPELL = `${ROOT}\\spell`
+  const folder = folderPictures([
+    { dir: NPC, files: [{ name: 'npc_missionary_of_rodcet.png', path: `${NPC}\\npc_missionary_of_rodcet.png` }] },
+    { dir: ITEM, files: [{ name: 'item_halfling_blood.png', path: `${ITEM}\\item_halfling_blood.png` }, { name: 'item_halfling_blood_lore.png', path: `${ITEM}\\item_halfling_blood_lore.png` }] },
+    { dir: SPELL, files: [{ name: 'spell_burst_of_flame.png', path: `${SPELL}\\spell_burst_of_flame.png` }] }
+  ])
+  assert.equal(rowPicture(row('mob', 'Missionary of Rodcet'), {}, folder), `${NPC}\\npc_missionary_of_rodcet.png`)
+  // The window, not its Lore tab.
+  assert.equal(rowPicture(row('item', 'Halfling Blood'), {}, folder), `${ITEM}\\item_halfling_blood.png`)
+  assert.equal(rowPicture(row('spell', 'Burst of Flame'), {}, folder), `${SPELL}\\spell_burst_of_flame.png`)
+  assert.equal(rowPicture(row('item', 'Rusty Mace'), {}, folder), undefined)
+  assert.equal(rowPicture(row('faction', 'Death Fist Orcs (a Deathfist templar)'), {}, folder), undefined)
+  // A mob picture saved from the tab into a folder the listing did not read still shows.
+  assert.equal(rowPicture(row('mob', 'a bat'), { 'npc_a_bat.png': { path: 'D:\\pics\\npc_a_bat.png' } }, NO_FOLDER_PICTURES), 'D:\\pics\\npc_a_bat.png')
+})
+
+test('MAIN SHOWS ONLY A .PNG DIRECTLY IN A PICTURE FOLDER: NO OTHER TYPE, NO SUBFOLDER, NO WAY OUT WITH ..', () => {
+  const root = join('C:', 'pics', 'eqlwiki')
+  const dirs = [join(root, 'npc'), join(root, 'item'), root]
+  assert.ok(pictureIn(join(root, 'npc', 'npc_a_bat.png'), dirs))
+  assert.ok(pictureIn(join(root, 'npc', 'NPC_A_BAT.PNG'), dirs))
+  assert.ok(pictureIn(join(root, 'notes.png'), dirs))
+  assert.ok(!pictureIn(join(root, 'npc', 'secret.txt'), dirs))
+  assert.ok(!pictureIn(join(root, 'npc', 'deeper', 'x.png'), dirs))
+  assert.ok(!pictureIn(join(root, 'npc', '..', '..', 'other.png'), dirs))
+  assert.ok(!pictureIn(join('C:', 'Windows', 'x.png'), dirs))
 })

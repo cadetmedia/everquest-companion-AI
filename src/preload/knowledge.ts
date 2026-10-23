@@ -124,6 +124,8 @@ export const knowledgeBridge = {
   shotSavedFile: (action: 'show' | 'delete', path: string): Promise<boolean> => ipcRenderer.invoke(IPC.shotSavedFile, action, path),
   /** The .png files in the picture folders, by lower-cased name: a picture put there by hand counts. */
   shotFolderPictures: (): Promise<import('../shared/mobPicture').FolderPictures> => ipcRenderer.invoke(IPC.shotFolderPictures),
+  /** A picture in a picture folder as a data URL, for a row's details; null when it is not one. */
+  shotPictureData: (path: string): Promise<string | null> => ipcRenderer.invoke(IPC.shotPictureData, path),
   /** Keep an item window, Lore tab or spell window picture under the picture root, replacing that part's earlier copy. */
   shotKeepPicture: (kind: 'item' | 'lore' | 'spell', name: string, png: Uint8Array): Promise<import('../shared/mobPicture').PictureKeep> =>
     ipcRenderer.invoke(IPC.shotKeepPicture, kind, name, png)

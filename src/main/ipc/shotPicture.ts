@@ -16,12 +16,12 @@
 // `{ status: 'error' }` with the player's words, so the panel never spins forever.
 
 import { app, BrowserWindow, dialog, ipcMain, nativeImage, shell } from 'electron'
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { IPC } from '../../shared/ipc'
 import { folderPictures, keptPictureFile, PICTURE_FOLDER, pictureFileName, pictureRoot, type FolderPictures, type PictureKeep, type PictureKind, type PictureSave } from '../../shared/mobPicture'
 import { showsName } from '../shot/nameplate'
-import { deleteSafely, writeSafely } from '../shot/pictureFiles'
+import { deleteSafely, pictureIn, writeSafely } from '../shot/pictureFiles'
 import { bgraToRgba, isNearSolid, type Rgba } from '../shot/pixels'
 
 /** A pasted picture past this is not a game screenshot (a 4K screen is 33 MB of pixels). */
@@ -164,14 +164,16 @@ async function autoDir(action: unknown): Promise<string | null> {
 }
 
 /**
- * The folders a mob picture may already sit in, first wins a name: for the auto-save root, then the
- * last folder's root, its npc folder and the root itself (the owner's earlier pictures sit at the
- * root); each once, each still there.
+ * The folders a picture may already sit in, first wins a name: for the auto-save root, then the
+ * last folder's root, its npc, item and spell folders and the root itself (the owner's earlier
+ * pictures sit at the root); each once, each still there. The names never meet (`npc_`, `item_`,
+ * `spell_`), so a mob's picture is found as before.
  */
 function pictureDirs(): string[] {
   const s = settings()
   const roots = [live(s.autoDir), live(s.lastDir)].filter((d): d is string => d !== undefined).map(pictureRoot)
-  const dirs = roots.flatMap((r) => [join(r, PICTURE_FOLDER.npc), r]).filter((d) => existsSync(d))
+  const kinds = [PICTURE_FOLDER.npc, PICTURE_FOLDER.item, PICTURE_FOLDER.spell]
+  const dirs = roots.flatMap((r) => [...kinds.map((k) => join(r, k)), r]).filter((d) => existsSync(d))
   return dirs.filter((d, i) => dirs.findIndex((o) => resolve(o).toLowerCase() === resolve(d).toLowerCase()) === i)
 }
 
@@ -244,7 +246,38 @@ function savedFile(action: unknown, path: unknown): boolean {
   return gone
 }
 
+/** Pictures shown in the details pane, by path, while their file is unchanged. */
+const shown = new Map<string, { mtimeMs: number; url: string }>()
+/** Past this many the oldest goes: a details pane shows one picture at a time. */
+const SHOWN_KEEP = 24
+
+/**
+ * A picture for the row's details pane (owner, 2026-10-22: "can we show the picture if we have it?"),
+ * as a data URL: only a `.png` directly in a picture folder (pictureIn), never past the picture cap,
+ * read again only when the file changed. Null for anything else; never throws.
+ */
+function pictureData(path: unknown): string | null {
+  try {
+    if (typeof path !== 'string' || !pictureIn(path, pictureDirs()) || !existsSync(path)) return null
+    const { mtimeMs, size } = statSync(path)
+    if (size > MAX_PICTURE_BYTES) return null
+    const had = shown.get(path)
+    if (had?.mtimeMs === mtimeMs) return had.url
+    const url = `data:image/png;base64,${readFileSync(path).toString('base64')}`
+    shown.delete(path)
+    shown.set(path, { mtimeMs, url })
+    for (const old of shown.keys()) {
+      if (shown.size <= SHOWN_KEEP) break
+      shown.delete(old)
+    }
+    return url
+  } catch {
+    return null
+  }
+}
+
 export function registerShotPictureIpc(): void {
+  ipcMain.handle(IPC.shotPictureData, (_e, path: unknown) => pictureData(path))
   ipcMain.handle(IPC.shotSaveImage, (_e, png: unknown, fileName: unknown, overwrite: unknown) => savePicture(png, fileName, overwrite))
   ipcMain.handle(IPC.shotCheckMob, (_e, checkId: unknown, name: unknown) => hasMobName(checkId, name))
   ipcMain.handle(IPC.shotAutoDir, (_e, action: unknown) => autoDir(action).catch(() => null))
