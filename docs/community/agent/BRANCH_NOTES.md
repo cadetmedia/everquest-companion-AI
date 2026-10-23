@@ -353,7 +353,22 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   go look it up myself anyways"), never on render or a timer (`src/main/gapQuestLive.ts`); a title
   ending in `?` that the wiki lacks is asked once more without it. `gapQuestMerge.ts` only adds: rows
   the table lacks or holds `?` in, rewards, walkthrough blocks whose words are not on the page,
-  categories; a differing start zone or faction number is a note, never an edit.
+  categories; a differing start zone or faction number is a note, never an edit. The read goes
+  through the shared `wikiClient.fetchPage` (catch_all's). A page whose body is only a link to
+  another spelling of its own title is a stub: the read follows it once and says so (the wiki has
+  `Unfortunate news` as a stub of `Unfortunate News`). The merge reads sections at `= X =` or
+  `== X ==` and adds in the page's own level; `Starts In` is Start Zone; a hand-in counts as present
+  when any Hand/Give line links the item, and a near-miss link (`Curt Dismissal` for `A Curt
+  Dismissal`) is a note. Task lines are never added (12 of 931 cached pages carry one).
+- Chained quests: a task assigned in the same second as another quest's step (Unfortunate news after
+  Call for Aid's last hand-in) is served with `chainedFrom` and no giver or start zone; the page writes
+  `Start Zone: Finishing the quest [[X]]`, no giver row, and that second's talk, hand-ins and rewards
+  stay on the other quest. Repeated hand-ins are a count (`Give 3 [[Fresh Fish]]`); a task line
+  repeated in its second, or right after itself, is one line; an item handed in at a step is never its
+  reward (Nikko hands Defiled Fish Scales back, and the log says `You have been given:` for it).
+- Open from the 2026-10-23 review: a cancelled trade still counts as turned in for the item quest
+  facts (`gaps_quests.rs`; only the quest log drops it); an emote is taken as the hailed NPC's when
+  its speaker's name starts with that NPC's name (`a gnoll pup` after `a gnoll`; none in the log).
 - Quest steps from the log (`gaps_quest_log.rs`): a step's hand-ins are the open trade's offers to its
   NPC (`You offered ...` until `You complete the trade with X.`, 5 min cap), not a window before the
   task line; Unfortunate news offered its letters 57-61 s before. Its talk starts at the player's last
