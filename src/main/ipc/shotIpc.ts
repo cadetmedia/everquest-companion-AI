@@ -15,6 +15,7 @@ import type { ItemDbFile } from '../itemsDb'
 import { effectiveEqRoot } from '../log/config'
 import { decodeTga } from '../shot/gameTextures'
 import { buildIconIndex, iconSheets, readIconIndex, sheetsFingerprint, SheetCells, writeIconIndex, type IconIndex } from '../shot/iconIndex'
+import { readJournalLines } from '../shot/journalLines'
 import { readLines } from '../shot/ocr'
 import type { Rgba } from '../shot/pixels'
 import { readItemShot, type ShotReaders } from '../shot/readItemShot'
@@ -96,13 +97,17 @@ async function readItem(png: unknown): Promise<ItemShotReply> {
   }
 }
 
-/** A picture's text lines (a spell display window), for shared/spellWindow.ts to map in the renderer. */
-async function readText(png: unknown): Promise<ShotTextReply> {
+/**
+ * A picture's text lines (a spell display window), for shared/spellWindow.ts to map in the renderer;
+ * a Quest Journal (`mode` journal) read its own way, with each line's shade (journalLines.ts).
+ */
+async function readText(png: unknown, mode?: unknown): Promise<ShotTextReply> {
   if (!(png instanceof Uint8Array) || png.length === 0 || png.length > MAX_BYTES) return { lines: [], ms: 0, error: 'Not a picture.' }
   const t0 = performance.now()
   try {
     const img = decodePicture(png)
     if (img === null) return { lines: [], ms: 0, error: 'Not a picture, or larger than a 4K screen.' }
+    if (mode === 'journal') return { ...(await readJournalLines(img)), ms: Math.round(performance.now() - t0) }
     const lines = (await readLines(img)).map((l) => l.text)
     return { lines, ms: Math.round(performance.now() - t0) }
   } catch (e) {
@@ -130,7 +135,7 @@ function clipboardPng(): Uint8Array | null {
 export function registerShotIpc(): void {
   ipcMain.handle(IPC.shotClipboard, () => clipboardPng())
   ipcMain.handle(IPC.shotReadItem, (_e, png: unknown) => readItem(png))
-  ipcMain.handle(IPC.shotReadText, (_e, png: unknown) => readText(png))
+  ipcMain.handle(IPC.shotReadText, (_e, png: unknown, mode?: unknown) => readText(png, mode))
   ipcMain.handle(IPC.shotIcon, (_e, id: unknown) => iconUrl(id))
   registerShotPictureIpc()
 }

@@ -13,6 +13,9 @@
 import { itemTierKey } from './itemStats'
 import type { GapHeld, HeldIndex } from './gapHeld'
 import type { GapRow } from './gaps'
+import { silentGiver, type QuestJournalFacts, type QuestLog } from './gapQuests'
+import type { ItemQuestFacts } from './itemQuestFacts'
+import { journalTurnIn } from './questJournal'
 
 /** One item a witness names, before it is a row. */
 export interface ExtraItem {
@@ -20,6 +23,8 @@ export interface ExtraItem {
   kind: 'held' | 'captured'
   /** When the witness saw it (ISO). */
   at: string
+  /** A held item: the first export that listed it (ISO), when remembered (gapHeldSeen.ts). */
+  first?: string
   count: number
   samples: string[]
 }
@@ -72,8 +77,29 @@ export function capturedExtras(items: readonly CapturedItem[]): ExtraItem[] {
   return items.map((c) => ({ name: c.name, kind: 'captured' as const, at: c.at, count: 1, samples: [`Item window captured ${logStamp(c.at)}`] }))
 }
 
-/** One Items row per item, its witnesses joined; none for an item a row already names. */
-export function extraItemRows(extras: readonly ExtraItem[], rows: readonly GapRow[]): GapRow[] {
+/**
+ * What the app may guess of a held item's quest (owner, 2026-10-22): the quests the log saw, to find
+ * the step that handed it over silently (gapQuests.ts `silentGiver`), and the kept Quest Journal
+ * readings, to find who an objective sends it to (questJournal.ts `journalTurnIn`).
+ */
+export interface ExtraGuess {
+  quests: readonly { name: string; log: QuestLog }[]
+  journals: readonly QuestJournalFacts[]
+}
+
+/** A held item's guessed quest facts, `guess`-marked: shown, never written into a page; none when nothing fits. */
+export function guessedFacts(name: string, firstSeen: string, g: ExtraGuess): ItemQuestFacts | undefined {
+  const giver = silentGiver(name, logStamp(firstSeen), g.quests)
+  const to = journalTurnIn(g.journals.flatMap((j) => j.objectives ?? []), name)
+  if (giver === undefined && to === undefined) return undefined
+  return {
+    ...(giver === undefined ? {} : { givenBy: { npc: giver.npc, ...(giver.zone === undefined ? {} : { zone: giver.zone }), guess: true as const, quest: giver.quest } }),
+    ...(to === undefined ? {} : { turnInGuess: { npc: to, ...(giver === undefined ? {} : { quest: giver.quest }) } })
+  }
+}
+
+/** One Items row per item, its witnesses joined; none for an item a row already names. A held one carries its guessed quest facts. */
+export function extraItemRows(extras: readonly ExtraItem[], rows: readonly GapRow[], guess?: ExtraGuess): GapRow[] {
   const named = itemRowKeys(rows)
   const byKey = new Map<string, ExtraItem[]>()
   for (const e of extras) {
@@ -83,6 +109,8 @@ export function extraItemRows(extras: readonly ExtraItem[], rows: readonly GapRo
   return [...byKey.values()].map((group) => {
     const ats = group.map((e) => e.at).sort()
     const held = group.find((e) => e.kind === 'held')
+    const firstSeen = group.map((e) => e.first ?? e.at).sort()[0] ?? ''
+    const facts = held === undefined || guess === undefined ? undefined : guessedFacts(held.name, firstSeen, guess)
     return {
       domain: 'item',
       name: (held ?? group[0]).name,
@@ -90,7 +118,8 @@ export function extraItemRows(extras: readonly ExtraItem[], rows: readonly GapRo
       count: held?.count ?? 1,
       first: logStamp(ats[0] ?? ''),
       last: logStamp(ats.at(-1) ?? ''),
-      details: { samples: group.flatMap((e) => e.samples) }
+      details: { samples: group.flatMap((e) => e.samples) },
+      ...(facts === undefined ? {} : { questFacts: facts })
     }
   })
 }

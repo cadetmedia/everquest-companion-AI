@@ -29,6 +29,7 @@ import { gapsSince, joinCharacters, otherInputs, ownSince, type CharacterGaps, t
 import { useModule } from '../../lib/useModule'
 import { useItemMobs } from '../../lib/gapItemMobs'
 import { useThrottled } from '../../lib/useThrottled'
+import { questJournalNow } from './itemShotsStore'
 import { useItemForage } from '../../lib/gapItemForage'
 import { forageProofNames } from '@shared/gapForage'
 import { mobPageFinder } from '@shared/mobPageTitle'
@@ -42,7 +43,7 @@ const ZONE_NAME: ZoneNamer = wikiZoneNamer(catalogZoneCounts(MOB_CATALOG))
 const IS_MOB = catalogNameTest(MOB_CATALOG)
 /** A quest's catalog entry when the wiki has its page (the Quests rows' Make page / Update page). */
 const QUEST_ENTRY = questCatalogFinder((questsJson as { quests: QuestCatalogEntry[] }).quests)
-export const PAGE_EXTRAS: PageExtras = { zoneName: ZONE_NAME, isMob: IS_MOB, commonLoot: commonLootNames(MOB_CATALOG), vendorAt: vendorFinder(MOB_CATALOG), mobPage: mobPageFinder(MOB_CATALOG), questEntry: QUEST_ENTRY }
+export const PAGE_EXTRAS: PageExtras = { zoneName: ZONE_NAME, isMob: IS_MOB, commonLoot: commonLootNames(MOB_CATALOG), vendorAt: vendorFinder(MOB_CATALOG), mobPage: mobPageFinder(MOB_CATALOG), questEntry: QUEST_ENTRY, questJournal: questJournalNow }
 
 /** The wiki side, one object for the session: the caches key on it. */
 const WIKI: GapsWiki = { catalog: MOB_CATALOG, groups: DROPS.groups, aliases: DROPS.aliases ?? {} }

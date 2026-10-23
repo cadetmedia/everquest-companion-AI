@@ -9,6 +9,7 @@ import type { ItemPageShot } from '@shared/wikiPage'
 import type { SpellPageShot } from '@shared/spellWindow'
 import type { ItemShotReply } from '@shared/itemWindow'
 import type { ShotKind } from '@shared/itemShotKeep'
+import { questTitleKey, type QuestJournalFacts } from '@shared/gapQuests'
 
 export const SHOTS_KEY = 'eq.gaps.itemShots'
 export const SPELL_SHOTS_KEY = 'eq.gaps.spellShots'
@@ -26,6 +27,8 @@ function shotStore<T extends object>(key: string): {
   now: (name: string) => Stored<T> | undefined
   set: (name: string, shot: T | null) => void
   use: () => Readonly<Record<string, Stored<T>>>
+  /** Every kept reading, outside a render: parsed again only when the stored text changed. */
+  all: () => Readonly<Record<string, Stored<T>>>
 } {
   const load = (): Record<string, Stored<T>> => {
     try {
@@ -76,7 +79,8 @@ function shotStore<T extends object>(key: string): {
       const others = Object.fromEntries(Object.entries(load()).filter(([k]) => k !== name))
       save(shot === null ? others : { ...others, [name]: { ...shot, at: new Date().toISOString() } })
     },
-    use: () => useSyncExternalStore(subscribe, snapshot, snapshot)
+    use: () => useSyncExternalStore(subscribe, snapshot, snapshot),
+    all: snapshot
   }
 }
 
@@ -94,6 +98,20 @@ export const useItemShots = (): Readonly<Record<string, StoredShot>> => items.us
 export const setSpellShot = (name: string, shot: SpellPageShot | null): void => spells.set(name, shot)
 /** Every kept spell window reading by spell name. */
 export const useSpellShots = (): Readonly<Record<string, StoredSpellShot>> => spells.use()
+
+/**
+ * What pasted Quest Journal windows said of each quest, by its key (gapQuests.ts `questTitleKey`):
+ * its zone and level range, and, for the task the window had selected, its objectives and description
+ * (shared/questJournal.ts; owner, 2026-10-22). Copy wiki page reads the Minimum Level from it.
+ */
+export const JOURNALS_KEY = 'eq.gaps.questJournals'
+const journals = shotStore<QuestJournalFacts>(JOURNALS_KEY)
+/** Keep (or replace) what a journal said of one quest, by its key; `null` forgets it. */
+export const setQuestJournal = (key: string, facts: QuestJournalFacts | null): void => journals.set(key, facts)
+/** Every kept journal reading by quest key, current across windows. */
+export const useQuestJournals = (): Readonly<Record<string, Stored<QuestJournalFacts>>> => journals.use()
+/** One quest's kept journal reading, by its task name, outside a render (Copy wiki page, the details). */
+export const questJournalNow = (name: string): QuestJournalFacts | undefined => journals.all()[questTitleKey(name)]
 
 const pictures = shotStore<{ path: string }>(PICTURES_KEY)
 /** Note a mob picture saved under `file` (MobPicture); `null` when it was deleted. */

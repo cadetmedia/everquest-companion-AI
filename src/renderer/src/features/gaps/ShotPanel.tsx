@@ -20,6 +20,7 @@ import { itemRowNamesNow, itemShotNow, keepPartPicture, setCapturedRead, setItem
 import { KeptPicture, Line, PasteZone, WrongItem } from './PasteZone'
 import SpellShot from './SpellShot'
 import MobPicture from './MobPicture'
+import QuestShot from './QuestShot'
 
 /** One icon choice, drawn from the install's own sheets. */
 function IconChoice({ id, picked, onPick }: { id: number; picked: boolean; onPick: () => void }): JSX.Element {
@@ -255,5 +256,6 @@ export default function ShotPanel({ row }: { row: GapRow }): JSX.Element | null 
   if (isItemShotRow(row)) return <ItemShot key={row.name} row={row} />
   if (row.domain === 'spell' && row.suggest === undefined) return <SpellShot key={row.name} row={row} />
   if (row.domain === 'image' || row.domain === 'mob' || row.domain === 'merchant') return <MobPicture key={row.name} row={row} />
+  if (row.domain === 'quest') return <QuestShot key={row.name} row={row} />
   return null
 }
