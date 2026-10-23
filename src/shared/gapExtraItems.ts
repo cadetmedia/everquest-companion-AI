@@ -135,6 +135,11 @@ export function capturedItemsOf(parsed: unknown): CapturedItem[] {
   return Array.isArray(parsed) ? (parsed as Partial<CapturedItem>[]).filter((c): c is CapturedItem => typeof c?.name === 'string' && typeof c.at === 'string') : []
 }
 
+/** The list less `name`, any case: a capture the player removed (a misread name, owner 2026-10-23). */
+export function withoutCapturedItem(items: readonly CapturedItem[], name: string): CapturedItem[] {
+  return items.filter((c) => c.name.toLowerCase() !== name.toLowerCase())
+}
+
 /** The list with `name` kept at `at` (a second capture of it only moves its time), the newest `keep`. */
 export function withCapturedItem(items: readonly CapturedItem[], name: string, at: string, keep: number): CapturedItem[] {
   return [...items.filter((c) => c.name.toLowerCase() !== name.toLowerCase()), { name, at }].slice(-keep)
