@@ -27,9 +27,9 @@ import type { LootEvent } from './types'
 import { withPageTitles } from './mobPageTitle'
 import { noticeProof } from './gapNotices'
 import { locFinder, questFactsOf, questPageParts, withQuestFields } from './itemQuestFacts'
-import { fishedNote, roleClass, roleField, roleOf } from './gapRoles'
+import { roleClass, roleField, roleOf, withFishedNote } from './gapRoles'
 import { questRowPage } from './gapQuestPage'
-import type { QuestCatalogEntry, QuestJournalFacts } from './gapQuests'
+import type { QuestExtras } from './gapQuests'
 
 /** A log zone name as the wiki spells it (shared/gapWikiZone.ts); as printed when none is given. */
 export type ZoneNamer = (raw: string) => string
@@ -131,8 +131,6 @@ export interface ItemFacts {
   /** The quest sentences for `|notes` and the `|relatedquests` list (shared/itemQuestFacts.ts). */
   questNote?: string
   relatedQuests?: string
-  /** Where it was caught fishing, as the wiki spells the zones (gaps_fished.rs). */
-  fishedIn?: string[]
 }
 
 /** A faction a kill moved: the amount most lines stated, and whether the kill raised it. */
@@ -235,8 +233,7 @@ export function itemFacts(row: GapRow, loot: readonly LootEvent[], zoneName: Zon
   // A merchant's offer heard at ally wins over the instant-sale estimate; any other never stands in
   // for it (shared/gapOffers.ts `merchantValueOf`, owner ask 2026-10-20).
   const merchantValue = merchantValueOf(row.details, derivedPrices(row.details)?.vendorValue)
-  const fished = ((row as { fishedIn?: string[] }).fishedIn ?? []).map(zoneName)
-  return { name: row.name, drops, soldBy, crafted: row.kinds.includes('crafted'), ...(merchantValue === undefined ? {} : { merchantValue }), ...(fished.length === 0 ? {} : { fishedIn: fished }) }
+  return { name: row.name, drops, soldBy, crafted: row.kinds.includes('crafted'), ...(merchantValue === undefined ? {} : { merchantValue }) }
 }
 
 /** The levels a mob row's /con lines stated (`L12 indifferent`), lowest first. */
@@ -387,7 +384,6 @@ export function itemPage(f: ItemFacts): string {
   for (const d of f.drops) byZone.set(d.zone, [...(byZone.get(d.zone) ?? []), d.mob])
   const fields: [string, string][] = [['itemname', f.name]]
   if (f.merchantValue !== undefined) fields.push(['merchant_value', wikiCoin(f.merchantValue)])
-  if ((f.fishedIn ?? []).length > 0) fields.push(['notes', fishedNote(f.fishedIn ?? [])])
   fields.push(['statsblock', STATS_SKELETON])
   if (byZone.size > 0) fields.push(['dropsfrom', zoneBlocks(byZone)])
   if (f.soldBy.length > 0) fields.push(['soldby', itemWhereTable(f.soldBy)])
@@ -569,7 +565,8 @@ export function merchantPage(f: NpcFacts): string {
 }
 
 /** What the tab knows beside the row and the ledgers: the wiki's zone spellings and its mobs. */
-export interface PageExtras {
+/** `questEntry` / `questJournal`: a quest's catalog entry and its Quest Journal reading (gapQuests.ts). */
+export interface PageExtras extends QuestExtras {
   zoneName?: ZoneNamer
   /** A name the mob catalog has: a one-word caster that is a mob, not a player. */
   isMob?: (name: string) => boolean
@@ -581,9 +578,6 @@ export interface PageExtras {
   vendorAt?: VendorFinder
   /** A mob's page title, by the catalog (`mobPageFinder`): the links take it, not the log's spelling. */
   mobPage?: (name: string) => string | undefined
-  /** A quest's catalog entry when the wiki has its page (quests.json), and its Quest Journal reading. */
-  questEntry?: (name: string) => QuestCatalogEntry | undefined
-  questJournal?: (name: string) => QuestJournalFacts | undefined
 }
 
 /**
@@ -609,7 +603,7 @@ interface PageContext extends Omit<PageExtras, 'zoneName'> {
  * so a new domain is one entry, and a domain without one does not compile.
  */
 const PAGE_OF: Record<GapDomain, (row: GapRow, c: PageContext) => string> = {
-  item: (row, c) => itemPage({ ...withPageTitles(itemFacts(row, c.loot, c.zoneName, c.vendorAt), c.mobPage), ...questPageParts(questFactsOf(row), { mobPage: c.mobPage, zoneName: c.zoneName, locOf: locFinder(c.seen.mobLocs) }) }),
+  item: (row, c) => itemPage({ ...withPageTitles(itemFacts(row, c.loot, c.zoneName, c.vendorAt), c.mobPage), ...withFishedNote(questPageParts(questFactsOf(row), { mobPage: c.mobPage, zoneName: c.zoneName, locOf: locFinder(c.seen.mobLocs) }), row, c.zoneName) }),
   // A mob its target line calls a merchant takes the merchant layout before any trade (owner, 2026-10-22).
   mob: (row, c) => (roleOf(row) === 'Merchant' ? merchantPage(mobFacts(row, [], c.kills, { ...c.seen, zoneName: c.zoneName })) : mobPage(mobFacts(row, c.loot, c.kills, { ...c.seen, zoneName: c.zoneName }), c.commonLoot)),
   merchant: (row, c) => merchantPage(mobFacts(row, [], c.kills, { ...c.seen, zoneName: c.zoneName })),

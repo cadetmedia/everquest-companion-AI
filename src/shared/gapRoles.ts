@@ -41,5 +41,15 @@ export function fishedNote(zones: readonly string[]): string {
   return `Fished up in ${places.map(wikiZoneLink).join(' and ')}.`
 }
 
+/**
+ * An item page's quest sentences with the fishing note first (`Fished up in [[Lake Nerius]].`), from
+ * the zones the row was fished in (`fishedIn`), as the wiki spells them; unchanged when never fished.
+ */
+export function withFishedNote<Q extends { questNote?: string }>(q: Q, row: object, zoneName: (raw: string) => string): Q {
+  const zones = ((row as { fishedIn?: string[] }).fishedIn ?? []).map(zoneName)
+  if (zones.length === 0) return q
+  return { ...q, questNote: [fishedNote(zones), ...(q.questNote === undefined ? [] : [q.questNote])].join(' ') }
+}
+
 /** The role in words for the row's details: `Banker (its target line)`. */
 export const roleLine = (role: string | undefined): string[] => (role === undefined ? [] : [`Role: ${role} (the client's target line)`])

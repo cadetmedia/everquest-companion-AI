@@ -58,6 +58,14 @@ export interface QuestCatalogEntry {
   expReward?: boolean
 }
 
+/** What the page writers read of quests beside the row: the catalog's entry, the journal's reading. */
+export interface QuestExtras {
+  /** A quest's catalog entry when the wiki has its page (quests.json). */
+  questEntry?: (name: string) => QuestCatalogEntry | undefined
+  /** What a pasted Quest Journal said of it (screenshot-to-wiki `questJournal.ts`). */
+  questJournal?: (name: string) => QuestJournalFacts | undefined
+}
+
 /** What a Quest Journal screenshot read (screenshot-to-wiki `questJournal.ts`), as the page needs it. */
 export interface QuestJournalFacts {
   zone?: string
