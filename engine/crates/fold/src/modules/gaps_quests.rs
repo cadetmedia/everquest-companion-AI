@@ -18,12 +18,15 @@
 //!
 //! A child of `gaps.rs`, apart so that file keeps its size.
 
+use super::{Domain, GapsModule};
 use crate::event::Event;
 use crate::message_overlay::message_text_of;
+use crate::modules::consider::mob_key;
 use crate::modules::gaps_keys::item_gap_key;
 use crate::modules::gaps_players::speaker_of;
 use crate::modules::resist::world::is_player_shaped_name;
 use serde::Serialize;
+use serde_json::{json, Value};
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet, VecDeque};
 
 /// The NPC's last line before a give: the give follows its hand-over line in the same second or two.
@@ -82,6 +85,12 @@ pub struct QuestFacts {
     /// Items given or turned in within TASK_MS, waiting for a task line.
     pending: Vec<(String, i64)>,
     by_item: HashMap<String, Facts>,
+    /// The last NPC an item was turned in to, and when.
+    last_offer: Option<(String, i64)>,
+    /// Each NPC's quests, by its mob key: a task line within TASK_MS after it spoke or took an item
+    /// (owner, 2026-10-22: Nikko Canti's page left `related_quests` empty; `You have been assigned
+    /// the task 'Something Fishy'.` came a second after his [help] line).
+    by_npc: HashMap<String, BTreeSet<String>>,
 }
 
 /// `Your task 'Q' has been updated.` / `You have been assigned the task 'Q'.` → `Q`.
@@ -169,6 +178,7 @@ impl QuestFacts {
             return false;
         }
         self.pending_item(item, ts);
+        self.last_offer = Some((npc.to_string(), ts));
         *self
             .by_item
             .entry(item_gap_key(item))
@@ -184,10 +194,23 @@ impl QuestFacts {
         self.pending.push((item_gap_key(item), ts));
     }
 
-    /// A task line: every item given or turned in just before belongs to that quest.
+    /// A task line: every item given or turned in just before belongs to that quest, and so does the
+    /// NPC that spoke or took an item just before.
     fn task(&mut self, quest: &str, ts: i64) -> bool {
         self.pending.retain(|(_, at)| ts - at <= TASK_MS);
         let mut changed = false;
+        for (npc, at) in [self.last_npc.clone(), self.last_offer.clone()]
+            .into_iter()
+            .flatten()
+        {
+            if ts - at <= TASK_MS {
+                changed |= self
+                    .by_npc
+                    .entry(mob_key(&npc))
+                    .or_default()
+                    .insert(quest.to_string());
+            }
+        }
         for (key, _) in &self.pending {
             changed |= self
                 .by_item
@@ -197,6 +220,19 @@ impl QuestFacts {
                 .insert(quest.to_string());
         }
         changed
+    }
+
+    /// A row's `questFacts`: an item's facts, or an NPC's quests (`{ "quests": [...] }`); none when the
+    /// log tied the row to no quest step.
+    pub fn served(&self, domain: Domain, key: &str) -> Option<Value> {
+        match domain {
+            Domain::Item => self.of(key).map(|f| json!(f)),
+            Domain::Mob | Domain::Merchant => {
+                let quests = self.by_npc.get(key).filter(|q| !q.is_empty())?;
+                Some(json!({ "quests": quests }))
+            }
+            _ => None,
+        }
     }
 
     /// The facts an item row serves, by its key; none when the log saw no quest step for it.
@@ -215,6 +251,25 @@ impl QuestFacts {
             quests: f.quests.iter().cloned().collect(),
         };
         (out != ItemQuestFacts::default()).then_some(out)
+    }
+}
+
+impl GapsModule {
+    /// `You have been given: <item>`: its giver, for the item's quest facts.
+    pub(super) fn quest_give(&mut self, ev: &Event) -> bool {
+        let zone = self.zone.clone();
+        match (ev.str("via"), ev.str("item")) {
+            (Some("given"), Some(item)) => self.quests.given(item, ev.ts(), zone.as_deref()),
+            _ => false,
+        }
+    }
+
+    /// `You offered 1 <item> to <NPC>.`: a turn-in, for the item's and the NPC's quest facts.
+    pub(super) fn turn_in(&mut self, ev: &Event) -> bool {
+        match (ev.str("item"), ev.str("npc")) {
+            (Some(item), Some(npc)) => self.quests.offered(item, npc, ev.ts()),
+            _ => false,
+        }
     }
 }
 
@@ -260,7 +315,11 @@ mod tests {
             "a player is no turn-in"
         );
         assert!(
-            !q.task("Alchemical Solution", t(206)),
+            q.task("Alchemical Solution", t(206)),
+            "the task line after the turn-in ties the quest to Dorian"
+        );
+        assert!(
+            !q.task("Alchemical Solution", t(207)),
             "the same quest again changes nothing"
         );
         assert_eq!(
@@ -272,5 +331,28 @@ mod tests {
             })
         );
         assert!(q.of("ancient signet ring").is_none());
+        // Dorian took the missive just before the task line: his quest.
+        assert_eq!(
+            q.served(super::Domain::Mob, "dorian g'wyn"),
+            Some(json!({ "quests": ["Alchemical Solution"] }))
+        );
+    }
+
+    /// Owner's log, 2026-10-22: `Nikko Canti says, '... [help] me restock my catch ...'` then a second
+    /// later `You have been assigned the task 'Something Fishy'.`: Nikko's page lists the quest.
+    #[test]
+    fn an_npc_that_spoke_just_before_a_task_line_gives_that_quest() {
+        let mut q = QuestFacts::default();
+        let t = |s: i64| 1_787_000_000_000 + s * 1000;
+        q.last_npc = Some(("Nikko Canti".into(), t(0)));
+        assert!(q.task("Something Fishy", t(1)));
+        assert_eq!(
+            q.served(super::Domain::Mob, "nikko canti"),
+            Some(json!({ "quests": ["Something Fishy"] }))
+        );
+        // A task line long after says nothing of him.
+        q.last_npc = Some(("Guard Shilster".into(), t(100)));
+        assert!(!q.task("Something Fishy", t(200)));
+        assert_eq!(q.served(super::Domain::Mob, "guard shilster"), None);
     }
 }

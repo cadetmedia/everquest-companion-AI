@@ -25,6 +25,7 @@ import { wikiZoneLink } from './gapWikiZone'
 import type { VendorFinder } from './gapMobPage'
 import type { LootEvent } from './types'
 import { withPageTitles } from './mobPageTitle'
+import { noticeProof } from './gapNotices'
 import { locFinder, questFactsOf, questPageParts, withQuestFields } from './itemQuestFacts'
 
 /** A log zone name as the wiki spells it (shared/gapWikiZone.ts); as printed when none is given. */
@@ -157,6 +158,8 @@ export interface MobFacts {
   specials: string[]
   /** What its corpse paid at the player's kills; absent when no kill paid (never "none", gaps_coin.rs). */
   coin?: MobCoin
+  /** The quests whose task lines came just after it spoke or took an item (gaps_quests.rs): `related_quests`. */
+  quests?: string[]
 }
 
 /** What the log saw of mobs beyond the rows: each kill's factions and each mob's `/loc` points. */
@@ -287,6 +290,7 @@ export function mobFacts(row: GapRow, loot: readonly LootEvent[], kills: KillMap
     points: (seen.mobLocs ?? []).filter(mine).flatMap((m) => m.points),
     specials: [...new Set((seen.mobSpecials ?? []).filter(mine).flatMap((m) => m.specials))],
     ...coinOf(seen.mobCoin, row.name),
+    quests: questFactsOf(row)?.quests ?? [],
     factions: (seen.killFactions ?? []).filter(mine).map(({ faction, adjust, raised }) => ({
       faction,
       ...(adjust === undefined ? {} : { adjust }),
@@ -443,9 +447,9 @@ function factionBlocks(factions: readonly FactionSeen[], credited: number): Reco
   }
 }
 
-type NpcFacts = Pick<MobFacts, 'name' | 'zones' | 'levels' | 'points' | 'factions' | 'credited' | 'specials'>
+type NpcFacts = Pick<MobFacts, 'name' | 'zones' | 'levels' | 'points' | 'factions' | 'credited' | 'specials' | 'quests'>
 
-/** The values both NPC layouts share: image, name, level, zone, location, factions. */
+/** The values both NPC layouts share: image, name, level, zone, location, factions, quests. */
 function npcValues(f: NpcFacts): Record<string, string> {
   const lo = f.levels[0]
   const hi = f.levels.at(-1)
@@ -457,6 +461,7 @@ function npcValues(f: NpcFacts): Record<string, string> {
     zone: f.zones.map(wikiZoneLink).join(', '),
     location: locationText(f.points),
     special: f.specials.join(', '),
+    related_quests: (f.quests ?? []).map((q) => `* [[${q}]]`).join('\n'),
     ...factionBlocks(f.factions, f.credited)
   }
 }
@@ -614,18 +619,6 @@ const NEEDED_OF: Partial<Record<GapDomain, (row: GapRow) => string[]>> = {
   drop: () => [],
   image: () => [],
   notice: () => []
-}
-
-/**
- * A notice row's copy: what the log proves, to cite on the page's talk page or in the edit summary
- * when the notice comes off (owner, 2026-10-22): how often and when it was met, where, and the lines.
- */
-function noticeProof(row: GapRow): string {
-  const zones = row.details.zones?.all ?? row.details.zones?.entries.map((z) => z.name) ?? []
-  const where = zones.length > 0 ? ` in ${zones.join(', ')}` : ''
-  const when = row.first === row.last ? row.first : `${row.first} to ${row.last}`
-  const head = `Seen in EverQuest Legends (${row.kinds.join(', ')}), ${String(row.count)} time${row.count === 1 ? '' : 's'}${where}, ${when}:`
-  return [head, ...row.details.samples.map((s) => `: ${s}`)].join('\n') + '\n'
 }
 
 /**

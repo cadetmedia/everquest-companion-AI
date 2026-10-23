@@ -43,3 +43,13 @@ test('THE QUEST JOINS A SCREENSHOT\'S LORE NOTE, OR STANDS BEFORE THE STATSBLOCK
   ])
   assert.deepEqual(withQuestFields([['itemname', 'X'], ['statsblock', 'S']], { questNote: 'N' }), [['itemname', 'X'], ['notes', 'N'], ['statsblock', 'S']])
 })
+
+// Owner, 2026-10-22: "how come this doesn't include the something fishy quest?" Nikko Canti spoke
+// his [help] line and a second later `You have been assigned the task 'Something Fishy'.`
+test('COPY WIKI PAGE FOR AN NPC OR MERCHANT LISTS ITS QUESTS IN related_quests', () => {
+  const nikko = { domain: 'mob', name: 'Nikko Canti', kinds: ['hailed'], count: 1, first: '', last: '', details: { samples: [] }, questFacts: { quests: ['Something Fishy'] } } as unknown as GapRow
+  assert.ok(wikiPageText(nikko, [], {}).includes('| related_quests = \n\n* [[Something Fishy]]'))
+  assert.ok(wikiPageText({ ...nikko, domain: 'merchant' }, [], {}).includes('| related_quests = \n\n* [[Something Fishy]]'))
+  // No quest seen: the field stays open.
+  assert.ok(wikiPageText({ ...nikko, questFacts: undefined } as unknown as GapRow, [], {}).includes('| related_quests = \n'))
+})

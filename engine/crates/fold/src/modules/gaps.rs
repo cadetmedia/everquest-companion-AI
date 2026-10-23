@@ -285,23 +285,6 @@ impl GapsModule {
         }
     }
 
-    /// `You have been given: <item>`: its giver, for the item's quest facts (`gaps_quests.rs`).
-    fn quest_give(&mut self, ev: &Event) -> bool {
-        let zone = self.zone.clone();
-        match (ev.str("via"), ev.str("item")) {
-            (Some("given"), Some(item)) => self.quests.given(item, ev.ts(), zone.as_deref()),
-            _ => false,
-        }
-    }
-
-    /// `You offered 1 <item> to <NPC>.`: a turn-in, for the item's quest facts.
-    fn turn_in(&mut self, ev: &Event) -> bool {
-        match (ev.str("item"), ev.str("npc")) {
-            (Some(item), Some(npc)) => self.quests.offered(item, npc, ev.ts()),
-            _ => false,
-        }
-    }
-
     /// A merchant's offer for an item (owner, 2026-10-20: "more information is gathered about the
     /// items if a merchant tries to sell"): an unknown item is filed as `appraised`, placed nowhere,
     /// with the offer and the player's standing with that merchant on its row (`gaps_offers.rs`).
@@ -503,8 +486,8 @@ impl GapsModule {
         if domain == Domain::Mob && only_met && is_player_shaped_name(&row.name) && !self.who.is_npc(&row.name) {
             v["maybePlayer"] = json!(true);
         }
-        if let Some(f) = (domain == Domain::Item).then(|| self.quests.of(key)).flatten() {
-            v["questFacts"] = json!(f);
+        if let Some(f) = self.quests.served(domain, key) {
+            v["questFacts"] = f;
         }
         if let Some(s) = self.suggestion(domain, key) {
             v["suggest"] = json!(s);
