@@ -81,8 +81,10 @@ export interface CoinEvent extends LogEventBase {
  *                the same delivery when there is nowhere to put it. It still reached you.
  *   'fashioned'  `You have fashioned the items together to create something new: <item>.` — a
  *                tradeskill combine. Distinct from `itemMerge`, which is the +N upgrade line.
+ *   'given'      `You have been given: <item>` — an NPC hands it over, a quest step (owner's log,
+ *                2026-10-22: 14 lines; Encoded Missive from Ty`Klerr).
  */
-export type ItemReceivedVia = 'inventory' | 'overflow' | 'fashioned'
+export type ItemReceivedVia = 'inventory' | 'overflow' | 'fashioned' | 'given'
 
 /** An item reaching the player outside the loot family. */
 export interface ItemReceivedEvent extends LogEventBase {

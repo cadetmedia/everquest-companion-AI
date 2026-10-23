@@ -175,6 +175,16 @@ fn classify_purchase(r: &AcquireRes, c: &Ctx, out: &mut Ev) -> bool {
 /// The three corpse-less item arrivals.
 fn classify_item_arrival(r: &AcquireRes, c: &Ctx, out: &mut Ev) -> bool {
     let text = c.text;
+    // `You have been given: Encoded Missive` — an NPC hands a quest item over (owner's log,
+    // 2026-10-22: 14 lines, Void-Touched Potential x9, Encoded Missive, Peerless Sapphire ...).
+    if let Some(item) = text.strip_prefix("You have been given: ") {
+        let item = js_trim(item.trim_end_matches('.'));
+        if item.is_empty() || text.contains(CHAT_QUOTE_MARKER) {
+            return false;
+        }
+        item_received(c, out, item, "given");
+        return true;
+    }
     if text.starts_with("You have fashioned ") {
         let Some(m) = r.item_fashioned.captures(text) else {
             return false;
