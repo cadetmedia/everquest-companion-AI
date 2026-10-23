@@ -22,8 +22,11 @@ const RAUL = ['Regal Weapon Tailoring', 'Glorious Weapon Tailoring', 'Whip Patte
 const TROONI = ['Small Cloth Shirt', 'Small Cloth Pants', 'Small Sewing Kit', 'Small Cloth Gloves', 'Small Cloth Cape', 'How to Sew: Small Sizes', 'Small Cloth Sleeves', 'Small Cloth Cap', 'Small Cloth Wristband', 'Small Cloth Shawl', 'Small Cloth Cord', 'Small Cloth Veil', 'Small Cloth Choker']
 
 test('the corpus names an item\'s tradeskills by its recipes, grouped or by the skill\'s page', () => {
-  const t = itemTrades(['Sage Leaf', 'Small Plate Helm Mold', 'No Such Item Anywhere'])
-  assert.deepEqual(t['Sage Leaf'], ['Alchemy', 'Baking'])
+  // Named by pages that state the trade either way in every data refresh so far: a skill page
+  // link (Agrimony) and a grouped line or link (Sage Leaf's page changed between the two, 2026-10-23).
+  const t = itemTrades(['Agrimony', 'Sage Leaf', 'Small Plate Helm Mold', 'No Such Item Anywhere'])
+  assert.deepEqual(t['Agrimony'], ['Alchemy'])
+  assert.ok(t['Sage Leaf'].includes('Baking'), String(t['Sage Leaf']))
   assert.deepEqual(t['Small Plate Helm Mold'], ['Blacksmithing'])
   assert.deepEqual(t['No Such Item Anywhere'], [])
 })
