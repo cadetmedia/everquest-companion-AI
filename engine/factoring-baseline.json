@@ -408,6 +408,24 @@
       "value": 455
     },
     {
+      "file": "crates/fold/src/modules/event_feed.rs",
+      "metric": "file-lines",
+      "name": "",
+      "value": 434
+    },
+    {
+      "file": "crates/fold/src/modules/gaps_tests.rs",
+      "metric": "file-lines",
+      "name": "",
+      "value": 411
+    },
+    {
+      "file": "crates/fold/src/modules/gaps.rs",
+      "metric": "file-lines",
+      "name": "",
+      "value": 460
+    },
+    {
       "file": "crates/fold/src/modules/resist/catalog.rs",
       "metric": "complexity",
       "name": "abbr_by_name",
@@ -453,7 +471,7 @@
       "file": "crates/knowledge/src/lib.rs",
       "metric": "file-lines",
       "name": "",
-      "value": 463
+      "value": 474
     },
     {
       "file": "crates/parity/src/main.rs",
