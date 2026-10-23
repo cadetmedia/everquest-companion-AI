@@ -152,6 +152,8 @@ pub struct GapsModule {
     specials: MobSpecials,
     /// Each name's last /con rung: the standing a merchant's offer is made at (`gaps_offers.rs`).
     standings: Standings,
+    /// What each merchant quoted or sold the player, for its page's `items_sold` (`gaps_stock.rs`).
+    stock: stock::Stock,
     /// The slot the event feed reads each con's marks from (`gaps_marks.rs`).
     con_marks: ConMarks,
     seq: i64,
@@ -178,6 +180,7 @@ impl GapsModule {
         self.who.clear();
         self.specials.clear();
         self.standings.clear();
+        self.stock.clear();
         if let Ok(mut cache) = self.suggests.lock() {
             cache.clear();
         }
@@ -237,10 +240,7 @@ impl GapsModule {
     }
 
     fn item(&mut self, ev: &Event, kind: &'static str) -> bool {
-        match ev.str("item") {
-            Some(name) => self.item_named(name, kind, ev),
-            None => false,
-        }
+        ev.str("item").is_some_and(|name| self.item_named(name, kind, ev))
     }
 
     fn item_named(&mut self, name: &str, kind: &'static str, ev: &Event) -> bool {
@@ -256,10 +256,7 @@ impl GapsModule {
     /// and nothing else — not the zone (the item is not from here), not the count, not a kind.
     /// A name the log only ever destroyed has no row to carry it and is not filed.
     fn disposal(&mut self, ev: &Event) -> bool {
-        let Some(name) = ev.str("item") else {
-            return false;
-        };
-        let Some(row) = self.rows.get_mut(&(Domain::Item, item_gap_key(name))) else {
+        let Some(row) = ev.str("item").and_then(|name| self.rows.get_mut(&(Domain::Item, item_gap_key(name)))) else {
             return false;
         };
         row.details.disposal(ev);
@@ -284,7 +281,7 @@ impl GapsModule {
     /// after it), or an unparsed line (a price quote, or a faction line held for the kill after it).
     fn trade(&mut self, ev: &Event) -> bool {
         match ev.kind() {
-            "purchase" => self.item_event(ev) | self.merchant(ev),
+            "purchase" => self.item_event(ev) | self.merchant(ev) | self.stocked(ev),
             "coin" => {
                 self.kill_coin.line(ev);
                 self.merchant(ev)
@@ -292,7 +289,7 @@ impl GapsModule {
             "unknown" => {
                 self.kill_factions.line(ev);
                 let zone = self.zone.clone();
-                self.mob_locs.line(ev, zone.as_deref()) | self.quest_line(ev) | self.unparsed(ev) | self.merchant(ev) | self.offered(ev)
+                self.mob_locs.line(ev, zone.as_deref()) | self.quest_line(ev) | self.unparsed(ev) | self.merchant(ev) | self.offered(ev) | self.stocked(ev)
             }
             _ => self.merchant(ev),
         }
@@ -588,6 +585,8 @@ use fished::Fished;
 mod notices;
 #[path = "gaps_redirects.rs"]
 mod redirects;
+#[path = "gaps_stock.rs"]
+mod stock;
 #[path = "gaps_marks.rs"]
 pub mod marks;
 use marks::ConMarks;

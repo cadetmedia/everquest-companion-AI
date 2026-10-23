@@ -31,6 +31,7 @@ import { roleClass, roleField, roleOf, withFishedNote } from './gapRoles'
 import { questRowPage } from './gapQuestPage'
 import type { QuestExtras } from './gapQuests'
 import { withFightFields } from './gapFight'
+import { itemsSoldBlock, itemsSoldField, type SoldSeen } from './gapItemsSold'
 
 /** A log zone name as the wiki spells it (shared/gapWikiZone.ts); as printed when none is given. */
 export type ZoneNamer = (raw: string) => string
@@ -166,6 +167,8 @@ export interface MobFacts {
   quests?: string[]
   /** Its role from the client's target line (`Banker`, `Merchant`, `Warrior GM`; gaps_roles.rs). */
   role?: string
+  /** What it quoted or sold the player, a merchant page's `items_sold` (gaps_stock.rs, shared/gapItemsSold.ts). */
+  itemsSold?: SoldSeen[]
 }
 
 /** What the log saw of mobs beyond the rows: each kill's factions and each mob's `/loc` points. */
@@ -302,6 +305,7 @@ export function mobFacts(row: GapRow, loot: readonly LootEvent[], kills: KillMap
     ...coinOf(seen.mobCoin, row.name),
     quests: questFactsOf(row)?.quests ?? [],
     ...roleField(row),
+    ...itemsSoldField(row),
     factions: (seen.killFactions ?? []).filter(mine).map(({ faction, adjust, raised }) => ({
       faction,
       ...(adjust === undefined ? {} : { adjust }),
@@ -404,7 +408,7 @@ export function itemPage(f: ItemFacts): string {
 
 /** The NPC Page Blueprint's fields; '' is a blank line between groups. */
 const NPC_LAYOUT = ['imagefilename', '', 'name', 'race', 'class', 'level', 'agro_radius', 'run_speed', '', 'zone', 'location', 'respawn_time', '', 'AC', 'HP', 'HP_regen', 'mana_regen', '', 'attacks_per_round', 'attack_speed', 'damage_per_hit', 'special', '', 'description', '', 'known_loot', '', 'common_loot', '', 'factions', '', 'opposing_factions', '', 'related_quests', '']
-/** The Merchant Page Blueprint's: no loot, `items_sold` instead (left for the merchant window). */
+/** The Merchant Page Blueprint's: no loot, `items_sold` instead (what the merchant quoted or sold the player). */
 const MERCHANT_LAYOUT = ['imagefilename', '', 'name', 'race', 'class', 'level', 'agro_radius', 'run_speed', '', 'zone', 'location', '', 'AC', 'HP', 'HP_regen', 'mana_regen', '', 'attacks_per_round', 'attack_speed', 'damage_per_hit', 'special', 'description', '', 'items_sold', '', 'factions', '', 'opposing_factions', '', 'related_quests', '']
 /** The fields whose value is a block under the key, not a word beside it. */
 const BLOCK_FIELDS = new Set(['description', 'known_loot', 'common_loot', 'items_sold', 'factions', 'opposing_factions', 'related_quests'])
@@ -458,7 +462,7 @@ function factionBlocks(factions: readonly FactionSeen[], credited: number): Reco
   }
 }
 
-type NpcFacts = Pick<MobFacts, 'name' | 'zones' | 'levels' | 'points' | 'factions' | 'credited' | 'specials' | 'quests' | 'role'>
+type NpcFacts = Pick<MobFacts, 'name' | 'zones' | 'levels' | 'points' | 'factions' | 'credited' | 'specials' | 'quests' | 'role' | 'itemsSold'>
 
 /** The values both NPC layouts share: image, name, level, zone, location, factions, quests. */
 function npcValues(f: NpcFacts): Record<string, string> {
@@ -558,11 +562,14 @@ export function spellPage(f: SpellFacts): string {
 }
 
 /**
- * A trader the wiki lacks as a merchant, in the Merchant Page Blueprint's layout. `items_sold` is
- * left open: a merchant's stock mixes player resells the log cannot tell apart (owner, 2026-10-18).
+ * A trader the wiki lacks as a merchant, in the Merchant Page Blueprint's layout. `items_sold` lists
+ * what the merchant quoted or sold the player (shared/gapItemsSold.ts). The owner left it open on
+ * 2026-10-18 (a merchant's stock mixes player resells the log cannot tell apart) and reversed that on
+ * 2026-10-23 ("why doesn't our merchant page show items sold?"): a resell may appear, for the player
+ * to prune before saving the page.
  */
 export function merchantPage(f: NpcFacts): string {
-  return page(layoutBlock('MerchantPage', MERCHANT_LAYOUT, { ...npcValues(f), class: '[[Merchant]]' }), f.zones)
+  return page(layoutBlock('MerchantPage', MERCHANT_LAYOUT, { ...npcValues(f), class: '[[Merchant]]', items_sold: itemsSoldBlock(f.itemsSold ?? []) }), f.zones)
 }
 
 /** What the tab knows beside the row and the ledgers: the wiki's zone spellings and its mobs. */
