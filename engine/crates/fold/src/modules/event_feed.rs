@@ -16,7 +16,7 @@
 
 use crate::event::Event;
 use crate::knowledge::Knowledge;
-use crate::modules::gaps_names::MobNames;
+use crate::modules::gaps::marks::{marks_for, ConMarks, FeedMarks};
 use crate::EqModule;
 use serde::Serialize;
 use serde_json::{json, Value};
@@ -121,14 +121,10 @@ pub struct FeedEvent {
     /// The consider context, on a `con` row.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub con: Option<FeedConsider>,
-    /// The item or mob is in none of the app's data: a reminder to screenshot it for the wiki
-    /// (owner ask, 2026-10-18).
-    #[serde(skip_serializing_if = "std::ops::Not::not")]
-    pub unknown: bool,
-    /// The mob's wiki pages exist but none has a picture (the Gaps tab's Images row): screenshot
-    /// it (owner, 2026-10-20). Never beside `unknown`, which wins.
-    #[serde(rename = "needsImage", skip_serializing_if = "std::ops::Not::not")]
-    pub needs_image: bool,
+    /// The screenshot marks: missing (and on a con, "may be a player"), or no picture
+    /// (`gaps_marks.rs`).
+    #[serde(flatten)]
+    pub marks: FeedMarks,
 }
 
 #[derive(Default)]
@@ -142,8 +138,9 @@ pub struct EventFeedModule {
     last_con: HashMap<String, i64>,
     /// `deps.lookupItem`, or `None` in every construction but the production one.
     knowledge: Option<Arc<dyn Knowledge>>,
-    /// The Gaps tab's names for a mob (wiki spellings, pets), so the mark agrees with the tab.
-    mob_names: MobNames,
+    /// The Gaps module's answer for each con: a con is marked exactly when the tab has a Mobs row
+    /// for it (owner, 2026-10-23: "shouldn't they agree logically?"). See `gaps_marks.rs`.
+    con_marks: ConMarks,
     /// The Gaps tab's item test, so a KEEP mark agrees with its Items rows.
     items: crate::modules::gaps_keys::ItemIndex,
     /// The announce cursor — see [`crate::announce`]. Every path into the ring goes through
@@ -154,6 +151,12 @@ pub struct EventFeedModule {
 impl EventFeedModule {
     pub fn new() -> Self {
         Self::default()
+    }
+
+    /// A feed that reads its con marks from the Gaps module holding the same slot.
+    #[must_use]
+    pub fn sharing(con_marks: ConMarks) -> Self {
+        Self { con_marks, ..Self::default() }
     }
 
     /// The feed pull seam — the ring as the module keeps it, oldest first. The view reverses it.
@@ -220,8 +223,8 @@ impl EventFeedModule {
         if rare {
             bits.push("rare".to_owned());
         }
-        // A player's name is no catalog miss (gaps.rs asks the same test before counting a con).
-        let (unknown, needs_image) = self.mob_names.marks(self.knowledge.as_deref(), mob);
+        // The Gaps module folded this con first and wrote what its rows say of it.
+        let marks = marks_for(&self.con_marks, ev.seq());
         self.append(FeedEvent {
             id: String::new(),
             kind: "con",
@@ -235,8 +238,7 @@ impl EventFeedModule {
                 rare,
                 difficulty,
             }),
-            unknown,
-            needs_image,
+            marks,
         });
     }
 
@@ -287,8 +289,7 @@ impl EventFeedModule {
                 .and_then(Value::as_str)
                 .map(str::to_owned),
             con: None,
-            unknown,
-            needs_image: false,
+            marks: FeedMarks { unknown, ..FeedMarks::default() },
         });
     }
 }
@@ -355,7 +356,6 @@ impl EqModule for EventFeedModule {
 
     fn install_knowledge(&mut self, k: &Arc<dyn Knowledge>) {
         let index = k.gap_index();
-        self.mob_names = MobNames::new(&index.mob_names).with_redirects(&index.mob_redirects);
         self.items = crate::modules::gaps_keys::ItemIndex::new(&index.item_pages).with_redirects(&index.item_redirects);
         self.knowledge = Some(Arc::clone(k));
     }
@@ -396,13 +396,8 @@ mod tests {
                 found: true,
             }
         }
-        /// A con row asks it: the table's names are the known mobs.
         fn known_mob(&self, name: &str) -> bool {
             self.0.iter().any(|(key, _)| *key == name)
-        }
-        /// No page in the table has a picture.
-        fn imageless_mob(&self, _name: &str) -> bool {
-            true
         }
         fn take_misses(&self) -> Vec<Miss> {
             Vec::new()
@@ -465,39 +460,16 @@ mod tests {
     }
 
     #[test]
-    fn an_item_or_mob_the_data_lacks_or_a_mob_with_no_picture_is_flagged_but_a_player_is_not() {
+    fn an_item_the_data_lacks_is_flagged_and_a_con_alone_carries_no_mark() {
+        // A con's marks are the Gaps module's (gaps_marks.rs, tested there): a feed with no Gaps
+        // module beside it marks no con, however unknown the name.
         let mut feed = EventFeedModule::new();
-        feed.install_knowledge(
-            &(Arc::new(Table(vec![("a gnoll", json!({}))])) as Arc<dyn Knowledge>),
-        );
+        feed.install_knowledge(&(Arc::new(Table(vec![])) as Arc<dyn Knowledge>));
         feed.on_event(&ev(&loot(1, "Black Lizard Talon")), true);
-        let con = |seq: i64, mob: &str| {
-            format!(
-                r#"{{"kind":"consider","mob":"{mob}","level":12,"seq":{seq},"ts":{},"raw":"x"}}"#,
-                1_787_181_707_000 + seq * 60_000
-            )
-        };
-        // A group mate's mount and a summoned pet are no catalog miss either (owner, 2026-10-22).
-        for (seq, mob) in [(2, "a lizardman forager"), (3, "a gnoll"), (4, "Soandso"), (5, "Malkil`s Mount"), (6, "Gonekn")] {
-            feed.on_event(&ev(&con(seq, mob)), true);
-        }
-        // [title, unknown, needsImage]: a mob the data lacks has no page to picture, so the
-        // unknown mark wins (owner, 2026-10-20), and an absent mark is absent rather than false.
-        let flagged: Vec<Value> = state(&feed)
-            .iter()
-            .map(|r| json!([r["title"], r["unknown"], r["needsImage"]]))
-            .collect();
-        assert_eq!(
-            Value::Array(flagged),
-            json!([
-                ["Black Lizard Talon", true, null],
-                ["a lizardman forager", true, null],
-                ["a gnoll", null, true],
-                ["Soandso", null, null],
-                ["Malkil`s Mount", null, null],
-                ["Gonekn", null, null]
-            ])
-        );
+        let con = r#"{"kind":"consider","mob":"a lizardman forager","level":12,"seq":2,"ts":1787181767000,"raw":"x"}"#;
+        feed.on_event(&ev(con), true);
+        let flagged: Vec<Value> = state(&feed).iter().map(|r| json!([r["title"], r["unknown"]])).collect();
+        assert_eq!(Value::Array(flagged), json!([["Black Lizard Talon", true], ["a lizardman forager", null]]));
     }
 
     #[test]

@@ -33,29 +33,52 @@ export function isMarkedDone(done: ReadonlySet<string>, domain: string, name: st
   return done.has(`${domain}:${name}`.toLowerCase())
 }
 
-let cached: { raw: string | null; keys: ReadonlySet<string> } = { raw: null, keys: new Set() }
+/** The names marked "Mark as player" on the Gaps tab (useDoneMarks.ts `usePlayerList`): a lower-cased list. */
+export const PLAYERS_KEY = 'eq.gaps.players'
 
-/** The marked keys, lowercased; one Set per stored value, so a reader re-renders only on a change. */
-function snapshot(): ReadonlySet<string> {
-  let raw: string | null = null
+/** The stored players list as names. Empty when absent or unreadable. */
+export function loadPlayers(raw: string | null): string[] {
   try {
-    raw = localStorage.getItem(DONE_KEY)
+    const parsed: unknown = JSON.parse(raw ?? '[]')
+    return Array.isArray(parsed) ? parsed.filter((n): n is string => typeof n === 'string') : []
   } catch {
+    return []
+  }
+}
+
+/** One stored key read as a Set of lowercased strings; one Set per stored value, so a reader re-renders only on a change. */
+function storedSet(key: string, keysOf: (raw: string | null) => Iterable<string>): { snapshot: () => ReadonlySet<string>; subscribe: (onChange: () => void) => () => void } {
+  let cached: { raw: string | null; keys: ReadonlySet<string> } = { raw: null, keys: new Set() }
+  const snapshot = (): ReadonlySet<string> => {
+    let raw: string | null = null
+    try {
+      raw = localStorage.getItem(key)
+    } catch {
+      return cached.keys
+    }
+    if (raw !== cached.raw) cached = { raw, keys: new Set([...keysOf(raw)].map((k) => k.toLowerCase())) }
     return cached.keys
   }
-  if (raw !== cached.raw) cached = { raw, keys: new Set(Object.keys(loadDoneMarks()).map((k) => k.toLowerCase())) }
-  return cached.keys
+  const subscribe = (onChange: () => void): (() => void) => {
+    const onStorage = (e: StorageEvent): void => {
+      if (e.key === null || e.key === key) onChange()
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }
+  return { snapshot, subscribe }
 }
 
-function subscribe(onChange: () => void): () => void {
-  const onStorage = (e: StorageEvent): void => {
-    if (e.key === null || e.key === DONE_KEY) onChange()
-  }
-  window.addEventListener('storage', onStorage)
-  return () => window.removeEventListener('storage', onStorage)
-}
+const doneStore = storedSet(DONE_KEY, () => Object.keys(loadDoneMarks()))
+const playersStore = storedSet(PLAYERS_KEY, loadPlayers)
 
 /** The Done marks another window made, kept current (lowercased `domain:name` keys). */
 export function useDoneKeys(): ReadonlySet<string> {
-  return useSyncExternalStore(subscribe, snapshot, snapshot)
+  return useSyncExternalStore(doneStore.subscribe, doneStore.snapshot, doneStore.snapshot)
+}
+
+/** The names the viewer marked as players on the Gaps tab, kept current (lowercased): the Event log
+ *  marks none of them, as the tab files no Mobs row for them (owner, 2026-10-23). */
+export function useMarkedPlayers(): ReadonlySet<string> {
+  return useSyncExternalStore(playersStore.subscribe, playersStore.snapshot, playersStore.snapshot)
 }

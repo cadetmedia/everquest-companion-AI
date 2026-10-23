@@ -199,6 +199,8 @@ pub struct ItemIndex {
     bare: HashSet<String>,
     /// The wiki redirects that land on item pages, under [`loose_key`] → the page.
     redirects: HashMap<String, String>,
+    /// Every key under [`loose_key`] → its page title: what a merchant page links (`{{:Cat's Eye Agate}}`).
+    pages: HashMap<String, String>,
 }
 
 impl ItemIndex {
@@ -207,7 +209,8 @@ impl ItemIndex {
         let loose: HashSet<String> = exact.iter().map(|k| loose_key(k)).collect();
         let bare = |k: &String| ["a ", "an ", "the "].iter().find_map(|a| k.strip_prefix(a)).map(str::to_string);
         let bare = loose.iter().filter_map(bare).collect();
-        Self { exact, loose, bare, redirects: HashMap::new() }
+        let pages = item_pages.iter().map(|(key, page)| (loose_key(&item_gap_key(key)), page.clone())).collect();
+        Self { exact, loose, bare, redirects: HashMap::new(), pages }
     }
 
     /// The wiki redirects that land on item pages too (`GapIndex::item_redirects`): known names.
@@ -215,6 +218,12 @@ impl ItemIndex {
     pub fn with_redirects(mut self, redirects: &[(String, String)]) -> Self {
         self.redirects = redirects.iter().map(|(key, page)| (loose_key(&item_gap_key(key)), page.clone())).collect();
         self
+    }
+
+    /// The page title the data files the item under, its own or a redirect's; None for an unknown item.
+    pub fn page(&self, name: &str) -> Option<&str> {
+        let loose = loose_key(&item_gap_key(name));
+        self.pages.get(&loose).or_else(|| self.redirects.get(&loose)).map(String::as_str)
     }
 
     /// Does the committed data know the item, under any of the keys above or a redirect's name?

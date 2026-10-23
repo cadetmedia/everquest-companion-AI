@@ -64,8 +64,8 @@ test("THE EVENT LOG'S NO-PICTURE MARK SAYS SAVED ONCE THE PLAYER HOLDS THE PICTU
   const con: FeedEvent = { id: 'c1', kind: 'con', ts: 1, title: 'Disciple of Rodcet', needsImage: true }
   const none = new Set<string>()
   assert.equal(screenshotLabel(con, none), 'no picture · screenshot it')
-  assert.equal(screenshotLabel(con, none, (f) => heldPicture(f, {}, listing) !== undefined), PICTURED_LABEL)
-  assert.equal(screenshotLabel(con, new Set(['image:disciple of rodcet']), () => true), undefined)
+  assert.equal(screenshotLabel(con, none, undefined, (f) => heldPicture(f, {}, listing) !== undefined), PICTURED_LABEL)
+  assert.equal(screenshotLabel(con, new Set(['image:disciple of rodcet']), undefined, () => true), undefined)
 })
 
 test('THE LAYOUT: NPC, ITEM (WINDOW AND LORE TAB) AND SPELL FOLDERS; ITEM AND SPELL PICTURES NAMED AS npc_ ARE', () => {

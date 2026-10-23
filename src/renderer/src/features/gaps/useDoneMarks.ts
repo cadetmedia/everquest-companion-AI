@@ -9,7 +9,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { doneKey, keptDoneMarks, withDoneMarks, type GapRow } from '@shared/gaps'
 import { playerNames, type PlayerNames } from '@shared/gapPlayers'
-import { loadDoneMarks as load, saveDoneMarks as save } from './doneMarksStore'
+import { loadDoneMarks as load, loadPlayers, PLAYERS_KEY, saveDoneMarks as save } from './doneMarksStore'
 import { useOwnCharacterNames } from './useOwnCharacters'
 
 export interface DoneMarks {
@@ -54,8 +54,6 @@ export function useDoneMarks(today: string, dataDate: string): DoneMarks {
   return { done, toggle, setMany }
 }
 
-const PLAYERS_KEY = 'eq.gaps.players'
-
 export interface PlayerList {
   /** Lower-cased names the player marked as players: never a Mobs row again; `own`, the player's own characters: never a row. */
   players: PlayerNames
@@ -69,8 +67,7 @@ export interface PlayerList {
 export function usePlayerList(): PlayerList {
   const [names, setNames] = useState<string[]>(() => {
     try {
-      const parsed: unknown = JSON.parse(localStorage.getItem(PLAYERS_KEY) ?? '[]')
-      return Array.isArray(parsed) ? parsed.filter((n): n is string => typeof n === 'string') : []
+      return loadPlayers(localStorage.getItem(PLAYERS_KEY))
     } catch {
       return []
     }

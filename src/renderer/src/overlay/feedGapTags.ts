@@ -1,7 +1,10 @@
 // feedGapTags — the Event log's Wiki Gaps marks, and the Gaps tab's Done rule over them.
 //
 // Three marks (engine event_feed.rs and event_feed_offer.rs):
-//   * not in the app's data: "missing · screenshot it" (owner ask, 2026-10-18);
+//   * not in the app's data: "missing · screenshot it" (owner ask, 2026-10-18). On a con it is the
+//     Gaps tab's own Mobs row (engine gaps_marks.rs), so the two agree (owner, 2026-10-23: "uh
+//     shouldn't they agree logically?"): a row the tab serves "may be a player" reads "missing? ·
+//     may be a player · screenshot it", and a name the viewer marked as a player gets no mark;
 //   * a mob whose wiki pages have no picture: "no picture · screenshot it" (owner ask, 2026-10-20),
 //     or "picture saved · upload it" once the player holds its picture, saved from the Gaps tab or
 //     put in the picture folder by hand (owner, 2026-10-22: "the tool should see that the image is
@@ -20,23 +23,41 @@ import { isMarkedDone } from '../features/gaps/doneMarksStore'
 
 export const KEEP_LABEL = 'KEEP · needed on wiki'
 export const PICTURED_LABEL = 'picture saved · upload it'
+export const MAYBE_PLAYER_LABEL = 'missing? · may be a player · screenshot it'
+
+const NO_PLAYERS: ReadonlySet<string> = new Set()
 
 /** A `keep` row whose item the player marked Done: nothing left to say, so not shown. */
 export function hiddenKeep(e: FeedEvent, done: ReadonlySet<string>): boolean {
   return e.kind === 'keep' && isMarkedDone(done, 'item', e.title)
 }
 
-/**
- * The mark a row carries, or undefined for none. The engine never sets `unknown` and `needsImage`
- * together. `pictured`: whether the player holds the picture file named so (`npc_<name>.png`).
- */
-export function screenshotLabel(e: FeedEvent, done: ReadonlySet<string>, pictured: (file: string) => boolean = () => false): string | undefined {
+/** A con's "missing" mark: none for a name the viewer marked as a player, the uncertain one for a
+ *  row the Gaps tab serves "may be a player". */
+function conMissing(e: FeedEvent, players: ReadonlySet<string>): string | undefined {
+  if (players.has(e.title.toLowerCase())) return undefined
+  return e.maybePlayer === true ? MAYBE_PLAYER_LABEL : 'missing · screenshot it'
+}
+
+/** An `unknown` row's mark: a con's from the Gaps tab's row, a loot's by whether it was sold. */
+function unknownLabel(e: FeedEvent, done: ReadonlySet<string>, players: ReadonlySet<string>): string | undefined {
+  if (isMarkedDone(done, e.kind === 'con' ? 'mob' : 'item', e.title)) return undefined
+  if (e.kind === 'con') return conMissing(e, players)
+  // Sold on loot is already gone: the next one is the screenshot (review 2026-10-19).
+  return e.detail?.startsWith('auto-sold') === true ? 'missing · auto-sold, keep the next one' : 'missing · screenshot it'
+}
+
+/** The mark a row carries, or undefined for none. The engine never sets `unknown` and `needsImage`
+ *  together. `players`: the names the viewer marked as players on the Gaps tab, lowercased;
+ *  `pictured`: whether the player holds the picture file named so (`npc_<name>.png`). */
+export function screenshotLabel(
+  e: FeedEvent,
+  done: ReadonlySet<string>,
+  players: ReadonlySet<string> = NO_PLAYERS,
+  pictured: (file: string) => boolean = () => false
+): string | undefined {
   if (e.kind === 'keep') return hiddenKeep(e, done) ? undefined : KEEP_LABEL
-  if (e.unknown) {
-    if (isMarkedDone(done, e.kind === 'con' ? 'mob' : 'item', e.title)) return undefined
-    // Sold on loot is already gone: the next one is the screenshot (review 2026-10-19).
-    return e.detail?.startsWith('auto-sold') === true ? 'missing · auto-sold, keep the next one' : 'missing · screenshot it'
-  }
+  if (e.unknown) return unknownLabel(e, done, players)
   if (e.needsImage !== true || isMarkedDone(done, 'image', e.title)) return undefined
   return pictured(npcImageName(e.title)) ? PICTURED_LABEL : 'no picture · screenshot it'
 }

@@ -28,7 +28,7 @@
 use super::gaps_coin::KillCoin;
 use super::gaps_details::{stamp_of, Details};
 use super::gaps_keys::{aa_known, item_gap_key, loose_key, spell_gap_key, spell_known, spell_via_redirect, ItemIndex};
-use super::gaps_names::{no_mob, no_spell, owner_of_pet, MobNames};
+use super::gaps_names::{no_mob, no_spell, MobNames};
 use super::gaps_offers::{offer_of, Offer, Standings};
 use super::gaps_players::{caught_of, hail_of, speaker_of, Players};
 use super::gaps_specials::MobSpecials;
@@ -159,6 +159,10 @@ pub struct GapsModule {
     standings: Standings,
     /// The last tradeskill tick and combine, paired by their second (`gaps_craft.rs`).
     combines: craft::Combines,
+    /// What each merchant quoted or sold the player, for its page's `items_sold` (`gaps_stock.rs`).
+    stock: stock::Stock,
+    /// The slot the event feed reads each con's marks from (`gaps_marks.rs`).
+    con_marks: ConMarks,
     seq: i64,
     announce: crate::announce::Announce,
 }
@@ -184,6 +188,7 @@ impl GapsModule {
         self.specials.clear();
         self.standings.clear();
         self.combines.clear();
+        self.stock.clear();
         if let Ok(mut cache) = self.suggests.lock() {
             cache.clear();
         }
@@ -236,10 +241,7 @@ impl GapsModule {
     }
 
     fn item(&mut self, ev: &Event, kind: &'static str) -> bool {
-        match ev.str("item") {
-            Some(name) => self.item_named(name, kind, ev),
-            None => false,
-        }
+        ev.str("item").is_some_and(|name| self.item_named(name, kind, ev))
     }
 
     fn item_named(&mut self, name: &str, kind: &'static str, ev: &Event) -> bool {
@@ -255,10 +257,7 @@ impl GapsModule {
     /// and nothing else — not the zone (the item is not from here), not the count, not a kind.
     /// A name the log only ever destroyed has no row to carry it and is not filed.
     fn disposal(&mut self, ev: &Event) -> bool {
-        let Some(name) = ev.str("item") else {
-            return false;
-        };
-        let Some(row) = self.rows.get_mut(&(Domain::Item, item_gap_key(name))) else {
+        let Some(row) = ev.str("item").and_then(|name| self.rows.get_mut(&(Domain::Item, item_gap_key(name)))) else {
             return false;
         };
         row.details.disposal(ev);
@@ -272,19 +271,18 @@ impl GapsModule {
         if self.players.contains(&mob_key(name)) || no_mob(name) {
             return false;
         }
-        let known = (self.knowledge.as_ref()).is_some_and(|k| self.mob_names.known(k.as_ref(), name));
+        let (known, filed) = self.knowledge.as_deref().map_or((false, name), |k| self.filed_as(k, name));
         if let Some(page) = (self.knowledge.as_ref()).and_then(|k| self.mob_names.via_redirect(k.as_ref(), name)) {
             return self.redirected(Domain::Mob, mob_key(name), name, page, kind, ev);
         }
-        let name = if known { name } else { owner_of_pet(name) };
-        self.note(Domain::Mob, mob_key(name), name, known, kind, ev)
+        self.note(Domain::Mob, mob_key(filed), filed, known, kind, ev)
     }
 
     /// A purchase (an item and its merchant), a vendor sale or a corpse's coin (held for the kill
     /// after it), or an unparsed line (a price quote, or a faction line held for the kill after it).
     fn trade(&mut self, ev: &Event) -> bool {
         match ev.kind() {
-            "purchase" => self.item_event(ev) | self.merchant(ev),
+            "purchase" => self.item_event(ev) | self.merchant(ev) | self.stocked(ev),
             "coin" => {
                 self.kill_coin.line(ev);
                 self.merchant(ev)
@@ -292,7 +290,7 @@ impl GapsModule {
             "unknown" => {
                 self.kill_factions.line(ev);
                 let zone = self.zone.clone();
-                self.mob_locs.line(ev, zone.as_deref()) | self.quest_line(ev) | self.unparsed(ev) | self.merchant(ev) | self.offered(ev)
+                self.mob_locs.line(ev, zone.as_deref()) | self.quest_line(ev) | self.unparsed(ev) | self.merchant(ev) | self.offered(ev) | self.stocked(ev)
             }
             _ => self.merchant(ev),
         }
@@ -309,17 +307,6 @@ impl GapsModule {
         let (at, standing) = (stamp_of(ev.raw()).unwrap_or_default(), self.standings.of(o.merchant));
         let row = self.rows.get_mut(&(Domain::Item, item_gap_key(o.item)));
         row.is_some_and(|r| r.details.offer(&o, standing, self.zone.as_deref(), &at))
-    }
-
-    /// A /con: a mob met, maybe placed by a `/loc`, and the standing a later offer from it carries.
-    fn considered(&mut self, ev: &Event) -> bool {
-        let Some(mob) = ev.str("mob") else {
-            return false;
-        };
-        self.standings.con(mob, ev.str("faction"));
-        let zone = self.zone.clone();
-        let placed = self.mob_locs.target(mob, ev.ts(), zone.as_deref());
-        placed | self.met(mob, false, ev)
     }
 
     /// An unparsed line the parser has no family for: a forage, a hail, or a player's chat.
@@ -501,8 +488,7 @@ impl GapsModule {
     /// The row as served: its fields, and `suggest` when one known name is within reach.
     fn serve_row(&self, domain: Domain, key: &str, row: &GapRow) -> Value {
         let mut v = serde_json::to_value(row).unwrap_or(Value::Null);
-        let only_met = row.kinds.iter().all(|k| *k == "hailed" || *k == "considered");
-        if domain == Domain::Mob && only_met && is_player_shaped_name(&row.name) && !self.who.is_npc(&row.name) {
+        if domain == Domain::Mob && self.maybe_player(row) {
             v["maybePlayer"] = json!(true);
         }
         self.serve_extras(domain, key, &mut v);
@@ -604,6 +590,11 @@ use fished::Fished;
 mod notices;
 #[path = "gaps_redirects.rs"]
 mod redirects;
+#[path = "gaps_stock.rs"]
+mod stock;
+#[path = "gaps_marks.rs"]
+pub mod marks;
+use marks::ConMarks;
 use notices::{Noticed, Notices};
 
 #[cfg(test)]

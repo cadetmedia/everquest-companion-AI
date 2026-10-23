@@ -29,3 +29,14 @@ test('the other marks keep their rules, and a loot row is never hidden by the KE
   assert.equal(screenshotLabel(con, new Set()), 'no picture · screenshot it')
   assert.equal(screenshotLabel({ id: 'f4', kind: 'loot', ts: 1, title: 'Bone Chips' }, new Set()), undefined, 'not a gap')
 })
+
+test('a con the Gaps tab serves "may be a player" says so; a proven NPC is plainly missing; a name marked as a player has no mark (owner, 2026-10-23)', () => {
+  const none = new Set<string>()
+  const raul: FeedEvent = { id: 'f5', kind: 'con', ts: 1, title: 'Raul', unknown: true, maybePlayer: true }
+  assert.equal(screenshotLabel(raul, none), 'missing? · may be a player · screenshot it')
+  assert.equal(screenshotLabel({ ...raul, maybePlayer: undefined }, none), 'missing · screenshot it')
+  assert.equal(screenshotLabel(raul, none, new Set(['raul'])), undefined, 'the viewer marked Raul a player')
+  assert.equal(screenshotLabel(raul, new Set(['mob:raul'])), undefined, 'a Done mark quiets it too')
+  const talon: FeedEvent = { id: 'f6', kind: 'loot', ts: 1, title: 'Raul', unknown: true }
+  assert.equal(screenshotLabel(talon, none, new Set(['raul'])), 'missing · screenshot it', 'the players list is for mobs only')
+})

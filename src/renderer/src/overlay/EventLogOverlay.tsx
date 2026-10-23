@@ -50,7 +50,7 @@ import { OverlayContent } from './overlayScale'
 import { BgFooter } from './BgFooter'
 import { useOverlayChrome } from './useOverlayChrome'
 import { OverlayHeader } from './OverlayHeader'
-import { useDoneKeys } from '../features/gaps/doneMarksStore'
+import { useDoneKeys, useMarkedPlayers } from '../features/gaps/doneMarksStore'
 import { useMobPictures } from '../features/gaps/itemShotsStore'
 import { folderPicturesStore } from '../features/gaps/folderPicturesStore'
 import { heldPicture } from '@shared/mobPicture'
@@ -174,7 +174,7 @@ const overlayFolder = folderPicturesStore(() => window.eqOverlay.shotFolderPictu
 function UnknownTag({ e }: { e: FeedEvent }): JSX.Element | null {
   const saved = useMobPictures()
   const folder = overlayFolder.use()
-  const label = screenshotLabel(e, useDoneKeys(), (file) => heldPicture(file, saved, folder) !== undefined)
+  const label = screenshotLabel(e, useDoneKeys(), useMarkedPlayers(), (file) => heldPicture(file, saved, folder) !== undefined)
   if (label === undefined) return null
   return (
     <span

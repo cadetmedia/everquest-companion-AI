@@ -411,7 +411,7 @@
       "file": "crates/fold/src/modules/event_feed.rs",
       "metric": "file-lines",
       "name": "",
-      "value": 434
+      "value": 408
     },
     {
       "file": "crates/fold/src/modules/gaps_tests.rs",
@@ -423,7 +423,7 @@
       "file": "crates/fold/src/modules/gaps.rs",
       "metric": "file-lines",
       "name": "",
-      "value": 460
+      "value": 451
     },
     {
       "file": "crates/fold/src/modules/resist/catalog.rs",

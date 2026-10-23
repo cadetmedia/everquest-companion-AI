@@ -96,6 +96,7 @@ mod tests {
     use super::{rows, rows_of, RECENT};
     use crate::views::{cut, validate, SourceRow};
     use fold::modules::event_feed::{FeedConsider, FeedEvent};
+    use fold::modules::gaps::marks::FeedMarks;
     use protocol::generated::ViewDescriptor;
     use protocol::Cell;
 
@@ -108,8 +109,7 @@ mod tests {
             detail: Some("Handed in to Corflunk".to_owned()),
             page: Some("Coldain_Ring_War".to_owned()),
             con: None,
-            unknown: false,
-            needs_image: false,
+            marks: FeedMarks::default(),
         }
     }
 
@@ -127,8 +127,7 @@ mod tests {
                 rare: true,
                 difficulty: "looks like quite a gamble".to_owned(),
             }),
-            unknown: false,
-            needs_image: false,
+            marks: FeedMarks::default(),
         }
     }
 
