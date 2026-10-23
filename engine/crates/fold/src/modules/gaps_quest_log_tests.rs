@@ -12,12 +12,11 @@ fn feed(q: &mut QuestLogs, lines: &[(i64, &str)]) {
         if let Some(item) = text.strip_prefix("GIVEN:") {
             q.given(item, ts);
         } else if let Some((item, npc)) = text.strip_prefix("OFFER:").and_then(|r| r.split_once('|')) {
-            q.offered(item, npc, ts);
+            q.offered(item, npc, ts, Some(&zone));
         } else if let Some(npc) = text.strip_prefix("TRADE:") {
             q.trade_done(npc);
         } else if let Some(z) = text.strip_prefix("ZONE:") {
             zone = z.to_string();
-            q.zoned();
         } else if text.starts_with("You gain ") && text.ends_with("experience!") {
             // A typed event (`expGain`) in the real fold, never an unparsed line.
             q.experience(ts);

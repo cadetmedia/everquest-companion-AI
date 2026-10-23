@@ -190,7 +190,6 @@ impl GapsModule {
         match ev.kind() {
             "zone" => {
                 self.zone = ev.str("zone").map(str::to_string);
-                self.quest_log.zoned();
                 self.specials.zone(ev.str("zone"))
             }
             // The player's own `/who` row, parsed apart, names a player like any /who row (gaps_players.rs),

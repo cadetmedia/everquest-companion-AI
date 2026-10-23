@@ -161,6 +161,8 @@ pub struct QuestLogs {
     last: Option<(String, usize)>,
     /// The NPC last hailed or handed an item, and when: whose emote lines are talk.
     addressed: Option<(String, i64)>,
+    /// The zone of the last unparsed line: a change ends any trade and hail (`zoned`).
+    zone: Option<String>,
     /// The character the log belongs to, kept across a clear, and its name as a word.
     player: Option<String>,
     player_word: Option<Regex>,
@@ -198,7 +200,8 @@ impl QuestLogs {
     }
 
     /// A zone change: no trade or hail carries across it.
-    pub fn zoned(&mut self) {
+    fn zoned(&mut self, zone: Option<&str>) {
+        self.zone = zone.map(str::to_string);
         self.offers.clear();
         self.addressed = None;
     }
@@ -218,7 +221,7 @@ impl QuestLogs {
     }
 
     fn trim(&mut self, ts: i64) {
-        // OFFER_MS, not TALK_MS: a step's talk may start at a hail that long before (`with_talk`).
+        // OFFER_MS, not TALK_MS: a step's talk may start at a hail that long before (`talk_of`).
         while self.heard.front().is_some_and(|(at, _, _)| ts - at > OFFER_MS) {
             self.heard.pop_front();
         }
@@ -236,9 +239,12 @@ impl QuestLogs {
         self.gives.push_back((ts, item.to_string()));
     }
 
-    /// `You offered 1 <item> to <NPC>.`, an NPC already (gaps_quests.rs `offered` said so).
-    pub fn offered(&mut self, item: &str, npc: &str, ts: i64) {
+    /// `You offered 1 <item> to <NPC>.`, an NPC already (gaps_quests.rs `offered` said so), in `zone`.
+    pub fn offered(&mut self, item: &str, npc: &str, ts: i64, zone: Option<&str>) {
         self.trim(ts);
+        if self.zone.as_deref() != zone {
+            self.zoned(zone);
+        }
         self.offers.push_back((ts, item.to_string(), npc.to_string()));
         self.addressed = Some((npc.to_string(), ts));
     }
@@ -246,6 +252,9 @@ impl QuestLogs {
     /// An unparsed line. A task line returns its quest and kind, for the row.
     pub fn line(&mut self, text: &str, ts: i64, zone: Option<&str>, at: &str) -> Option<(String, &'static str)> {
         self.trim(ts);
+        if self.zone.as_deref() != zone {
+            self.zoned(zone);
+        }
         if let Some(q) = task_of(text) {
             let kind = if text.starts_with("You have been assigned") { "assigned" } else { "updated" };
             self.step(q, kind, ts, zone, at);
@@ -319,10 +328,7 @@ impl QuestLogs {
     /// The step a line after the newest one belongs to: the newest, or the step that chained it.
     fn answer_step(&mut self, ts: i64, ms: i64) -> Option<&mut Step> {
         let (key, i) = self.last.clone()?;
-        let s = self.quests.get(&key)?.steps.get(i)?;
-        if ts - s.ts > ms {
-            return None;
-        }
+        let s = self.quests.get(&key)?.steps.get(i).filter(|s| ts - s.ts <= ms)?;
         let (key, i) = s.from.clone().unwrap_or((key, i));
         self.quests.get_mut(&key)?.steps.get_mut(i)
     }
@@ -334,18 +340,17 @@ impl QuestLogs {
         (ts - s.ts <= ms).then_some(s)
     }
 
+    /// A task assigned in the second after another quest's step is that quest's next, given by that
+    /// step (Something Fishy's hand-in to Nikko Canti assigns Alchemical Solution): that step.
+    fn chain_of(&mut self, name: &str, key: &str, ts: i64) -> Option<(String, usize)> {
+        let from = self.last.clone().filter(|(k, _)| k != key)?;
+        self.last_step(ts, AFTER_MS)?.next = Some(name.to_string());
+        Some(from)
+    }
+
     fn step(&mut self, name: &str, kind: &'static str, ts: i64, zone: Option<&str>, at: &str) {
         let key = quest_key(name);
-        // A task assigned in the second after another quest's step is that quest's next, given by
-        // that step's NPC (Something Fishy's hand-in to Nikko Canti assigns Alchemical Solution).
-        let mut chained: Option<(String, usize)> = None;
-        if kind == "assigned" {
-            let other = self.last.clone().filter(|(k, _)| *k != key);
-            if let (Some(from), Some(s)) = (other, self.last_step(ts, AFTER_MS)) {
-                s.next = Some(name.to_string());
-                chained = Some(from);
-            }
-        }
+        let chained = if kind == "assigned" { self.chain_of(name, &key, ts) } else { None };
         let from_name = chained.as_ref().and_then(|(k, _)| self.quests.get(k)).map(|q| q.name.clone());
         let quest = self.quests.entry(key.clone()).or_insert_with(|| Quest { name: name.to_string(), ..Quest::default() });
         if kind == "assigned" && !quest.steps.is_empty() {
@@ -360,29 +365,39 @@ impl QuestLogs {
         if quest.reruns > 0 || same_second || quest.steps.len() >= STEP_CAP {
             return;
         }
+        let since = quest.steps.last().map_or(i64::MIN, |s| s.ts);
         let base = Step { at: at.to_string(), ts, kind, zone: zone.map(str::to_string), lines: 1, ..Step::default() };
-        let step = if chained.is_some() {
+        let step = match chained {
             // The talk, the hand-in and the reward are the chaining step's (`answer_step`).
-            quest.chained_from = from_name;
-            Step { from: chained, ..base }
-        } else {
-            let since = quest.steps.last().map_or(i64::MIN, |s| s.ts);
-            let offers: Vec<&(i64, String, String)> = self.offers.iter().filter(|(t, _, _)| *t > since).collect();
-            let took = offers.last().map(|(_, _, n)| n.clone());
-            let (offered_ms, offered) =
-                offers.iter().filter(|(_, _, n)| Some(n) == took.as_ref()).map(|(t, item, _)| (*t, item.clone())).unzip();
-            let (given_ms, given) = self.gives.iter().filter(|(t, _)| *t > since).cloned().unzip();
-            let npc = took.or_else(|| {
-                let spoke = self.heard.iter().rev().find(|(t, who, _)| who.is_some() && ts - t <= SPOKE_MS);
-                spoke.and_then(|(_, who, _)| who.clone())
-            });
-            let heard = self.heard.iter().filter(|(t, _, _)| *t > since).cloned().collect();
-            Step { npc, offered, offered_ms, given, given_ms, heard, ..base }
+            Some(from) => {
+                quest.chained_from = from_name;
+                Step { from: Some(from), ..base }
+            }
+            None => self.gathered(since, base),
+        };
+        let Some(quest) = self.quests.get_mut(&key) else {
+            return;
         };
         quest.steps.push(step);
         self.last = Some((key, quest.steps.len() - 1));
         self.offers.clear();
         self.gives.clear();
+    }
+
+    /// What the buffers hold for a step after `since`: the open trade's offers to one NPC, the items
+    /// given, the NPC (the trade's, else the one that just spoke) and the lines heard.
+    fn gathered(&self, since: i64, base: Step) -> Step {
+        let offers: Vec<&(i64, String, String)> = self.offers.iter().filter(|(t, _, _)| *t > since).collect();
+        let took = offers.last().map(|(_, _, n)| n.clone());
+        let (offered_ms, offered) =
+            offers.iter().filter(|(_, _, n)| Some(n) == took.as_ref()).map(|(t, item, _)| (*t, item.clone())).unzip();
+        let (given_ms, given) = self.gives.iter().filter(|(t, _)| *t > since).cloned().unzip();
+        let npc = took.or_else(|| {
+            let spoke = self.heard.iter().rev().find(|(t, who, _)| who.is_some() && base.ts - t <= SPOKE_MS);
+            spoke.and_then(|(_, who, _)| who.clone())
+        });
+        let heard = self.heard.iter().filter(|(t, _, _)| *t > since).cloned().collect();
+        Step { npc, offered, offered_ms, given, given_ms, heard, ..base }
     }
 
     /// A Quest row's `quest`: the giver, the zone, the steps with their talk, the NPCs met, re-runs.
