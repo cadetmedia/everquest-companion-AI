@@ -56,6 +56,7 @@ import PageFixNote from './PageFixNote'
 import GapDetailsPanel from './GapDetailsPanel'
 import GapRowButtons from './GapRowButtons'
 import MobHeadingButtons from './MobHeadingButtons'
+import { questFactsOf } from '@shared/itemQuestFacts'
 
 /** One line of small cells with a small chip: 6px padding above and below a 24px chip, plus the border. */
 const ROW_HEIGHT = 37
@@ -261,7 +262,7 @@ function DetailsPane({ row, actions }: { row: GapRow; actions: PaneActions }): J
           Still needed for the page: {needed.join(', ')}.
         </Typography>
       )}
-      <GapDetailsPanel details={row.details} />
+      <GapDetailsPanel details={row.details} quest={questFactsOf(row)} />
     </Paper>
   )
 }

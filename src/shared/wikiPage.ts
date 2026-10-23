@@ -25,6 +25,7 @@ import { wikiZoneLink } from './gapWikiZone'
 import type { VendorFinder } from './gapMobPage'
 import type { LootEvent } from './types'
 import { withPageTitles } from './mobPageTitle'
+import { locFinder, questFactsOf, questPageParts } from './itemQuestFacts'
 
 /** A log zone name as the wiki spells it (shared/gapWikiZone.ts); as printed when none is given. */
 export type ZoneNamer = (raw: string) => string
@@ -123,6 +124,9 @@ export interface ItemFacts {
   soldBy: VendorSeen[]
   /** The player made it in a combine (a mote fusion is not one). */
   crafted: boolean
+  /** The quest sentences for `|notes` and the `|relatedquests` list (shared/itemQuestFacts.ts). */
+  questNote?: string
+  relatedQuests?: string
 }
 
 /** A faction a kill moved: the amount most lines stated, and whether the kill raised it. */
@@ -366,9 +370,11 @@ export function itemPage(f: ItemFacts): string {
   for (const d of f.drops) byZone.set(d.zone, [...(byZone.get(d.zone) ?? []), d.mob])
   const fields: [string, string][] = [['itemname', f.name]]
   if (f.merchantValue !== undefined) fields.push(['merchant_value', wikiCoin(f.merchantValue)])
+  if (f.questNote !== undefined) fields.push(['notes', f.questNote])
   fields.push(['statsblock', STATS_SKELETON])
   if (byZone.size > 0) fields.push(['dropsfrom', zoneBlocks(byZone)])
   if (f.soldBy.length > 0) fields.push(['soldby', itemWhereTable(f.soldBy)])
+  if (f.relatedQuests !== undefined) fields.push(['relatedquests', f.relatedQuests])
   const cats = [
     ...(f.soldBy.length > 0 ? ['Vendor Sold'] : []),
     ...(f.crafted ? ['Player Crafted'] : []),
@@ -587,7 +593,7 @@ interface PageContext {
  * so a new domain is one entry, and a domain without one does not compile.
  */
 const PAGE_OF: Record<GapDomain, (row: GapRow, c: PageContext) => string> = {
-  item: (row, c) => itemPage(withPageTitles(itemFacts(row, c.loot, c.zoneName, c.vendorAt), c.mobPage)),
+  item: (row, c) => itemPage({ ...withPageTitles(itemFacts(row, c.loot, c.zoneName, c.vendorAt), c.mobPage), ...questPageParts(questFactsOf(row), { mobPage: c.mobPage, zoneName: c.zoneName, locOf: locFinder(c.seen.mobLocs) }) }),
   mob: (row, c) => mobPage(mobFacts(row, c.loot, c.kills, { ...c.seen, zoneName: c.zoneName }), c.commonLoot),
   merchant: (row, c) => merchantPage(mobFacts(row, [], c.kills, { ...c.seen, zoneName: c.zoneName })),
   spell: (row, c) => spellPage({ name: row.name, npcOnly: npcOnlySpell(row, c.isMob), client: c.spellFacts?.[row.name] }),

@@ -124,6 +124,8 @@ pub struct GapsModule {
     players: HashSet<String>,
     /// Pages with a not-Legends or deletion notice, for the Notices domain (`gaps_notices.rs`).
     notices: Notices,
+    /// Who gave each item, who took it, which quest it moved (`gaps_quests.rs`). Served as `questFacts`.
+    quests: QuestFacts,
     /// The player's own pets, as the log spells them (`petClaim`/`petSay`): their kills are the
     /// player's (owner, 2026-10-22: Gonekn's kill moved the player's factions). Served as `ownPets`.
     own_pets: std::collections::BTreeSet<String>,
@@ -155,6 +157,7 @@ impl GapsModule {
         self.seen.clear();
         self.players.clear();
         self.own_pets.clear();
+        self.quests.clear();
         self.kill_factions.clear();
         self.kill_coin.clear();
         self.mob_locs.clear();
@@ -183,7 +186,7 @@ impl GapsModule {
             "castBegin" | "otherCastBegin" => self.spell(ev),
             "petClaim" | "petSay" => self.own_pet(ev.str("name")),
             // Handing an item to it is meeting it (owner, 2026-10-19: a fallen froglok, only traded with).
-            "offer" => self.npc_met(ev.str("npc"), "offered", ev),
+            "offer" => self.turn_in(ev) | self.npc_met(ev.str("npc"), "offered", ev),
             "allyPetLeader" => self.player_pet(ev.str("pet")),
             _ => false,
         }
@@ -197,12 +200,13 @@ impl GapsModule {
             "loot" if ev.str("disposition") == Some("destroyed") => self.disposal(ev),
             "loot" => self.item(ev, "looted") | self.mob(ev.str("source"), "dropped-by", ev),
             "itemReceived" => {
+                let given = self.quest_give(ev);
                 let how = if ev.str("via") == Some("fashioned") {
                     "crafted"
                 } else {
                     "received"
                 };
-                self.item(ev, how)
+                self.item(ev, how) | given
             }
             "purchase" => self.item(ev, "bought"),
             _ => self.merge(ev),
@@ -275,9 +279,26 @@ impl GapsModule {
             "unknown" => {
                 self.kill_factions.line(ev);
                 let zone = self.zone.clone();
-                self.mob_locs.line(ev, zone.as_deref()) | self.unparsed(ev) | self.merchant(ev) | self.offered(ev)
+                self.mob_locs.line(ev, zone.as_deref()) | self.quests.line(ev) | self.unparsed(ev) | self.merchant(ev) | self.offered(ev)
             }
             _ => self.merchant(ev),
+        }
+    }
+
+    /// `You have been given: <item>`: its giver, for the item's quest facts (`gaps_quests.rs`).
+    fn quest_give(&mut self, ev: &Event) -> bool {
+        let zone = self.zone.clone();
+        match (ev.str("via"), ev.str("item")) {
+            (Some("given"), Some(item)) => self.quests.given(item, ev.ts(), zone.as_deref()),
+            _ => false,
+        }
+    }
+
+    /// `You offered 1 <item> to <NPC>.`: a turn-in, for the item's quest facts.
+    fn turn_in(&mut self, ev: &Event) -> bool {
+        match (ev.str("item"), ev.str("npc")) {
+            (Some(item), Some(npc)) => self.quests.offered(item, npc, ev.ts()),
+            _ => false,
         }
     }
 
@@ -482,6 +503,9 @@ impl GapsModule {
         if domain == Domain::Mob && only_met && is_player_shaped_name(&row.name) && !self.who.is_npc(&row.name) {
             v["maybePlayer"] = json!(true);
         }
+        if let Some(f) = (domain == Domain::Item).then(|| self.quests.of(key)).flatten() {
+            v["questFacts"] = json!(f);
+        }
         if let Some(s) = self.suggestion(domain, key) {
             v["suggest"] = json!(s);
         }
@@ -560,6 +584,9 @@ impl EqModule for GapsModule {
     }
 }
 
+#[path = "gaps_quests.rs"]
+mod quests;
+use quests::QuestFacts;
 #[path = "gaps_notices.rs"]
 mod notices;
 #[path = "gaps_redirects.rs"]
