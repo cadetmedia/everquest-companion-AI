@@ -229,6 +229,18 @@ test("PETAMORPH WAND: WEREWOLF, THE LORE TAB WHOLE (THE OWNER'S, 2026-10-22): A 
   assert.equal(s.read.statsblock, '')
 })
 
+test("PETAMORPH WAND: WEREWOLF, ENLARGED (THE OWNER'S, 2026-10-22): THE CLICK EFFECT IS ONE CLEAN LINE; THE LORE TAB READS WITH ITS 'Lore' LOST", async () => {
+  const w = await read('petamorph-wand-werewolf.png', textOnly)
+  assert.equal(w.read.name, 'Petamorph Wand: Werewolf')
+  assert.equal(w.read.loreTab, true)
+  assert.ok(w.read.statsblock.includes('Effect: [[Summon Familiar: Werewolf]] (Can Equip, Casting Time: 5.0)<br>'), w.read.statsblock)
+  assert.ok(w.read.statsblock.includes('No Trade, Attunable, Heirloom<br>') && w.read.statsblock.includes('Slot: AMMO<br>'), w.read.statsblock)
+  // The tab row read as `Wr ~~ Descriplic TRVAC) N "ra . Coe:`: no Lore word, a slipped Description near the top.
+  const l = await read('petamorph-wand-werewolf-lore-large.png', textOnly)
+  assert.equal(l.read.lore, 'Likes moongazing.')
+  assert.equal(l.read.name, 'Petamorph Wand: Werewolf')
+})
+
 test("WU'S FIST OF MASTERY +10 (AUGMENTED) (THE OWNER'S, 2026-10-21): THE +10 PATH, NO EXALTATION LINE, NO EFFECT AN EXALTATION GRANTS", async () => {
   const s = await read('wus-fist-of-mastery-10-augmented.png', textOnly)
   assert.equal(s.read.name, "Wu's Fist of Mastery")

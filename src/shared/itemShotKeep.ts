@@ -6,7 +6,7 @@
 import { editDistance } from './itemVocab'
 import { gapJob } from './gapJob'
 import type { GapRow } from './gaps'
-import { isTabRow, withoutTier, type ItemShotReply } from './itemWindow'
+import { isTabRow, tabRowAt, withoutTier, type ItemShotReply } from './itemWindow'
 import type { ItemPageShot } from './wikiPage'
 
 /** What one paste was: the item window, its Lore tab, the icon alone; null when nothing usable was read. */
@@ -40,7 +40,7 @@ const WINDOW_TEXT = /\b(Equipped|No Trade|Temporary)\b|\b(Class|Race|Size|Weight
 function isLore(r: ItemShotReply): boolean {
   const lore = r.read.lore
   if (lore === undefined || WINDOW_TEXT.test(lore) || !/[a-z]{3}/i.test(lore)) return false
-  return r.lines.some(tabRowWithLore) || (sentence(lore) && r.lines.some((l) => TAB_RE.test(l)))
+  return r.lines.some(tabRowWithLore) || tabRowAt(r.lines) >= 0 || (sentence(lore) && r.lines.some((l) => TAB_RE.test(l)))
 }
 
 /** A window's statsblock carries its Class or Race codes; a blank one (a Lore tab taken for a window) does not. */
