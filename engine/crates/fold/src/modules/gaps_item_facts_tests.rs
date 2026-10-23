@@ -104,5 +104,8 @@ fn a_known_item_foraged_is_served_as_proof_and_never_as_an_unknown_item() {
     assert_eq!(forage[0]["count"], json!(2), "the loot is not a forage");
     assert_eq!(forage[0]["details"]["forageZones"]["all"], json!(["Kedge Keep", "Qeynos Hills"]));
     assert!(item_row(&m, "Rat Meat").is_null());
-    assert_eq!(state["totals"], json!({ "item": 0, "mob": 1, "spell": 0, "merchant": 0 }));
+    // The four totals by name: a domain another branch adds (Notices, 2026-10-22) is no change here.
+    for (domain, n) in [("item", 0), ("mob", 1), ("spell", 0), ("merchant", 0)] {
+        assert_eq!(state["totals"][domain], json!(n), "{domain}");
+    }
 }
