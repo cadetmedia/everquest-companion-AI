@@ -99,6 +99,7 @@ import { MOB_CARD_SLOT_PROPS, MobCard } from '../../lib/hoverCards'
 import { fmtDuration } from '../buffs/format'
 import { mainMobLookup } from './mobLookup'
 import { RespawnEditDialog } from './RespawnEditDialog'
+import { MobNameLink, ZoneLink, type TimerLinks } from './timerLinks'
 import { UnwatchButton } from './UnwatchButton'
 
 /**
@@ -306,13 +307,15 @@ function NameAndClock({
   nowMs,
   r,
   t,
-  onUnwatch
+  onUnwatch,
+  links
 }: {
   row: RespawnRow
   nowMs: number
   r: RespawnReading
   t: RowTone
   onUnwatch?: (key: string) => void
+  links?: TimerLinks | undefined
 }): JSX.Element {
   return (
     <Stack direction="row" spacing={1} alignItems="baseline" sx={{ minWidth: 0 }}>
@@ -320,7 +323,7 @@ function NameAndClock({
         variant="body2"
         sx={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
       >
-        {row.display}
+        <MobNameLink name={row.display} links={links} />
       </Typography>
       <Typography
         variant="body2"
@@ -344,12 +347,44 @@ function NameAndClock({
   )
 }
 
+/**
+ * Where it died, and (only when it is not the norm) what the clock counts from. The RUNG is no
+ * longer here: round 9 moved it into the duration unit it describes.
+ */
+function WhereLine({
+  zone,
+  basis,
+  links
+}: {
+  zone: string
+  basis: string
+  links?: TimerLinks | undefined
+}): JSX.Element {
+  return (
+    <Typography
+      variant="caption"
+      sx={{
+        flex: 1,
+        minWidth: 0,
+        color: 'text.secondary',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap'
+      }}
+    >
+      <ZoneLink zone={zone} links={links} />
+      {basis.length > 0 ? ` · ${basis}` : ''}
+    </Typography>
+  )
+}
+
 export function RespawnRowBar({
   row,
   nowMs,
   onConfirmSighting,
   onUnwatch,
-  onSetCustom
+  onSetCustom,
+  links
 }: {
   row: RespawnRow
   nowMs: number
@@ -362,6 +397,8 @@ export function RespawnRowBar({
    * spent this on a bare seconds field; round 9 spends it on the modal, and it is the SAME write.
    */
   onSetCustom?: (key: string, display: string, sec?: number) => void
+  /** The name's and zone's doors to the Mobs and Maps tabs; absent, plain text. */
+  links?: TimerLinks | undefined
 }): JSX.Element {
   const r = respawnReading(row, nowMs)
   const hasEstimate = row.estimateMs !== undefined
@@ -423,24 +460,9 @@ export function RespawnRowBar({
             borderRadius: 0.5
           }}
         >
-            <NameAndClock row={row} nowMs={nowMs} r={r} t={t} onUnwatch={onUnwatch} />
+            <NameAndClock row={row} nowMs={nowMs} r={r} t={t} onUnwatch={onUnwatch} links={links} />
           <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.25 }}>
-            {/* Where it died, and (only when it is not the norm) what the clock counts from. The RUNG
-                is no longer here: round 9 moved it into the duration unit it describes. */}
-            <Typography
-              variant="caption"
-              sx={{
-                flex: 1,
-                minWidth: 0,
-                color: 'text.secondary',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              {row.zone.length > 0 ? row.zone : 'unknown zone'}
-              {basis.length > 0 ? ` · ${basis}` : ''}
-            </Typography>
+            <WhereLine zone={row.zone} basis={basis} links={links} />
             <DurationUnit
               row={row}
               {...(onSetCustom === undefined
