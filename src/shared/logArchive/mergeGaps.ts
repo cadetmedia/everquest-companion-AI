@@ -231,7 +231,10 @@ function joinFight(a: FightTier, b: FightTier): FightTier {
 function mergeFight(a: FightTier[] | undefined, b: FightTier[] | undefined): FightTier[] | undefined {
   if (a === undefined || b === undefined) return a ?? b
   const byTier = new Map(a.map((t) => [t.tier, t]))
-  for (const t of b) byTier.set(t.tier, byTier.has(t.tier) ? joinFight(byTier.get(t.tier)!, t) : t)
+  for (const t of b) {
+    const had = byTier.get(t.tier)
+    byTier.set(t.tier, had === undefined ? t : joinFight(had, t))
+  }
   return [...byTier.values()].sort((x, y) => x.tier - y.tier)
 }
 
