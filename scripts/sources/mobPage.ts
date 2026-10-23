@@ -22,6 +22,7 @@ import { parseMobLoot, parseMobWikitext } from '../../src/main/mobLookupParse'
 import { factionNames } from './mobFaction'
 import { encodeFactionAmount, type MobFactionHit } from '../../src/shared/mobFactionAmounts'
 import type { MobEntry } from '../../src/shared/types'
+import { pageNotices, type PageNotice } from '../../src/shared/pageNotices'
 import { stripFormatChars } from '../../src/shared/wikiTitle'
 
 /**
@@ -127,7 +128,9 @@ export function factionAmountList(wikitext: string): string[] {
 }
 
 /** For the Gaps tab (owner ask, 2026-10-18): whether the page is a vendor's, and the factions a kill moves. */
-function gapsFacts(wikitext: string): Pick<MobEntry, 'merchant' | 'factions' | 'factionAmounts' | 'image' | 'commonDrops'> {
+function gapsFacts(wikitext: string): Pick<MobEntry, 'merchant' | 'factions' | 'factionAmounts' | 'image' | 'commonDrops'> & { notices?: PageNotice[] } {
+  // `{{DNE}}` / `{{delete}}`: the page says the mob may not be in Legends (owner, 2026-10-22).
+  const notices = pageNotices(wikitext)
   const factions = factionNames(wikitext)
   // `|common_loot` lists drops as surely as `|known_loot`: on 195 pages, mostly shared tables (Classic
   // Raid Tier Treasures) and a zone's set loot (owner, 2026-10-19: Gaps read them as missing).
@@ -138,7 +141,8 @@ function gapsFacts(wikitext: string): Pick<MobEntry, 'merchant' | 'factions' | '
     ...(/\{\{\s*MerchantPage\b/i.test(wikitext) ? { merchant: true } : {}),
     ...(factions.length ? { factions, factionAmounts: factionAmountList(wikitext) } : {}),
     ...(image !== '' ? { image } : {}),
-    ...(common.length ? { commonDrops: common } : {})
+    ...(common.length ? { commonDrops: common } : {}),
+    ...(notices === undefined ? {} : { notices })
   }
 }
 
