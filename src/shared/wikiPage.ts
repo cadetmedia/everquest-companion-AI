@@ -54,7 +54,7 @@ export function wikiCoin(copper: number): string {
 export function zoneBlocks(byZone: ReadonlyMap<string, readonly string[]>): string {
   const zones = [...byZone].sort((a, b) => a[0].localeCompare(b[0]))
   const blocks = zones.map(([zone, mobs]) => {
-    const list = [...mobs].filter((m) => m !== '').sort((a, b) => a.localeCompare(b)).map((m) => `* ${wikiLink(m)}`).join('\n')
+    const list = [...new Set(mobs)].filter((m) => m !== '').sort((a, b) => a.localeCompare(b)).map((m) => `* ${wikiLink(m)}`).join('\n')
     // A zone with no mob (a Reward Chest payout) stands alone, as the wiki's own zone-only blocks do (Tasty Candy).
     return zone === '' ? list : list === '' ? wikiZoneLink(zone) : `${wikiZoneLink(zone)}\n\n${list}`
   })
@@ -554,6 +554,18 @@ export interface PageExtras {
   spellFacts?: Readonly<Record<string, ClientSpellFacts>>
   /** Where a vendor stands, by the catalog (`vendorFinder`): an item page's `|soldby` rows. */
   vendorAt?: VendorFinder
+  /** A mob's page title, by the catalog (`mobPageFinder`): the links take it, not the log's spelling. */
+  mobPage?: (name: string) => string | undefined
+}
+
+/**
+ * The facts' mob and vendor names as their pages title them, so a link never leans on a redirect
+ * (owner, 2026-10-22: `[[a fire drake]]` for the page `A Fire Drake`). Unknown names stay as read.
+ */
+export function withPageTitles(f: ItemFacts, mobPage?: (name: string) => string | undefined): ItemFacts {
+  if (mobPage === undefined) return f
+  const title = (n: string): string => mobPage(n) ?? n
+  return { ...f, drops: f.drops.map((d) => ({ ...d, mob: title(d.mob) })), soldBy: f.soldBy.map((v) => ({ ...v, vendor: title(v.vendor) })) }
 }
 
 /**
@@ -564,7 +576,7 @@ export interface PageExtras {
 export function wikiPageText(row: GapRow, loot: readonly LootEvent[], kills: KillMap, seen: MobSightings & PageExtras = {}): string {
   const extras = seen
   if (row.suggest !== undefined && (row.domain === 'item' || row.domain === 'spell')) return `#REDIRECT [[${row.suggest.page}]]\n`
-  return PAGE_OF[row.domain](row, { loot, kills, seen, zoneName: extras.zoneName ?? asPrinted, isMob: extras.isMob, commonLoot: extras.commonLoot, spellFacts: extras.spellFacts, vendorAt: extras.vendorAt })
+  return PAGE_OF[row.domain](row, { loot, kills, seen, zoneName: extras.zoneName ?? asPrinted, isMob: extras.isMob, commonLoot: extras.commonLoot, spellFacts: extras.spellFacts, vendorAt: extras.vendorAt, mobPage: extras.mobPage })
 }
 
 interface PageContext {
@@ -576,6 +588,7 @@ interface PageContext {
   commonLoot?: ReadonlySet<string>
   spellFacts?: Readonly<Record<string, ClientSpellFacts>>
   vendorAt?: VendorFinder
+  mobPage?: (name: string) => string | undefined
 }
 
 /**
@@ -583,7 +596,7 @@ interface PageContext {
  * so a new domain is one entry, and a domain without one does not compile.
  */
 const PAGE_OF: Record<GapDomain, (row: GapRow, c: PageContext) => string> = {
-  item: (row, c) => itemPage(itemFacts(row, c.loot, c.zoneName, c.vendorAt)),
+  item: (row, c) => itemPage(withPageTitles(itemFacts(row, c.loot, c.zoneName, c.vendorAt), c.mobPage)),
   mob: (row, c) => mobPage(mobFacts(row, c.loot, c.kills, { ...c.seen, zoneName: c.zoneName }), c.commonLoot),
   merchant: (row, c) => merchantPage(mobFacts(row, [], c.kills, { ...c.seen, zoneName: c.zoneName })),
   spell: (row, c) => spellPage({ name: row.name, npcOnly: npcOnlySpell(row, c.isMob), client: c.spellFacts?.[row.name] }),
