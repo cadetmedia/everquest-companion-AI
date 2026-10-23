@@ -74,7 +74,9 @@ impl MobNames {
     /// tab's Mobs and Images domains. Neither for a player's name or with no lookup installed, and
     /// never both: a mob the catalog lacks has no page to picture (owner, 2026-10-20).
     pub fn marks(&self, k: Option<&dyn Knowledge>, name: &str) -> (bool, bool) {
-        let Some(k) = k.filter(|_| !is_player_shaped_name(name)) else {
+        // Nor is a player's mount, familiar, warder or summoned pet, the test gaps.rs asks before
+        // filing (owner, 2026-10-22: "Malkil`s Mount ... missing · screenshot it", a group mate's).
+        let Some(k) = k.filter(|_| !is_player_shaped_name(name) && !no_mob(name)) else {
             return (false, false);
         };
         let unknown = !self.known(k, name);
