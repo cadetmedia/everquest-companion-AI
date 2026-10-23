@@ -37,6 +37,11 @@ const KEYWORDS_MS: i64 = 60_000;
 const TASK_MS: i64 = 10_000;
 /// A keyword is a short phrase, not a sentence of chat.
 const KEYWORD_WORDS: usize = 5;
+/// An NPC hands a refused item back at once: `Sir Mollin says, 'I have no need for this, Drywrought.
+/// You can have it back.'` a second after `You offered 1 A Curt Dismissal to Sir Mollin.`
+pub const REFUSE_MS: i64 = 10_000;
+/// The NPC's words when it hands an offered item back: no turn-in.
+pub const REFUSAL: &str = "I have no need for this";
 
 /// Who handed an item over, where, and what the player said to get it.
 #[derive(Debug, Clone, Serialize, PartialEq)]
@@ -87,6 +92,8 @@ pub struct QuestFacts {
     by_item: HashMap<String, Facts>,
     /// The last NPC an item was turned in to, and when.
     last_offer: Option<(String, i64)>,
+    /// The offers of the last REFUSE_MS (item key, NPC, when): a refusal takes its own back.
+    offers: Vec<(String, String, i64)>,
     /// Each NPC's quests, by its mob key: a task line within TASK_MS after it spoke or took an item
     /// (owner, 2026-10-22: Nikko Canti's page left `related_quests` empty; `You have been assigned
     /// the task 'Something Fishy'.` came a second after his [help] line).
@@ -138,6 +145,9 @@ impl QuestFacts {
             return false;
         }
         if let Some(name) = speaker_of(text) {
+            if text.contains(REFUSAL) {
+                return self.refused(name, ts);
+            }
             if text.contains('[') {
                 self.keyword_speakers.insert(name.to_string());
             }
@@ -179,6 +189,8 @@ impl QuestFacts {
         }
         self.pending_item(item, ts);
         self.last_offer = Some((npc.to_string(), ts));
+        self.offers.retain(|(_, _, at)| ts - at <= REFUSE_MS);
+        self.offers.push((item_gap_key(item), npc.to_string(), ts));
         *self
             .by_item
             .entry(item_gap_key(item))
@@ -186,6 +198,30 @@ impl QuestFacts {
             .turned_in
             .entry(npc.to_string())
             .or_default() += 1;
+        true
+    }
+
+    /// `<NPC> says, 'I have no need for this, ...'`: the NPC handed the last item offered to it back,
+    /// so it was no turn-in (owner's log, 2026-10-22: A Curt Dismissal to Sir Mollin). True when a
+    /// turn-in was taken back.
+    fn refused(&mut self, npc: &str, ts: i64) -> bool {
+        let Some(i) = self.offers.iter().rposition(|(_, n, at)| n == npc && ts - at <= REFUSE_MS) else {
+            return false;
+        };
+        let (key, _, at) = self.offers.remove(i);
+        self.pending.retain(|(k, t)| !(*k == key && *t == at));
+        if self.last_offer.as_ref().is_some_and(|(n, t)| n == npc && *t == at) {
+            self.last_offer = None;
+        }
+        let Some(facts) = self.by_item.get_mut(&key) else {
+            return false;
+        };
+        if let Some(n) = facts.turned_in.get_mut(npc) {
+            *n -= 1;
+            if *n == 0 {
+                facts.turned_in.remove(npc);
+            }
+        }
         true
     }
 
@@ -268,7 +304,8 @@ impl GapsModule {
     }
 
     /// `You offered 1 <item> to <NPC>.`: a turn-in, for the item's and the NPC's quest facts.
-    /// An item handed to an NPC is proof the item exists, so it is filed like a looted one (owner,
+    /// An item handed to an NPC is proof the item exists, so it is filed like a looted one, kind
+    /// `offered`, whether the NPC takes it or hands it back (owner,
     /// 2026-10-22: Plea to Freeport, only ever in the inventory export, vanished from the tab once
     /// turned in to Sir Mollin, while the wiki still had no page). A hand-over to a player is not.
     pub(super) fn turn_in(&mut self, ev: &Event) -> bool {
@@ -279,7 +316,8 @@ impl GapsModule {
             return false;
         }
         self.quest_log.offered(item, npc, ev.ts());
-        self.item_named(item, "turned-in", ev);
+        // Handed over, taken or handed back: the item exists either way.
+        self.item_named(item, "offered", ev);
         true
     }
 

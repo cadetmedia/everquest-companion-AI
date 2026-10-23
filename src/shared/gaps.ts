@@ -160,7 +160,10 @@ export type GapKind =
   | 'killed'
   | 'considered'
   | 'hailed'
-  /** handed an item (`You offered 1 Fruit to a fallen froglok.`) */
+  /**
+   * a mob handed an item (`You offered 1 Fruit to a fallen froglok.`); an item handed to an NPC, taken
+   * or handed back: proof the item exists (owner, 2026-10-22: Plea to Freeport, turned in to Sir Mollin)
+   */
   | 'offered'
   /** heard speaking (`A fallen froglok says, '...'`); mob-shaped names only */
   | 'spoke'
@@ -175,11 +178,8 @@ export type GapKind =
    * a row of only these passes "Zone I'm in" (owner, 2026-10-22; shared/gapExtraItems.ts).
    */
   | 'held' | 'captured'
-  /**
-   * `fished`: caught fishing (gaps_fished.rs); `turned-in`: handed to an NPC, proof the item exists
-   * (`You offered 1 Plea to Freeport to Sir Mollin.`); `assigned` / `updated`: a Quests row's task lines.
-   */
-  | 'fished' | 'turned-in' | 'assigned' | 'updated'
+  /** `fished`: caught fishing (gaps_fished.rs); `assigned` / `updated`: a Quests row's task lines. */
+  | 'fished' | 'assigned' | 'updated'
 
 /**
  * One distinct merchant offer for an item, from the sell slot (`X told you, 'I'll give you ...'`;

@@ -228,3 +228,11 @@ export function withQuestPages<S extends { rows: { domain: string; name: string;
   })
   return { ...snap, rows }
 }
+
+/** The log's quests among the rows, each with its steps: what the silent hand-over guess reads. */
+export function questsOfRows(rows: readonly { domain: string; name: string }[]): { name: string; log: QuestLog }[] {
+  return rows.flatMap((r) => {
+    const log = r.domain === 'quest' ? questLogOf(r) : undefined
+    return log === undefined ? [] : [{ name: r.name, log }]
+  })
+}

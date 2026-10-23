@@ -59,6 +59,9 @@ fn a_hand_in_step_gets_its_items_factions_experience_and_the_next_quest() {
             (61, "Your faction standing with Nerius Trade Association has been adjusted by 10."),
             (61, "You gain experience!"),
             (61, "You have been assigned the task 'Alchemical Solution'."),
+            // A refused hand-in is no hand-in: Dorian hands the Imp Blood back.
+            (290, "OFFER:Imp Blood|Ty`Klerr"),
+            (291, "Ty`Klerr says, 'I have no need for this, Drywrought. You can have it back.'"),
             // Two lines of one task in a second are one step.
             (300, "OFFER:Imp Blood|Dorian G`Wyn"),
             (302, "OFFER:Putrid Bile|Dorian G`Wyn"),
