@@ -344,3 +344,11 @@ test('an edited `X (Item)` page keeps the plain key the full scrape files it und
   fold(g, new Map([[hole.page, page('|lucy_img_ID=4')]]))
   assert.equal(g.items['dimensional hole']?.page, 'Dimensional Hole')
 })
+
+test("A PAGE'S NOT-LEGENDS OR DELETION NOTICE IS ON ITS RECORD AFTER A DELTA, AND GONE WHEN AN EDIT TAKES IT OFF (OWNER, 2026-10-22)", () => {
+  const f = file([CANON])
+  fold(f, new Map([[CANON.page, `{{delete|No longer in game}}{{DNE}}\n${page('|lucy_img_ID=708')}`]]))
+  assert.deepEqual((f.items[itemKey(CANON.page) ?? ''] as ItemDbEntry & { notices?: string[] }).notices, ['delete: No longer in game', 'DNE'])
+  fold(f, new Map([[CANON.page, page('|lucy_img_ID=708')]]))
+  assert.equal('notices' in (f.items[itemKey(CANON.page) ?? ''] ?? {}), false)
+})
