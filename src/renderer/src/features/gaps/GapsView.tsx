@@ -49,6 +49,7 @@ import { useGapShow } from './useGapShow'
 import { useHideUncertain, type HideUncertain } from './useHideUncertain'
 import { useGrouping } from './useGrouping'
 import GroupHeaderControls from './GroupHeaderControls'
+import { QuestCopyScope } from './QuestCopyDialog'
 
 // One line (owner, 2026-10-11): the how is in the module header, not on the page. Since 2026-10-18
 // the line says what the chosen domain's rows are (GAP_DOMAIN_HELP); since 2026-10-21 the hint is its
@@ -281,8 +282,10 @@ export default function GapsView(): JSX.Element {
   const served = visibleGaps(rows ?? [], domain, '').length
   const hidden = sure.rows.length - visible.length
 
+  // A full-height column whose last child, the table box, is the page's only scroller (GapsTable).
+  // A quest row's Copy reads its live page and merges against the same page context (QuestCopyDialog).
   return (
-    // A full-height column whose last child, the table box, is the page's only scroller (GapsTable).
+    <QuestCopyScope extras={sightings}>
     <Stack spacing={2} data-testid="gaps-view" sx={{ height: '100%', minHeight: 0 }}>
       <Tooltip title={CLICK_HINT}>
         <Typography variant="body2" color="text.secondary" sx={{ alignSelf: 'flex-start' }}>
@@ -339,5 +342,6 @@ export default function GapsView(): JSX.Element {
         nameLead={<GroupHeaderControls group={group} />}
       />
     </Stack>
+    </QuestCopyScope>
   )
 }

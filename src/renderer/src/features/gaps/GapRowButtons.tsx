@@ -19,6 +19,7 @@ import { existingEditor } from '@shared/gapExistingPage'
 import { wikiPageUrl } from '@shared/gapUrls'
 import { questPageTitle } from '@shared/gapQuests'
 import { readGapVerdict } from '../../lib/gapVerdicts'
+import { QuestCopyDialog, readQuestPage, type QuestRead } from './QuestCopyDialog'
 
 const stop = (e: MouseEvent): void => e.stopPropagation()
 
@@ -85,6 +86,8 @@ function copyWords(row: GapRow): { label: string; tip: string } {
     return { label: 'Copy redirect', tip: `A redirect from the game's spelling to ${row.suggest.page}, so both spellings reach one page.` }
   }
   if (row.domain === 'notice') return { label: 'Copy proof', tip: 'What your log proves (how often, when, where, the lines), for the talk page or the edit summary.' }
+  // A quest reads its wiki page first and adds to it (owner, 2026-10-23: "implement the diff idea").
+  if (row.domain === 'quest') return { label: 'Copy wiki page', tip: 'Reads the wiki page and adds what your log saw, removing nothing.' }
   const tip = `Wiki markup from what your log saw. ${GAP_CAPTURE[row.domain]}`
   if (!pageExists(row)) return { label: 'Copy wiki page', tip }
   return { label: 'Copy draft (page exists)', tip: `The wiki already has this page: copy only the fields it lacks from this draft. Pasting all of it replaces what people wrote there. ${tip}` }
@@ -93,9 +96,17 @@ function copyWords(row: GapRow): { label: string; tip: string } {
 /** A new wiki page for the row, built from what the log saw (shared/wikiPage.ts), onto the clipboard. */
 function CopyPageButton({ text, row, compact }: { text: () => string; row: GapRow; compact: boolean }): JSX.Element {
   const [copied, setCopied] = useState(false)
+  // A quest's Copy opens the comparison with its live page; the read starts on this click, once.
+  const [read, setRead] = useState<QuestRead | null>(null)
   const words = copyWords(row)
   const icon = copied && compact ? <DoneIcon fontSize="small" color="success" /> : <ContentCopyIcon fontSize="small" />
-  return <ActionButton compact={compact} label={copied ? 'Copied' : words.label} tip={words.tip} icon={icon} onClick={() => void copyText(text()).then(setCopied)} testId="gaps-copy-page" />
+  const onClick = row.domain === 'quest' ? () => readQuestPage(row, setRead) : () => void copyText(text()).then(setCopied)
+  return (
+    <>
+      <ActionButton compact={compact} label={copied ? 'Copied' : words.label} tip={words.tip} icon={icon} onClick={onClick} testId="gaps-copy-page" />
+      {read !== null && <QuestCopyDialog row={row} read={read} offline={text} onClose={() => setRead(null)} />}
+    </>
+  )
 }
 
 /**
