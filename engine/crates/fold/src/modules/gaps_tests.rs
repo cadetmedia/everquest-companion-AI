@@ -26,7 +26,7 @@ impl Knowledge for Corpus {
         panic!("the gaps module must never ask a lookup that notes a miss")
     }
     fn known_mob(&self, name: &str) -> bool {
-        matches!(super::mob_key(name).as_str(), "a decaying skeleton" | "innoruuk")
+        matches!(super::mob_key(name).as_str(), "a decaying skeleton" | "innoruuk" | "a rotting citizen")
     }
     /// The corpus's one vendor, a `{{MerchantPage}}` on the wiki.
     fn known_merchant(&self, name: &str) -> bool {
@@ -54,6 +54,7 @@ impl Knowledge for Corpus {
             ("giant scarab egg sack", "Giant Scarab Egg Sack"),
             ("desecrated kejaar totem", "Desecrated Kejaar Totem"),
             ("a skeletal finger", "A skeletal finger"),
+            ("old wand", "Old Wand"),
         ]
         .iter()
         .map(|(k, p)| (k.to_string(), p.to_string()))
@@ -65,6 +66,21 @@ impl Knowledge for Corpus {
             item_pages,
             item_effects: vec![("Summon Horse".to_string(), "Black Chain Bridle".to_string())],
             mob_names: mob_names.iter().map(|n| n.to_string()).collect(),
+            // A page that says it may not be in Legends (owner, 2026-10-22: A Rotting Citizen).
+            item_notices: vec![("old wand".into(), "Old Wand".into(), vec!["delete: No longer in game".into()])],
+            mob_notices: vec![("a rotting citizen".into(), "A Rotting Citizen".into(), vec!["delete".into(), "DNE".into()])],
+            // Wiki redirects (owner, 2026-10-22): a wrong one (Halfling Blood is no vial), one that only
+            // drops an article, and one onto a name that has its own record.
+            item_redirects: vec![
+                ("halfling blood".into(), "Vial of Halfling Blood".into()),
+                ("a wooden heart".into(), "Wooden Heart".into()),
+                ("bone chips".into(), "Rat Meat".into()),
+            ],
+            mob_redirects: vec![
+                ("Hoptor Thaggelum".into(), "The Ghoul Lord".into()),
+                ("a lizardman warrior".into(), "A lizard man warrior".into()),
+                ("a decaying skeleton".into(), "Cazic-Thule (God)".into()),
+            ],
         }
     }
 }
@@ -127,8 +143,8 @@ fn known_names_are_not_rows_and_unknown_ones_are_counted_per_kind() {
         ]
     );
     let state = m.snapshot()["state"].clone();
-    assert_eq!(state["totals"], json!({ "item": 1, "mob": 1, "spell": 1, "merchant": 0 }));
-    assert_eq!(state["seen"], json!({ "item": 2, "mob": 2, "spell": 2, "merchant": 0 }));
+    assert_eq!(state["totals"], json!({ "item": 1, "mob": 1, "spell": 1, "merchant": 0, "notice": 0 }));
+    assert_eq!(state["seen"], json!({ "item": 2, "mob": 2, "spell": 2, "merchant": 0, "notice": 0 }));
     assert_eq!(state["rows"][0]["first"], json!("2026-10-06 18:12:26"));
 }
 
@@ -171,7 +187,7 @@ fn nothing_is_checked_before_the_knowledge_is_installed_and_an_epoch_clears() {
     feed(&mut m, 1, json!({ "kind": "loot", "item": "Glowing Widget" }));
     feed(&mut m, 2, json!({ "kind": "epoch" }));
     assert!(rows(&m).is_empty());
-    assert_eq!(m.snapshot()["state"]["seen"], json!({ "item": 0, "mob": 0, "spell": 0, "merchant": 0 }));
+    assert_eq!(m.snapshot()["state"]["seen"], json!({ "item": 0, "mob": 0, "spell": 0, "merchant": 0, "notice": 0 }));
 }
 
 #[test]
@@ -305,7 +321,7 @@ fn a_backtick_and_an_apostrophe_are_one_name_and_the_row_keeps_the_log_spelling(
     feed(&mut m, 1, json!({ "kind": "loot", "item": "10 Dose Ant`s Potion" }));
     feed(&mut m, 2, json!({ "kind": "castBegin", "spell": "Jaxan`s Jig o` Vigor V" }));
     assert!(rows(&m).is_empty(), "the corpus spells both with an apostrophe");
-    assert_eq!(m.snapshot()["state"]["seen"], json!({ "item": 1, "mob": 0, "spell": 1, "merchant": 0 }));
+    assert_eq!(m.snapshot()["state"]["seen"], json!({ "item": 1, "mob": 0, "spell": 1, "merchant": 0, "notice": 0 }));
     feed(&mut m, 3, json!({ "kind": "loot", "item": "Teir`Dal Arcane Insignia" }));
     feed(&mut m, 4, json!({ "kind": "loot", "item": "Teir'Dal Arcane Insignia" }));
     assert_eq!(rows(&m), ["item Teir`Dal Arcane Insignia x2 [looted]"]);

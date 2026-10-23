@@ -355,8 +355,8 @@ impl EqModule for EventFeedModule {
 
     fn install_knowledge(&mut self, k: &Arc<dyn Knowledge>) {
         let index = k.gap_index();
-        self.mob_names = MobNames::new(&index.mob_names);
-        self.items = crate::modules::gaps_keys::ItemIndex::new(&index.item_pages);
+        self.mob_names = MobNames::new(&index.mob_names).with_redirects(&index.mob_redirects);
+        self.items = crate::modules::gaps_keys::ItemIndex::new(&index.item_pages).with_redirects(&index.item_redirects);
         self.knowledge = Some(Arc::clone(k));
     }
 }

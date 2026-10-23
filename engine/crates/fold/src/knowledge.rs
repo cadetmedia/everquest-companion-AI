@@ -95,6 +95,18 @@ pub struct GapIndex {
     pub item_effects: Vec<(String, String)>,
     /// Every name the mob catalog states, as its pages spell them.
     pub mob_names: Vec<String>,
+    /// Every item key (and redirect name) whose page says the item may not be in Legends
+    /// (`{{DNE}}`, `{{delete}}`): `(key, page, notices)`. A thing the log met is proof it exists, so
+    /// its page is work to do (owner, 2026-10-22).
+    pub item_notices: Vec<(String, String, Vec<String>)>,
+    /// The same for mob pages, by every name the page answers to (its `|name`, title, redirects).
+    pub mob_notices: Vec<(String, String, Vec<String>)>,
+    /// Every wiki redirect that lands on an item page, `(item key of the redirect's name, page)`.
+    /// Apart from `item_pages`: a name known ONLY so is a row to check, never silent (owner,
+    /// 2026-10-22: a wrong redirect, Halfling Blood to Vial of Halfling Blood, hid a missing item).
+    pub item_redirects: Vec<(String, String)>,
+    /// The same for mob pages: `(redirect's name, page)`.
+    pub mob_redirects: Vec<(String, String)>,
 }
 
 /// The engine-internal knowledge lookups — `main/itemLookup.ts lookupItem` and

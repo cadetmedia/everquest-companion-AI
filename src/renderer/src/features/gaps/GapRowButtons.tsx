@@ -69,10 +69,13 @@ function ActionButton({
 function CopyPageButton({ text, row, compact }: { text: () => string; row: GapRow; compact: boolean }): JSX.Element {
   const [copied, setCopied] = useState(false)
   const redirect = row.suggest !== undefined && (row.domain === 'item' || row.domain === 'spell')
+  const notice = row.domain === 'notice'
   const tip = redirect
     ? `A redirect from the game's spelling to ${row.suggest?.page ?? ''}, so both spellings reach one page.`
-    : `Wiki markup from what your log saw. ${GAP_CAPTURE[row.domain]}`
-  const label = copied ? 'Copied' : redirect ? 'Copy redirect' : 'Copy wiki page'
+    : notice
+      ? 'What your log proves (how often, when, where, the lines), for the talk page or the edit summary.'
+      : `Wiki markup from what your log saw. ${GAP_CAPTURE[row.domain]}`
+  const label = copied ? 'Copied' : redirect ? 'Copy redirect' : notice ? 'Copy proof' : 'Copy wiki page'
   const icon = copied && compact ? <DoneIcon fontSize="small" color="success" /> : <ContentCopyIcon fontSize="small" />
   return <ActionButton compact={compact} label={label} tip={tip} icon={icon} onClick={() => void copyText(text()).then(setCopied)} testId="gaps-copy-page" />
 }
@@ -82,10 +85,12 @@ function CopyPageButton({ text, row, compact }: { text: () => string; row: GapRo
  * row, the editor on the mob page the faction belongs on.
  */
 function WikiLinks({ row, compact }: { row: GapRow; compact: boolean }): JSX.Element {
-  const faction = onMobPage(row)
-  const target = faction ? mobPageOf(row) : row.name
+  // A notice row's page exists: it is edited, the notice off (owner, 2026-10-22).
+  const notice = row.domain === 'notice'
+  const faction = onMobPage(row) || notice
+  const target = notice ? (row.page ?? row.name) : faction ? mobPageOf(row) : row.name
   const redirect = !faction && row.suggest !== undefined
-  const create = faction ? 'Edit mob page' : redirect ? 'Create redirect' : 'Create page'
+  const create = notice ? 'Edit page' : faction ? 'Edit mob page' : redirect ? 'Create redirect' : 'Create page'
   return (
     <>
       <ActionButton compact={compact} label="Search wiki" tip={`The wiki's search for ${target}.`} icon={<SearchIcon fontSize="small" />} href={wikiSearchUrl(target)} testId="gaps-wiki-search" />

@@ -261,9 +261,10 @@ function mobLoot(row: GapRow, loot: readonly LootEvent[]): MobFacts['loot'] {
  * a gray mob never credits.
  */
 function ownKills(row: GapRow, pets: readonly string[] = []): number {
-  // A kill by the player's own pet is the player's: it moves the player's factions and its corpse is
-  // the player's to loot (owner, 2026-10-22: "A Deathfist templar has been slain by Gonekn!", then
-  // five faction lines).
+  // `pets`: the player's own pets' kills too, for the LOOT rule only: their corpses are the player's
+  // to loot. Never for factions: a pet's kill while the player is feigned moves no faction (owner,
+  // 2026-10-22: "Pets killing faction, while i'm Feign Death, don't give faction"), so a pet kill with
+  // no faction lines proves nothing; faction lines seen at any kill prove them on their own.
   const mine = new Set(['you', ...pets.map((p) => p.toLowerCase())])
   return (row.details.killers?.entries ?? []).filter((e) => mine.has(e.name.toLowerCase())).reduce((n, e) => n + e.n, 0)
 }
@@ -279,7 +280,7 @@ export function mobFacts(row: GapRow, loot: readonly LootEvent[], kills: KillMap
     levels: conLevels(row),
     loot: mobLoot(row, loot),
     kills: killed?.count ?? 0,
-    credited: Math.max(killed?.credited ?? 0, ownKills(row, seen.ownPets)),
+    credited: Math.max(killed?.credited ?? 0, ownKills(row)),
     ownKills: ownKills(row, seen.ownPets),
     points: (seen.mobLocs ?? []).filter(mine).flatMap((m) => m.points),
     specials: [...new Set((seen.mobSpecials ?? []).filter(mine).flatMap((m) => m.specials))],
@@ -451,8 +452,13 @@ const raises = (f: FactionSeen): boolean | undefined => (f.adjust !== undefined 
 
 /** One faction bullet as a mob page lists it; the amount in its span when a line stated one. */
 export function factionLine(f: FactionSeen): string {
-  const css = raises(f) === true ? 'oppfac' : 'profac'
-  return `* ${wikiLink(f.faction)}${f.adjust === undefined ? '' : ` <span class='${css}'>(${String(f.adjust)})</span>`}`
+  const up = raises(f)
+  const css = up === true ? 'oppfac' : 'profac'
+  // A capped line (`could not possibly get any better`) states the side and no amount: the sign alone,
+  // as the wiki writes an unknown amount (`(+)` 27 pages, `(-)` 82) (owner, 2026-10-22: "indicate it's
+  // a POSITIVE increase, even if we don't know the amount").
+  const amount = f.adjust !== undefined ? String(f.adjust) : up === undefined ? undefined : up ? '+' : '-'
+  return `* ${wikiLink(f.faction)}${amount === undefined ? '' : ` <span class='${css}'>(${amount})</span>`}`
 }
 
 /**
@@ -616,6 +622,7 @@ const PAGE_OF: Record<GapDomain, (row: GapRow, c: PageContext) => string> = {
   spell: (row, c) => spellPage({ name: row.name, npcOnly: npcOnlySpell(row, c.isMob), client: c.spellFacts?.[row.name], shot: c.spellShots?.[row.name] }),
   faction: (row) => `${factionLine({ faction: factionOf(row), adjust: row.adjust, raised: row.raised })}\n`,
   image: (row) => `| ${'imagefilename'.padEnd(17)} = ${row.image ?? ''}\n`,
+  notice: (row) => noticeProof(row),
   // A drop: its group's link (`[[Rusty Weapons]]`), else the item; each with the rate seen, a
   // group's being the corpses that dropped any member (the row's count) over the mob's kills.
   drop: (row, c) => {
@@ -639,7 +646,20 @@ const NEEDED_OF: Partial<Record<GapDomain, (row: GapRow, seen: PageExtras) => st
   spell: (row, seen) => (spellPageValues(seen.spellFacts?.[row.name], seen.spellShots?.[row.name]).description === undefined ? ['description (paste the spell display window below)'] : []),
   faction: (row) => (row.adjust === undefined ? ['the amount (a kill that is not capped)'] : []),
   drop: () => [],
-  image: () => []
+  image: () => [],
+  notice: () => []
+}
+
+/**
+ * A notice row's copy: what the log proves, to cite on the page's talk page or in the edit summary
+ * when the notice comes off (owner, 2026-10-22): how often and when it was met, where, and the lines.
+ */
+function noticeProof(row: GapRow): string {
+  const zones = row.details.zones?.all ?? row.details.zones?.entries.map((z) => z.name) ?? []
+  const where = zones.length > 0 ? ` in ${zones.join(', ')}` : ''
+  const when = row.first === row.last ? row.first : `${row.first} to ${row.last}`
+  const head = `Seen in EverQuest Legends (${row.kinds.join(', ')}), ${String(row.count)} time${row.count === 1 ? '' : 's'}${where}, ${when}:`
+  return [head, ...row.details.samples.map((s) => `: ${s}`)].join('\n') + '\n'
 }
 
 /**
@@ -647,6 +667,8 @@ const NEEDED_OF: Partial<Record<GapDomain, (row: GapRow, seen: PageExtras) => st
  * what to collect before the trip ends (review 2026-10-19). `kills` must be a `killIndex` result.
  */
 export function stillNeeded(row: GapRow, loot: readonly LootEvent[], kills: KillMap, seen: MobSightings & PageExtras = {}): string[] {
+  // A redirect row asks for a check in game, nothing to collect (gapRedirects.ts).
+  if (row.viaRedirect !== undefined) return []
   const fixed = NEEDED_OF[row.domain]
   if (fixed !== undefined) return fixed(row, seen)
   const f = mobFacts(row, row.domain === 'mob' ? loot : [], kills, seen)

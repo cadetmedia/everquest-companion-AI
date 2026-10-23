@@ -16,16 +16,20 @@
 //!     great one.'`) is filed as a player by the module; a mount or familiar a single-word name
 //!     owns (`Malkil`s Mount`, `Revilus`s familiar`) is no mob here.
 
-use super::gaps_keys::{fold_quotes, loose_key};
+use super::gaps_keys::{fold_quotes, loose_key, same_name};
 use crate::knowledge::Knowledge;
 use crate::modules::consider::mob_key;
 use crate::modules::resist::world::is_player_shaped_name;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 /// The catalog's names under [`mob_loose`].
 #[derive(Default)]
 pub struct MobNames {
     loose: HashSet<String>,
+    /// The wiki redirects that land on mob pages, under [`mob_loose`] → the page.
+    redirects: HashMap<String, String>,
+    /// Those pages under [`mob_loose`]: a page's own title is its own name.
+    pages: HashSet<String>,
 }
 
 impl MobNames {
@@ -36,12 +40,34 @@ impl MobNames {
                 .flat_map(|n| n.split(" / "))
                 .map(mob_loose)
                 .collect(),
+            ..Self::default()
         }
+    }
+
+    /// The wiki redirects that land on mob pages too (`GapIndex::mob_redirects`): known names.
+    #[must_use]
+    pub fn with_redirects(mut self, redirects: &[(String, String)]) -> Self {
+        self.redirects = redirects.iter().map(|(n, page)| (mob_loose(n), page.clone())).collect();
+        self.pages = redirects.iter().map(|(_, page)| mob_loose(page)).collect();
+        self
+    }
+
+    /// The page a mob name reaches only through a wiki redirect that is more than a respelling
+    /// (`Hoptor Thaggelum` → `The Ghoul Lord`): a row to check, since a redirect can be wrong (owner,
+    /// 2026-10-22). None for a name the catalog or the raid roster has as its own.
+    pub fn via_redirect(&self, k: &dyn Knowledge, name: &str) -> Option<String> {
+        let own = |n: &str| self.loose.contains(&mob_loose(n)) || self.pages.contains(&mob_loose(n));
+        if own(name) || k.identity_keys(name).iter().any(|key| own(key)) {
+            return None;
+        }
+        let page = self.redirects.get(&mob_loose(name))?;
+        (!same_name(name, page)).then(|| page.clone())
     }
 
     /// Known as the catalog spells it, as the roster aliases it, loosely, or as a known mob's pet.
     pub fn known(&self, k: &dyn Knowledge, name: &str) -> bool {
-        self.spelled(k, name) || (name.ends_with(" pet") && self.spelled(k, owner_of_pet(name)))
+        let redirected = |n: &str| self.redirects.contains_key(&mob_loose(n));
+        self.spelled(k, name) || redirected(name) || (name.ends_with(" pet") && self.spelled(k, owner_of_pet(name)))
     }
 
     /// The event feed's two screenshot marks for a conned name: `(unknown, needs_image)`, the Gaps
