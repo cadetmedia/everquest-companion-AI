@@ -24,6 +24,7 @@ import { isRewardChest, mobSourceOf } from './rewardChest'
 import { wikiZoneLink } from './gapWikiZone'
 import type { VendorFinder } from './gapMobPage'
 import type { LootEvent } from './types'
+import { withPageTitles } from './mobPageTitle'
 
 /** A log zone name as the wiki spells it (shared/gapWikiZone.ts); as printed when none is given. */
 export type ZoneNamer = (raw: string) => string
@@ -556,16 +557,6 @@ export interface PageExtras {
   vendorAt?: VendorFinder
   /** A mob's page title, by the catalog (`mobPageFinder`): the links take it, not the log's spelling. */
   mobPage?: (name: string) => string | undefined
-}
-
-/**
- * The facts' mob and vendor names as their pages title them, so a link never leans on a redirect
- * (owner, 2026-10-22: `[[a fire drake]]` for the page `A Fire Drake`). Unknown names stay as read.
- */
-export function withPageTitles(f: ItemFacts, mobPage?: (name: string) => string | undefined): ItemFacts {
-  if (mobPage === undefined) return f
-  const title = (n: string): string => mobPage(n) ?? n
-  return { ...f, drops: f.drops.map((d) => ({ ...d, mob: title(d.mob) })), soldBy: f.soldBy.map((v) => ({ ...v, vendor: title(v.vendor) })) }
 }
 
 /**
