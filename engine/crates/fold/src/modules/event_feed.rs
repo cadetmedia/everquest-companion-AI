@@ -477,7 +477,8 @@ mod tests {
                 1_787_181_707_000 + seq * 60_000
             )
         };
-        for (seq, mob) in [(2, "a lizardman forager"), (3, "a gnoll"), (4, "Soandso")] {
+        // A group mate's mount and a summoned pet are no catalog miss either (owner, 2026-10-22).
+        for (seq, mob) in [(2, "a lizardman forager"), (3, "a gnoll"), (4, "Soandso"), (5, "Malkil`s Mount"), (6, "Gonekn")] {
             feed.on_event(&ev(&con(seq, mob)), true);
         }
         // [title, unknown, needsImage]: a mob the data lacks has no page to picture, so the
@@ -492,7 +493,9 @@ mod tests {
                 ["Black Lizard Talon", true, null],
                 ["a lizardman forager", true, null],
                 ["a gnoll", null, true],
-                ["Soandso", null, null]
+                ["Soandso", null, null],
+                ["Malkil`s Mount", null, null],
+                ["Gonekn", null, null]
             ])
         );
     }
