@@ -31,6 +31,9 @@ import { locFinder, questFactsOf, questPageParts, withQuestFields } from './item
 import { roleClass, roleField, roleOf, withFishedNote } from './gapRoles'
 import { questRowPage } from './gapQuestPage'
 import type { QuestExtras } from './gapQuests'
+import { withFightFields } from './gapFight'
+import { itemsSoldBlock, itemsSoldField, type SoldSeen } from './gapItemsSold'
+import { pageOrAdd, withDescription, withoutStated, type MerchantExtras, type PageStated } from './gapMerchantDescription'
 
 /** A log zone name as the wiki spells it (shared/gapWikiZone.ts); as printed when none is given. */
 export type ZoneNamer = (raw: string) => string
@@ -166,6 +169,8 @@ export interface MobFacts {
   quests?: string[]
   /** Its role from the client's target line (`Banker`, `Merchant`, `Warrior GM`; gaps_roles.rs). */
   role?: string
+  /** What it quoted or sold the player, a merchant page's `items_sold` (gaps_stock.rs, shared/gapItemsSold.ts). */
+  itemsSold?: SoldSeen[]
 }
 
 /** What the log saw of mobs beyond the rows: each kill's factions and each mob's `/loc` points. */
@@ -304,6 +309,7 @@ export function mobFacts(row: GapRow, loot: readonly LootEvent[], kills: KillMap
     ...coinOf(seen.mobCoin, row.name),
     quests: questFactsOf(row)?.quests ?? [],
     ...roleField(row),
+    ...itemsSoldField(row),
     factions: (seen.killFactions ?? []).filter(mine).map(({ faction, adjust, raised }) => ({
       faction,
       ...(adjust === undefined ? {} : { adjust }),
@@ -439,7 +445,7 @@ export function itemPage(f: ItemFacts, shot: ItemPageShot = {}): string {
 
 /** The NPC Page Blueprint's fields; '' is a blank line between groups. */
 const NPC_LAYOUT = ['imagefilename', '', 'name', 'race', 'class', 'level', 'agro_radius', 'run_speed', '', 'zone', 'location', 'respawn_time', '', 'AC', 'HP', 'HP_regen', 'mana_regen', '', 'attacks_per_round', 'attack_speed', 'damage_per_hit', 'special', '', 'description', '', 'known_loot', '', 'common_loot', '', 'factions', '', 'opposing_factions', '', 'related_quests', '']
-/** The Merchant Page Blueprint's: no loot, `items_sold` instead (left for the merchant window). */
+/** The Merchant Page Blueprint's: no loot, `items_sold` instead (what the merchant quoted or sold the player). */
 const MERCHANT_LAYOUT = ['imagefilename', '', 'name', 'race', 'class', 'level', 'agro_radius', 'run_speed', '', 'zone', 'location', '', 'AC', 'HP', 'HP_regen', 'mana_regen', '', 'attacks_per_round', 'attack_speed', 'damage_per_hit', 'special', 'description', '', 'items_sold', '', 'factions', '', 'opposing_factions', '', 'related_quests', '']
 /** The fields whose value is a block under the key, not a word beside it. */
 const BLOCK_FIELDS = new Set(['description', 'known_loot', 'common_loot', 'items_sold', 'factions', 'opposing_factions', 'related_quests'])
@@ -493,7 +499,8 @@ function factionBlocks(factions: readonly FactionSeen[], credited: number): Reco
   }
 }
 
-type NpcFacts = Pick<MobFacts, 'name' | 'zones' | 'levels' | 'points' | 'factions' | 'credited' | 'specials' | 'quests' | 'role'>
+/** `description`: a new merchant page's, from its nameplate, its items and its hail answer (gapMerchantDescription.ts). */
+type NpcFacts = Pick<MobFacts, 'name' | 'zones' | 'levels' | 'points' | 'factions' | 'credited' | 'specials' | 'quests' | 'role' | 'itemsSold'> & { description?: string; stated?: PageStated }
 
 /** The values both NPC layouts share: image, name, level, zone, location, factions, quests. */
 function npcValues(f: NpcFacts): Record<string, string> {
@@ -583,16 +590,19 @@ export function spellPage(f: SpellFacts): string {
 }
 
 /**
- * A trader the wiki lacks as a merchant, in the Merchant Page Blueprint's layout. `items_sold` is
- * left open: a merchant's stock mixes player resells the log cannot tell apart (owner, 2026-10-18).
+ * A trader the wiki lacks as a merchant, in the Merchant Page Blueprint's layout. `items_sold` lists
+ * what the merchant quoted or sold the player (shared/gapItemsSold.ts). The owner left it open on
+ * 2026-10-18 (a merchant's stock mixes player resells the log cannot tell apart) and reversed that on
+ * 2026-10-23 ("why doesn't our merchant page show items sold?"): a resell may appear, for the player
+ * to prune before saving the page.
  */
 export function merchantPage(f: NpcFacts): string {
-  return page(layoutBlock('MerchantPage', MERCHANT_LAYOUT, { ...npcValues(f), class: '[[Merchant]]' }), f.zones)
+  return pageOrAdd(f, { ...npcValues(f), class: '[[Merchant]]', description: f.description ?? '', items_sold: itemsSoldBlock(f.itemsSold ?? []) }, (v) => page(layoutBlock('MerchantPage', MERCHANT_LAYOUT, v), f.zones))
 }
 
 /** What the tab knows beside the row and the ledgers: the wiki's zone spellings and its mobs. */
 /** `questEntry` / `questJournal`: a quest's catalog entry and its Quest Journal reading (gapQuests.ts). */
-export interface PageExtras extends QuestExtras {
+export interface PageExtras extends QuestExtras, MerchantExtras {
   zoneName?: ZoneNamer
   /** A name the mob catalog has: a one-word caster that is a mob, not a player. */
   isMob?: (name: string) => boolean
@@ -616,9 +626,8 @@ export interface PageExtras extends QuestExtras {
  * second page (owner, 2026-10-11). `kills` must be a `killIndex` result.
  */
 export function wikiPageText(row: GapRow, loot: readonly LootEvent[], kills: KillMap, seen: MobSightings & PageExtras = {}): string {
-  const extras = seen
   if (row.suggest !== undefined && (row.domain === 'item' || row.domain === 'spell')) return `#REDIRECT [[${row.suggest.page}]]\n`
-  return PAGE_OF[row.domain](row, { ...extras, loot, kills, seen, zoneName: extras.zoneName ?? asPrinted })
+  return PAGE_OF[row.domain](row, { ...seen, loot, kills, seen, zoneName: seen.zoneName ?? asPrinted })
 }
 
 interface PageContext extends Omit<PageExtras, 'zoneName'> {
@@ -634,9 +643,10 @@ interface PageContext extends Omit<PageExtras, 'zoneName'> {
  */
 const PAGE_OF: Record<GapDomain, (row: GapRow, c: PageContext) => string> = {
   item: (row, c) => itemPage({ ...withPageTitles(itemFacts(row, c.loot, c.zoneName, c.vendorAt), c.mobPage), ...withFishedNote(questPageParts(questFactsOf(row), { mobPage: c.mobPage, zoneName: c.zoneName, locOf: locFinder(c.seen.mobLocs) }), row, c.zoneName) }, c.itemShots?.[row.name]),
-  // A mob its target line calls a merchant takes the merchant layout before any trade (owner, 2026-10-22).
-  mob: (row, c) => (roleOf(row) === 'Merchant' ? merchantPage(mobFacts(row, [], c.kills, { ...c.seen, zoneName: c.zoneName })) : mobPage(mobFacts(row, c.loot, c.kills, { ...c.seen, zoneName: c.zoneName }), c.commonLoot)),
-  merchant: (row, c) => merchantPage(mobFacts(row, [], c.kills, { ...c.seen, zoneName: c.zoneName })),
+  // A mob its target line calls a merchant takes the merchant layout before any trade (owner, 2026-10-22);
+  // a new mob page takes its fight estimates in its blank fields (shared/gapFight.ts).
+  mob: (row, c) => (roleOf(row) === 'Merchant' ? merchantPage(withDescription(mobFacts(row, [], c.kills, { ...c.seen, zoneName: c.zoneName }), row, c)) : withFightFields(mobPage(mobFacts(row, c.loot, c.kills, { ...c.seen, zoneName: c.zoneName }), c.commonLoot), row)),
+  merchant: (row, c) => merchantPage(withDescription(mobFacts(row, [], c.kills, { ...c.seen, zoneName: c.zoneName }), row, c)),
   spell: (row, c) => spellPage({ name: row.name, npcOnly: npcOnlySpell(row, c.isMob), client: c.spellFacts?.[row.name], shot: c.spellShots?.[row.name] }),
   faction: (row) => `${factionLine({ faction: factionOf(row), adjust: row.adjust, raised: row.raised })}\n`,
   image: (row) => `| ${'imagefilename'.padEnd(17)} = ${row.image ?? ''}\n`,
@@ -680,11 +690,12 @@ export function stillNeeded(row: GapRow, loot: readonly LootEvent[], kills: Kill
   const fixed = NEEDED_OF[row.domain]
   if (fixed !== undefined) return fixed(row, seen)
   const f = mobFacts(row, row.domain === 'mob' ? loot : [], kills, seen)
-  return [
+  // An Update row asks only for what its page lacks (owner, 2026-10-23; gapMerchantDescription.ts).
+  return withoutStated(row, seen, [
     ...(f.levels.length === 0 ? ['level (/con)'] : []),
     ...(f.points.length === 0 ? ['location (/loc beside a hail or /con)'] : []),
     // Faction lines seen at a kill of the mob are the proof itself, whoever's kill it was.
     ...(row.domain === 'mob' && f.credited === 0 && f.factions.length === 0 ? ['factions (a kill of your own)'] : []),
     IMAGE_NEED
-  ]
+  ])
 }

@@ -194,3 +194,21 @@ fn the_players_own_name_conned_or_hailed_is_never_a_row_and_another_one_word_nam
     let kamas = rows.iter().find(|r| r["name"] == "Kamas").expect("Kamas stays a row");
     assert_eq!(kamas["maybePlayer"], true);
 }
+
+#[test]
+fn a_mobs_row_carries_its_fight_numbers_per_tier_and_a_known_mob_has_no_row_to_carry_them() {
+    let mut m = module();
+    feed(&mut m, 1, json!({ "kind": "zone", "zone": "Cabilis East 4 (Refined)" }));
+    let blow = json!({ "kind": "damage", "attacker": "a nameless thing", "target": "You", "amount": 40, "dtype": "melee", "verb": "cleave" });
+    feed(&mut m, 2, blow);
+    feed(&mut m, 3, json!({ "kind": "death", "name": "a nameless thing", "bySelf": true }));
+    feed(&mut m, 4, json!({ "kind": "death", "name": "a decaying skeleton", "bySelf": true }));
+    let served = m.snapshot()["state"]["rows"].clone();
+    let row = served.as_array().expect("rows").iter().find(|r| r["name"] == "a nameless thing").expect("its row");
+    // No blow at it seen: a kill and a hit, but no damage taken to measure.
+    assert_eq!(
+        row["fight"],
+        json!([{ "tier": 4, "kills": 1, "fights": 0, "hits": 1, "hitMin": 40, "hitMax": 40, "attacks": ["cleave"] }])
+    );
+    assert_eq!(rows(&m).len(), 1, "the skeleton has a page: no row, so nothing is suggested for it");
+}

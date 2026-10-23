@@ -43,6 +43,7 @@ pub mod event_feed;
 pub mod gaps;
 pub mod gaps_coin;
 pub mod gaps_details;
+pub mod gaps_fight;
 pub mod gaps_keys;
 pub mod gaps_locs;
 pub mod gaps_names;

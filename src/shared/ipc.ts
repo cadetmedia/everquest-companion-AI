@@ -1117,6 +1117,9 @@ export const IPC = {
   // (<root>/item, <root>/spell), replacing that part's earlier copy. Payload: ('item' | 'lore' |
   // 'spell', row name, png bytes). Answers PictureKeep ('off' when no folder is chosen).
   shotKeepPicture: 'shot:keepPicture',
+  // Item names in, `{ [name]: the tradeskills its recipes name }` out, off the committed corpus
+  // (src/main/gapItemTrades.ts), for a new merchant page's description. Payload: (names: string[]).
+  gapItemTrades: 'gaps:itemTrades',
 
   // ---- error harness (renderer -> main, fire-and-forget) ----
   // window.onerror / onunhandledrejection / React ErrorBoundary report here so

@@ -335,8 +335,13 @@ impl GapsModule {
         if let (Domain::Mob | Domain::Merchant, Some(role)) = (domain, self.roles.of(key)) {
             v["role"] = json!(role);
         }
+        // A merchant's stock, an NPC's hail answer and a Merchants row's cons (gaps_stock.rs).
+        self.serve_stock(domain, key, v);
         if let (Domain::Item, Some(zones)) = (domain, self.fish.of(key)) {
             v["fishedIn"] = json!(zones);
+        }
+        if let (Domain::Mob, Some(fight)) = (domain, self.specials.fights.of(key)) {
+            v["fight"] = fight;
         }
     }
 }

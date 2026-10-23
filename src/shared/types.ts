@@ -894,6 +894,8 @@ export interface FeedEvent {
   con?: FeedConsider
   /** the item or mob is in none of the app's data: screenshot it for the wiki (owner ask, 2026-10-18) */
   unknown?: true
+  /** beside `unknown` on a con: the Gaps tab serves its Mobs row "may be a player" (owner ask, 2026-10-23) */
+  maybePlayer?: true
   /** the mob's wiki pages exist but none has a picture (the Gaps tab's Images row): screenshot it.
    *  Never beside `unknown`, which wins (owner ask, 2026-10-20) */
   needsImage?: true

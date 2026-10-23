@@ -848,9 +848,7 @@ pub fn registered(deps: ClusterDeps) -> Registry {
     )));
     r.register(Box::new(modules::progression::ProgressionModule::new()));
     r.register(Box::new(modules::leveling::LevelingModule::new()));
-    r.register(Box::new(modules::character::CharacterModule::new(
-        character,
-    )));
+    r.register(Box::new(modules::character::CharacterModule::new(character)));
     r.register(Box::new(modules::output_files::OutputFilesModule::new()));
     r.register(Box::new(modules::spell_sets::SpellSetsModule::new()));
     r.register(Box::new(modules::item_tiers::ItemTiersModule::new()));
@@ -869,8 +867,11 @@ pub fn registered(deps: ClusterDeps) -> Registry {
     r.register(Box::new(modules::buff_timers::BuffTimersModule::new(core)));
     r.register(Box::new(modules::consider::ConsiderModule::new()));
     r.register(Box::new(modules::resist::ResistModule::new()));
-    r.register(Box::new(modules::gaps::GapsModule::new()));
-    r.register(Box::new(modules::event_feed::EventFeedModule::new()));
+    // The Event log marks a con as missing exactly when the Gaps tab has a Mobs row for it: one
+    // decision, the Gaps module's, handed over in one slot cloned into both (`gaps_marks.rs`).
+    let con_marks = modules::gaps::marks::ConMarks::default();
+    r.register(Box::new(modules::gaps::GapsModule::sharing(con_marks.clone())));
+    r.register(Box::new(modules::event_feed::EventFeedModule::sharing(con_marks)));
     r
 }
 
