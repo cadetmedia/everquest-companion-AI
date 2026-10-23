@@ -76,7 +76,8 @@ test('a capped "better" line is a raise: it lands under opposing_factions; prove
   }
   const page = mobPage(mobFacts(row('mob', 'a rabid kobold'), [], kills, seen))
   assert.ok(page.includes("| factions = \n\n* [[Clan Kolbok]] <span class='profac'>(-1)</span>"), page)
-  assert.ok(page.includes('| opposing_factions = \n\n* [[Kerra Isle]]\n'), page)
+  // No amount stated: the sign alone (owner, 2026-10-22).
+  assert.ok(page.includes("| opposing_factions = \n\n* [[Kerra Isle]] <span class='oppfac'>(+)</span>\n"), page)
   const none = mobPage(mobFacts(row('mob', 'a bat'), [], killIndex({ 'a bat': { display: 'a bat', count: 2, credited: 2 } } as unknown as KillMap)))
   assert.ok(none.includes('| factions = \n\n* None') && none.includes('| opposing_factions = \n\n* None'), none)
   const unknown = mobPage(mobFacts(row('mob', 'a bat'), [], {}))
