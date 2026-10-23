@@ -291,3 +291,21 @@ test("THE ICON READ AS A CHARACTER BEFORE THE NAME GOES WHEN THE TITLE BAR NAMES
   assert.equal(read('5 Dose Potion of Cold [=', '5 Dose Potion of Cold'), '5 Dose Potion of Cold')
   assert.equal(read('A Faded Page', 'A Faded Page'), 'A Faded Page')
 })
+
+test("A LEGENDS CLICK EFFECT WITH ITS CASTING TIME IN ITS OWN BRACKETS IS ONE CLEAN EFFECT LINE (OWNER'S PETAMORPH WAND, 2026-10-22)", () => {
+  // The window prints `Click Effect: Summon Familiar: Werewolf (Casting Time: 5.0)(Can Equip)`; the page
+  // had `Effect: [[Summon Familiar: Werewolf (]] (Casting Time: 5.0)`. Lines as the window shows them.
+  const read = readItemWindow([
+    'Petamorph Wand: Werewolf',
+    'No Trade, Attunable, Heirloom',
+    'Class: ALL',
+    'Race: ALL',
+    'Ammo',
+    'Size: SMALL',
+    'Weight: 0.9',
+    'Click Effect: Summon Familiar: Werewolf (Casting Time: 5.0)(Can Equip)',
+    'Cast Time: 5.0 seconds',
+    'Cooldown: 10 seconds'
+  ])
+  assert.ok(read.statsblock.includes('Effect: [[Summon Familiar: Werewolf]] (Can Equip, Casting Time: 5.0)<br>'), read.statsblock)
+})
