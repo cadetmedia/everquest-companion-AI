@@ -2,7 +2,7 @@
 // copied page says about tiers, corpses, factions and redirects, and which page a chip opens.
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { dropsSeen, lootLine, mobFacts, mobPage, stillNeeded, wikiPageText } from '../src/shared/wikiPage'
+import { dropsSeen, factionLine, lootLine, mobFacts, mobPage, stillNeeded, wikiPageText } from '../src/shared/wikiPage'
 import { catalogZoneCounts, wikiZoneLink, wikiZoneNamer, zoneBaseName } from '../src/shared/gapWikiZone'
 import { dropGaps } from '../src/shared/gapDrops'
 import { factionGaps, factionKey } from '../src/shared/gapFactions'
@@ -76,7 +76,8 @@ test('a capped "better" line is a raise: it lands under opposing_factions; prove
   }
   const page = mobPage(mobFacts(row('mob', 'a rabid kobold'), [], kills, seen))
   assert.ok(page.includes("| factions = \n\n* [[Clan Kolbok]] <span class='profac'>(-1)</span>"), page)
-  assert.ok(page.includes('| opposing_factions = \n\n* [[Kerra Isle]]\n'), page)
+  // No amount stated: the sign alone (owner, 2026-10-22).
+  assert.ok(page.includes("| opposing_factions = \n\n* [[Kerra Isle]] <span class='oppfac'>(+)</span>\n"), page)
   const none = mobPage(mobFacts(row('mob', 'a bat'), [], killIndex({ 'a bat': { display: 'a bat', count: 2, credited: 2 } } as unknown as KillMap)))
   assert.ok(none.includes('| factions = \n\n* None') && none.includes('| opposing_factions = \n\n* None'), none)
   const unknown = mobPage(mobFacts(row('mob', 'a bat'), [], {}))
@@ -263,4 +264,11 @@ test("A KILL BY THE PLAYER'S OWN PET IS THE PLAYER'S; FACTION LINES SEEN AT A KI
   // Faction lines seen at a kill of the mob are the proof, whoever landed the blow.
   const seen = { killFactions: [{ mob: 'a Deathfist templar', faction: 'Death Fist Orcs', adjust: -3, raised: false }] }
   assert.ok(!stillNeeded(templar, [], {}, seen).includes('factions (a kill of your own)'))
+})
+
+test("A CAPPED FACTION LINE WRITES ITS SIDE'S SIGN WHEN NO AMOUNT WAS STATED (OWNER, 2026-10-22: KNIGHTS OF TRUTH 'COULD NOT POSSIBLY GET ANY BETTER')", () => {
+  assert.equal(factionLine({ faction: 'Knights of Truth', raised: true }), "* [[Knights of Truth]] <span class='oppfac'>(+)</span>")
+  assert.equal(factionLine({ faction: 'Death Fist Orcs', raised: false }), "* [[Death Fist Orcs]] <span class='profac'>(-)</span>")
+  assert.equal(factionLine({ faction: 'Ashen Order', adjust: 5, raised: true }), "* [[Ashen Order]] <span class='oppfac'>(5)</span>")
+  assert.equal(factionLine({ faction: 'Unknown Side' }), '* [[Unknown Side]]')
 })

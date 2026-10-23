@@ -496,8 +496,13 @@ const raises = (f: FactionSeen): boolean | undefined => (f.adjust !== undefined 
 
 /** One faction bullet as a mob page lists it; the amount in its span when a line stated one. */
 export function factionLine(f: FactionSeen): string {
-  const css = raises(f) === true ? 'oppfac' : 'profac'
-  return `* ${wikiLink(f.faction)}${f.adjust === undefined ? '' : ` <span class='${css}'>(${String(f.adjust)})</span>`}`
+  const up = raises(f)
+  const css = up === true ? 'oppfac' : 'profac'
+  // A capped line (`could not possibly get any better`) states the side and no amount: the sign alone,
+  // as the wiki writes an unknown amount (`(+)` 27 pages, `(-)` 82) (owner, 2026-10-22: "indicate it's
+  // a POSITIVE increase, even if we don't know the amount").
+  const amount = f.adjust !== undefined ? String(f.adjust) : up === undefined ? undefined : up ? '+' : '-'
+  return `* ${wikiLink(f.faction)}${amount === undefined ? '' : ` <span class='${css}'>(${amount})</span>`}`
 }
 
 /**
