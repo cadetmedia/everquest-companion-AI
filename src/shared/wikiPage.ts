@@ -28,9 +28,9 @@ import { SPELL_HEAD, SPELL_TAIL, spellPageValues, type SpellPageShot } from './s
 import { withPageTitles } from './mobPageTitle'
 import { noticeProof } from './gapNotices'
 import { locFinder, questFactsOf, questPageParts, withQuestFields } from './itemQuestFacts'
-import { fishedNote, roleClass, roleField, roleOf } from './gapRoles'
+import { roleClass, roleField, roleOf, withFishedNote } from './gapRoles'
 import { questRowPage } from './gapQuestPage'
-import type { QuestCatalogEntry, QuestJournalFacts } from './gapQuests'
+import type { QuestExtras } from './gapQuests'
 
 /** A log zone name as the wiki spells it (shared/gapWikiZone.ts); as printed when none is given. */
 export type ZoneNamer = (raw: string) => string
@@ -132,8 +132,6 @@ export interface ItemFacts {
   /** The quest sentences for `|notes` and the `|relatedquests` list (shared/itemQuestFacts.ts). */
   questNote?: string
   relatedQuests?: string
-  /** Where it was caught fishing, as the wiki spells the zones (gaps_fished.rs). */
-  fishedIn?: string[]
 }
 
 /** A faction a kill moved: the amount most lines stated, and whether the kill raised it. */
@@ -153,7 +151,7 @@ export interface MobFacts {
   loot: { item: string; drops: number }[]
   /** How many of it the player killed: the drop rates' denominator. */
   kills: number
-  /** Kills whose faction lines the log prints (credited, or the player's own killing blow): with none seen, the page can say none. */
+  /** The player's own killing blows, whose faction lines the log always prints: with none seen, the page can say none. */
   credited: number
   /** The player's own killing blows: with LOOT_NONE_KILLS of them and nothing looted, the page says no loot. */
   ownKills: number
@@ -238,8 +236,7 @@ export function itemFacts(row: GapRow, loot: readonly LootEvent[], zoneName: Zon
   // A merchant's offer heard at ally wins over the instant-sale estimate; any other never stands in
   // for it (shared/gapOffers.ts `merchantValueOf`, owner ask 2026-10-20).
   const merchantValue = merchantValueOf(row.details, derivedPrices(row.details)?.vendorValue)
-  const fished = ((row as { fishedIn?: string[] }).fishedIn ?? []).map(zoneName)
-  return { name: row.name, drops, soldBy, crafted: row.kinds.includes('crafted'), ...(merchantValue === undefined ? {} : { merchantValue }), ...(fished.length === 0 ? {} : { fishedIn: fished }) }
+  return { name: row.name, drops, soldBy, crafted: row.kinds.includes('crafted'), ...(merchantValue === undefined ? {} : { merchantValue }) }
 }
 
 /** The levels a mob row's /con lines stated (`L12 indifferent`), lowest first. */
@@ -296,7 +293,11 @@ export function mobFacts(row: GapRow, loot: readonly LootEvent[], kills: KillMap
     levels: conLevels(row),
     loot: mobLoot(row, loot),
     kills: killed?.count ?? 0,
-    credited: Math.max(killed?.credited ?? 0, ownKills(row)),
+    // Only the player's own killing blows prove "no factions". An experience-credited kill does not:
+    // a pet's kill while the player is feigned pays experience and moves no faction (owner's log,
+    // 2026-10-23: Gonekn killed Guard S`Tal, "You gain experience!", no faction line; owner: "this
+    // is dangerous to say None when it's not none"), and `X died.` never says whose kill it was.
+    credited: ownKills(row),
     ownKills: ownKills(row, seen.ownPets),
     points: (seen.mobLocs ?? []).filter(mine).flatMap((m) => m.points),
     specials: [...new Set((seen.mobSpecials ?? []).filter(mine).flatMap((m) => m.specials))],
@@ -419,9 +420,7 @@ function shotFields(shot: ItemPageShot, merchantValue: number | undefined): [str
 export function itemPage(f: ItemFacts, shot: ItemPageShot = {}): string {
   const byZone = new Map<string, string[]>()
   for (const d of f.drops) byZone.set(d.zone, [...(byZone.get(d.zone) ?? []), d.mob])
-  const shotted: [string, string][] = [['itemname', f.name], ...shotFields(shot, f.merchantValue)]
-  // A fished item's notes say where it was fished up, after the lore a screenshot gave (gapRoles.ts).
-  const fields = (f.fishedIn ?? []).length > 0 ? withQuestFields(shotted, { questNote: fishedNote(f.fishedIn ?? []) }) : shotted
+  const fields: [string, string][] = [['itemname', f.name], ...shotFields(shot, f.merchantValue)]
   if (byZone.size > 0) fields.push(['dropsfrom', zoneBlocks(byZone)])
   if (f.soldBy.length > 0) fields.push(['soldby', itemWhereTable(f.soldBy)])
   const cats = [
@@ -592,7 +591,8 @@ export function merchantPage(f: NpcFacts): string {
 }
 
 /** What the tab knows beside the row and the ledgers: the wiki's zone spellings and its mobs. */
-export interface PageExtras {
+/** `questEntry` / `questJournal`: a quest's catalog entry and its Quest Journal reading (gapQuests.ts). */
+export interface PageExtras extends QuestExtras {
   zoneName?: ZoneNamer
   /** A name the mob catalog has: a one-word caster that is a mob, not a player. */
   isMob?: (name: string) => boolean
@@ -608,9 +608,6 @@ export interface PageExtras {
   spellShots?: Readonly<Record<string, SpellPageShot>>
   /** A mob's page title, by the catalog (`mobPageFinder`): the links take it, not the log's spelling. */
   mobPage?: (name: string) => string | undefined
-  /** A quest's catalog entry when the wiki has its page (quests.json), and its Quest Journal reading. */
-  questEntry?: (name: string) => QuestCatalogEntry | undefined
-  questJournal?: (name: string) => QuestJournalFacts | undefined
 }
 
 /**
@@ -636,7 +633,7 @@ interface PageContext extends Omit<PageExtras, 'zoneName'> {
  * so a new domain is one entry, and a domain without one does not compile.
  */
 const PAGE_OF: Record<GapDomain, (row: GapRow, c: PageContext) => string> = {
-  item: (row, c) => itemPage({ ...withPageTitles(itemFacts(row, c.loot, c.zoneName, c.vendorAt), c.mobPage), ...questPageParts(questFactsOf(row), { mobPage: c.mobPage, zoneName: c.zoneName, locOf: locFinder(c.seen.mobLocs) }) }, c.itemShots?.[row.name]),
+  item: (row, c) => itemPage({ ...withPageTitles(itemFacts(row, c.loot, c.zoneName, c.vendorAt), c.mobPage), ...withFishedNote(questPageParts(questFactsOf(row), { mobPage: c.mobPage, zoneName: c.zoneName, locOf: locFinder(c.seen.mobLocs) }), row, c.zoneName) }, c.itemShots?.[row.name]),
   // A mob its target line calls a merchant takes the merchant layout before any trade (owner, 2026-10-22).
   mob: (row, c) => (roleOf(row) === 'Merchant' ? merchantPage(mobFacts(row, [], c.kills, { ...c.seen, zoneName: c.zoneName })) : mobPage(mobFacts(row, c.loot, c.kills, { ...c.seen, zoneName: c.zoneName }), c.commonLoot)),
   merchant: (row, c) => merchantPage(mobFacts(row, [], c.kills, { ...c.seen, zoneName: c.zoneName })),
