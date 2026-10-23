@@ -85,6 +85,9 @@ function listedDrops(m: CatalogMob, aliases: DropAliases): string[] {
   return [...named, ...bare, ...named.flatMap((d) => (aliases[d] === undefined ? [] : [aliases[d]]))]
 }
 
+/** The aliases by the drop key of the redirecting name, for the looted side; built once per aliases table. */
+const aliasKeys = perObject((aliases: DropAliases): ReadonlyMap<string, string> => new Map(Object.entries(aliases).map(([from, to]) => [sourceItemKey(from), to])))
+
 /** The aliases when none are given: one object, so the per-(catalog, aliases) index below is found again. */
 const NO_ALIASES: DropAliases = {}
 
@@ -187,8 +190,9 @@ export function dropGaps(loot: readonly LootEvent[], catalog: readonly CatalogMo
   const inGroups = groupsByItem(groups)
   const missing = new Map<string, Missing>()
   const listedMembers: [LootEvent, string, readonly string[]][] = []
+  const redirected = aliasKeys(aliases)
   for (const e of loot) {
-    const filed = filedAs(e, listed, inGroups)
+    const filed = filedAs(e, listed, inGroups, redirected)
     const mob = mobSourceOf(e)
     if (filed === null || mob === undefined) continue
     if (filed.listed !== undefined) listedMembers.push([e, mob, filed.listed])
@@ -220,13 +224,17 @@ interface Filed {
  * when listed, the mob is unknown or it was a chest payout. An item in a group the page lacks is
  * filed as the group, even when the page lists other members one by one (never a member's line).
  */
-function filedAs(e: LootEvent, listed: ReadonlyMap<string, ReadonlySet<string>>, inGroups: ReadonlyMap<string, readonly string[]>): Filed | null {
+function filedAs(e: LootEvent, listed: ReadonlyMap<string, ReadonlySet<string>>, inGroups: ReadonlyMap<string, readonly string[]>, redirected: ReadonlyMap<string, string>): Filed | null {
   const mob = mobSourceOf(e)
   const page = mob === undefined ? undefined : listed.get(mobKey(mob))
   if (page === undefined) return null
-  const its = inGroups.get(sourceItemKey(e.item)) ?? []
+  // The looted name and, when the wiki redirects it, the item page it lands on (owner, 2026-10-22:
+  // a looted Halfling Blood is the Vial of Halfling Blood a mob page lists).
+  const to = redirected.get(sourceItemKey(e.item))
+  const names = to === undefined ? [e.item] : [e.item, to]
+  const its = names.flatMap((n) => inGroups.get(sourceItemKey(n)) ?? [])
   if (its.some((g) => page.has(sourceItemKey(g)))) return null
-  const onPage = page.has(sourceItemKey(e.item)) || page.has(bareItemKey(e.item))
+  const onPage = names.some((n) => page.has(sourceItemKey(n)) || page.has(bareItemKey(n)))
   if (its.length > 0) return onPage ? { name: its[0], group: true, listed: its } : { name: its[0], group: true }
   // The item's own page is the base item's: `Barbed Legplates +4` is filed as `Barbed Legplates`.
   return onPage ? null : { name: itemBaseName(e.item), group: false }

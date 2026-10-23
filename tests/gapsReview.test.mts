@@ -250,3 +250,17 @@ test('ten kills of your own with nothing looted write * None under known_loot; f
   const loot = [{ item: 'Froglok Leg', source: 'a fallen froglok', ts: 1 }] as LootEvent[]
   assert.ok(!mobPage(mobFacts(killedBy(10), loot, kills)).includes('* None\n\n| common_loot'))
 })
+
+test("A KILL BY THE PLAYER'S OWN PET IS THE PLAYER'S; FACTION LINES SEEN AT A KILL NEED NO MORE (OWNER, 2026-10-22: GONEKN)", () => {
+  const killers = { entries: [{ name: 'Gonekn', n: 1 }] } as GapRow['details']['killers']
+  const templar = row('mob', 'a Deathfist templar', { killers })
+  // Gonekn unknown as the player's pet, no faction lines: still asked for.
+  assert.ok(stillNeeded(templar, [], {}).includes('factions (a kill of your own)'))
+  // The player's pet: its kill is the player's.
+  const pets = { ownPets: ['Gonekn'] }
+  assert.equal(mobFacts(templar, [], {}, pets).ownKills, 1)
+  assert.ok(!stillNeeded(templar, [], {}, pets).includes('factions (a kill of your own)'))
+  // Faction lines seen at a kill of the mob are the proof, whoever landed the blow.
+  const seen = { killFactions: [{ mob: 'a Deathfist templar', faction: 'Death Fist Orcs', adjust: -3, raised: false }] }
+  assert.ok(!stillNeeded(templar, [], {}, seen).includes('factions (a kill of your own)'))
+})
