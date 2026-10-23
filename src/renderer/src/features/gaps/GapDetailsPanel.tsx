@@ -7,6 +7,7 @@ import { GAP_LISTS, derivedPrices, formatCoin, type GapDetails, type GapRow, typ
 import { offerCheckText, offerText } from '@shared/gapOffers'
 import { questFactLines, questFactsOf } from '@shared/itemQuestFacts'
 import { rowFactLines } from '@shared/gapQuestPage'
+import { fightLines } from '@shared/gapFight'
 import { PAGE_EXTRAS } from './useGapsData'
 
 /** Under the sale-on-loot chips: what the sale implies (shared/gaps.ts `derivedPrices`). */
@@ -63,11 +64,12 @@ function TallyChips({ label, tally }: { label: string; tally: GapTally }): JSX.E
 
 /**
  * The row's facts in words first: an item's quest facts, then a quest's steps, an NPC's role, where it
- * was fished (gapQuestPage.ts `rowFactLines`); then its tallies, offers and sample lines.
+ * was fished (gapQuestPage.ts `rowFactLines`), a mob's fights per tier (gapFight.ts); then its
+ * tallies, offers and sample lines.
  */
 export default function GapDetailsPanel({ row }: { row: GapRow }): JSX.Element {
   const details = row.details
-  const lines = [...questFactLines(questFactsOf(row)), ...rowFactLines(row, PAGE_EXTRAS)]
+  const lines = [...questFactLines(questFactsOf(row)), ...rowFactLines(row, PAGE_EXTRAS), ...fightLines(row)]
   return (
     <Stack spacing={1} sx={{ py: 1 }} data-testid="gaps-details">
       {/* Who gave it, who took it, its quest (owner, 2026-10-22: who it is turned in to). */}

@@ -338,6 +338,9 @@ impl GapsModule {
         if let (Domain::Item, Some(zones)) = (domain, self.fish.of(key)) {
             v["fishedIn"] = json!(zones);
         }
+        if let (Domain::Mob, Some(fight)) = (domain, self.specials.fights.of(key)) {
+            v["fight"] = fight;
+        }
     }
 }
 

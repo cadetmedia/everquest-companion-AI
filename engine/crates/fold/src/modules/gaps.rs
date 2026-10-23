@@ -153,7 +153,7 @@ pub struct GapsModule {
     mob_locs: MobLocs,
     /// Who chats (a player) and which hailed or conned one-word names are NPCs (`gaps_players.rs`).
     who: Players,
-    /// What each mob was seen to do, Rampage or Flurry (`gaps_specials.rs`).
+    /// What each mob was seen to do, Rampage or Flurry, and its fight numbers (`gaps_specials.rs`).
     specials: MobSpecials,
     /// Each name's last /con rung: the standing a merchant's offer is made at (`gaps_offers.rs`).
     standings: Standings,
@@ -193,14 +193,14 @@ impl GapsModule {
         match ev.kind() {
             "zone" => {
                 self.zone = ev.str("zone").map(str::to_string);
-                false
+                self.specials.zone(ev.str("zone"))
             }
             // The player's own `/who` row, parsed apart, names a player like any /who row (gaps_players.rs),
             // so a self-con (a /con with nothing targeted) is never a row (owner, 2026-10-22: "this is me").
             "selfWho" => self.unparsed(ev),
             "loot" | "itemReceived" | "itemMerge" => self.item_event(ev),
             "purchase" | "coin" | "unknown" => self.trade(ev),
-            "death" => self.kill_factions_of(ev) | self.death(ev),
+            "death" => self.kill_factions_of(ev) | self.specials.death(ev) | self.death(ev),
             "consider" => self.considered(ev),
             "damage" | "miss" => self.specials.event(ev),
             "castBegin" | "otherCastBegin" => self.spell(ev),

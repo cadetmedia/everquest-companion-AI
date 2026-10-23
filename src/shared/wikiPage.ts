@@ -32,6 +32,7 @@ import { locFinder, questFactsOf, questPageParts, withQuestFields } from './item
 import { roleClass, roleField, roleOf, withFishedNote } from './gapRoles'
 import { questRowPage } from './gapQuestPage'
 import type { QuestExtras } from './gapQuests'
+import { withFightFields } from './gapFight'
 
 /** A log zone name as the wiki spells it (shared/gapWikiZone.ts); as printed when none is given. */
 export type ZoneNamer = (raw: string) => string
@@ -661,9 +662,8 @@ export interface PageExtras extends QuestExtras {
  * second page (owner, 2026-10-11). `kills` must be a `killIndex` result.
  */
 export function wikiPageText(row: GapRow, loot: readonly LootEvent[], kills: KillMap, seen: MobSightings & PageExtras = {}): string {
-  const extras = seen
   if (row.suggest !== undefined && (row.domain === 'item' || row.domain === 'spell')) return `#REDIRECT [[${row.suggest.page}]]\n`
-  return PAGE_OF[row.domain](row, { ...extras, loot, kills, seen, zoneName: extras.zoneName ?? asPrinted })
+  return PAGE_OF[row.domain](row, { ...seen, loot, kills, seen, zoneName: seen.zoneName ?? asPrinted })
 }
 
 interface PageContext extends Omit<PageExtras, 'zoneName'> {
@@ -680,8 +680,9 @@ interface PageContext extends Omit<PageExtras, 'zoneName'> {
 const PAGE_OF: Record<GapDomain, (row: GapRow, c: PageContext) => string> = {
   // A page that exists and lacks a forage zone or the category: only the lines to add (gapForage.ts).
   item: (row, c) => (row.forageUpdate ? forageAddText(row.forageUpdate) : itemPage({ ...withPageTitles(itemFacts(row, c.loot, c.zoneName, c.vendorAt), c.mobPage), ...withFishedNote(questPageParts(questFactsOf(row), { mobPage: c.mobPage, zoneName: c.zoneName, locOf: locFinder(c.seen.mobLocs) }), row, c.zoneName) }, c.itemShots?.[row.name])),
-  // A mob its target line calls a merchant takes the merchant layout before any trade (owner, 2026-10-22).
-  mob: (row, c) => (roleOf(row) === 'Merchant' ? merchantPage(mobFacts(row, [], c.kills, { ...c.seen, zoneName: c.zoneName })) : mobPage(mobFacts(row, c.loot, c.kills, { ...c.seen, zoneName: c.zoneName }), c.commonLoot)),
+  // A mob its target line calls a merchant takes the merchant layout before any trade (owner, 2026-10-22);
+  // a new mob page takes its fight estimates in its blank fields (shared/gapFight.ts).
+  mob: (row, c) => (roleOf(row) === 'Merchant' ? merchantPage(mobFacts(row, [], c.kills, { ...c.seen, zoneName: c.zoneName })) : withFightFields(mobPage(mobFacts(row, c.loot, c.kills, { ...c.seen, zoneName: c.zoneName }), c.commonLoot), row)),
   merchant: (row, c) => merchantPage(mobFacts(row, [], c.kills, { ...c.seen, zoneName: c.zoneName })),
   spell: (row, c) => spellPage({ name: row.name, npcOnly: npcOnlySpell(row, c.isMob), client: c.spellFacts?.[row.name], shot: c.spellShots?.[row.name] }),
   faction: (row) => `${factionLine({ faction: factionOf(row), adjust: row.adjust, raised: row.raised })}\n`,
