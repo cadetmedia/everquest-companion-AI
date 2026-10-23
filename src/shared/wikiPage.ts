@@ -713,6 +713,8 @@ function noticeProof(row: GapRow): string {
  * what to collect before the trip ends (review 2026-10-19). `kills` must be a `killIndex` result.
  */
 export function stillNeeded(row: GapRow, loot: readonly LootEvent[], kills: KillMap, seen: MobSightings & PageExtras = {}): string[] {
+  // A redirect row asks for a check in game, nothing to collect (gapRedirects.ts).
+  if (row.viaRedirect !== undefined) return []
   const fixed = NEEDED_OF[row.domain]
   if (fixed !== undefined) return fixed(row, seen)
   const f = mobFacts(row, row.domain === 'mob' ? loot : [], kills, seen)

@@ -19,7 +19,8 @@ const UPDATE_DOMAINS: ReadonlySet<GapDomain> = new Set<GapDomain>(['faction', 'd
  * for a known item's page that lacks a forage zone or the category (shared/gapForage.ts) is an update.
  */
 export function gapJob(row: GapRow, ctx: GapActionContext = {}): GapJob {
-  if (UPDATE_DOMAINS.has(row.domain) || row.forageUpdate !== undefined) return 'update'
+  // A forage update, or a name known only through a redirect: the page exists.
+  if (UPDATE_DOMAINS.has(row.domain) || row.forageUpdate !== undefined || row.viaRedirect !== undefined) return 'update'
   if (row.domain === 'merchant' && ctx.isMob?.(row.name) === true) return 'update'
   return 'new'
 }

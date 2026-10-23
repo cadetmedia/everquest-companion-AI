@@ -8,22 +8,19 @@ use serde_json::{Map, Value};
 
 /// The item keys with their pages, every effect an item states, and the mob catalog's names.
 ///
-/// A record's `otherNames` (the wiki redirects that land on its page) are keys of that page too:
-/// `Halfling Blood` redirects to `Vial of Halfling Blood`, so a looted Halfling Blood is known (owner,
-/// 2026-10-22: "no one told you to restrict it to mobs only").
+/// A record's `otherNames` (the wiki redirects that land on its page) are names of that page too
+/// (owner, 2026-10-22: "no one told you to restrict it to mobs only"), handed over apart from its
+/// own keys: a name known only through a redirect is a row to check, since a redirect can be wrong
+/// (Halfling Blood was sent to Vial of Halfling Blood, a different item).
 pub(crate) fn build(items: &Map<String, Value>, mobs: &MobIndex) -> GapIndex {
     let page = |k: &String, e: &Value| e["page"].as_str().unwrap_or(k).to_string();
-    let item_pages = items
+    let item_pages = items.iter().map(|(k, e)| (k.clone(), page(k, e))).collect();
+    let item_redirects = items
         .iter()
         .flat_map(|(k, e)| {
             let others = e["otherNames"].as_array().into_iter().flatten();
-            let keys = others
-                .filter_map(Value::as_str)
-                .map(item_key)
-                .filter(|o| !o.is_empty());
-            std::iter::once(k.clone())
-                .chain(keys.collect::<Vec<_>>())
-                .map(move |key| (key, page(k, e)))
+            let keys = others.filter_map(Value::as_str).map(item_key).filter(|o| !o.is_empty());
+            keys.map(|key| (key, page(k, e))).collect::<Vec<_>>()
         })
         .collect();
     let item_effects = items
@@ -46,7 +43,23 @@ pub(crate) fn build(items: &Map<String, Value>, mobs: &MobIndex) -> GapIndex {
         item_pages,
         item_effects,
         mob_names: mobs.names().to_vec(),
+        item_redirects,
+        mob_redirects: mob_redirects_of(mobs.names().iter().filter_map(|n| mobs.entry(n))),
     }
+}
+
+/// Every `(redirect name, page)` of the mob records, each page once.
+fn mob_redirects_of<'a>(mobs: impl Iterator<Item = &'a Value>) -> Vec<(String, String)> {
+    let mut pages = std::collections::HashSet::new();
+    let mut out = Vec::new();
+    for m in mobs {
+        let Some(page) = m["page"].as_str().filter(|p| pages.insert(p.to_string())) else {
+            continue;
+        };
+        let others = m["otherNames"].as_array().into_iter().flatten().filter_map(Value::as_str);
+        out.extend(others.map(|n| (n.to_string(), page.to_string())));
+    }
+    out
 }
 
 /// A record's `notices` (`DNE`, `delete`, `delete: <reason>`; scripts/sources pageNotices).
@@ -96,7 +109,7 @@ mod tests {
     use serde_json::{json, Map, Value};
 
     #[test]
-    fn an_items_other_names_are_keys_of_its_page() {
+    fn an_items_other_names_are_its_pages_redirects_apart_from_its_own_keys() {
         // Owner, 2026-10-22: Halfling Blood redirects to Vial of Halfling Blood and was a Gaps row.
         let items: Map<String, Value> = serde_json::from_value(json!({
             "vial of halfling blood": {"page": "Vial of Halfling Blood", "otherNames": ["Halfling Blood"]},
@@ -109,13 +122,14 @@ mod tests {
             .iter()
             .map(|(k, p)| (k.as_str(), p.as_str()))
             .collect();
-        assert!(
-            pages.contains(&("halfling blood", "Vial of Halfling Blood")),
-            "{pages:?}"
-        );
+        // Own keys only: a redirect can be wrong, so its name is handed over apart.
+        assert_eq!(pages.len(), 2, "{pages:?}");
         assert!(pages.contains(&("vial of halfling blood", "Vial of Halfling Blood")));
         assert!(pages.contains(&("rusty mace", "Rusty Mace")));
-        assert_eq!(pages.len(), 3);
+        assert_eq!(
+            index.item_redirects,
+            [("halfling blood".to_string(), "Vial of Halfling Blood".to_string())]
+        );
     }
 
     #[test]
