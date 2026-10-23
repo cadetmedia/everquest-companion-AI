@@ -67,6 +67,12 @@ full scrapers). A 3-week window was ~1,200 pages in ~25 batched requests.
   item page loses that requirement (Armor of Ro Quests lost `A Dark Cauldron`, now `Dark Cauldron`).
   Proposed: the delta adds the item pages it folds to that list and drops the ones it removes
   (scrape-delta-tool), or the owner approves a re-list of the item categories. Owner to decide.
+- New quest pages (since 2026-10-23, `deltaQuests.ts` `namesQuestCategory`): a read page on no list
+  whose own text links a category the full scrape walks (ends in Quest(s), not Quest Items) joins
+  `quest-pages.json` and quests.json; unknown pages are read in the quest window too. Before it, the
+  delta never added a quest page, so the Lake Nerius quests (written after the 2026-10-18 scrape)
+  were missing. 929 of 931 cached quest pages carry such a link; the 2 that do not are a
+  `{{Simple Quest` page and a list page.
 - mobs.json `factionAmounts` (wiki-scraper-fixes, 2026-10-20) comes from the parser the delta folds
   with; the first delta after it kept it 1:1 with `factions` on every record.
 - The delta follows moves (reads by pageid), removes a page that was deleted, became a redirect or
