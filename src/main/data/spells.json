@@ -1,8 +1,8 @@
 {
-  "scrapedAt": "2026-10-22T08:40:22.773Z",
+  "scrapedAt": "2026-10-23T04:05:45.103Z",
   "schema": 3,
-  "count": 2012,
-  "withEffects": 2009,
+  "count": 2014,
+  "withEffects": 2011,
   "spells": [
     {
       "name": "Aanya's Animation",
@@ -23246,6 +23246,21 @@
       ]
     },
     {
+      "name": "Pet Illusion: Werewolf",
+      "eraTag": "Classic",
+      "durationText": "16:40:00",
+      "durationMs": 60000000,
+      "castTimeMs": 0,
+      "targetType": "Summoned Pet",
+      "spellType": "Beneficial",
+      "classes": "NPC Only Spell",
+      "msgCastOnYou": "You alter your pet.",
+      "illusion": true,
+      "effects": [
+        "Pet Illusion: Werewolf"
+      ]
+    },
+    {
       "name": "Phantom Armor",
       "eraTag": "Kunark",
       "durationText": "1 hour 30 minutes",
@@ -31660,6 +31675,27 @@
       "illusion": false,
       "effects": [
         "Summon Familiar: Murderbee"
+      ]
+    },
+    {
+      "name": "Summon Familiar: Werewolf",
+      "eraTag": "Classic",
+      "durationText": "6:00:00",
+      "durationMs": 21600000,
+      "castTimeMs": 14000,
+      "recastMs": 1000,
+      "targetType": "Self",
+      "spellType": "Beneficial",
+      "classes": "NPC Only Spell",
+      "msgCastOnYou": "You summon forth a small werewolf.",
+      "msgCastOnOther": "Soandso summons forth a small werewolf.",
+      "msgWearsOff": "Your small werewolf departs.",
+      "illusion": false,
+      "effects": [
+        "Summon Familiar: Werewolf"
+      ],
+      "otherNames": [
+        "Familiar: Werewolf"
       ]
     },
     {

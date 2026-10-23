@@ -1,5 +1,5 @@
 {
-  "scrapedAt": "2026-10-22T08:40:22.773Z",
+  "scrapedAt": "2026-10-23T04:05:45.103Z",
   "source": "eqlwiki.com — Category:NPCs/Named Mobs/Merchants/Raid Encounters ∪ embeddedin Template:Namedmobpage/MerchantPage, filtered to pages opening a mob template + recentchanges delta (scripts/scrape-delta.mts)",
   "mobs": [
     {
@@ -966,11 +966,11 @@
         "Giant Snake Fang"
       ],
       "image": "npc_a_black_mamba.png",
-      "noImage": true,
       "notices": [
         "delete",
         "DNE"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A black reaver",
@@ -9462,8 +9462,45 @@
         "10",
         "10"
       ],
-      "image": "npc_a_deathfist_legionnaire.png",
-      "noImage": true
+      "image": "npc_a_deathfist_legionnaire.png"
+    },
+    {
+      "page": "A Deathfist Templar",
+      "eraTag": "Classic",
+      "name": "a Deathfist templar",
+      "level": "8-9",
+      "zones": [
+        "Nektulos Forest"
+      ],
+      "drops": [
+        "Jasper",
+        "Large Cloth Shirt"
+      ],
+      "loc": [
+        {
+          "ns": -73,
+          "ew": -1
+        },
+        {
+          "ns": -538,
+          "ew": 746
+        }
+      ],
+      "factions": [
+        "Death Fist Orcs",
+        "Ashen Order",
+        "Commons Residents",
+        "Guardians of the Vale",
+        "Knights of Truth"
+      ],
+      "factionAmounts": [
+        "-3",
+        "5",
+        "5",
+        "5",
+        "+"
+      ],
+      "image": "npc_a_deathfist_templar.png"
     },
     {
       "page": "A Deathly Harbinger",
@@ -14594,8 +14631,7 @@
         "Ashweed",
         "Ashroot"
       ],
-      "image": "fireimp.png",
-      "noImage": true
+      "image": "fireimp.png"
     },
     {
       "page": "A fire sprite",
@@ -19901,11 +19937,11 @@
         "Snake Egg"
       ],
       "image": "npc_a_garter_snake.png",
-      "noImage": true,
       "notices": [
         "delete",
         "DNE"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A Gelatinous Cube (Qeynos Aqueducts)",
@@ -20786,11 +20822,11 @@
         }
       ],
       "image": "npc_a_ghoul_yeoman.png",
-      "noImage": true,
       "notices": [
         "delete",
         "DNE"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A Ghoulish Ancille",
@@ -21604,11 +21640,11 @@
         }
       ],
       "image": "npc_a_giant_wasp_warrior.jpg",
-      "noImage": true,
       "notices": [
         "delete",
         "DNE"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A giant wasp worker",
@@ -32488,10 +32524,10 @@
         "10"
       ],
       "image": "npc_a_kobold_guardian.png",
-      "noImage": true,
       "notices": [
         "delete"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A kobold hunter",
@@ -33537,11 +33573,11 @@
         "Nektulos Forest"
       ],
       "image": "npc_a_large_arachneidae.png",
-      "noImage": true,
       "notices": [
         "delete",
         "DNE"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A large bat",
@@ -34058,8 +34094,7 @@
         "Spider Legs",
         "A Spider Venom Sac"
       ],
-      "image": "npc_a_large_spider.png",
-      "noImage": true
+      "image": "npc_a_large_spider.png"
     },
     {
       "page": "A large thicket rat",
@@ -35611,10 +35646,10 @@
         "Decayed Armor"
       ],
       "image": "npc_a_lizard_spiritualist.png",
-      "noImage": true,
       "notices": [
         "delete"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A lizard warder",
@@ -35834,11 +35869,11 @@
         "-30"
       ],
       "image": "npc_a_lizardman_robber.png",
-      "noImage": true,
       "notices": [
         "delete",
         "DNE"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A lizardman scout",
@@ -38301,11 +38336,11 @@
         "10"
       ],
       "image": "npc_a_muddite_recordkeeper.png",
-      "noImage": true,
       "notices": [
         "delete",
         "DNE"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A mumbling totem man",
@@ -41856,11 +41891,11 @@
         "Fire Beetle Carapace"
       ],
       "image": "npc_a_pyre_beetle.png",
-      "noImage": true,
       "notices": [
         "delete",
         "DNE"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A Pyre Golem",
@@ -43440,12 +43475,7 @@
         "Leathered Zombie Flesh",
         "Lock of Zombie Hair"
       ],
-      "image": "npc_a_rotting_citizen.png",
-      "noImage": true,
-      "notices": [
-        "delete",
-        "DNE"
-      ]
+      "image": "npc_a_rotting_citizen.png"
     },
     {
       "page": "A Rotting Initiate",
@@ -43459,11 +43489,11 @@
         "Zombie Skin"
       ],
       "image": "npc_a_rotting_initiate.png",
-      "noImage": true,
       "notices": [
         "delete",
         "DNE"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A Rotting Sentry",
@@ -44907,11 +44937,11 @@
         "10"
       ],
       "image": "npc_a_sarnak_berzerker.png",
-      "noImage": true,
       "otherNames": [
         "A Sarnak Berserker",
         "A Sarnak berserker"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A Sarnak bloodbinder",
@@ -50951,11 +50981,11 @@
         "Tarnished Rapier"
       ],
       "image": "npc_a_skeletal_soldier.png",
-      "noImage": true,
       "notices": [
         "delete",
         "DNE"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A skeletal watchman",
@@ -51725,11 +51755,11 @@
         }
       ],
       "image": "npc_a_small_coyote.png",
-      "noImage": true,
       "notices": [
         "delete",
         "DNE"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A small mountain lion",
@@ -51745,11 +51775,11 @@
         "High Quality Cat Pelt"
       ],
       "image": "npc_a_small_mountain_lion.png",
-      "noImage": true,
       "notices": [
         "delete",
         "DNE"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A smelly slave",
@@ -54799,10 +54829,10 @@
         "10"
       ],
       "image": "npc_a_tae_ew_defender.png",
-      "noImage": true,
       "notices": [
         "delete"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A Tae Ew Justicar",
@@ -54820,10 +54850,10 @@
         "10"
       ],
       "image": "npc_a_tae_ew_justicar.png",
-      "noImage": true,
       "notices": [
         "delete"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A Tae Ew Page",
@@ -54841,10 +54871,10 @@
         "10"
       ],
       "image": "npc_a_tae_ew_page.png",
-      "noImage": true,
       "notices": [
         "delete"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A Tae Ew Sentinel",
@@ -54863,10 +54893,10 @@
         "10"
       ],
       "image": "npc_a_tae_ew_sentinel.png",
-      "noImage": true,
       "notices": [
         "delete"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A tal ghoul wizard",
@@ -60573,11 +60603,11 @@
         }
       ],
       "image": "npc_a_zombie_yeoman.png",
-      "noImage": true,
       "notices": [
         "delete",
         "DNE"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "A.S.A. VI",
@@ -65570,11 +65600,11 @@
         }
       ],
       "image": "npc_an_animated_scarecrow.png",
-      "noImage": true,
       "notices": [
         "delete",
         "DNE"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "An apparition",
@@ -65917,11 +65947,47 @@
         "Spider Legs"
       ],
       "image": "an_araneidae_spiderling.png",
-      "noImage": true,
       "notices": [
         "delete",
         "DNE"
-      ]
+      ],
+      "noImage": true
+    },
+    {
+      "page": "An arcane incantator",
+      "eraTag": "Classic",
+      "name": "an arcane incantator",
+      "level": "2-4",
+      "zones": [
+        "Nektulos Forest"
+      ],
+      "drops": [
+        "Cloth Choker",
+        "Cloth Sandals"
+      ],
+      "loc": [
+        {
+          "ns": 658,
+          "ew": -911
+        },
+        {
+          "ns": 591,
+          "ew": -526
+        }
+      ],
+      "factions": [
+        "Faydarks Champions",
+        "Keepers of the Art",
+        "King Tearis Thex",
+        "The Dead"
+      ],
+      "factionAmounts": [
+        "-3",
+        "-20",
+        "-5",
+        "5"
+      ],
+      "image": "npc_an_arcane_incantator.png"
     },
     {
       "page": "An arena spectator",
@@ -66515,11 +66581,11 @@
         }
       ],
       "image": "npc_an_ebon_drakeling.png",
-      "noImage": true,
       "notices": [
         "delete",
         "DNE"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "An ebon wing hatchling",
@@ -66569,10 +66635,10 @@
         "-30"
       ],
       "image": "npc_an_eerie_chest.png",
-      "noImage": true,
       "notices": [
         "delete"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "An elder crimson drake",
@@ -75843,11 +75909,11 @@
         "1"
       ],
       "image": "aqua_goblin_marauder.png",
-      "noImage": true,
       "notices": [
         "delete",
         "DNE"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Aqua goblin mariner",
@@ -81465,10 +81531,10 @@
         "10"
       ],
       "image": "npc_berinsan.png",
-      "noImage": true,
       "notices": [
         "delete"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Berit",
@@ -87022,10 +87088,10 @@
         "10"
       ],
       "image": "npc_bruax_grengar_pet.png",
-      "noImage": true,
       "notices": [
         "delete: Not present in EQL"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Brumen Firehammer",
@@ -104700,6 +104766,26 @@
       "noImage": true
     },
     {
+      "page": "Direbear",
+      "name": "Direbear",
+      "level": "15",
+      "zones": [
+        "Lake Nerius"
+      ],
+      "drops": [
+        "Well Worn Boots"
+      ],
+      "loc": [
+        {
+          "ns": 513,
+          "ew": -1752,
+          "z": 6,
+          "pct": 100
+        }
+      ],
+      "image": "Direbear.png"
+    },
+    {
       "page": "Direlee Furme",
       "name": "Direlee Furme",
       "level": "45",
@@ -106543,8 +106629,7 @@
         "-30",
         "10"
       ],
-      "image": "npc_dragoon_x`lottl.png",
-      "noImage": true
+      "image": "npc_dragoon_x`lottl.png"
     },
     {
       "page": "Dragoon Zytl",
@@ -110140,10 +110225,10 @@
         "10"
       ],
       "image": "npc_elgar_donbrand.png",
-      "noImage": true,
       "notices": [
         "delete"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Elia Athrex",
@@ -112596,10 +112681,10 @@
         "-30"
       ],
       "image": "npc_exterminator_glurg.png",
-      "noImage": true,
       "notices": [
         "delete: Does not spawn in EQL."
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Exterminator VII",
@@ -123289,10 +123374,10 @@
         "10"
       ],
       "image": "npc_a_goblin_archeologist.png",
-      "noImage": true,
       "notices": [
         "delete"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Goblin Battlemaster",
@@ -128925,10 +129010,10 @@
         "-30"
       ],
       "image": "guard_butal.png",
-      "noImage": true,
       "notices": [
         "delete"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Guard Calik",
@@ -130837,8 +130922,7 @@
         "-30",
         "10"
       ],
-      "image": "npc_guard_e`brona.png",
-      "noImage": true
+      "image": "npc_guard_e`brona.png"
     },
     {
       "page": "Guard E`Tru",
@@ -130871,8 +130955,7 @@
         "-30",
         "10"
       ],
-      "image": "npc_guard_e`tru.png",
-      "noImage": true
+      "image": "npc_guard_e`tru.png"
     },
     {
       "page": "Guard Eaglesong",
@@ -131290,8 +131373,7 @@
         "-30",
         "10"
       ],
-      "image": "npc_guard_f`losta.png",
-      "noImage": true
+      "image": "npc_guard_f`losta.png"
     },
     {
       "page": "Guard F`Mazz",
@@ -136495,8 +136577,7 @@
         "-30",
         "10"
       ],
-      "image": "npc_guard_n`lan.png",
-      "noImage": true
+      "image": "npc_guard_n`lan.png"
     },
     {
       "page": "Guard N`Mar",
@@ -140128,8 +140209,7 @@
         "10",
         "-30"
       ],
-      "image": "npc_guard_t`aba.png",
-      "noImage": true
+      "image": "npc_guard_t`aba.png"
     },
     {
       "page": "Guard T`Kix",
@@ -140207,8 +140287,7 @@
         "-30",
         "10"
       ],
-      "image": "npc_guard_t`quetal.png",
-      "noImage": true
+      "image": "npc_guard_t`quetal.png"
     },
     {
       "page": "Guard Taalen",
@@ -146116,6 +146195,73 @@
       "noImage": true
     },
     {
+      "page": "High Chief Ferilsars",
+      "eraTag": "Classic",
+      "name": "High Chief Ferilsars",
+      "level": "12",
+      "zones": [
+        "Nektulos Forest"
+      ],
+      "drops": [
+        "Chief Ferilsars' Prayer Beads",
+        "Rusty Warhammer"
+      ],
+      "loc": [
+        {
+          "ns": -167,
+          "ew": -471
+        }
+      ],
+      "factions": [
+        "Death Fist Orcs",
+        "Ashen Order",
+        "Commons Residents",
+        "Guardians of the Vale",
+        "Knights of Truth"
+      ],
+      "factionAmounts": [
+        "-2",
+        "5",
+        "5",
+        "5",
+        "+"
+      ],
+      "image": "npc_high_chief_ferilsars.png"
+    },
+    {
+      "page": "High Chief Wasolors",
+      "eraTag": "Classic",
+      "name": "High Chief Wasolors",
+      "level": "12",
+      "zones": [
+        "Nektulos Forest"
+      ],
+      "drops": [
+        "Chief Wasolors' Prayer Beads"
+      ],
+      "loc": [
+        {
+          "ns": -1782,
+          "ew": 1216
+        }
+      ],
+      "factions": [
+        "Death Fist Orcs",
+        "Ashen Order",
+        "Commons Residents",
+        "Guardians of the Vale",
+        "Knights of Truth"
+      ],
+      "factionAmounts": [
+        "-2",
+        "+",
+        "+",
+        "+",
+        "+"
+      ],
+      "image": "npc_high_chief_wasolors.png"
+    },
+    {
       "page": "High Priest M`kari",
       "eraTag": "Hate",
       "name": "High Priest M`kari",
@@ -149468,8 +149614,7 @@
         "-3",
         "5"
       ],
-      "image": "npc_initiate_guanin.png",
-      "noImage": true
+      "image": "npc_initiate_guanin.png"
     },
     {
       "page": "Initiate Halagin",
@@ -149535,8 +149680,7 @@
         "-3",
         "5"
       ],
-      "image": "npc_initiate_hart.png",
-      "noImage": true
+      "image": "npc_initiate_hart.png"
     },
     {
       "page": "Initiate Kroskain",
@@ -149610,8 +149754,7 @@
         "-30",
         "10"
       ],
-      "image": "npc_initiate_pool.png",
-      "noImage": true
+      "image": "npc_initiate_pool.png"
     },
     {
       "page": "Initiate Rambel",
@@ -149639,8 +149782,7 @@
         "-3",
         "5"
       ],
-      "image": "npc_initiate_rambel.png",
-      "noImage": true
+      "image": "npc_initiate_rambel.png"
     },
     {
       "page": "Initiate Sircthain",
@@ -149739,8 +149881,7 @@
         "-3",
         "5"
       ],
-      "image": "npc_initiate_umbra.png",
-      "noImage": true
+      "image": "npc_initiate_umbra.png"
     },
     {
       "page": "Initiate Xabbis",
@@ -158758,8 +158899,7 @@
         "-20",
         "2"
       ],
-      "image": "npc_kirak_vil.png",
-      "noImage": true
+      "image": "npc_kirak_vil.png"
     },
     {
       "page": "Kirran Mirrah",
@@ -164890,6 +165030,14 @@
       "zones": [
         "Nektulos Forest"
       ],
+      "drops": [
+        "Halfling Blood",
+        "Halfling Toe",
+        "Leatherfoot Raider Skullcap",
+        "Sample of Halfling Meat",
+        "Vial of Halfling Blood",
+        "Woven Grass Amulet"
+      ],
       "loc": [
         {
           "ns": 1016,
@@ -164909,8 +165057,7 @@
         "-3",
         "5"
       ],
-      "image": "npc_leatherfoot_captain.png",
-      "noImage": true
+      "image": "npc_leatherfoot_captain.png"
     },
     {
       "page": "Leatherfoot Corporal",
@@ -164920,8 +165067,13 @@
         "Nektulos Forest"
       ],
       "drops": [
-        "Woven Grass Amulet",
-        "Rusty Two Handed Hammer"
+        "Halfling Blood",
+        "Halfling Toe",
+        "Leatherfoot Raider Skullcap",
+        "Rusty Weapons",
+        "Sample of Halfling Meat",
+        "Vial of Halfling Blood",
+        "Woven Grass Amulet"
       ],
       "loc": [
         {
@@ -164941,8 +165093,7 @@
         "-3",
         "5"
       ],
-      "image": "npc_leatherfoot_corporal.png",
-      "noImage": true
+      "image": "npc_leatherfoot_corporal.png"
     },
     {
       "page": "Leatherfoot Deputy",
@@ -164986,8 +165137,7 @@
         "-20",
         "30"
       ],
-      "image": "npc_leatherfoot_deputy.png",
-      "noImage": true
+      "image": "npc_leatherfoot_deputy.png"
     },
     {
       "page": "Leatherfoot Medic",
@@ -165061,8 +165211,7 @@
         "-3",
         "10"
       ],
-      "image": "npc_leatherfoot_scout.png",
-      "noImage": true
+      "image": "npc_leatherfoot_scout.png"
     },
     {
       "page": "Leatherfoot Sergeant",
@@ -165099,8 +165248,7 @@
         "-3",
         "5"
       ],
-      "image": "npc_leatherfoot_sergeant.png",
-      "noImage": true
+      "image": "npc_leatherfoot_sergeant.png"
     },
     {
       "page": "Legionnaire Alveyrem",
@@ -174549,8 +174697,7 @@
         "-7",
         "7"
       ],
-      "image": "npc_master_whoopal.png",
-      "noImage": true
+      "image": "npc_master_whoopal.png"
     },
     {
       "page": "Master Xalg",
@@ -181600,8 +181747,7 @@
         "-3",
         "5"
       ],
-      "image": "npc_neophyte_edel.png",
-      "noImage": true
+      "image": "npc_neophyte_edel.png"
     },
     {
       "page": "Neophyte Halle",
@@ -181671,8 +181817,7 @@
         "-30",
         "10"
       ],
-      "image": "npc_neophyte_hazel.png",
-      "noImage": true
+      "image": "npc_neophyte_hazel.png"
     },
     {
       "page": "Neordla",
@@ -190823,10 +190968,10 @@
         "Ice Crystal Staff"
       ],
       "image": "npc_priest_of_order.png",
-      "noImage": true,
       "notices": [
         "delete: No longer in game"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Priest of Zek",
@@ -192722,8 +192867,7 @@
         "-3",
         "5"
       ],
-      "image": "npc_quester_dunden.png",
-      "noImage": true
+      "image": "npc_quester_dunden.png"
     },
     {
       "page": "Quester Hannil",
@@ -192752,8 +192896,7 @@
         "-30",
         "10"
       ],
-      "image": "npc_quester_hannil.png",
-      "noImage": true
+      "image": "npc_quester_hannil.png"
     },
     {
       "page": "Quester Hannin",
@@ -210942,10 +211085,10 @@
         }
       ],
       "image": "npc_sir_telian_mottsworth.png",
-      "noImage": true,
       "notices": [
         "DNE"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Sir Willam",
@@ -212765,11 +212908,11 @@
         "-"
       ],
       "image": "npc_smith_tv`ysa.png",
-      "noImage": true,
       "notices": [
         "delete",
         "DNE"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Smithy Bashdyn",
@@ -233007,10 +233150,10 @@
         "1"
       ],
       "image": "npc_ulia_yovar.png",
-      "noImage": true,
       "notices": [
         "delete"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Ulkar Jollkarek",
@@ -235763,10 +235906,10 @@
         "10"
       ],
       "image": "npc_Veredenia.jpg",
-      "noImage": true,
       "notices": [
         "delete"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Vergad",
@@ -237791,6 +237934,22 @@
       "eraTag": "Classic",
       "name": "Voidling",
       "image": "voidling.jpg"
+    },
+    {
+      "page": "Vol T`Vke",
+      "eraTag": "Classic",
+      "name": "Vol T`Vke",
+      "level": "60",
+      "zones": [
+        "Nektulos Forest"
+      ],
+      "loc": [
+        {
+          "ns": 2338,
+          "ew": -803
+        }
+      ],
+      "image": "npc_vol_t_vke.png"
     },
     {
       "page": "Voleen Tassen",
@@ -244048,10 +244207,10 @@
         }
       ],
       "image": "npc_xalirilan_zarinokosalio.png",
-      "noImage": true,
       "notices": [
         "delete"
-      ]
+      ],
+      "noImage": true
     },
     {
       "page": "Xantis Ixtax",
