@@ -20,6 +20,9 @@ const RETRY_AFTER_FALLBACK_MS = 60_000
 export interface WikiClient {
   /** A page's raw wikitext. '' when the page doesn't exist, null on network error. */
   fetchWikitext(title: string): Promise<string | null>
+  /** The same read with the title it landed on (a redirect followed): text '' when the page doesn't
+   *  exist, null on network error. The Gaps tab's quest Copy names the page it compared against. */
+  fetchPage(title: string): Promise<{ title: string; text: string } | null>
   /** The search hits for a query (up to 8), or null on network error. An EMPTY array is a real
    *  zero-hit search — a negative worth caching — and distinct from null ('offline'). */
   searchTitles(query: string): Promise<{ title: string }[] | null>
@@ -63,13 +66,18 @@ export function createWikiClient(): WikiClient {
     }
   }
 
-  async function fetchWikitext(title: string): Promise<string | null> {
+  async function fetchPage(title: string): Promise<{ title: string; text: string } | null> {
     const j = (await apiFetch({ action: 'parse', page: title, prop: 'wikitext', redirects: '1' })) as
-      | { parse?: { wikitext?: string }; error?: { code?: string } }
+      | { parse?: { title?: string; wikitext?: string }; error?: { code?: string } }
       | null
     if (j === null) return null // network error (offline)
-    if (j.error) return '' // missingtitle etc. — a real negative
-    return j.parse?.wikitext ?? ''
+    if (j.error) return { title, text: '' } // missingtitle etc. — a real negative
+    return { title: j.parse?.title ?? title, text: j.parse?.wikitext ?? '' }
+  }
+
+  async function fetchWikitext(title: string): Promise<string | null> {
+    const page = await fetchPage(title)
+    return page === null ? null : page.text
   }
 
   async function searchTitles(query: string): Promise<{ title: string }[] | null> {
@@ -93,5 +101,5 @@ export function createWikiClient(): WikiClient {
     return run
   }
 
-  return { fetchWikitext, searchTitles, enqueue }
+  return { fetchWikitext, fetchPage, searchTitles, enqueue }
 }

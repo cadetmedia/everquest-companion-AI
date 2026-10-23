@@ -84,3 +84,15 @@ test('the queue runs one job at a time and survives a job that throws', async ()
   assert.equal(await second, 2)
   assert.deepEqual(order, ['first:start', 'first:end', 'second'])
 })
+
+test('fetchPage names the page a redirect landed on, and reads a missing page as empty text', async () => {
+  stubFetch((url) => {
+    const q = new URL(url).searchParams
+    assert.equal(q.get('redirects'), '1')
+    if (q.get('page') === 'Missing') return Response.json({ error: { code: 'missingtitle' } })
+    return Response.json({ parse: { title: "What's going on here", wikitext: '{{Classic Era}}' } })
+  })
+  const c = createWikiClient()
+  assert.deepEqual(await c.fetchPage('What`s going on here?'), { title: "What's going on here", text: '{{Classic Era}}' })
+  assert.deepEqual(await c.fetchPage('Missing'), { title: 'Missing', text: '' })
+})
