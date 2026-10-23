@@ -70,12 +70,15 @@ function ActionButton({
 function CopyPageButton({ text, row, compact }: { text: () => string; row: GapRow; compact: boolean }): JSX.Element {
   const [copied, setCopied] = useState(false)
   const redirect = row.suggest !== undefined && (row.domain === 'item' || row.domain === 'spell')
+  const notice = row.domain === 'notice'
   const tip = redirect
     ? `A redirect from the game's spelling to ${row.suggest?.page ?? ''}, so both spellings reach one page.`
-    : row.forageUpdate !== undefined
-      ? forageButtons(row.forageUpdate).copyTip
-      : `Wiki markup from what your log saw. ${GAP_CAPTURE[row.domain]}`
-  const label = copied ? 'Copied' : redirect ? 'Copy redirect' : 'Copy wiki page'
+    : notice
+      ? 'What your log proves (how often, when, where, the lines), for the talk page or the edit summary.'
+      : row.forageUpdate !== undefined
+        ? forageButtons(row.forageUpdate).copyTip
+        : `Wiki markup from what your log saw. ${GAP_CAPTURE[row.domain]}`
+  const label = copied ? 'Copied' : redirect ? 'Copy redirect' : notice ? 'Copy proof' : 'Copy wiki page'
   const icon = copied && compact ? <DoneIcon fontSize="small" color="success" /> : <ContentCopyIcon fontSize="small" />
   return <ActionButton compact={compact} label={label} tip={tip} icon={icon} onClick={() => void copyText(text()).then(setCopied)} testId="gaps-copy-page" />
 }
@@ -86,6 +89,8 @@ function editorOf(row: GapRow): { target: string; create: string; existing: bool
     const f = forageButtons(row.forageUpdate)
     return { target: f.page, create: f.edit, existing: true }
   }
+  // A notice row's page exists: it is edited, the notice off (owner, 2026-10-22).
+  if (row.domain === 'notice') return { target: row.page ?? row.name, create: 'Edit page', existing: true }
   if (onMobPage(row)) return { target: mobPageOf(row), create: 'Edit mob page', existing: true }
   return { target: row.name, create: row.suggest !== undefined ? 'Create redirect' : 'Create page', existing: false }
 }

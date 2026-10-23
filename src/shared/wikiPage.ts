@@ -662,6 +662,7 @@ const PAGE_OF: Record<GapDomain, (row: GapRow, c: PageContext) => string> = {
   spell: (row, c) => spellPage({ name: row.name, npcOnly: npcOnlySpell(row, c.isMob), client: c.spellFacts?.[row.name], shot: c.spellShots?.[row.name] }),
   faction: (row) => `${factionLine({ faction: factionOf(row), adjust: row.adjust, raised: row.raised })}\n`,
   image: (row) => `| ${'imagefilename'.padEnd(17)} = ${row.image ?? ''}\n`,
+  notice: (row) => noticeProof(row),
   // A drop: its group's link (`[[Rusty Weapons]]`), else the item; each with the rate seen, a
   // group's being the corpses that dropped any member (the row's count) over the mob's kills.
   drop: (row, c) => {
@@ -686,7 +687,20 @@ const NEEDED_OF: Partial<Record<GapDomain, (row: GapRow, seen: PageExtras) => st
   spell: (row, seen) => (spellPageValues(seen.spellFacts?.[row.name], seen.spellShots?.[row.name]).description === undefined ? ['description (paste the spell display window below)'] : []),
   faction: (row) => (row.adjust === undefined ? ['the amount (a kill that is not capped)'] : []),
   drop: () => [],
-  image: () => []
+  image: () => [],
+  notice: () => []
+}
+
+/**
+ * A notice row's copy: what the log proves, to cite on the page's talk page or in the edit summary
+ * when the notice comes off (owner, 2026-10-22): how often and when it was met, where, and the lines.
+ */
+function noticeProof(row: GapRow): string {
+  const zones = row.details.zones?.all ?? row.details.zones?.entries.map((z) => z.name) ?? []
+  const where = zones.length > 0 ? ` in ${zones.join(', ')}` : ''
+  const when = row.first === row.last ? row.first : `${row.first} to ${row.last}`
+  const head = `Seen in EverQuest Legends (${row.kinds.join(', ')}), ${String(row.count)} time${row.count === 1 ? '' : 's'}${where}, ${when}:`
+  return [head, ...row.details.samples.map((s) => `: ${s}`)].join('\n') + '\n'
 }
 
 /**

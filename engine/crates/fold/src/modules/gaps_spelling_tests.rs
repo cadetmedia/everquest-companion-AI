@@ -161,3 +161,23 @@ fn a_store_delivery_is_a_received_item_and_an_unknown_one_is_a_row() {
     );
     assert_eq!(rows(&m), ["item Petamorph Wand: Werewolf x1 [received]"]);
 }
+
+/// A known mob or item met whose page says it may not be in Legends (`{{DNE}}`, `{{delete}}`) is a
+/// Notices row under its page, with its notices and the lines that prove it exists (owner,
+/// 2026-10-22: A Rotting Citizen); a known one without a notice is no row anywhere.
+#[test]
+fn a_met_mob_or_item_whose_page_says_not_legends_is_a_notices_row() {
+    let mut m = module();
+    feed(&mut m, 1, json!({ "kind": "zone", "zone": "Nektulos Forest" }));
+    feed(&mut m, 2, json!({ "kind": "consider", "mob": "a rotting citizen", "level": 7 }));
+    feed(&mut m, 3, json!({ "kind": "death", "name": "a rotting citizen", "bySelf": true }));
+    feed(&mut m, 4, json!({ "kind": "loot", "item": "Old Wand", "source": "a rotting citizen" }));
+    feed(&mut m, 5, json!({ "kind": "loot", "item": "Bone Chips", "source": "a decaying skeleton" }));
+    assert_eq!(rows(&m), ["notice a rotting citizen x3 [considered,killed,dropped-by]", "notice Old Wand x1 [looted]"]);
+    let state = m.snapshot()["state"].clone();
+    let citizen = state["rows"].as_array().unwrap().iter().find(|r| r["name"] == "a rotting citizen").unwrap().clone();
+    assert_eq!(citizen["page"], "A Rotting Citizen");
+    assert_eq!(citizen["notices"], json!(["delete", "DNE"]));
+    assert_eq!(citizen["subject"], "mob");
+    assert_eq!(state["totals"]["notice"], 2);
+}

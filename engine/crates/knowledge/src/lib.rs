@@ -341,7 +341,7 @@ impl Knowledge for Corpus {
     }
 
     fn gap_index(&self) -> fold::knowledge::GapIndex {
-        gap_index::build(self.items(), self.mob_index().names())
+        gap_index::build(self.items(), self.mob_index())
     }
 
     /// The catalog, then the overlay, then a miss; the local half merged on top of whichever

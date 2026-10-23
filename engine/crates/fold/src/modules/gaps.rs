@@ -62,10 +62,12 @@ pub enum Domain {
     /// its page's `|foraged` is checked against (shared/gapForage.ts). Served after the four, with
     /// no total of its own.
     Forage,
+    /// A known item or mob met whose page says it may not be in Legends (`gaps_notices.rs`).
+    Notice,
 }
 
 impl Domain {
-    const ALL: [Domain; 4] = [Domain::Item, Domain::Mob, Domain::Spell, Domain::Merchant];
+    const ALL: [Domain; 5] = [Domain::Item, Domain::Mob, Domain::Spell, Domain::Merchant, Domain::Notice];
 
     fn as_str(self) -> &'static str {
         match self {
@@ -74,6 +76,7 @@ impl Domain {
             Domain::Spell => "spell",
             Domain::Merchant => "merchant",
             Domain::Forage => "forage",
+            Domain::Notice => "notice",
         }
     }
 }
@@ -98,6 +101,9 @@ pub struct GapRow {
     /// [`super::gaps_players`]. Set when served.
     #[serde(skip_serializing_if = "std::ops::Not::not")]
     maybe_player: bool,
+    /// A Notices row's page and notices (`gaps_notices.rs`).
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    notice: Option<Noticed>,
 }
 
 #[derive(Default)]
@@ -118,6 +124,8 @@ pub struct GapsModule {
     seen: HashMap<Domain, HashSet<String>>,
     /// Mob keys the log showed dying to a mob: players and pets, never rows again.
     players: HashSet<String>,
+    /// Pages with a not-Legends or deletion notice, for the Notices domain (`gaps_notices.rs`).
+    notices: Notices,
     /// The player's own pets, as the log spells them (`petClaim`/`petSay`): their kills are the
     /// player's (owner, 2026-10-22: Gonekn's kill moved the player's factions). Served as `ownPets`.
     own_pets: std::collections::BTreeSet<String>,
@@ -410,7 +418,7 @@ impl GapsModule {
     ) -> bool {
         self.seen.entry(domain).or_default().insert(key.clone());
         if known {
-            return false;
+            return self.noticed(domain, &key, name, kind, ev);
         }
         let at = stamp_of(ev.raw()).unwrap_or_default();
         let row = self.rows.entry((domain, key)).or_insert_with(|| GapRow {
@@ -422,6 +430,7 @@ impl GapsModule {
             last: String::new(),
             details: Details::default(),
             maybe_player: false,
+            notice: None,
         });
         // An offer is a sale's start: it says where the item went, not where it came from.
         let zone = if kind == "appraised" { None } else { self.zone.as_deref() };
@@ -472,7 +481,7 @@ impl GapsModule {
         let candidates: &[Candidate] = match domain {
             Domain::Item => &self.item_candidates,
             Domain::Spell => spell_candidates(),
-            Domain::Mob | Domain::Merchant | Domain::Forage => return None,
+            Domain::Mob | Domain::Merchant | Domain::Forage | Domain::Notice => return None,
         };
         let mut cache = self.suggests.lock().ok()?;
         cache
@@ -535,6 +544,7 @@ impl EqModule for GapsModule {
         let effect_key = |n: &String| loose_key(&spell_gap_key(n));
         self.item_effects = index.item_effects.iter().map(|(n, _)| effect_key(n)).collect();
         self.mob_names = MobNames::new(&index.mob_names);
+        self.notices = Notices::new(&index);
         self.knowledge = Some(Arc::clone(k));
     }
 }
@@ -542,6 +552,9 @@ impl EqModule for GapsModule {
 /// A forage's zone and a combine's tradeskill: a child module, so it files onto the rows.
 #[path = "gaps_craft.rs"]
 mod craft;
+#[path = "gaps_notices.rs"]
+mod notices;
+use notices::{Noticed, Notices};
 
 #[cfg(test)]
 #[path = "gaps_tests.rs"]

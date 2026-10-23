@@ -95,6 +95,12 @@ pub struct GapIndex {
     pub item_effects: Vec<(String, String)>,
     /// Every name the mob catalog states, as its pages spell them.
     pub mob_names: Vec<String>,
+    /// Every item key (and redirect name) whose page says the item may not be in Legends
+    /// (`{{DNE}}`, `{{delete}}`): `(key, page, notices)`. A thing the log met is proof it exists, so
+    /// its page is work to do (owner, 2026-10-22).
+    pub item_notices: Vec<(String, String, Vec<String>)>,
+    /// The same for mob pages, by every name the page answers to (its `|name`, title, redirects).
+    pub mob_notices: Vec<(String, String, Vec<String>)>,
 }
 
 /// The engine-internal knowledge lookups — `main/itemLookup.ts lookupItem` and

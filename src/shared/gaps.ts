@@ -10,6 +10,7 @@
 import type { FactionFix, KillFaction } from './gapFactions'
 import { forageWhy, type ForageUpdate } from './gapForage'
 import { replaceWhy } from './gapDrops'
+import { noticeAction } from './gapNotices'
 import { offerCheckText, offerText } from './gapOffers'
 import { decodeFactionAmount } from './mobFactionAmounts'
 import { wikiPageUrl } from './wiki'
@@ -20,18 +21,11 @@ export const GAPS_MODULE_ID = 'gaps'
 /** `merchant`: an NPC the log saw trading that the wiki lists as no merchant; `faction`: a faction a
  *  kill moved that the mob's page does not name (shared/gapFactions.ts); `drop`: an item looted from a
  *  mob whose page lists neither it nor its group (shared/gapDrops.ts); `image`: a mob met whose page
- *  has no image (shared/gapImages.ts) (owner asks, 2026-10-18). */
-export type GapDomain = 'item' | 'mob' | 'spell' | 'merchant' | 'faction' | 'drop' | 'image'
-export const GAP_DOMAINS: readonly GapDomain[] = ['item', 'mob', 'spell', 'merchant', 'faction', 'drop', 'image']
-export const GAP_DOMAIN_LABELS: Record<GapDomain, string> = {
-  item: 'Items',
-  mob: 'Mobs',
-  spell: 'Spells',
-  merchant: 'Merchants',
-  faction: 'Factions',
-  drop: 'Drops',
-  image: 'Images'
-}
+ *  has no image (shared/gapImages.ts) (owner asks, 2026-10-18); `notice`: a mob or item the log met
+ *  whose page says it may not be in Legends, `{{DNE}}` or `{{delete}}` (gaps_notices.rs; owner, 2026-10-22). */
+export type GapDomain = 'item' | 'mob' | 'spell' | 'merchant' | 'faction' | 'drop' | 'image' | 'notice'
+export const GAP_DOMAINS: readonly GapDomain[] = ['item', 'mob', 'spell', 'merchant', 'faction', 'drop', 'image', 'notice']
+export const GAP_DOMAIN_LABELS: Record<GapDomain, string> = { item: 'Items', mob: 'Mobs', spell: 'Spells', merchant: 'Merchants', faction: 'Factions', drop: 'Drops', image: 'Images', notice: 'Notices' }
 
 /** What the shown-count line calls a domain's rows: "Showing 11 of 395 mobs missing a wiki picture" (owner, 2026-10-19: "unknown images" read oddly). */
 export const GAP_SHOWN_NOUN: Record<GapDomain, string> = {
@@ -41,7 +35,8 @@ export const GAP_SHOWN_NOUN: Record<GapDomain, string> = {
   merchant: 'merchants the wiki does not list',
   faction: 'factions to add or fix on mob pages',
   drop: 'drops missing from mob pages',
-  image: 'mobs missing a wiki picture'
+  image: 'mobs missing a wiki picture',
+  notice: 'pages that say they are not in Legends'
 }
 
 /** One line under the toggle saying what the chosen domain's rows are (owner ask, 2026-10-18). */
@@ -52,7 +47,8 @@ export const GAP_DOMAIN_HELP: Record<GapDomain, string> = {
   merchant: 'Traders the wiki does not list as a merchant.',
   faction: "Factions a kill changed that the mob's page lacks or gets wrong.",
   drop: "Items you looted that the mob's wiki page does not list; Motes excluded.",
-  image: 'Mobs you met whose wiki page has no picture.'
+  image: 'Mobs you met whose wiki page has no picture.',
+  notice: 'Mobs and items you met whose wiki page says they are not in Legends or are up for deletion: your log proves they exist.'
 }
 
 /**
@@ -66,7 +62,8 @@ export const GAP_CAPTURE: Record<GapDomain, string> = {
   spell: 'Paste the spell window for mana and timings.',
   faction: 'Paste into factions; kill again if no amount.',
   drop: "Paste it into the mob page's known_loot list.",
-  image: 'Screenshot it; upload under the file name shown.'
+  image: 'Screenshot it; upload under the file name shown.',
+  notice: 'Nothing: remove the notice and cite the lines below.'
 }
 
 /** A row's key in the Done marks (owner ask, 2026-10-19). */
@@ -264,8 +261,12 @@ export interface GapRow {
   image?: string
   /** An image row whose page's own `imagefilename` names another file: that file (the page may need fixing). */
   pageImage?: string
-  /** A faction, drop or image row: the wiki page of its mob, when the catalog could pick one. */
+  /** A faction, drop or image row: the wiki page of its mob, when the catalog could pick one; a notice row's page. */
   page?: string
+  /** A notice row: the page's notices, `DNE`, `delete` or `delete: <reason>` (gaps_notices.rs). */
+  notices?: string[]
+  /** A notice row: whether the log met an item or a mob there. */
+  subject?: 'item' | 'mob'
   /** A faction row: the amount most kills stated, and whether the kill raised the faction. */
   adjust?: number
   raised?: boolean
@@ -582,6 +583,7 @@ function imageAction(row: GapRow, file = row.image ?? ''): GapAction {
 }
 
 export function gapActions(row: GapRow, verdict: GapVerdict, ctx: GapActionContext = {}): GapAction[] {
+  if (row.domain === 'notice') return [noticeAction(row)]
   if (row.domain === 'image') return [imageAction(row)]
   if (row.domain === 'drop') return dropActions(row)
   if (row.forageUpdate !== undefined) return [{ kind: 'addToWiki', label: 'Add to item page', why: forageWhy(row.name, row.forageUpdate), href: wikiEditUrl(row.forageUpdate.page) }]

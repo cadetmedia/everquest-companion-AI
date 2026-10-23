@@ -1,6 +1,7 @@
 //! The gaps module's index off the committed corpora — see [`fold::knowledge::GapIndex`]. Apart
 //! from `lib.rs` so that file stays under its recorded size.
 
+use crate::mobs::MobIndex;
 use crate::names::item_key;
 use fold::knowledge::GapIndex;
 use serde_json::{Map, Value};
@@ -10,7 +11,7 @@ use serde_json::{Map, Value};
 /// A record's `otherNames` (the wiki redirects that land on its page) are keys of that page too:
 /// `Halfling Blood` redirects to `Vial of Halfling Blood`, so a looted Halfling Blood is known (owner,
 /// 2026-10-22: "no one told you to restrict it to mobs only").
-pub(crate) fn build(items: &Map<String, Value>, mob_names: &[String]) -> GapIndex {
+pub(crate) fn build(items: &Map<String, Value>, mobs: &MobIndex) -> GapIndex {
     let page = |k: &String, e: &Value| e["page"].as_str().unwrap_or(k).to_string();
     let item_pages = items
         .iter()
@@ -40,15 +41,58 @@ pub(crate) fn build(items: &Map<String, Value>, mob_names: &[String]) -> GapInde
         })
         .collect();
     GapIndex {
+        item_notices: item_notices(items),
+        mob_notices: mob_notices_of(mobs.names().iter().filter_map(|n| mobs.entry(n))),
         item_pages,
         item_effects,
-        mob_names: mob_names.to_vec(),
+        mob_names: mobs.names().to_vec(),
     }
+}
+
+/// A record's `notices` (`DNE`, `delete`, `delete: <reason>`; scripts/sources pageNotices).
+fn notices_of(e: &Value) -> Vec<String> {
+    let listed = e["notices"].as_array().into_iter().flatten();
+    listed.filter_map(Value::as_str).map(str::to_string).collect()
+}
+
+/// Every item key, and each redirect name of the record, whose page carries a notice.
+fn item_notices(items: &Map<String, Value>) -> Vec<(String, String, Vec<String>)> {
+    let mut out = Vec::new();
+    for (k, e) in items {
+        let notices = notices_of(e);
+        if notices.is_empty() {
+            continue;
+        }
+        let page = e["page"].as_str().unwrap_or(k).to_string();
+        let others = e["otherNames"].as_array().into_iter().flatten().filter_map(Value::as_str);
+        for key in std::iter::once(k.clone()).chain(others.map(item_key)) {
+            out.push((key, page.clone(), notices.clone()));
+        }
+    }
+    out
+}
+
+/// Every name a mob page whose text carries a notice answers to: its `|name`, title and redirects.
+fn mob_notices_of<'a>(mobs: impl Iterator<Item = &'a Value>) -> Vec<(String, String, Vec<String>)> {
+    // The mob index answers each record under several names: each page once.
+    let mut pages = std::collections::HashSet::new();
+    let mut out = Vec::new();
+    for m in mobs {
+        let notices = notices_of(m);
+        let Some(page) = m["page"].as_str().filter(|p| !notices.is_empty() && pages.insert(p.to_string())) else {
+            continue;
+        };
+        let others = m["otherNames"].as_array().into_iter().flatten().filter_map(Value::as_str);
+        let names = [m["name"].as_str(), Some(page)].into_iter().flatten().chain(others);
+        out.extend(names.map(|n| (n.to_string(), page.to_string(), notices.clone())));
+    }
+    out
 }
 
 #[cfg(test)]
 mod tests {
-    use super::build;
+    use super::{build, mob_notices_of};
+    use crate::mobs::MobIndex;
     use serde_json::{json, Map, Value};
 
     #[test]
@@ -59,7 +103,7 @@ mod tests {
             "rusty mace": {"page": "Rusty Mace"}
         }))
         .unwrap();
-        let index = build(&items, &[]);
+        let index = build(&items, &MobIndex::build());
         let pages: Vec<(&str, &str)> = index
             .item_pages
             .iter()
@@ -72,5 +116,27 @@ mod tests {
         assert!(pages.contains(&("vial of halfling blood", "Vial of Halfling Blood")));
         assert!(pages.contains(&("rusty mace", "Rusty Mace")));
         assert_eq!(pages.len(), 3);
+    }
+
+    #[test]
+    fn a_page_with_a_notice_is_listed_under_every_name_it_answers_to() {
+        // Owner, 2026-10-22: A Rotting Citizen opens {{delete}}{{DNE}}.
+        let mobs = r#"{"mobs":[
+          {"page":"A Rotting Citizen","name":"a rotting citizen","notices":["delete","DNE"],"otherNames":["Rotting Citizen"]},
+          {"page":"A bat","name":"a bat"}
+        ]}"#;
+        let mobs: Value = serde_json::from_str(mobs).unwrap();
+        let records = mobs["mobs"].as_array().unwrap();
+        let names: Vec<String> = mob_notices_of(records.iter().chain(records.iter())).into_iter().map(|(n, _, _)| n).collect();
+        assert_eq!(names, ["a rotting citizen", "A Rotting Citizen", "Rotting Citizen"]);
+        let items: Map<String, Value> = serde_json::from_value(json!({
+            "old thing": {"page": "Old Thing", "notices": ["delete: No longer in game"], "otherNames": ["Older Thing"]},
+            "rusty mace": {"page": "Rusty Mace"}
+        }))
+        .unwrap();
+        let index = build(&items, &MobIndex::build());
+        let keys: Vec<(&str, &str)> = index.item_notices.iter().map(|(k, p, _)| (k.as_str(), p.as_str())).collect();
+        assert_eq!(keys, [("old thing", "Old Thing"), ("older thing", "Old Thing")]);
+        assert_eq!(index.item_notices[0].2, ["delete: No longer in game"]);
     }
 }

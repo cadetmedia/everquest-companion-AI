@@ -9,8 +9,8 @@ export type GapJob = 'new' | 'update'
 /** The Show picker's choice: every row, one job, or the rows with nothing left to capture (shared/gapReady.ts). */
 export type GapShow = 'all' | GapJob | 'ready'
 
-/** The domains whose every row is a line for a mob page that exists: a faction, a drop, a picture. */
-const UPDATE_DOMAINS: ReadonlySet<GapDomain> = new Set<GapDomain>(['faction', 'drop', 'image'])
+/** The domains whose every row is a change to a page that exists: a faction, a drop, a picture, a notice. */
+const UPDATE_DOMAINS: ReadonlySet<GapDomain> = new Set<GapDomain>(['faction', 'drop', 'image', 'notice'])
 
 /**
  * A row's job. A faction row whose mob the data has no page for stays an update: its chip asks to
