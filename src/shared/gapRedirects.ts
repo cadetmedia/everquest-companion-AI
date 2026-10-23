@@ -6,6 +6,7 @@
 
 import { existingPageAction } from './gapExistingPage'
 import { noticeAction } from './gapNotices'
+import { questAction } from './gapQuests'
 import type { GapAction, GapRow, GapVerdict } from './gaps'
 
 /** The redirect page itself, not where it sends you: the wiki's `redirect=no` view, to edit or replace it. */
@@ -31,5 +32,6 @@ export function redirectAction(row: GapRow): GapAction {
  */
 export function pageCheckAction(row: GapRow, verdict: GapVerdict = 'unchecked'): GapAction | undefined {
   if (row.domain === 'notice') return noticeAction(row)
+  if (row.domain === 'quest') return questAction(row)
   return row.viaRedirect === undefined ? existingPageAction(verdict) : redirectAction(row)
 }

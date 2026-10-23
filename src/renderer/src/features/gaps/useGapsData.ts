@@ -22,6 +22,8 @@ import { catalogZoneCounts, wikiZoneNamer } from '@shared/gapWikiZone'
 import type { PageExtras, ZoneNamer } from '@shared/wikiPage'
 import dropGroupsJson from '../../data/eqlegends/dropGroups.json'
 import mobsJson from '../../data/eqlegends/mobs.json'
+import questsJson from '../../data/eqlegends/quests.json'
+import { questCatalogFinder, withQuestPages, type QuestCatalogEntry } from '@shared/gapQuests'
 import { MOB_CATALOG } from '../mobs/mobSearch'
 import { gapsSince, joinCharacters, otherInputs, ownSince, type CharacterGaps, type JoinedGaps, type OwnGaps } from '@shared/gapsAllCharacters'
 import { useModule } from '../../lib/useModule'
@@ -38,7 +40,9 @@ export const GAPS_DATA_DATE = ((mobsJson as { scrapedAt?: string }).scrapedAt ??
 
 const ZONE_NAME: ZoneNamer = wikiZoneNamer(catalogZoneCounts(MOB_CATALOG))
 const IS_MOB = catalogNameTest(MOB_CATALOG)
-export const PAGE_EXTRAS: PageExtras = { zoneName: ZONE_NAME, isMob: IS_MOB, commonLoot: commonLootNames(MOB_CATALOG), vendorAt: vendorFinder(MOB_CATALOG), mobPage: mobPageFinder(MOB_CATALOG) }
+/** A quest's catalog entry when the wiki has its page (the Quests rows' Make page / Update page). */
+const QUEST_ENTRY = questCatalogFinder((questsJson as { quests: QuestCatalogEntry[] }).quests)
+export const PAGE_EXTRAS: PageExtras = { zoneName: ZONE_NAME, isMob: IS_MOB, commonLoot: commonLootNames(MOB_CATALOG), vendorAt: vendorFinder(MOB_CATALOG), mobPage: mobPageFinder(MOB_CATALOG), questEntry: QUEST_ENTRY }
 
 /** The wiki side, one object for the session: the caches key on it. */
 const WIKI: GapsWiki = { catalog: MOB_CATALOG, groups: DROPS.groups, aliases: DROPS.aliases ?? {} }
@@ -162,7 +166,7 @@ export function useGapsData(all: AllCharacters | null = null, opts: GapsDataOpti
   // The overlay's one-domain copy keeps its own cache slot, so it and the tab never evict each other.
   const derive = only === undefined ? snapOf : snapOfOnly
   const snap = useMemo(
-    () => (engine ? derive(engine, { loot, kills: killMobs, cons, itemMobs, itemForage }, WIKI, only) : engine),
+    () => (engine ? withQuestPages(derive(engine, { loot, kills: killMobs, cons, itemMobs, itemForage }, WIKI, only), QUEST_ENTRY) : engine),
     [derive, engine, loot, killMobs, itemMobs, itemForage, cons, only]
   )
   const kills = lastKills([killMobs], () => killIndex(killMobs))

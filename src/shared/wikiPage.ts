@@ -29,6 +29,9 @@ import { SPELL_HEAD, SPELL_TAIL, spellPageValues, type SpellPageShot } from './s
 import { withPageTitles } from './mobPageTitle'
 import { noticeProof } from './gapNotices'
 import { locFinder, questFactsOf, questPageParts, withQuestFields } from './itemQuestFacts'
+import { roleClass, roleField, roleOf, withFishedNote } from './gapRoles'
+import { questRowPage } from './gapQuestPage'
+import type { QuestExtras } from './gapQuests'
 
 /** A log zone name as the wiki spells it (shared/gapWikiZone.ts); as printed when none is given. */
 export type ZoneNamer = (raw: string) => string
@@ -160,7 +163,7 @@ export interface MobFacts {
   loot: { item: string; drops: number }[]
   /** How many of it the player killed: the drop rates' denominator. */
   kills: number
-  /** Kills whose faction lines the log prints (credited, or the player's own killing blow): with none seen, the page can say none. */
+  /** The player's own killing blows, whose faction lines the log always prints: with none seen, the page can say none. */
   credited: number
   /** The player's own killing blows: with LOOT_NONE_KILLS of them and nothing looted, the page says no loot. */
   ownKills: number
@@ -173,6 +176,8 @@ export interface MobFacts {
   coin?: MobCoin
   /** The quests whose task lines came just after it spoke or took an item (gaps_quests.rs): `related_quests`. */
   quests?: string[]
+  /** Its role from the client's target line (`Banker`, `Merchant`, `Warrior GM`; gaps_roles.rs). */
+  role?: string
 }
 
 /** What the log saw of mobs beyond the rows: each kill's factions and each mob's `/loc` points. */
@@ -321,12 +326,17 @@ export function mobFacts(row: GapRow, loot: readonly LootEvent[], kills: KillMap
     levels: conLevels(row),
     loot: mobLoot(row, loot),
     kills: killed?.count ?? 0,
-    credited: Math.max(killed?.credited ?? 0, ownKills(row)),
+    // Only the player's own killing blows prove "no factions". An experience-credited kill does not:
+    // a pet's kill while the player is feigned pays experience and moves no faction (owner's log,
+    // 2026-10-23: Gonekn killed Guard S`Tal, "You gain experience!", no faction line; owner: "this
+    // is dangerous to say None when it's not none"), and `X died.` never says whose kill it was.
+    credited: ownKills(row),
     ownKills: ownKills(row, seen.ownPets),
     points: (seen.mobLocs ?? []).filter(mine).flatMap((m) => m.points),
     specials: [...new Set((seen.mobSpecials ?? []).filter(mine).flatMap((m) => m.specials))],
     ...coinOf(seen.mobCoin, row.name),
     quests: questFactsOf(row)?.quests ?? [],
+    ...roleField(row),
     factions: (seen.killFactions ?? []).filter(mine).map(({ faction, adjust, raised }) => ({
       faction,
       ...(adjust === undefined ? {} : { adjust }),
@@ -528,7 +538,7 @@ function factionBlocks(factions: readonly FactionSeen[], credited: number): Reco
   }
 }
 
-type NpcFacts = Pick<MobFacts, 'name' | 'zones' | 'levels' | 'points' | 'factions' | 'credited' | 'specials' | 'quests'>
+type NpcFacts = Pick<MobFacts, 'name' | 'zones' | 'levels' | 'points' | 'factions' | 'credited' | 'specials' | 'quests' | 'role'>
 
 /** The values both NPC layouts share: image, name, level, zone, location, factions, quests. */
 function npcValues(f: NpcFacts): Record<string, string> {
@@ -537,6 +547,7 @@ function npcValues(f: NpcFacts): Record<string, string> {
   return {
     imagefilename: npcImageName(f.name),
     name: f.name,
+    class: roleClass(f.role) ?? '',
     // The wiki writes a range unspaced, `11-13`, four times in five.
     level: lo === undefined || hi === undefined ? '' : lo === hi ? String(lo) : `${String(lo)}-${String(hi)}`,
     zone: f.zones.map(wikiZoneLink).join(', '),
@@ -625,7 +636,8 @@ export function merchantPage(f: NpcFacts): string {
 }
 
 /** What the tab knows beside the row and the ledgers: the wiki's zone spellings and its mobs. */
-export interface PageExtras {
+/** `questEntry` / `questJournal`: a quest's catalog entry and its Quest Journal reading (gapQuests.ts). */
+export interface PageExtras extends QuestExtras {
   zoneName?: ZoneNamer
   /** A name the mob catalog has: a one-word caster that is a mob, not a player. */
   isMob?: (name: string) => boolean
@@ -651,22 +663,14 @@ export interface PageExtras {
 export function wikiPageText(row: GapRow, loot: readonly LootEvent[], kills: KillMap, seen: MobSightings & PageExtras = {}): string {
   const extras = seen
   if (row.suggest !== undefined && (row.domain === 'item' || row.domain === 'spell')) return `#REDIRECT [[${row.suggest.page}]]\n`
-  return PAGE_OF[row.domain](row, { loot, kills, seen, zoneName: extras.zoneName ?? asPrinted, isMob: extras.isMob, commonLoot: extras.commonLoot, spellFacts: extras.spellFacts, vendorAt: extras.vendorAt, itemShots: extras.itemShots, spellShots: extras.spellShots, mobPage: extras.mobPage })
+  return PAGE_OF[row.domain](row, { ...extras, loot, kills, seen, zoneName: extras.zoneName ?? asPrinted })
 }
 
-interface PageContext {
+interface PageContext extends Omit<PageExtras, 'zoneName'> {
   loot: readonly LootEvent[]
   kills: KillMap
   seen: MobSightings
   zoneName: ZoneNamer
-  isMob?: (name: string) => boolean
-  commonLoot?: ReadonlySet<string>
-  spellFacts?: Readonly<Record<string, ClientSpellFacts>>
-  vendorAt?: VendorFinder
-  itemShots?: Readonly<Record<string, ItemPageShot>>
-  /** What pasted spell display windows gave, by the row's name (SpellPageShot). */
-  spellShots?: Readonly<Record<string, SpellPageShot>>
-  mobPage?: (name: string) => string | undefined
 }
 
 /**
@@ -675,13 +679,15 @@ interface PageContext {
  */
 const PAGE_OF: Record<GapDomain, (row: GapRow, c: PageContext) => string> = {
   // A page that exists and lacks a forage zone or the category: only the lines to add (gapForage.ts).
-  item: (row, c) => (row.forageUpdate ? forageAddText(row.forageUpdate) : itemPage({ ...withPageTitles(itemFacts(row, c.loot, c.zoneName, c.vendorAt), c.mobPage), ...questPageParts(questFactsOf(row), { mobPage: c.mobPage, zoneName: c.zoneName, locOf: locFinder(c.seen.mobLocs) }) }, c.itemShots?.[row.name])),
-  mob: (row, c) => mobPage(mobFacts(row, c.loot, c.kills, { ...c.seen, zoneName: c.zoneName }), c.commonLoot),
+  item: (row, c) => (row.forageUpdate ? forageAddText(row.forageUpdate) : itemPage({ ...withPageTitles(itemFacts(row, c.loot, c.zoneName, c.vendorAt), c.mobPage), ...withFishedNote(questPageParts(questFactsOf(row), { mobPage: c.mobPage, zoneName: c.zoneName, locOf: locFinder(c.seen.mobLocs) }), row, c.zoneName) }, c.itemShots?.[row.name])),
+  // A mob its target line calls a merchant takes the merchant layout before any trade (owner, 2026-10-22).
+  mob: (row, c) => (roleOf(row) === 'Merchant' ? merchantPage(mobFacts(row, [], c.kills, { ...c.seen, zoneName: c.zoneName })) : mobPage(mobFacts(row, c.loot, c.kills, { ...c.seen, zoneName: c.zoneName }), c.commonLoot)),
   merchant: (row, c) => merchantPage(mobFacts(row, [], c.kills, { ...c.seen, zoneName: c.zoneName })),
   spell: (row, c) => spellPage({ name: row.name, npcOnly: npcOnlySpell(row, c.isMob), client: c.spellFacts?.[row.name], shot: c.spellShots?.[row.name] }),
   faction: (row) => `${factionLine({ faction: factionOf(row), adjust: row.adjust, raised: row.raised })}\n`,
   image: (row) => `| ${'imagefilename'.padEnd(17)} = ${row.image ?? ''}\n`,
   notice: (row) => noticeProof(row),
+  quest: (row, c) => questRowPage(row, { zoneName: c.zoneName, mobPage: c.mobPage, entry: c.questEntry?.(row.name), journal: c.questJournal?.(row.name) }),
   // A drop: its group's link (`[[Rusty Weapons]]`), else the item; each with the rate seen, a
   // group's being the corpses that dropped any member (the row's count) over the mob's kills.
   drop: (row, c) => {
@@ -707,7 +713,8 @@ const NEEDED_OF: Partial<Record<GapDomain, (row: GapRow, seen: PageExtras) => st
   faction: (row) => (row.adjust === undefined ? ['the amount (a kill that is not capped)'] : []),
   drop: () => [],
   image: () => [],
-  notice: () => []
+  notice: () => [],
+  quest: () => []
 }
 
 /**

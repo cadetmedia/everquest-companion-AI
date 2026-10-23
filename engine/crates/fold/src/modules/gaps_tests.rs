@@ -143,8 +143,8 @@ fn known_names_are_not_rows_and_unknown_ones_are_counted_per_kind() {
         ]
     );
     let state = m.snapshot()["state"].clone();
-    assert_eq!(state["totals"], json!({ "item": 1, "mob": 1, "spell": 1, "merchant": 0, "notice": 0 }));
-    assert_eq!(state["seen"], json!({ "item": 2, "mob": 2, "spell": 2, "merchant": 0, "notice": 0 }));
+    assert_eq!(state["totals"], json!({ "item": 1, "mob": 1, "spell": 1, "merchant": 0, "notice": 0, "quest": 0 }));
+    assert_eq!(state["seen"], json!({ "item": 2, "mob": 2, "spell": 2, "merchant": 0, "notice": 0, "quest": 0 }));
     assert_eq!(state["rows"][0]["first"], json!("2026-10-06 18:12:26"));
 }
 
@@ -187,7 +187,7 @@ fn nothing_is_checked_before_the_knowledge_is_installed_and_an_epoch_clears() {
     feed(&mut m, 1, json!({ "kind": "loot", "item": "Glowing Widget" }));
     feed(&mut m, 2, json!({ "kind": "epoch" }));
     assert!(rows(&m).is_empty());
-    assert_eq!(m.snapshot()["state"]["seen"], json!({ "item": 0, "mob": 0, "spell": 0, "merchant": 0, "notice": 0 }));
+    assert_eq!(m.snapshot()["state"]["seen"], json!({ "item": 0, "mob": 0, "spell": 0, "merchant": 0, "notice": 0, "quest": 0 }));
 }
 
 #[test]
@@ -321,7 +321,7 @@ fn a_backtick_and_an_apostrophe_are_one_name_and_the_row_keeps_the_log_spelling(
     feed(&mut m, 1, json!({ "kind": "loot", "item": "10 Dose Ant`s Potion" }));
     feed(&mut m, 2, json!({ "kind": "castBegin", "spell": "Jaxan`s Jig o` Vigor V" }));
     assert!(rows(&m).is_empty(), "the corpus spells both with an apostrophe");
-    assert_eq!(m.snapshot()["state"]["seen"], json!({ "item": 1, "mob": 0, "spell": 1, "merchant": 0, "notice": 0 }));
+    assert_eq!(m.snapshot()["state"]["seen"], json!({ "item": 1, "mob": 0, "spell": 1, "merchant": 0, "notice": 0, "quest": 0 }));
     feed(&mut m, 3, json!({ "kind": "loot", "item": "Teir`Dal Arcane Insignia" }));
     feed(&mut m, 4, json!({ "kind": "loot", "item": "Teir'Dal Arcane Insignia" }));
     assert_eq!(rows(&m), ["item Teir`Dal Arcane Insignia x2 [looted]"]);
@@ -473,3 +473,8 @@ mod offers;
 /// Forage zones and a combine's tradeskill (owner, 2026-10-20): a file of their own.
 #[path = "gaps_item_facts_tests.rs"]
 mod item_facts;
+
+/// NPC roles, fished items, turn-ins and the Quests rows (owner, 2026-10-22): a file of their own
+/// for the factoring bar.
+#[path = "gaps_batch_tests.rs"]
+mod batch;

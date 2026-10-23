@@ -22,6 +22,8 @@ export function gapJob(row: GapRow, ctx: GapActionContext = {}): GapJob {
   // A forage update, or a name known only through a redirect: the page exists.
   if (UPDATE_DOMAINS.has(row.domain) || row.forageUpdate !== undefined || row.viaRedirect !== undefined) return 'update'
   if (row.domain === 'merchant' && ctx.isMob?.(row.name) === true) return 'update'
+  // A quest the wiki has a page for: the job is to fill what the page lacks (`page`, the catalog's).
+  if (row.domain === 'quest') return row.page === undefined ? 'new' : 'update'
   return 'new'
 }
 

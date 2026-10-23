@@ -9,12 +9,21 @@
 //
 // and `|relatedquests` lists the quests. Only the parts the log saw are written.
 
-/** The engine's facts for one item row (gaps_quests.rs `ItemQuestFacts`). */
+/**
+ * The engine's facts for one item row (gaps_quests.rs `ItemQuestFacts`). A `guess` is the app's own
+ * (gapQuests.ts `silentGiver`, a journal objective): shown as one in the details ("probably ...
+ * (check)"), never written into a page (owner, 2026-10-22: no wrong data on the wiki).
+ */
 export interface ItemQuestFacts {
-  givenBy?: { npc: string; zone?: string; keywords?: string[] }
+  givenBy?: { npc: string; zone?: string; keywords?: string[]; guess?: true; quest?: string }
   turnedInTo?: { npc: string; n: number }[]
   quests?: string[]
+  /** Who a Quest Journal objective says the item goes to (`petition Lord Lyfyx`): a guess. */
+  turnInGuess?: { npc: string; quest?: string }
 }
+
+/** The facts a page may state: a guessed giver and a guessed turn-in left out. */
+const confirmed = (f: ItemQuestFacts): ItemQuestFacts => (f.givenBy?.guess === true ? { ...f, givenBy: undefined } : f)
 
 /**
  * A row's facts: the engine serves them on an item row as `questFacts`. Read here rather than typed
@@ -50,8 +59,9 @@ function turnInSentence(to: readonly { npc: string }[], quest: string | undefine
 }
 
 /** The `|notes` sentences, or undefined when the log saw no quest step for the item. */
-export function questNote(f: ItemQuestFacts | undefined, c: QuestNoteContext = {}): string | undefined {
-  if (f === undefined) return undefined
+export function questNote(facts: ItemQuestFacts | undefined, c: QuestNoteContext = {}): string | undefined {
+  if (facts === undefined) return undefined
+  const f = confirmed(facts)
   const quest = f.quests?.[0]
   const to = f.turnedInTo ?? []
   const parts = [
@@ -91,11 +101,23 @@ export function withQuestFields(fields: readonly (readonly [string, string])[], 
   return out
 }
 
+/** The guesses as lines, each marked for checking. */
+function guessLines(f: ItemQuestFacts): string[] {
+  const g = f.givenBy?.guess === true ? f.givenBy : undefined
+  const t = f.turnInGuess
+  const during = (q: string | undefined, word: string): string => (q === undefined ? '' : ` ${word} ${q}`)
+  return [
+    ...(g === undefined ? [] : [`Probably given by ${g.npc}${during(g.quest, 'during')} (check)`]),
+    ...(t === undefined ? [] : [`Probably turned in to ${t.npc}${during(t.quest, 'for')} (check)`])
+  ]
+}
+
 /** The facts as short lines for the row's details. */
 export function questFactLines(f: ItemQuestFacts | undefined): string[] {
   if (f === undefined) return []
-  const g = f.givenBy
+  const g = confirmed(f).givenBy
   return [
+    ...guessLines(f),
     ...(g === undefined ? [] : [`Given by ${g.npc}${g.zone === undefined ? '' : ` in ${g.zone}`}${(g.keywords ?? []).length === 0 ? '' : ` (you said: ${(g.keywords ?? []).join(', ')})`}`]),
     ...(f.turnedInTo ?? []).map((t) => `Turned in to ${t.npc}${t.n > 1 ? ` x${String(t.n)}` : ''}`),
     ...(f.quests ?? []).map((q) => `Quest: ${q}`)
