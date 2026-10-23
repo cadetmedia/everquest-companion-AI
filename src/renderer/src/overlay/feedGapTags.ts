@@ -27,14 +27,20 @@ export function hiddenKeep(e: FeedEvent, done: ReadonlySet<string>): boolean {
   return e.kind === 'keep' && isMarkedDone(done, 'item', e.title)
 }
 
+/** A con's "missing" mark: none for a name the viewer marked as a player, the uncertain one for a
+ *  row the Gaps tab serves "may be a player". */
+function conMissing(e: FeedEvent, players: ReadonlySet<string>): string | undefined {
+  if (players.has(e.title.toLowerCase())) return undefined
+  return e.maybePlayer === true ? MAYBE_PLAYER_LABEL : 'missing · screenshot it'
+}
+
 /** The mark a row carries, or undefined for none. The engine never sets `unknown` and `needsImage`
  *  together. `players`: the names the viewer marked as players on the Gaps tab, lowercased. */
 export function screenshotLabel(e: FeedEvent, done: ReadonlySet<string>, players: ReadonlySet<string> = NO_PLAYERS): string | undefined {
   if (e.kind === 'keep') return hiddenKeep(e, done) ? undefined : KEEP_LABEL
   if (e.unknown) {
     if (isMarkedDone(done, e.kind === 'con' ? 'mob' : 'item', e.title)) return undefined
-    if (e.kind === 'con' && players.has(e.title.toLowerCase())) return undefined
-    if (e.kind === 'con' && e.maybePlayer === true) return MAYBE_PLAYER_LABEL
+    if (e.kind === 'con') return conMissing(e, players)
     // Sold on loot is already gone: the next one is the screenshot (review 2026-10-19).
     return e.detail?.startsWith('auto-sold') === true ? 'missing · auto-sold, keep the next one' : 'missing · screenshot it'
   }
