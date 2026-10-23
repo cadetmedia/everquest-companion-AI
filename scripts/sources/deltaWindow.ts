@@ -51,14 +51,13 @@ function ownerOf(title: string, pageid: number | undefined, k: Known): Owner {
 
 /**
  * Is a change at `t` worth reading? Inside the item or mob window, always (today's rule). In an
- * older window only for the pages that file holds, plus unknown pages for spells (a spell page
- * created since). A page an item or mob scrape read after the change cannot be a spell or quest
- * page it did not already list, so it is skipped.
+ * older window only for the pages that file holds, plus unknown pages for spells and quests (a
+ * spell or quest page created since; a quest page joins the list by its own category link).
  */
 function wanted(files: DeltaFile[], owner: Owner): boolean {
   if (files.includes('items') || files.includes('mobs')) return true
   if (files.includes('spells') && (owner === 'spells' || owner === 'unknown')) return true
-  return files.includes('quests') && owner === 'quests'
+  return files.includes('quests') && (owner === 'quests' || owner === 'unknown')
 }
 
 export interface ReadPlan {

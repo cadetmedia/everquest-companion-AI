@@ -420,7 +420,7 @@ function writeQuests(ctx: DeltaCtx, fold: QuestFold, scrapedAt: string): void {
   const out: QuestData = { scrapedAt, source: deltaSource(db.quests.source), quests: fold.quests }
   writeAtomic(ctx.paths.quests, JSON.stringify(out, null, 2))
   writeQuestCache(ctx.paths.questCache, db.questCache, fold)
-  console.log(`quests.json: ${db.quests.quests.length} → ${fold.quests.length} (${fold.folded.length} pages folded)`)
+  console.log(`quests.json: ${db.quests.quests.length} → ${fold.quests.length} (${fold.folded.length} pages folded; new to the list: ${fold.added.join(', ') || 'none'})`)
   printRemoved('quest', fold.removed)
 }
 

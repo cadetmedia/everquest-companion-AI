@@ -3,7 +3,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { deriveSpells, foldSpells } from '../scripts/sources/deltaSpells'
-import { foldQuests, redirectTarget, type QuestCache } from '../scripts/sources/deltaQuests'
+import { foldQuests, namesQuestCategory, redirectTarget, type QuestCache } from '../scripts/sources/deltaQuests'
 import { buildCatalog } from '../scripts/scrape-quests'
 import type { PageIds, PageTexts } from '../scripts/sources/deltaPages'
 
@@ -107,4 +107,25 @@ test('quests: a listed page turned redirect is read through its target, as scrap
   const read = foldQuests(cache, [], { pages, ids: ids([['Gone Quest', 2, 21]]), aux })
   assert.deepEqual(read.quests.map((q) => q.page), ['Gone Quest'])
   assert.deepEqual(read.fresh, [{ pageid: 2, content: QUEST, revid: 21 }])
+})
+
+test('quests: a read page on no list that files itself as a quest joins the list (owner, 2026-10-23)', () => {
+  const cache = questCache()
+  assert.equal(namesQuestCategory('[[Category:Lake Nerius]]\n[[Category:All Classes Quests|N]]'), true)
+  assert.equal(namesQuestCategory('[[Category:Quest Items]]\n[[Category:Quests in Lake Nerius]]'), false)
+  const fresh = `${QUEST}[[Category:Quests]]\n[[Category:Lake Nerius]]\n`
+  const pages: PageTexts = new Map([
+    ['Unfortunate news', fresh],
+    ['A Curt Dismissal', 'An item.\n[[Category:Quest Items]]\n'],
+    ['Old Title', '#REDIRECT [[Unfortunate news]]\n[[Category:Quests]]']
+  ])
+  const fold = foldQuests(cache, [], {
+    pages,
+    ids: ids([['Unfortunate news', 72900, 9], ['A Curt Dismissal', 72901, 9], ['Old Title', 72902, 9]]),
+    aux: new Map()
+  })
+  assert.deepEqual(fold.added, ['Unfortunate news'])
+  assert.deepEqual(fold.quests.map((q) => q.page), ['Unfortunate news'])
+  assert.deepEqual(fold.members.map((m) => m.title), ['Armor Quest', 'Gone Quest', 'Unfortunate news'])
+  assert.deepEqual(fold.fresh, [{ pageid: 72900, content: fresh, revid: 9 }])
 })

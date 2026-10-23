@@ -1,8 +1,9 @@
 // deltaQuests.ts — the delta's quests: a changed page of the cached quest-page list is parsed by
 // scrape-quests.ts's own buildCatalog and folded into quests.json by page title; the quest cache
 // (page-<pageid>.wikitext, index.json revids, quest-pages.json titles) moves with it, so the next
-// `npm run scrape:quests` sees those pages as current. Pages outside the cached list are never
-// added: only that scraper's category walk can say a page is a quest.
+// `npm run scrape:quests` sees those pages as current. A read page outside the list joins it when
+// its own text files it in a category that scraper walks (owner, 2026-10-23: new Lake Nerius quest
+// pages were missed): 929 of the 931 cached quest pages carry such a link in their text.
 
 import { existsSync, readFileSync, renameSync, rmSync, writeFileSync } from 'fs'
 import { join } from 'path'
@@ -68,6 +69,28 @@ function readMembers(members: QuestMember[], pages: PageTexts, ids: PageIds): Ma
   return out
 }
 
+/** A category scrape-quests.ts walks: its name ends in Quest(s) and it is not Quest Items. */
+export function namesQuestCategory(wt: string): boolean {
+  for (const m of wt.matchAll(/\[\[\s*Category\s*:\s*([^\]|]+)/gi)) {
+    const name = m[1].replace(/_/g, ' ').replace(/\s+/g, ' ').trim()
+    if (/\bquests?$/i.test(name) && !/^quest items$/i.test(name)) return true
+  }
+  return false
+}
+
+/** Read pages on no list that file themselves as quests, as members of the list to be. */
+function newMembers(members: QuestMember[], pages: PageTexts, ids: PageIds): Map<string, QuestMember> {
+  const listedIds = new Set(members.map((m) => m.pageid))
+  const listedTitles = new Set(members.map((m) => m.title))
+  const out = new Map<string, QuestMember>()
+  for (const [title, wt] of pages) {
+    const pageid = ids.pageids.get(title)
+    if (wt == null || pageid === undefined || listedIds.has(pageid) || listedTitles.has(title)) continue
+    if (redirectTarget(wt) === null && namesQuestCategory(wt)) out.set(title, { pageid, ns: 0, title })
+  }
+  return out
+}
+
 /** Redirect targets of changed quest pages: scrape-quests.ts caches the followed text. */
 export function questRedirects(cache: QuestCache, pages: PageTexts, ids: PageIds): string[] {
   const out: string[] = []
@@ -85,6 +108,8 @@ export interface QuestFold {
   /** pageids whose cache file and index entry go */
   gone: number[]
   folded: string[]
+  /** pages on no list before that joined it this run */
+  added: string[]
   removed: string[]
   /** changed quest pages that could not be applied (a redirect target that was not read) */
   unapplied: string[]
@@ -132,7 +157,7 @@ export function foldQuests(
   reads: { pages: PageTexts; ids: PageIds; aux: PageTexts }
 ): QuestFold {
   const fold: QuestFold = {
-    quests: [], members: [...cache.members], fresh: [], gone: [], folded: [], removed: [], unapplied: []
+    quests: [], members: [...cache.members], fresh: [], gone: [], folded: [], added: [], removed: [], unapplied: []
   }
   const isItem = (title: string): boolean => cache.itemTitles.has(titleKey(title))
   const byPage = new Map(quests.map((q) => [q.page, q]))
@@ -143,6 +168,11 @@ export function foldQuests(
     const text = target ? (reads.aux.get(target) ?? reads.pages.get(target)) : wt
     if (target && text == null) fold.unapplied.push(title)
     else foldMember(ctx, m, title, text ?? null)
+  }
+  for (const [title, m] of newMembers(cache.members, reads.pages, reads.ids)) {
+    fold.members.push(m)
+    fold.added.push(title)
+    foldMember(ctx, m, title, reads.pages.get(title) ?? null)
   }
   fold.quests = [...ctx.byPage.values()].sort((a, b) => a.page.localeCompare(b.page))
   fold.members.sort((a, b) => a.title.localeCompare(b.title))
