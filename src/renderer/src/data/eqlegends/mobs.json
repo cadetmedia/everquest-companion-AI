@@ -1,5 +1,5 @@
 {
-  "scrapedAt": "2026-10-23T09:44:10.359Z",
+  "scrapedAt": "2026-10-23T11:30:09.046Z",
   "source": "eqlwiki.com — Category:NPCs/Named Mobs/Merchants/Raid Encounters ∪ embeddedin Template:Namedmobpage/MerchantPage, filtered to pages opening a mob template + recentchanges delta (scripts/scrape-delta.mts)",
   "mobs": [
     {
@@ -21691,7 +21691,9 @@
         "Nektulos Forest"
       ],
       "drops": [
-        "Spider Silk"
+        "Spider Legs",
+        "Spider Silk",
+        "Spider Venom Sac"
       ],
       "image": "npc_a_giant_widow.png"
     },
@@ -27744,17 +27746,18 @@
         "Nektulos Forest",
         "Field of Bone",
         "Kurn's Tower",
-        "Lake of Ill Omen."
+        "Lake of Ill Omen",
+        "Lake Nerius"
       ],
       "drops": [
         "Bone Chips",
         "Darkbone Marrow",
         "Raw-Hide Mask",
         "Raw-Hide Tunic",
-        "Raw-Hide Wristbands"
+        "Raw-Hide Wristbands",
+        "Rusty Weapons"
       ],
-      "image": "npc_a_greater_skeleton.png",
-      "noImage": true
+      "image": "npc_a_greater_skeleton.png"
     },
     {
       "page": "A greater sky drake",
@@ -38705,6 +38708,11 @@
       "level": "7-8",
       "zones": [
         "Lake Nerius"
+      ],
+      "drops": [
+        "Spider Legs",
+        "Spider Silk",
+        "Spider Venom Sac"
       ],
       "loc": [
         {
@@ -60519,6 +60527,7 @@
         "Various"
       ],
       "drops": [
+        "Cloth Armor",
         "Rusty Weapons",
         "Zombie Skin",
         "Embalming Dust"
@@ -82746,6 +82755,23 @@
       "noImage": true
     },
     {
+      "page": "Blargraah",
+      "eraTag": "Classic",
+      "name": "Blargraah",
+      "level": "50",
+      "zones": [
+        "Lake Nerius"
+      ],
+      "loc": [
+        {
+          "ns": -248,
+          "ew": 281
+        }
+      ],
+      "merchant": true,
+      "image": "npc_blargraah.png"
+    },
+    {
       "page": "Blazing Elemental",
       "eraTag": "Classic",
       "name": "blazing elemental",
@@ -82918,6 +82944,23 @@
         "-30"
       ],
       "image": "npc_blergagg.png"
+    },
+    {
+      "page": "Blergagh",
+      "eraTag": "Classic",
+      "name": "Blergagh",
+      "level": "50",
+      "zones": [
+        "Lake Nerius"
+      ],
+      "loc": [
+        {
+          "ns": -260,
+          "ew": 282
+        }
+      ],
+      "merchant": true,
+      "image": "npc_blergagh.png"
     },
     {
       "page": "Blich",
@@ -107655,6 +107698,23 @@
       "noImage": true
     },
     {
+      "page": "Drip Drop",
+      "eraTag": "Classic",
+      "name": "Drip Drop",
+      "level": "50",
+      "zones": [
+        "Lake Nerius"
+      ],
+      "loc": [
+        {
+          "ns": -310,
+          "ew": 136
+        }
+      ],
+      "merchant": true,
+      "image": "npc_drip_drop.png"
+    },
+    {
       "page": "Drisi J`Axx",
       "eraTag": "Classic",
       "name": "Drisi J`Axx",
@@ -131607,6 +131667,25 @@
       "noImage": true
     },
     {
+      "page": "Guard F`Waff",
+      "eraTag": "Classic",
+      "name": "Guard F`Waff",
+      "level": "50",
+      "zones": [
+        "Lake Nerius"
+      ],
+      "drops": [
+        "Long Sword"
+      ],
+      "loc": [
+        {
+          "ns": -356,
+          "ew": 169
+        }
+      ],
+      "image": "npc_guard_f`waff.png"
+    },
+    {
       "page": "Guard Falldrryn",
       "eraTag": "Velious",
       "name": "Guard Falldrryn",
@@ -133028,6 +133107,25 @@
       ],
       "image": "npc_guard_gyll.png",
       "noImage": true
+    },
+    {
+      "page": "Guard H`Rar",
+      "eraTag": "Classic",
+      "name": "Guard H`Rar",
+      "level": "50",
+      "zones": [
+        "Lake Nerius"
+      ],
+      "drops": [
+        "Long Sword"
+      ],
+      "loc": [
+        {
+          "ns": -356,
+          "ew": 219
+        }
+      ],
+      "image": "npc_guard_h`rar.png"
     },
     {
       "page": "Guard Haendar",
@@ -138963,6 +139061,25 @@
       "noImage": true
     },
     {
+      "page": "Guard Ru`Ryt",
+      "eraTag": "Classic",
+      "name": "Guard Ru`Ryt",
+      "level": "50",
+      "zones": [
+        "Lake Nerius"
+      ],
+      "drops": [
+        "Long Sword"
+      ],
+      "loc": [
+        {
+          "ns": -140,
+          "ew": 218
+        }
+      ],
+      "image": "npc_guard_ru`ryt.png"
+    },
+    {
       "page": "Guard Rundul",
       "eraTag": "Classic",
       "name": "Guard Rundul",
@@ -140541,8 +140658,7 @@
           "ew": -124
         }
       ],
-      "image": "npc_guard_ta`dalk.png",
-      "noImage": true
+      "image": "npc_guard_ta`dalk.png"
     },
     {
       "page": "Guard Taalen",
@@ -141613,6 +141729,25 @@
       ],
       "image": "npc_guard_v`retta.png",
       "noImage": true
+    },
+    {
+      "page": "Guard V`Shur",
+      "eraTag": "Classic",
+      "name": "Guard V`Shur",
+      "level": "50",
+      "zones": [
+        "Lake Nerius"
+      ],
+      "drops": [
+        "Long Sword"
+      ],
+      "loc": [
+        {
+          "ns": -118,
+          "ew": 205
+        }
+      ],
+      "image": "npc_guard_v`shur.png"
     },
     {
       "page": "Guard Valewatcher",
@@ -155593,6 +155728,23 @@
       "noImage": true
     },
     {
+      "page": "Kaelin K`Toz",
+      "eraTag": "Classic",
+      "name": "Kaelin K`Toz",
+      "level": "50",
+      "zones": [
+        "Lake Nerius"
+      ],
+      "loc": [
+        {
+          "ns": -202,
+          "ew": 258
+        }
+      ],
+      "merchant": true,
+      "image": "npc_kaelin_k`toz.png"
+    },
+    {
       "page": "Kafia Ratsbone",
       "eraTag": "Classic",
       "name": "Kafia Ratsbone",
@@ -161515,6 +161667,7 @@
           "ew": 251
         }
       ],
+      "merchant": true,
       "image": "npc_konro_strongfoot.png"
     },
     {
@@ -178063,6 +178216,23 @@
         "-30"
       ],
       "image": "npc_minda.png"
+    },
+    {
+      "page": "Mindiinya N`Zar",
+      "eraTag": "Classic",
+      "name": "Mindiinya N`Zar",
+      "level": "50",
+      "zones": [
+        "Lake Nerius"
+      ],
+      "loc": [
+        {
+          "ns": -194,
+          "ew": 249
+        }
+      ],
+      "merchant": true,
+      "image": "npc_mindiinya_n`zar.png"
     },
     {
       "page": "Miner Bordakn",
@@ -194873,6 +195043,23 @@
       ],
       "image": "npc_ratraz.png",
       "noImage": true
+    },
+    {
+      "page": "Raul",
+      "eraTag": "Classic",
+      "name": "Raul",
+      "level": "35",
+      "zones": [
+        "Lake Nerius"
+      ],
+      "loc": [
+        {
+          "ns": -260,
+          "ew": 112
+        }
+      ],
+      "merchant": true,
+      "image": "npc_raul.png"
     },
     {
       "page": "Raven",
@@ -222560,6 +222747,7 @@
           "ew": 141
         }
       ],
+      "merchant": true,
       "image": "npc_the_great_zultor.png"
     },
     {
@@ -227945,6 +228133,23 @@
       "noImage": true
     },
     {
+      "page": "Trooni Thimblethumb",
+      "eraTag": "Classic",
+      "name": "Trooni Thimblethumb",
+      "level": "50",
+      "zones": [
+        "Lake Nerius"
+      ],
+      "loc": [
+        {
+          "ns": -248,
+          "ew": 113
+        }
+      ],
+      "merchant": true,
+      "image": "npc_trooni_thimblethumb.png"
+    },
+    {
       "page": "Trooper Agash",
       "eraTag": "Kunark",
       "name": "Trooper Agash",
@@ -233316,6 +233521,23 @@
       "noImage": true
     },
     {
+      "page": "Ukbog",
+      "eraTag": "Classic",
+      "name": "Ukbog",
+      "level": "50",
+      "zones": [
+        "Lake Nerius"
+      ],
+      "loc": [
+        {
+          "ns": -313,
+          "ew": 258
+        }
+      ],
+      "merchant": true,
+      "image": "npc_ukbog.png"
+    },
+    {
       "page": "Ukla",
       "eraTag": "Classic",
       "name": "Ukla",
@@ -238187,6 +238409,22 @@
       ],
       "image": "npc_vkjor.png",
       "noImage": true
+    },
+    {
+      "page": "Vlad Sterovich",
+      "eraTag": "Classic",
+      "name": "Vlad Sterovich",
+      "level": "50",
+      "zones": [
+        "Lake Nerius"
+      ],
+      "loc": [
+        {
+          "ns": 0,
+          "ew": 0
+        }
+      ],
+      "image": "npc_vlad_sterovich.png"
     },
     {
       "page": "Vluudeen",
@@ -245423,6 +245661,23 @@
       ],
       "image": "npc_yeka_ias.png",
       "noImage": true
+    },
+    {
+      "page": "Yelayna",
+      "eraTag": "Classic",
+      "name": "Yelayna",
+      "level": "50",
+      "zones": [
+        "Lake Nerius"
+      ],
+      "loc": [
+        {
+          "ns": -7,
+          "ew": 64
+        }
+      ],
+      "merchant": true,
+      "image": "npc_yelayna.png"
     },
     {
       "page": "Yeldema",
