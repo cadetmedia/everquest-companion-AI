@@ -103,12 +103,44 @@ pub fn spell_keys() -> &'static HashSet<String> {
     static KEYS: OnceLock<HashSet<String>> = OnceLock::new();
     KEYS.get_or_init(|| {
         let whole = |n: &str| fold_quotes(&js_trim(n).to_lowercase());
-        eqlog::spelldb::shared()
-            .spells
-            .iter()
-            .flat_map(|s| [spell_gap_key(&s.name), whole(&s.name)])
+        let db = eqlog::spelldb::shared();
+        let names: Vec<String> = db.spells.iter().map(|s| s.name.clone()).collect();
+        names
+            .into_iter()
+            .chain(spell_other_names())
+            .flat_map(|n| [spell_gap_key(&n), whole(&n)])
             .collect()
     })
+}
+
+/// The committed spell catalog, read here only for its rows' `otherNames`: the spell parser keeps
+/// no field its output does not depend on.
+const SPELLS_JSON: &str = include_str!("../../../../../src/main/data/spells.json");
+
+/// Every spell row's `otherNames`, the wiki redirects that land on its page (`Enchant: Gold` on
+/// `Enchant Gold`): a spell the wiki answers under that name is known (owner, 2026-10-22: "no one
+/// told you to restrict it to mobs only").
+fn spell_other_names() -> Vec<String> {
+    other_names_of(SPELLS_JSON)
+}
+
+/// Every `spells[].otherNames` entry of a spells.json text.
+pub(crate) fn other_names_of(json: &str) -> Vec<String> {
+    let Ok(Value::Object(mut file)) = serde_json::from_str::<Value>(json) else {
+        return Vec::new();
+    };
+    let Some(Value::Array(rows)) = file.remove("spells") else {
+        return Vec::new();
+    };
+    rows.into_iter()
+        .filter_map(|mut s| s.get_mut("otherNames").map(Value::take))
+        .filter_map(|v| match v {
+            Value::Array(names) => Some(names),
+            _ => None,
+        })
+        .flatten()
+        .filter_map(|n| n.as_str().map(str::to_string))
+        .collect()
 }
 
 /// The class tables: `aas`, every row of the Alternate Advancement page, and `abilities`, the
@@ -158,5 +190,17 @@ impl ItemIndex {
         let key = item_gap_key(name);
         let loose = loose_key(&key);
         self.exact.contains(&key) || self.loose.contains(&loose) || self.bare.contains(&loose) || scroll_known(name)
+    }
+}
+
+#[cfg(test)]
+mod redirect_tests {
+    use super::other_names_of;
+
+    #[test]
+    fn a_spell_rows_other_names_are_read_and_a_row_without_them_adds_none() {
+        let json = r#"{"spells":[{"name":"Enchant Gold","otherNames":["Enchant: Gold"]},{"name":"Clarity"},{"name":"Clarity II","otherNames":["Clarity 2","C2"]}]}"#;
+        assert_eq!(other_names_of(json), ["Enchant: Gold", "Clarity 2", "C2"]);
+        assert!(other_names_of("not json").is_empty());
     }
 }

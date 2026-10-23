@@ -182,3 +182,21 @@ test("a group row's line takes the page's member rates summed (A lizard man scou
   // Only listed members looted: nothing missing, no row.
   assert.deepEqual(dropGaps([at('Rusty Mace'), at('Large Cloth Cap')], [page], sets), [])
 })
+
+test("A LOOTED NAME THE WIKI REDIRECTS IS THE ITEM ITS PAGE LISTS (OWNER, 2026-10-22: HALFLING BLOOD IS VIAL OF HALFLING BLOOD)", () => {
+  const mobs = [{ page: 'Leatherfoot Captain', name: 'Leatherfoot Captain', drops: ['Vial of Halfling Blood', 'Rusty Weapons'] }]
+  const aliases = { 'Halfling Blood': 'Vial of Halfling Blood', 'Blunt Thing': 'Rusty Axe' }
+  const rows = dropGaps(
+    [
+      loot('Halfling Blood', 'Leatherfoot Captain'), // redirects to a listed item
+      loot('Blunt Thing', 'Leatherfoot Captain'), // redirects to a member of a listed group
+      loot('Halfling Toe', 'Leatherfoot Captain') // no redirect: still a gap
+    ],
+    mobs,
+    groups,
+    { aliases }
+  )
+  assert.deepEqual(rows.map((r) => r.name), ['Halfling Toe (Leatherfoot Captain)'])
+  // Without the redirect it is a gap, under the looted name.
+  assert.deepEqual(dropGaps([loot('Halfling Blood', 'Leatherfoot Captain')], mobs, groups).map((r) => r.name), ['Halfling Blood (Leatherfoot Captain)'])
+})

@@ -9,8 +9,10 @@
 import { itemKey, type ItemDbFile } from './itemsDb'
 import type { ItemPageMobs } from '../shared/gaps'
 import itemsJson from './data/items.json'
+import { itemsByAnyName } from './itemOtherNames'
 
-const items = (itemsJson as unknown as ItemDbFile).items
+// By any name the wiki gives the page: a redirect to it finds it (itemOtherNames.ts).
+const items = itemsByAnyName((itemsJson as unknown as ItemDbFile).items)
 
 /** Each name's item page mobs, page order, deduped; null when the corpus has no page for it. */
 export function itemPageMobs(names: readonly string[]): ItemPageMobs {
