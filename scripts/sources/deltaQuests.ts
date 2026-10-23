@@ -125,6 +125,8 @@ interface FoldCtx {
 /** One read member: its entry replaced, renamed or dropped, its cache copy refreshed. */
 function foldMember(ctx: FoldCtx, m: QuestMember, title: string, wt: string | null): void {
   const { fold, byPage, ids } = ctx
+  // Only an entry the catalog held can be reported removed; a new page that parses as no quest never was.
+  const had = byPage.has(m.title) || byPage.has(title)
   byPage.delete(m.title)
   if (wt === null) {
     fold.members = fold.members.filter((x) => x !== m)
@@ -141,7 +143,7 @@ function foldMember(ctx: FoldCtx, m: QuestMember, title: string, wt: string | nu
   const run = buildCatalog([member], () => wt, ctx.isItem)
   const entry = run.quests[0]
   if (entry) byPage.set(entry.page, entry)
-  else fold.removed.push(title)
+  else if (had) fold.removed.push(title)
   fold.folded.push(title)
   if (revid != null) fold.fresh.push({ pageid, content: wt, revid })
 }
