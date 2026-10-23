@@ -61,6 +61,7 @@ import { parseDurationMs } from '../src/shared/spellDuration'
 // The one reader of a non-item page's `{{X Era}}` banner, shared with the mob and set-page scrapes.
 import { parsePageEraTag } from '../src/main/itemLookupParse'
 import { isMain } from './sources/isMain'
+import { applySpellOtherNames, cachedRedirects } from './sources/mobRedirects'
 import { cachePath, indexedPages, readIndex, writeIndex } from './sources/spellCache'
 import type { CacheIndex, WikiPage } from './sources/spellCache'
 import { wikiGet, wikiRequestCount } from './sources/wikiApi'
@@ -576,6 +577,8 @@ async function main(): Promise<void> {
   const withEffects = spells.filter((s) => s.effects?.length).length
   const withInstrument = spells.filter((s) => s.instrumentEnhanced).length
 
+  // The cached redirects that land on each spell page as its otherNames (owner, 2026-10-22).
+  applySpellOtherNames(spells, cachedRedirects())
   const out: SpellDbFile = {
     scrapedAt: previousScrapedAt(spells) ?? new Date().toISOString(),
     schema: SCHEMA,

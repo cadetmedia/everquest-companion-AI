@@ -10,7 +10,9 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
 import { dirname, resolve } from 'path'
 import { fileURLToPath } from 'url'
+import { itemKey } from '../src/main/itemsDb'
 import { isMain } from './sources/isMain'
+import { cachedRedirects, withItemRedirectAliases, type NamedItem } from './sources/mobRedirects'
 import { wikiGet } from './sources/wikiApi'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
@@ -100,7 +102,8 @@ async function fetchPages(titles: readonly string[]): Promise<CachedPage[]> {
 }
 
 async function main(): Promise<void> {
-  const itemKeys = new Set(Object.keys((JSON.parse(readFileSync(ITEMS, 'utf8')) as { items: object }).items))
+  const items = (JSON.parse(readFileSync(ITEMS, 'utf8')) as { items: Record<string, NamedItem> }).items
+  const itemKeys = new Set(Object.keys(items))
   const titles = groupTitles((JSON.parse(readFileSync(MOBS, 'utf8')) as { mobs: { drops?: string[] }[] }).mobs, itemKeys)
   // Cached like every other wiki text (owner, 2026-10-18): only a page the cache lacks, or one the
   // delta saw change (`--fresh <titles.json>`), is fetched; offline fetches nothing.
@@ -123,7 +126,9 @@ async function main(): Promise<void> {
     const item = aliasedItem(p.content, itemKeys)
     if (item !== null && item.toLowerCase() !== p.title.toLowerCase()) aliases[p.title] = item
   }
-  const out = { source: 'eqlwiki.com — the drop-list pages that are not items', groups, aliases }
+  // Every redirect that lands on an item page is an alias too: a looted name the wiki sends to the page
+  // a mob page lists (owner, 2026-10-22: Halfling Blood, listed as Vial of Halfling Blood).
+  const out = { source: 'eqlwiki.com — the drop-list pages that are not items', groups, aliases: withItemRedirectAliases(aliases, items, cachedRedirects(), itemKey) }
   writeFileSync(OUT, JSON.stringify(out, null, 1) + '\n')
   const missing = pages.filter((p) => p.content === '').length
   console.log(`${String(pages.length)} pages: ${String(Object.keys(groups).length)} groups, ${String(Object.keys(aliases).length)} redirects to items, ${String(missing)} with no page`)

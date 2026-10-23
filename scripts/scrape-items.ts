@@ -53,6 +53,7 @@ import { fileURLToPath } from 'url'
 import { parseItemWikitext, templateField } from '../src/main/itemLookupParse'
 import { itemKey, type ItemDbEntry, type ItemDbFile } from '../src/main/itemsDb'
 import { isMain } from './sources/isMain'
+import { applyItemOtherNames, cachedRedirects } from './sources/mobRedirects'
 import { createCache } from './sources/diskCache'
 import { wikiGet } from './sources/wikiApi'
 
@@ -307,6 +308,8 @@ async function main(): Promise<void> {
   const items = buildIndex(entries, stats)
   // Sorted keys ⇒ a deterministic file ⇒ a re-scrape diffs cleanly against the wiki.
   const sorted = Object.fromEntries([...items.entries()].sort((a, b) => a[0].localeCompare(b[0])))
+  // The cached redirects that land on each page as its otherNames (owner, 2026-10-22: Halfling Blood).
+  applyItemOtherNames(sorted, cachedRedirects(), itemKey)
   const out: ItemDbFile = {
     scrapedAt: new Date().toISOString(),
     source: SOURCE,

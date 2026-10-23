@@ -3,7 +3,8 @@
 
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { applyOtherNames, redirectTarget, redirectsOf, type NamedMob } from '../scripts/sources/mobRedirects'
+import { applyItemOtherNames, applyOtherNames, applySpellOtherNames, redirectTarget, redirectsOf, withItemRedirectAliases, type NamedItem, type NamedMob, type NamedSpell } from '../scripts/sources/mobRedirects'
+import { itemKey } from '../src/main/itemsDb'
 import { allRedirects } from '../scripts/scrape-mob-redirects'
 
 test('a redirect page names its target; any other page names none', () => {
@@ -45,4 +46,42 @@ test('the collector joins the redirect pages to their targets by page id, 500 a 
   assert.deepEqual(await allRedirects(get), [{ from: 'A', to: 'B' }, { from: 'N', to: 'O' }])
   assert.deepEqual(asked.map((q) => [q.list, q.apcontinue ?? q.arcontinue ?? '']), [['allpages', ''], ['allpages', 'M'], ['allredirects', '']])
   assert.equal(asked[0].apfilterredir, 'redirects')
+})
+
+test("AN ITEM KEEPS THE REDIRECTS THAT LAND ON ITS PAGE, ON EVERY KEY OF THE PAGE, LESS NAMES THAT ARE ITEMS OF THEIR OWN (OWNER, 2026-10-22: HALFLING BLOOD)", () => {
+  const vial: NamedItem = { page: 'Vial of Halfling Blood' }
+  const items: Record<string, NamedItem> = { 'vial of halfling blood': vial, 'halfling vial': vial, 'rusty mace': { page: 'Rusty Mace', otherNames: ['Stale'] } }
+  applyItemOtherNames(items, [
+    { from: 'Halfling Blood', to: 'Vial of Halfling Blood' },
+    // The target differs in case from the page: still the page.
+    { from: 'Blood of a Halfling', to: 'vial of Halfling Blood' },
+    // A name that is an item of its own stays that item.
+    { from: 'Halfling Vial', to: 'Vial of Halfling Blood' },
+    { from: 'Nektulos Forest', to: 'Nektulos' }
+  ], itemKey)
+  assert.deepEqual(items['vial of halfling blood'].otherNames, ['Blood of a Halfling', 'Halfling Blood'])
+  assert.deepEqual(items['halfling vial'].otherNames, ['Blood of a Halfling', 'Halfling Blood'])
+  assert.equal(items['rusty mace'].otherNames, undefined)
+})
+
+test('A SPELL KEEPS THE REDIRECTS THAT LAND ON ITS PAGE, LESS ANY SPELL OF ITS OWN', () => {
+  const spells: NamedSpell[] = [{ name: 'Enchant Gold' }, { name: 'Clarity II' }, { name: 'Clarity' }]
+  applySpellOtherNames(spells, [
+    { from: 'Enchant: Gold', to: 'Enchant Gold' },
+    { from: 'Clarity 2', to: 'Clarity II' },
+    { from: 'Clarity', to: 'Clarity II' }
+  ])
+  assert.deepEqual(spells.map((s) => s.otherNames), [['Enchant: Gold'], ['Clarity 2'], undefined])
+})
+
+test("EVERY REDIRECT THAT LANDS ON AN ITEM PAGE IS A DROP ALIAS; THE DROP-LIST PAGES' OWN ALIASES STAY", () => {
+  const items: Record<string, NamedItem> = { 'vial of halfling blood': { page: 'Vial of Halfling Blood' }, 'wooden heart': { page: 'Wooden Heart' }, 'halfling blood': { page: 'Halfling Blood' } }
+  const out = withItemRedirectAliases({ 'A Wooden Heart': 'Wooden Heart' }, items, [
+    { from: 'Blood Vial', to: 'Vial of Halfling Blood' },
+    { from: 'A Wooden Heart', to: 'Something Else' },
+    // An item of its own is never an alias of another.
+    { from: 'Halfling Blood', to: 'Vial of Halfling Blood' },
+    { from: 'Nektulos Forest', to: 'Nektulos' }
+  ], itemKey)
+  assert.deepEqual(out, { 'A Wooden Heart': 'Wooden Heart', 'Blood Vial': 'Vial of Halfling Blood' })
 })
