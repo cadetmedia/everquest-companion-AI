@@ -344,6 +344,20 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   `withForageRows`, add `met.itemForage` to `keyOf`), `wikiPage.ts` (`row.forageUpdate ?
   forageAddText(...) : itemPage(...)`; NEEDED_OF `[]` for a forage row) and `useGapsData.ts` (forage
   names from the snapshot the derivation receives, the joined one under All characters).
+- Quest pages follow the wiki's own quest pages, not the Help blueprint (2026-10-23, measured on the
+  931 cached): `{{<Era> Era}}`, picture, `questTopTable` with `Start Zone` (885; `Starts In` 6),
+  `== Reward ==`, `== Checklist ==`, `== Walkthrough ==` with a blank line after every block,
+  `Give [[X]] to [[NPC]]:` for a hand-in, `[[Category:Quests]]` then the zone. The player's name in an
+  NPC line is `Soandso` (27 lines on 8 pages; `<name>` 9) in both the engine and `gapQuestPage.ts`.
+- Quest Copy reads the live page: one `action=parse` read per Copy click (owner-approved: "i'd have to
+  go look it up myself anyways"), never on render or a timer (`src/main/gapQuestLive.ts`); a title
+  ending in `?` that the wiki lacks is asked once more without it. `gapQuestMerge.ts` only adds: rows
+  the table lacks or holds `?` in, rewards, walkthrough blocks whose words are not on the page,
+  categories; a differing start zone or faction number is a note, never an edit.
+- Quest steps from the log (`gaps_quest_log.rs`): a step's hand-ins are the open trade's offers to its
+  NPC (`You offered ...` until `You complete the trade with X.`, 5 min cap), not a window before the
+  task line; Unfortunate news offered its letters 57-61 s before. Its talk starts at the player's last
+  hail of that NPC. The log prints no task-completed line: an end is the last update with its rewards.
 
 ## screenshot-to-wiki
 
