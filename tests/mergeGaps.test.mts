@@ -293,3 +293,17 @@ test("THE PLAYER'S OWN PETS SURVIVE THE ARCHIVE MERGE, BOTH SIDES' (OWNER, 2026-
   assert.deepEqual((mergeGaps(older, newer) as Snap & { ownPets?: string[] }).ownPets, ['Gonekn', 'Zobektik'])
   assert.deepEqual((mergeGaps(snap([]), snap([])) as Snap & { ownPets?: string[] }).ownPets, [])
 })
+
+test("A MOB'S FIGHT NUMBERS JOIN TIER BY TIER ACROSS CHARACTERS, NEVER MIXED ACROSS TIERS (OWNER, 2026-10-23: ALL CHARACTERS)", () => {
+  const t0a = { tier: 0, kills: 12, fights: 8, hp: 2300, hits: 40, hitMin: 10, hitMax: 90, attacks: ['slash'], swings: 2 }
+  const t0b = { tier: 0, kills: 5, fights: 4, hp: 2500, hits: 9, hitMin: 4, hitMax: 99, attacks: ['kick', 'slash'], swings: 3 }
+  const t4 = { tier: 4, kills: 1, fights: 1, hp: 6146, attacks: ['cleave'] }
+  const older = snap([row('mob', 'a hill giant', 12, { fight: [t0a] } as Partial<Row>)])
+  const newer = snap([row('mob', 'a hill giant', 6, { fight: [t0b, t4] } as Partial<Row>)])
+  const got = (mergeGaps(older, newer)?.rows[0] as unknown as { fight: unknown[] }).fight
+  assert.deepEqual(got, [
+    // HP and swings from the side with more whole fights (a median does not add); the rest joined.
+    { tier: 0, kills: 17, fights: 12, hp: 2300, hits: 49, hitMin: 4, hitMax: 99, attacks: ['kick', 'slash'], swings: 2 },
+    t4
+  ])
+})
