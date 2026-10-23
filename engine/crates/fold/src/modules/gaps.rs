@@ -129,6 +129,8 @@ pub struct GapsModule {
     players: HashSet<String>,
     /// Pages with a not-Legends or deletion notice, for the Notices domain (`gaps_notices.rs`).
     notices: Notices,
+    /// Who gave each item, who took it, which quest it moved (`gaps_quests.rs`). Served as `questFacts`.
+    quests: QuestFacts,
     /// The player's own pets, as the log spells them (`petClaim`/`petSay`): their kills are the
     /// player's (owner, 2026-10-22: Gonekn's kill moved the player's factions). Served as `ownPets`.
     own_pets: std::collections::BTreeSet<String>,
@@ -162,6 +164,7 @@ impl GapsModule {
         self.seen.clear();
         self.players.clear();
         self.own_pets.clear();
+        self.quests.clear();
         self.kill_factions.clear();
         self.kill_coin.clear();
         self.mob_locs.clear();
@@ -191,7 +194,7 @@ impl GapsModule {
             "castBegin" | "otherCastBegin" => self.spell(ev),
             "petClaim" | "petSay" => self.own_pet(ev.str("name")),
             // Handing an item to it is meeting it (owner, 2026-10-19: a fallen froglok, only traded with).
-            "offer" => self.npc_met(ev.str("npc"), "offered", ev),
+            "offer" => self.turn_in(ev) | self.npc_met(ev.str("npc"), "offered", ev),
             "allyPetLeader" => self.player_pet(ev.str("pet")),
             "skillUp" => self.skill_up(ev),
             _ => false,
@@ -205,7 +208,7 @@ impl GapsModule {
             // the loot itself: it says what became of the item, not where it came from.
             "loot" if ev.str("disposition") == Some("destroyed") => self.disposal(ev),
             "loot" => self.item(ev, "looted") | self.mob(ev.str("source"), "dropped-by", ev),
-            "itemReceived" => self.received(ev),
+            "itemReceived" => self.quest_give(ev) | self.received(ev),
             "purchase" => self.item(ev, "bought"),
             _ => self.merge(ev),
         }
@@ -277,7 +280,7 @@ impl GapsModule {
             "unknown" => {
                 self.kill_factions.line(ev);
                 let zone = self.zone.clone();
-                self.mob_locs.line(ev, zone.as_deref()) | self.unparsed(ev) | self.merchant(ev) | self.offered(ev)
+                self.mob_locs.line(ev, zone.as_deref()) | self.quests.line(ev) | self.unparsed(ev) | self.merchant(ev) | self.offered(ev)
             }
             _ => self.merchant(ev),
         }
@@ -484,6 +487,9 @@ impl GapsModule {
         if domain == Domain::Mob && only_met && is_player_shaped_name(&row.name) && !self.who.is_npc(&row.name) {
             v["maybePlayer"] = json!(true);
         }
+        if let Some(f) = self.quests.served(domain, key) {
+            v["questFacts"] = f;
+        }
         if let Some(s) = self.suggestion(domain, key) {
             v["suggest"] = json!(s);
         }
@@ -566,6 +572,9 @@ impl EqModule for GapsModule {
 /// A forage's zone and a combine's tradeskill: a child module, so it files onto the rows.
 #[path = "gaps_craft.rs"]
 mod craft;
+#[path = "gaps_quests.rs"]
+mod quests;
+use quests::QuestFacts;
 #[path = "gaps_notices.rs"]
 mod notices;
 #[path = "gaps_redirects.rs"]
