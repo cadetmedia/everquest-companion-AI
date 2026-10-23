@@ -60,6 +60,9 @@ import ShotPanel from './ShotPanel'
 import { WithRowPicture } from './RowPicture'
 import GapRowButtons from './GapRowButtons'
 import MobHeadingButtons from './MobHeadingButtons'
+import { questFactsOf } from '@shared/itemQuestFacts'
+import { rowFactLines } from '@shared/gapQuestPage'
+import { PAGE_EXTRAS } from './useGapsData'
 
 /** One line of small cells with a small chip: 6px padding above and below a 24px chip, plus the border. */
 const ROW_HEIGHT = 37
@@ -303,7 +306,7 @@ function DetailsPane({ row, actions }: { row: GapRow; actions: PaneActions }): J
           </Typography>
         )}
         <ShotPanel row={row} />
-        <GapDetailsPanel details={row.details} />
+        <GapDetailsPanel details={row.details} quest={questFactsOf(row)} lines={rowFactLines(row, PAGE_EXTRAS)} />
       </WithRowPicture>
     </Paper>
   )

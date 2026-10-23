@@ -5,6 +5,7 @@ import type { JSX } from 'react'
 import { Box, Chip, Stack, Typography } from '@mui/material'
 import { GAP_LISTS, derivedPrices, formatCoin, type GapDetails, type GapTally } from '@shared/gaps'
 import { offerCheckText, offerText } from '@shared/gapOffers'
+import { questFactLines, type ItemQuestFacts } from '@shared/itemQuestFacts'
 
 /** Under the sale-on-loot chips: what the sale implies (shared/gaps.ts `derivedPrices`). */
 function SalesCaveat({ details }: { details: GapDetails }): JSX.Element | null {
@@ -58,9 +59,16 @@ function TallyChips({ label, tally }: { label: string; tally: GapTally }): JSX.E
   )
 }
 
-export default function GapDetailsPanel({ details }: { details: GapDetails }): JSX.Element {
+/** `lines`: the row's other facts in words (a quest's steps, an NPC's role, where it was fished; gapQuestPage.ts `rowFactLines`). */
+export default function GapDetailsPanel({ details, quest, lines = [] }: { details: GapDetails; quest?: ItemQuestFacts; lines?: readonly string[] }): JSX.Element {
   return (
     <Stack spacing={1} sx={{ py: 1 }} data-testid="gaps-details">
+      {/* Who gave it, who took it, its quest (owner, 2026-10-22: who it is turned in to). */}
+      {[...questFactLines(quest), ...lines].map((l) => (
+        <Typography key={l} variant="body2" color="info.main" data-testid="gaps-quest-line">
+          {l}
+        </Typography>
+      ))}
       {GAP_LISTS.map(({ key, label }) => {
         const tally = details[key]
         if (tally === undefined) return null

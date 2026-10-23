@@ -30,7 +30,7 @@ use super::gaps_details::{stamp_of, Details};
 use super::gaps_keys::{aa_known, item_gap_key, loose_key, spell_gap_key, spell_known, spell_via_redirect, ItemIndex};
 use super::gaps_names::{no_mob, no_spell, owner_of_pet, MobNames};
 use super::gaps_offers::{offer_of, Offer, Standings};
-use super::gaps_players::{forage_of, hail_of, speaker_of, Players};
+use super::gaps_players::{caught_of, forage_of, hail_of, speaker_of, Players};
 use super::gaps_specials::MobSpecials;
 use super::gaps_suggest::{item_candidates, spell_candidates, suggest, Candidate, Suggest};
 use super::gaps_locs::MobLocs;
@@ -60,10 +60,12 @@ pub enum Domain {
     Merchant,
     /// A known item or mob met whose page says it may not be in Legends (`gaps_notices.rs`).
     Notice,
+    /// A task the log named: one row per quest, with its steps (`gaps_quest_log.rs`).
+    Quest,
 }
 
 impl Domain {
-    const ALL: [Domain; 5] = [Domain::Item, Domain::Mob, Domain::Spell, Domain::Merchant, Domain::Notice];
+    const ALL: [Domain; 6] = [Domain::Item, Domain::Mob, Domain::Spell, Domain::Merchant, Domain::Notice, Domain::Quest];
 
     fn as_str(self) -> &'static str {
         match self {
@@ -72,6 +74,7 @@ impl Domain {
             Domain::Spell => "spell",
             Domain::Merchant => "merchant",
             Domain::Notice => "notice",
+            Domain::Quest => "quest",
         }
     }
 }
@@ -124,6 +127,14 @@ pub struct GapsModule {
     players: HashSet<String>,
     /// Pages with a not-Legends or deletion notice, for the Notices domain (`gaps_notices.rs`).
     notices: Notices,
+    /// Who gave each item, who took it, which quest it moved (`gaps_quests.rs`). Served as `questFacts`.
+    quests: QuestFacts,
+    /// Each task's steps, for the Quests rows (`gaps_quest_log.rs`).
+    quest_log: QuestLogs,
+    /// Each NPC's role from the client's target line (`gaps_roles.rs`).
+    roles: Roles,
+    /// Where each item was fished (`gaps_fished.rs`).
+    fish: Fished,
     /// The player's own pets, as the log spells them (`petClaim`/`petSay`): their kills are the
     /// player's (owner, 2026-10-22: Gonekn's kill moved the player's factions). Served as `ownPets`.
     own_pets: std::collections::BTreeSet<String>,
@@ -155,6 +166,10 @@ impl GapsModule {
         self.seen.clear();
         self.players.clear();
         self.own_pets.clear();
+        self.quests.clear();
+        self.quest_log.clear();
+        self.roles.clear();
+        self.fish.clear();
         self.kill_factions.clear();
         self.kill_coin.clear();
         self.mob_locs.clear();
@@ -183,7 +198,7 @@ impl GapsModule {
             "castBegin" | "otherCastBegin" => self.spell(ev),
             "petClaim" | "petSay" => self.own_pet(ev.str("name")),
             // Handing an item to it is meeting it (owner, 2026-10-19: a fallen froglok, only traded with).
-            "offer" => self.npc_met(ev.str("npc"), "offered", ev),
+            "offer" => self.turn_in(ev) | self.npc_met(ev.str("npc"), "offered", ev),
             "allyPetLeader" => self.player_pet(ev.str("pet")),
             _ => false,
         }
@@ -197,12 +212,13 @@ impl GapsModule {
             "loot" if ev.str("disposition") == Some("destroyed") => self.disposal(ev),
             "loot" => self.item(ev, "looted") | self.mob(ev.str("source"), "dropped-by", ev),
             "itemReceived" => {
+                let given = self.quest_give(ev);
                 let how = if ev.str("via") == Some("fashioned") {
                     "crafted"
                 } else {
                     "received"
                 };
-                self.item(ev, how)
+                self.item(ev, how) | given
             }
             "purchase" => self.item(ev, "bought"),
             _ => self.merge(ev),
@@ -275,7 +291,7 @@ impl GapsModule {
             "unknown" => {
                 self.kill_factions.line(ev);
                 let zone = self.zone.clone();
-                self.mob_locs.line(ev, zone.as_deref()) | self.unparsed(ev) | self.merchant(ev) | self.offered(ev)
+                self.mob_locs.line(ev, zone.as_deref()) | self.quest_line(ev) | self.unparsed(ev) | self.merchant(ev) | self.offered(ev)
             }
             _ => self.merchant(ev),
         }
@@ -308,6 +324,12 @@ impl GapsModule {
     /// An unparsed line the parser has no family for: a forage, a hail, or a player's chat.
     fn unparsed(&mut self, ev: &Event) -> bool {
         let text = message_text_of(ev.raw());
+        if let Some(t) = target_of(text) {
+            return self.targeted(&t);
+        }
+        if let Some(item) = caught_of(text) {
+            return self.fished(item, ev);
+        }
         if let Some(item) = forage_of(text) {
             return self.item_named(item, "foraged", ev);
         }
@@ -482,6 +504,7 @@ impl GapsModule {
         if domain == Domain::Mob && only_met && is_player_shaped_name(&row.name) && !self.who.is_npc(&row.name) {
             v["maybePlayer"] = json!(true);
         }
+        self.serve_extras(domain, key, &mut v);
         if let Some(s) = self.suggestion(domain, key) {
             v["suggest"] = json!(s);
         }
@@ -493,7 +516,7 @@ impl GapsModule {
         let candidates: &[Candidate] = match domain {
             Domain::Item => &self.item_candidates,
             Domain::Spell => spell_candidates(),
-            Domain::Mob | Domain::Merchant | Domain::Notice => return None,
+            Domain::Mob | Domain::Merchant | Domain::Notice | Domain::Quest => return None,
         };
         let mut cache = self.suggests.lock().ok()?;
         cache
@@ -560,6 +583,18 @@ impl EqModule for GapsModule {
     }
 }
 
+#[path = "gaps_quests.rs"]
+mod quests;
+use quests::QuestFacts;
+#[path = "gaps_quest_log.rs"]
+mod quest_log;
+use quest_log::QuestLogs;
+#[path = "gaps_roles.rs"]
+mod roles;
+use roles::{target_of, Roles};
+#[path = "gaps_fished.rs"]
+mod fished;
+use fished::Fished;
 #[path = "gaps_notices.rs"]
 mod notices;
 #[path = "gaps_redirects.rs"]

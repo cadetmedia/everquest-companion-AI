@@ -15,6 +15,9 @@ import SearchIcon from '@mui/icons-material/Search'
 import { GAP_CAPTURE, mobPageOf, onMobPage, wikiCreateUrl, wikiEditUrl, wikiSearchUrl, type GapRow } from '@shared/gaps'
 import { copyText } from '../../lib/clipboard'
 import { Tooltip } from '../../lib/Tooltip'
+import { existingEditor } from '@shared/gapExistingPage'
+import { questPageTitle } from '@shared/gapQuests'
+import { readGapVerdict } from '../../lib/gapVerdicts'
 
 const stop = (e: MouseEvent): void => e.stopPropagation()
 
@@ -84,22 +87,31 @@ function CopyPageButton({ text, row, compact }: { text: () => string; row: GapRo
  * Into the wiki in one click: its search, and its editor on a new page of this name; for a faction
  * row, the editor on the mob page the faction belongs on.
  */
-function WikiLinks({ row, compact }: { row: GapRow; compact: boolean }): JSX.Element {
+/** The page the editor opens and its button's words: a page that exists, or a new one. */
+function editorOf(row: GapRow): { target: string; create: string; existing: boolean } {
   // A notice row's page exists: it is edited, the notice off (owner, 2026-10-22).
-  const notice = row.domain === 'notice'
-  const faction = onMobPage(row) || notice
-  const target = notice ? (row.page ?? row.name) : faction ? mobPageOf(row) : row.name
-  const redirect = !faction && row.suggest !== undefined
-  const create = notice ? 'Edit page' : faction ? 'Edit mob page' : redirect ? 'Create redirect' : 'Create page'
+  if (row.domain === 'notice') return { target: row.page ?? row.name, create: 'Edit page', existing: true }
+  if (onMobPage(row)) return { target: mobPageOf(row), create: 'Edit mob page', existing: true }
+  // A quest: its page from the catalog when the wiki has one, else a new page under the wiki's spelling.
+  if (row.domain === 'quest') return row.page === undefined ? { target: questPageTitle(row.name), create: 'Create page', existing: false } : { target: row.page, create: 'Edit page', existing: true }
+  // A page the lookup found under other capitals or as free text is edited, never made twice
+  // (owner, 2026-10-22: Drake lava powder; gapExistingPage.ts).
+  const found = existingEditor(row, readGapVerdict(row.domain, row.name))
+  if (found !== undefined) return found
+  return { target: row.name, create: row.suggest !== undefined ? 'Create redirect' : 'Create page', existing: false }
+}
+
+function WikiLinks({ row, compact }: { row: GapRow; compact: boolean }): JSX.Element {
+  const { target, create, existing } = editorOf(row)
   return (
     <>
       <ActionButton compact={compact} label="Search wiki" tip={`The wiki's search for ${target}.`} icon={<SearchIcon fontSize="small" />} href={wikiSearchUrl(target)} testId="gaps-wiki-search" />
       <ActionButton
         compact={compact}
         label={create}
-        tip={faction ? `The wiki's editor on ${target}.` : `The wiki's editor on a new page named ${target}.`}
+        tip={existing ? `The wiki's editor on ${target}.` : `The wiki's editor on a new page named ${target}.`}
         icon={<NoteAddIcon fontSize="small" />}
-        href={faction ? wikiEditUrl(target) : wikiCreateUrl(target)}
+        href={existing ? wikiEditUrl(target) : wikiCreateUrl(target)}
         testId="gaps-wiki-create"
       />
     </>

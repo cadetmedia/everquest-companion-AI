@@ -4,8 +4,10 @@
 // engine files such a name as a row with `viaRedirect`, the page the redirect sends it to
 // (gaps_redirects.rs). This words the check. Apart from gaps.ts, which sits at its size ceiling.
 
+import { existingPageAction } from './gapExistingPage'
 import { noticeAction } from './gapNotices'
-import type { GapAction, GapRow } from './gaps'
+import { questAction } from './gapQuests'
+import type { GapAction, GapRow, GapVerdict } from './gaps'
 
 /** The redirect page itself, not where it sends you: the wiki's `redirect=no` view, to edit or replace it. */
 export const redirectPageUrl = (name: string): string => `https://eqlwiki.com/index.php?title=${encodeURIComponent(name.trim().replace(/ /g, '_'))}&redirect=no`
@@ -24,8 +26,12 @@ export function redirectAction(row: GapRow): GapAction {
   }
 }
 
-/** The chip of a row about a page that exists and may be wrong: a notice row's, or a redirect row's. */
-export function pageCheckAction(row: GapRow): GapAction | undefined {
+/**
+ * The chip of a row about a page that exists and may be wrong: a notice row's, a redirect row's, or
+ * one whose name the wiki has under other capitals or as free text (gapExistingPage.ts).
+ */
+export function pageCheckAction(row: GapRow, verdict: GapVerdict = 'unchecked'): GapAction | undefined {
   if (row.domain === 'notice') return noticeAction(row)
-  return row.viaRedirect === undefined ? undefined : redirectAction(row)
+  if (row.domain === 'quest') return questAction(row)
+  return row.viaRedirect === undefined ? existingPageAction(verdict) : redirectAction(row)
 }

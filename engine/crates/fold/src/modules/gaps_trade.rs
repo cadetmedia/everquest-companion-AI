@@ -37,12 +37,12 @@ pub fn merchant_of<'a>(ev: &'a Event) -> Option<(&'a str, &'static str)> {
 }
 
 /// One faction line: the faction, the amount it stated, and whether the kill raised it.
-type FactionLine<'a> = (&'a str, Option<i64>, Option<bool>);
+pub(super) type FactionLine<'a> = (&'a str, Option<i64>, Option<bool>);
 
 /// `Your faction standing with X has been adjusted by -20.` → `(X, Some(-20), Some(false))`; `…
 /// could not possibly get any better.` → `(X, None, Some(true))`: a capped standing states no amount
 /// but still says which way the kill pushed it (review 2026-10-19: a raise was filed as lowered).
-fn faction_of(text: &str) -> Option<FactionLine<'_>> {
+pub(super) fn faction_of(text: &str) -> Option<FactionLine<'_>> {
     let rest = text.strip_prefix("Your faction standing with ")?;
     if let Some((f, by)) = rest.split_once(" has been adjusted by ") {
         let n: Option<i64> = by

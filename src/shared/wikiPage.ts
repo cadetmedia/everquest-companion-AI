@@ -25,6 +25,12 @@ import { wikiZoneLink } from './gapWikiZone'
 import type { VendorFinder } from './gapMobPage'
 import type { LootEvent } from './types'
 import { SPELL_HEAD, SPELL_TAIL, spellPageValues, type SpellPageShot } from './spellWindow'
+import { withPageTitles } from './mobPageTitle'
+import { noticeProof } from './gapNotices'
+import { locFinder, questFactsOf, questPageParts, withQuestFields } from './itemQuestFacts'
+import { fishedNote, roleClass, roleField, roleOf } from './gapRoles'
+import { questRowPage } from './gapQuestPage'
+import type { QuestCatalogEntry, QuestJournalFacts } from './gapQuests'
 
 /** A log zone name as the wiki spells it (shared/gapWikiZone.ts); as printed when none is given. */
 export type ZoneNamer = (raw: string) => string
@@ -55,7 +61,7 @@ export function wikiCoin(copper: number): string {
 export function zoneBlocks(byZone: ReadonlyMap<string, readonly string[]>): string {
   const zones = [...byZone].sort((a, b) => a[0].localeCompare(b[0]))
   const blocks = zones.map(([zone, mobs]) => {
-    const list = [...mobs].filter((m) => m !== '').sort((a, b) => a.localeCompare(b)).map((m) => `* ${wikiLink(m)}`).join('\n')
+    const list = [...new Set(mobs)].filter((m) => m !== '').sort((a, b) => a.localeCompare(b)).map((m) => `* ${wikiLink(m)}`).join('\n')
     // A zone with no mob (a Reward Chest payout) stands alone, as the wiki's own zone-only blocks do (Tasty Candy).
     return zone === '' ? list : list === '' ? wikiZoneLink(zone) : `${wikiZoneLink(zone)}\n\n${list}`
   })
@@ -123,6 +129,11 @@ export interface ItemFacts {
   soldBy: VendorSeen[]
   /** The player made it in a combine (a mote fusion is not one). */
   crafted: boolean
+  /** The quest sentences for `|notes` and the `|relatedquests` list (shared/itemQuestFacts.ts). */
+  questNote?: string
+  relatedQuests?: string
+  /** Where it was caught fishing, as the wiki spells the zones (gaps_fished.rs). */
+  fishedIn?: string[]
 }
 
 /** A faction a kill moved: the amount most lines stated, and whether the kill raised it. */
@@ -153,6 +164,10 @@ export interface MobFacts {
   specials: string[]
   /** What its corpse paid at the player's kills; absent when no kill paid (never "none", gaps_coin.rs). */
   coin?: MobCoin
+  /** The quests whose task lines came just after it spoke or took an item (gaps_quests.rs): `related_quests`. */
+  quests?: string[]
+  /** Its role from the client's target line (`Banker`, `Merchant`, `Warrior GM`; gaps_roles.rs). */
+  role?: string
 }
 
 /** What the log saw of mobs beyond the rows: each kill's factions and each mob's `/loc` points. */
@@ -223,7 +238,8 @@ export function itemFacts(row: GapRow, loot: readonly LootEvent[], zoneName: Zon
   // A merchant's offer heard at ally wins over the instant-sale estimate; any other never stands in
   // for it (shared/gapOffers.ts `merchantValueOf`, owner ask 2026-10-20).
   const merchantValue = merchantValueOf(row.details, derivedPrices(row.details)?.vendorValue)
-  return { name: row.name, drops, soldBy, crafted: row.kinds.includes('crafted'), ...(merchantValue === undefined ? {} : { merchantValue }) }
+  const fished = ((row as { fishedIn?: string[] }).fishedIn ?? []).map(zoneName)
+  return { name: row.name, drops, soldBy, crafted: row.kinds.includes('crafted'), ...(merchantValue === undefined ? {} : { merchantValue }), ...(fished.length === 0 ? {} : { fishedIn: fished }) }
 }
 
 /** The levels a mob row's /con lines stated (`L12 indifferent`), lowest first. */
@@ -285,6 +301,8 @@ export function mobFacts(row: GapRow, loot: readonly LootEvent[], kills: KillMap
     points: (seen.mobLocs ?? []).filter(mine).flatMap((m) => m.points),
     specials: [...new Set((seen.mobSpecials ?? []).filter(mine).flatMap((m) => m.specials))],
     ...coinOf(seen.mobCoin, row.name),
+    quests: questFactsOf(row)?.quests ?? [],
+    ...roleField(row),
     factions: (seen.killFactions ?? []).filter(mine).map(({ faction, adjust, raised }) => ({
       faction,
       ...(adjust === undefined ? {} : { adjust }),
@@ -401,7 +419,9 @@ function shotFields(shot: ItemPageShot, merchantValue: number | undefined): [str
 export function itemPage(f: ItemFacts, shot: ItemPageShot = {}): string {
   const byZone = new Map<string, string[]>()
   for (const d of f.drops) byZone.set(d.zone, [...(byZone.get(d.zone) ?? []), d.mob])
-  const fields: [string, string][] = [['itemname', f.name], ...shotFields(shot, f.merchantValue)]
+  const shotted: [string, string][] = [['itemname', f.name], ...shotFields(shot, f.merchantValue)]
+  // A fished item's notes say where it was fished up, after the lore a screenshot gave (gapRoles.ts).
+  const fields = (f.fishedIn ?? []).length > 0 ? withQuestFields(shotted, { questNote: fishedNote(f.fishedIn ?? []) }) : shotted
   if (byZone.size > 0) fields.push(['dropsfrom', zoneBlocks(byZone)])
   if (f.soldBy.length > 0) fields.push(['soldby', itemWhereTable(f.soldBy)])
   const cats = [
@@ -409,7 +429,7 @@ export function itemPage(f: ItemFacts, shot: ItemPageShot = {}): string {
     ...(f.crafted ? ['Player Crafted'] : []),
     ...[...byZone.keys()].filter((z) => z !== '').sort((a, b) => a.localeCompare(b))
   ]
-  return page(templateBlock('Itempage', fields), cats)
+  return page(templateBlock('Itempage', withQuestFields(fields, f)), cats)
 }
 
 // ---- NPC and merchant pages: the blueprints' full layout ------------------------------------------
@@ -474,20 +494,22 @@ function factionBlocks(factions: readonly FactionSeen[], credited: number): Reco
   }
 }
 
-type NpcFacts = Pick<MobFacts, 'name' | 'zones' | 'levels' | 'points' | 'factions' | 'credited' | 'specials'>
+type NpcFacts = Pick<MobFacts, 'name' | 'zones' | 'levels' | 'points' | 'factions' | 'credited' | 'specials' | 'quests' | 'role'>
 
-/** The values both NPC layouts share: image, name, level, zone, location, factions. */
+/** The values both NPC layouts share: image, name, level, zone, location, factions, quests. */
 function npcValues(f: NpcFacts): Record<string, string> {
   const lo = f.levels[0]
   const hi = f.levels.at(-1)
   return {
     imagefilename: npcImageName(f.name),
     name: f.name,
+    class: roleClass(f.role) ?? '',
     // The wiki writes a range unspaced, `11-13`, four times in five.
     level: lo === undefined || hi === undefined ? '' : lo === hi ? String(lo) : `${String(lo)}-${String(hi)}`,
     zone: f.zones.map(wikiZoneLink).join(', '),
     location: locationText(f.points),
     special: f.specials.join(', '),
+    related_quests: (f.quests ?? []).map((q) => `* [[${q}]]`).join('\n'),
     ...factionBlocks(f.factions, f.credited)
   }
 }
@@ -584,6 +606,11 @@ export interface PageExtras {
   itemShots?: Readonly<Record<string, ItemPageShot>>
   /** What pasted spell display windows gave, by the row's name (SpellPageShot). */
   spellShots?: Readonly<Record<string, SpellPageShot>>
+  /** A mob's page title, by the catalog (`mobPageFinder`): the links take it, not the log's spelling. */
+  mobPage?: (name: string) => string | undefined
+  /** A quest's catalog entry when the wiki has its page (quests.json), and its Quest Journal reading. */
+  questEntry?: (name: string) => QuestCatalogEntry | undefined
+  questJournal?: (name: string) => QuestJournalFacts | undefined
 }
 
 /**
@@ -594,21 +621,14 @@ export interface PageExtras {
 export function wikiPageText(row: GapRow, loot: readonly LootEvent[], kills: KillMap, seen: MobSightings & PageExtras = {}): string {
   const extras = seen
   if (row.suggest !== undefined && (row.domain === 'item' || row.domain === 'spell')) return `#REDIRECT [[${row.suggest.page}]]\n`
-  return PAGE_OF[row.domain](row, { loot, kills, seen, zoneName: extras.zoneName ?? asPrinted, isMob: extras.isMob, commonLoot: extras.commonLoot, spellFacts: extras.spellFacts, vendorAt: extras.vendorAt, itemShots: extras.itemShots, spellShots: extras.spellShots })
+  return PAGE_OF[row.domain](row, { ...extras, loot, kills, seen, zoneName: extras.zoneName ?? asPrinted })
 }
 
-interface PageContext {
+interface PageContext extends Omit<PageExtras, 'zoneName'> {
   loot: readonly LootEvent[]
   kills: KillMap
   seen: MobSightings
   zoneName: ZoneNamer
-  isMob?: (name: string) => boolean
-  commonLoot?: ReadonlySet<string>
-  spellFacts?: Readonly<Record<string, ClientSpellFacts>>
-  vendorAt?: VendorFinder
-  itemShots?: Readonly<Record<string, ItemPageShot>>
-  /** What pasted spell display windows gave, by the row's name (SpellPageShot). */
-  spellShots?: Readonly<Record<string, SpellPageShot>>
 }
 
 /**
@@ -616,13 +636,15 @@ interface PageContext {
  * so a new domain is one entry, and a domain without one does not compile.
  */
 const PAGE_OF: Record<GapDomain, (row: GapRow, c: PageContext) => string> = {
-  item: (row, c) => itemPage(itemFacts(row, c.loot, c.zoneName, c.vendorAt), c.itemShots?.[row.name]),
-  mob: (row, c) => mobPage(mobFacts(row, c.loot, c.kills, { ...c.seen, zoneName: c.zoneName }), c.commonLoot),
+  item: (row, c) => itemPage({ ...withPageTitles(itemFacts(row, c.loot, c.zoneName, c.vendorAt), c.mobPage), ...questPageParts(questFactsOf(row), { mobPage: c.mobPage, zoneName: c.zoneName, locOf: locFinder(c.seen.mobLocs) }) }, c.itemShots?.[row.name]),
+  // A mob its target line calls a merchant takes the merchant layout before any trade (owner, 2026-10-22).
+  mob: (row, c) => (roleOf(row) === 'Merchant' ? merchantPage(mobFacts(row, [], c.kills, { ...c.seen, zoneName: c.zoneName })) : mobPage(mobFacts(row, c.loot, c.kills, { ...c.seen, zoneName: c.zoneName }), c.commonLoot)),
   merchant: (row, c) => merchantPage(mobFacts(row, [], c.kills, { ...c.seen, zoneName: c.zoneName })),
   spell: (row, c) => spellPage({ name: row.name, npcOnly: npcOnlySpell(row, c.isMob), client: c.spellFacts?.[row.name], shot: c.spellShots?.[row.name] }),
   faction: (row) => `${factionLine({ faction: factionOf(row), adjust: row.adjust, raised: row.raised })}\n`,
   image: (row) => `| ${'imagefilename'.padEnd(17)} = ${row.image ?? ''}\n`,
   notice: (row) => noticeProof(row),
+  quest: (row, c) => questRowPage(row, { zoneName: c.zoneName, mobPage: c.mobPage, entry: c.questEntry?.(row.name), journal: c.questJournal?.(row.name) }),
   // A drop: its group's link (`[[Rusty Weapons]]`), else the item; each with the rate seen, a
   // group's being the corpses that dropped any member (the row's count) over the mob's kills.
   drop: (row, c) => {
@@ -647,19 +669,8 @@ const NEEDED_OF: Partial<Record<GapDomain, (row: GapRow, seen: PageExtras) => st
   faction: (row) => (row.adjust === undefined ? ['the amount (a kill that is not capped)'] : []),
   drop: () => [],
   image: () => [],
-  notice: () => []
-}
-
-/**
- * A notice row's copy: what the log proves, to cite on the page's talk page or in the edit summary
- * when the notice comes off (owner, 2026-10-22): how often and when it was met, where, and the lines.
- */
-function noticeProof(row: GapRow): string {
-  const zones = row.details.zones?.all ?? row.details.zones?.entries.map((z) => z.name) ?? []
-  const where = zones.length > 0 ? ` in ${zones.join(', ')}` : ''
-  const when = row.first === row.last ? row.first : `${row.first} to ${row.last}`
-  const head = `Seen in EverQuest Legends (${row.kinds.join(', ')}), ${String(row.count)} time${row.count === 1 ? '' : 's'}${where}, ${when}:`
-  return [head, ...row.details.samples.map((s) => `: ${s}`)].join('\n') + '\n'
+  notice: () => [],
+  quest: () => []
 }
 
 /**

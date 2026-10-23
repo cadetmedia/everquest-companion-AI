@@ -14,6 +14,9 @@ import { offerCheckText, offerText } from './gapOffers'
 import { decodeFactionAmount } from './mobFactionAmounts'
 import { wikiPageUrl } from './wiki'
 import { zoneKey } from './zones'
+import { wikiCreateUrl, wikiEditUrl, wikiSearchUrl, wikiUploadUrl } from './gapUrls'
+
+export { wikiCreateUrl, wikiEditUrl, wikiSearchUrl, wikiUploadUrl }
 
 export const GAPS_MODULE_ID = 'gaps'
 
@@ -21,10 +24,11 @@ export const GAPS_MODULE_ID = 'gaps'
  *  kill moved that the mob's page does not name (shared/gapFactions.ts); `drop`: an item looted from a
  *  mob whose page lists neither it nor its group (shared/gapDrops.ts); `image`: a mob met whose page
  *  has no image (shared/gapImages.ts) (owner asks, 2026-10-18); `notice`: a mob or item the log met
- *  whose page says it may not be in Legends, `{{DNE}}` or `{{delete}}` (gaps_notices.rs; owner, 2026-10-22). */
-export type GapDomain = 'item' | 'mob' | 'spell' | 'merchant' | 'faction' | 'drop' | 'image' | 'notice'
-export const GAP_DOMAINS: readonly GapDomain[] = ['item', 'mob', 'spell', 'merchant', 'faction', 'drop', 'image', 'notice']
-export const GAP_DOMAIN_LABELS: Record<GapDomain, string> = { item: 'Items', mob: 'Mobs', spell: 'Spells', merchant: 'Merchants', faction: 'Factions', drop: 'Drops', image: 'Images', notice: 'Notices' }
+ *  whose page says it may not be in Legends, `{{DNE}}` or `{{delete}}` (gaps_notices.rs; owner, 2026-10-22);
+ *  `quest`: a task the log named, its page made or filled (gaps_quest_log.rs, shared/gapQuests.ts). */
+export type GapDomain = 'item' | 'mob' | 'spell' | 'merchant' | 'faction' | 'drop' | 'image' | 'notice' | 'quest'
+export const GAP_DOMAINS: readonly GapDomain[] = ['item', 'mob', 'spell', 'merchant', 'faction', 'drop', 'image', 'notice', 'quest']
+export const GAP_DOMAIN_LABELS: Record<GapDomain, string> = { item: 'Items', mob: 'Mobs', spell: 'Spells', merchant: 'Merchants', faction: 'Factions', drop: 'Drops', image: 'Images', notice: 'Notices', quest: 'Quests' }
 
 /** What the shown-count line calls a domain's rows: "Showing 11 of 395 mobs missing a wiki picture" (owner, 2026-10-19: "unknown images" read oddly). */
 export const GAP_SHOWN_NOUN: Record<GapDomain, string> = {
@@ -35,19 +39,21 @@ export const GAP_SHOWN_NOUN: Record<GapDomain, string> = {
   faction: 'factions to add or fix on mob pages',
   drop: 'drops missing from mob pages',
   image: 'mobs missing a wiki picture',
-  notice: 'pages that say they are not in Legends'
+  notice: 'pages that say they are not in Legends',
+  quest: 'quests your log took part in'
 }
 
 /** One line under the toggle saying what the chosen domain's rows are (owner ask, 2026-10-18). */
 export const GAP_DOMAIN_HELP: Record<GapDomain, string> = {
-  item: 'Items your log names that the wiki has no page for.',
-  mob: 'Mobs you looted, killed or conned that the wiki has no page for.',
-  spell: 'Spells cast near you that the wiki has no page for.',
-  merchant: 'Traders the wiki does not list as a merchant.',
-  faction: "Factions a kill changed that the mob's page lacks or gets wrong.",
-  drop: "Items you looted that the mob's wiki page does not list; Motes excluded.",
-  image: 'Mobs you met whose wiki page has no picture.',
-  notice: 'Mobs and items you met whose wiki page says they are not in Legends or are up for deletion: your log proves they exist.'
+  item: 'Items your log, inventory export or a capture names that have no wiki page yet: make the page.',
+  mob: 'Mobs you looted, killed, conned or hailed that have no wiki page yet: make the page.',
+  spell: 'Spells cast near you that have no wiki page yet: make the page.',
+  merchant: "NPCs you saw trading that the wiki doesn't mark as merchants: give them a merchant page.",
+  faction: "Factions a kill changed that the mob's page is missing or states wrongly: fix the mob page.",
+  drop: "Items you looted that the mob's page doesn't list (Motes excluded): add them to its loot.",
+  image: 'Mobs you met whose wiki page has no picture: screenshot one and upload it.',
+  notice: 'Mobs and items you met whose page says "not in Legends" or "up for deletion": remove the notice, since your log proves they exist.',
+  quest: 'Quests your log took part in: make the page, or fill what its page is missing.'
 }
 
 /**
@@ -62,7 +68,8 @@ export const GAP_CAPTURE: Record<GapDomain, string> = {
   faction: 'Paste into factions; kill again if no amount.',
   drop: "Paste it into the mob page's known_loot list.",
   image: 'Screenshot it; upload under the file name shown.',
-  notice: 'Nothing: remove the notice and cite the lines below.'
+  notice: 'Nothing: remove the notice and cite the lines below.',
+  quest: 'Paste the Quest Journal for its level; hail and say each [keyword].'
 }
 
 /** A row's key in the Done marks (owner ask, 2026-10-19). */
@@ -172,6 +179,11 @@ export type GapKind =
    * a row of only these passes "Zone I'm in" (owner, 2026-10-22; shared/gapExtraItems.ts).
    */
   | 'held' | 'captured'
+  /**
+   * `fished`: caught fishing (gaps_fished.rs); `turned-in`: handed to an NPC, proof the item exists
+   * (`You offered 1 Plea to Freeport to Sir Mollin.`); `assigned` / `updated`: a Quests row's task lines.
+   */
+  | 'fished' | 'turned-in' | 'assigned' | 'updated'
 
 /**
  * One distinct merchant offer for an item, from the sell slot (`X told you, 'I'll give you ...'`;
@@ -453,7 +465,8 @@ export function gapsAsText(rows: readonly GapRow[], verdicts: GapVerdicts = {}):
  * main process answers off `<userData>/item-knowledge-cache.json` / `mob-knowledge-cache.json`
  * (src/main/gapVerdicts.ts); spells have no cache and are always `unchecked`.
  */
-export type GapVerdict = 'noPage' | 'hasPage' | 'unchecked'
+/** `otherPage:<title>` / `freeText:<title>`: a page exists under other capitals, or as free text (gapExistingPage.ts). */
+export type GapVerdict = 'noPage' | 'hasPage' | 'unchecked' | `otherPage:${string}` | `freeText:${string}`
 /** Verdicts by row name, as the renderer's store hands them to the table. */
 export type GapVerdicts = Record<string, GapVerdict>
 
@@ -465,21 +478,6 @@ export interface GapAction {
   label: string
   why: string
   href?: string
-}
-
-/** The wiki's own search for a name — a link the person clicks, never an app fetch. */
-export function wikiSearchUrl(name: string): string {
-  return `https://eqlwiki.com/index.php?search=${encodeURIComponent(name.trim())}`
-}
-
-/** The wiki's editor on an existing page. */
-export function wikiEditUrl(page: string): string {
-  return `https://eqlwiki.com/index.php?title=${encodeURIComponent(page.trim().replace(/ /g, '_'))}&action=edit`
-}
-
-/** The wiki's upload form with the file name filled in. */
-export function wikiUploadUrl(file: string): string {
-  return `https://eqlwiki.com/index.php?title=Special:Upload&wpDestFile=${encodeURIComponent(file.trim())}`
 }
 
 /** What a page's faction statement says, in words: `(-10) to (-30) (unconfirmed)`, `a lowering of no stated amount`. */
@@ -506,11 +504,6 @@ export const factionMob = (row: GapRow): string => row.details.sources?.entries[
 
 /** A faction, drop or image row's subject: its name less the ` (mob)` it is filed under. */
 export const factionOf = (row: GapRow): string => row.name.slice(0, Math.max(0, row.name.length - factionMob(row).length - 3))
-
-/** The wiki's editor on a new page titled with the name, as its own red links open it (owner ask, 2026-10-18). */
-export function wikiCreateUrl(name: string): string {
-  return `https://eqlwiki.com/index.php?title=${encodeURIComponent(name.trim().replace(/ /g, '_'))}&action=edit&redlink=1`
-}
 
 /** A shape the app's own parsers leave in a name, or null: the words the Fix parser tooltip uses. */
 export function parserShape(name: string): string | null {
@@ -583,7 +576,8 @@ function imageAction(row: GapRow, file = row.image ?? ''): GapAction {
 }
 
 export function gapActions(row: GapRow, verdict: GapVerdict, ctx: GapActionContext = {}): GapAction[] {
-  const check = pageCheckAction(row)
+  // A notice row, a redirect row, or a page that exists under other capitals or as free text (gapExistingPage.ts).
+  const check = pageCheckAction(row, verdict)
   if (check !== undefined) return [check]
   if (row.domain === 'image') return [imageAction(row)]
   if (row.domain === 'drop') return dropActions(row)

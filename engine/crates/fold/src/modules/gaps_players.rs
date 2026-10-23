@@ -79,6 +79,13 @@ pub fn forage_of(text: &str) -> Option<&str> {
     (!item.is_empty()).then_some(item)
 }
 
+/// `You caught Fresh Fish!` → the item: a fishing catch, which no parser family reads. `You caught
+/// something...` names nothing (owner's log, 2026-10-22: 33 catches, 7 of them that line).
+pub fn caught_of(text: &str) -> Option<&str> {
+    let item = text.strip_prefix("You caught ")?.strip_suffix('!')?;
+    (!item.is_empty() && !item.starts_with("something")).then_some(item)
+}
+
 #[derive(Default)]
 pub struct Players {
     /// Lower-cased names a line showed to be players.
@@ -157,6 +164,22 @@ impl Players {
         true
     }
 
+    /// The client's target line named it a player (`Targeted (Player): Malkil`): one for good.
+    pub fn player(&mut self, name: &str) {
+        let key = name.to_lowercase();
+        self.npcs.remove(&key);
+        self.beyond_cap.remove(&key);
+        self.known.insert(key);
+    }
+
+    /// The client's target line named it a merchant, banker or guildmaster: an NPC for good.
+    pub fn npc(&mut self, name: &str) {
+        let key = name.to_lowercase();
+        self.known.remove(&key);
+        self.npcs.insert(key.clone());
+        self.beyond_cap.insert(key);
+    }
+
     /// Whether the log has shown this candidate to be an NPC.
     pub fn is_npc(&self, name: &str) -> bool {
         self.npcs.contains(&name.to_lowercase())
@@ -187,6 +210,8 @@ mod tests {
         assert_eq!(joined_or_listed("AFK [50 WAR/MNK/SHM] Drywrought (Iksar)  ZONE: Oggok (oggok)"), Some("Drywrought"));
         assert_eq!(joined_or_listed(" * RIP * [12 CLR] Kamas (Ogre)  ZONE: Oggok (oggok)"), Some("Kamas"));
         assert_eq!(hail_of("You say, 'Hail, Grapok'"), Some("Grapok"));
+        assert_eq!(super::caught_of("You caught Fresh Fish!"), Some("Fresh Fish"));
+        assert_eq!(super::caught_of("You caught something..."), None);
     }
 
     #[test]
