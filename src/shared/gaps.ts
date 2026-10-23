@@ -162,6 +162,12 @@ export type GapKind =
   | 'sold'
   /** a merchant offered to buy it (an item), or offered to buy an item (a merchant): gaps_offers.rs */
   | 'appraised'
+  /**
+   * `held`: in the player's inventory export with no log line naming it (a store purchase);
+   * `captured`: an item window a capture read, with no log line naming it. Neither has a place:
+   * a row of only these passes "Zone I'm in" (owner, 2026-10-22; shared/gapExtraItems.ts).
+   */
+  | 'held' | 'captured'
 
 /**
  * One distinct merchant offer for an item, from the sell slot (`X told you, 'I'll give you ...'`;
@@ -326,6 +332,8 @@ export const GAP_LISTS: { key: GapListKey; label: string }[] = [
  * `Befallen`. A row with no zones is in none.
  */
 export function gapInZone(row: GapRow, zone: string): boolean {
+  // An item held or captured with no line naming it was seen nowhere: it is in every zone's list.
+  if (row.details.zones === undefined && row.kinds.length > 0 && row.kinds.every((k) => k === 'held' || k === 'captured')) return true
   const here = zoneKey(zone)
   const zones = row.details.zones
   const names = zones?.all ?? zones?.entries.map((e) => e.name) ?? []
