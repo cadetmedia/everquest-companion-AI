@@ -458,6 +458,10 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   anyway" keeps it too. Pictures are written after the reading is kept and never block it.
 - Overlay code imported by tests uses relative `shared/` imports, not `@shared` (`feedGapTags.ts`).
 - `shotIpc.ts catalogNames` includes each item's `otherNames` (wiki redirects).
+- Details picture: `rowPicture` (shared/mobPicture.ts) picks it (mob/Images: the held picture; item: `item/item_<n>.png`,
+  never the Lore one; spell: `spell/spell_<n>.png`); `RowPicture.tsx WithRowPicture` lays the pane out (text `1 1 380px`,
+  picture `0 1 420px`, wraps then scales). Main serves it as a data URL through `IPC.shotPictureData` only where
+  `pictureIn` passes for `pictureDirs()` (root, npc, item, spell), cached by path and mtime; the renderer reads no path.
 
 ## Page notices (cross-branch)
 
