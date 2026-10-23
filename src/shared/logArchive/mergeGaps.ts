@@ -49,6 +49,8 @@ interface Row {
   first: string
   last: string
   details: Details
+  /** a Mobs row's fight numbers per zone tier (gaps_fight.rs) */
+  fight?: FightTier[]
 }
 
 /** A kill and a faction its lines moved (gaps_trade.rs), how often, and the zone last seen in. */
@@ -186,9 +188,61 @@ function nameOf(had: Row, r: Row): string {
   return had.domain === 'mob' && lowerInitial(r.name) && !lowerInitial(had.name) ? r.name : had.name
 }
 
+/** One zone tier of a mob's fights (gaps_fight.rs, shared/gapFight.ts `FightTier`). */
+interface FightTier {
+  tier: number
+  kills: number
+  fights: number
+  hp?: number
+  hits?: number
+  hitMin?: number
+  hitMax?: number
+  attacks: string[]
+  swings?: number
+}
+
+const pick = (f: (a: number, b: number) => number, a: number | undefined, b: number | undefined): number | undefined =>
+  a === undefined ? b : b === undefined ? a : f(a, b)
+
+/**
+ * Two characters' fights at one tier: kills, fights and hits added, the hit range widened, the verbs
+ * joined; the median HP and the swings from the side that saw more whole fights (a median does not
+ * add). The owner's "All characters" view, 2026-10-23.
+ */
+function joinFight(a: FightTier, b: FightTier): FightTier {
+  const more = b.fights > a.fights ? b : a
+  const hits = pick((x, y) => x + y, a.hits, b.hits)
+  const hitMin = pick(Math.min, a.hitMin, b.hitMin)
+  const hitMax = pick(Math.max, a.hitMax, b.hitMax)
+  return {
+    tier: a.tier,
+    kills: a.kills + b.kills,
+    fights: a.fights + b.fights,
+    ...(more.hp === undefined ? {} : { hp: more.hp }),
+    ...(hits === undefined ? {} : { hits }),
+    ...(hitMin === undefined ? {} : { hitMin }),
+    ...(hitMax === undefined ? {} : { hitMax }),
+    attacks: [...new Set([...a.attacks, ...b.attacks])].sort(),
+    ...(more.swings === undefined ? {} : { swings: more.swings })
+  }
+}
+
+/** Both rows' fight tiers, tier by tier; undefined when neither has any. */
+function mergeFight(a: FightTier[] | undefined, b: FightTier[] | undefined): FightTier[] | undefined {
+  if (a === undefined || b === undefined) return a ?? b
+  const byTier = new Map(a.map((t) => [t.tier, t]))
+  for (const t of b) {
+    const had = byTier.get(t.tier)
+    byTier.set(t.tier, had === undefined ? t : joinFight(had, t))
+  }
+  return [...byTier.values()].sort((x, y) => x.tier - y.tier)
+}
+
 function mergeRow(had: Row, r: Row): Row {
+  const fight = mergeFight(had.fight, r.fight)
   return {
     ...had,
+    ...(fight === undefined ? {} : { fight }),
     name: nameOf(had, r),
     kinds: [...had.kinds, ...r.kinds.filter((k) => !had.kinds.includes(k))],
     count: had.count + r.count,
