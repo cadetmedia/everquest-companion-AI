@@ -294,9 +294,10 @@ function mobLoot(row: GapRow, loot: readonly LootEvent[]): MobFacts['loot'] {
  * a gray mob never credits.
  */
 function ownKills(row: GapRow, pets: readonly string[] = []): number {
-  // A kill by the player's own pet is the player's: it moves the player's factions and its corpse is
-  // the player's to loot (owner, 2026-10-22: "A Deathfist templar has been slain by Gonekn!", then
-  // five faction lines).
+  // `pets`: the player's own pets' kills too, for the LOOT rule only: their corpses are the player's
+  // to loot. Never for factions: a pet's kill while the player is feigned moves no faction (owner,
+  // 2026-10-22: "Pets killing faction, while i'm Feign Death, don't give faction"), so a pet kill with
+  // no faction lines proves nothing; faction lines seen at any kill prove them on their own.
   const mine = new Set(['you', ...pets.map((p) => p.toLowerCase())])
   return (row.details.killers?.entries ?? []).filter((e) => mine.has(e.name.toLowerCase())).reduce((n, e) => n + e.n, 0)
 }
@@ -312,7 +313,7 @@ export function mobFacts(row: GapRow, loot: readonly LootEvent[], kills: KillMap
     levels: conLevels(row),
     loot: mobLoot(row, loot),
     kills: killed?.count ?? 0,
-    credited: Math.max(killed?.credited ?? 0, ownKills(row, seen.ownPets)),
+    credited: Math.max(killed?.credited ?? 0, ownKills(row)),
     ownKills: ownKills(row, seen.ownPets),
     points: (seen.mobLocs ?? []).filter(mine).flatMap((m) => m.points),
     specials: [...new Set((seen.mobSpecials ?? []).filter(mine).flatMap((m) => m.specials))],
