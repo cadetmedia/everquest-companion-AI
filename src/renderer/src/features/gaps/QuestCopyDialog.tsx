@@ -56,7 +56,8 @@ function PageText({ copy }: { copy: QuestLiveCopy }): JSX.Element {
           data-added={copy.added[i] ? 'true' : undefined}
           sx={{ display: 'block', minHeight: '1.2em', whiteSpace: 'pre-wrap', ...(copy.added[i] ? { bgcolor: 'rgba(76, 175, 80, 0.22)' } : {}) }}
         >
-          {line}
+          {/* An empty line holds a no-break space so it reads (and selects) as the blank line the page has. */}
+          {line === '' ? ' ' : line}
         </Box>
       ))}
     </Box>
