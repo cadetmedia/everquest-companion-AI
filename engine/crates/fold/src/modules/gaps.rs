@@ -190,6 +190,7 @@ impl GapsModule {
         match ev.kind() {
             "zone" => {
                 self.zone = ev.str("zone").map(str::to_string);
+                self.quest_log.zoned();
                 self.specials.zone(ev.str("zone"))
             }
             // The player's own `/who` row, parsed apart, names a player like any /who row (gaps_players.rs),
@@ -205,8 +206,8 @@ impl GapsModule {
             // Handing an item to it is meeting it (owner, 2026-10-19: a fallen froglok, only traded with).
             "offer" => self.turn_in(ev) | self.npc_met(ev.str("npc"), "offered", ev),
             "allyPetLeader" => self.player_pet(ev.str("pet")),
-            // `You complete the trade with X.` spends the open trade (gaps_quest_log.rs); nothing else.
-            _ => self.quest_trade(ev),
+            // A trade's end and experience, for the quest log (gaps_quest_log.rs); nothing else.
+            _ => self.quest_event(ev),
         }
     }
 

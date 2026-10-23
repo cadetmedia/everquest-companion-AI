@@ -59,11 +59,12 @@ const GIVE_MS: i64 = 10_000;
 const STEP_CAP: usize = 40;
 const TALK_CAP: usize = 12;
 
-/// One line of the talk: `You` or the NPC, and what was said.
+/// One line of the talk: `You` or the NPC, what was said, and when (epoch ms, for log order).
 #[derive(Debug, Clone, Serialize, PartialEq)]
 pub struct Talk {
     who: String,
     text: String,
+    ms: i64,
 }
 
 /// One faction line: the faction, and the line as the log printed it.
@@ -86,12 +87,22 @@ pub struct Step {
     npc: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     zone: Option<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    talk: Vec<Talk>,
+    /// The NPC's answers after the line; served inside the talk (`StepOut`).
+    #[serde(skip)]
+    answers: Vec<Talk>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     offered: Vec<String>,
+    /// Epoch ms of each `offered` item, in step.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    offered_ms: Vec<i64>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     given: Vec<String>,
+    /// Epoch ms of each `given` item, in step.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    given_ms: Vec<i64>,
+    /// Task lines of one second folded into this step, when more than one (three items, three lines).
+    #[serde(skip_serializing_if = "one_or_less")]
+    lines: u32,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     factions: Vec<FactionMoved>,
     #[serde(skip_serializing_if = "std::ops::Not::not")]
@@ -104,11 +115,33 @@ pub struct Step {
     /// The NPC came from its answer after the line, so its earlier lines join the talk at serve time.
     #[serde(skip)]
     heard: Vec<(i64, Option<String>, String)>,
+    /// An assignment printed in the second of another quest's step: that step (quest key, index),
+    /// which keeps the talk, the hand-in and what came after (Call for Aid's last hand-in assigns
+    /// Unfortunate news).
+    #[serde(skip)]
+    from: Option<(String, usize)>,
+}
+
+fn one_or_less(n: &u32) -> bool {
+    *n <= 1
+}
+
+/// A step as served: its fields and its whole talk, borrowed rather than cloned.
+#[derive(Serialize)]
+struct StepOut<'a> {
+    #[serde(flatten)]
+    step: &'a Step,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    talk: Vec<Talk>,
 }
 
 /// One quest as the log saw it.
 #[derive(Debug, Default)]
 struct Quest {
+    /// The task's name as the log first spelled it.
+    name: String,
+    /// The quest whose step assigned this one in the same second (`Step::from`).
+    chained_from: Option<String>,
     steps: Vec<Step>,
     /// Times assigned after the first run was logged.
     reruns: u32,
@@ -162,6 +195,19 @@ impl QuestLogs {
     /// `You complete the trade with <NPC>.`: its offers are spent.
     pub fn trade_done(&mut self, npc: &str) {
         self.offers.retain(|(_, _, n)| n != npc);
+    }
+
+    /// A zone change: no trade or hail carries across it.
+    pub fn zoned(&mut self) {
+        self.offers.clear();
+        self.addressed = None;
+    }
+
+    /// `You gain experience!` (kind `expGain`, never an unparsed line): the step it came of.
+    pub fn experience(&mut self, ts: i64) {
+        if let Some(s) = self.answer_step(ts, AFTER_MS) {
+            s.experience = true;
+        }
     }
 
     /// `<NPC> bows as a courtesy. ... 'Greetings ...'` from the NPC just addressed: its name and quote.
@@ -222,21 +268,17 @@ impl QuestLogs {
         None
     }
 
-    /// What follows a step: a faction line, experience, an achievement; or a trade called off.
+    /// What follows a step: a faction line or an achievement; or a trade called off.
     fn outcome(&mut self, text: &str, ts: i64) {
         if text == "You have cancelled the trade." || text.ends_with(" has cancelled the trade.") {
             self.offers.clear();
         } else if let Some((faction, _, _)) = faction_of(text) {
             let moved = FactionMoved { faction: faction.to_string(), line: text.to_string() };
-            if let Some(s) = self.last_step(ts, AFTER_MS) {
+            if let Some(s) = self.answer_step(ts, AFTER_MS) {
                 s.factions.push(moved);
             }
-        } else if text == "You gain experience!" || text == "You gain party experience!" {
-            if let Some(s) = self.last_step(ts, AFTER_MS) {
-                s.experience = true;
-            }
         } else if let Some(a) = text.strip_prefix("You have completed achievement: ") {
-            if let Some(s) = self.last_step(ts, ACHIEVE_MS) {
+            if let Some(s) = self.answer_step(ts, ACHIEVE_MS) {
                 s.achievements.push(a.to_string());
             }
         }
@@ -263,15 +305,26 @@ impl QuestLogs {
         }
         let said = self.scrub(said);
         self.heard.push_back((ts, Some(name.to_string()), said.clone()));
-        let Some(s) = self.last_step(ts, AFTER_MS) else {
+        let Some(s) = self.answer_step(ts, AFTER_MS) else {
             return;
         };
         if s.npc.is_none() {
             s.npc = Some(name.to_string());
         }
-        if s.npc.as_deref() == Some(name) && !s.talk.iter().any(|t| t.text == said) {
-            s.talk.push(Talk { who: name.to_string(), text: said });
+        if s.npc.as_deref() == Some(name) && !s.answers.iter().any(|t| t.text == said) {
+            s.answers.push(Talk { who: name.to_string(), text: said, ms: ts });
         }
+    }
+
+    /// The step a line after the newest one belongs to: the newest, or the step that chained it.
+    fn answer_step(&mut self, ts: i64, ms: i64) -> Option<&mut Step> {
+        let (key, i) = self.last.clone()?;
+        let s = self.quests.get(&key)?.steps.get(i)?;
+        if ts - s.ts > ms {
+            return None;
+        }
+        let (key, i) = s.from.clone().unwrap_or((key, i));
+        self.quests.get_mut(&key)?.steps.get_mut(i)
     }
 
     /// The newest step, when it is within `ms` of `ts`.
@@ -285,40 +338,46 @@ impl QuestLogs {
         let key = quest_key(name);
         // A task assigned in the second after another quest's step is that quest's next, given by
         // that step's NPC (Something Fishy's hand-in to Nikko Canti assigns Alchemical Solution).
-        let mut chained: Option<String> = None;
+        let mut chained: Option<(String, usize)> = None;
         if kind == "assigned" {
-            let other = self.last.as_ref().is_some_and(|(k, _)| *k != key);
-            if let (true, Some(s)) = (other, self.last_step(ts, AFTER_MS)) {
+            let other = self.last.clone().filter(|(k, _)| *k != key);
+            if let (Some(from), Some(s)) = (other, self.last_step(ts, AFTER_MS)) {
                 s.next = Some(name.to_string());
-                chained.clone_from(&s.npc);
+                chained = Some(from);
             }
         }
-        let quest = self.quests.entry(key.clone()).or_default();
+        let from_name = chained.as_ref().and_then(|(k, _)| self.quests.get(k)).map(|q| q.name.clone());
+        let quest = self.quests.entry(key.clone()).or_insert_with(|| Quest { name: name.to_string(), ..Quest::default() });
         if kind == "assigned" && !quest.steps.is_empty() {
             quest.reruns += 1;
         }
         let same_second = quest.steps.last().is_some_and(|s| s.ts / 1000 == ts / 1000);
+        if same_second && quest.reruns == 0 {
+            if let Some(s) = quest.steps.last_mut() {
+                s.lines += 1;
+            }
+        }
         if quest.reruns > 0 || same_second || quest.steps.len() >= STEP_CAP {
             return;
         }
-        let since = quest.steps.last().map_or(i64::MIN, |s| s.ts);
-        let offers: Vec<&(i64, String, String)> = self.offers.iter().filter(|(t, _, _)| *t > since).collect();
-        let took = offers.last().map(|(_, _, n)| n.clone());
-        let offered = offers.iter().filter(|(_, _, n)| Some(n) == took.as_ref()).map(|(_, item, _)| item.clone()).collect();
-        let npc = took.or(chained).or_else(|| {
-            let spoke = self.heard.iter().rev().find(|(t, who, _)| who.is_some() && ts - t <= SPOKE_MS);
-            spoke.and_then(|(_, who, _)| who.clone())
-        });
-        let step = Step {
-            at: at.to_string(),
-            ts,
-            kind,
-            npc,
-            zone: zone.map(str::to_string),
-            offered,
-            given: self.gives.iter().filter(|(t, _)| *t > since).map(|(_, i)| i.clone()).collect(),
-            heard: self.heard.iter().filter(|(t, _, _)| *t > since).cloned().collect(),
-            ..Step::default()
+        let base = Step { at: at.to_string(), ts, kind, zone: zone.map(str::to_string), lines: 1, ..Step::default() };
+        let step = if chained.is_some() {
+            // The talk, the hand-in and the reward are the chaining step's (`answer_step`).
+            quest.chained_from = from_name;
+            Step { from: chained, ..base }
+        } else {
+            let since = quest.steps.last().map_or(i64::MIN, |s| s.ts);
+            let offers: Vec<&(i64, String, String)> = self.offers.iter().filter(|(t, _, _)| *t > since).collect();
+            let took = offers.last().map(|(_, _, n)| n.clone());
+            let (offered_ms, offered) =
+                offers.iter().filter(|(_, _, n)| Some(n) == took.as_ref()).map(|(t, item, _)| (*t, item.clone())).unzip();
+            let (given_ms, given) = self.gives.iter().filter(|(t, _)| *t > since).cloned().unzip();
+            let npc = took.or_else(|| {
+                let spoke = self.heard.iter().rev().find(|(t, who, _)| who.is_some() && ts - t <= SPOKE_MS);
+                spoke.and_then(|(_, who, _)| who.clone())
+            });
+            let heard = self.heard.iter().filter(|(t, _, _)| *t > since).cloned().collect();
+            Step { npc, offered, offered_ms, given, given_ms, heard, ..base }
         };
         quest.steps.push(step);
         self.last = Some((key, quest.steps.len() - 1));
@@ -329,46 +388,50 @@ impl QuestLogs {
     /// A Quest row's `quest`: the giver, the zone, the steps with their talk, the NPCs met, re-runs.
     pub fn served(&self, key: &str) -> Option<Value> {
         let q = self.quests.get(key)?;
-        let steps: Vec<Step> = q.steps.iter().map(with_talk).collect();
-        let assigned = steps.first().filter(|s| s.kind == "assigned");
-        let giver = assigned.and_then(|s| s.npc.clone());
-        let mut npcs: Vec<String> = Vec::new();
-        for n in steps.iter().filter_map(|s| s.npc.clone()) {
+        let steps: Vec<StepOut> = q.steps.iter().map(|s| StepOut { step: s, talk: talk_of(s) }).collect();
+        let assigned = q.steps.first().filter(|s| s.kind == "assigned" && s.from.is_none());
+        let giver = assigned.and_then(|s| s.npc.as_deref());
+        let mut npcs: Vec<&str> = Vec::new();
+        for n in q.steps.iter().filter_map(|s| s.npc.as_deref()) {
             if !npcs.contains(&n) {
                 npcs.push(n);
             }
         }
-        // Where the task was assigned: a quest first seen mid-way has no start the log can state.
-        let zone = assigned.and_then(|s| s.zone.clone());
-        Some(json!({ "giver": giver, "zone": zone, "npcs": npcs, "steps": steps, "reruns": q.reruns }))
+        // Where the task was assigned: a quest first seen mid-way, or chained, has no start of its own.
+        let zone = assigned.and_then(|s| s.zone.as_deref());
+        let mut v = json!({ "giver": giver, "zone": zone, "npcs": npcs, "steps": steps, "reruns": q.reruns });
+        if let Some(from) = &q.chained_from {
+            v["chainedFrom"] = json!(from);
+        }
+        Some(v)
     }
 }
 
-/// The step with its talk: the player's lines and its NPC's before it, then the NPC's answer. The
-/// talk starts at the player's last hail of that NPC, else TALK_MS before the step (Lord Lyfyx was
+/// The step's talk: the player's lines and its NPC's before it, then the NPC's answer. The talk
+/// starts at the player's last hail of that NPC, else TALK_MS before the step (Lord Lyfyx was
 /// hailed 108 s before the hand-in that answered with the next quest).
-fn with_talk(s: &Step) -> Step {
+fn talk_of(s: &Step) -> Vec<Talk> {
     let hail = s.npc.as_ref().map(|n| format!("Hail, {n}"));
     let hailed = s.heard.iter().rev().find(|(_, who, text)| who.is_none() && Some(text) == hail.as_ref());
     let start = hailed.map_or(s.ts - TALK_MS, |(at, _, _)| *at);
     let mut talk: Vec<Talk> = Vec::new();
-    for (_, who, text) in s.heard.iter().filter(|(at, _, _)| *at >= start) {
+    for (at, who, text) in s.heard.iter().filter(|(at, _, _)| *at >= start) {
         let who = match who {
             None => "You".to_string(),
             Some(n) if s.npc.as_deref() == Some(n.as_str()) => n.clone(),
             Some(_) => continue,
         };
         if !talk.iter().any(|t| t.who == who && t.text == *text) {
-            talk.push(Talk { who, text: text.clone() });
+            talk.push(Talk { who, text: text.clone(), ms: *at });
         }
     }
-    for t in &s.talk {
-        if !talk.contains(t) {
+    for t in &s.answers {
+        if !talk.iter().any(|x| x.who == t.who && x.text == t.text) {
             talk.push(t.clone());
         }
     }
     let skip = talk.len().saturating_sub(TALK_CAP);
-    Step { talk: talk.into_iter().skip(skip).collect(), heard: Vec::new(), ..s.clone() }
+    talk.split_off(skip)
 }
 
 impl GapsModule {
@@ -384,10 +447,13 @@ impl GapsModule {
         }
     }
 
-    /// `You complete the trade with <NPC>.` (kind `trade`): the trade's offers are spent. No row changes.
-    pub(super) fn quest_trade(&mut self, ev: &Event) -> bool {
-        if let (true, Some(npc)) = (ev.kind() == "trade", ev.str("npc")) {
-            self.quest_log.trade_done(npc);
+    /// The typed lines the quest log reads, no row changes: `You complete the trade with <NPC>.`
+    /// (kind `trade`) spends the trade's offers; `You gain experience!` (kind `expGain`) is a step's.
+    pub(super) fn quest_event(&mut self, ev: &Event) -> bool {
+        match (ev.kind(), ev.str("npc")) {
+            ("trade", Some(npc)) => self.quest_log.trade_done(npc),
+            ("expGain", _) => self.quest_log.experience(ev.ts()),
+            _ => {}
         }
         false
     }

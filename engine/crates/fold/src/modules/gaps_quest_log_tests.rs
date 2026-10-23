@@ -17,10 +17,24 @@ fn feed(q: &mut QuestLogs, lines: &[(i64, &str)]) {
             q.trade_done(npc);
         } else if let Some(z) = text.strip_prefix("ZONE:") {
             zone = z.to_string();
+            q.zoned();
+        } else if text.starts_with("You gain ") && text.ends_with("experience!") {
+            // A typed event (`expGain`) in the real fold, never an unparsed line.
+            q.experience(ts);
         } else {
             q.line(text, ts, Some(&zone), &format!("2026-10-22 t{s}"));
         }
     }
+}
+
+/// The epoch ms `feed` stamps second `s` with.
+fn at(s: i64) -> i64 {
+    1_787_000_000_000 + s * 1000
+}
+
+/// A talk line's speaker and words.
+fn said(t: &serde_json::Value) -> (&str, &str) {
+    (t["who"].as_str().unwrap_or(""), t["text"].as_str().unwrap_or(""))
 }
 
 /// A log whose character is `Testplayer`.
@@ -128,7 +142,10 @@ fn an_emote_with_a_quote_from_the_npc_addressed_is_its_line() {
     assert_eq!(step["offered"], json!(["Solusek Petition"]));
     assert_eq!(step["given"], json!(["Ordination of Might"]));
     let talk = step["talk"].as_array().unwrap();
-    assert_eq!(talk[0], json!({ "who": "You", "text": "Hail, Lord Lyfyx of Burwood" }), "the talk starts at the hail");
+    assert_eq!(said(&talk[0]), ("You", "Hail, Lord Lyfyx of Burwood"), "the talk starts at the hail");
+    assert_eq!(talk[0]["ms"], json!(at(100)), "each line carries its time, for log order");
+    assert_eq!(step["offeredMs"], json!([at(208)]));
+    assert_eq!(step["givenMs"], json!([at(220)]));
     assert!(talk.iter().any(|t| t["text"] == json!("Greetings, my friend.  Welcome to the Temple of Ro.")), "{talk:?}");
     assert!(!talk.iter().any(|t| t["text"].as_str().unwrap().contains("Freeport Militia")), "an NPC not addressed is not this step's");
 }
@@ -163,7 +180,7 @@ fn an_assignment_names_its_giver_and_the_talk_that_led_to_it() {
     assert_eq!(v["giver"], json!("Nikko Canti"));
     assert_eq!(v["zone"], json!("Lake Nerius"));
     let talk = &v["steps"][0]["talk"];
-    assert_eq!(talk[0], json!({ "who": "You", "text": "Hail, Nikko Canti" }));
+    assert_eq!(said(&talk[0]), ("You", "Hail, Nikko Canti"));
     assert!(!talk.as_array().unwrap().iter().any(|t| t["who"] == "Malkil"), "another player's words never count");
     assert_eq!(talk.as_array().unwrap().last().unwrap()["text"], json!("That's so kind of you! Here I have an old fishing pole you can use, and some bait!"));
     assert_eq!(v["steps"][1]["kind"], json!("updated"));
@@ -185,7 +202,7 @@ fn a_hand_in_step_gets_its_items_factions_experience_and_the_next_quest() {
             (61, "You have been assigned the task 'Alchemical Solution'."),
             // A refused hand-in is no hand-in: Dorian hands the Imp Blood back.
             (290, "OFFER:Imp Blood|Ty`Klerr"),
-            (291, "Ty`Klerr says, 'I have no need for this, Drywrought. You can have it back.'"),
+            (291, "Ty`Klerr says, 'I have no need for this, Testplayer. You can have it back.'"),
             // Two lines of one task in a second are one step.
             (300, "OFFER:Imp Blood|Dorian G`Wyn"),
             (302, "OFFER:Putrid Bile|Dorian G`Wyn"),
@@ -206,11 +223,16 @@ fn a_hand_in_step_gets_its_items_factions_experience_and_the_next_quest() {
     assert_eq!(last["next"], json!("Alchemical Solution"));
     assert_eq!(fishy["reruns"], json!(1));
     assert_eq!(fishy["steps"].as_array().unwrap().len(), 2);
+    // Assigned in the second of Something Fishy's hand-in: chained from it, with no giver or start
+    // zone of its own; Nikko's talk and the hand-in stay on Something Fishy's step.
     let alch = q.served(&quest_key("Alchemical Solution")).unwrap();
-    assert_eq!(alch["giver"], json!("Nikko Canti"), "the hand-in that assigned it");
+    assert_eq!(alch["chainedFrom"], json!("Something Fishy"));
+    assert!(alch["giver"].is_null() && alch["zone"].is_null(), "{alch}");
+    assert!(alch["steps"][0].get("offered").is_none() && alch["steps"][0].get("talk").is_none());
     assert_eq!(alch["steps"][1]["offered"], json!(["Imp Blood", "Putrid Bile"]));
+    assert_eq!(alch["steps"][1]["lines"], json!(2), "two task lines in one second are one step of two lines");
     assert_eq!(alch["steps"].as_array().unwrap().len(), 2);
-    assert_eq!(alch["npcs"], json!(["Nikko Canti", "Dorian G`Wyn"]));
+    assert_eq!(alch["npcs"], json!(["Dorian G`Wyn"]));
 }
 
 #[test]
@@ -237,4 +259,59 @@ fn a_keyword_step_is_the_npc_that_spoke_or_the_one_that_answers() {
     let talk: Vec<String> = v["steps"][2]["talk"].as_array().unwrap().iter().map(|t| t["text"].as_str().unwrap().to_string()).collect();
     assert_eq!(talk.first().map(String::as_str), Some("dorian"));
     assert_eq!(talk.last().map(String::as_str), Some("Ya know, rat smell like rat."));
+}
+
+/// 2026-10-22 23:50:22, the owner's log in this order: the petition's hand-in updates Call for Aid,
+/// pays faction and experience, assigns Unfortunate news, then Lord Lyfyx answers. All of it is Call
+/// for Aid's last step; Unfortunate news is chained from it, with no giver or start zone of its own.
+#[test]
+fn a_task_assigned_by_another_quests_hand_in_is_chained_from_it() {
+    let mut q = played();
+    feed(
+        &mut q,
+        &[
+            (0, "You have been assigned the task 'Call for Aid'."),
+            (100, "ZONE:The Temple of Solusek Ro"),
+            (100, "You say, 'Hail, Lord Lyfyx of Burwood'"),
+            (208, "OFFER:Solusek Petition|Lord Lyfyx of Burwood"),
+            (220, "GIVEN:Ordination of Might"),
+            (220, "Your task 'Call for Aid' has been updated."),
+            (220, "Your faction standing with Nerius Trade Association has been adjusted by 150."),
+            (220, "You gain experience!"),
+            (220, "You have been assigned the task 'Unfortunate news'."),
+            (220, "Lord Lyfyx of Burwood says, 'A petition for aid against some unknown evil?'"),
+            (220, "TRADE:Lord Lyfyx of Burwood"),
+        ],
+    );
+    let aid = q.served(&quest_key("Call for Aid")).unwrap();
+    let last = &aid["steps"][1];
+    assert_eq!(last["next"], json!("Unfortunate news"));
+    assert_eq!(last["experience"], json!(true));
+    assert_eq!(last["factions"][0]["faction"], json!("Nerius Trade Association"));
+    let talk: Vec<_> = last["talk"].as_array().unwrap().iter().map(said).collect();
+    assert_eq!(talk.last(), Some(&("Lord Lyfyx of Burwood", "A petition for aid against some unknown evil?")));
+    let news = q.served(&quest_key("Unfortunate news")).unwrap();
+    assert_eq!(news["chainedFrom"], json!("Call for Aid"));
+    assert!(news["giver"].is_null() && news["zone"].is_null(), "{news}");
+    let first = &news["steps"][0];
+    assert!(first.get("npc").is_none() && first.get("talk").is_none() && first.get("given").is_none(), "{first}");
+}
+
+#[test]
+fn a_zone_change_ends_an_open_trade() {
+    let mut q = played();
+    feed(
+        &mut q,
+        &[
+            (0, "You have been assigned the task 'Call for Aid'."),
+            (10, "OFFER:Plea to Freeport|Sir Mollin"),
+            (20, "ZONE:North Freeport"),
+            (40, "You say, 'Hail, Guard Jup'"),
+            (41, "Guard Jup says, 'Move along.'"),
+            (42, "Your task 'Call for Aid' has been updated."),
+        ],
+    );
+    let step = &q.served(&quest_key("Call for Aid")).unwrap()["steps"][1];
+    assert!(step.get("offered").is_none(), "{step}");
+    assert_eq!(step["npc"], json!("Guard Jup"));
 }
