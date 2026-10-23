@@ -60,6 +60,11 @@ A page is a mob page only if its OWN text opens the template (indirect transclus
   named images). Upload: `Special:Upload&wpDestFile=<name>`. 6,364 of 7,954 mob pages name a file
   nobody uploaded (`mobs.json noImage`, from the cached file list).
 - **Loot lines**: `<li> {{:Item}} <span class='drare'>(Rare)</span> <span class='ddb'>[...]</span></li>`.
+  `{{:Item}}` TRANSCLUDES the item page (the colon is the main namespace; without it MediaWiki looks
+  for `Template:Item`): the row shows what the item page offers, such as its era pill
+  (`mobDropEra.ts`). `[[Item]]` is a plain link with the text only; drop GROUPS use it
+  (`[[Rusty Weapons]]`), since a group page is no item page. Both follow a redirect, so a loot line
+  naming a redirect title still lands on the item.
   Rarity bands (Help:Contents): Always 100%, Common >= 50%, Uncommon >= 25%, Rare >= 5%, Ultra Rare
   < 5%. The wiki's `ddb` holds loot-table data no log has; Gaps writes `[Overall: ~N%]`, the
   player's corpses over kills. The wiki writes one decimal (`25.0%`) on most pages.

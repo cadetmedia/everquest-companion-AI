@@ -446,6 +446,38 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   session's `images` folder (Claude Code in VS Code): describe it to the agent and ask the owner to
   re-send it after the reply, or to save the snip as a file and give its path.
 - Not built: the glyph-exact reader (D2); tesseract reads every fixture.
+- Picture root = live autoDir, else live lastDir, through `pictureRoot` (a kind's folder stands for
+  its parent; `lastDir` is saved as the root). Mob -> `<root>/npc`; item/lore ->
+  `<root>/item/item_<n>[_lore].png`; spell -> `<root>/spell/spell_<n>.png` (`keptPictureFile`). Item
+  and spell copies are overwritten with no prompt; `IPC.shotKeepPicture` answers `off` with no folder.
+- Held = `heldPicture`: the folder listing (`<root>/npc`, then `<root>`, any case) wins; a saved-store
+  entry whose path is in a listed folder but missing from it is not held. Main lists via
+  `IPC.shotFolderPictures`; `folderPicturesStore` re-reads on mount, focus, after save/delete/folder
+  change, and the overlay every 30 s. The player's files are never moved, renamed or deleted.
+- A capture's `Captured.png` is that window's crop (`windowPng`) and rides `CapturedRead.png`, so "Use it
+  anyway" keeps it too. Pictures are written after the reading is kept and never block it.
+- Overlay code imported by tests uses relative `shared/` imports, not `@shared` (`feedGapTags.ts`).
+- `shotIpc.ts catalogNames` includes each item's `otherNames` (wiki redirects).
+
+## Wiki redirects (cross-branch)
+
+- A redirect is a fact about the wiki, not about mobs: it applies to every catalog (owner, 2026-10-22,
+  after the 2026-10-18 ask was built for mobs only). The cached list
+  (`scripts/sources/cache/redirects/redirects.json`) becomes the `otherNames` of the record whose page
+  it lands on: mobs.json, items.json (every key of the page), spells.json; and every redirect to an
+  item page is a dropGroups.json alias. Target matched case-insensitively; a name with a record of its
+  own is never another's.
+- Writers (`scripts/sources/mobRedirects.ts`): scrape-mob-redirects (`--offline` re-applies the cache to
+  all four files), scrape-mobs, scrape-items, scrape-spells and scrape-drop-groups apply the cache on
+  write; the delta (scrape-delta-tool) folds the cache first, then applies it to items, spells and the
+  drop aliases (written only when a name changed).
+- Readers, each filling only FREE keys: engine `knowledge::gap_index` (Gaps item check, near-miss
+  candidates, event-feed offers), `knowledge::Corpus::item_db_key` (item answers), `gaps_keys::spell_keys`
+  (Gaps spell check, its own light parse of spells.json); app `itemsDb.buildItemDbIndex` (itemLookup,
+  character sheet), `itemOtherNames.itemsByAnyName` (gapItemMobs, gapItemForage, mobDropEra,
+  wornFocusIndex); `gapDrops.filedAs` reads a looted name through the aliases; `shotIpc` catalog names.
+- Not read: walks over every item (planner indexes, zone ports, clickies) keep the file's own map, so no
+  page is visited twice; Spells search leaves the redirect shorthand (`DT`, `Dmf`) out.
 
 ## Unassigned open items (no branch yet)
 
