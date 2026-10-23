@@ -40,6 +40,13 @@ creating the release runs nothing.
 
 ## Procedure
 
+**Two gates come first** (owner, 2026-10-22: "i never told you to release something, we should
+ALWAYS do a delta scrape before a release"): a release is cut only on the owner's explicit word to
+release, and only after a delta scrape has brought the data up to today's wiki. test.31 went out
+without either. Say "GitHub release" for this and "local build" for anything that stays on the
+owner's PC; ask "Publish GitHub release test.N now?" and wait (owner: "be specific about releases
+going forward ... say github release").
+
 Since 2026-10-08 a release is built and published by GitHub Actions
 (`.github/workflows/community-release.yml`) when a `community-<version>` tag is pushed, as the
 creator's releases are by `build.yml` on a `v*` tag. Nothing is built on the owner's machine. The

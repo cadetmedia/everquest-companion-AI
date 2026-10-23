@@ -11,6 +11,18 @@ owner's machine. `docs/community/RELEASING.md` is the full procedure and the rea
 checklist. Every install from test.20 on updates itself from the newest release, so a release
 reaches players within hours: only publish what the owner has asked for.
 
+## 0. Two gates before anything (owner, 2026-10-22, after test.31 went out without either)
+
+1. **Only on the owner's explicit word to make a GITHUB RELEASE.** "build it", "run it", "load it"
+   or a yes to a question about something else is not it. Always say "GitHub release" for this
+   (public, every tester's install updates) and "local build" for anything that stays on the
+   owner's PC (owner, 2026-10-22: "be specific about releases going forward ... say github
+   release"). Ask in one line: "Publish GitHub release test.N now (public, every install
+   updates)?" and wait.
+2. **A delta scrape first, always** (`docs/community/agent/DATA_REFRESH.md`; data on
+   `local-data-refresh`, gated and merged like any branch). A release ships the wiki as it stands
+   today, owner's and testers' edits included.
+
 ## 1. Before the tag
 
 1. **Read the previous `Test build` notes** (`git log --grep="^Test build 0.1.0-test." -2 test-neutering`):
