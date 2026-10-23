@@ -66,8 +66,11 @@ test('every key is canonical, and derived from the record it points at', () => {
     // addressable, pointing at the record under its CURRENT name — a log line or a share bundle
     // predating the rename must still resolve. Only a key the table names may miss the derivation.
     const fromRename = isRenamedItem(key) && itemKey(renameItemName(key)) === itemKey(entry.page)
+    // AND A WIKI REDIRECT (owner, 2026-10-22): a record's otherNames, the redirects that land on its
+    // page, are keys of it too (`wort pot` finds `10 Dose Potion of Stinging Wort`).
+    const fromRedirect = (entry.otherNames ?? []).some((n) => itemKey(n) === key)
     assert.ok(
-      fromTitle || fromName || fromBase || fromRename,
+      fromTitle || fromName || fromBase || fromRename || fromRedirect,
       `key ${key} matches neither page ${entry.page} nor name ${entry.name}`
     )
   }

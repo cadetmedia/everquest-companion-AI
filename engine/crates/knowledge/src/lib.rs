@@ -21,6 +21,7 @@
 //! wrong answer wearing a right one's clothes. A named gap, stated in the schema beside the op.
 
 pub mod images;
+mod item_other_names;
 pub mod items;
 pub mod mobs;
 pub mod names;
@@ -84,26 +85,6 @@ pub struct Corpus {
     announced: Mutex<HashSet<(String, String)>>,
 }
 
-/// Each record's `otherNames` under [`item_key`] → that record's own key, where the name is no key
-/// of its own (a redirect never displaces a record).
-fn other_name_keys(items: &Map<String, Value>) -> HashMap<String, String> {
-    let mut out = HashMap::new();
-    for (own, e) in items {
-        for other in e["otherNames"]
-            .as_array()
-            .into_iter()
-            .flatten()
-            .filter_map(Value::as_str)
-        {
-            let k = item_key(other);
-            if !k.is_empty() && !items.contains_key(&k) {
-                out.entry(k).or_insert_with(|| own.clone());
-            }
-        }
-    }
-    out
-}
-
 /// The process's corpus, built lazily and shared. A respawn is a launch, so there is no state to
 /// restore and no way to make a second one by accident.
 #[must_use]
@@ -133,7 +114,7 @@ impl Corpus {
         }
         let others = self
             .item_other_names
-            .get_or_init(|| other_name_keys(self.items()));
+            .get_or_init(|| item_other_names::other_name_keys(self.items()));
         others.get(&key).cloned().unwrap_or(key)
     }
 
@@ -424,26 +405,9 @@ impl Knowledge for Corpus {
 
 #[cfg(test)]
 mod tests {
-    use super::{other_name_keys, shared, Corpus, SEARCH_MAX_LIMIT};
+    use super::{shared, Corpus, SEARCH_MAX_LIMIT};
     use fold::knowledge::{Knowledge, NoOwnLoot, OwnLoot, SeenDrop};
     use serde_json::json;
-
-    #[test]
-    fn a_wiki_redirect_to_an_item_page_answers_for_the_item_but_never_displaces_another() {
-        // Owner, 2026-10-22: Halfling Blood redirects to Vial of Halfling Blood.
-        let items = serde_json::from_value(json!({
-            "vial of halfling blood": {"page": "Vial of Halfling Blood", "otherNames": ["Halfling Blood", "Rusty Mace"]},
-            "rusty mace": {"page": "Rusty Mace"}
-        }))
-        .unwrap();
-        let keys = other_name_keys(&items);
-        assert_eq!(
-            keys.get("halfling blood").map(String::as_str),
-            Some("vial of halfling blood")
-        );
-        assert_eq!(keys.get("rusty mace"), None);
-        assert_eq!(keys.len(), 1);
-    }
 
     struct Looted(Vec<SeenDrop>);
     impl OwnLoot for Looted {
