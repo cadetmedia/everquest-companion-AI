@@ -13,7 +13,8 @@
 // the one repair is Weight's decimal, which the game always prints and OCR loses (3 windows of 3).
 
 import { delevel } from './itemDelevel'
-import { CLASS_CODES, codeWords, deityText, editDistance, FLAG_WORDS, isDeityLine, RACE_CODES, SIZES, slotWord, snap, type Snapped } from './itemVocab'
+import { isTabRow, tabRowAt } from './itemTabRow'
+import { CLASS_CODES, codeWords, deityText, FLAG_WORDS, isDeityLine, RACE_CODES, SIZES, slotWord, snap, type Snapped } from './itemVocab'
 
 export interface ItemWindowRead {
   /** The coloured name line, a `+N` tier dropped. OCR may run words together; the caller's name wins. */
@@ -467,35 +468,6 @@ function statsLines(h: Head, g: Gathered): string[] {
   return out
 }
 
-/** The tab row reads as junk around `Description` (`| /~ SPDesciption 3, © [[ 4" “Lore`). */
-const TAB_ROW = /Des\w{0,4}ption/i
-
-/** A word OCR made of the tab label `Description`, within three letters (`Descriplic`). */
-const descriptionWord = (w: string): boolean => {
-  const t = w.toLowerCase().replace(/[^a-z]/g, '')
-  return t.length >= 7 && editDistance(t, 'description') <= 3
-}
-
-/**
- * The window's tab row: `Description` read whole, or slipped further with `Lore` on the same line
- * (owner's Petamorph Wand: Werewolf Lore tab, 2026-10-22: `VE A Descriplic y A rr Lore | hy.`).
- */
-export const isTabRow = (l: string): boolean => TAB_ROW.test(l) || (/\bLore\b/i.test(l) && l.split(/\s+/).some(descriptionWord))
-
-/** Lines the tab row can be: under the title bar, at the top of the window. */
-const TAB_ROW_TOP = 3
-
-/**
- * Where the tab row is: a line that reads as one anywhere, else a line near the top with a slipped
- * `Description` and nothing of `Lore` left (owner's enlarged Lore tab, 2026-10-22:
- * `Wr ~~ Descriplic TRVAC) N "ra . Coe:`). -1 for none.
- */
-export function tabRowAt(lines: readonly string[]): number {
-  const at = lines.findIndex(isTabRow)
-  if (at >= 0) return at
-  return lines.slice(0, TAB_ROW_TOP).findIndex((l) => l.split(/\s+/).some(descriptionWord))
-}
-
 /**
  * A lore line less what the frame leaves after its last sentence: the scrollbar read as `1`, `|`, `}`,
  * or its up arrow as a lone `t` (owner's Earring of Experimentation, 2026-10-23: `Attempt # 326 t`).
@@ -601,6 +573,8 @@ function raceAfter(lines: readonly string[], after: number): { line: string; end
   const at = lines.findIndex((l, i) => i > after && /\bRace\s*[:;.]?\s/i.test(l))
   return at < 0 ? undefined : listAt(lines, at, RACE_CODES)
 }
+
+export { isTabRow, tabRowAt }
 
 /** OCR lines of one item window (top to bottom) -> the page's fields. */
 export function readItemWindow(raw: readonly string[]): ItemWindowRead {

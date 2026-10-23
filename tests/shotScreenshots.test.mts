@@ -255,6 +255,14 @@ test("EARRING OF EXPERIMENTATION (THE OWNER'S CAPTURE, 2026-10-23): A SLIPPED FL
   assert.ok(!(await read('earring-of-experimentation-lore.png', textOnly)).read.name?.startsWith('_'))
 })
 
+test("PEERLESS SAPPHIRE'S LORE TAB (THE OWNER'S, 2026-10-23): A TAB ROW READ `D esc fp tion - ore Pp` IS STILL THE TAB ROW, TALL OR CROPPED", async () => {
+  for (const f of ['peerless-sapphire-lore.png', 'peerless-sapphire-lore-cropped.png']) {
+    const l = await read(f, textOnly)
+    assert.equal(l.read.lore, "You can't put a price on this. Thankfully.", f)
+    assert.equal(l.read.name, 'Peerless Sapphire', f)
+  }
+})
+
 test("WU'S FIST OF MASTERY +10 (AUGMENTED) (THE OWNER'S, 2026-10-21): THE +10 PATH, NO EXALTATION LINE, NO EFFECT AN EXALTATION GRANTS", async () => {
   const s = await read('wus-fist-of-mastery-10-augmented.png', textOnly)
   assert.equal(s.read.name, "Wu's Fist of Mastery")
