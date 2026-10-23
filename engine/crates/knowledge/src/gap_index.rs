@@ -1,6 +1,7 @@
 //! The gaps module's index off the committed corpora — see [`fold::knowledge::GapIndex`]. Apart
 //! from `lib.rs` so that file stays under its recorded size.
 
+use crate::mobs::MobIndex;
 use crate::names::item_key;
 use fold::knowledge::GapIndex;
 use serde_json::{Map, Value};
@@ -10,7 +11,7 @@ use serde_json::{Map, Value};
 /// A record's `otherNames` (the wiki redirects that land on its page) are keys of that page too:
 /// `Halfling Blood` redirects to `Vial of Halfling Blood`, so a looted Halfling Blood is known (owner,
 /// 2026-10-22: "no one told you to restrict it to mobs only").
-pub(crate) fn build(items: &Map<String, Value>, mob_names: &[String]) -> GapIndex {
+pub(crate) fn build(items: &Map<String, Value>, mobs: &MobIndex) -> GapIndex {
     let page = |k: &String, e: &Value| e["page"].as_str().unwrap_or(k).to_string();
     let item_pages = items
         .iter()
@@ -41,10 +42,10 @@ pub(crate) fn build(items: &Map<String, Value>, mob_names: &[String]) -> GapInde
         .collect();
     GapIndex {
         item_notices: item_notices(items),
-        mob_notices: mob_notices_in(crate::mobs::MOBS_JSON),
+        mob_notices: mob_notices_of(mobs.names().iter().filter_map(|n| mobs.entry(n))),
         item_pages,
         item_effects,
-        mob_names: mob_names.to_vec(),
+        mob_names: mobs.names().to_vec(),
     }
 }
 
@@ -72,12 +73,13 @@ fn item_notices(items: &Map<String, Value>) -> Vec<(String, String, Vec<String>)
 }
 
 /// Every name a mob page whose text carries a notice answers to: its `|name`, title and redirects.
-fn mob_notices_in(json: &str) -> Vec<(String, String, Vec<String>)> {
-    let file: Value = serde_json::from_str(json).unwrap_or(Value::Null);
+fn mob_notices_of<'a>(mobs: impl Iterator<Item = &'a Value>) -> Vec<(String, String, Vec<String>)> {
+    // The mob index answers each record under several names: each page once.
+    let mut pages = std::collections::HashSet::new();
     let mut out = Vec::new();
-    for m in file["mobs"].as_array().into_iter().flatten() {
+    for m in mobs {
         let notices = notices_of(m);
-        let Some(page) = m["page"].as_str().filter(|_| !notices.is_empty()) else {
+        let Some(page) = m["page"].as_str().filter(|p| !notices.is_empty() && pages.insert(p.to_string())) else {
             continue;
         };
         let others = m["otherNames"].as_array().into_iter().flatten().filter_map(Value::as_str);
@@ -89,7 +91,8 @@ fn mob_notices_in(json: &str) -> Vec<(String, String, Vec<String>)> {
 
 #[cfg(test)]
 mod tests {
-    use super::{build, mob_notices_in};
+    use super::{build, mob_notices_of};
+    use crate::mobs::MobIndex;
     use serde_json::{json, Map, Value};
 
     #[test]
@@ -100,7 +103,7 @@ mod tests {
             "rusty mace": {"page": "Rusty Mace"}
         }))
         .unwrap();
-        let index = build(&items, &[]);
+        let index = build(&items, &MobIndex::build());
         let pages: Vec<(&str, &str)> = index
             .item_pages
             .iter()
@@ -122,14 +125,16 @@ mod tests {
           {"page":"A Rotting Citizen","name":"a rotting citizen","notices":["delete","DNE"],"otherNames":["Rotting Citizen"]},
           {"page":"A bat","name":"a bat"}
         ]}"#;
-        let names: Vec<String> = mob_notices_in(mobs).into_iter().map(|(n, _, _)| n).collect();
+        let mobs: Value = serde_json::from_str(mobs).unwrap();
+        let records = mobs["mobs"].as_array().unwrap();
+        let names: Vec<String> = mob_notices_of(records.iter().chain(records.iter())).into_iter().map(|(n, _, _)| n).collect();
         assert_eq!(names, ["a rotting citizen", "A Rotting Citizen", "Rotting Citizen"]);
         let items: Map<String, Value> = serde_json::from_value(json!({
             "old thing": {"page": "Old Thing", "notices": ["delete: No longer in game"], "otherNames": ["Older Thing"]},
             "rusty mace": {"page": "Rusty Mace"}
         }))
         .unwrap();
-        let index = build(&items, &[]);
+        let index = build(&items, &MobIndex::build());
         let keys: Vec<(&str, &str)> = index.item_notices.iter().map(|(k, p, _)| (k.as_str(), p.as_str())).collect();
         assert_eq!(keys, [("old thing", "Old Thing"), ("older thing", "Old Thing")]);
         assert_eq!(index.item_notices[0].2, ["delete: No longer in game"]);

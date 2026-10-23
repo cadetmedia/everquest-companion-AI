@@ -27,7 +27,7 @@ use fold::knowledge::{OwnLoot, SeenDrop};
 use fold::modules::consider::mob_key;
 
 /// The scraped mob catalog — local source 1, the definitive drop table.
-pub(crate) const MOBS_JSON: &str = include_str!("../../../../src/renderer/src/data/eqlegends/mobs.json");
+const MOBS_JSON: &str = include_str!("../../../../src/renderer/src/data/eqlegends/mobs.json");
 /// The raid roster — the one place two spellings are stated to be one creature.
 const BOSSES_JSON: &str = include_str!("../../../../src/renderer/src/data/eqlegends/bosses.json");
 
