@@ -1,5 +1,5 @@
 {
- "updatedAt": "2026-10-23T05:02:44.136Z",
+ "updatedAt": "2026-10-23T09:44:10.368Z",
  "redirects": [
   {
    "from": "1 Hand Blunt",
@@ -17256,6 +17256,14 @@
   {
    "from": "Westwastes",
    "to": "Western Wastes"
+  },
+  {
+   "from": "What's going on here?",
+   "to": "What's going on here"
+  },
+  {
+   "from": "What`s going on here?",
+   "to": "What's going on here"
   },
   {
    "from": "Whip of strangulation",

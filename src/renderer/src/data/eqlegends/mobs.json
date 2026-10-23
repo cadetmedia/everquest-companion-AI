@@ -1,5 +1,5 @@
 {
-  "scrapedAt": "2026-10-23T05:02:44.127Z",
+  "scrapedAt": "2026-10-23T09:44:10.359Z",
   "source": "eqlwiki.com — Category:NPCs/Named Mobs/Merchants/Raid Encounters ∪ embeddedin Template:Namedmobpage/MerchantPage, filtered to pages opening a mob template + recentchanges delta (scripts/scrape-delta.mts)",
   "mobs": [
     {
@@ -20376,6 +20376,26 @@
       "noImage": true
     },
     {
+      "page": "A ghost gill",
+      "eraTag": "Classic",
+      "name": "a ghost gill",
+      "level": "5-15",
+      "zones": [
+        "Lake Nerius"
+      ],
+      "drops": [
+        "Defiled Fish Scales",
+        "Fish Scales"
+      ],
+      "loc": [
+        {
+          "ns": 2512,
+          "ew": 1351
+        }
+      ],
+      "image": "npc_a_ghost_gill.png"
+    },
+    {
       "page": "A Ghostly Ancille",
       "eraTag": "Classic",
       "name": "a ghostly ancille",
@@ -21673,8 +21693,7 @@
       "drops": [
         "Spider Silk"
       ],
-      "image": "npc_a_giant_widow.png",
-      "noImage": true
+      "image": "npc_a_giant_widow.png"
     },
     {
       "page": "A giant wood spider",
@@ -30397,6 +30416,22 @@
       "image": "npc_a_hulking_gorilla.png"
     },
     {
+      "page": "A human ghost",
+      "eraTag": "Classic",
+      "name": "a human ghost",
+      "level": "10-11",
+      "zones": [
+        "Lake Nerius"
+      ],
+      "loc": [
+        {
+          "ns": -1050,
+          "ew": 880
+        }
+      ],
+      "image": "npc_a_human_ghost.png"
+    },
+    {
       "page": "A human skeleton",
       "eraTag": "Kunark",
       "name": "a human skeleton",
@@ -38647,6 +38682,39 @@
       "noImage": true
     },
     {
+      "page": "A Nektulos spiderling",
+      "eraTag": "Classic",
+      "name": "a Nektulos spiderling",
+      "level": "4",
+      "zones": [
+        "Lake Nerius"
+      ],
+      "drops": [
+        "Spider Legs",
+        "Spiderling Eye",
+        "Spiderling Legs",
+        "Spiderling Silk"
+      ],
+      "image": "npc_a_nektulos_spiderling.png",
+      "noImage": true
+    },
+    {
+      "page": "A Nektulos widow",
+      "eraTag": "Classic",
+      "name": "a Nektulos widow",
+      "level": "7-8",
+      "zones": [
+        "Lake Nerius"
+      ],
+      "loc": [
+        {
+          "ns": 868,
+          "ew": 884
+        }
+      ],
+      "image": "npc_a_nektulos_widow.png"
+    },
+    {
       "page": "A Neriad Maiden",
       "eraTag": "Velious",
       "name": "a neriad maiden",
@@ -41890,12 +41958,7 @@
         "Fire Beetle Leg",
         "Fire Beetle Carapace"
       ],
-      "image": "npc_a_pyre_beetle.png",
-      "notices": [
-        "delete",
-        "DNE"
-      ],
-      "noImage": true
+      "image": "npc_a_pyre_beetle.png"
     },
     {
       "page": "A Pyre Golem",
@@ -97379,6 +97442,19 @@
       "image": "npc_corrupted_hill_giant.png"
     },
     {
+      "page": "Corrupted Kedgespawn",
+      "eraTag": "Classic",
+      "name": "Corrupted Kedgespawn",
+      "level": "55",
+      "zones": [
+        "Lake Nerius"
+      ],
+      "drops": [
+        "Ancient Signet Ring of House Everling"
+      ],
+      "image": "npc_corrupted_kedgespawn.png"
+    },
+    {
       "page": "Corrupted seafury cyclops",
       "eraTag": "Classic",
       "name": "corrupted seafury cyclops",
@@ -104924,6 +105000,19 @@
       "noImage": true
     },
     {
+      "page": "Discarded Experiment",
+      "eraTag": "Classic",
+      "name": "Discarded Experiment",
+      "level": "15",
+      "zones": [
+        "Lake Nerius"
+      ],
+      "drops": [
+        "Earring of Experimentation"
+      ],
+      "image": "npc_discarded_experiment.png"
+    },
+    {
       "page": "Disciple Okarote",
       "eraTag": "Classic",
       "name": "Disciple Okarote",
@@ -106015,6 +106104,22 @@
       ],
       "image": "npc_dorg_mcmerin.png",
       "noImage": true
+    },
+    {
+      "page": "Dorian G`Wyn",
+      "eraTag": "Classic",
+      "name": "Dorian G`Wyn",
+      "level": "50",
+      "zones": [
+        "Lake Nerius"
+      ],
+      "loc": [
+        {
+          "ns": -110,
+          "ew": 65
+        }
+      ],
+      "image": "npc_dorian_g`wyn.png"
     },
     {
       "page": "Doriggan",
@@ -129563,8 +129668,7 @@
         "10",
         "10"
       ],
-      "image": "npc_guard_corpillius.png",
-      "noImage": true
+      "image": "npc_guard_corpillius.png"
     },
     {
       "page": "Guard Corshin",
@@ -129781,6 +129885,25 @@
       ],
       "image": "npc_guard_d`bious.png",
       "noImage": true
+    },
+    {
+      "page": "Guard D`Drash",
+      "eraTag": "Classic",
+      "name": "Guard D`Drash",
+      "level": "50",
+      "zones": [
+        "Lake Nerius"
+      ],
+      "drops": [
+        "Long Sword"
+      ],
+      "loc": [
+        {
+          "ns": -525,
+          "ew": -1180
+        }
+      ],
+      "image": "npc_guard_d`drash.png"
     },
     {
       "page": "Guard D`Unnar",
@@ -135238,6 +135361,25 @@
       "noImage": true
     },
     {
+      "page": "Guard L`Jer",
+      "eraTag": "Classic",
+      "name": "Guard L`Jer",
+      "level": "50",
+      "zones": [
+        "Lake Nerius"
+      ],
+      "drops": [
+        "Long Sword"
+      ],
+      "loc": [
+        {
+          "ns": -399,
+          "ew": -1077
+        }
+      ],
+      "image": "npc_guard_l`jer.png"
+    },
+    {
       "page": "Guard Lammel",
       "name": "Guard Lammel",
       "level": "55",
@@ -139036,6 +139178,29 @@
       "noImage": true
     },
     {
+      "page": "Guard S`Tal",
+      "eraTag": "Classic",
+      "name": "Guard S`Tal",
+      "level": "50",
+      "zones": [
+        "Lake Nerius"
+      ],
+      "drops": [
+        "Long Sword"
+      ],
+      "loc": [
+        {
+          "ns": 1838,
+          "ew": 145
+        },
+        {
+          "ns": 1709,
+          "ew": 48
+        }
+      ],
+      "image": "npc_guard_s`tal.png"
+    },
+    {
       "page": "Guard Sara",
       "eraTag": "Classic",
       "name": "Guard Sara",
@@ -140358,6 +140523,26 @@
         "10"
       ],
       "image": "npc_guard_t`quetal.png"
+    },
+    {
+      "page": "Guard Ta`Dalk",
+      "eraTag": "Classic",
+      "name": "Guard Ta`Dalk",
+      "level": "50",
+      "zones": [
+        "Lake Nerius"
+      ],
+      "drops": [
+        "Long Sword"
+      ],
+      "loc": [
+        {
+          "ns": 2454,
+          "ew": -124
+        }
+      ],
+      "image": "npc_guard_ta`dalk.png",
+      "noImage": true
     },
     {
       "page": "Guard Taalen",
@@ -146469,6 +146654,22 @@
       ],
       "image": "npc_mitty.png",
       "noImage": true
+    },
+    {
+      "page": "High Priestess of Ulkorruuk",
+      "eraTag": "Classic",
+      "name": "High Priestess of Ulkorruuk",
+      "level": "65",
+      "zones": [
+        "Plane of Hate"
+      ],
+      "loc": [
+        {
+          "ns": -103,
+          "ew": 294
+        }
+      ],
+      "image": "npc_high_priestess_of_ulkorruuk.png"
     },
     {
       "page": "High Scale Kirn",
@@ -161301,6 +161502,22 @@
       "noImage": true
     },
     {
+      "page": "Konro Strongfoot",
+      "eraTag": "Classic",
+      "name": "Konro Strongfoot",
+      "level": "50",
+      "zones": [
+        "Lake Nerius"
+      ],
+      "loc": [
+        {
+          "ns": -322,
+          "ew": 251
+        }
+      ],
+      "image": "npc_konro_strongfoot.png"
+    },
+    {
       "page": "Korakaz",
       "eraTag": "Velious",
       "name": "Korakaz",
@@ -170257,7 +170474,7 @@
     },
     {
       "page": "Lord Lyfyx of Burwood",
-      "eraTag": "Temple",
+      "eraTag": "Classic",
       "name": "Lord Lyfyx of Burwood",
       "level": "45",
       "zones": [
@@ -170283,8 +170500,7 @@
         "-30",
         "10"
       ],
-      "image": "npc_lord_lyfyx_of_burwood.png",
-      "noImage": true
+      "image": "npc_lord_lyfyx_of_burwood.png"
     },
     {
       "page": "Lord Nagafen",
@@ -182211,6 +182427,22 @@
       "noImage": true
     },
     {
+      "page": "Neuven F`Lok",
+      "eraTag": "Classic",
+      "name": "Neuven F`Lok",
+      "level": "60",
+      "zones": [
+        "Lake Nerius"
+      ],
+      "loc": [
+        {
+          "ns": -40,
+          "ew": 135
+        }
+      ],
+      "image": "npc_neuven_f`lok.png"
+    },
+    {
       "page": "Nexona",
       "eraTag": "Kunark",
       "name": "Nexona",
@@ -182536,6 +182768,22 @@
       ],
       "image": "npc_nikina_sparlek.png",
       "noImage": true
+    },
+    {
+      "page": "Nikko Canti",
+      "eraTag": "Classic",
+      "name": "Nikko Canti",
+      "level": "50",
+      "zones": [
+        "Lake Nerius"
+      ],
+      "loc": [
+        {
+          "ns": 2470,
+          "ew": 1425
+        }
+      ],
+      "image": "npc_nikko_canti.png"
     },
     {
       "page": "Nilham the Chef",
@@ -196034,6 +196282,21 @@
       ],
       "image": "npc_resron_silvern.png",
       "noImage": true
+    },
+    {
+      "page": "Retainer Ozval",
+      "name": "Retainer Ozval",
+      "zones": [
+        "Lake Nerius"
+      ],
+      "loc": [
+        {
+          "ns": 201,
+          "ew": -97,
+          "z": -7
+        }
+      ],
+      "image": "npc_retainer_ozval.png"
     },
     {
       "page": "Retlon Brenclog",
@@ -210859,8 +211122,7 @@
         "10",
         "10"
       ],
-      "image": "npc_sir_mollin.png",
-      "noImage": true
+      "image": "npc_sir_mollin.png"
     },
     {
       "page": "Sir Morgan",
@@ -222283,6 +222545,22 @@
         "Ale"
       ],
       "noImage": true
+    },
+    {
+      "page": "The Great Zultor",
+      "eraTag": "Classic",
+      "name": "The Great Zultor",
+      "level": "50",
+      "zones": [
+        "Lake Nerius"
+      ],
+      "loc": [
+        {
+          "ns": -319,
+          "ew": 141
+        }
+      ],
+      "image": "npc_the_great_zultor.png"
     },
     {
       "page": "The guard captain",
