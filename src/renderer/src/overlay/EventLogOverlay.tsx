@@ -50,7 +50,7 @@ import { FOOTER_ROW, OverlayContent } from './overlayScale'
 import { TextScaleStepper } from './TextScaleStepper'
 import { useOverlayChrome, type OverlayChrome } from './useOverlayChrome'
 import { OverlayHeader } from './OverlayHeader'
-import { useDoneKeys } from '../features/gaps/doneMarksStore'
+import { useDoneKeys, useMarkedPlayers } from '../features/gaps/doneMarksStore'
 import { hiddenKeep, screenshotLabel } from './feedGapTags'
 
 const GOLD = '#d9b25f'
@@ -166,7 +166,7 @@ function previewItemOf(e: FeedEvent): string | undefined {
 
 /** The Wiki Gaps mark on a row: missing, no picture, or KEEP (feedGapTags.ts). */
 function UnknownTag({ e }: { e: FeedEvent }): JSX.Element | null {
-  const label = screenshotLabel(e, useDoneKeys())
+  const label = screenshotLabel(e, useDoneKeys(), useMarkedPlayers())
   if (label === undefined) return null
   return (
     <span

@@ -36,8 +36,7 @@ impl EventFeedModule {
             detail: None,
             page: None,
             con: None,
-            unknown: false,
-            needs_image: false,
+            marks: super::FeedMarks::default(),
         });
     }
 }
