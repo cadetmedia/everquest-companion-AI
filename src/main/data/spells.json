@@ -54,6 +54,9 @@
       "mana": 5,
       "effects": [
         "Increase STR by 25"
+      ],
+      "otherNames": [
+        "Ab. of Strength Recourse"
       ]
     },
     {
@@ -345,6 +348,9 @@
         "Increase Max Hitpoints by 1100",
         "Increase HP when cast by 1100",
         "Increase AC by 54"
+      ],
+      "otherNames": [
+        "Aego"
       ]
     },
     {
@@ -1295,6 +1301,9 @@
       "effects": [
         "Increase Hitpoints by 2 per tick",
         "Increase ATK by 10"
+      ],
+      "otherNames": [
+        "Aob"
       ]
     },
     {
@@ -4193,6 +4202,9 @@
       "mana": 500,
       "effects": [
         "Summon PC"
+      ],
+      "otherNames": [
+        "CotH"
       ]
     },
     {
@@ -4212,6 +4224,10 @@
       "mana": 200,
       "effects": [
         "Increase ATK by 40"
+      ],
+      "otherNames": [
+        "CotP",
+        "Cotp"
       ]
     },
     {
@@ -4443,6 +4459,9 @@
       "effects": [
         "Decrease Hitpoints by 148",
         "Increase Mana by 81 (L58) to 82 (L60)"
+      ],
+      "otherNames": [
+        "Cannibalize 4"
       ]
     },
     {
@@ -4462,6 +4481,9 @@
         "Increase Hitpoints by 11 per tick (L55) to 12 per tick (L60)",
         "Increase Mana by 12 per tick (L55) to 13 per tick (L60)",
         "Decrease Stamina Loss by 10"
+      ],
+      "otherNames": [
+        "Cantana of Replenishment"
       ]
     },
     {
@@ -4483,7 +4505,10 @@
         "Increase Mana by 5 per tick",
         "Decrease Stamina Loss by 4"
       ],
-      "instrumentEnhanced": "Required"
+      "instrumentEnhanced": "Required",
+      "otherNames": [
+        "Cantana of Soothing"
+      ]
     },
     {
       "name": "Captain Nalot's Quickening",
@@ -4502,6 +4527,9 @@
       "mana": 0,
       "effects": [
         "Increase Attack Speed by 20%"
+      ],
+      "otherNames": [
+        "Captain Nalots Quickening"
       ]
     },
     {
@@ -4776,6 +4804,10 @@
       "mana": 0,
       "effects": [
         "Decrease Hitpoints by 25000"
+      ],
+      "otherNames": [
+        "DT",
+        "Death Touch"
       ]
     },
     {
@@ -4987,6 +5019,9 @@
         "Decrease STR by 50",
         "Decrease AC by 19 (L56) to 21 (L60)",
         "Decrease Hitpoints by 100 per tick"
+      ],
+      "otherNames": [
+        "Cessation of the Blood"
       ]
     },
     {
@@ -5330,6 +5365,9 @@
         "Decrease STR by 7 (L12) to 10 (L18)",
         "Decrease AGI by 7 (L12) to 10 (L18)",
         "Decrease Hitpoints by 12 per tick"
+      ],
+      "otherNames": [
+        "Choking"
       ]
     },
     {
@@ -5616,6 +5654,9 @@
       "mana": 300,
       "effects": [
         "Teleport group to -2706,-1494,-4 in North Karana"
+      ],
+      "otherNames": [
+        "Circle of Karana"
       ]
     },
     {
@@ -5850,6 +5891,9 @@
       "mana": 75,
       "effects": [
         "Increase Mana by 4 per tick (L29) to 7 per tick (L60)"
+      ],
+      "otherNames": [
+        "C"
       ]
     },
     {
@@ -5868,6 +5912,11 @@
       "mana": 115,
       "effects": [
         "Increase Mana by 11 per tick"
+      ],
+      "otherNames": [
+        "C2",
+        "Clarity 2",
+        "Clarity2"
       ]
     },
     {
@@ -7414,6 +7463,12 @@
         "See Invisible(1)",
         "Levitate(2)",
         "Increase Poison Resist by 64 (L44) to 70 (L50)"
+      ],
+      "otherNames": [
+        "DMF",
+        "DMf",
+        "DmF",
+        "Dmf"
       ]
     },
     {
@@ -8913,6 +8968,9 @@
       "mana": 162,
       "effects": [
         "Decrease Hitpoints by 582"
+      ],
+      "otherNames": [
+        "Spell: Dustdevil"
       ]
     },
     {
@@ -8931,6 +8989,9 @@
       "mana": 162,
       "effects": [
         "Decrease Hitpoints by 582"
+      ],
+      "otherNames": [
+        "Spell: Dustdevil"
       ]
     },
     {
@@ -10110,6 +10171,9 @@
       "mana": 325,
       "effects": [
         "Summon Item: Enchanted Lrg. Brick of Adamantite"
+      ],
+      "otherNames": [
+        "Enchant: Adamantite"
       ]
     },
     {
@@ -10157,6 +10221,9 @@
       "mana": 75,
       "effects": [
         "Summon Item: Enchanted Electrum Bar"
+      ],
+      "otherNames": [
+        "Enchant: Electrum"
       ]
     },
     {
@@ -10173,6 +10240,9 @@
       "mana": 150,
       "effects": [
         "Summon Item: Enchanted Gold Bar"
+      ],
+      "otherNames": [
+        "Enchant: Gold"
       ]
     },
     {
@@ -10204,6 +10274,9 @@
       "mana": 225,
       "effects": [
         "Summon Item: Enchanted Platinum Bar"
+      ],
+      "otherNames": [
+        "Enchant: Platinum"
       ]
     },
     {
@@ -10220,6 +10293,9 @@
       "mana": 60,
       "effects": [
         "Summon Item: Enchanted Silver Bar"
+      ],
+      "otherNames": [
+        "Enchant: Silver"
       ]
     },
     {
@@ -10251,6 +10327,9 @@
       "mana": 200,
       "effects": [
         "Summon Item: Enchanted Velium Bar"
+      ],
+      "otherNames": [
+        "Enchant: Velium"
       ]
     },
     {
@@ -10921,6 +11000,9 @@
       "effects": [
         "Decrease Mana by 750",
         "Evacuate to -150,-1,-1 in same zone"
+      ],
+      "otherNames": [
+        "EVAC"
       ]
     },
     {
@@ -11784,6 +11866,9 @@
       "mana": 60,
       "effects": [
         "Feign Death"
+      ],
+      "otherNames": [
+        "Feigned"
       ]
     },
     {
@@ -12701,6 +12786,9 @@
       "mana": 0,
       "effects": [
         "Increase Mana by 1 per tick"
+      ],
+      "otherNames": [
+        "Flowing Thought"
       ]
     },
     {
@@ -12817,6 +12905,10 @@
         "Increase HP when cast by 405",
         "Increase STR by 67",
         "Increase DEX by 60"
+      ],
+      "otherNames": [
+        "FoS",
+        "Fos"
       ]
     },
     {
@@ -13823,6 +13915,9 @@
       "mana": 415,
       "effects": [
         "Decrease Hitpoints by 720"
+      ],
+      "otherNames": [
+        "Gangrenous Touch of Zum'uul"
       ]
     },
     {
@@ -14009,6 +14104,9 @@
       "effects": [
         "Increase Max Mana by 150",
         "Increase Mana by 2 per tick"
+      ],
+      "otherNames": [
+        "Gob"
       ]
     },
     {
@@ -14261,6 +14359,9 @@
       "effects": [
         "Decrease Hitpoints by 242 (L36) to 270 (L50)",
         "Toss Up(100)"
+      ],
+      "otherNames": [
+        "Gflux"
       ]
     },
     {
@@ -14763,6 +14864,9 @@
       "mana": 200,
       "effects": [
         "Increase Magic Resist by 54 (L49) to 55 (L50)"
+      ],
+      "otherNames": [
+        "GRM"
       ]
     },
     {
@@ -15730,6 +15834,10 @@
       "mana": 450,
       "effects": [
         "Decrease Hitpoints by 2000"
+      ],
+      "otherNames": [
+        "Giant bane",
+        "Giantbane"
       ]
     },
     {
@@ -16015,6 +16123,9 @@
       "mana": 50,
       "effects": [
         "Identify"
+      ],
+      "otherNames": [
+        "Identified"
       ]
     },
     {
@@ -16169,6 +16280,9 @@
       "effects": [
         "Illusion: 60",
         "Increase Fire Resist by 25"
+      ],
+      "otherNames": [
+        "Illusion: Drybone"
       ]
     },
     {
@@ -16285,6 +16399,9 @@
       "mana": 10,
       "effects": [
         "Illusion: 12"
+      ],
+      "otherNames": [
+        "Illusion Gnome"
       ]
     },
     {
@@ -16322,6 +16439,9 @@
       "mana": 10,
       "effects": [
         "Illusion: 7"
+      ],
+      "otherNames": [
+        "Illusion: Half Elf"
       ]
     },
     {
@@ -17626,7 +17746,10 @@
       "msgCastOnOther": "Someone 's feet adhere to the ground.",
       "msgWearsOff": "Your feet come free. Cleric Spell Vendors Enchanter Spell Vendors Necromancer Spell Vendors Paladin Spell Vendors Shaman Spell Vendors Wizard Spell Vendors",
       "illusion": false,
-      "mana": 60
+      "mana": 60,
+      "otherNames": [
+        "Enstill"
+      ]
     },
     {
       "name": "Instrument of Nife",
@@ -17850,6 +17973,10 @@
       "mana": 30,
       "effects": [
         "Invisibility versus Animals"
+      ],
+      "otherNames": [
+        "Invisibility to Animals",
+        "Invisibility vs Animals"
       ]
     },
     {
@@ -17868,6 +17995,10 @@
       "mana": 30,
       "effects": [
         "Invisibility versus Animals"
+      ],
+      "otherNames": [
+        "Invisibility to Animals",
+        "Invisibility vs Animals"
       ]
     },
     {
@@ -17887,6 +18018,10 @@
       "mana": 40,
       "effects": [
         "Invisibility versus Undead"
+      ],
+      "otherNames": [
+        "IVU",
+        "Invisibility vs Undead"
       ]
     },
     {
@@ -17906,6 +18041,10 @@
       "mana": 30,
       "effects": [
         "Invisibility(1)"
+      ],
+      "otherNames": [
+        "IVU",
+        "Invisibility vs Undead"
       ]
     },
     {
@@ -18215,7 +18354,10 @@
         "Increase Attack Speed by 16% (L7) to 25% (L40)",
         "Increase AC by 2 (L7) to 10 (L60)"
       ],
-      "instrumentEnhanced": "Yes (haste is not increased)"
+      "instrumentEnhanced": "Yes (haste is not increased)",
+      "otherNames": [
+        "Jonathan's Whistling Warsong"
+      ]
     },
     {
       "name": "JourneymanBoots",
@@ -18268,6 +18410,9 @@
       "mana": 24,
       "effects": [
         "Summon Pet: Level 5 Animation"
+      ],
+      "otherNames": [
+        "Juli`s Animation"
       ]
     },
     {
@@ -18625,7 +18770,10 @@
         "Decrease Movement Speed by 52% (L51) to 61% (L60)",
         "Decrease AGI by 45 (L51) to 50 (L60)"
       ],
-      "instrumentEnhanced": "Yes"
+      "instrumentEnhanced": "Yes",
+      "otherNames": [
+        "Largo's Assonant Binding"
+      ]
     },
     {
       "name": "Largo's Melodic Binding",
@@ -19480,6 +19628,9 @@
       "effects": [
         "Decrease Fire Resist by 6",
         "Decrease Cold Resist by 6"
+      ],
+      "otherNames": [
+        "Lower Element"
       ]
     },
     {
@@ -19978,6 +20129,9 @@
         "Decrease Magic Resist by 15 (L19) to 20 (L28)",
         "Decrease Poison Resist by 15 (L19) to 20 (L28)",
         "Decrease Fire Resist by 15 (L19) to 20 (L28)"
+      ],
+      "otherNames": [
+        "Malise"
       ]
     },
     {
@@ -20000,6 +20154,9 @@
         "Decrease Magic Resist by 37 (L34) to 40 (L40)",
         "Decrease Poison Resist by 37 (L34) to 40 (L40)",
         "Decrease Fire Resist by 37 (L34) to 40 (L40)"
+      ],
+      "otherNames": [
+        "Malisement"
       ]
     },
     {
@@ -20392,6 +20549,9 @@
       "mana": 150,
       "effects": [
         "Increase STR by 68"
+      ],
+      "otherNames": [
+        "Manicial Strength"
       ]
     },
     {
@@ -20947,7 +21107,10 @@
         "Increase STR by 15 (L42) to 21 (L60)",
         "Increase AC by 6 (L42) to 9 (L60)"
       ],
-      "instrumentEnhanced": "Yes (not attack speed)"
+      "instrumentEnhanced": "Yes (not attack speed)",
+      "otherNames": [
+        "McVaxius Berserker Crescendo"
+      ]
     },
     {
       "name": "McVaxius' Rousing Rondo",
@@ -21141,6 +21304,9 @@
       "effects": [
         "Mesmerize (2/55)",
         "Memblur(1%)"
+      ],
+      "otherNames": [
+        "MEZ"
       ]
     },
     {
@@ -21548,6 +21714,9 @@
       "mana": 200,
       "effects": [
         "Summon Item: Summoned: Modulating Rod"
+      ],
+      "otherNames": [
+        "Mod rod"
       ]
     },
     {
@@ -21566,6 +21735,9 @@
       "effects": [
         "Decrease Hitpoints by 225",
         "Increase Mana by 150"
+      ],
+      "otherNames": [
+        "Modulate"
       ]
     },
     {
@@ -21778,6 +21950,9 @@
       "mana": 100,
       "effects": [
         "Summon Item: Summoned: Muzzle of Mardu"
+      ],
+      "otherNames": [
+        "Summon: Muzzle of Mardu"
       ]
     },
     {
@@ -21925,6 +22100,9 @@
       "mana": 600,
       "effects": [
         "Summon Pet: DruidPet"
+      ],
+      "otherNames": [
+        "Nature Walker's Behest"
       ]
     },
     {
@@ -22019,6 +22197,9 @@
       "mana": 400,
       "effects": [
         "Increase Hitpoints by 880"
+      ],
+      "otherNames": [
+        "Natures Touch"
       ]
     },
     {
@@ -23650,6 +23831,10 @@
       "mana": 450,
       "effects": [
         "Decrease Hitpoints by 2000"
+      ],
+      "otherNames": [
+        "Dragon bane",
+        "Dragonbane"
       ]
     },
     {
@@ -23727,6 +23912,9 @@
         "Increase Disease Counter by 9",
         "Decrease Hitpoints by 111 per tick",
         "Decrease HP when cast by 90"
+      ],
+      "otherNames": [
+        "Pox of Bertox"
       ]
     },
     {
@@ -23770,6 +23958,9 @@
         "Increase AGI by 20",
         "Increase STR by 20",
         "Increase DEX by 20"
+      ],
+      "otherNames": [
+        "PE"
       ]
     },
     {
@@ -23982,6 +24173,10 @@
         "Increase Max Hitpoints by 470 (L60)",
         "Increase HP when cast by 470 (L60)",
         "Increase Mana by 6 per tick"
+      ],
+      "otherNames": [
+        "PotG",
+        "Potg"
       ]
     },
     {
@@ -25474,6 +25669,9 @@
       "mana": 700,
       "effects": [
         "Resurrect and restore 90% experience"
+      ],
+      "otherNames": [
+        "REZ"
       ]
     },
     {
@@ -25616,6 +25814,9 @@
       "mana": 150,
       "effects": [
         "Teleport group to -2135,1984,3 in Butcherblock Mountains"
+      ],
+      "otherNames": [
+        "Ring of Butcher"
       ]
     },
     {
@@ -25783,6 +25984,9 @@
       "mana": 150,
       "effects": [
         "Teleport group to -2706,-1494,-4 in North Karana"
+      ],
+      "otherNames": [
+        "Ring of Karana"
       ]
     },
     {
@@ -26138,6 +26342,9 @@
       "mana": 41,
       "effects": [
         "UNKNOWN CALC 111 base 27 max 55 attrib Absorb Damage"
+      ],
+      "otherNames": [
+        "Rune 1"
       ]
     },
     {
@@ -26157,6 +26364,9 @@
       "mana": 83,
       "effects": [
         "UNKNOWN CALC 112 base 71 max 118 attrib Absorb Damage"
+      ],
+      "otherNames": [
+        "Rune 2"
       ]
     },
     {
@@ -26176,6 +26386,9 @@
       "mana": 149,
       "effects": [
         "UNKNOWN CALC 113 base 168 max 230 attrib Absorb Damage"
+      ],
+      "otherNames": [
+        "Rune 3"
       ]
     },
     {
@@ -26195,6 +26408,9 @@
       "mana": 236,
       "effects": [
         "UNKNOWN CALC 114 base 305 max 394 attrib Absorb Damage"
+      ],
+      "otherNames": [
+        "Rune 4"
       ]
     },
     {
@@ -26213,6 +26429,9 @@
       "mana": 350,
       "effects": [
         "Increase Absorb Damage by 620 (L52) to 700 (L60)"
+      ],
+      "otherNames": [
+        "Rune 5"
       ]
     },
     {
@@ -26860,6 +27079,9 @@
       "mana": 25,
       "effects": [
         "See Invisible"
+      ],
+      "otherNames": [
+        "See invis"
       ]
     },
     {
@@ -29299,6 +29521,9 @@
         "Increase AGI by 40",
         "Decrease Stamina Loss by 3",
         "Increase AC by 12"
+      ],
+      "otherNames": [
+        "SOS"
       ]
     },
     {
@@ -29948,6 +30173,11 @@
       "mana": 40,
       "effects": [
         "Increase Movement Speed by 30% (L1) to 55% (L50)"
+      ],
+      "otherNames": [
+        "SoW",
+        "Sow",
+        "Spirit of the Wolf"
       ]
     },
     {
@@ -32315,6 +32545,10 @@
       "mana": 250,
       "effects": [
         "Increase Attack Speed by 60%"
+      ],
+      "otherNames": [
+        "Sltw",
+        "Spell: Swift Like The Wind"
       ]
     },
     {
@@ -32334,6 +32568,10 @@
       "mana": 250,
       "effects": [
         "Increase Attack Speed by 60%"
+      ],
+      "otherNames": [
+        "Sltw",
+        "Spell: Swift Like The Wind"
       ]
     },
     {
@@ -33661,6 +33899,9 @@
       "effects": [
         "Stun for 5.0* seconds (*some player-cast stuns are capped at 4 seconds)",
         "Decrease Hitpoints by 260"
+      ],
+      "otherNames": [
+        "Tishan's Discord"
       ]
     },
     {
@@ -33699,6 +33940,9 @@
       "mana": 147,
       "effects": [
         "Decrease Hitpoints by 207 (L34) to 220 (L39)"
+      ],
+      "otherNames": [
+        "Torbas Acid Blast"
       ]
     },
     {
@@ -33989,6 +34233,9 @@
       "mana": 200,
       "effects": [
         "Translocate to 1,0,0 in bind"
+      ],
+      "otherNames": [
+        "TL"
       ]
     },
     {
@@ -34329,6 +34576,9 @@
       "mana": 225,
       "effects": [
         "Translocate to -3040,-3032,28 in wakening"
+      ],
+      "otherNames": [
+        "Translocate: Wakening Land"
       ]
     },
     {
@@ -34806,6 +35056,9 @@
       "mana": 600,
       "effects": [
         "Summon Pet: SumHammer"
+      ],
+      "otherNames": [
+        "Unswerving Hammer of Faith"
       ]
     },
     {
@@ -35264,6 +35517,10 @@
         "Increase AGI by 40",
         "Increase DEX by 25",
         "Increase ATK by 20"
+      ],
+      "otherNames": [
+        "VOG",
+        "Vog"
       ]
     },
     {
@@ -35328,6 +35585,9 @@
       "mana": 300,
       "effects": [
         "Summon Pet: SumWaterR13"
+      ],
+      "otherNames": [
+        "Vocarate water"
       ]
     },
     {
@@ -35439,6 +35699,9 @@
       "mana": 400,
       "effects": [
         "Stop Rain"
+      ],
+      "otherNames": [
+        "Rainfall"
       ]
     },
     {
@@ -36307,6 +36570,9 @@
       "mana": 300,
       "effects": [
         "Evacuate to -3100,3500,-340 in Emerald Jungle"
+      ],
+      "otherNames": [
+        "Ejac"
       ]
     },
     {
@@ -36345,6 +36611,9 @@
       "effects": [
         "Increase Poison Counter by 1",
         "Decrease Magic Resist by 40"
+      ],
+      "otherNames": [
+        "Wind of Tashanian"
       ]
     },
     {
@@ -36486,6 +36755,9 @@
       "mana": 325,
       "effects": [
         "Increase Attack Speed by 70%"
+      ],
+      "otherNames": [
+        "WR"
       ]
     },
     {
@@ -36697,6 +36969,9 @@
       "effects": [
         "Decrease Hitpoints by 448",
         "Stun for 0.0 seconds"
+      ],
+      "otherNames": [
+        "Wrath of Ap'Sagor"
       ]
     },
     {
@@ -37131,6 +37406,9 @@
       "mana": 350,
       "effects": [
         "Summon Pet: Animation13"
+      ],
+      "otherNames": [
+        "Zumaik's Animation"
       ]
     }
   ]

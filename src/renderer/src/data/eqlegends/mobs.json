@@ -44853,7 +44853,11 @@
         "10"
       ],
       "image": "npc_a_sarnak_berzerker.png",
-      "noImage": true
+      "noImage": true,
+      "otherNames": [
+        "A Sarnak Berserker",
+        "A Sarnak berserker"
+      ]
     },
     {
       "page": "A Sarnak bloodbinder",
@@ -185932,7 +185936,10 @@
         "5",
         "5"
       ],
-      "image": "npc_orc_oracle.png"
+      "image": "npc_orc_oracle.png",
+      "otherNames": [
+        "An orc oracle"
+      ]
     },
     {
       "page": "Orc Oracle (Crushbone)",
