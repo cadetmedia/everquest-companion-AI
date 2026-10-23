@@ -52,6 +52,7 @@ import { dirname, resolve } from 'path'
 import { fileURLToPath } from 'url'
 import { parseItemWikitext, templateField } from '../src/main/itemLookupParse'
 import { itemKey, type ItemDbEntry, type ItemDbFile } from '../src/main/itemsDb'
+import { pageNotices } from '../src/shared/pageNotices'
 import { isMain } from './sources/isMain'
 import { applyItemOtherNames, cachedRedirects } from './sources/mobRedirects'
 import { createCache } from './sources/diskCache'
@@ -177,7 +178,9 @@ function compact(entry: ItemDbEntry): ItemDbEntry {
 export function toEntry(title: string, wikitext: string): ItemDbEntry | null {
   const parsed = parseItemWikitext(title, wikitext)
   const name = displayName(wikitext, title)
-  const entry = compact({ page: title, ...parsed, ...(name ? { name } : {}) })
+  // `{{DNE}}` / `{{delete}}`: the page says the item may not be in Legends (owner, 2026-10-22).
+  const notices = pageNotices(wikitext)
+  const entry = compact({ page: title, ...parsed, ...(name ? { name } : {}), ...(notices === undefined ? {} : { notices }) })
   // A record that states nothing beyond its own title is noise: a stub page with an empty
   // template. Committing it would only teach the app to stop asking the wiki about it.
   return Object.keys(entry).length > 1 ? entry : null
