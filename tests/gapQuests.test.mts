@@ -219,3 +219,13 @@ test("A CHAINED QUEST'S DETAILS SAY WHICH QUEST IT FOLLOWS, NOT WHO HANDED OVER 
   const log: QuestLog = { giver: 'Lord Lyfyx of Burwood', zone: 'The Temple of Solusek Ro', npcs: [], steps: [], reruns: 0, chainedFrom: 'Call for Aid' }
   assert.equal(questRowLines(log)[0], 'Follows Call for Aid')
 })
+
+test('task lines back to back, seconds apart (three fish caught), are one line on the page', () => {
+  const upd = (at: string): QuestLog['steps'][number] => ({ at, kind: 'updated', npc: 'Nikko Canti' })
+  const log: QuestLog = {
+    giver: 'Nikko Canti', zone: 'Lake Nerius', npcs: ['Nikko Canti'], reruns: 0,
+    steps: [{ at: '2026-10-22 21:00:12', kind: 'assigned', npc: 'Nikko Canti' }, upd('2026-10-22 21:10:00'), upd('2026-10-22 21:12:30'), upd('2026-10-22 21:15:02')]
+  }
+  const page = questDraftPage('Something Fishy', log)
+  assert.equal(page.split("'''Your task 'Something Fishy' has been updated.'''").length - 1, 1)
+})

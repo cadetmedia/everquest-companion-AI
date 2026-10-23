@@ -172,19 +172,24 @@ function walkStep(name: string, s: QuestStep, c: QuestPageContext): WalkBlock[] 
 
 /**
  * The walkthrough's blocks, step by step. The game prints one update per objective, so a three-item
- * turn-in is three of the same task line in one second: those are one line, the first.
+ * turn-in is three of the same task line in one second: those are one line, the first. Three fish
+ * caught are three more, seconds apart: a task line right after the same task line is one line too.
  */
 export function questWalkBlocks(name: string, log: QuestLog, c: QuestPageContext = {}): WalkBlock[] {
   const seen = new Set<string>()
-  return ownSteps(log).flatMap((s) =>
-    walkStep(name, s, c).filter((b) => {
-      if (b.kind !== 'task') return true
-      const key = `${s.at}|${b.lines[0]}`
-      if (seen.has(key)) return false
-      seen.add(key)
-      return true
-    })
-  )
+  const out: WalkBlock[] = []
+  /** A task line already written this second, or the line just written. */
+  const repeat = (at: string, b: WalkBlock): boolean => {
+    const prev = out[out.length - 1]
+    const key = `${at}|${b.lines[0]}`
+    const again = seen.has(key) || (prev?.kind === 'task' && prev.lines[0] === b.lines[0])
+    seen.add(key)
+    return again
+  }
+  for (const s of ownSteps(log)) {
+    for (const b of walkStep(name, s, c)) if (b.kind !== 'task' || !repeat(s.at, b)) out.push(b)
+  }
+  return out
 }
 
 /**
