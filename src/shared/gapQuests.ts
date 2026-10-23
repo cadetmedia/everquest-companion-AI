@@ -76,6 +76,8 @@ export interface QuestJournalFacts {
   minLevel?: number
   maxLevel?: number
   objectives?: { text: string; status?: string; zone?: string }[]
+  /** `? ? ?` objective rows: steps the game has not shown yet. */
+  hiddenSteps?: number
   description?: string
 }
 
