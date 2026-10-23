@@ -335,10 +335,8 @@ impl GapsModule {
         if let (Domain::Mob | Domain::Merchant, Some(role)) = (domain, self.roles.of(key)) {
             v["role"] = json!(role);
         }
-        // A merchant's stock goes on its Mobs row and its Merchants row alike (gaps_stock.rs).
-        if let (Domain::Mob | Domain::Merchant, Some(sold)) = (domain, self.stock.serve(key, &self.items)) {
-            v["itemsSold"] = sold;
-        }
+        // A merchant's stock, an NPC's hail answer and a Merchants row's cons (gaps_stock.rs).
+        self.serve_stock(domain, key, v);
         if let (Domain::Item, Some(zones)) = (domain, self.fish.of(key)) {
             v["fishedIn"] = json!(zones);
         }

@@ -68,3 +68,18 @@ fn a_merchants_quotes_are_its_items_sold_priced_where_the_player_stood_at_ally_a
     assert_eq!(sold("Kaelin K`Toz"), Some(json!([{ "item": "Bone Chips" }, { "item": "Jeweler's Kit", "copper": 1049 }, { "item": "Platinum Bar", "copper": 104_999 }])));
     assert_eq!(sold("Mindiinya N`Zar"), Some(json!([{ "item": "Cat's Eye Agate" }])), "no con before the quote, no price");
 }
+
+/// The owner's Merchants rows, 2026-10-23: every one said "needs: level (/con)" though each was
+/// conned (`Mindiinya N`Zar regards you as an ally -- looks like quite a gamble. (Lvl: 50)`). The con
+/// files on the Mobs row; the Merchants row is served the name's cons too, so its page has a level.
+#[test]
+fn a_merchants_row_carries_the_cons_of_its_name() {
+    let mut m = module();
+    feed(&mut m, 1, json!({ "kind": "zone", "zone": "Lake Nerius" }));
+    feed(&mut m, 2, json!({ "kind": "consider", "mob": "Mindiinya N`Zar", "faction": "ally", "level": 50 }));
+    feed(&mut m, 3, line("Mindiinya N`Zar told you, 'That'll be 2 gold 9 copper per Cat's Eye Agate.'"));
+    let served = m.snapshot()["state"]["rows"].clone();
+    let row = |domain: &str| served.as_array().and_then(|r| r.iter().find(|r| r["domain"] == domain && r["name"] == "Mindiinya N`Zar")).cloned();
+    assert_eq!(row("merchant").map(|r| r["details"]["cons"].clone()), Some(json!({ "entries": [{ "name": "L50 ally", "n": 1 }], "distinct": 1 })));
+    assert_eq!(row("mob").map(|r| r["details"]["cons"]["entries"][0]["name"].clone()), Some(json!("L50 ally")), "the Mobs row keeps its own");
+}

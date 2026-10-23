@@ -33,6 +33,7 @@ import { questJournalNow } from './itemShotsStore'
 import { useItemForage } from '../../lib/gapItemForage'
 import { forageProofNames } from '@shared/gapForage'
 import { mobPageFinder } from '@shared/mobPageTitle'
+import { catalogStates } from '@shared/gapMerchantDescription'
 
 /** Each drop group's members, and the drop-list links that redirect to an item (scrape-drop-groups.ts). */
 const DROPS = dropGroupsJson as { groups: DropGroups; aliases?: DropAliases }
@@ -43,7 +44,7 @@ const ZONE_NAME: ZoneNamer = wikiZoneNamer(catalogZoneCounts(MOB_CATALOG))
 const IS_MOB = catalogNameTest(MOB_CATALOG)
 /** A quest's catalog entry when the wiki has its page (the Quests rows' Make page / Update page). */
 const QUEST_ENTRY = questCatalogFinder((questsJson as { quests: QuestCatalogEntry[] }).quests)
-export const PAGE_EXTRAS: PageExtras = { zoneName: ZONE_NAME, isMob: IS_MOB, commonLoot: commonLootNames(MOB_CATALOG), vendorAt: vendorFinder(MOB_CATALOG), mobPage: mobPageFinder(MOB_CATALOG), questEntry: QUEST_ENTRY, questJournal: questJournalNow }
+export const PAGE_EXTRAS: PageExtras = { zoneName: ZONE_NAME, isMob: IS_MOB, commonLoot: commonLootNames(MOB_CATALOG), vendorAt: vendorFinder(MOB_CATALOG), mobPage: mobPageFinder(MOB_CATALOG), questEntry: QUEST_ENTRY, questJournal: questJournalNow, pageStates: catalogStates(MOB_CATALOG) }
 
 /** The wiki side, one object for the session: the caches key on it. */
 const WIKI: GapsWiki = { catalog: MOB_CATALOG, groups: DROPS.groups, aliases: DROPS.aliases ?? {} }
