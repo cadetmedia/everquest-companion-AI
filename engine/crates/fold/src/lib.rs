@@ -872,7 +872,7 @@ pub fn registered(deps: ClusterDeps) -> Registry {
     // The Event log marks a con as missing exactly when the Gaps tab has a Mobs row for it: one
     // decision, the Gaps module's, handed over in one slot cloned into both (`gaps_marks.rs`).
     let con_marks = modules::gaps::marks::ConMarks::default();
-    // The quest log writes the player as `<name>` and keeps refusals said to others (gaps_quest_log.rs).
+    // The quest log writes the player as `Soandso` and keeps refusals said to others (gaps_quest_log.rs).
     r.register(Box::new(modules::gaps::GapsModule::for_log(con_marks.clone(), &character)));
     r.register(Box::new(modules::event_feed::EventFeedModule::sharing(con_marks)));
     r

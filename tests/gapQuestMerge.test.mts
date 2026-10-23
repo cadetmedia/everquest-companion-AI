@@ -4,7 +4,9 @@
 // wiki nothing.
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { mergeQuestPage, plainWords, questLiveCopy } from '../src/shared/gapQuestMerge'
+import { readFileSync } from 'node:fs'
+import { mergeQuestPage, plainWords, questLiveCopy, stubLinkTarget } from '../src/shared/gapQuestMerge'
+import { questDraftPage } from '../src/shared/gapQuestPage'
 import type { QuestLog } from '../src/shared/gapQuests'
 
 const news: QuestLog = {
@@ -81,8 +83,10 @@ test('THE PAGE KEEPS EVERY LINE IT HAD, AND GAINS ONLY WHAT THE LOG SAW THAT IT 
   assert.equal(lines.length, out.added.length)
   // The NPC's line the page already quotes (no comma, as many pages write it) is not added again.
   assert.equal(lines.filter((l) => l.includes('A petition for aid')).length, 1)
-  // The hand-ins, the task line, the faction block and experience land in the walkthrough, after the talk.
-  for (const want of ['Give [[Exorbitant Commission]] to [[Dorian G`Wyn]]:', "'''Your task 'Unfortunate news' has been updated.'''", '* Your faction standing with [[Nerius Trade Association]] has been adjusted by 200.', '{{YouGainExperience}}']) {
+  // The hand-ins, the faction block and experience land in the walkthrough, after the talk; the task
+  // line is never added (12 of the 931 cached pages write one).
+  assert.ok(!lines.some((l) => l.includes("Your task 'Unfortunate news'")))
+  for (const want of ['Give [[Exorbitant Commission]] to [[Dorian G`Wyn]]:', '* Your faction standing with [[Nerius Trade Association]] has been adjusted by 200.', '{{YouGainExperience}}']) {
     const i = lines.indexOf(want)
     assert.ok(i > lines.indexOf('== Walkthrough =='), want)
     assert.equal(out.added[i], true, `${want} is marked new`)
@@ -109,7 +113,7 @@ test('A NUMBER THE LOG PROVES OTHERWISE IS SHOWN, NOT CHANGED', () => {
   const page = LIVE.replace('== Walkthrough ==', '== Walkthrough ==\n\n<div class="facblock">\n* Your faction standing with [[Nerius Trade Association]] has been adjusted by 100.\n</div>')
   const out = mergeQuestPage(page.replace('| [[Temple of Solusek Ro]]', '| [[Lake Nerius]]'), 'Unfortunate news', news, ctx)
   assert.ok(out.text.includes('adjusted by 100.'))
-  assert.deepEqual(out.notes, ['Start Zone: the page says lake nerius, your log took it in Temple of Solusek Ro.', 'Nerius Trade Association: the page says 100, your log says 200.'])
+  assert.deepEqual(out.notes, ['Start Zone: the page says Lake Nerius; your log: Temple of Solusek Ro.', 'Nerius Trade Association: the page says 100, your log says 200.'])
 })
 
 test('A PAGE WITH NO WALKTHROUGH OR REWARD GETS THEM WHOLE, BEFORE ITS CATEGORIES', () => {
@@ -139,4 +143,87 @@ test('NO PAGE IS A DRAFT, AND A FAILED READ IS THE OFFLINE TEXT, SAID TO BE OFFL
 test('WORDS FOLD MARKUP, CASE, PUNCTUATION AND THE BACKTICK', () => {
   assert.equal(plainWords("'''You give [[Solusek Petition|the petition]] to Lord Lyfyx.'''"), 'you give the petition to lord lyfyx')
   assert.equal(plainWords('What`s going on here?'), plainWords("What's Going On Here"))
+})
+
+// ---- the wiki's own Unfortunate News (2026-10-23, read once by the coordinator; another player's
+// name on it replaced with Otherplayer). The game's title, Unfortunate news, is a stub that only
+// links here; the page writes the older layout (`Starts In`, `= Walkthrough =`) and one Hand line.
+const fixture = (name: string): string => readFileSync(new URL(`./fixtures/quests/${name}.wikitext`, import.meta.url), 'utf8')
+const REAL = fixture('unfortunate-news')
+const STUB = fixture('unfortunate-news-stub')
+
+/** The owner's log of it: a chained quest (assigned in the second Call for Aid was finished). */
+const chained: QuestLog = {
+  giver: 'Lord Lyfyx of Burwood',
+  zone: 'The Temple of Solusek Ro',
+  npcs: ['Lord Lyfyx of Burwood', 'Dorian G`Wyn'],
+  reruns: 0,
+  chainedFrom: 'Call for Aid',
+  steps: [
+    {
+      at: '2026-10-22 23:50:22',
+      kind: 'assigned',
+      npc: 'Lord Lyfyx of Burwood',
+      zone: 'The Temple of Solusek Ro',
+      talk: [{ who: 'Lord Lyfyx of Burwood', text: 'A petition for aid against some unknown evil? I am afraid the Temple has no soldiers to spare.' }],
+      offered: ['Solusek Petition'],
+      given: ['Ordination of Might'],
+      factions: [{ faction: 'Nerius Trade Association', line: 'Your faction standing with Nerius Trade Association has been adjusted by 150.' }],
+      experience: true
+    },
+    {
+      at: '2026-10-22 23:53:50',
+      kind: 'updated',
+      npc: 'Dorian G`Wyn',
+      zone: 'Lake Nerius',
+      offered: ['Exorbitant Commission', 'A Curt Dismissal', 'Ordination of Might'],
+      talk: [{ who: 'Dorian G`Wyn', text: 'Curses! I should have known the cruel world would refuse aid to another, even of their own creed. We shall retreat back to the Undercroft and look to fortify our home against the undead, against the tumult in the castle, and from the outside world. You, however, Soandso , you will always be welcome amongst our kind.' }],
+      factions: [{ faction: 'Nerius Trade Association', line: 'Your faction standing with Nerius Trade Association has been adjusted by 200.' }],
+      experience: true,
+      achievements: ['Race Unlock - Half Dark Elves']
+    },
+    { at: '2026-10-22 23:53:50', kind: 'updated', npc: 'Dorian G`Wyn', zone: 'Lake Nerius' },
+    { at: '2026-10-22 23:53:50', kind: 'updated', npc: 'Dorian G`Wyn', zone: 'Lake Nerius' }
+  ]
+}
+
+test('THE GAME TITLE IS A STUB THAT ONLY LINKS ITS CAPITALISED TWIN: THE READ FOLLOWS IT, AND SAYS SO', () => {
+  assert.equal(stubLinkTarget('Unfortunate news', STUB), 'Unfortunate News')
+  assert.equal(stubLinkTarget('Unfortunate News', REAL), undefined)
+  // A page that only links an unrelated page is no stub of this quest.
+  assert.equal(stubLinkTarget('Unfortunate news', STUB.replace('[[Unfortunate News]]', '[[Call for Aid]]')), undefined)
+  const copy = questLiveCopy({ name: 'Unfortunate news', log: chained, offline: '' }, { title: 'Unfortunate News', text: REAL, stubOf: 'Unfortunate news' })
+  assert.equal(copy.notes[0], 'Unfortunate news is a second page holding only a link here; this compares against Unfortunate News.')
+})
+
+test('THE REAL PAGE ALREADY HAS WHAT THE LOG SAW: NOTHING ADDED, THE TWO MISNAMED ITEMS NOTED', () => {
+  const out = mergeQuestPage(REAL, 'Unfortunate news', chained, { players: ['Drywrought'] })
+  // Starts In names the quest before, so no Quest Giver row, no second start row, no Temple category.
+  assert.deepEqual(out.changes, [])
+  assert.equal(out.text, REAL.replace(/\r\n/g, '\n'))
+  assert.deepEqual(out.notes, [
+    'The page links Curt Dismissal; the item is A Curt Dismissal.',
+    'The page links Orgination of Might; the item is Ordination of Might.'
+  ])
+})
+
+test('A PAGE IN THE OLDER LAYOUT GETS ADDITIONS IN ITS OWN LAYOUT', () => {
+  const bare = REAL.replace(/= Walkthrough =[\s\S]*?= Notes =/, '= Notes =')
+  const out = mergeQuestPage(bare, 'Unfortunate news', chained, {})
+  const lines = out.text.split('\n')
+  assert.ok(lines.includes('= Walkthrough ='), 'level-1, as the page writes its headings')
+  assert.ok(!lines.includes('== Walkthrough =='))
+  assert.ok(lines.includes('Give [[A Curt Dismissal]] to [[Dorian G`Wyn]]:'))
+  assert.ok(lines.includes("'''You have completed achievement: Race Unlock - Half Dark Elves'''"))
+  // The chained quest's assigning trade belongs to Call for Aid: none of it is written here.
+  assert.ok(!out.text.includes('Solusek Petition') && !out.text.includes('A petition for aid'))
+})
+
+test('A CHAINED QUEST STARTS FROM THE QUEST BEFORE, NAMES NO GIVER, AND IS FILED UNDER ITS OWN ZONE', () => {
+  const page = questDraftPage('Unfortunate news', chained)
+  assert.ok(page.includes("! ''' Start Zone: '''\n| Finishing the quest [[Call for Aid]]"))
+  assert.ok(!page.includes('Quest Giver') && !page.includes('[[File:'))
+  assert.ok(page.includes('[[Category:Lake Nerius]]') && !page.includes('Category:The Temple of Solusek Ro'))
+  // Three updates in one second are one task line.
+  assert.equal(page.split("'''Your task 'Unfortunate news' has been updated.'''").length - 1, 1)
 })

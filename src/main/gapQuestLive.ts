@@ -2,75 +2,40 @@
 // player presses Copy on a Quests row (owner, 2026-10-23: "COPY does a live lookup (i'd have to go
 // look it up myself anyways ...)"; one page read per click, as their own visit would be).
 //
-// Never on a timer, a render or a list: only the click's IPC call reaches `readQuestPage`. Serialized,
-// one request at a time, and a 429/5xx silences it until the server's Retry-After, the same contract
-// mobLookup.ts honours. `action=parse` with `redirects` follows a redirect (the wiki's `What`s going
-// on here?` lands on `What's going on here`), so the answer carries the title it landed on.
+// Never on a timer, a render or a list: only the click's IPC call reaches `readQuestPage`. The shared
+// wiki client (wikiClient.ts) does the request, its own queue and its own Retry-After cooldown, as the
+// item and mob lookups each have theirs. `redirects` follows a redirect (the wiki's `What`s going on
+// here?` lands on `What's going on here`), so the answer carries the title it landed on.
+//
+// At most one more read on the same click, for one of two misses the game's title makes:
+//   * a title ending in `?` the wiki lacks is asked without it (task names carry one pages drop);
+//   * a page that is only a link to another spelling of its title (Unfortunate news, a stub that
+//     links Unfortunate News, where the walkthrough is) is followed, and the stub is named.
 
 import { ipcMain } from 'electron'
 import { IPC } from '../shared/ipc'
-import type { LiveQuestPage } from '../shared/gapQuestMerge'
+import { stubLinkTarget, type LiveQuestPage } from '../shared/gapQuestMerge'
+import { createWikiClient } from './wikiClient'
 
-const API = 'https://eqlwiki.com/api.php'
-const UA = 'everquest-companion (github.com/kaltinril/everquest-companion)'
-const TIMEOUT_MS = 8000
-const RETRY_AFTER_FALLBACK_MS = 60_000
+const wiki = createWikiClient()
 
-let cooldownUntil = 0
-let queue: Promise<unknown> = Promise.resolve()
-
-interface ParseAnswer {
-  parse?: { title?: string; wikitext?: string }
-  error?: { code?: string }
+/** The page, or the bare title's when the asked one ends in `?` and the wiki lacks it. */
+async function pageOrBare(title: string): Promise<LiveQuestPage | null> {
+  const page = await wiki.fetchPage(title)
+  if (page?.text !== '' || !/\?\s*$/.test(title)) return page
+  const bare = await wiki.fetchPage(title.replace(/\?+\s*$/, ''))
+  return (bare?.text ?? '') === '' ? page : bare
 }
 
-/** The answer's page: `{ text: '' }` for a page the wiki lacks, null for any other error. */
-function pageOf(j: ParseAnswer, title: string): LiveQuestPage | null {
-  if (j.error?.code === 'missingtitle') return { title, text: '' }
-  if (j.error !== undefined) return null
-  return { title: j.parse?.title ?? title, text: j.parse?.wikitext ?? '' }
-}
-
-/** A 429 or 5xx: quiet until the server's Retry-After. */
-function coolDown(res: Response): void {
-  const after = Number(res.headers.get('retry-after'))
-  cooldownUntil = Date.now() + (Number.isFinite(after) && after > 0 ? after * 1000 : RETRY_AFTER_FALLBACK_MS)
-}
-
-/** One `action=parse` read: the page, `{ text: '' }` when the wiki has none, null when it could not be read. */
-async function parsePage(title: string): Promise<LiveQuestPage | null> {
-  if (Date.now() < cooldownUntil) return null
-  const url = `${API}?${new URLSearchParams({ action: 'parse', page: title, prop: 'wikitext', redirects: '1', format: 'json', formatversion: '2' }).toString()}`
-  const ctrl = new AbortController()
-  const t = setTimeout(() => ctrl.abort(), TIMEOUT_MS)
-  try {
-    const res = await fetch(url, { headers: { 'User-Agent': UA }, signal: ctrl.signal })
-    if (res.status === 429 || res.status >= 500) {
-      coolDown(res)
-      return null
-    }
-    return res.ok ? pageOf((await res.json()) as ParseAnswer, title) : null
-  } catch {
-    return null
-  } finally {
-    clearTimeout(t)
-  }
-}
-
-/**
- * A quest page as it stands on the wiki. A title the wiki lacks with a trailing `?` is asked once more
- * without it, since the game's task names carry one its pages often drop (`questTitleKey`).
- */
+/** A quest page as it stands on the wiki: null when it could not be read, text '' when it has none. */
 export function readQuestPage(title: string): Promise<LiveQuestPage | null> {
-  const run = async (): Promise<LiveQuestPage | null> => {
-    const page = await parsePage(title)
-    if (page?.text !== '' || !/\?\s*$/.test(title)) return page
-    const bare = await parsePage(title.replace(/\?+\s*$/, ''))
-    return (bare?.text ?? '') === '' ? page : bare
-  }
-  const next = queue.then(run, run)
-  queue = next.catch(() => undefined)
-  return next
+  return wiki.enqueue(async () => {
+    const page = await pageOrBare(title)
+    const target = page === null || page.text === '' ? undefined : stubLinkTarget(page.title, page.text)
+    if (page === null || target === undefined) return page
+    const real = await wiki.fetchPage(target)
+    return real === null || real.text === '' ? page : { ...real, stubOf: page.title }
+  })
 }
 
 export function registerGapQuestLiveIpc(): void {

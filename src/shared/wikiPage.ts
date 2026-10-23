@@ -26,7 +26,7 @@ import { forageAddText } from './gapForage'
 import type { VendorFinder } from './gapMobPage'
 import type { LootEvent } from './types'
 import { SPELL_HEAD, SPELL_TAIL, spellPageValues, type SpellPageShot } from './spellWindow'
-import { withPageTitles } from './mobPageTitle'
+import { npcImageName, withPageTitles } from './mobPageTitle'
 import { noticeProof } from './gapNotices'
 import { locFinder, questFactsOf, questPageParts, withQuestFields } from './itemQuestFacts'
 import { roleClass, roleField, roleOf, withFishedNote } from './gapRoles'
@@ -501,14 +501,8 @@ export function layoutBlock(template: string, layout: readonly string[], values:
   return `{{${template}\n\n${lines.join('\n')}\n}}`
 }
 
-/**
- * The wiki's image name for an NPC: `npc_drizda_tunesinger.png`. A backtick stays, as the wiki's own
- * files keep it (Guard E`tru, `npc_guard_e`tru.png`: 397 of the 428 backtick mobs' files; owner,
- * 2026-10-22); only a character Windows (`\/:*?"<>|`) or a wiki title (`#[]{}`) refuses becomes `_`,
- * and a run of spaces or `_` is one `_`.
- */
-export const npcImageName = (name: string): string =>
-  `npc_${name.trim().toLowerCase().replace(/[\\/:*?"<>|#[\]{}]/g, '_').replace(/[\s_]+/g, '_').replace(/^_|_$/g, '')}.png`
+// The NPC picture's name lives in mobPageTitle.ts, a leaf the quest page writer imports too.
+export { npcImageName }
 
 /** `/loc` points as the wiki writes `|location`: `(-791, 173), (10, -21)`. */
 const locationText = (points: readonly number[][]): string => points.map((p) => `(${String(p[0])}, ${String(p[1])})`).join(', ')

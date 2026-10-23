@@ -341,7 +341,7 @@ impl GapsModule {
         if !self.quests.offered(item, npc, ev.ts()) {
             return false;
         }
-        self.quest_log.offered(item, npc, ev.ts());
+        self.quest_log.offered(item, npc, ev.ts(), self.zone.as_deref());
         // Handed over, taken or handed back: the item exists either way.
         self.item_named(item, "offered", ev);
         true

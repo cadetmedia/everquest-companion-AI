@@ -7,7 +7,8 @@
 //   talk (`You say, '...'`, `: NPC says, '...'`), a blank line after each, hand-ins as `Give [[X]] to
 //   [[NPC]]:`, the task lines in bold, a `facblock` and `{{YouGainExperience}}`. A cell the log cannot
 //   fill is `?`, as the wiki writes Classes and Minimum Level; a row no page fills with `?` (Required
-//   Faction) is left out. The player's own names read `Soandso`, as 37 cached pages write it.
+//   Faction) is left out. The player's own names read `Soandso`, as the cached pages write a player (27 NPC lines on 8
+//   pages; `<name>` 9).
 //
 //   A PAGE EXISTS, read offline: only what the page is missing, as the top-table rows to paste. The
 //   live comparison, walkthrough included, is gapQuestMerge.ts (owner, 2026-10-23: "implement the
@@ -16,7 +17,8 @@
 import { CURRENT_ERA } from './planner/era'
 import { wikiZoneLink } from './gapWikiZone'
 import { roleLine, roleOf } from './gapRoles'
-import { questLogOf, questPageTitle, questRewards, questRowLines, relatedNpcs, relatedZones, stepKeyword, type QuestCatalogEntry, type QuestJournalFacts, type QuestLog, type QuestStep } from './gapQuests'
+import { npcImageName } from './mobPageTitle'
+import { ownSteps, questLogOf, questPageTitle, questRewards, questRowLines, receivedOf, relatedNpcs, relatedZones, stepKeyword, type QuestCatalogEntry, type QuestJournalFacts, type QuestLog, type QuestStep } from './gapQuests'
 
 /** What the page text needs beside the log: the wiki's spellings and the journal's reading. */
 export interface QuestPageContext {
@@ -36,20 +38,36 @@ export function scrubPlayers(text: string, players: readonly string[] = []): str
 }
 const linkList = (names: readonly string[], link: (n: string) => string): string => (names.length === 0 ? 'None' : names.map(link).join(', '))
 
-/** `npc_nikko_canti.png`, as the wiki names an NPC's picture (wikiPage.ts npcImageName, restated: no import cycle). */
-const npcFile = (name: string): string => `npc_${name.trim().toLowerCase().replace(/[\\/:*?"<>|#[\]{}]/g, '_').replace(/[\s_]+/g, '_').replace(/^_|_$/g, '')}.png`
-
 /** One `questTopTable` row. */
 export const topRow = (label: string, value: string): string => `! ''' ${label}: '''\n| ${value}`
 
 /** The level the journal states, or the placeholder. */
 const minLevel = (c: QuestPageContext): string => (c.journal?.minLevel === undefined ? '?' : String(c.journal.minLevel))
 
-function topTable(log: QuestLog, c: QuestPageContext): string {
+/**
+ * The Start Zone cell: the zone it was given in, or for a chained quest the quest it follows, as the
+ * wiki writes one (`Finishing the quest [[Call for Aid]]`, Unfortunate News).
+ */
+export function startCell(log: QuestLog, c: QuestPageContext): string | undefined {
+  if (log.chainedFrom !== undefined) return `Finishing the quest [[${questPageTitle(log.chainedFrom)}]]`
   const start = log.zone ?? c.journal?.zone
+  return start === undefined || start === null ? undefined : zoneOf(start, c)
+}
+
+/** The giver a page names: none for a chained quest, whose assigning NPC finished the quest before. */
+export const giverOf = (log: QuestLog): string | undefined => (log.chainedFrom === undefined ? (log.giver ?? undefined) : undefined)
+
+/** The zone a page is filed under: where it was given, or a chained quest's first zone of its own. */
+export function homeZone(log: QuestLog): string | undefined {
+  if (log.chainedFrom === undefined) return log.zone ?? undefined
+  return ownSteps(log).find((s) => (s.zone ?? '') !== '')?.zone
+}
+
+function topTable(log: QuestLog, c: QuestPageContext): string {
+  const giver = giverOf(log)
   const rows = [
-    topRow('Start Zone', start === undefined || start === null ? '?' : zoneOf(start, c)),
-    topRow('Quest Giver', log.giver === undefined || log.giver === null ? '?' : npcOf(log.giver, c)),
+    topRow('Start Zone', startCell(log, c) ?? '?'),
+    ...(log.chainedFrom !== undefined ? [] : [topRow('Quest Giver', giver === undefined ? '?' : npcOf(giver, c))]),
     topRow('Minimum Level', minLevel(c)),
     topRow('Classes', '?'),
     topRow('Related Zones', linkList(relatedZones(log), (z) => zoneOf(z, c))),
@@ -68,13 +86,23 @@ function rewardSection(log: QuestLog): string {
   return ['== Reward ==', '', ...lines].join('\n')
 }
 
+/** Each distinct item with how many times it appears, in first-seen order. */
+function counted(items: readonly string[]): [string, number][] {
+  const n = new Map<string, number>()
+  for (const i of items) n.set(i, (n.get(i) ?? 0) + 1)
+  return [...n]
+}
+
+/** `[[Fresh Fish]]`, or `3 [[Fresh Fish]]` as pages write a count (`Hand 4 [[Spiderling Eye]]`). */
+const itemLink = ([item, n]: [string, number]): string => `${n > 1 ? `${String(n)} ` : ''}[[${item}]]`
+
 /** One step as a checklist line: who, what was said or handed over, what came of it. */
 function checkLine(s: QuestStep, c: QuestPageContext): string | undefined {
   const who = s.npc === undefined ? undefined : npcOf(s.npc, c)
   const where = s.zone === undefined ? '' : ` in ${zoneOf(s.zone, c)}`
   const said = stepKeyword(s)
-  const handed = (s.offered ?? []).map((i) => `[[${i}]]`).join(' and ')
-  const got = (s.given ?? []).map((i) => `[[${i}]]`).join(' and ')
+  const handed = counted(s.offered ?? []).map(itemLink).join(' and ')
+  const got = counted(receivedOf(s)).map(itemLink).join(' and ')
   const parts = [
     ...(handed !== '' && who !== undefined ? [`Give ${handed} to ${who}${where}`] : []),
     ...(handed === '' && said !== undefined && who !== undefined ? [`Say '${said}' to ${who}${where}`] : []),
@@ -86,7 +114,7 @@ function checkLine(s: QuestStep, c: QuestPageContext): string | undefined {
 }
 
 function summarySection(name: string, log: QuestLog, c: QuestPageContext): string {
-  const lines = log.steps.map((s) => checkLine(s, c)).filter((l): l is string => l !== undefined)
+  const lines = ownSteps(log).map((s) => checkLine(s, c)).filter((l): l is string => l !== undefined)
   const next = questRewards(log)?.next
   if (next !== undefined) lines.push(`* Receive the [[${next}]] quest.`)
   if (lines.length === 0) lines.push(`* Finish ${name}.`)
@@ -98,33 +126,66 @@ function summarySection(name: string, log: QuestLog, c: QuestPageContext): strin
  * lines. A block is one line, but a facblock is its `<div>` and every faction line inside it.
  */
 export interface WalkBlock {
-  kind: 'say' | 'npc' | 'give' | 'receive' | 'task' | 'faction' | 'experience'
+  kind: 'say' | 'npc' | 'give' | 'receive' | 'task' | 'faction' | 'experience' | 'achievement'
   lines: string[]
-  /** What the block names: the words said, the item, the faction lines. */
+  /** What the block names: the words said, the item, the faction lines, the achievement. */
   keys: string[]
 }
 
-/** One step in the walkthrough: the talk, what was handed over and given, the task line, its factions. */
+/** A part of a step with the time its line was printed, when the engine serves it. */
+interface Timed {
+  ms?: number
+  block: WalkBlock
+}
+
+/** The first time an item's line was printed, from a list and its parallel stamps. */
+const firstMs = (items: readonly string[] = [], ms: readonly number[] = [], item: string): number | undefined => ms[items.indexOf(item)]
+
+/** A step's talk and its hand-ins and returns, in the order the log printed them when it says. */
+function stepParts(s: QuestStep, c: QuestPageContext): WalkBlock[] {
+  const to = s.npc === undefined ? '' : ` to ${npcOf(s.npc, c)}`
+  const parts: Timed[] = [
+    ...(s.talk ?? []).map((t): Timed => {
+      const text = scrubPlayers(t.text, c.players)
+      const block: WalkBlock = t.who === 'You' ? { kind: 'say', lines: [`You say, '${text}'`], keys: [text] } : { kind: 'npc', lines: [`: ${t.who} says, '${text}'`], keys: [text] }
+      return { ms: t.ms, block }
+    }),
+    ...counted(s.offered ?? []).map(([i, n]): Timed => ({ ms: firstMs(s.offered, s.offeredMs, i), block: { kind: 'give', lines: [`Give ${itemLink([i, n])}${to}:`], keys: [i] } })),
+    ...counted(receivedOf(s)).map(([i, n]): Timed => ({ ms: firstMs(s.given, s.givenMs, i), block: { kind: 'receive', lines: [`'''You receive ${itemLink([i, n])}.'''`], keys: [i] } }))
+  ]
+  const timed = parts.every((p) => p.ms !== undefined)
+  return (timed ? [...parts].sort((a, b) => (a.ms ?? 0) - (b.ms ?? 0)) : parts).map((p) => p.block)
+}
+
+/** One step in the walkthrough: its parts, the task line, its factions, experience, achievements. */
 function walkStep(name: string, s: QuestStep, c: QuestPageContext): WalkBlock[] {
-  const talk = (s.talk ?? []).map((t): WalkBlock => {
-    const text = scrubPlayers(t.text, c.players)
-    return t.who === 'You' ? { kind: 'say', lines: [`You say, '${text}'`], keys: [text] } : { kind: 'npc', lines: [`: ${t.who} says, '${text}'`], keys: [text] }
-  })
   const task = s.kind === 'assigned' ? `'''You have been assigned the task '${name}'.'''` : `'''Your task '${name}' has been updated.'''`
   const fac = (s.factions ?? []).map((f) => `* ${f.line.replace(` with ${f.faction} `, ` with [[${f.faction}]] `)}`)
-  const to = s.npc === undefined ? '' : ` to ${npcOf(s.npc, c)}`
   return [
-    ...talk,
-    ...(s.offered ?? []).map((i): WalkBlock => ({ kind: 'give', lines: [`Give [[${i}]]${to}:`], keys: [i] })),
-    ...(s.given ?? []).map((i): WalkBlock => ({ kind: 'receive', lines: [`'''You receive [[${i}]].'''`], keys: [i] })),
+    ...stepParts(s, c),
     { kind: 'task', lines: [task], keys: [task] },
     ...(fac.length === 0 ? [] : [{ kind: 'faction' as const, lines: ['<div class="facblock">', ...fac, '</div>'], keys: fac }]),
-    ...(s.experience === true ? [{ kind: 'experience' as const, lines: ['{{YouGainExperience}}'], keys: [] }] : [])
+    ...(s.experience === true ? [{ kind: 'experience' as const, lines: ['{{YouGainExperience}}'], keys: [] }] : []),
+    ...(s.achievements ?? []).map((a): WalkBlock => ({ kind: 'achievement', lines: [`'''You have completed achievement: ${a}'''`], keys: [a] }))
   ]
 }
 
-/** The walkthrough's blocks, step by step. */
-export const questWalkBlocks = (name: string, log: QuestLog, c: QuestPageContext = {}): WalkBlock[] => log.steps.flatMap((s) => walkStep(name, s, c))
+/**
+ * The walkthrough's blocks, step by step. The game prints one update per objective, so a three-item
+ * turn-in is three of the same task line in one second: those are one line, the first.
+ */
+export function questWalkBlocks(name: string, log: QuestLog, c: QuestPageContext = {}): WalkBlock[] {
+  const seen = new Set<string>()
+  return ownSteps(log).flatMap((s) =>
+    walkStep(name, s, c).filter((b) => {
+      if (b.kind !== 'task') return true
+      const key = `${s.at}|${b.lines[0]}`
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+  )
+}
 
 /**
  * Blocks as page lines: a blank line after each, as the wiki writes 3,584 of its 3,676 spoken lines;
@@ -145,13 +206,17 @@ export const zoneCategory = (zone: string, c: QuestPageContext): string => `[[Ca
 /** The page the wiki has no copy of yet, from the log (and the journal's level, when read). */
 export function questDraftPage(name: string, log: QuestLog, c: QuestPageContext = {}): string {
   const era = `{{${CURRENT_ERA.charAt(0).toUpperCase()}${CURRENT_ERA.slice(1)} Era}}`
-  const giver = log.giver ?? undefined
-  const picture = giver === undefined ? [] : [`[[File:${npcFile(giver)}|thumb|${giver}]]`]
+  const giver = giverOf(log)
+  const picture = giver === undefined ? [] : [`[[File:${npcImageName(giver)}|thumb|${giver}]]`]
   const walk = walkLines(questWalkBlocks(name, log, c))
+  const home = homeZone(log)
   // The class category is the editor's to pick: the log never states which classes may take it.
-  const cats = ['[[Category:Quests]]', ...(log.zone === undefined || log.zone === null ? [] : [zoneCategory(log.zone, c)]), '<!-- [[Category:All Classes Quests]] or [[Category:<Class> Quests]] -->']
+  const cats = ['[[Category:Quests]]', ...(home === undefined ? [] : [zoneCategory(home, c)]), '<!-- [[Category:All Classes Quests]] or [[Category:<Class> Quests]] -->']
   return [era, ...picture, topTable(log, c), '', rewardSection(log), '', summarySection(name, log, c), '', '== Walkthrough ==', '', ...walk, ...cats].join('\n') + '\n'
 }
+
+/** A start cell that names a quest (`Finishing the quest [[Call for Aid]]`), not a zone. */
+export const startsFromQuest = (cell: string | undefined): boolean => /\bquest\b/i.test(cell ?? '')
 
 /** A page's list compared by name: the catalog writes `[[Freeport|West Freeport]]` cells as their shown text. */
 const lacks = (list: readonly string[] | undefined, name: string): boolean => !(list ?? []).some((n) => n.toLowerCase().replace(/`/g, "'") === name.toLowerCase().replace(/`/g, "'"))
@@ -161,12 +226,13 @@ const lacks = (list: readonly string[] | undefined, name: string): boolean => !(
  * paste: `[label, value]`. Empty when the log can tell of nothing missing.
  */
 export function questPageGaps(entry: QuestCatalogEntry, log: QuestLog, c: QuestPageContext = {}): [string, string][] {
-  const zone = log.zone ?? undefined
-  const giver = log.giver ?? undefined
+  const start = startCell(log, c)
+  // A page that starts the quest from another quest names no giver, and the log gives it none.
+  const giver = startsFromQuest(entry.startZone) ? undefined : giverOf(log)
   const level = c.journal?.minLevel
   const blank = (v: string | undefined): boolean => (v ?? '') === ''
   return [
-    ...(blank(entry.startZone) && zone !== undefined ? [['Start Zone', zoneOf(zone, c)] as [string, string]] : []),
+    ...(blank(entry.startZone) && start !== undefined ? [['Start Zone', start] as [string, string]] : []),
     ...(blank(entry.giver) && giver !== undefined ? [['Quest Giver', npcOf(giver, c)] as [string, string]] : []),
     ...(entry.minLevel === undefined && level !== undefined ? [['Minimum Level', String(level)] as [string, string]] : []),
     ...relatedNpcGap(entry, log, c)

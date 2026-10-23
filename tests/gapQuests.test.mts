@@ -88,7 +88,8 @@ test('THE QUESTS TAB SAYS WHAT IT LISTS, AND A ROW IS A NEW PAGE OR AN UPDATE', 
 
 test('THE REWARDS ARE THE LAST STEP WITH A FACTION LINE OR EXPERIENCE', () => {
   assert.deepEqual(questRewards(fishy), {
-    items: ['Defiled Fish Scales'],
+    // The scales were handed in at that step: a turn-in is never its own reward.
+    items: [],
     factions: [{ faction: 'Nerius Trade Association', line: 'Your faction standing with Nerius Trade Association has been adjusted by 10.' }],
     experience: true,
     next: 'Alchemical Solution'
@@ -97,7 +98,7 @@ test('THE REWARDS ARE THE LAST STEP WITH A FACTION LINE OR EXPERIENCE', () => {
   const lines = questRowLines(fishy)
   assert.equal(lines[0], 'Given by Nikko Canti in Lake Nerius')
   assert.equal(lines[1], '21:00:12 assigned · Nikko Canti · said "help"')
-  assert.ok(lines.includes('Reward: Defiled Fish Scales, Nerius Trade Association, experience'))
+  assert.ok(lines.includes('Reward: Nerius Trade Association, experience'))
   assert.ok(lines.includes('Done again 2 times (steps from the first run)'))
 })
 
@@ -114,10 +115,10 @@ test('A QUEST THE WIKI LACKS GETS A DRAFT IN THE LAYOUT MOST CACHED QUEST PAGES 
     "! ''' Classes: '''\n| ?",
     "! ''' Related NPCs: '''\n| None\n|}",
     // Level-2 headings, as ~1,700 of the cache's headings are; the checklist under `Checklist`.
-    '== Reward ==\n\n<ul><li>{{:Defiled Fish Scales}}</li></ul>',
+    '== Reward ==\n\n* Experience',
     '== Checklist ==\n{{CheckboxList}}',
     "* Say 'help' to [[Nikko Canti]] in [[Lake Nerius]].",
-    '* Give [[Defiled Fish Scales]] to [[Nikko Canti]] in [[Lake Nerius]], receive [[Defiled Fish Scales]].',
+    '* Give [[Defiled Fish Scales]] to [[Nikko Canti]] in [[Lake Nerius]].',
     '* Receive the [[Alchemical Solution]] quest.\n{{End}}',
     // A blank line after every walkthrough line, so each renders as its own paragraph.
     "== Walkthrough ==\n\nYou say, 'Hail, Nikko Canti'\n\n: Nikko Canti says, 'Oi, you there!",
@@ -194,4 +195,27 @@ test('A FISHED ITEM SAYS WHERE IT WAS FISHED UP, AND NOT WHERE IT IS CAUGHT ANYW
   const row = { domain: 'item', name: 'Fetid Lake Muck', kinds: ['fished'], count: 5, first: '', last: '', details: { samples: [] }, fishedIn: ['Lake Nerius'] } as unknown as GapRow
   assert.match(wikiPageText(row, [], {}), /\|notes = Fished up in \[\[Lake Nerius\]\]\.\n\|statsblock = /)
   assert.deepEqual(rowFactLines(row), ['Fished up in Lake Nerius'])
+})
+
+test('REPEATS ARE A COUNT, AND A STEP READS IN THE ORDER THE LOG PRINTED IT', () => {
+  const fish: QuestLog = {
+    giver: 'Nikko Canti', zone: 'Lake Nerius', npcs: ['Nikko Canti'], reruns: 0,
+    steps: [{
+      at: '2026-10-22 21:46:03', kind: 'updated', npc: 'Nikko Canti', zone: 'Lake Nerius',
+      offered: ['Fresh Fish', 'Fresh Fish', 'Fresh Fish'], offeredMs: [1000, 1001, 1002],
+      talk: [{ who: 'You', text: 'Hail, Nikko Canti', ms: 900 }, { who: 'Nikko Canti', text: 'My fish! Thank you!', ms: 1500 }]
+    }]
+  }
+  const page = questDraftPage('Something Fishy', fish)
+  assert.ok(page.includes('* Give 3 [[Fresh Fish]] to [[Nikko Canti]] in [[Lake Nerius]].'))
+  assert.equal(page.split('Give 3 [[Fresh Fish]] to [[Nikko Canti]]:').length - 1, 1)
+  // The hail, then the hand-in, then the reply it caused.
+  const order = ["You say, 'Hail, Nikko Canti'", 'Give 3 [[Fresh Fish]] to [[Nikko Canti]]:', ": Nikko Canti says, 'My fish! Thank you!'"].map((l) => page.indexOf(l))
+  assert.deepEqual([...order].sort((a, b) => a - b), order)
+  assert.ok(order.every((i) => i >= 0))
+})
+
+test("A CHAINED QUEST'S DETAILS SAY WHICH QUEST IT FOLLOWS, NOT WHO HANDED OVER THE OTHER QUEST", () => {
+  const log: QuestLog = { giver: 'Lord Lyfyx of Burwood', zone: 'The Temple of Solusek Ro', npcs: [], steps: [], reruns: 0, chainedFrom: 'Call for Aid' }
+  assert.equal(questRowLines(log)[0], 'Follows Call for Aid')
 })

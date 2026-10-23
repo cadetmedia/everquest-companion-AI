@@ -7,6 +7,15 @@
 import { gapMobKey as mobKey, perObject } from './gapMemo'
 import type { ItemFacts } from './wikiPage'
 
+/**
+ * The wiki's image name for an NPC: `npc_drizda_tunesinger.png`. A backtick stays, as the wiki's own
+ * files keep it (Guard E`tru, `npc_guard_e`tru.png`: 397 of the 428 backtick mobs' files; owner,
+ * 2026-10-22); only a character Windows (`\/:*?"<>|`) or a wiki title (`#[]{}`) refuses becomes `_`,
+ * and a run of spaces or `_` is one `_`.
+ */
+export const npcImageName = (name: string): string =>
+  `npc_${name.trim().toLowerCase().replace(/[\\/:*?"<>|#[\]{}]/g, '_').replace(/[\s_]+/g, '_').replace(/^_|_$/g, '')}.png`
+
 /** The catalog fields this reads; `otherNames` is absent on a branch without the redirects. */
 interface TitledMob {
   name: string

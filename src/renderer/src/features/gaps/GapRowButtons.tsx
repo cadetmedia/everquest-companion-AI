@@ -5,7 +5,7 @@
 //
 // A row click opens the details, so every compact button stops its click there.
 
-import { type JSX, type MouseEvent, type ReactNode, useState } from 'react'
+import { type JSX, type MouseEvent, type ReactNode, useRef, useState } from 'react'
 import { Button, IconButton, Stack } from '@mui/material'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import DoneIcon from '@mui/icons-material/Done'
@@ -104,11 +104,23 @@ function CopyPageButton({ text, row, compact }: { text: () => string; row: GapRo
   const [read, setRead] = useState<QuestRead | null>(null)
   const words = copyWords(row)
   const icon = copied && compact ? <DoneIcon fontSize="small" color="success" /> : <ContentCopyIcon fontSize="small" />
-  const onClick = row.domain === 'quest' ? () => readQuestPage(row, setRead) : () => void copyText(text()).then(setCopied)
+  // A read that answers after Close is dropped: the ticket moved on, so the dialog stays shut.
+  const ticket = useRef(0)
+  const openRead = (): void => {
+    const mine = ++ticket.current
+    readQuestPage(row, (r) => {
+      if (ticket.current === mine) setRead(r)
+    })
+  }
+  const close = (): void => {
+    ticket.current++
+    setRead(null)
+  }
+  const onClick = row.domain === 'quest' ? openRead : () => void copyText(text()).then(setCopied)
   return (
     <>
       <ActionButton compact={compact} label={copied ? 'Copied' : words.label} tip={words.tip} icon={icon} onClick={onClick} testId="gaps-copy-page" />
-      {read !== null && <QuestCopyDialog row={row} read={read} offline={text} onClose={() => setRead(null)} />}
+      {read !== null && <QuestCopyDialog row={row} read={read} offline={text} onClose={close} />}
     </>
   )
 }

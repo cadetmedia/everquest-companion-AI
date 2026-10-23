@@ -11,15 +11,22 @@
 //   * top-table rows the page lacks or holds `?` / blank in (Start Zone, Quest Giver, Minimum Level),
 //     and the Related NPCs and Related Zones the log met that the row does not name;
 //   * reward items the page names nowhere, under its Reward heading (or a new one);
-//   * walkthrough blocks (a say, an NPC line, a hand-in, a task line, faction lines, experience) whose
-//     words the page does not hold, each placed after the last block the page does hold, so a missing
-//     hand-in lands between the talk around it;
+//   * walkthrough blocks (a say, an NPC line, a hand-in, faction lines, experience, an achievement)
+//     whose words the page does not hold, each placed after the last block the page does hold, so a
+//     missing hand-in lands between the talk around it. Task lines are never added (12 of the 931
+//     cached pages write one), only read as anchors;
 //   * the Quests and zone categories.
 // A line counts as present when its words are on the page with case, punctuation, markup and the
-// game's backtick folded away; a long NPC line by its first 40 letters, since editors trim them.
+// game's backtick folded away; a long NPC line by its first 40 letters, since editors trim them. A
+// hand-in is present when a Hand/Give line of the walkthrough links its item, and a link an article
+// or a letter or two off the game's item name is reported (Unfortunate News links Curt Dismissal and
+// Orgination of Might; the game hands over A Curt Dismissal and Ordination of Might).
+//
+// THE PAGE'S OWN LAYOUT: older pages write level-1 headings (`= Walkthrough =`, 10 of the cache) and
+// `Starts In`; sections are found at any level and a new one takes the page's level.
 
-import { questLogOf, questPageTitle, questRewards, relatedNpcs, relatedZones, type QuestCatalogEntry, type QuestLog } from './gapQuests'
-import { npcOf, questDraftPage, questRowPage, questWalkBlocks, rewardList, scrubPlayers, topRow, walkLines, zoneCategory, zoneOf, type QuestPageContext, type RowFactContext, type WalkBlock } from './gapQuestPage'
+import { questLogOf, questPageTitle, questRewards, questTitleKey, relatedNpcs, relatedZones, type QuestCatalogEntry, type QuestLog } from './gapQuests'
+import { giverOf, homeZone, npcOf, questDraftPage, questRowPage, questWalkBlocks, rewardList, startCell, startsFromQuest, topRow, walkLines, zoneCategory, zoneOf, type QuestPageContext, type RowFactContext, type WalkBlock } from './gapQuestPage'
 
 /** What Copy shows for a quest row. */
 export interface QuestLiveCopy {
@@ -67,6 +74,9 @@ class Doc {
     this.lines[at] = line
     this.added[at] = true
   }
+  note(text: string): void {
+    if (!this.notes.includes(text)) this.notes.push(text)
+  }
   find(re: RegExp, from = 0): number {
     for (let i = from; i < this.lines.length; i++) if (re.test(this.lines[i])) return i
     return -1
@@ -76,9 +86,21 @@ class Doc {
   }
 }
 
-const HEADING = /^=+[^=].*=+\s*$/
+const HEADING = /^(=+)[^=].*?\1\s*$/
+const REWARD_HEADING = /^(=+)\s*Rewards?\s*\1\s*$/i
+const WALK_HEADING = /^(=+)\s*Walkthrough\s*\1\s*$/i
 const CATEGORY = /^\s*\[\[\s*category\s*:/i
 const holds = (hay: string, words: string): boolean => words === '' || hay.includes(` ${words} `)
+
+/** A heading line's level: `= X =` is 1, `== X ==` 2; 0 for any other line. */
+const levelOf = (line: string): number => HEADING.exec(line)?.[1].length ?? 0
+
+/** A new section's heading at the page's own level (its first heading's), else the wiki's usual 2. */
+function headingLine(doc: Doc, title: string): string {
+  const first = doc.lines.find((l) => levelOf(l) > 0)
+  const eq = '='.repeat(first === undefined ? 2 : levelOf(first))
+  return `${eq} ${title} ${eq}`
+}
 
 // ---- the top table ---------------------------------------------------------------------------
 
@@ -139,6 +161,12 @@ function cellOf(doc: Doc, label: string): number {
   return t === undefined || at === undefined ? -1 : valueLine(doc, at, t.close)
 }
 
+/** A row's written value, '' when the row is missing, blank or `?`. */
+function cellText(doc: Doc, label: string): string {
+  const v = cellOf(doc, label)
+  return v < 0 || emptyCell(doc.lines[v]) ? '' : doc.lines[v].replace(/^\|\s*/, '').trim()
+}
+
 /** A row the page lacks is added; a blank or `?` cell is filled; a written cell is left alone. */
 function fillRow(doc: Doc, label: string, value: string): void {
   const t = table(doc)
@@ -173,28 +201,44 @@ function extendList(doc: Doc, label: string, names: readonly string[], link: (n:
   doc.changes.push(`${label}: + ${missing.join(', ')}`)
 }
 
-/** The start zone: filled when blank; a page that names another zone is noted, never changed. */
-function mergeStartZone(doc: Doc, zone: string, c: QuestPageContext): void {
-  const v = cellOf(doc, 'start zone')
-  const pageZone = v < 0 || emptyCell(doc.lines[v]) ? '' : plainWords(doc.lines[v].replace(/^\|/, ''))
-  if (pageZone !== '' && pageZone !== plainWords(zoneOf(zone, c))) doc.notes.push(`Start Zone: the page says ${pageZone}, your log took it in ${zone}.`)
-  fillRow(doc, 'Start Zone', zoneOf(zone, c))
+/**
+ * The start: filled when blank. A page that starts it from a quest is left alone (a chained quest's
+ * own answer). A page naming one zone the log disagrees with is noted, never changed; then the zone
+ * category is not filed either. Returns whether the page's start agrees with the log's.
+ */
+function mergeStart(doc: Doc, log: QuestLog, c: QuestPageContext): boolean {
+  const want = startCell(log, c)
+  if (want === undefined) return true
+  const cell = cellText(doc, 'start zone')
+  if (cell === '') {
+    fillRow(doc, 'Start Zone', want)
+    return true
+  }
+  if (startsFromQuest(cell) || plainWords(cell) === plainWords(want)) return true
+  if (/^\[\[[^\]]+\]\]$/.test(cell) || log.chainedFrom !== undefined) doc.note(`Start Zone: the page says ${plainWordsKeep(cell)}; your log: ${plainWordsKeep(want)}.`)
+  return false
 }
 
-function mergeTopTable(doc: Doc, log: QuestLog, c: QuestPageContext): void {
-  const zone = log.zone ?? c.journal?.zone
-  if (zone !== undefined && zone !== null) mergeStartZone(doc, zone, c)
-  if (log.giver !== undefined && log.giver !== null) fillRow(doc, 'Quest Giver', npcOf(log.giver, c))
+function mergeTopTable(doc: Doc, log: QuestLog, c: QuestPageContext): boolean {
+  const agrees = mergeStart(doc, log, c)
+  // A page that starts the quest from another quest names no giver; nor does a chained log.
+  const giver = startsFromQuest(cellText(doc, 'start zone')) ? undefined : giverOf(log)
+  if (giver !== undefined) fillRow(doc, 'Quest Giver', npcOf(giver, c))
   if (c.journal?.minLevel !== undefined) fillRow(doc, 'Minimum Level', String(c.journal.minLevel))
   extendList(doc, 'Related Zones', relatedZones(log), (z) => zoneOf(z, c))
   extendList(doc, 'Related NPCs', relatedNpcs(log), (n) => npcOf(n, c))
+  return agrees
 }
 
 // ---- the reward ------------------------------------------------------------------------------
 
-/** Where a section's body ends: the next heading or category, or the page's end. */
+/** Where a section's body ends: the next heading of its level or above, or a category, or the end. */
 function sectionEnd(doc: Doc, heading: number): number {
-  for (let i = heading + 1; i < doc.lines.length; i++) if (HEADING.test(doc.lines[i]) || CATEGORY.test(doc.lines[i])) return i
+  const level = levelOf(doc.lines[heading])
+  for (let i = heading + 1; i < doc.lines.length; i++) {
+    const l = levelOf(doc.lines[i])
+    if ((l > 0 && l <= level) || CATEGORY.test(doc.lines[i])) return i
+  }
   return doc.lines.length
 }
 
@@ -208,15 +252,56 @@ function afterText(doc: Doc, at: number): number {
 function mergeReward(doc: Doc, log: QuestLog): void {
   const items = (questRewards(log)?.items ?? []).filter((i) => !holds(doc.words(), plainWords(i)))
   if (items.length === 0) return
-  const heading = doc.find(/^==\s*Rewards?\s*==\s*$/i)
+  const heading = doc.find(REWARD_HEADING)
   if (heading >= 0) {
     doc.insert(afterText(doc, sectionEnd(doc, heading)), rewardList(items))
   } else {
-    const walk = doc.find(/^==\s*Walkthrough\s*==\s*$/i)
+    const walk = doc.find(WALK_HEADING)
     const at = walk >= 0 ? walk : firstCategory(doc)
-    doc.insert(at, ['== Reward ==', '', ...rewardList(items), ''])
+    doc.insert(at, [headingLine(doc, 'Reward'), '', ...rewardList(items), ''])
   }
   doc.changes.push(`Reward: ${items.join(', ')}`)
+}
+
+// ---- hand-ins --------------------------------------------------------------------------------
+
+const HAND_LINE = /^\s*:?\s*(?:'''\s*)?(?:hand|give|turn in)\b/i
+const LINKS = /\[\[([^\]|]+)(?:\|[^\]]*)?\]\]/g
+const ARTICLE = /^(?:a|an|the) /
+
+/** Letters to change to turn one name into the other (insert, delete, swap). */
+function editDistance(a: string, b: string): number {
+  let prev = Array.from({ length: b.length + 1 }, (_, j) => j)
+  for (let i = 1; i <= a.length; i++) {
+    const row = [i]
+    for (let j = 1; j <= b.length; j++) row[j] = Math.min(prev[j] + 1, row[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1))
+    prev = row
+  }
+  return prev[b.length]
+}
+
+/** How a page's link names the game's item: the same, near (an article or a letter or two off), or not. */
+function itemMatch(item: string, link: string): 'same' | 'near' | undefined {
+  const a = plainWords(item)
+  const b = plainWords(link)
+  if (a === b) return 'same'
+  const x = a.replace(ARTICLE, '')
+  const y = b.replace(ARTICLE, '')
+  if (x === y || (Math.min(x.length, y.length) >= 8 && editDistance(x, y) <= 2)) return 'near'
+  return undefined
+}
+
+/** The walkthrough line that hands this item over (any Hand/Give line linking it), or -1; a near link is noted. */
+function handLineOf(doc: Doc, item: string, from: number, to: number): number {
+  for (let i = from; i < to; i++) {
+    if (!HAND_LINE.test(doc.lines[i])) continue
+    for (const m of doc.lines[i].matchAll(LINKS)) {
+      const match = itemMatch(item, m[1])
+      if (match === 'near') doc.note(`The page links ${m[1].trim()}; the item is ${item}.`)
+      if (match !== undefined) return i
+    }
+  }
+  return -1
 }
 
 // ---- the walkthrough -------------------------------------------------------------------------
@@ -236,33 +321,43 @@ function blockWords(b: WalkBlock): string[] {
   })
 }
 
-/** Whether the page (its walkthrough, for a hand-in or a gift) already states the block. */
-function stated(b: WalkBlock, page: string, walk: string): boolean {
-  if (b.kind === 'experience') return page.includes('yougainexperience') || page.includes(' you gain experience ')
-  const hay = b.kind === 'give' || b.kind === 'receive' ? walk : page
-  return blockWords(b).every((w) => holds(hay, w))
+/** The walkthrough's span: its heading's line and where its body ends. */
+interface Span {
+  heading: number
+  end: number
 }
 
-/** The page line that states a block, at or after `from`, or -1. */
-function lineOf(doc: Doc, b: WalkBlock, from: number, to: number): number {
+/** The page line that states a block inside the walkthrough at or after `from`, or -1. */
+function lineOf(doc: Doc, b: WalkBlock, from: number, walk: Span): number {
+  if (b.kind === 'give') return handLineOf(doc, b.keys[0], from, walk.end)
   const words = blockWords(b)
-  for (let i = from; i < to; i++) {
+  for (let i = from; i < walk.end; i++) {
     const l = ` ${plainWords(doc.lines[i])} `
     if (b.kind === 'experience' ? /yougainexperience/i.test(doc.lines[i]) : words.some((w) => w !== '' && holds(l, w))) return i
   }
   return -1
 }
 
+/** Whether the page already states the block: a hand-in by its item, the rest by their words. */
+function stated(doc: Doc, b: WalkBlock, walk: Span): boolean {
+  if (b.kind === 'give') return handLineOf(doc, b.keys[0], walk.heading + 1, walk.end) >= 0
+  const page = doc.words()
+  if (b.kind === 'experience') return page.includes('yougainexperience') || page.includes(' you gain experience ')
+  const hay = b.kind === 'receive' || b.kind === 'achievement' ? doc.words(walk.heading, walk.end) : page
+  return blockWords(b).every((w) => holds(hay, w))
+}
+
 /** A faction line the page states with another number: the log's is the one the game printed. */
 function factionNotes(doc: Doc, blocks: readonly WalkBlock[]): void {
+  const page = doc.words()
   for (const b of blocks.filter((x) => x.kind === 'faction')) {
     for (const key of b.keys) {
       const m = /with \[\[(.+?)\]\] has been adjusted by (-?\d+)/.exec(key)
       if (!m) continue
       // Only when no number the page gives that faction is the log's: a page may list it at several steps.
       const re = new RegExp(`${plainWords(m[1])} has been adjusted by (\\d+)`, 'g')
-      const said = [...doc.words().matchAll(re)].map((x) => x[1])
-      if (said.length > 0 && !said.includes(m[2].replace('-', ''))) doc.notes.push(`${m[1]}: the page says ${said.join(' / ')}, your log says ${m[2]}.`)
+      const said = [...page.matchAll(re)].map((x) => x[1])
+      if (said.length > 0 && !said.includes(m[2].replace('-', ''))) doc.note(`${m[1]}: the page says ${said.join(' / ')}, your log says ${m[2]}.`)
     }
   }
 }
@@ -283,22 +378,24 @@ function mergeWalkthrough(doc: Doc, name: string, log: QuestLog, c: QuestPageCon
   const blocks = questWalkBlocks(name, log, c)
   if (blocks.length === 0) return
   factionNotes(doc, blocks)
-  const heading = doc.find(/^==\s*Walkthrough\s*==\s*$/i)
+  const heading = doc.find(WALK_HEADING)
   if (heading < 0) {
-    doc.insert(firstCategory(doc), ['== Walkthrough ==', '', ...walkLines(blocks)])
-    doc.changes.push(`Walkthrough: ${String(blocks.length)} lines from your log`)
+    const lines = walkLines(blocks.filter((b) => b.kind !== 'task'))
+    doc.insert(firstCategory(doc), [headingLine(doc, 'Walkthrough'), '', ...lines])
+    doc.changes.push(`Walkthrough: ${String(lines.filter((l) => l !== '').length)} lines from your log`)
     return
   }
   let anchor = heading
   let count = 0
   for (const b of blocks) {
-    const end = sectionEnd(doc, heading)
-    const page = doc.words()
-    if (stated(b, page, doc.words(heading, end))) {
-      const at = lineOf(doc, b, anchor + 1, end)
+    const walk = { heading, end: sectionEnd(doc, heading) }
+    if (stated(doc, b, walk)) {
+      const at = lineOf(doc, b, anchor + 1, walk)
       if (at >= 0) anchor = at + b.lines.length - 1
       continue
     }
+    // A task line is read as an anchor, never added: almost no page writes one.
+    if (b.kind === 'task') continue
     anchor = insertBlock(doc, anchor, b)
     count++
   }
@@ -307,8 +404,10 @@ function mergeWalkthrough(doc: Doc, name: string, log: QuestLog, c: QuestPageCon
 
 // ---- categories and the whole ----------------------------------------------------------------
 
-function mergeCategories(doc: Doc, log: QuestLog, c: QuestPageContext): void {
-  const wanted = ['[[Category:Quests]]', ...(log.zone === undefined || log.zone === null ? [] : [zoneCategory(log.zone, c)])]
+/** The Quests category, and the zone's when the page's start agrees with the log's. */
+function mergeCategories(doc: Doc, log: QuestLog, c: QuestPageContext, zoneOk: boolean): void {
+  const home = zoneOk ? homeZone(log) : undefined
+  const wanted = ['[[Category:Quests]]', ...(home === undefined ? [] : [zoneCategory(home, c)])]
   const have = doc.lines.filter((l) => CATEGORY.test(l)).map((l) => plainWords(l.replace(/^\s*\[\[\s*category\s*:/i, '[[')))
   const missing = wanted.filter((w) => !have.includes(plainWords(w.replace(/^\[\[Category:/, '[['))))
   if (missing.length === 0) return
@@ -320,11 +419,11 @@ function mergeCategories(doc: Doc, log: QuestLog, c: QuestPageContext): void {
 /** The log's quest against the page the wiki has: the page with only additions. */
 export function mergeQuestPage(live: string, name: string, log: QuestLog, c: QuestPageContext & { entry?: QuestCatalogEntry } = {}): Omit<QuestLiveCopy, 'kind' | 'title'> {
   const doc = new Doc(live)
-  const scrubbed: QuestLog = { ...log, steps: log.steps.map((s) => ({ ...s, ...(s.talk ? { talk: s.talk.map((t) => ({ ...t, text: scrubPlayers(t.text, c.players) })) } : {}) })) }
-  mergeTopTable(doc, scrubbed, c)
-  mergeReward(doc, scrubbed)
-  mergeWalkthrough(doc, name, scrubbed, c)
-  mergeCategories(doc, scrubbed, c)
+  // The walkthrough's blocks read the player's names as Soandso themselves (questWalkBlocks).
+  const zoneOk = mergeTopTable(doc, log, c)
+  mergeReward(doc, log)
+  mergeWalkthrough(doc, name, log, c)
+  mergeCategories(doc, log, c, zoneOk)
   return { text: doc.lines.join('\n'), added: doc.added, changes: doc.changes, notes: doc.notes }
 }
 
@@ -332,6 +431,26 @@ export function mergeQuestPage(live: string, name: string, log: QuestLog, c: Que
 export interface LiveQuestPage {
   title: string
   text: string
+  /** A second page the read passed through: the game's title, holding only a link to this one. */
+  stubOf?: string
+}
+
+/**
+ * A page that is only a link to another spelling of its own title: the title the link names. The
+ * wiki's Unfortunate news is the top table, `[[Unfortunate News]]` and the categories, while the
+ * walkthrough lives on Unfortunate News (titles are case-sensitive past the first letter).
+ */
+export function stubLinkTarget(title: string, text: string): string | undefined {
+  const t = table(new Doc(text))
+  const lines = text.replace(/\r\n/g, '\n').split('\n')
+  const body = lines
+    .filter((_, i) => t === undefined || i < t.open || i > t.close)
+    .map((l) => l.trim())
+    .filter((l) => l !== '' && !CATEGORY.test(l) && !/^\{\{[^}]*\}\}$/.test(l) && !/^\[\[\s*(?:file|image)\s*:/i.test(l))
+  if (body.length !== 1) return undefined
+  const m = /^\[\[([^\]|#]+)(?:\|[^\]]*)?\]\]\.?$/.exec(body[0])
+  const target = m?.[1].trim()
+  return target !== undefined && target !== title && questTitleKey(target) === questTitleKey(title) ? target : undefined
 }
 
 /**
@@ -346,7 +465,9 @@ export function questLiveCopy(q: { name: string; log: QuestLog; offline: string 
     const text = questDraftPage(name, log, c)
     return { kind: 'draft', title: live.title, text, added: flat(text), changes: [], notes: [] }
   }
-  return { kind: 'merged', title: live.title, ...mergeQuestPage(live.text, name, log, c) }
+  const merged = mergeQuestPage(live.text, name, log, c)
+  const stub = live.stubOf === undefined ? [] : [`${live.stubOf} is a second page holding only a link here; this compares against ${live.title}.`]
+  return { kind: 'merged', title: live.title, ...merged, notes: [...stub, ...merged.notes] }
 }
 
 /** A Quests row's Copy against what the wiki answered: the row's log, the page writers' context. */
