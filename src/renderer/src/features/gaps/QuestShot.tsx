@@ -9,7 +9,7 @@ import { type JSX, useCallback, useMemo, useState } from 'react'
 import { Chip, Stack, Typography } from '@mui/material'
 import type { GapRow } from '@shared/gaps'
 import { questLogOf, questTitleKey, type QuestJournalFacts } from '@shared/gapQuests'
-import { isQuestJournal, journalFactsByQuest, journalPlaces, readQuestJournal } from '@shared/questJournal'
+import { isQuestJournal, journalFactsByQuest, journalMissText, journalPlaces, readQuestJournal } from '@shared/questJournal'
 import { setQuestJournal, useQuestJournals } from './itemShotsStore'
 import { Line, PasteZone } from './PasteZone'
 
@@ -19,6 +19,7 @@ function keptLines(f: QuestJournalFacts): string[] {
   return [
     [...(f.zone === undefined ? [] : [f.zone]), ...levels].join(' · '),
     ...(f.objectives ?? []).map((o) => `${o.text}${o.status === undefined ? '' : ` (${o.status})`}`),
+    ...(f.hiddenSteps === undefined ? [] : [`${String(f.hiddenSteps)} more step${f.hiddenSteps === 1 ? '' : 's'} not shown yet`]),
     ...(f.description === undefined ? [] : [f.description])
   ].filter((l) => l !== '')
 }
@@ -38,7 +39,7 @@ export default function QuestShot({ row }: { row: GapRow }): JSX.Element {
         .then((reply) => {
           const r = reply.error === undefined ? readQuestJournal(reply.lines, reply.shades, places) : null
           if (r === null || !isQuestJournal(r)) {
-            setFailed(reply.error ?? 'No task rows read: paste the whole Quest Journal window, its task list showing.')
+            setFailed(reply.error ?? journalMissText(reply.lines))
             return
           }
           setFailed(null)

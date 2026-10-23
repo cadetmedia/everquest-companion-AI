@@ -10,7 +10,7 @@ import { join } from 'node:path'
 import { readJournalLines } from '../src/main/shot/journalLines.ts'
 import { stopOcr } from '../src/main/shot/ocr.ts'
 import { readItemShot, type ShotReaders } from '../src/main/shot/readItemShot.ts'
-import { journalFacts, journalFactsByQuest, journalPlaces, journalStatus, journalTurnIn, readQuestJournal, snapPlace } from '../src/shared/questJournal.ts'
+import { journalFacts, journalFactsByQuest, journalMissText, journalPlaces, journalStatus, journalTurnIn, readQuestJournal, snapPlace, splitLevels } from '../src/shared/questJournal.ts'
 import { heldSightings, rememberedExtras, withHeldSeen, askedNames } from '../src/shared/gapHeldSeen.ts'
 import { extraItemRows, guessedFacts, heldExtras } from '../src/shared/gapExtraItems.ts'
 import type { GapHeld, HeldIndex } from '../src/shared/gapHeld.ts'
@@ -147,4 +147,61 @@ test('A HELD QUEST ITEM CARRIES ITS GUESSED GIVER AND TURN-IN, MARKED AS GUESSES
   const unknown = new Set(['Solusek Petition'])
   const rows = extraItemRows(heldExtras(index(holder('Solusek Petition', first, ['General 6-Slot3'])), unknown), [], g)
   assert.equal((rows[0] as unknown as { questFacts: { givenBy: { guess: boolean } } }).questFacts.givenBy.guess, true)
+})
+
+/**
+ * The owner's window that errored (2026-10-23): one task, zone ALL, one objective done anywhere, six
+ * `? ? ?` rows, no description. Lines shaped as the real OCR reads the other three windows (the same
+ * heading slips; the grey bar's shade 128, the rock's 13), with the two misreads that refused it:
+ * the `Q` run into the title, and the zone run into the levels.
+ */
+const tragic = (row: string): { lines: string[]; shades: number[] } => {
+  const lines = [
+    'Cuest Journal ¥1 3A',
+    'Current Tasks Shared Task Quest History',
+    'Tasks 1/29 Request Timer: 00:11',
+    'Task Tile Time Left Zone Min Max',
+    row,
+    'Task Progression Preview Reward Monster Select REMOVE',
+    'Objective Instructions Status Zone',
+    "Make contact with Ollix's mother. 01 ALL",
+    ...Array.from({ length: 6 }, () => '? ? ? ? ? ?')
+  ]
+  return { lines, shades: lines.map((l) => (l === row ? 128 : 13)) }
+}
+
+test('THE TRAGIC TALE OF HOUSE EVERLING: ZONE ALL, SIX HIDDEN STEPS, AND THE ROW OCR RUNS TOGETHER', () => {
+  for (const row of [
+    '[4 Q The Tragic Tale of House Everling Unlimited ALL 1 50',
+    '[4 QThe Tragic Tale of House Everling Unlimited ALL 1 50',
+    '[4 Q The Tragic Tale of House Everling Unlimited ALL150',
+    '[4 QThe Tragic Tale of House Everling Unlimited ALL150 t',
+    // The time left misread too: the grey bar's line is the task.
+    '[4 QThe Tragic Tale of House Everling Unlirnited ALL150'
+  ]) {
+    const w = tragic(row)
+    const j = readQuestJournal(w.lines, w.shades, PLACES)
+    assert.deepEqual(j.tasks, [{ title: 'The Tragic Tale of House Everling', minLevel: 1, maxLevel: 50, selected: true }], row)
+    assert.deepEqual(journalFacts(j, 'The Tragic Tale of House Everling'), {
+      minLevel: 1,
+      maxLevel: 50,
+      objectives: [{ text: "Make contact with Ollix's mother.", status: '0/1' }],
+      hiddenSteps: 6
+    }, row)
+  }
+})
+
+test('A ZONE AND ITS LEVELS READ AS ONE SPLIT ONLY WHEN ONE SPLIT FITS', () => {
+  assert.deepEqual(splitLevels('150'), { min: 1, max: 50 })
+  assert.deepEqual(splitLevels('1050'), { min: 10, max: 50 })
+  assert.equal(splitLevels('1125'), undefined) // 1-125 or 11-25
+  assert.equal(splitLevels('900'), undefined)
+})
+
+test('A READ WITH NO TASK ROW SAYS WHAT IT READ, SHORT', () => {
+  const w = tragic('[4 Q')
+  assert.equal(readQuestJournal(w.lines, w.lines.map(() => 13), PLACES).tasks.length, 0)
+  assert.equal(journalMissText(w.lines), 'No task row found. Read: "Task Progression Preview Reward Monster Select REM…", "Objective Instructions Status Zone"')
+  assert.equal(journalMissText(['Inventory', 'Bags']), 'No task list found. Read: "Inventory", "Bags"')
+  assert.equal(journalMissText([]), 'No task list found: paste the whole Quest Journal window.')
 })

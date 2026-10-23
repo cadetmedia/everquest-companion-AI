@@ -5,8 +5,8 @@
 // row (a grey bar) is known. Here the lines become:
 //
 //   * THE TASK ROWS: `Q <title> <time left> <zone> <min> <max>`, each a quest's zone and level range;
-//   * THE SELECTED TASK's objectives, `<instruction> <status> <zone>` (`? ? ?` rows are hidden ones,
-//     skipped), and its description, the free text under them.
+//   * THE SELECTED TASK's objectives, `<instruction> <status> <zone>` (zone `ALL` kept as none; `? ? ?`
+//     rows are hidden steps, counted), and its description, the free text under them.
 //
 // OCR slips on the journal's font are measured on the owner's three windows (tests/fixtures/shots/
 // quest-journal-*.png): `Nerius` read `Merius`, `0/1` read `01`, `011` or `oi`, `Done` read `Cone`. A
@@ -38,6 +38,8 @@ export interface JournalObjective {
 export interface QuestJournalRead {
   tasks: JournalTask[]
   objectives: JournalObjective[]
+  /** `? ? ?` rows: steps the game has not shown yet. */
+  hiddenSteps?: number
   description?: string
 }
 
@@ -70,15 +72,70 @@ export function journalStatus(token: string): string | undefined {
   return m === null ? undefined : `${m[1].replace(/[oO]/, '0')}/${m[2]}`
 }
 
-/** A task row: the junk the row's icon reads as, `Q`, the title, the time left, the zone, min and max. */
-const TASK_ROW = /(?:^|[^a-z])Q\s+([A-Za-z].*?)\s+(Unlimited|\d+[dhms:][\d dhms:]*?)\s+(.+?)\s+(\d{1,3})(?:\s+(\d{1,3}))?(?:\s+\S{1,2})?\s*$/
+/**
+ * A task row: the junk the row's icon reads as, `Q` (OCR may run it into the title: `QThe Tragic
+ * Tale`), the title, the time left, then the zone and the levels (OCR may run those together too:
+ * `ALL150`, owner's window 2026-10-23).
+ */
+const TASK_ROW = /(?:^|[^a-z])Q\s*([A-Za-z].*?)\s+(Unlimited|\d+[dhms:][\d dhms:]*?)\s+(.+?)\s*$/
+
+/** The highest level a task row can state; a run of digits above it is a min and max read as one. */
+const MAX_LEVEL = 125
+
+/** `150` -> 1 and 50: the one split into min <= max, both levels; undefined when none or several fit. */
+export function splitLevels(digits: string): { min: number; max: number } | undefined {
+  const fits: { min: number; max: number }[] = []
+  for (let i = 1; i < digits.length; i++) {
+    const min = Number(digits.slice(0, i))
+    const max = Number(digits.slice(i))
+    if (digits[i] !== '0' && min >= 1 && min <= max && max <= MAX_LEVEL) fits.push({ min, max })
+  }
+  return fits.length === 1 ? fits[0] : undefined
+}
+
+/** A task row's tail (`Lake Nerius 1 50 t`, `ALL150`): its zone words and its levels. */
+function zoneAndLevels(tail: string): { zone: string; min?: number; max?: number } {
+  const w = tail.trim().split(/\s+/)
+  while (w.length > 1 && /^\D{1,2}$/.test(w[w.length - 1])) w.pop()
+  const m = /^(.*?)\s*(\d{1,5})(?:\s+(\d{1,3}))?$/.exec(w.join(' '))
+  if (m === null) return { zone: w.join(' ') }
+  if (m[3] !== undefined) return { zone: m[1], min: Number(m[2]), max: Number(m[3]) }
+  const run = m[2].length >= 3 || Number(m[2]) > MAX_LEVEL ? splitLevels(m[2]) : { min: Number(m[2]) }
+  return { zone: m[1], ...run }
+}
+
+function taskFrom(title: string, tail: string, selected: boolean, places: readonly string[]): JournalTask {
+  const t = zoneAndLevels(tail)
+  const zone = snapPlace(t.zone, places)
+  return {
+    title: title.trim(),
+    ...(zone === undefined ? {} : { zone }),
+    ...(t.min === undefined ? {} : { minLevel: t.min }),
+    ...(t.max === undefined ? {} : { maxLevel: t.max }),
+    selected
+  }
+}
 
 function taskOf(line: string, selected: boolean, places: readonly string[]): JournalTask | undefined {
   const m = TASK_ROW.exec(line)
-  if (m === null) return undefined
-  const zone = snapPlace(m[3], places)
-  const max = m[5] === undefined ? undefined : Number(m[5])
-  return { title: m[1].trim(), ...(zone === undefined ? {} : { zone }), minLevel: Number(m[4]), ...(max === undefined ? {} : { maxLevel: max }), selected }
+  return m === null ? undefined : taskFrom(m[1], m[3], selected, places)
+}
+
+/** A time-left word as OCR may read it: `Unlimited` within two slips, or a `3d`, `12h`, `00:11`. */
+const timeWord = (w: string): boolean => editDistance(letters(w), 'unlimited') <= 2 || /^\d+[dhms:]/.test(w)
+
+/**
+ * The selected row when no line reads as a task row (its time left misread): the text after the `Q`
+ * (or after the icon's junk), cut at the time left, or else before an `ALL` or level digits.
+ */
+function looseTask(line: string, places: readonly string[]): JournalTask | undefined {
+  const body = (/(?:^|[^a-z])Q\s*([A-Za-z].*)$/.exec(line)?.[1] ?? line.replace(/^[^A-Za-z]+/, '')).trim()
+  const w = body.split(/\s+/)
+  const time = w.findIndex((x, i) => i > 0 && timeWord(x))
+  const end = time > 0 ? time : w.findIndex((x, i) => i > 0 && /^(?:A[Ll1I|]{2}(?![A-Za-z])|\d)/.test(x))
+  const title = (end > 0 ? w.slice(0, end) : w).join(' ')
+  if (letters(title).length < 3) return undefined
+  return taskFrom(title, end > 0 ? w.slice(time > 0 ? end + 1 : end).join(' ') : '', true, places)
 }
 
 /** The words of a line with the junk OCR leaves at its end (`1`, `t`, `|`) dropped. */
@@ -88,23 +145,33 @@ function words(line: string): string[] {
   return w
 }
 
-/** An objective row: the instruction, the status token, and the zone its last words snap to. */
+/** An objective's words before its zone: the instruction and, when readable, the status token. */
+function instruction(rest: readonly string[], zone: string | undefined): JournalObjective | undefined {
+  const status = journalStatus(rest.at(-1) ?? '')
+  const known = status !== undefined || /^(?:[a-z|]{1,2}|[0-9oO][^\s]{0,2})$/.test(rest.at(-1) ?? '')
+  const text = (known ? rest.slice(0, -1) : rest).join(' ').replace(/^[^A-Za-z[]+/, '')
+  return text === '' ? undefined : { text, ...(status === undefined ? {} : { status }), ...(zone === undefined ? {} : { zone }) }
+}
+
+/** The journal's `ALL` (a step done anywhere), as OCR may read it. No zone to keep. */
+const ALL_ZONE = /^A[Ll1I|]{2}$/
+
+/** An objective row: the instruction, the status token, and the zone its last words snap to (none for `ALL`). */
 function objectiveOf(line: string, places: readonly string[]): JournalObjective | undefined {
   const w = words(line)
+  if (w.length > 1 && ALL_ZONE.test(w[w.length - 1])) return instruction(w.slice(0, -1), undefined)
   for (let n = Math.min(4, w.length - 1); n >= 1; n--) {
     // A zone's words start with a letter: a status token (`0i3`) is never part of it.
     const first = w[w.length - n]
     if (!/^[A-Za-z]{2}/.test(first) || journalStatus(first) !== undefined) continue
     const zone = snapPlace(w.slice(-n).join(' '), places)
-    if (zone === undefined) continue
-    const rest = w.slice(0, -n)
-    const status = journalStatus(rest.at(-1) ?? '')
-    const known = status !== undefined || /^(?:[a-z|]{1,2}|[0-9oO][^\s]{0,2})$/.test(rest.at(-1) ?? '')
-    const text = (known ? rest.slice(0, -1) : rest).join(' ').replace(/^[^A-Za-z[]+/, '')
-    return text === '' ? undefined : { text, ...(status === undefined ? {} : { status }), zone }
+    if (zone !== undefined) return instruction(w.slice(0, -n), zone)
   }
   return undefined
 }
+
+/** A `? ? ?` row: a step the game has not shown yet (no letters, two question marks or more). */
+const hiddenRow = (line: string): boolean => !/[A-Za-z]/.test(line) && (line.match(/\?/g) ?? []).length >= 2
 
 /** Where a heading line sits, by a pattern that survives OCR's slips on it; -1 when absent. */
 const headingAt = (lines: readonly string[], re: RegExp, from = 0): number => lines.findIndex((l, i) => i >= from && re.test(l))
@@ -116,21 +183,31 @@ function tasksOf(lines: readonly string[], shades: readonly number[], places: re
     const t = taskOf(lines[i], (shades[i] ?? 0) > SELECTED_SHADE, places)
     if (t !== undefined) tasks.push(t)
   }
+  if (tasks.length === 0) {
+    // No row read as one: the grey bar's line is the task the window shows.
+    const bar = lines.slice(rows.from, rows.to).filter((_, i) => (shades[rows.from + i] ?? 0) > SELECTED_SHADE)
+    const t = bar.length === 1 ? looseTask(bar[0], places) : undefined
+    if (t !== undefined) tasks.push(t)
+  }
   if (tasks.length === 1) tasks[0].selected = true
   return tasks
 }
 
-/** The objective rows after their heading, then the description: the prose after them. */
-function objectivesOf(lines: readonly string[], places: readonly string[], from: number): { objectives: JournalObjective[]; description?: string } {
+/** The objective rows after their heading (`? ? ?` rows counted, not kept), then the description: the prose after them. */
+function objectivesOf(lines: readonly string[], places: readonly string[], from: number): Omit<QuestJournalRead, 'tasks'> {
   const objectives: JournalObjective[] = []
   const prose: string[] = []
+  let hidden = 0
   for (const line of lines.slice(from)) {
-    if (letters(line).length < 3) continue
+    if (letters(line).length < 3) {
+      if (hiddenRow(line) && prose.length === 0) hidden++
+      continue
+    }
     const o = objectiveOf(line, places)
     if (o !== undefined && prose.length === 0) objectives.push(o)
     else if (words(line).length >= 5) prose.push(words(line).join(' '))
   }
-  return { objectives, ...(prose.length === 0 ? {} : { description: prose.join(' ') }) }
+  return { objectives, ...(hidden === 0 ? {} : { hiddenSteps: hidden }), ...(prose.length === 0 ? {} : { description: prose.join(' ') }) }
 }
 
 /**
@@ -154,6 +231,15 @@ export function journalPlaces(stepZones: readonly (string | undefined)[]): strin
 /** Whether the lines are a Quest Journal at all: its task table and a task row read. */
 export const isQuestJournal = (r: QuestJournalRead): boolean => r.tasks.length > 0
 
+/** A read with no task row, said short: what was read under the Task Title heading (or at the top). */
+export function journalMissText(lines: readonly string[]): string {
+  const head = headingAt(lines, /Task\s+Ti[tl]/i)
+  const read = (head < 0 ? lines : lines.slice(head + 1)).filter((l) => letters(l).length >= 3).slice(0, 2)
+  const quoted = read.map((l) => `"${l.length > 50 ? `${l.slice(0, 50)}…` : l}"`).join(', ')
+  const what = head < 0 ? 'No task list found' : 'No task row found'
+  return read.length === 0 ? `${what}: paste the whole Quest Journal window.` : `${what}. Read: ${quoted}`
+}
+
 /** Two titles one quest: folded alike, or a slip or two apart (OCR's `alchemical Solution`). */
 export function sameQuest(read: string, title: string): boolean {
   const a = letters(questTitleKey(read))
@@ -169,7 +255,13 @@ export function journalFacts(r: QuestJournalRead, title: string): QuestJournalFa
     ...(t.zone === undefined ? {} : { zone: t.zone }),
     ...(t.minLevel === undefined ? {} : { minLevel: t.minLevel }),
     ...(t.maxLevel === undefined ? {} : { maxLevel: t.maxLevel }),
-    ...(t.selected ? { objectives: r.objectives, ...(r.description === undefined ? {} : { description: r.description }) } : {})
+    ...(t.selected
+      ? {
+          objectives: r.objectives,
+          ...(r.hiddenSteps === undefined ? {} : { hiddenSteps: r.hiddenSteps }),
+          ...(r.description === undefined ? {} : { description: r.description })
+        }
+      : {})
   }
 }
 
