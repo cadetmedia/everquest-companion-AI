@@ -152,7 +152,7 @@ export interface MobFacts {
   loot: { item: string; drops: number }[]
   /** How many of it the player killed: the drop rates' denominator. */
   kills: number
-  /** Kills whose faction lines the log prints (credited, or the player's own killing blow): with none seen, the page can say none. */
+  /** The player's own killing blows, whose faction lines the log always prints: with none seen, the page can say none. */
   credited: number
   /** The player's own killing blows: with LOOT_NONE_KILLS of them and nothing looted, the page says no loot. */
   ownKills: number
@@ -293,7 +293,11 @@ export function mobFacts(row: GapRow, loot: readonly LootEvent[], kills: KillMap
     levels: conLevels(row),
     loot: mobLoot(row, loot),
     kills: killed?.count ?? 0,
-    credited: Math.max(killed?.credited ?? 0, ownKills(row)),
+    // Only the player's own killing blows prove "no factions". An experience-credited kill does not:
+    // a pet's kill while the player is feigned pays experience and moves no faction (owner's log,
+    // 2026-10-23: Gonekn killed Guard S`Tal, "You gain experience!", no faction line; owner: "this
+    // is dangerous to say None when it's not none"), and `X died.` never says whose kill it was.
+    credited: ownKills(row),
     ownKills: ownKills(row, seen.ownPets),
     points: (seen.mobLocs ?? []).filter(mine).flatMap((m) => m.points),
     specials: [...new Set((seen.mobSpecials ?? []).filter(mine).flatMap((m) => m.specials))],

@@ -78,8 +78,14 @@ test('a capped "better" line is a raise: it lands under opposing_factions; prove
   assert.ok(page.includes("| factions = \n\n* [[Clan Kolbok]] <span class='profac'>(-1)</span>"), page)
   // No amount stated: the sign alone (owner, 2026-10-22).
   assert.ok(page.includes("| opposing_factions = \n\n* [[Kerra Isle]] <span class='oppfac'>(+)</span>\n"), page)
-  const none = mobPage(mobFacts(row('mob', 'a bat'), [], killIndex({ 'a bat': { display: 'a bat', count: 2, credited: 2 } } as unknown as KillMap)))
+  const batKills = killIndex({ 'a bat': { display: 'a bat', count: 2, credited: 2 } } as unknown as KillMap)
+  const own = { killers: { entries: [{ name: 'you', n: 2 }], distinct: 1 } }
+  const none = mobPage(mobFacts(row('mob', 'a bat', own), [], batKills))
   assert.ok(none.includes('| factions = \n\n* None') && none.includes('| opposing_factions = \n\n* None'), none)
+  // Experience-credited kills with no killing blow of your own prove nothing: a pet's kill while you
+  // are feigned pays experience and moves no faction (owner, 2026-10-23, Guard S`Tal).
+  const petOnly = mobPage(mobFacts(row('mob', 'a bat'), [], batKills))
+  assert.ok(petOnly.includes('| factions = \n') && !petOnly.includes('* None'), petOnly)
   const unknown = mobPage(mobFacts(row('mob', 'a bat'), [], {}))
   assert.ok(unknown.includes('| factions = \n'), 'no kill of your own: blank, not None')
 })
