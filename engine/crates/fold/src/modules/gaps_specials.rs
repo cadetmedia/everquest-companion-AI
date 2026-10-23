@@ -2,7 +2,11 @@
 //! prints `(Rampage)` and `(Flurry)` on the mob's own attack lines, and the parser already hands
 //! them over as `modifiers`; nothing kept them per mob. Only what the log states: no guess at
 //! Summons, Enrage or an immunity, which Legends never prints.
+//!
+//! Beside them, the same lines' fight numbers for the page's HP, damage and attacks fields
+//! (`gaps_fight.rs`): one reader of a mob's combat lines for its page.
 
+use super::gaps_fight::MobFights;
 use crate::event::Event;
 use crate::modules::resist::world::is_player_shaped_name;
 use serde_json::{json, Value};
@@ -15,15 +19,32 @@ const SPECIALS: [(&str, &str); 2] = [("Rampage", "Rampages"), ("Flurry", "Flurri
 pub struct MobSpecials {
     /// Lower-cased mob → its display name and what it did.
     seen: HashMap<String, (String, BTreeSet<&'static str>)>,
+    /// Each mob's fights per tier (`gaps_fight.rs`), served on its Mobs row as `fight`.
+    pub fights: MobFights,
 }
 
 impl MobSpecials {
     pub fn clear(&mut self) {
         self.seen.clear();
+        self.fights.clear();
     }
 
-    /// A damage or miss line: a mob-shaped attacker's Rampage or Flurry. True when it was new.
+    /// A zone line: the fights' tier. False: nothing served moves.
+    pub fn zone(&mut self, zone: Option<&str>) -> bool {
+        self.fights.zone(zone);
+        false
+    }
+
+    /// A death line ends its fight. False: the Mobs row's own death line moves what is served.
+    pub fn death(&mut self, ev: &Event) -> bool {
+        self.fights.death(ev);
+        false
+    }
+
+    /// A damage or miss line: its fight, and a mob-shaped attacker's Rampage or Flurry. True when
+    /// the special was new.
     pub fn event(&mut self, ev: &Event) -> bool {
+        self.fights.event(ev);
         let Some(attacker) = ev.str("attacker") else {
             return false;
         };
