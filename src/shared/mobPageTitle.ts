@@ -5,6 +5,7 @@
 // page answers (`a bandit`, a page per zone) keeps the log's spelling: no page is more right.
 
 import { gapMobKey as mobKey, perObject } from './gapMemo'
+import type { ItemFacts } from './wikiPage'
 
 /** The catalog fields this reads; `otherNames` is absent on a branch without the redirects. */
 interface TitledMob {
@@ -29,4 +30,14 @@ const titles = perObject((catalog: readonly TitledMob[]): ReadonlyMap<string, st
 export function mobPageFinder(catalog: readonly TitledMob[]): (name: string) => string | undefined {
   const map = titles(catalog)
   return (name) => map.get(mobKey(name)) ?? undefined
+}
+
+/**
+ * The facts' mob and vendor names as their pages title them, so a link never leans on a redirect
+ * (owner, 2026-10-22: `[[a fire drake]]` for the page `A Fire Drake`). Unknown names stay as read.
+ */
+export function withPageTitles(f: ItemFacts, mobPage?: (name: string) => string | undefined): ItemFacts {
+  if (mobPage === undefined) return f
+  const title = (n: string): string => mobPage(n) ?? n
+  return { ...f, drops: f.drops.map((d) => ({ ...d, mob: title(d.mob) })), soldBy: f.soldBy.map((v) => ({ ...v, vendor: title(v.vendor) })) }
 }

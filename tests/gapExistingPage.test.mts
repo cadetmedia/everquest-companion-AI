@@ -3,8 +3,8 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { existingEditor, existingPage, existingPageAction, lookupVerdict } from '../src/shared/gapExistingPage'
-import { mobPageFinder } from '../src/shared/mobPageTitle'
-import { itemFacts, itemPage, withPageTitles } from '../src/shared/wikiPage'
+import { mobPageFinder, withPageTitles } from '../src/shared/mobPageTitle'
+import { itemFacts, itemPage } from '../src/shared/wikiPage'
 import { gapActions, wikiEditUrl, type GapRow } from '../src/shared/gaps'
 import type { LootEvent } from '../src/shared/types'
 
