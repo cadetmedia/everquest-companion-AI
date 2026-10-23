@@ -31,6 +31,7 @@ pub mod procdetect;
 pub mod procrouting;
 pub mod procviews;
 pub mod procwindows;
+pub mod rekey;
 pub mod roster;
 pub mod rounds;
 pub mod routing;

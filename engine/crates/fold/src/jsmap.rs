@@ -77,6 +77,18 @@ impl<V> JsMap<V> {
         }
     }
 
+    /// `remove`, handing the value back; None when the key is absent. Same cost.
+    pub fn take(&mut self, key: &str) -> Option<V> {
+        let i = self.at.remove(key)?;
+        let (_, value) = self.entries.remove(i);
+        for slot in self.at.values_mut() {
+            if *slot > i {
+                *slot -= 1;
+            }
+        }
+        Some(value)
+    }
+
     /// `map.delete(k)` — true when something was removed. See the header on the cost.
     pub fn remove(&mut self, key: &str) -> bool {
         let Some(i) = self.at.remove(key) else {

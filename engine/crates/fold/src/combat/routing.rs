@@ -1043,7 +1043,7 @@ fn miss_instant(ev: &MissLine, kind: &'static str, target: String) -> TimelineRa
 /// The ally pet's own meter row. The row id carries the CHARMER — `allypet:<charmer>:<pet>` — because
 /// the same mob re-charmed by a different enchanter is a different person's contribution, and one
 /// row summing both would be the "aggregates lie" failure with two names on it.
-fn ally_pet_source(bind: &AllyBind) -> SourceRef {
+pub(crate) fn ally_pet_source(bind: &AllyBind) -> SourceRef {
     SourceRef {
         id: format!("allypet:{}:{}", bind.charmer_key, bind.name_key),
         // The broadcast's spelling, not the damage line's: EQ sentence-cases a leading article, and
