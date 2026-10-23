@@ -6,8 +6,10 @@
 // pane. Nothing shows when there is no picture or it cannot be read.
 
 import { type JSX, type ReactNode, useEffect, useState } from 'react'
-import { Box } from '@mui/material'
-import { rowPicture } from '@shared/mobPicture'
+import { Box, IconButton, Stack, Typography } from '@mui/material'
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
+import ChevronRightIcon from '@mui/icons-material/ChevronRight'
+import { rowPictures } from '@shared/mobPicture'
 import type { GapRow } from '@shared/gaps'
 import { Tooltip } from '../../lib/Tooltip'
 import { useFolderPictures } from './folderPicturesStore'
@@ -33,14 +35,38 @@ function usePictureData(path: string | undefined, listing: unknown): string | nu
   return url
 }
 
+/**
+ * The row's pictures, one at a time: an item's window and its Lore tab with arrows above to step
+ * between them (owner, 2026-10-22: "can the image section have a left/right arrow above so you can
+ * see the item and it's lore image?"); a single picture shows no arrows.
+ */
 function RowPicture({ row }: { row: GapRow }): JSX.Element | null {
   const folder = useFolderPictures()
-  const path = rowPicture(row, useMobPictures(), folder)
-  const url = usePictureData(path, folder)
-  if (path === undefined || url === null) return null
+  const pictures = rowPictures(row, useMobPictures(), folder)
+  const [at, setAt] = useState(0)
+  // Back to the first picture when another row opens.
+  useEffect(() => setAt(0), [row.name, row.domain])
+  const shown = pictures.at(Math.min(at, pictures.length - 1))
+  const url = usePictureData(shown?.path, folder)
+  if (shown === undefined || url === null) return null
+  const path = shown.path
   const name = path.split(/[\\/]/).pop() ?? path
+  const step = (by: number): void => setAt((i) => (i + by + pictures.length) % pictures.length)
   return (
     <Box sx={{ flex: '0 1 420px', maxWidth: '100%', minWidth: 0 }} data-testid="gaps-row-picture">
+      {pictures.length > 1 && (
+        <Stack direction="row" alignItems="center" justifyContent="center" spacing={0.5} data-testid="gaps-row-picture-steps">
+          <IconButton size="small" aria-label="Previous picture" onClick={() => step(-1)} data-testid="gaps-row-picture-prev">
+            <ChevronLeftIcon fontSize="small" />
+          </IconButton>
+          <Typography variant="caption" color="text.secondary">
+            {shown.label} ({String(pictures.indexOf(shown) + 1)}/{String(pictures.length)})
+          </Typography>
+          <IconButton size="small" aria-label="Next picture" onClick={() => step(1)} data-testid="gaps-row-picture-next">
+            <ChevronRightIcon fontSize="small" />
+          </IconButton>
+        </Stack>
+      )}
       <Tooltip title={`${name}: click to show it in its folder.`}>
         <Box
           component="img"
