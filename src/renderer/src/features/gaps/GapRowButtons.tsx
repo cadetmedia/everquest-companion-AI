@@ -10,6 +10,8 @@ import { Button, IconButton, Stack } from '@mui/material'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import DoneIcon from '@mui/icons-material/Done'
 import UndoIcon from '@mui/icons-material/Undo'
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
+import { removeCapturedItem } from './capturedItemsStore'
 import NoteAddIcon from '@mui/icons-material/NoteAdd'
 import SearchIcon from '@mui/icons-material/Search'
 import { GAP_CAPTURE, mobPageOf, onMobPage, wikiCreateUrl, wikiEditUrl, wikiSearchUrl, type GapRow } from '@shared/gaps'
@@ -131,6 +133,24 @@ function DoneButton({ isDone, onDone, compact }: { isDone: boolean; onDone: () =
   )
 }
 
+/**
+ * A captured item's Remove, in the details pane only (owner, 2026-10-23): a capture that misread the
+ * name made a row of its own. The log's and the export's rows for the item stay.
+ */
+function RemoveCaptureButton({ row }: { row: GapRow }): JSX.Element | null {
+  if (!row.kinds.includes('captured')) return null
+  return (
+    <ActionButton
+      compact={false}
+      label="Remove capture"
+      tip="Forget this capture (a misread name, say). The item's log and inventory rows stay."
+      icon={<DeleteOutlineIcon fontSize="small" />}
+      onClick={() => removeCapturedItem(row.name)}
+      testId="gaps-remove-capture"
+    />
+  )
+}
+
 /** The four work buttons, worded in the details pane, icons on a row. */
 export default function GapRowButtons({
   row,
@@ -150,6 +170,7 @@ export default function GapRowButtons({
       <CopyPageButton key={row.name} text={() => pageText(row)} row={row} compact={compact} />
       <WikiLinks row={row} compact={compact} />
       <DoneButton isDone={isDone} onDone={() => onDone(row)} compact={compact} />
+      {!compact && <RemoveCaptureButton row={row} />}
     </>
   )
   if (!compact) return buttons

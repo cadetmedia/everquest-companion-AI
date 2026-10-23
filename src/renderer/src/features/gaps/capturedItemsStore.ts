@@ -4,7 +4,7 @@
 // and its reading survive a restart; Done hides the row as any other.
 
 import { useSyncExternalStore } from 'react'
-import { capturedItemsOf, withCapturedItem, type CapturedItem } from '@shared/gapExtraItems'
+import { capturedItemsOf, withCapturedItem, withoutCapturedItem, type CapturedItem } from '@shared/gapExtraItems'
 
 export const CAPTURED_ITEMS_KEY = 'eq.gaps.capturedItems'
 /** The newest this many are kept. */
@@ -51,6 +51,19 @@ export function addCapturedItem(name: string, at = new Date().toISOString()): vo
     localStorage.setItem(CAPTURED_ITEMS_KEY, JSON.stringify(withCapturedItem(load(), name, at, KEEP)))
   } catch {
     // A blocked store keeps nothing; the reading stays on screen for this capture.
+  }
+  for (const l of listeners) l()
+}
+
+/**
+ * Forget a captured item (owner, 2026-10-23: "i need a way to delete this captured item": a capture
+ * that misread the name, `Altunable` for Earring of Experimentation, left a row of its own).
+ */
+export function removeCapturedItem(name: string): void {
+  try {
+    localStorage.setItem(CAPTURED_ITEMS_KEY, JSON.stringify(withoutCapturedItem(load(), name)))
+  } catch {
+    // A blocked store held nothing to remove.
   }
   for (const l of listeners) l()
 }

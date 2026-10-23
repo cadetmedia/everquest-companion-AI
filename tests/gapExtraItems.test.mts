@@ -6,7 +6,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { knownIndex, knownItem, unknownOf } from '../src/main/gapUnknownItems'
 import { parseInventoryDump } from '../src/main/outputs/inventoryParse'
-import { capturedExtras, capturedItemsOf, extraItemRows, heldCandidates, heldExtras, withCapturedItem, withExtraItemRows } from '../src/shared/gapExtraItems'
+import { capturedExtras, capturedItemsOf, extraItemRows, heldCandidates, heldExtras, withCapturedItem, withExtraItemRows, withoutCapturedItem } from '../src/shared/gapExtraItems'
 import { heldIndex } from '../src/shared/gapHeld'
 import { gapInZone, type GapRow } from '../src/shared/gaps'
 import { ownershipPayload } from '../src/shared/planner/ownership'
@@ -74,4 +74,6 @@ test('THE KEPT CAPTURES READ BACK WHOLE; A SECOND CAPTURE OF A NAME MOVES ITS TI
   const list = withCapturedItem([{ name: 'A', at: '1' }, { name: 'B', at: '2' }], 'a', '3', 300)
   assert.deepEqual(list, [{ name: 'B', at: '2' }, { name: 'a', at: '3' }])
   assert.equal(withCapturedItem(list, 'C', '4', 2).length, 2)
+  // Remove capture (owner, 2026-10-23: a misread `Altunable`): that name goes, any case; the rest stay.
+  assert.deepEqual(withoutCapturedItem(list, 'A'), [{ name: 'B', at: '2' }])
 })
