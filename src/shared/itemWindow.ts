@@ -166,12 +166,22 @@ function flagsOf(line: string): string[] {
 }
 
 /**
+ * A flag line OCR slipped in every word (owner's capture, 2026-10-23: `Altunable`, so the name came
+ * out "Altunable"): each comma piece within reach of a flag word, and 6+ letters, so a short name such
+ * as `Lord` is never the flag `Lore`.
+ */
+function slippedFlags(line: string): boolean {
+  const pieces = line.split(/\s*,\s*/).filter(Boolean)
+  return pieces.length > 0 && pieces.every((p) => p.replace(/[^A-Za-z]/g, '').length >= 6 && FLAG_WORDS.includes(snap(p, FLAG_WORDS, 'Flag').value))
+}
+
+/**
  * The flag line holds flag words, never a word of a name: `Lore of Malignancy` is the name line, not a
  * `Lore` flag (review, 2026-10-21). Besides the known words: a flag within OCR's reach of one, or a
  * flag the list does not know yet beside known ones, comma-separated (`Soulbound, No Trade`).
  */
 function isFlagLine(line: string): boolean {
-  if (flagsOf(line).length === 0) return false
+  if (flagsOf(line).length === 0) return slippedFlags(line)
   if (!/[A-Za-z]{3}/.test(line.replace(FLAG_RE, ' '))) return true
   const pieces = line.split(/\s*,\s*/).filter(Boolean)
   const known = pieces.filter((p) => FLAG_WORDS.includes(snap(p, FLAG_WORDS, 'Flag').value)).length

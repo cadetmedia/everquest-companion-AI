@@ -241,6 +241,13 @@ test("PETAMORPH WAND: WEREWOLF, ENLARGED (THE OWNER'S, 2026-10-22): THE CLICK EF
   assert.equal(l.read.name, 'Petamorph Wand: Werewolf')
 })
 
+test("EARRING OF EXPERIMENTATION (THE OWNER'S CAPTURE, 2026-10-23): A SLIPPED FLAG WORD (`Altunable`) IS THE FLAG LINE, NOT THE NAME", async () => {
+  const e = await read('earring-of-experimentation.png', textOnly)
+  assert.equal(e.read.name, 'Earring of Experimentation')
+  assert.ok(e.read.statsblock.startsWith('\nAttunable<br>\nSlot: EAR<br>\nAC: 3<br>'), e.read.statsblock)
+  assert.ok(e.read.checks?.includes('Flag read as "Altunable", taken as Attunable.'), String(e.read.checks))
+})
+
 test("WU'S FIST OF MASTERY +10 (AUGMENTED) (THE OWNER'S, 2026-10-21): THE +10 PATH, NO EXALTATION LINE, NO EFFECT AN EXALTATION GRANTS", async () => {
   const s = await read('wus-fist-of-mastery-10-augmented.png', textOnly)
   assert.equal(s.read.name, "Wu's Fist of Mastery")
