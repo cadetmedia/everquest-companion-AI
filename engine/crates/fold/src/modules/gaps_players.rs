@@ -16,7 +16,7 @@
 use std::collections::{HashMap, HashSet};
 
 /// The hail and its answer are a few seconds apart.
-const ANSWER_MS: i64 = 10_000;
+pub const ANSWER_MS: i64 = 10_000;
 /// Seen again in the same zone this much later: it stands there, so it is an NPC.
 const REVISIT_MS: i64 = 10 * 60_000;
 /// The highest level a player can reach in the era the server is in. Raised as expansions open

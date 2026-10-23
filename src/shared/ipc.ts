@@ -1049,6 +1049,9 @@ export const IPC = {
   // Spell names in, `{ [name]: what the install's spells_us.txt / spells_us_str.txt state }` out
   // (src/main/gapSpellFacts.ts), for a copied spell page. Payload: (names: string[]).
   gapSpellFacts: 'gaps:spellFacts',
+  // Item names in, `{ [name]: the tradeskills its recipes name }` out, off the committed corpus
+  // (src/main/gapItemTrades.ts), for a new merchant page's description. Payload: (names: string[]).
+  gapItemTrades: 'gaps:itemTrades',
 
   // ---- error harness (renderer -> main, fire-and-forget) ----
   // window.onerror / onunhandledrejection / React ErrorBoundary report here so

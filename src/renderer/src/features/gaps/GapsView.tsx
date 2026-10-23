@@ -39,7 +39,7 @@ import { Tooltip } from '../../lib/Tooltip'
 import { useBoolPref } from '../combat/useCombatPrefs'
 import { copyText } from '../../lib/clipboard'
 import { useGapVerdicts } from '../../lib/gapVerdicts'
-import { useSpellFacts } from '../../lib/gapSpellFacts'
+import { usePageSightings } from './usePageSightings'
 import GapsTable from './GapsTable'
 import { GAPS_DATA_DATE, PAGE_EXTRAS, useGapsData } from './useGapsData'
 import { useDoneMarks, usePlayerList } from './useDoneMarks'
@@ -60,9 +60,6 @@ const ZONE_HERE_KEY = 'eq.gaps.zoneHere'
 /** Where "Show done" is remembered. */
 const SHOW_DONE_KEY = 'eq.gaps.showDone'
 const CHIP_CONTEXT = { dataDate: GAPS_DATA_DATE, isMob: PAGE_EXTRAS.isMob }
-const NO_NAMES: readonly string[] = []
-/** The names of the rows on screen. */
-const spellNamesOf = (rows: readonly GapRow[]): string[] => rows.map((r) => r.name)
 
 /** A small checkbox with a caption, the tab's toolbar control. */
 function Pref({ label, checked, onChange, testId, disabled }: { label: string; checked: boolean; onChange: (on: boolean) => void; testId: string; disabled?: boolean }): JSX.Element {
@@ -230,11 +227,6 @@ function ShownLine({
   )
 }
 
-/** What the pages read beside the ledgers, from the engine's snapshot (useGapsData). */
-function sightingsOf(engine: GapsSnap | null | undefined, spellFacts: ReturnType<typeof useSpellFacts>) {
-  return { killFactions: engine?.killFactions, mobLocs: engine?.mobLocs, mobSpecials: engine?.mobSpecials, mobCoin: engine?.mobCoin, ownPets: engine?.ownPets, ...PAGE_EXTRAS, spellFacts }
-}
-
 export default function GapsView(): JSX.Element {
   const { snap, engine, loot, kills } = useGapsData()
   const [domain, setDomain] = useState<GapDomain>('item')
@@ -272,9 +264,8 @@ export default function GapsView(): JSX.Element {
   const sorted = useMemo(() => sortGaps(visible, sort, verdicts), [visible, sort, verdicts])
   // What the pages read beside the ledgers: each kill's factions, each mob's points, the wiki's spellings.
   // A spell page fills from the install's spell files (owner, 2026-10-19): asked for the spells on screen.
-  const spellNames = useMemo(() => (domain === 'spell' ? spellNamesOf(visible) : NO_NAMES), [domain, visible])
-  const spellFacts = useSpellFacts(spellNames)
-  const sightings = useMemo(() => sightingsOf(engine, spellFacts), [engine, spellFacts])
+  // A new merchant page's description reads its items' trades and the player's names (usePageSightings).
+  const sightings = usePageSightings(engine, domain, visible)
   const pageText = useCallback((row: GapRow) => wikiPageText(row, loot, kills, sightings), [loot, kills, sightings])
   const needed = useCallback((row: GapRow) => stillNeeded(row, loot, kills, sightings), [loot, kills, sightings])
   // "Group by zone, then mob" (owner ask, 2026-10-18), its heading order and its folds (useGrouping).

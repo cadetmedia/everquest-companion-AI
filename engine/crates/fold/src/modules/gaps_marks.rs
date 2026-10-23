@@ -110,6 +110,7 @@ impl GapsModule {
             return false;
         };
         self.standings.con(mob, ev.str("faction"));
+        self.stock.conned(mob, ev.int("level"), ev.str("faction"));
         let zone = self.zone.clone();
         let placed = self.mob_locs.target(mob, ev.ts(), zone.as_deref());
         let filed = placed | self.met(mob, false, ev);
