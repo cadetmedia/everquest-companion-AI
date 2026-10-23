@@ -25,7 +25,7 @@ import { wikiZoneLink } from './gapWikiZone'
 import type { VendorFinder } from './gapMobPage'
 import type { LootEvent } from './types'
 import { withPageTitles } from './mobPageTitle'
-import { locFinder, questFactsOf, questPageParts } from './itemQuestFacts'
+import { locFinder, questFactsOf, questPageParts, withQuestFields } from './itemQuestFacts'
 
 /** A log zone name as the wiki spells it (shared/gapWikiZone.ts); as printed when none is given. */
 export type ZoneNamer = (raw: string) => string
@@ -370,17 +370,15 @@ export function itemPage(f: ItemFacts): string {
   for (const d of f.drops) byZone.set(d.zone, [...(byZone.get(d.zone) ?? []), d.mob])
   const fields: [string, string][] = [['itemname', f.name]]
   if (f.merchantValue !== undefined) fields.push(['merchant_value', wikiCoin(f.merchantValue)])
-  if (f.questNote !== undefined) fields.push(['notes', f.questNote])
   fields.push(['statsblock', STATS_SKELETON])
   if (byZone.size > 0) fields.push(['dropsfrom', zoneBlocks(byZone)])
   if (f.soldBy.length > 0) fields.push(['soldby', itemWhereTable(f.soldBy)])
-  if (f.relatedQuests !== undefined) fields.push(['relatedquests', f.relatedQuests])
   const cats = [
     ...(f.soldBy.length > 0 ? ['Vendor Sold'] : []),
     ...(f.crafted ? ['Player Crafted'] : []),
     ...[...byZone.keys()].filter((z) => z !== '').sort((a, b) => a.localeCompare(b))
   ]
-  return page(templateBlock('Itempage', fields), cats)
+  return page(templateBlock('Itempage', withQuestFields(fields, f)), cats)
 }
 
 // ---- NPC and merchant pages: the blueprints' full layout ------------------------------------------

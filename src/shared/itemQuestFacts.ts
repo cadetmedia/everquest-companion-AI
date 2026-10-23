@@ -75,6 +75,22 @@ export function questPageParts(f: ItemQuestFacts | undefined, c: QuestNoteContex
   return { ...(note === undefined ? {} : { questNote: note }), ...(related === undefined ? {} : { relatedQuests: related }) }
 }
 
+/**
+ * An Itempage's fields with the quest's: its sentences joined onto `|notes` (after the lore a
+ * screenshot gave, or a new `|notes` before `|statsblock`), and `|relatedquests` at the end.
+ */
+export function withQuestFields(fields: readonly (readonly [string, string])[], q: { questNote?: string; relatedQuests?: string }): [string, string][] {
+  const out: [string, string][] = fields.map(([k, v]) => [k, v])
+  const notes = out.find(([k]) => k === 'notes')
+  if (q.questNote !== undefined && notes !== undefined) notes[1] = `${notes[1]}<br>\n${q.questNote}`
+  else if (q.questNote !== undefined) {
+    const at = out.findIndex(([k]) => k === 'statsblock')
+    out.splice(at < 0 ? out.length : at, 0, ['notes', q.questNote])
+  }
+  if (q.relatedQuests !== undefined) out.push(['relatedquests', q.relatedQuests])
+  return out
+}
+
 /** The facts as short lines for the row's details. */
 export function questFactLines(f: ItemQuestFacts | undefined): string[] {
   if (f === undefined) return []

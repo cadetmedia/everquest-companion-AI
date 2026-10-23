@@ -3,7 +3,7 @@
 // about who the item is supposed to be turned into").
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { locFinder, questFactLines, questNote, relatedQuests, type ItemQuestFacts } from '../src/shared/itemQuestFacts'
+import { locFinder, questFactLines, questNote, relatedQuests, withQuestFields, type ItemQuestFacts } from '../src/shared/itemQuestFacts'
 import { wikiPageText } from '../src/shared/wikiPage'
 import type { GapRow } from '../src/shared/gaps'
 
@@ -31,4 +31,15 @@ test("COPY WIKI PAGE FOR AN ITEM WRITES THE QUEST IN |notes AND |relatedquests",
   const page = wikiPageText(row, [], {}, { mobLocs: [{ mob: 'Ty`Klerr', points: [[-395.03, -228.06, 3.19]] }] })
   assert.ok(page.includes('|notes = Given by [[Ty`Klerr]] in [[Neriak - Foreign Quarter]] at /loc (-395.03, -228.06, 3.19)'), page)
   assert.ok(page.includes('|relatedquests = \n* [[Alchemical Solution]]'), page)
+})
+
+test('THE QUEST JOINS A SCREENSHOT\'S LORE NOTE, OR STANDS BEFORE THE STATSBLOCK ALONE', () => {
+  const q = { questNote: 'Turn in to [[Dorian G`Wyn]].', relatedQuests: '\n* [[Alchemical Solution]]' }
+  assert.deepEqual(withQuestFields([['itemname', 'X'], ['notes', '{{Item Lore|Likes moongazing.}}'], ['statsblock', 'S']], q), [
+    ['itemname', 'X'],
+    ['notes', '{{Item Lore|Likes moongazing.}}<br>\nTurn in to [[Dorian G`Wyn]].'],
+    ['statsblock', 'S'],
+    ['relatedquests', '\n* [[Alchemical Solution]]']
+  ])
+  assert.deepEqual(withQuestFields([['itemname', 'X'], ['statsblock', 'S']], { questNote: 'N' }), [['itemname', 'X'], ['notes', 'N'], ['statsblock', 'S']])
 })
