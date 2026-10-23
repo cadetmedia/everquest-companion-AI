@@ -218,7 +218,8 @@ test('the read plan: each change is read only when a window that could use it ho
   }
   const w = { items: windowStart(ITEMS_AT), mobs: windowStart(ITEMS_AT), quests: windowStart(QUESTS_AT) }
   const noSpells = planReads(feed, w, known)
-  assert.deepEqual(noSpells.pageids, [500])
+  // Unknown pages are read in the quest window too: one may be a new quest page (owner, 2026-10-23).
+  assert.deepEqual(noSpells.pageids, [600, 500, 800])
   assert.deepEqual(noSpells.titles, ['Rusty Dagger', 'Rusty Blade', 'Doomed Spell'])
   const all = planReads(feed, { ...w, spells: windowStart(SPELLS_AT) }, known)
   assert.deepEqual(all.pageids, [600, 500, 800, 57458])
