@@ -163,6 +163,11 @@ export const ZONES: readonly ZoneEntry[] = [
   // EQL-new; DEFAULT SET ONLY. No era: it is not a 1999-2000 expansion zone, it is content EQ
   // Legends invented — and the player has walked it, so calling it out-of-era would be a lie.
   { short: 'newsebexp', name: 'New Sebilis Expedition' },
+  // EQL-new in the 2026-10-21 patch, no era for the same reason: the game's own maps folder
+  // ships `lakenerius`, `nektropos` and `nektrunder` (owner, 2026-10-23: the Maps tab found none).
+  { short: 'lakenerius', name: 'Lake Nerius' },
+  { short: 'nektropos', name: 'Nektropos Castle', aliases: ['Castle Nektropos'] },
+  { short: 'nektrunder', name: 'Nektropos Undercrofts' },
   { short: 'freportn', name: 'North Freeport', era: 'classic' },
   // KALADIM'S STEMS RUN THE OTHER WAY, AND BOTH SOURCES SAY SO (JOS-415, reported 8AX84S:
   // "When I zone into or manually select South Kaladim the North Kaladim map loads and visa
@@ -295,7 +300,7 @@ export const ZONES: readonly ZoneEntry[] = [
   { short: 'barter', name: 'The Barter Hall' },
   { short: 'bazaar', name: 'The Bazaar' },
   { short: 'cauldron', name: "Dagnor's Cauldron", era: 'classic' },
-  { short: 'cazicthule', name: 'Cazic-Thule', era: 'classic' },
+  { short: 'cazicthule', name: 'Cazic-Thule', aliases: ['Temple of Cazic-Thule'], era: 'classic' },
   { short: 'crushbone', name: 'Clan Crushbone', aliases: ['Crushbone'], era: 'classic' },
   { short: 'felwithea', name: 'North Felwithe', aliases: ['Northern Felwithe'], era: 'classic' },
   { short: 'felwitheb', name: 'South Felwithe', aliases: ['Southern Felwithe'], era: 'classic' },
