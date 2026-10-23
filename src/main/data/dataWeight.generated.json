@@ -3,47 +3,48 @@
     {
       "file": "src/main/data/items.json",
       "bytes": 8911569,
-      "parseMs": 51.1,
+      "parseMs": 56.1,
       "heapMb": 20.8
     },
     {
       "file": "src/main/data/messageOverlay.baseline.json",
       "bytes": 410455,
-      "parseMs": 2,
+      "parseMs": 2.4,
       "heapMb": 0.7
     },
     {
       "file": "src/main/data/pageEra.json",
       "bytes": 233763,
-      "parseMs": 3.7,
+      "parseMs": 2.7,
       "heapMb": 0.7
     },
     {
       "file": "src/main/data/resistBaseline.json",
       "bytes": 969398,
-      "parseMs": 3.7,
+      "parseMs": 3.3,
       "heapMb": 1.7
     },
     {
       "file": "src/main/data/spellLines.json",
       "bytes": 191765,
-      "parseMs": 1,
+      "parseMs": 0.5,
       "heapMb": 0.2
     },
     {
       "file": "src/main/data/spells.json",
       "bytes": 1122358,
-      "parseMs": 2.8,
+      "parseMs": 2.4,
       "heapMb": 1.1
     },
     {
       "file": "src/renderer/src/data/eqlegends/mobs.json",
       "bytes": 5065082,
-      "parseMs": 15.8,
+      "parseMs": 14.2,
       "heapMb": 7.4
     }
   ],
   "rendererOnly": [
+    "src/renderer/src/data/eqlegends/mobRaces.json",
     "src/renderer/src/data/eqlegends/posky.json",
     "src/renderer/src/data/eqlegends/quests.json"
   ]
