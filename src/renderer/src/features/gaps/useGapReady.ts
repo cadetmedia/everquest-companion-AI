@@ -27,7 +27,7 @@ export interface GapReadiness {
 
 /** What the pages read beside the ledgers, from the engine's snapshot (useGapsData). */
 function sightingsOf(engine: GapsSnap | null | undefined): MobSightings & PageExtras {
-  return { killFactions: engine?.killFactions, mobLocs: engine?.mobLocs, mobSpecials: engine?.mobSpecials, mobCoin: engine?.mobCoin, ...PAGE_EXTRAS }
+  return { killFactions: engine?.killFactions, mobLocs: engine?.mobLocs, mobSpecials: engine?.mobSpecials, mobCoin: engine?.mobCoin, ownPets: engine?.ownPets, ...PAGE_EXTRAS }
 }
 
 /** `spellNames`: the spells to ask the install's files about (the shown domain's, when it is Spells). */
