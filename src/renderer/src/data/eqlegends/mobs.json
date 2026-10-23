@@ -966,7 +966,11 @@
         "Giant Snake Fang"
       ],
       "image": "npc_a_black_mamba.png",
-      "noImage": true
+      "noImage": true,
+      "notices": [
+        "delete",
+        "DNE"
+      ]
     },
     {
       "page": "A black reaver",
@@ -19897,7 +19901,11 @@
         "Snake Egg"
       ],
       "image": "npc_a_garter_snake.png",
-      "noImage": true
+      "noImage": true,
+      "notices": [
+        "delete",
+        "DNE"
+      ]
     },
     {
       "page": "A Gelatinous Cube (Qeynos Aqueducts)",
@@ -20778,7 +20786,11 @@
         }
       ],
       "image": "npc_a_ghoul_yeoman.png",
-      "noImage": true
+      "noImage": true,
+      "notices": [
+        "delete",
+        "DNE"
+      ]
     },
     {
       "page": "A Ghoulish Ancille",
@@ -21592,7 +21604,11 @@
         }
       ],
       "image": "npc_a_giant_wasp_warrior.jpg",
-      "noImage": true
+      "noImage": true,
+      "notices": [
+        "delete",
+        "DNE"
+      ]
     },
     {
       "page": "A giant wasp worker",
@@ -23469,7 +23485,11 @@
         "-30",
         "-30"
       ],
-      "image": "npc_a_gnome_slave.png"
+      "image": "npc_a_gnome_slave.png",
+      "notices": [
+        "delete",
+        "DNE"
+      ]
     },
     {
       "page": "A gnomish mage",
@@ -32468,7 +32488,10 @@
         "10"
       ],
       "image": "npc_a_kobold_guardian.png",
-      "noImage": true
+      "noImage": true,
+      "notices": [
+        "delete"
+      ]
     },
     {
       "page": "A kobold hunter",
@@ -33514,7 +33537,11 @@
         "Nektulos Forest"
       ],
       "image": "npc_a_large_arachneidae.png",
-      "noImage": true
+      "noImage": true,
+      "notices": [
+        "delete",
+        "DNE"
+      ]
     },
     {
       "page": "A large bat",
@@ -35584,7 +35611,10 @@
         "Decayed Armor"
       ],
       "image": "npc_a_lizard_spiritualist.png",
-      "noImage": true
+      "noImage": true,
+      "notices": [
+        "delete"
+      ]
     },
     {
       "page": "A lizard warder",
@@ -35804,7 +35834,11 @@
         "-30"
       ],
       "image": "npc_a_lizardman_robber.png",
-      "noImage": true
+      "noImage": true,
+      "notices": [
+        "delete",
+        "DNE"
+      ]
     },
     {
       "page": "A lizardman scout",
@@ -38145,7 +38179,11 @@
         "Medium Quality Cat Pelt",
         "High Quality Cat Pelt"
       ],
-      "image": "npc_a_mountain_lion.png"
+      "image": "npc_a_mountain_lion.png",
+      "notices": [
+        "delete",
+        "DNE"
+      ]
     },
     {
       "page": "A mountain spiritling",
@@ -38263,7 +38301,11 @@
         "10"
       ],
       "image": "npc_a_muddite_recordkeeper.png",
-      "noImage": true
+      "noImage": true,
+      "notices": [
+        "delete",
+        "DNE"
+      ]
     },
     {
       "page": "A mumbling totem man",
@@ -41814,7 +41856,11 @@
         "Fire Beetle Carapace"
       ],
       "image": "npc_a_pyre_beetle.png",
-      "noImage": true
+      "noImage": true,
+      "notices": [
+        "delete",
+        "DNE"
+      ]
     },
     {
       "page": "A Pyre Golem",
@@ -43395,7 +43441,11 @@
         "Lock of Zombie Hair"
       ],
       "image": "npc_a_rotting_citizen.png",
-      "noImage": true
+      "noImage": true,
+      "notices": [
+        "delete",
+        "DNE"
+      ]
     },
     {
       "page": "A Rotting Initiate",
@@ -43409,7 +43459,11 @@
         "Zombie Skin"
       ],
       "image": "npc_a_rotting_initiate.png",
-      "noImage": true
+      "noImage": true,
+      "notices": [
+        "delete",
+        "DNE"
+      ]
     },
     {
       "page": "A Rotting Sentry",
@@ -50897,7 +50951,11 @@
         "Tarnished Rapier"
       ],
       "image": "npc_a_skeletal_soldier.png",
-      "noImage": true
+      "noImage": true,
+      "notices": [
+        "delete",
+        "DNE"
+      ]
     },
     {
       "page": "A skeletal watchman",
@@ -51667,7 +51725,11 @@
         }
       ],
       "image": "npc_a_small_coyote.png",
-      "noImage": true
+      "noImage": true,
+      "notices": [
+        "delete",
+        "DNE"
+      ]
     },
     {
       "page": "A small mountain lion",
@@ -51683,7 +51745,11 @@
         "High Quality Cat Pelt"
       ],
       "image": "npc_a_small_mountain_lion.png",
-      "noImage": true
+      "noImage": true,
+      "notices": [
+        "delete",
+        "DNE"
+      ]
     },
     {
       "page": "A smelly slave",
@@ -54733,7 +54799,10 @@
         "10"
       ],
       "image": "npc_a_tae_ew_defender.png",
-      "noImage": true
+      "noImage": true,
+      "notices": [
+        "delete"
+      ]
     },
     {
       "page": "A Tae Ew Justicar",
@@ -54751,7 +54820,10 @@
         "10"
       ],
       "image": "npc_a_tae_ew_justicar.png",
-      "noImage": true
+      "noImage": true,
+      "notices": [
+        "delete"
+      ]
     },
     {
       "page": "A Tae Ew Page",
@@ -54769,7 +54841,10 @@
         "10"
       ],
       "image": "npc_a_tae_ew_page.png",
-      "noImage": true
+      "noImage": true,
+      "notices": [
+        "delete"
+      ]
     },
     {
       "page": "A Tae Ew Sentinel",
@@ -54788,7 +54863,10 @@
         "10"
       ],
       "image": "npc_a_tae_ew_sentinel.png",
-      "noImage": true
+      "noImage": true,
+      "notices": [
+        "delete"
+      ]
     },
     {
       "page": "A tal ghoul wizard",
@@ -60495,7 +60573,11 @@
         }
       ],
       "image": "npc_a_zombie_yeoman.png",
-      "noImage": true
+      "noImage": true,
+      "notices": [
+        "delete",
+        "DNE"
+      ]
     },
     {
       "page": "A.S.A. VI",
@@ -65488,7 +65570,11 @@
         }
       ],
       "image": "npc_an_animated_scarecrow.png",
-      "noImage": true
+      "noImage": true,
+      "notices": [
+        "delete",
+        "DNE"
+      ]
     },
     {
       "page": "An apparition",
@@ -65831,7 +65917,11 @@
         "Spider Legs"
       ],
       "image": "an_araneidae_spiderling.png",
-      "noImage": true
+      "noImage": true,
+      "notices": [
+        "delete",
+        "DNE"
+      ]
     },
     {
       "page": "An arena spectator",
@@ -66425,7 +66515,11 @@
         }
       ],
       "image": "npc_an_ebon_drakeling.png",
-      "noImage": true
+      "noImage": true,
+      "notices": [
+        "delete",
+        "DNE"
+      ]
     },
     {
       "page": "An ebon wing hatchling",
@@ -66475,7 +66569,10 @@
         "-30"
       ],
       "image": "npc_an_eerie_chest.png",
-      "noImage": true
+      "noImage": true,
+      "notices": [
+        "delete"
+      ]
     },
     {
       "page": "An elder crimson drake",
@@ -75746,7 +75843,11 @@
         "1"
       ],
       "image": "aqua_goblin_marauder.png",
-      "noImage": true
+      "noImage": true,
+      "notices": [
+        "delete",
+        "DNE"
+      ]
     },
     {
       "page": "Aqua goblin mariner",
@@ -81364,7 +81465,10 @@
         "10"
       ],
       "image": "npc_berinsan.png",
-      "noImage": true
+      "noImage": true,
+      "notices": [
+        "delete"
+      ]
     },
     {
       "page": "Berit",
@@ -86918,7 +87022,10 @@
         "10"
       ],
       "image": "npc_bruax_grengar_pet.png",
-      "noImage": true
+      "noImage": true,
+      "notices": [
+        "delete: Not present in EQL"
+      ]
     },
     {
       "page": "Brumen Firehammer",
@@ -110033,7 +110140,10 @@
         "10"
       ],
       "image": "npc_elgar_donbrand.png",
-      "noImage": true
+      "noImage": true,
+      "notices": [
+        "delete"
+      ]
     },
     {
       "page": "Elia Athrex",
@@ -112486,7 +112596,10 @@
         "-30"
       ],
       "image": "npc_exterminator_glurg.png",
-      "noImage": true
+      "noImage": true,
+      "notices": [
+        "delete: Does not spawn in EQL."
+      ]
     },
     {
       "page": "Exterminator VII",
@@ -123176,7 +123289,10 @@
         "10"
       ],
       "image": "npc_a_goblin_archeologist.png",
-      "noImage": true
+      "noImage": true,
+      "notices": [
+        "delete"
+      ]
     },
     {
       "page": "Goblin Battlemaster",
@@ -128809,7 +128925,10 @@
         "-30"
       ],
       "image": "guard_butal.png",
-      "noImage": true
+      "noImage": true,
+      "notices": [
+        "delete"
+      ]
     },
     {
       "page": "Guard Calik",
@@ -145585,7 +145704,10 @@
         "5",
         "5"
       ],
-      "image": "Heretic_invader.png"
+      "image": "Heretic_invader.png",
+      "notices": [
+        "delete"
+      ]
     },
     {
       "page": "Heretic Mkoriku",
@@ -190701,7 +190823,10 @@
         "Ice Crystal Staff"
       ],
       "image": "npc_priest_of_order.png",
-      "noImage": true
+      "noImage": true,
+      "notices": [
+        "delete: No longer in game"
+      ]
     },
     {
       "page": "Priest of Zek",
@@ -193918,7 +194043,10 @@
           "pct": 100
         }
       ],
-      "image": "npc_raotin_teawel.jpg"
+      "image": "npc_raotin_teawel.jpg",
+      "notices": [
+        "DNE"
+      ]
     },
     {
       "page": "Rapticor",
@@ -210814,7 +210942,10 @@
         }
       ],
       "image": "npc_sir_telian_mottsworth.png",
-      "noImage": true
+      "noImage": true,
+      "notices": [
+        "DNE"
+      ]
     },
     {
       "page": "Sir Willam",
@@ -212634,7 +212765,11 @@
         "-"
       ],
       "image": "npc_smith_tv`ysa.png",
-      "noImage": true
+      "noImage": true,
+      "notices": [
+        "delete",
+        "DNE"
+      ]
     },
     {
       "page": "Smithy Bashdyn",
@@ -232872,7 +233007,10 @@
         "1"
       ],
       "image": "npc_ulia_yovar.png",
-      "noImage": true
+      "noImage": true,
+      "notices": [
+        "delete"
+      ]
     },
     {
       "page": "Ulkar Jollkarek",
@@ -235625,7 +235763,10 @@
         "10"
       ],
       "image": "npc_Veredenia.jpg",
-      "noImage": true
+      "noImage": true,
+      "notices": [
+        "delete"
+      ]
     },
     {
       "page": "Vergad",
@@ -243907,7 +244048,10 @@
         }
       ],
       "image": "npc_xalirilan_zarinokosalio.png",
-      "noImage": true
+      "noImage": true,
+      "notices": [
+        "delete"
+      ]
     },
     {
       "page": "Xantis Ixtax",
