@@ -117,15 +117,18 @@ test('quests: a read page on no list that files itself as a quest joins the list
   const pages: PageTexts = new Map([
     ['Unfortunate news', fresh],
     ['A Curt Dismissal', 'An item.\n[[Category:Quest Items]]\n'],
-    ['Old Title', '#REDIRECT [[Unfortunate news]]\n[[Category:Quests]]']
+    ['Old Title', '#REDIRECT [[Unfortunate news]]\n[[Category:Quests]]'],
+    // A list page in a quest category: the full scrape lists it too, and it is no quest, so never "removed".
+    ['Faction Quest List', 'Below is a list of quests.\n[[Category:Quests]]\n']
   ])
   const fold = foldQuests(cache, [], {
     pages,
-    ids: ids([['Unfortunate news', 72900, 9], ['A Curt Dismissal', 72901, 9], ['Old Title', 72902, 9]]),
+    ids: ids([['Unfortunate news', 72900, 9], ['A Curt Dismissal', 72901, 9], ['Old Title', 72902, 9], ['Faction Quest List', 72903, 9]]),
     aux: new Map()
   })
-  assert.deepEqual(fold.added, ['Unfortunate news'])
+  assert.deepEqual(fold.added, ['Unfortunate news', 'Faction Quest List'])
+  assert.deepEqual(fold.removed, [])
   assert.deepEqual(fold.quests.map((q) => q.page), ['Unfortunate news'])
-  assert.deepEqual(fold.members.map((m) => m.title), ['Armor Quest', 'Gone Quest', 'Unfortunate news'])
-  assert.deepEqual(fold.fresh, [{ pageid: 72900, content: fresh, revid: 9 }])
+  assert.deepEqual(fold.members.map((m) => m.title), ['Armor Quest', 'Faction Quest List', 'Gone Quest', 'Unfortunate news'])
+  assert.deepEqual(fold.fresh.map((p) => p.pageid), [72900, 72903])
 })
