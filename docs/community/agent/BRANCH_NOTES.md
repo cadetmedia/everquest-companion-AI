@@ -476,6 +476,14 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   proof), `gapJob` treats `notice` as an update; `GapRowButtons.editorOf` opens the page's editor.
 - The forage test (gaps-item-facts) checks its four totals by name, so a new domain does not break it.
 
+- Existing page (gaps-tab): the lookups (catch_all, `wikiTemplates.ts`) save `notItemPage` / `notMobPage`;
+  `gapExistingPage.lookupVerdict` gives `otherPage:<title>` or `freeText:<title>`, a search hit under another name
+  is unchecked; `pageCheckAction(row, verdict)` says Fix page; `GapRowButtons.editorOf` edits that page.
+- Link titles: `mobPageTitle.mobPageFinder` (name, page, redirect names to the page title; none when several answer)
+  feeds `withPageTitles` for item `|dropsfrom` and `|soldby` via `PAGE_EXTRAS.mobPage`.
+- Unlogged items: `shared/gapExtraItems.ts` (held from the export, captured from a 📷 of an unknown item, kept in
+  `eq.gaps.capturedItems`); main `gapUnknownItems.ts` restates the engine's item check, keep it in step with `gaps_keys.rs`.
+
 ## Wiki redirects (cross-branch)
 
 - A redirect is a fact about the wiki, not about mobs: it applies to every catalog (owner, 2026-10-22,
