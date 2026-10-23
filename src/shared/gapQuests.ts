@@ -30,6 +30,8 @@ export interface QuestStep {
   factions?: { faction: string; line: string }[]
   experience?: boolean
   next?: string
+  /** `You have completed achievement: X` within 15 s after the step. */
+  achievements?: string[]
 }
 
 /** A Quests row's `quest`. */

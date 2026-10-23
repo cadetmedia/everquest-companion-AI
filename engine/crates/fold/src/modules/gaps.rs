@@ -205,7 +205,8 @@ impl GapsModule {
             // Handing an item to it is meeting it (owner, 2026-10-19: a fallen froglok, only traded with).
             "offer" => self.turn_in(ev) | self.npc_met(ev.str("npc"), "offered", ev),
             "allyPetLeader" => self.player_pet(ev.str("pet")),
-            _ => false,
+            // `You complete the trade with X.` spends the open trade (gaps_quest_log.rs); nothing else.
+            _ => self.quest_trade(ev),
         }
     }
 

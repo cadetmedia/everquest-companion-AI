@@ -43,6 +43,22 @@ pub const REFUSE_MS: i64 = 10_000;
 /// The NPC's words when it hands an offered item back: no turn-in.
 pub const REFUSAL: &str = "I have no need for this";
 
+/// A refusal is the player's when it names the player, or names no one, or the player is unknown:
+/// `I have no need for this, Bacon. You can have it back.` hands another player's item back.
+pub fn refused_here(said: &str, player: Option<&str>) -> bool {
+    let Some((_, rest)) = said.split_once(REFUSAL) else {
+        return false;
+    };
+    let to = rest
+        .strip_prefix(", ")
+        .and_then(|r| r.split('.').next())
+        .map(str::trim);
+    match (to, player) {
+        (Some(to), Some(p)) => to.eq_ignore_ascii_case(p),
+        _ => true,
+    }
+}
+
 /// Who handed an item over, where, and what the player said to get it.
 #[derive(Debug, Clone, Serialize, PartialEq)]
 pub struct GivenBy {
@@ -98,6 +114,8 @@ pub struct QuestFacts {
     /// (owner, 2026-10-22: Nikko Canti's page left `related_quests` empty; `You have been assigned
     /// the task 'Something Fishy'.` came a second after his [help] line).
     by_npc: HashMap<String, BTreeSet<String>>,
+    /// The log's character, kept across a clear: whose refusals are its own.
+    player: Option<String>,
 }
 
 /// `Your task 'Q' has been updated.` / `You have been assigned the task 'Q'.` → `Q`.
@@ -123,7 +141,15 @@ fn said_of(text: &str) -> Option<&str> {
 
 impl QuestFacts {
     pub fn clear(&mut self) {
-        *self = Self::default();
+        *self = Self {
+            player: self.player.take(),
+            ..Self::default()
+        };
+    }
+
+    /// The log's character, off its file name.
+    pub fn set_player(&mut self, name: Option<&str>) {
+        self.player = name.map(str::to_string);
     }
 
     /// An unparsed line: a speaker, the player's words, or a task line. True when an item's facts changed.
@@ -146,7 +172,7 @@ impl QuestFacts {
         }
         if let Some(name) = speaker_of(text) {
             if text.contains(REFUSAL) {
-                return self.refused(name, ts);
+                return refused_here(text, self.player.as_deref()) && self.refused(name, ts);
             }
             if text.contains('[') {
                 self.keyword_speakers.insert(name.to_string());
@@ -348,7 +374,7 @@ impl GapsModule {
 
 #[cfg(test)]
 mod tests {
-    use super::{said_of, task_of, QuestFacts};
+    use super::{refused_here, said_of, task_of, QuestFacts};
     use serde_json::json;
 
     #[test]
@@ -427,5 +453,16 @@ mod tests {
         q.last_npc = Some(("Guard Shilster".into(), t(100)));
         assert!(!q.task("Something Fishy", t(200)));
         assert_eq!(q.served(super::Domain::Mob, "guard shilster"), None);
+    }
+
+    /// 2026-10-22 23:53:30: Dorian G`Wyn handed another player's offer back beside the player's own.
+    #[test]
+    fn a_refusal_is_the_players_only_when_said_to_the_player() {
+        let other = "I have no need for this, Otherguy. You can have it back.";
+        let mine = "I have no need for this, Testplayer. You can have it back.";
+        assert!(!refused_here(other, Some("Testplayer")));
+        assert!(refused_here(mine, Some("Testplayer")));
+        assert!(refused_here(other, None), "an unknown player keeps every refusal");
+        assert!(!refused_here("Well met.", Some("Testplayer")));
     }
 }
