@@ -6,7 +6,7 @@
 import { editDistance } from './itemVocab'
 import { gapJob } from './gapJob'
 import type { GapRow } from './gaps'
-import { withoutTier, type ItemShotReply } from './itemWindow'
+import { isTabRow, withoutTier, type ItemShotReply } from './itemWindow'
 import type { ItemPageShot } from './wikiPage'
 
 /** What one paste was: the item window, its Lore tab, the icon alone; null when nothing usable was read. */
@@ -25,7 +25,7 @@ const TAB_RE = /\bLore\b/i
 const sentence = (s: string): boolean => s.split(/\s+/).length >= 3 && (s.match(/[a-z]/gi) ?? []).length >= 12
 
 /** Both tab words on one line: the window's tab row (`- Description Lore`), not a stray `Lore` in a picture. */
-const TAB_ROW_RE = /Des\w{0,4}ption.*\bLore\b/i
+const tabRowWithLore = (l: string): boolean => isTabRow(l) && /\bLore\b/i.test(l)
 /**
  * The Description tab's own text: a lore read off it is a window whose Class line OCR missed. Labels
  * with their colon: a lore's prose may say "class" (`... - Class 1`, review 2026-10-21).
@@ -40,7 +40,7 @@ const WINDOW_TEXT = /\b(Equipped|No Trade|Temporary)\b|\b(Class|Race|Size|Weight
 function isLore(r: ItemShotReply): boolean {
   const lore = r.read.lore
   if (lore === undefined || WINDOW_TEXT.test(lore) || !/[a-z]{3}/i.test(lore)) return false
-  return r.lines.some((l) => TAB_ROW_RE.test(l)) || (sentence(lore) && r.lines.some((l) => TAB_RE.test(l)))
+  return r.lines.some(tabRowWithLore) || (sentence(lore) && r.lines.some((l) => TAB_RE.test(l)))
 }
 
 /** A window's statsblock carries its Class or Race codes; a blank one (a Lore tab taken for a window) does not. */

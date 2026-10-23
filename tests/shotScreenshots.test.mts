@@ -220,6 +220,15 @@ test("SICKLY MAIDEN'S HAIR, THE LORE TAB (THE OWNER'S, 2026-10-21): TWO WRAPPED 
   assert.equal(s.read.statsblock, '')
 })
 
+test("PETAMORPH WAND: WEREWOLF, THE LORE TAB WHOLE (THE OWNER'S, 2026-10-22): A TAB ROW READ AS 'Descriplic' IS STILL THE TAB ROW; THE SCROLLBAR IS NOT LORE", async () => {
+  // The owner had to shrink and crop the window before it read ("ERROR: unable to read image"): OCR read
+  // the tab row `VE A Descriplic y A rr Lore | hy.`, so the lore was that line.
+  const s = await read('petamorph-wand-werewolf-lore.png', textOnly)
+  assert.equal(s.read.lore, 'Likes moongazing.')
+  assert.equal(s.read.name, 'Petamorph Wand: Werewolf')
+  assert.equal(s.read.statsblock, '')
+})
+
 test("WU'S FIST OF MASTERY +10 (AUGMENTED) (THE OWNER'S, 2026-10-21): THE +10 PATH, NO EXALTATION LINE, NO EFFECT AN EXALTATION GRANTS", async () => {
   const s = await read('wus-fist-of-mastery-10-augmented.png', textOnly)
   assert.equal(s.read.name, "Wu's Fist of Mastery")

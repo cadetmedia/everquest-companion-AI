@@ -13,7 +13,7 @@
 // the one repair is Weight's decimal, which the game always prints and OCR loses (3 windows of 3).
 
 import { delevel } from './itemDelevel'
-import { CLASS_CODES, codeWords, deityText, FLAG_WORDS, isDeityLine, RACE_CODES, SIZES, slotWord, snap, type Snapped } from './itemVocab'
+import { CLASS_CODES, codeWords, deityText, editDistance, FLAG_WORDS, isDeityLine, RACE_CODES, SIZES, slotWord, snap, type Snapped } from './itemVocab'
 
 export interface ItemWindowRead {
   /** The coloured name line, a `+N` tier dropped. OCR may run words together; the caller's name wins. */
@@ -279,6 +279,25 @@ interface Effect {
   info: Map<string, string>
 }
 
+/**
+ * An info line onto its effect. Legends prints a click's casting time inside the effect's own brackets,
+ * `Summon Familiar: Werewolf (Casting Time: 5.0)(Can Equip)` (owner's Petamorph Wand, 2026-10-22), so
+ * the label splits the line: the name keeps a dangling `(` and the time keeps `)(Can Equip)`. The time
+ * is the number; the brackets after it go back to the effect, as `(Must Equip)` sits on other windows.
+ */
+function effectInfo(effect: Effect | null | undefined, key: string, value: string): void {
+  if (effect === null || effect === undefined) return
+  const m = key === 'Casting Time' ? /^(Instant|[\d.]+)\s*\)?\s*(.*)$/i.exec(value) : null
+  if (m === null) {
+    effect.info.set(key, value)
+    return
+  }
+  effect.info.set(key, m[1])
+  const notes = [...m[2].matchAll(/\(([^)]*)\)/g)].map((n) => n[1].trim()).filter((n) => n !== '')
+  effect.value = effect.value.replace(/\s*\($/, '')
+  if (notes.length > 0 && !effect.value.includes('(')) effect.value = `${effect.value} (${notes.join(', ')})`
+}
+
 /** `Rec Level: 10` -> `Recommended level of 10.` (the pages' words); `Charges: 5` as it stands. */
 const wikiLine = (p: Pair): string => (p.key.endsWith('level') ? `${p.key} of ${p.value.replace(/\.$/, '')}.` : `${p.key}: ${p.value}`)
 
@@ -293,7 +312,7 @@ const PLACE: Record<Kind, (g: Gathered, p: Pair, lastEffect: Effect | null) => v
   value: (g, p) => (g.value = valueCopper(p.value)),
   line: (g, p) => g.lines.push(wikiLine(p)),
   bag: (g, p) => g.bag.set(p.key, p.key === 'Size Capacity' ? noted(g, snap(p.value.split(/\s+/)[0] ?? '', SIZES, 'Size Capacity')) : p.value),
-  effectInfo: (_g, p, lastEffect) => lastEffect?.info.set(p.key, p.value.replace(/\s+seconds?$/i, '')),
+  effectInfo: (_g, p, lastEffect) => effectInfo(lastEffect, p.key, p.value.replace(/\s+seconds?$/i, '')),
   effect: () => undefined,
   skip: () => undefined
 }
@@ -441,15 +460,31 @@ function statsLines(h: Head, g: Gathered): string[] {
 /** The tab row reads as junk around `Description` (`| /~ SPDesciption 3, © [[ 4" “Lore`). */
 const TAB_ROW = /Des\w{0,4}ption/i
 
+/** A word OCR made of the tab label `Description`, within three letters (`Descriplic`). */
+const descriptionWord = (w: string): boolean => {
+  const t = w.toLowerCase().replace(/[^a-z]/g, '')
+  return t.length >= 7 && editDistance(t, 'description') <= 3
+}
+
+/**
+ * The window's tab row: `Description` read whole, or slipped further with `Lore` on the same line
+ * (owner's Petamorph Wand: Werewolf Lore tab, 2026-10-22: `VE A Descriplic y A rr Lore | hy.`).
+ */
+export const isTabRow = (l: string): boolean => TAB_ROW.test(l) || (/\bLore\b/i.test(l) && l.split(/\s+/).some(descriptionWord))
+
+/** A lore line less what the frame leaves after its last sentence: the scrollbar read as `1`, `|`, `}`. */
+const loreLine = (l: string): string => l.replace(/([.!?'"])\s+[^\sA-Za-z]{1,2}$/, '$1')
+
 /**
  * The Lore tab: no Class line; its text is what follows the tab row, a wrapped lore joined back into
  * one line. With no tab row read, the longest line that is not a tab word.
  */
 function loreRead(lines: readonly string[], raw: readonly string[]): ItemWindowRead {
-  const tabAt = lines.findIndex((l) => TAB_ROW.test(l))
+  const tabAt = lines.findIndex(isTabRow)
   // Words, not OCR's junk off the frame: mostly letters and spaces.
-  const prose = (l: string): boolean => !/^Lore$/i.test(l) && !TAB_ROW.test(l) && /[a-z]{3}/i.test(l) && (l.match(/[A-Za-z ]/g) ?? []).length >= 0.8 * l.length
-  const text = tabAt >= 0 ? lines.slice(tabAt + 1).filter(prose).join(' ') : lines.filter(prose).sort((a, b) => b.length - a.length)[0]
+  const prose = (l: string): boolean => !/^Lore$/i.test(l) && !isTabRow(l) && /[a-z]{3}/i.test(l) && (l.match(/[A-Za-z ]/g) ?? []).length >= 0.8 * l.length
+  const kept = lines.map(loreLine)
+  const text = tabAt >= 0 ? kept.slice(tabAt + 1).filter(prose).join(' ') : kept.filter(prose).sort((a, b) => b.length - a.length)[0]
   // The title bar above the tab row names the item: a captured Lore tab finds its row by it.
   const titleAt = tabAt > 0 ? lines.slice(0, tabAt).map((l) => /[A-Za-z]{3}/.test(l)).lastIndexOf(true) : -1
   const title = titleAt < 0 ? undefined : withoutTier(bareTitle(cleanLine(raw[titleAt], true)) ?? '')
@@ -466,7 +501,7 @@ const bareTitle = (l: string | undefined): string | undefined =>
 
 /** The tab row above the name names a Lore tab: the item has lore (Ruined Robe; Windstriker and Black Lizard Scale show none). */
 const hasLoreTab = (lines: readonly string[], before: number): boolean =>
-  lines.slice(0, before).some((l) => TAB_ROW.test(l) && /\bLore\b(?!\s*(Equipped|Item))/i.test(l))
+  lines.slice(0, before).some((l) => isTabRow(l) &&/\bLore\b(?!\s*(Equipped|Item))/i.test(l))
 
 /** A `+N` tier after a name, as OCR reads it (`+10`, `+ 10`, `+9.`, `+10 (Augmented`), and anything after it. */
 const TIER = /\s*\+\s*(\d{1,2})\b.*$/
@@ -508,7 +543,7 @@ function tierParts(tier: number | undefined, statsblock: string): Partial<ItemWi
 
 /** The flag line (the last line of flag words above Class, never the tab row), Class and Race, with their notes. */
 function headOf(lines: readonly string[], clsAt: number, clsLine: string, raceLine: string | undefined): Head & { flagAt: number; notes: string[] } {
-  const flagAt = lines.slice(0, clsAt).map((l) => !TAB_ROW.test(l) && isFlagLine(l)).lastIndexOf(true)
+  const flagAt = lines.slice(0, clsAt).map((l) => !isTabRow(l) && isFlagLine(l)).lastIndexOf(true)
   const flags = flagAt < 0 ? [] : flagLine(lines[flagAt])
   const cls = codesOf(clsLine, 'Class')
   const race = raceLine === undefined ? undefined : codesOf(raceLine, 'Race')
