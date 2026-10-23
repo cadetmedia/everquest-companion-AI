@@ -688,7 +688,7 @@ const PAGE_OF: Record<GapDomain, (row: GapRow, c: PageContext) => string> = {
   faction: (row) => `${factionLine({ faction: factionOf(row), adjust: row.adjust, raised: row.raised })}\n`,
   image: (row) => `| ${'imagefilename'.padEnd(17)} = ${row.image ?? ''}\n`,
   notice: (row) => noticeProof(row),
-  quest: (row, c) => questRowPage(row, { zoneName: c.zoneName, mobPage: c.mobPage, entry: c.questEntry?.(row.name), journal: c.questJournal?.(row.name) }),
+  quest: (row, c) => questRowPage(row, { zoneName: c.zoneName, mobPage: c.mobPage, entry: c.questEntry?.(row.name), journal: c.questJournal?.(row.name), players: c.players }),
   // A drop: its group's link (`[[Rusty Weapons]]`), else the item; each with the rate seen, a
   // group's being the corpses that dropped any member (the row's count) over the mob's kills.
   drop: (row, c) => {

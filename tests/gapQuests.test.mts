@@ -101,33 +101,41 @@ test('THE REWARDS ARE THE LAST STEP WITH A FACTION LINE OR EXPERIENCE', () => {
   assert.ok(lines.includes('Done again 2 times (steps from the first run)'))
 })
 
-test('A QUEST THE WIKI LACKS GETS A DRAFT IN THE CACHED PAGES LAYOUT', () => {
+test('A QUEST THE WIKI LACKS GETS A DRAFT IN THE LAYOUT MOST CACHED QUEST PAGES SHARE', () => {
   const page = questDraftPage('Something Fishy', fishy, { journal: { minLevel: 1 } })
   for (const part of [
     '{{Classic Era}}',
     '[[File:npc_nikko_canti.png|thumb|Nikko Canti]]',
     '{| class="questTopTable"',
-    "! ''' Starts In: '''\n| [[Lake Nerius]]",
+    // `Start Zone` on 885 of the ~930 pages, `Starts In` on 6 (owner, 2026-10-23: "validate that").
+    "! ''' Start Zone: '''\n| [[Lake Nerius]]",
     "! ''' Quest Giver: '''\n| [[Nikko Canti]]",
     "! ''' Minimum Level: '''\n| 1",
     "! ''' Classes: '''\n| ?",
-    "! ''' Related NPCs: '''\n| None",
-    "! ''' Required Faction: '''\n| ?",
-    '= Reward =\n\n<ul>\n<li>{{:Defiled Fish Scales}}</li>\n</ul>',
-    '= Summary =\n{{CheckboxList}}',
+    "! ''' Related NPCs: '''\n| None\n|}",
+    // Level-2 headings, as ~1,700 of the cache's headings are; the checklist under `Checklist`.
+    '== Reward ==\n\n<ul><li>{{:Defiled Fish Scales}}</li></ul>',
+    '== Checklist ==\n{{CheckboxList}}',
     "* Say 'help' to [[Nikko Canti]] in [[Lake Nerius]].",
     '* Give [[Defiled Fish Scales]] to [[Nikko Canti]] in [[Lake Nerius]], receive [[Defiled Fish Scales]].',
     '* Receive the [[Alchemical Solution]] quest.\n{{End}}',
-    '= Walkthrough =',
-    "You say, 'Hail, Nikko Canti'",
-    ": Nikko Canti says, 'That's so kind of you! Here I have an old fishing pole you can use, and some bait!'",
-    "'''You have been assigned the task 'Something Fishy'.'''",
+    // A blank line after every walkthrough line, so each renders as its own paragraph.
+    "== Walkthrough ==\n\nYou say, 'Hail, Nikko Canti'\n\n: Nikko Canti says, 'Oi, you there!",
+    ": Nikko Canti says, 'That's so kind of you! Here I have an old fishing pole you can use, and some bait!'\n\n",
+    "'''You have been assigned the task 'Something Fishy'.'''\n\n",
+    'Give [[Defiled Fish Scales]] to [[Nikko Canti]]:\n\n',
     "'''Your task 'Something Fishy' has been updated.'''",
     '<div class="facblock">\n* Your faction standing with [[Nerius Trade Association]] has been adjusted by 10.\n</div>\n{{YouGainExperience}}',
-    '[[Category:Quests]]\n[[Category:Lake Nerius]]'
+    '[[Category:Quests]]\n[[Category:Lake Nerius]]\n<!-- [[Category:All Classes Quests]] or [[Category:<Class> Quests]] -->'
   ]) {
     assert.ok(page.includes(part), part)
   }
+  // No page writes `Required Faction: ?`: the row is left out when the log cannot know it.
+  assert.ok(!page.includes('Required Faction'))
+  assert.ok(!/^= [A-Z]/m.test(page), 'no level-1 heading')
+  // The player's own name reads Soandso, as the wiki writes a player.
+  const named: QuestLog = { ...fishy, steps: [{ ...fishy.steps[0], talk: [{ who: 'Nikko Canti', text: 'Thank you, Drywrought!' }] }] }
+  assert.ok(questDraftPage('Something Fishy', named, { players: ['Drywrought'] }).includes(": Nikko Canti says, 'Thank you, Soandso!'"))
   // No level read: the wiki's own placeholder, never a guess.
   assert.ok(questDraftPage('Call for Aid', callForAid).includes("! ''' Minimum Level: '''\n| ?"))
   assert.ok(questDraftPage('Call for Aid', callForAid).includes("! ''' Related NPCs: '''\n| [[Dorian G`Wyn]]"))

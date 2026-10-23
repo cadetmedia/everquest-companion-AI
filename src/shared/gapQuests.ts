@@ -30,6 +30,8 @@ export interface QuestStep {
   factions?: { faction: string; line: string }[]
   experience?: boolean
   next?: string
+  /** `You have completed achievement: X` within 15 s after the step. */
+  achievements?: string[]
 }
 
 /** A Quests row's `quest`. */
@@ -64,6 +66,8 @@ export interface QuestExtras {
   questEntry?: (name: string) => QuestCatalogEntry | undefined
   /** What a pasted Quest Journal said of it (screenshot-to-wiki `questJournal.ts`). */
   questJournal?: (name: string) => QuestJournalFacts | undefined
+  /** The player's own characters, written `Soandso` on a quest page. */
+  players?: readonly string[]
 }
 
 /** What a Quest Journal screenshot read (screenshot-to-wiki `questJournal.ts`), as the page needs it. */

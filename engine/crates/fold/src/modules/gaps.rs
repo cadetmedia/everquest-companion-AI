@@ -214,7 +214,8 @@ impl GapsModule {
             "offer" => self.turn_in(ev) | self.npc_met(ev.str("npc"), "offered", ev),
             "allyPetLeader" => self.player_pet(ev.str("pet")),
             "skillUp" => self.skill_up(ev),
-            _ => false,
+            // `You complete the trade with X.` spends the open trade (gaps_quest_log.rs); nothing else.
+            _ => self.quest_trade(ev),
         }
     }
 

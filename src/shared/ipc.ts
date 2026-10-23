@@ -1203,6 +1203,10 @@ export const IPC = {
   // Item names in, `{ [name]: the tradeskills its recipes name }` out, off the committed corpus
   // (src/main/gapItemTrades.ts), for a new merchant page's description. Payload: (names: string[]).
   gapItemTrades: 'gaps:itemTrades',
+  // A quest page's title in, `{ title, text }` out (text '' when the wiki has no such page), or null
+  // when it could not be read: the one wiki read of the Gaps tab, on a Copy click
+  // (src/main/gapQuestLive.ts). Payload: (title: string).
+  gapQuestPage: 'gaps:questPage',
 
   // ---- error harness (renderer -> main, fire-and-forget) ----
   // window.onerror / onunhandledrejection / React ErrorBoundary report here so

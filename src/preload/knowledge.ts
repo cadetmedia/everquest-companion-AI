@@ -106,6 +106,8 @@ export const knowledgeBridge = {
     ipcRenderer.invoke(IPC.gapItemForage, [...names]),
   /** A new merchant page's description: the tradeskills each item's recipes name (src/main/gapItemTrades.ts). */
   gapItemTrades: (names: readonly string[]): Promise<Record<string, string[]>> => ipcRenderer.invoke(IPC.gapItemTrades, [...names]),
+  /** A quest page as it stands on the wiki, read once per Copy click (src/main/gapQuestLive.ts); null offline. */
+  gapQuestPage: (title: string): Promise<import('../shared/gapQuestMerge').LiveQuestPage | null> => ipcRenderer.invoke(IPC.gapQuestPage, title),
   /** A copied spell page's fill: what the install's spell files state (src/main/gapSpellFacts.ts). */
   // The type is named inline so the import line spell-upgrades also edits stays untouched.
   gapSpellFacts: (names: readonly string[]): Promise<Record<string, import('../shared/gaps').ClientSpellFacts>> =>
