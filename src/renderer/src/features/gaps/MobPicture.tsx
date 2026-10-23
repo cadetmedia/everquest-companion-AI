@@ -13,7 +13,8 @@ import { wikiUploadUrl, type GapRow } from '@shared/gaps'
 import { heldPicture, pictureFile, type PictureSave } from '@shared/mobPicture'
 import { Line, PasteZone } from './PasteZone'
 import { latestOnly } from './latestOnly'
-import { setMobPicture, useMobPictures } from './itemShotsStore'
+import { setMobNameplate, setMobPicture, useMobPictures } from './itemShotsStore'
+import { roleOf } from '@shared/gapRoles'
 import { refreshFolderPictures, useFolderPictures } from './folderPicturesStore'
 
 type NameCheck = 'checking' | 'found' | 'missing' | 'deleted' | null
@@ -119,6 +120,7 @@ export default function MobPicture({ row }: { row: GapRow }): JSX.Element {
   // Each save is a ticket: a save or nameplate check that answers after a newer save is dropped, so
   // A's warning never shows against B and "Delete it" only ever deletes the picture on screen.
   const tickets = useRef(latestOnly())
+  const merchant = row.domain === 'merchant' || roleOf(row) === 'Merchant'
   const save = useCallback(
     (bytes: Uint8Array, overwrite = false) => {
       const ticket = tickets.current.start()
@@ -137,15 +139,20 @@ export default function MobPicture({ row }: { row: GapRow }): JSX.Element {
           if (r.status !== 'saved') return
           // The nameplate check runs after the save: OCR of a full screenshot can take seconds.
           setCheck('checking')
+          // A merchant's nameplate says its trade under the name: kept for its page's description.
           window.eq
-            .shotCheckMob(r.checkId, row.name)
-            .then((found) => mine() && setCheck(found === false ? 'missing' : 'found'))
+            .shotCheckMob(r.checkId, row.name, merchant)
+            .then((found) => {
+              if (!mine()) return
+              setCheck(found?.shown === false ? 'missing' : 'found')
+              if (found?.subtitle !== undefined) setMobNameplate(row.name, found.subtitle)
+            })
             .catch(() => mine() && setCheck('found'))
         })
         .catch(() => mine() && setResult({ status: 'error', message: 'Could not save it.' }))
         .finally(() => mine() && setBusy(false))
     },
-    [file, row.name]
+    [file, row.name, merchant]
   )
   return (
     <Stack spacing={0.5} data-testid="gaps-shot-picture">

@@ -9,6 +9,7 @@ import { itemsSoldOf } from '@shared/gapItemsSold'
 import type { MerchantExtras } from '@shared/gapMerchantDescription'
 import { useItemTrades } from '../../lib/gapItemTrades'
 import { useOwnCharacterNames } from './useOwnCharacters'
+import { useMobNameplates } from './itemShotsStore'
 
 const NO_NAMES: readonly string[] = []
 
@@ -23,5 +24,7 @@ export function useMerchantExtras(rows: readonly GapRow[]): MerchantExtras {
   const names = useMemo(() => soldNames(rows), [rows])
   const itemTrades = useItemTrades(names)
   const ownNames = useOwnCharacterNames()
-  return useMemo(() => ({ itemTrades, ownNames }), [itemTrades, ownNames])
+  // The subtitle a pasted picture's nameplate printed under the name (MobPicture, screenshot-to-wiki).
+  const plates = useMobNameplates()
+  return useMemo(() => ({ itemTrades, ownNames, nameplate: (name: string) => plates[name.toLowerCase()]?.subtitle }), [itemTrades, ownNames, plates])
 }

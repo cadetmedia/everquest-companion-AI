@@ -20,7 +20,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSy
 import { dirname, join, resolve } from 'node:path'
 import { IPC } from '../../shared/ipc'
 import { folderPictures, keptPictureFile, PICTURE_FOLDER, pictureFileName, pictureRoot, type FolderPictures, type PictureKeep, type PictureKind, type PictureSave } from '../../shared/mobPicture'
-import { showsName } from '../shot/nameplate'
+import { readNameplate, type NameplateReading } from '../shot/nameplate'
 import { deleteSafely, pictureIn, writeSafely } from '../shot/pictureFiles'
 import { bgraToRgba, isNearSolid, type Rgba } from '../shot/pixels'
 
@@ -138,12 +138,15 @@ async function savePicture(bytes: unknown, fileName: unknown, overwrite: unknown
   }
 }
 
-/** Whether the mob's name shows in the saved picture (its nameplate); null when it could not be read or is no longer the last save. */
-async function hasMobName(checkId: unknown, name: unknown): Promise<boolean | null> {
+/**
+ * Whether the mob's name shows in the saved picture (its nameplate), and, `wantSubtitle` (a merchant),
+ * the role printed under it; null when it could not be read or is no longer the last save.
+ */
+async function hasMobName(checkId: unknown, name: unknown, wantSubtitle: unknown): Promise<NameplateReading | null> {
   const slot = checkSlot
   if (slot === null || slot.id !== checkId || typeof name !== 'string') return null
   try {
-    return await showsName(slot.rgba, name)
+    return await readNameplate(slot.rgba, name, wantSubtitle === true)
   } catch {
     return null
   } finally {
@@ -279,7 +282,7 @@ function pictureData(path: unknown): string | null {
 export function registerShotPictureIpc(): void {
   ipcMain.handle(IPC.shotPictureData, (_e, path: unknown) => pictureData(path))
   ipcMain.handle(IPC.shotSaveImage, (_e, png: unknown, fileName: unknown, overwrite: unknown) => savePicture(png, fileName, overwrite))
-  ipcMain.handle(IPC.shotCheckMob, (_e, checkId: unknown, name: unknown) => hasMobName(checkId, name))
+  ipcMain.handle(IPC.shotCheckMob, (_e, checkId: unknown, name: unknown, wantSubtitle: unknown) => hasMobName(checkId, name, wantSubtitle))
   ipcMain.handle(IPC.shotAutoDir, (_e, action: unknown) => autoDir(action).catch(() => null))
   ipcMain.handle(IPC.shotSavedFile, (_e, action: unknown, path: unknown) => savedFile(action, path))
   ipcMain.handle(IPC.shotKeepPicture, (_e, kind: unknown, name: unknown, png: unknown) => keepPicture(kind, name, png))

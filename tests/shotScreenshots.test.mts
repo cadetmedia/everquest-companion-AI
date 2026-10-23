@@ -18,7 +18,7 @@ import { readSpellWindow } from '../src/shared/spellWindow.ts'
 import { readPng } from './shotPng.mts'
 import { imageGaps } from '../src/shared/gapImages.ts'
 import { pictureFile } from '../src/shared/mobPicture.ts'
-import { showsName } from '../src/main/shot/nameplate.ts'
+import { readNameplate, showsName } from '../src/main/shot/nameplate.ts'
 
 const SHOTS = join(import.meta.dirname, 'fixtures', 'shots')
 const EQ_ROOT = process.env.EQ_ROOT ?? 'C:/Users/Public/Daybreak Game Company/Installed Games/EverQuest Legends'
@@ -158,6 +158,17 @@ test("A LIZARDMAN SCOUT (THE OWNER'S PICTURE): THE NAMEPLATE IS FOUND, AND THE F
   const img = readPng(join(SHOTS, 'a-lizardman-scout-npc.png'))
   assert.equal(await showsName(img, row.name), true)
   assert.equal(await showsName(img, 'a gnoll pup'), false)
+})
+
+/**
+ * The owner's merchants (2026-10-23: "why don't the vendors have descriptions ... 1. screenshot"): the
+ * role under the name, white on Trooni Thimblethumb's plate and green on Raul's, whose plain reading
+ * is junk (`LT Raul rs b`) until the green fill is read. A mob's plate has none.
+ */
+test("A MERCHANT'S NAMEPLATE GIVES THE ROLE UNDER ITS NAME (Trooni Thimblethumb, Raul)", async () => {
+  assert.deepEqual(await readNameplate(readPng(join(SHOTS, 'trooni-thimblethumb-npc.png')), 'Trooni Thimblethumb', true), { shown: true, subtitle: 'Tailoring Supplies' })
+  assert.deepEqual(await readNameplate(readPng(join(SHOTS, 'raul-npc.png')), 'Raul', true), { shown: true, subtitle: 'Tailoring Supplies' })
+  assert.deepEqual(await readNameplate(readPng(join(SHOTS, 'a-white-wolf-npc.png')), 'a white wolf', true), { shown: true })
 })
 
 /** The owner's white wolf over snow (2026-10-22): a grey-con nameplate, grey letters, dark outline. */
