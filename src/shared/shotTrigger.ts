@@ -100,3 +100,8 @@ export interface Captured {
   error?: string
   ms: number
 }
+
+/** The item names the captures read, in order (a capture with no reading, or no name read, names none). */
+export function readNames(cs: readonly Captured[]): string[] {
+  return cs.flatMap((c) => (c.reply?.read.name === undefined ? [] : [c.reply.read.name]))
+}

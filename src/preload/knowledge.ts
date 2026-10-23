@@ -83,6 +83,8 @@ export const knowledgeBridge = {
    */
   gapVerdicts: (domain: 'item' | 'mob', names: readonly string[]): Promise<GapVerdicts> =>
     ipcRenderer.invoke(IPC.gapVerdicts, domain, [...names]),
+  /** The item names the wiki data has no page for (src/main/gapUnknownItems.ts): the export's, a capture's. */
+  gapUnknownItems: (names: readonly string[]): Promise<string[]> => ipcRenderer.invoke(IPC.gapUnknownItems, [...names]),
   /** The Drops domain's other side: the mobs each item page names (src/main/gapItemMobs.ts). */
   gapItemMobs: (names: readonly string[]): Promise<Record<string, string[] | null>> => ipcRenderer.invoke(IPC.gapItemMobs, [...names]),
   /** A copied spell page's fill: what the install's spell files state (src/main/gapSpellFacts.ts). */

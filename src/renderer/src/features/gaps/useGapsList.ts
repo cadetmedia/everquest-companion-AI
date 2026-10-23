@@ -27,6 +27,8 @@ import { useHeldOnly, type HeldOnly } from './useHeldOnly'
 import { useGapShow, type GapShowState } from './useGapShow'
 import { useGapReady, type GapReadiness } from './useGapReady'
 import type { HeldIndex } from '@shared/gapHeld'
+import { withExtraItemRows } from '@shared/gapExtraItems'
+import { useExtraItemRows } from './useExtraItemRows'
 
 /** Where the "Zone I'm in" choice is remembered, per viewer, as the Achievements tab remembers its own. */
 const ZONE_HERE_KEY = 'eq.gaps.zoneHere'
@@ -128,7 +130,14 @@ export function useGapsList(opts: { background?: boolean } = {}): GapsList {
   const allChars = useAllCharacters(me)
   const [domain, setDomain] = useGapDomain()
   // Days back trims every view (owner, 2026-10-21), the one-character list too.
-  const data = useGapsData(allChars.all, opts.background === true ? { only: domain, holdMs: BACKGROUND_HOLD_MS, cut: allChars.cut } : { cut: allChars.cut })
+  const engineData = useGapsData(allChars.all, opts.background === true ? { only: domain, holdMs: BACKGROUND_HOLD_MS, cut: allChars.cut } : { cut: allChars.cut })
+  // An item a character holds right now needs only a screenshot (review C6; owner, 2026-10-19): each
+  // character's own export plus ITS loot since, named per holder while All characters is on.
+  const holding = useAllHeld(engineData.ownLoot, me, allChars)
+  // Items no log line names (owner, 2026-10-22: a store purchase): held in an export or captured,
+  // with no wiki page, are Items rows too, in the one snapshot every view reads.
+  const extra = useExtraItemRows(engineData.snap?.rows, holding)
+  const data = useMemo(() => (engineData.snap && extra.length > 0 ? { ...engineData, snap: withExtraItemRows(engineData.snap, extra) } : engineData), [engineData, extra])
   const shownQuery = useGapsQuery()
   // "Zone I'm in" (owner ask, 2026-10-17): only what was named where you stand, every tier of it.
   const [hereOnly, setHereOnly] = useBoolPref(ZONE_HERE_KEY, false)
@@ -143,9 +152,6 @@ export function useGapsList(opts: { background?: boolean } = {}): GapsList {
   // The list follows the query a beat behind the keystroke, so typing never waits on a filter.
   const deferredQuery = useDeferredValue(shownQuery)
   const inDomain = useMemo(() => visibleGaps(rows ?? [], domain, deferredQuery, zone), [rows, domain, deferredQuery, zone])
-  // An item a character holds right now needs only a screenshot (review C6; owner, 2026-10-19): each
-  // character's own export plus ITS loot since, named per holder while All characters is on.
-  const holding = useAllHeld(data.ownLoot, me, allChars)
   // "Show" (owner, 2026-10-21): new pages, updates or both; then "I have it", what the player holds.
   // Ready (owner, 2026-10-21): nothing left to capture; the install's spell files asked for the domain's spells.
   const spellNames = useMemo(() => (domain === 'spell' ? inDomain.map((r) => r.name) : NO_NAMES), [domain, inDomain])

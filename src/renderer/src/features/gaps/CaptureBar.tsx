@@ -20,12 +20,13 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline'
 import { captureRow, keptAfter, otherItemNote, PART_WORDS, shotKind } from '@shared/itemShotKeep'
 import { partPicture } from '@shared/mobPicture'
-import { captureHowTo, type Captured } from '@shared/shotTrigger'
+import { captureHowTo, readNames, type Captured } from '@shared/shotTrigger'
 import type { CharacterSnap } from '@shared/types'
 import { copyText } from '../../lib/clipboard'
 import { Tooltip } from '../../lib/Tooltip'
 import { useModule } from '../../lib/useModule'
 import { itemShotNow, keepPartPicture, setCapturedRead, setItemRowNames, setItemShot } from './itemShotsStore'
+import { addCapturedItem } from './capturedItemsStore'
 
 const HOW_TIP = "The macro, or an overlay's 📷, reads the item window open in game."
 /** How long a check (or a no-window mark) stays before the bar is idle again. */
@@ -44,24 +45,57 @@ const IDLE: Status = { kind: 'idle' }
  * player. The row's name when it went to one; `none` when the game's window held no item window;
  * the reason when the capture failed; undefined when it is ignored (no row by that name, nothing usable).
  */
-function file(c: Captured, rows: readonly string[]): string | { none: true } | { failed: string } | undefined {
+type Filed = string | { none: true } | { failed: string } | { unplaced: Captured } | undefined
+
+function file(c: Captured, rows: readonly string[]): Filed {
   if (c.reply === undefined) return c.window !== undefined ? { none: true } : { failed: c.error ?? 'The capture failed.' }
   const kind = shotKind(c.reply)
-  const match = kind === null ? undefined : captureRow(c.reply.read.name, rows, c.reply.known)
-  if (kind === null || match === undefined) return undefined
+  if (kind === null) return undefined
+  const match = captureRow(c.reply.read.name, rows, c.reply.known)
+  // No row by that name: main is asked whether the wiki has a page for it (`withNewRows`).
+  if (match === undefined) return kind !== 'icon' && c.reply.read.name !== undefined ? { unplaced: c } : undefined
+  return fileOn(c, c.reply, kind, match)
+}
+
+/** One capture onto its row: an exact name kept at once, a near match waiting on the row. */
+function fileOn(c: Captured, reply: NonNullable<Captured['reply']>, kind: NonNullable<ReturnType<typeof shotKind>>, match: NonNullable<ReturnType<typeof captureRow>>): string {
   // A near match always asks: no `others` here, captureRow has already weighed them.
-  const note = match.exact ? undefined : (otherItemNote(c.reply.read.name, match.row, PART_WORDS[kind]) ?? `Is this ${match.row}'s?`)
+  const note = match.exact ? undefined : (otherItemNote(reply.read.name, match.row, PART_WORDS[kind]) ?? `Is this ${match.row}'s?`)
   if (note === undefined) {
-    setItemShot(match.row, keptAfter(itemShotNow(match.row), c.reply, kind))
+    setItemShot(match.row, keptAfter(itemShotNow(match.row), reply, kind))
     // The window's picture under the item folder (owner, 2026-10-22: "all items pasted get stored").
     void keepPartPicture(partPicture(kind), match.row, c.png)
   }
-  setCapturedRead(match.row, { reply: c.reply, kind, ...(note === undefined ? {} : { note }), ...(c.png === undefined ? {} : { png: c.png }) })
+  setCapturedRead(match.row, { reply, kind, ...(note === undefined ? {} : { note }), ...(c.png === undefined ? {} : { png: c.png }) })
   return match.row
 }
 
+/**
+ * A capture of an item no row names and the wiki data has no page for is the witness of its own row
+ * (owner, 2026-10-22: a store purchase prints no log line, "neither worked"): the row is kept
+ * (capturedItemsStore.ts) and the reading lands on it as on any row. One the wiki knows stays ignored.
+ */
+async function withNewRows(results: readonly Filed[]): Promise<Exclude<Filed, { unplaced: Captured }>[]> {
+  const unplaced = results.flatMap((r) => (typeof r === 'object' && 'unplaced' in r ? [r.unplaced] : []))
+  const names = readNames(unplaced)
+  const unknown = new Set(names.length === 0 ? [] : await window.eq.gapUnknownItems(names).catch(() => [] as string[]))
+  return results.map((r) => (typeof r === 'object' && 'unplaced' in r ? fileNew(r.unplaced, unknown) : r))
+}
+
+/** A captured item with no row, onto a row of its own when the wiki has no page for it. */
+function fileNew(c: Captured, unknown: ReadonlySet<string>): string | undefined {
+  const name = c.reply?.read.name
+  const kind = c.reply === undefined ? null : shotKind(c.reply)
+  if (c.reply === undefined || name === undefined || kind === null || !unknown.has(name)) return undefined
+  addCapturedItem(name)
+  setItemShot(name, keptAfter(itemShotNow(name), c.reply, kind))
+  void keepPartPicture(partPicture(kind), name, c.png)
+  setCapturedRead(name, { reply: c.reply, kind, ...(c.png === undefined ? {} : { png: c.png }) })
+  return name
+}
+
 /** What a batch of captures leaves the bar showing: the rows filed, else a failure, else no window, else idle. */
-function statusOf(results: ReturnType<typeof file>[]): Status {
+function statusOf(results: readonly Exclude<Filed, { unplaced: Captured }>[]): Status {
   const rows = results.filter((r): r is string => typeof r === 'string')
   if (rows.length > 0) return { kind: 'filed', rows }
   const failed = results.find((r): r is { failed: string } => typeof r === 'object' && 'failed' in r)
@@ -116,8 +150,8 @@ function useCaptureStatus(rows: readonly string[]): Status {
   const drain = useCallback(() => {
     window.eq
       .shotCaptures()
-      .then((cs) => {
-        if (cs.length > 0) setStatus(statusOf(cs.map((c) => file(c, rowsRef.current))))
+      .then(async (cs) => {
+        if (cs.length > 0) setStatus(statusOf(await withNewRows(cs.map((c) => file(c, rowsRef.current)))))
       })
       .catch(() => setStatus(IDLE))
   }, [])
