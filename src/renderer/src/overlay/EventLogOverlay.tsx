@@ -51,6 +51,9 @@ import { TextScaleStepper } from './TextScaleStepper'
 import { useOverlayChrome, type OverlayChrome } from './useOverlayChrome'
 import { OverlayHeader } from './OverlayHeader'
 import { useDoneKeys } from '../features/gaps/doneMarksStore'
+import { useMobPictures } from '../features/gaps/itemShotsStore'
+import { folderPicturesStore } from '../features/gaps/folderPicturesStore'
+import { heldPicture } from '@shared/mobPicture'
 import { hiddenKeep, screenshotLabel } from './feedGapTags'
 import { SHOT_CAPTURE_ACTION } from './shotCaptureAction'
 
@@ -165,9 +168,14 @@ function previewItemOf(e: FeedEvent): string | undefined {
   return e.kind === 'loot' && !e.unknown ? e.title : undefined
 }
 
+/** The picture folders as this overlay sees them: read on mount and every half minute (it seldom takes focus). */
+const overlayFolder = folderPicturesStore(() => window.eqOverlay.shotFolderPictures(), 30_000)
+
 /** The Wiki Gaps mark on a row: missing, no picture, or KEEP (feedGapTags.ts). */
 function UnknownTag({ e }: { e: FeedEvent }): JSX.Element | null {
-  const label = screenshotLabel(e, useDoneKeys())
+  const saved = useMobPictures()
+  const folder = overlayFolder.use()
+  const label = screenshotLabel(e, useDoneKeys(), (file) => heldPicture(file, saved, folder) !== undefined)
   if (label === undefined) return null
   return (
     <span

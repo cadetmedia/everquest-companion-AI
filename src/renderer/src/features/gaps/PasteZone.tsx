@@ -80,6 +80,22 @@ export function Line({ children, warn = false }: { children: ReactNode; warn?: b
 }
 
 /**
+ * Where the pasted picture was kept (owner, 2026-10-22: item and spell pictures under the picture
+ * root's item and spell folders), one quiet line with Open folder; nothing when none was kept.
+ */
+export function KeptPicture({ path }: { path: string | null }): JSX.Element | null {
+  if (path === null) return null
+  return (
+    <Stack direction="row" spacing={1} alignItems="center" data-testid="gaps-shot-kept-picture">
+      <Line>Picture saved to {path}.</Line>
+      <Button size="small" onClick={() => void window.eq.shotSavedFile('show', path).catch(() => false)}>
+        Open folder
+      </Button>
+    </Stack>
+  )
+}
+
+/**
  * A window whose name is another row's, or whose name was not read (item or spell): nothing is kept
  * until the player says (owner, 2026-10-21). `note` says which (shared/itemShotKeep.ts otherItemNote).
  */

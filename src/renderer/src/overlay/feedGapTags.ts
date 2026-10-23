@@ -2,7 +2,10 @@
 //
 // Three marks (engine event_feed.rs and event_feed_offer.rs):
 //   * not in the app's data: "missing · screenshot it" (owner ask, 2026-10-18);
-//   * a mob whose wiki pages have no picture: "no picture · screenshot it" (owner ask, 2026-10-20);
+//   * a mob whose wiki pages have no picture: "no picture · screenshot it" (owner ask, 2026-10-20),
+//     or "picture saved · upload it" once the player holds its picture, saved from the Gaps tab or
+//     put in the picture folder by hand (owner, 2026-10-22: "the tool should see that the image is
+//     there and not ask for it");
 //   * a `keep` row, a merchant's offer for an item the wiki lacks (owner ask, 2026-10-20: "the
 //     moment i click the item and he offers it to me, the event log pop up a row showing it"). The
 //     owner asked it short ("just simply KEEP - Needed on wiki"): the item and the mark, no price,
@@ -12,22 +15,28 @@
 // mark, is not shown at all.
 
 import type { FeedEvent } from '@shared/types'
+import { npcImageName } from '../../../shared/wikiPage'
 import { isMarkedDone } from '../features/gaps/doneMarksStore'
 
 export const KEEP_LABEL = 'KEEP · needed on wiki'
+export const PICTURED_LABEL = 'picture saved · upload it'
 
 /** A `keep` row whose item the player marked Done: nothing left to say, so not shown. */
 export function hiddenKeep(e: FeedEvent, done: ReadonlySet<string>): boolean {
   return e.kind === 'keep' && isMarkedDone(done, 'item', e.title)
 }
 
-/** The mark a row carries, or undefined for none. The engine never sets `unknown` and `needsImage` together. */
-export function screenshotLabel(e: FeedEvent, done: ReadonlySet<string>): string | undefined {
+/**
+ * The mark a row carries, or undefined for none. The engine never sets `unknown` and `needsImage`
+ * together. `pictured`: whether the player holds the picture file named so (`npc_<name>.png`).
+ */
+export function screenshotLabel(e: FeedEvent, done: ReadonlySet<string>, pictured: (file: string) => boolean = () => false): string | undefined {
   if (e.kind === 'keep') return hiddenKeep(e, done) ? undefined : KEEP_LABEL
   if (e.unknown) {
     if (isMarkedDone(done, e.kind === 'con' ? 'mob' : 'item', e.title)) return undefined
     // Sold on loot is already gone: the next one is the screenshot (review 2026-10-19).
     return e.detail?.startsWith('auto-sold') === true ? 'missing · auto-sold, keep the next one' : 'missing · screenshot it'
   }
-  return e.needsImage && !isMarkedDone(done, 'image', e.title) ? 'no picture · screenshot it' : undefined
+  if (e.needsImage !== true || isMarkedDone(done, 'image', e.title)) return undefined
+  return pictured(npcImageName(e.title)) ? PICTURED_LABEL : 'no picture · screenshot it'
 }

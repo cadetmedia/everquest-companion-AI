@@ -365,6 +365,8 @@ const overlayApi = {
 
   /** Capture the EverQuest window for screenshot to wiki (main/ipc/shotCapture.ts); the Gaps tab files it. */
   shotCapture: (): void => ipcRenderer.send(IPC.shotCaptureNow),
+  /** The .png files in the mob-picture folders (main/ipc/shotPicture.ts): the Event log's "no picture" mark skips a mob already pictured. */
+  shotFolderPictures: (): Promise<import('../shared/mobPicture').FolderPictures> => ipcRenderer.invoke(IPC.shotFolderPictures),
 
   /**
    * CON CARD (JOS-383): one finished card for the creature just `/con`ed, pushed by main. Same law

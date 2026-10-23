@@ -19,12 +19,13 @@ import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline'
 import { captureRow, keptAfter, otherItemNote, PART_WORDS, shotKind } from '@shared/itemShotKeep'
+import { partPicture } from '@shared/mobPicture'
 import { captureHowTo, type Captured } from '@shared/shotTrigger'
 import type { CharacterSnap } from '@shared/types'
 import { copyText } from '../../lib/clipboard'
 import { Tooltip } from '../../lib/Tooltip'
 import { useModule } from '../../lib/useModule'
-import { itemShotNow, setCapturedRead, setItemRowNames, setItemShot } from './itemShotsStore'
+import { itemShotNow, keepPartPicture, setCapturedRead, setItemRowNames, setItemShot } from './itemShotsStore'
 
 const HOW_TIP = "The macro, or an overlay's 📷, reads the item window open in game."
 /** How long a check (or a no-window mark) stays before the bar is idle again. */
@@ -50,8 +51,12 @@ function file(c: Captured, rows: readonly string[]): string | { none: true } | {
   if (kind === null || match === undefined) return undefined
   // A near match always asks: no `others` here, captureRow has already weighed them.
   const note = match.exact ? undefined : (otherItemNote(c.reply.read.name, match.row, PART_WORDS[kind]) ?? `Is this ${match.row}'s?`)
-  if (note === undefined) setItemShot(match.row, keptAfter(itemShotNow(match.row), c.reply, kind))
-  setCapturedRead(match.row, { reply: c.reply, kind, ...(note === undefined ? {} : { note }) })
+  if (note === undefined) {
+    setItemShot(match.row, keptAfter(itemShotNow(match.row), c.reply, kind))
+    // The window's picture under the item folder (owner, 2026-10-22: "all items pasted get stored").
+    void keepPartPicture(partPicture(kind), match.row, c.png)
+  }
+  setCapturedRead(match.row, { reply: c.reply, kind, ...(note === undefined ? {} : { note }), ...(c.png === undefined ? {} : { png: c.png }) })
   return match.row
 }
 
