@@ -246,6 +246,13 @@ test("EARRING OF EXPERIMENTATION (THE OWNER'S CAPTURE, 2026-10-23): A SLIPPED FL
   assert.equal(e.read.name, 'Earring of Experimentation')
   assert.ok(e.read.statsblock.startsWith('\nAttunable<br>\nSlot: EAR<br>\nAC: 3<br>'), e.read.statsblock)
   assert.ok(e.read.checks?.includes('Flag read as "Altunable", taken as Attunable.'), String(e.read.checks))
+  // Its Lore tab, snipped tight and wide: a number and `#` are lore, the scrollbar's arrow (`t`) is not.
+  for (const f of ['earring-of-experimentation-lore.png', 'earring-of-experimentation-lore-wide.png']) {
+    const l = await read(f, textOnly)
+    assert.equal(l.read.lore, 'Attempt # 326', f)
+  }
+  // The tight snip's title edge reads `| __Eaming ...`: the frame's marks go, the slip stays for the row to match.
+  assert.ok(!(await read('earring-of-experimentation-lore.png', textOnly)).read.name?.startsWith('_'))
 })
 
 test("WU'S FIST OF MASTERY +10 (AUGMENTED) (THE OWNER'S, 2026-10-21): THE +10 PATH, NO EXALTATION LINE, NO EFFECT AN EXALTATION GRANTS", async () => {

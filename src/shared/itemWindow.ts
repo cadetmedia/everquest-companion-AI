@@ -496,8 +496,11 @@ export function tabRowAt(lines: readonly string[]): number {
   return lines.slice(0, TAB_ROW_TOP).findIndex((l) => l.split(/\s+/).some(descriptionWord))
 }
 
-/** A lore line less what the frame leaves after its last sentence: the scrollbar read as `1`, `|`, `}`. */
-const loreLine = (l: string): string => l.replace(/([.!?'"])\s+[^\sA-Za-z]{1,2}$/, '$1')
+/**
+ * A lore line less what the frame leaves after its last sentence: the scrollbar read as `1`, `|`, `}`,
+ * or its up arrow as a lone `t` (owner's Earring of Experimentation, 2026-10-23: `Attempt # 326 t`).
+ */
+const loreLine = (l: string): string => l.replace(/([.!?'"])\s+[^\sA-Za-z]{1,2}$/, '$1').replace(/\s+[t|}\]]$/, '')
 
 /**
  * The Lore tab: no Class line; its text is what follows the tab row, a wrapped lore joined back into
@@ -505,8 +508,8 @@ const loreLine = (l: string): string => l.replace(/([.!?'"])\s+[^\sA-Za-z]{1,2}$
  */
 function loreRead(lines: readonly string[], raw: readonly string[]): ItemWindowRead {
   const tabAt = tabRowAt(lines)
-  // Words, not OCR's junk off the frame: mostly letters and spaces.
-  const prose = (l: string): boolean => !/^Lore$/i.test(l) && !isTabRow(l) && /[a-z]{3}/i.test(l) && (l.match(/[A-Za-z ]/g) ?? []).length >= 0.8 * l.length
+  // Words, not OCR's junk off the frame: mostly letters, numbers and spaces (`Attempt # 326`).
+  const prose = (l: string): boolean => !/^Lore$/i.test(l) && !isTabRow(l) && /[a-z]{3}/i.test(l) && (l.match(/[A-Za-z0-9 #]/g) ?? []).length >= 0.8 * l.length
   const kept = lines.map(loreLine)
   const text = tabAt >= 0 ? kept.slice(tabAt + 1).filter(prose).join(' ') : kept.filter(prose).sort((a, b) => b.length - a.length)[0]
   // The title bar above the tab row names the item: a captured Lore tab finds its row by it.
@@ -521,7 +524,7 @@ function loreRead(lines: readonly string[], raw: readonly string[]): ItemWindowR
  * Mastery +10 (Augmented), owner's screenshots 2026-10-21).
  */
 const bareTitle = (l: string | undefined): string | undefined =>
-  l?.replace(/(?<=\S)\s+[[\]{}=|<>].*$/, '').replace(/\s*\*+$/, '').replace(/\s*\(Augmented\)$/i, '').trim()
+  l?.replace(/^[_|~\s]+/, '').replace(/(?<=\S)\s+[[\]{}=|<>].*$/, '').replace(/\s*\*+$/, '').replace(/\s*\(Augmented\)$/i, '').trim()
 
 /** The tab row above the name names a Lore tab: the item has lore (Ruined Robe; Windstriker and Black Lizard Scale show none). */
 const hasLoreTab = (lines: readonly string[], before: number): boolean =>
