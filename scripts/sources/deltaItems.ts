@@ -4,6 +4,7 @@
 
 import { parseItemWikitext, templateField } from '../../src/main/itemLookupParse'
 import { itemKey, type ItemDbEntry, type ItemDbFile } from '../../src/main/itemsDb'
+import { pageNotices } from '../../src/shared/pageNotices'
 import type { PageTexts } from './deltaPages'
 
 // ---- mirrored from scripts/scrape-items.ts ----------------------------------------------------
@@ -26,7 +27,9 @@ function isEmptyValue(v: unknown): boolean {
 function toEntry(title: string, wikitext: string): ItemDbEntry | null {
   const parsed = parseItemWikitext(title, wikitext)
   const name = displayName(wikitext, title)
-  const full = { page: title, ...parsed, ...(name ? { name } : {}) }
+  // `{{DNE}}` / `{{delete}}` as scrape-items writes them: an edit that takes the notice off drops the field.
+  const notices = pageNotices(wikitext)
+  const full = { page: title, ...parsed, ...(name ? { name } : {}), ...(notices === undefined ? {} : { notices }) }
   const kept = Object.entries(full).filter(([, v]) => !isEmptyValue(v))
   const entry = Object.fromEntries(kept) as unknown as ItemDbEntry
   return Object.keys(entry).length > 1 ? entry : null
