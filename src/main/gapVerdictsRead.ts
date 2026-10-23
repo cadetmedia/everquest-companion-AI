@@ -12,11 +12,12 @@
 // is asked again later, but for "what must someone do" the last answer the wiki gave stands.
 
 import type { GapVerdict, GapVerdicts } from '../shared/gaps'
+import { lookupVerdict, type LookupAnswer } from '../shared/gapExistingPage'
 
 /** The two cache files' shape, as much of it as a verdict needs. */
 export interface KnowledgeCacheFile {
   version?: number
-  entries?: Record<string, { data?: { notFound?: boolean; offline?: boolean } }>
+  entries?: Record<string, { data?: LookupAnswer }>
 }
 
 /**
@@ -35,7 +36,8 @@ export function verdictsFrom(
     const entry = entries?.[keyOf(name)]
     let verdict: GapVerdict = 'unchecked'
     // A lookup made while the wiki was unreachable is no answer at all (review 2026-10-19).
-    if (entry !== undefined && entry.data?.offline !== true) verdict = entry.data?.notFound === true ? 'noPage' : 'hasPage'
+    // A page under other capitals, or one of free text, is named (gapExistingPage.ts, owner 2026-10-22).
+    if (entry !== undefined && entry.data?.offline !== true) verdict = lookupVerdict(name, entry.data ?? {})
     out[name] = verdict
   }
   return out

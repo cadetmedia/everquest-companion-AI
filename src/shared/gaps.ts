@@ -41,14 +41,14 @@ export const GAP_SHOWN_NOUN: Record<GapDomain, string> = {
 
 /** One line under the toggle saying what the chosen domain's rows are (owner ask, 2026-10-18). */
 export const GAP_DOMAIN_HELP: Record<GapDomain, string> = {
-  item: 'Items your log names that the wiki has no page for.',
-  mob: 'Mobs you looted, killed or conned that the wiki has no page for.',
-  spell: 'Spells cast near you that the wiki has no page for.',
-  merchant: 'Traders the wiki does not list as a merchant.',
-  faction: "Factions a kill changed that the mob's page lacks or gets wrong.",
-  drop: "Items you looted that the mob's wiki page does not list; Motes excluded.",
-  image: 'Mobs you met whose wiki page has no picture.',
-  notice: 'Mobs and items you met whose wiki page says they are not in Legends or are up for deletion: your log proves they exist.'
+  item: 'Items your log, inventory export or a capture names that have no wiki page yet: make the page.',
+  mob: 'Mobs you looted, killed, conned or hailed that have no wiki page yet: make the page.',
+  spell: 'Spells cast near you that have no wiki page yet: make the page.',
+  merchant: "NPCs you saw trading that the wiki doesn't mark as merchants: give them a merchant page.",
+  faction: "Factions a kill changed that the mob's page is missing or states wrongly: fix the mob page.",
+  drop: "Items you looted that the mob's page doesn't list (Motes excluded): add them to its loot.",
+  image: 'Mobs you met whose wiki page has no picture: screenshot one and upload it.',
+  notice: 'Mobs and items you met whose page says "not in Legends" or "up for deletion": remove the notice, since your log proves they exist.'
 }
 
 /**
@@ -464,7 +464,8 @@ export function gapsAsText(rows: readonly GapRow[], verdicts: GapVerdicts = {}):
  * main process answers off `<userData>/item-knowledge-cache.json` / `mob-knowledge-cache.json`
  * (src/main/gapVerdicts.ts); spells have no cache and are always `unchecked`.
  */
-export type GapVerdict = 'noPage' | 'hasPage' | 'unchecked'
+/** `otherPage:<title>` / `freeText:<title>`: a page exists under other capitals, or as free text (gapExistingPage.ts). */
+export type GapVerdict = 'noPage' | 'hasPage' | 'unchecked' | `otherPage:${string}` | `freeText:${string}`
 /** Verdicts by row name, as the renderer's store hands them to the table. */
 export type GapVerdicts = Record<string, GapVerdict>
 
@@ -594,7 +595,8 @@ function imageAction(row: GapRow, file = row.image ?? ''): GapAction {
 }
 
 export function gapActions(row: GapRow, verdict: GapVerdict, ctx: GapActionContext = {}): GapAction[] {
-  const check = pageCheckAction(row)
+  // A notice row, a redirect row, or a page that exists under other capitals or as free text (gapExistingPage.ts).
+  const check = pageCheckAction(row, verdict)
   if (check !== undefined) return [check]
   if (row.domain === 'image') return [imageAction(row)]
   if (row.domain === 'drop') return dropActions(row)

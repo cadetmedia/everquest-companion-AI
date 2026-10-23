@@ -29,6 +29,7 @@ import { useItemMobs } from '../../lib/gapItemMobs'
 import { useThrottled } from '../../lib/useThrottled'
 import { useItemForage } from '../../lib/gapItemForage'
 import { forageProofNames } from '@shared/gapForage'
+import { mobPageFinder } from '@shared/mobPageTitle'
 
 /** Each drop group's members, and the drop-list links that redirect to an item (scrape-drop-groups.ts). */
 const DROPS = dropGroupsJson as { groups: DropGroups; aliases?: DropAliases }
@@ -37,7 +38,7 @@ export const GAPS_DATA_DATE = ((mobsJson as { scrapedAt?: string }).scrapedAt ??
 
 const ZONE_NAME: ZoneNamer = wikiZoneNamer(catalogZoneCounts(MOB_CATALOG))
 const IS_MOB = catalogNameTest(MOB_CATALOG)
-export const PAGE_EXTRAS: PageExtras = { zoneName: ZONE_NAME, isMob: IS_MOB, commonLoot: commonLootNames(MOB_CATALOG), vendorAt: vendorFinder(MOB_CATALOG) }
+export const PAGE_EXTRAS: PageExtras = { zoneName: ZONE_NAME, isMob: IS_MOB, commonLoot: commonLootNames(MOB_CATALOG), vendorAt: vendorFinder(MOB_CATALOG), mobPage: mobPageFinder(MOB_CATALOG) }
 
 /** The wiki side, one object for the session: the caches key on it. */
 const WIKI: GapsWiki = { catalog: MOB_CATALOG, groups: DROPS.groups, aliases: DROPS.aliases ?? {} }
