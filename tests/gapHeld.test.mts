@@ -127,3 +127,12 @@ test("AN UPDATE ROW'S HELD LINE SAYS WHERE IT IS WITHOUT ASKING FOR A SCREENSHOT
   assert.equal(heldLine(h), 'You hold 2 (bags): screenshot it for the wiki now.')
   assert.equal(heldWhere(h), 'You hold 2 (bags).')
 })
+
+test("A HOLDER CARRIES THE EXPORT'S OWN SPELLING AND SLOTS, SO AN ITEM THE LOG NEVER NAMES IS KNOWN BY THEM (OWNER, 2026-10-22: A STORE PURCHASE)", () => {
+  const wand = own('petamorph wand: gelatinous cube', 'inventory', 1, { name: 'Petamorph Wand: Gelatinous Cube', location: 'General 6-Slot3' })
+  const gem = own('petamorph wand: gelatinous cube', 'inventory', 1, { name: 'Petamorph Wand: Gelatinous Cube', location: 'Ear', exaltation: true })
+  const index = heldIndex({ entries: [['petamorph wand: gelatinous cube', [gem, wand]]], loadedAt: EXPORTED }, { 'Rat Ear': 1 })
+  assert.deepEqual(index.get('petamorph wand: gelatinous cube')?.[0]?.exported, { name: 'Petamorph Wand: Gelatinous Cube', slots: ['General 6-Slot3'] })
+  // An item only the loot since the export shows has no export spelling.
+  assert.equal(index.get('rat ear')?.[0]?.exported, undefined)
+})
