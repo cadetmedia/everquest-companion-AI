@@ -56,9 +56,14 @@ export function existingPageAction(verdict: GapVerdict, edit: (page: string) => 
   return { kind: 'checkWiki', label: 'Fix page', why, href: edit(found.title) }
 }
 
-/** The row button's editor when a page exists: its title, worded for an edit, not a new page. */
-export function existingEditor(row: GapRow, verdict: GapVerdict): { target: string; create: string; existing: true } | undefined {
+/**
+ * The row button's link when a page exists: the page itself, opened to read, not its editor. Copy wiki
+ * page holds a whole page built from the log, and pasted over a page people wrote it erases their text
+ * (owner, 2026-10-23: "why is this description missing when i update from the app"; pre-release
+ * review): the person adds to the page from its own Edit tab.
+ */
+export function existingEditor(row: GapRow, verdict: GapVerdict): { target: string; create: string; existing: true; view: true } | undefined {
   const found = existingPage(verdict)
-  if (found !== undefined) return { target: found.title, create: 'Edit existing page', existing: true }
-  return verdict === 'hasPage' ? { target: row.name, create: 'Edit existing page', existing: true } : undefined
+  if (found !== undefined) return { target: found.title, create: 'Open existing page', existing: true, view: true }
+  return verdict === 'hasPage' ? { target: row.name, create: 'Open existing page', existing: true, view: true } : undefined
 }
