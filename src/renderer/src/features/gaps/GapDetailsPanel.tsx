@@ -59,11 +59,12 @@ function TallyChips({ label, tally }: { label: string; tally: GapTally }): JSX.E
   )
 }
 
-export default function GapDetailsPanel({ details, quest }: { details: GapDetails; quest?: ItemQuestFacts }): JSX.Element {
+/** `lines`: the row's other facts in words (a quest's steps, an NPC's role, where it was fished; gapQuestPage.ts `rowFactLines`). */
+export default function GapDetailsPanel({ details, quest, lines = [] }: { details: GapDetails; quest?: ItemQuestFacts; lines?: readonly string[] }): JSX.Element {
   return (
     <Stack spacing={1} sx={{ py: 1 }} data-testid="gaps-details">
       {/* Who gave it, who took it, its quest (owner, 2026-10-22: who it is turned in to). */}
-      {questFactLines(quest).map((l) => (
+      {[...questFactLines(quest), ...lines].map((l) => (
         <Typography key={l} variant="body2" color="info.main" data-testid="gaps-quest-line">
           {l}
         </Typography>

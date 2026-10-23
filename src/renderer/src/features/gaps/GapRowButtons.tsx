@@ -16,6 +16,7 @@ import { GAP_CAPTURE, mobPageOf, onMobPage, wikiCreateUrl, wikiEditUrl, wikiSear
 import { copyText } from '../../lib/clipboard'
 import { Tooltip } from '../../lib/Tooltip'
 import { existingEditor } from '@shared/gapExistingPage'
+import { questPageTitle } from '@shared/gapQuests'
 import { readGapVerdict } from '../../lib/gapVerdicts'
 
 const stop = (e: MouseEvent): void => e.stopPropagation()
@@ -91,6 +92,8 @@ function editorOf(row: GapRow): { target: string; create: string; existing: bool
   // A notice row's page exists: it is edited, the notice off (owner, 2026-10-22).
   if (row.domain === 'notice') return { target: row.page ?? row.name, create: 'Edit page', existing: true }
   if (onMobPage(row)) return { target: mobPageOf(row), create: 'Edit mob page', existing: true }
+  // A quest: its page from the catalog when the wiki has one, else a new page under the wiki's spelling.
+  if (row.domain === 'quest') return row.page === undefined ? { target: questPageTitle(row.name), create: 'Create page', existing: false } : { target: row.page, create: 'Edit page', existing: true }
   // A page the lookup found under other capitals or as free text is edited, never made twice
   // (owner, 2026-10-22: Drake lava powder; gapExistingPage.ts).
   const found = existingEditor(row, readGapVerdict(row.domain, row.name))

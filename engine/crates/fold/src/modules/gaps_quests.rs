@@ -94,7 +94,7 @@ pub struct QuestFacts {
 }
 
 /// `Your task 'Q' has been updated.` / `You have been assigned the task 'Q'.` → `Q`.
-fn task_of(text: &str) -> Option<&str> {
+pub(super) fn task_of(text: &str) -> Option<&str> {
     let q = text
         .strip_prefix("Your task '")
         .and_then(|r| r.split_once("' has been "))
@@ -259,16 +259,46 @@ impl GapsModule {
     pub(super) fn quest_give(&mut self, ev: &Event) -> bool {
         let zone = self.zone.clone();
         match (ev.str("via"), ev.str("item")) {
-            (Some("given"), Some(item)) => self.quests.given(item, ev.ts(), zone.as_deref()),
+            (Some("given"), Some(item)) => {
+                self.quest_log.given(item, ev.ts());
+                self.quests.given(item, ev.ts(), zone.as_deref())
+            }
             _ => false,
         }
     }
 
     /// `You offered 1 <item> to <NPC>.`: a turn-in, for the item's and the NPC's quest facts.
+    /// An item handed to an NPC is proof the item exists, so it is filed like a looted one (owner,
+    /// 2026-10-22: Plea to Freeport, only ever in the inventory export, vanished from the tab once
+    /// turned in to Sir Mollin, while the wiki still had no page). A hand-over to a player is not.
     pub(super) fn turn_in(&mut self, ev: &Event) -> bool {
-        match (ev.str("item"), ev.str("npc")) {
-            (Some(item), Some(npc)) => self.quests.offered(item, npc, ev.ts()),
-            _ => false,
+        let (Some(item), Some(npc)) = (ev.str("item"), ev.str("npc")) else {
+            return false;
+        };
+        if !self.quests.offered(item, npc, ev.ts()) {
+            return false;
+        }
+        self.quest_log.offered(item, npc, ev.ts());
+        self.item_named(item, "turned-in", ev);
+        true
+    }
+
+    /// What a row serves beyond its own fields: an item's or an NPC's quest facts, a quest's steps,
+    /// an NPC's role from its target line, the zones an item was fished in.
+    pub(super) fn serve_extras(&self, domain: Domain, key: &str, v: &mut Value) {
+        if let Some(f) = self.quests.served(domain, key) {
+            v["questFacts"] = f;
+        }
+        if domain == Domain::Quest {
+            if let Some(q) = self.quest_log.served(key) {
+                v["quest"] = q;
+            }
+        }
+        if let (Domain::Mob | Domain::Merchant, Some(role)) = (domain, self.roles.of(key)) {
+            v["role"] = json!(role);
+        }
+        if let (Domain::Item, Some(zones)) = (domain, self.fish.of(key)) {
+            v["fishedIn"] = json!(zones);
         }
     }
 }
