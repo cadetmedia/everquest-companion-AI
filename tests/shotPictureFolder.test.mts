@@ -6,7 +6,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { join } from 'node:path'
-import { folderPictures, heldPicture, keptPictureFile, NO_FOLDER_PICTURES, partPicture, PICTURE_FOLDER, pictureFile, pictureRoot, rowPicture } from '../src/shared/mobPicture'
+import { folderPictures, heldPicture, keptPictureFile, NO_FOLDER_PICTURES, partPicture, PICTURE_FOLDER, pictureFile, pictureRoot, rowPicture, rowPictures } from '../src/shared/mobPicture'
 import { pictureIn } from '../src/main/shot/pictureFiles'
 import { openNeeds } from '../src/shared/gapReady'
 import { IMAGE_NEED } from '../src/shared/wikiPage'
@@ -119,4 +119,16 @@ test('MAIN SHOWS ONLY A .PNG DIRECTLY IN A PICTURE FOLDER: NO OTHER TYPE, NO SUB
   assert.ok(!pictureIn(join(root, 'npc', 'deeper', 'x.png'), dirs))
   assert.ok(!pictureIn(join(root, 'npc', '..', '..', 'other.png'), dirs))
   assert.ok(!pictureIn(join('C:', 'Windows', 'x.png'), dirs))
+})
+
+test("AN ITEM ROW STEPS THROUGH ITS WINDOW AND ITS LORE TAB; A MOB HAS ITS ONE PICTURE (OWNER, 2026-10-22: LEFT/RIGHT ARROWS)", () => {
+  const ITEM = 'C:/pics/item'
+  const names = ['item_encoded_missive.png', 'item_encoded_missive_lore.png', 'item_lore_only_lore.png']
+  const folder = folderPictures([{ dir: ITEM, files: names.map((n) => ({ name: n, path: `${ITEM}/${n}` })) }])
+  assert.deepEqual(rowPictures({ domain: 'item', name: 'Encoded Missive' }, {}, folder), [
+    { label: 'Item window', path: `${ITEM}/item_encoded_missive.png` },
+    { label: 'Lore', path: `${ITEM}/item_encoded_missive_lore.png` }
+  ])
+  assert.deepEqual(rowPictures({ domain: 'item', name: 'Lore Only' }, {}, folder), [{ label: 'Lore', path: `${ITEM}/item_lore_only_lore.png` }])
+  assert.deepEqual(rowPictures({ domain: 'item', name: 'Nothing Here' }, {}, folder), [])
 })

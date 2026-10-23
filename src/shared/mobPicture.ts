@@ -101,6 +101,24 @@ export function rowPicture(row: Pick<GapRow, 'domain' | 'name' | 'image'>, saved
   return undefined
 }
 
+/** One of a row's pictures, with what it shows. */
+export interface RowPictureFile {
+  label: string
+  path: string
+}
+
+/**
+ * Every picture a row has, in the order the pane steps through them: an item's window, then its Lore
+ * tab (owner, 2026-10-22: "can the image section have a left/right arrow above so you can see the
+ * item and it's lore image?"); a mob's or a spell's one picture.
+ */
+export function rowPictures(row: Pick<GapRow, 'domain' | 'name' | 'image'>, saved: Readonly<Record<string, unknown>>, folder: FolderPictures): RowPictureFile[] {
+  const one = rowPicture(row, saved, folder)
+  const lore = row.domain === 'item' ? folder.files[keptPictureFile('lore', row.name)] : undefined
+  const first = one === undefined ? [] : [{ label: row.domain === 'item' ? 'Item window' : row.domain === 'spell' ? 'Spell window' : 'Picture', path: one }]
+  return [...first, ...(lore === undefined ? [] : [{ label: 'Lore', path: lore }])]
+}
+
 /** Whether `path` sits directly in one of the folders the listing read (Windows: any case, either slash). */
 function listed(folder: FolderPictures, path: string): boolean {
   const norm = (p: string): string => p.replace(/[\\/]+/g, '/').replace(/\/$/, '').toLowerCase()
