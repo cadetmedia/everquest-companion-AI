@@ -7,11 +7,13 @@
 import { itemKey, type ItemDbEntry, type ItemDbFile } from './itemsDb'
 import type { ItemPageForage } from '../shared/gapForage'
 import itemsJson from './data/items.json'
+import { itemsByAnyName } from './itemOtherNames'
 
 /** A record's forage fields (wiki-scraper-fixes' parser); absent on a corpus parsed before them. */
 type ForageEntry = ItemDbEntry & { foraged?: string[]; foragedNote?: string; foragedCategory?: boolean }
 
-const items = (itemsJson as unknown as ItemDbFile).items as Record<string, ForageEntry>
+// By any name the wiki gives the page: a redirect to it finds it (itemOtherNames.ts).
+const items = itemsByAnyName((itemsJson as unknown as ItemDbFile).items as Record<string, ForageEntry>)
 
 /** One record → what its page states; the page title is the edit link's. */
 export function pageForage(entry: ForageEntry): ItemPageForage {
