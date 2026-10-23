@@ -90,7 +90,9 @@ impl WorldRes {
             slain_by: Regex::new(r"^(.+?) has been slain by (.+?)!$").unwrap(),
             player_death: Regex::new(r"^You have been slain by (.+?)!$").unwrap(),
             mob_died: Regex::new(r"^(.+?) died\.$").unwrap(),
-            offer: Regex::new(r"^You offered [0-9,]+ (.+?) to (.+?)\.$").unwrap(),
+            // The item is the GREEDY part: an item name may hold " to " (`Plea to Freeport`), an NPC's
+            // name does not (owner, 2026-10-22: `You offered 1 Plea to Freeport to Sir Mollin.`).
+            offer: Regex::new(r"^You offered [0-9,]+ (.+) to (.+?)\.$").unwrap(),
             trade_done: Regex::new(r"^You complete the trade with (.+?)\.$").unwrap(),
             level: Regex::new(r"^You have gained a level! Welcome to level ([0-9]+)!$").unwrap(),
             exp: Regex::new(
