@@ -52,6 +52,7 @@ import { wikiPageUrl } from '@shared/wiki'
 import { Tooltip } from '../../lib/Tooltip'
 import { useWindowedRows } from '../../lib/useWindowedRows'
 import GapActionChips from './GapActionChips'
+import PageFixNote from './PageFixNote'
 import GapDetailsPanel from './GapDetailsPanel'
 import GapRowButtons from './GapRowButtons'
 import MobHeadingButtons from './MobHeadingButtons'
@@ -236,24 +237,24 @@ function DetailsPane({ row, actions }: { row: GapRow; actions: PaneActions }): J
         </Typography>
       )}
       {row.noPage === true && (
-        <Typography variant="body2" color="warning.main" component="div" data-testid="gaps-no-page-line">
+        <PageFixNote testId="gaps-no-page-line">
           No page for {mobPageOf(row)} in the wiki data: check the wiki first.
-        </Typography>
+        </PageFixNote>
       )}
       {row.fix !== undefined && (
-        <Typography variant="body2" color="warning.main" component="div" data-testid="gaps-fix-line">
+        <PageFixNote testId="gaps-fix-line">
           The page lists it as {pageSaysText(row.pageSays ?? '')}; your log: {logSaysText(row)}.
-        </Typography>
+        </PageFixNote>
       )}
       {row.replaces !== undefined && (
-        <Typography variant="body2" color="warning.main" component="div" data-testid="gaps-replace-line">
+        <PageFixNote testId="gaps-replace-line">
           {replaceWhy(factionOf(row), row.replaces.lines)}
-        </Typography>
+        </PageFixNote>
       )}
       {row.pageImage !== undefined && (
-        <Typography variant="body2" color="warning.main" component="div" data-testid="gaps-page-image-line">
+        <PageFixNote testId="gaps-page-image-line">
           The page&apos;s imagefilename says {row.pageImage}, not {row.image}: the page may need fixing.
-        </Typography>
+        </PageFixNote>
       )}
       {needed.length > 0 && (
         <Typography variant="caption" color="text.secondary" data-testid="gaps-needed">
