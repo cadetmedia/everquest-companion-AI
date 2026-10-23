@@ -392,9 +392,15 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
 - The icon box is placed from the `Class`/`Race` word itself (`ocr.ts` `LABEL_WORD`): OCR junk off
   the icon can be a real-looking word (`By`).
 - Auto-find anchor: the selected tab's yellow label, `max(r,g)>=100 && b*3<r && g>=0.6r`; its height
-  sets the scale. Sides are the strongest vertical edges within 24 label heights (often the inner
-  pane border, fine); the bottom is the first edge below which the sides stop. At most 4 candidate
-  reads through `readCapture`. A spell window has no yellow tab: no hotkey anchor for it yet.
+  sets the scale. Each yellow word's own text is OCR'd first (a crop, ~10 ms) and only `Description`
+  / `Lore` (`isTabWord`) gets the full read: by shape alone, chat titles, map buttons and gauges
+  outranked the tabs (owner's screenshots 2026-10-22: tabs 10th-11th of 24). Up to 60 words, 10
+  windows. Sides (`sideCol`): the NEAREST column whose step holds on 80% of rows 3-16 label heights
+  under the label, at least 0.6 of the steadiest in reach; never the strongest (a neighbour window's
+  frame, 97, beats the own, 85) and not 3-10 heights (the icon fills most of it). The bottom is the
+  first edge below which the sides stop. A spell window has no yellow tab: no anchor for it yet.
+- Name line: a 1-2 character first token is dropped when the rest equals the title bar
+  (`iconJunkDropped`: `S Halfling Blood`; `5 Dose Potion of Cold` keeps its 5).
 - Capture triggers: no `globalShortcut` (a test sweeps the source). Macro `/echo eqc capture`: main
   adds an alert definition of its own, `eqc-shot-capture`, to `alerts.define`
   (`dataServer/ownFires.ts`, `withOwnDefs` at the engine host's send site) and takes its fire in
@@ -402,7 +408,7 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   `SHOT_CAPTURE_ACTION` with `OverlayHeaderAction.whileLocked`.
 - `/echo` is not yet seen in any of the owner's logs; the bare-text line format is assumed. First
   live test: check the line appears.
-- `readCapture` returns `windows[]`, every window found (at most 4 labels read).
+- `readCapture` returns `windows[]`, every window found.
 - Spell window: Reuse is never written (whole seconds on the window); a bracketed value is the
   modified one and never written.
 - Capture trigger (rebuilt 2026-10-21): the player's own `You tell eqc…:<n>, 'eqc capture'`; a second
