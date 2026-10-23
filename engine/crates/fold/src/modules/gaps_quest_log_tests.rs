@@ -60,7 +60,7 @@ fn a_hand_in_is_the_open_trade_however_long_it_stood() {
     assert_eq!(step["offered"], json!(["Exorbitant Commission", "A Curt Dismissal", "Ordination of Might"]));
     assert_eq!(step["achievements"], json!(["Race Unlock - Half Dark Elves"]));
     let said = step["talk"].as_array().unwrap().iter().map(|t| t["text"].as_str().unwrap()).collect::<Vec<_>>().join(" ");
-    assert!(said.contains("You, however, <name> , you"), "the player's name is the wiki's <name>: {said}");
+    assert!(said.contains("You, however, Soandso , you"), "the player's name is the wiki's Soandso: {said}");
     assert!(!said.contains("Testplayer"));
     assert_eq!(v["zone"], json!("The Temple of Solusek Ro"), "the start zone is where the task was assigned");
 }

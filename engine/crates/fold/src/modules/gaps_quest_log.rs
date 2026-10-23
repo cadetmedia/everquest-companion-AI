@@ -16,7 +16,8 @@
 //!     that NPC, else in the TALK_MS before (and since the task's step before), and that NPC's answer
 //!     after, newest TALK_CAP. Other players' lines never count; an NPC's answer to them may (the log
 //!     cannot tell whom an NPC answers). An emote with a quote from the NPC just hailed or handed an
-//!     item is its line too. The player's own name is written as the wiki's `<name>`.
+//!     item is its line too. The player's own name is written `Soandso`, as the wiki's quest pages
+//!     write a player (27 NPC lines on 8 pages; `<name>` 9).
 //!   * WHAT CAME OF IT. Items given in the GIVE_MS before, faction lines and `You gain experience!`
 //!     within AFTER_MS, an achievement within ACHIEVE_MS, and a new task assigned within AFTER_MS
 //!     (the next quest of a chain).
@@ -49,7 +50,7 @@ const OFFER_MS: i64 = 300_000;
 /// An achievement a step earned (Race Unlock - Half Dark Elves, 11 s after the step that earned it).
 const ACHIEVE_MS: i64 = 15_000;
 /// How quest pages write the player's name: 9 of the 20 cached pages with a placeholder.
-const PLAYER_NAME: &str = "<name>";
+const PLAYER_NAME: &str = "Soandso";
 /// The NPC that spoke just before the step.
 const SPOKE_MS: i64 = 10_000;
 /// An item given before the step (0-6 s measured).
