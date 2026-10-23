@@ -1,5 +1,5 @@
 {
-  "scrapedAt": "2026-10-23T04:05:45.103Z",
+  "scrapedAt": "2026-10-23T05:02:44.127Z",
   "source": "eqlwiki.com — Category:NPCs/Named Mobs/Merchants/Raid Encounters ∪ embeddedin Template:Namedmobpage/MerchantPage, filtered to pages opening a mob template + recentchanges delta (scripts/scrape-delta.mts)",
   "mobs": [
     {
@@ -65954,6 +65954,41 @@
       "noImage": true
     },
     {
+      "page": "An arcane elementalist",
+      "eraTag": "Classic",
+      "name": "an arcane elementalist",
+      "level": "5-7",
+      "zones": [
+        "Nektulos Forest"
+      ],
+      "drops": [
+        "Cloth Shirt"
+      ],
+      "loc": [
+        {
+          "ns": 679,
+          "ew": -671
+        },
+        {
+          "ns": 459,
+          "ew": -991
+        }
+      ],
+      "factions": [
+        "Faydarks Champions",
+        "Keepers of the Art",
+        "King Tearis Thex",
+        "The Dead"
+      ],
+      "factionAmounts": [
+        "-3",
+        "-20",
+        "-5",
+        "5"
+      ],
+      "image": "npc_an_arcane_elementalist.png"
+    },
+    {
       "page": "An arcane incantator",
       "eraTag": "Classic",
       "name": "an arcane incantator",
@@ -65988,6 +66023,41 @@
         "5"
       ],
       "image": "npc_an_arcane_incantator.png"
+    },
+    {
+      "page": "An arcane shapeshifter",
+      "eraTag": "Classic",
+      "name": "an arcane shapeshifter",
+      "level": "5-10",
+      "zones": [
+        "Nektulos Forest"
+      ],
+      "drops": [
+        "Cloth Shawl"
+      ],
+      "loc": [
+        {
+          "ns": 412,
+          "ew": -508
+        },
+        {
+          "ns": 277,
+          "ew": -930
+        }
+      ],
+      "factions": [
+        "Faydarks Champions",
+        "Keepers of the Art",
+        "King Tearis Thex",
+        "The Dead"
+      ],
+      "factionAmounts": [
+        "-3",
+        "-20",
+        "-5",
+        "5"
+      ],
+      "image": "npc_an_arcane_shapeshifter.png"
     },
     {
       "page": "An arena spectator",
@@ -146195,6 +146265,39 @@
       "noImage": true
     },
     {
+      "page": "High Chief Deroslan",
+      "eraTag": "Classic",
+      "name": "High Chief Deroslan",
+      "level": "12",
+      "zones": [
+        "Nektulos Forest"
+      ],
+      "drops": [
+        "Chief Deroslan's Prayer Beads"
+      ],
+      "loc": [
+        {
+          "ns": -476,
+          "ew": 756
+        }
+      ],
+      "factions": [
+        "Death Fist Orcs",
+        "Ashen Order",
+        "Commons Residents",
+        "Guardians of the Vale",
+        "Knights of Truth"
+      ],
+      "factionAmounts": [
+        "-2",
+        "5",
+        "5",
+        "5",
+        "+"
+      ],
+      "image": "npc_high_chief_deroslan.png"
+    },
+    {
       "page": "High Chief Ferilsars",
       "eraTag": "Classic",
       "name": "High Chief Ferilsars",
@@ -165176,8 +165279,7 @@
         "-15",
         "22"
       ],
-      "image": "BST 25234 228747.jpg",
-      "noImage": true
+      "image": "npc_leatherfoot_medic.png"
     },
     {
       "page": "Leatherfoot Scout",
