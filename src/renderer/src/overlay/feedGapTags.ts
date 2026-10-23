@@ -39,6 +39,14 @@ function conMissing(e: FeedEvent, players: ReadonlySet<string>): string | undefi
   return e.maybePlayer === true ? MAYBE_PLAYER_LABEL : 'missing · screenshot it'
 }
 
+/** An `unknown` row's mark: a con's from the Gaps tab's row, a loot's by whether it was sold. */
+function unknownLabel(e: FeedEvent, done: ReadonlySet<string>, players: ReadonlySet<string>): string | undefined {
+  if (isMarkedDone(done, e.kind === 'con' ? 'mob' : 'item', e.title)) return undefined
+  if (e.kind === 'con') return conMissing(e, players)
+  // Sold on loot is already gone: the next one is the screenshot (review 2026-10-19).
+  return e.detail?.startsWith('auto-sold') === true ? 'missing · auto-sold, keep the next one' : 'missing · screenshot it'
+}
+
 /** The mark a row carries, or undefined for none. The engine never sets `unknown` and `needsImage`
  *  together. `players`: the names the viewer marked as players on the Gaps tab, lowercased;
  *  `pictured`: whether the player holds the picture file named so (`npc_<name>.png`). */
@@ -49,12 +57,7 @@ export function screenshotLabel(
   pictured: (file: string) => boolean = () => false
 ): string | undefined {
   if (e.kind === 'keep') return hiddenKeep(e, done) ? undefined : KEEP_LABEL
-  if (e.unknown) {
-    if (isMarkedDone(done, e.kind === 'con' ? 'mob' : 'item', e.title)) return undefined
-    if (e.kind === 'con') return conMissing(e, players)
-    // Sold on loot is already gone: the next one is the screenshot (review 2026-10-19).
-    return e.detail?.startsWith('auto-sold') === true ? 'missing · auto-sold, keep the next one' : 'missing · screenshot it'
-  }
+  if (e.unknown) return unknownLabel(e, done, players)
   if (e.needsImage !== true || isMarkedDone(done, 'image', e.title)) return undefined
   return pictured(npcImageName(e.title)) ? PICTURED_LABEL : 'no picture · screenshot it'
 }
