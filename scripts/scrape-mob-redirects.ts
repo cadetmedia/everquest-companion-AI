@@ -1,6 +1,9 @@
-// Collect every main-namespace redirect on eqlwiki and keep those that land on a mob page as that
-// mob's `otherNames` in mobs.json (sources/mobRedirects.ts). One request per 500 redirects, at the
-// shared 1 request per second. Run after a full `scrape:mobs`, which writes records without them.
+// Collect every main-namespace redirect on eqlwiki and keep those that land on a mob, item or spell
+// page as that record's `otherNames` (mobs.json, items.json, spells.json), and those that land on an
+// item page as drop aliases too (dropGroups.json) (sources/mobRedirects.ts; owner, 2026-10-22: "no
+// one told you to restrict it to mobs only"). One request per 500 redirects, at the shared 1 request
+// per second. scrape:items, scrape:spells and scrape-drop-groups apply the cached list themselves;
+// after a full `scrape:mobs`, run this with --offline.
 // The list is kept in cache/redirects/redirects.json like every other wiki text (owner, 2026-10-19:
 // "everything we get from the wiki should be cached"), so mobs.json re-derives from it offline.
 //
@@ -11,10 +14,14 @@ import { readFileSync, writeFileSync } from 'fs'
 import { resolve } from 'path'
 import { fileURLToPath } from 'url'
 import { isMain } from './sources/isMain'
-import { applyOtherNames, readRedirectCache, writeRedirectCache, type NamedMob, type Redirect } from './sources/mobRedirects'
+import { itemKey } from '../src/main/itemsDb'
+import { applyItemOtherNames, applyOtherNames, applySpellOtherNames, readRedirectCache, withItemRedirectAliases, writeRedirectCache, type NamedItem, type NamedMob, type NamedSpell, type Redirect } from './sources/mobRedirects'
 import { wikiGet } from './sources/wikiApi'
 
 const MOBS_PATH = resolve(fileURLToPath(import.meta.url), '../../src/renderer/src/data/eqlegends/mobs.json')
+const ITEMS_PATH = resolve(fileURLToPath(import.meta.url), '../../src/main/data/items.json')
+const SPELLS_PATH = resolve(fileURLToPath(import.meta.url), '../../src/main/data/spells.json')
+const DROPS_PATH = resolve(fileURLToPath(import.meta.url), '../../src/renderer/src/data/eqlegends/dropGroups.json')
 const CACHE = resolve(fileURLToPath(import.meta.url), '../sources/cache/redirects/redirects.json')
 
 type Get = typeof wikiGet
@@ -62,6 +69,25 @@ async function main(): Promise<void> {
   const names = data.mobs.reduce((n, m) => n + (m.otherNames?.length ?? 0), 0)
   writeFileSync(MOBS_PATH, JSON.stringify(data, null, 2))
   console.log(`${String(redirects.length)} redirects; ${String(names)} land on ${String(named)} mob pages`)
+  applyToItemsAndSpells(redirects)
+}
+
+/** The same list onto items.json, spells.json and dropGroups.json's aliases, each written as its scraper writes it. */
+export function applyToItemsAndSpells(redirects: readonly Redirect[]): void {
+  const items = JSON.parse(readFileSync(ITEMS_PATH, 'utf8')) as { items: Record<string, NamedItem> }
+  applyItemOtherNames(items.items, redirects, itemKey)
+  // Compact, as scrape-items writes it: the file is inlined into the main bundle.
+  writeFileSync(ITEMS_PATH, JSON.stringify(items), 'utf8')
+  const pages = new Set(Object.values(items.items).filter((e) => e.otherNames).map((e) => e.page))
+  const spells = JSON.parse(readFileSync(SPELLS_PATH, 'utf8')) as { spells: NamedSpell[] }
+  applySpellOtherNames(spells.spells, redirects)
+  writeFileSync(SPELLS_PATH, JSON.stringify(spells, null, 2))
+  const drops = JSON.parse(readFileSync(DROPS_PATH, 'utf8')) as { aliases?: Record<string, string> }
+  const before = Object.keys(drops.aliases ?? {}).length
+  drops.aliases = withItemRedirectAliases(drops.aliases ?? {}, items.items, redirects, itemKey)
+  writeFileSync(DROPS_PATH, JSON.stringify(drops, null, 1) + '\n')
+  const spellNamed = spells.spells.filter((s) => s.otherNames).length
+  console.log(`items: other names on ${String(pages.size)} pages; spells: on ${String(spellNamed)}; drop aliases ${String(before)} -> ${String(Object.keys(drops.aliases).length)}`)
 }
 
 if (isMain(import.meta.url)) void main()

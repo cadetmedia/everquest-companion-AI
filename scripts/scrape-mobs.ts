@@ -39,6 +39,7 @@ import { fileURLToPath } from 'url'
 import { isMobPage, parseMobPage } from './sources/mobPage'
 import type { MobData, MobEntry } from '../src/shared/types'
 import { isMain } from './sources/isMain'
+import { applyOtherNames, cachedRedirects } from './sources/mobRedirects'
 import { createCache } from './sources/diskCache'
 import { wikiGet } from './sources/wikiApi'
 
@@ -313,6 +314,8 @@ async function main(): Promise<void> {
   }
 
   mobs.sort((a, b) => a.page.localeCompare(b.page))
+  // The cached redirects as each mob's otherNames: a full scrape writes records without them.
+  applyOtherNames(mobs, cachedRedirects())
   const out: MobData = {
     scrapedAt: new Date().toISOString(),
     source:
