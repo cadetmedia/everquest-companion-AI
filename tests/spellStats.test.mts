@@ -247,9 +247,12 @@ test('the corpus is the one the header measured', () => {
   // Re-read 2026-10-18 after the full re-scrape (2,013 -> 2,012 spells, 1,083 -> 1,082 beneficial,
   // 2,075 -> 2,074 lines: Magical Monologue, marked {{Delete}}, left): the coverage band below still
   // reads the header's 702 of 727, so only the corpus size moved.
-  assert.equal(SPELLS.length, 2012)
-  assert.equal(BENEFICIAL.length, 1082)
-  assert.equal(BENEFICIAL_LINES.length, 2074)
+  // Re-read 2026-10-22 after the evening delta (2,012 -> 2,014 spells, 1,082 -> 1,084 beneficial,
+  // 2,074 -> 2,076 lines: Summon Familiar: Werewolf and Pet Illusion: Werewolf, each one line naming
+  // itself, outside the stat shape): only the corpus size moved.
+  assert.equal(SPELLS.length, 2014)
+  assert.equal(BENEFICIAL.length, 1084)
+  assert.equal(BENEFICIAL_LINES.length, 2076)
 })
 
 test('coverage over the real bytes matches the header, within a band', () => {
