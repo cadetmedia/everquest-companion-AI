@@ -459,6 +459,19 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
 - Overlay code imported by tests uses relative `shared/` imports, not `@shared` (`feedGapTags.ts`).
 - `shotIpc.ts catalogNames` includes each item's `otherNames` (wiki redirects).
 
+## Page notices (cross-branch)
+
+- `src/shared/pageNotices.ts` reads `{{DNE}}` and `{{delete[|reason]}}` (comments and nowiki skipped) into
+  `notices: ["DNE" | "delete" | "delete: <reason>"]`; byte-identical on wiki-scraper-fixes and
+  scrape-delta-tool. Written by `mobPage.ts`, scrape-items and the delta's `deltaItems` (an edit that
+  removes the notice drops the field). Spells need none.
+- Notices domain (gaps-tab), engine-filed: `gaps_notices.rs` (child of `gaps.rs`); `GapIndex.item_notices`
+  / `mob_notices` from `gap_index.rs`, the mobs off the corpus's `MobIndex` (never `MOBS_JSON` directly:
+  catch_all embeds that text once, in the fold crate). Row key `<item|mob>:<page lowercased>`; serves
+  `page`, `notices`, `subject`. Renderer: `gapNotices.ts noticeAction`, `wikiPage.ts noticeProof` (Copy
+  proof), `gapJob` treats `notice` as an update; `GapRowButtons.editorOf` opens the page's editor.
+- The forage test (gaps-item-facts) checks its four totals by name, so a new domain does not break it.
+
 ## Wiki redirects (cross-branch)
 
 - A redirect is a fact about the wiki, not about mobs: it applies to every catalog (owner, 2026-10-22,
