@@ -16,7 +16,7 @@
 //! absent entirely for a zone session — so "what was on when this fired" is knowable only now.
 //! Nothing below calls an `add_*` that moves a damage total (law 8's tripwire).
 
-use crate::combat::aggregate::{DamageEvent, MissType};
+use crate::combat::aggregate::{DamageEvent, MissType, SourceRef};
 use crate::combat::ally::{AllyCastLine, AllyKind, AllyLeaderLine, AllyVerdict};
 use crate::combat::charm::CharmVerdict;
 use crate::combat::encounter::{ZoneSessionClose, CC_HOLD_MS};
@@ -159,16 +159,7 @@ fn ingest_world(st: &mut EngineState, ev: &Event) -> bool {
             true
         }
         Kind::AllyPetLeader => {
-            // The speaker just named somebody its leader, which settles what it IS whether or not
-            // the ally model goes on to bind it.
-            if let Some(pet) = ev.str(Key::Pet) {
-                let why = format!(
-                    "named {} its leader",
-                    ev.str(Key::Owner).unwrap_or_default()
-                );
-                st.retract_other(&id_key(pet), &why);
-            }
-            ingest_ally_pet_leader(st, ev);
+            ally_pet_leader(st, ev);
             true
         }
         Kind::PetSay => {
@@ -331,22 +322,40 @@ fn bind_pet_claim(st: &mut EngineState, name: &str, ts: i64, via: &str) {
     }
 }
 
-/// `<PetName> says, 'My leader is <Player>.'` about somebody else — the strongest ally bind, and the
-/// only one that reaches a stranger's summoned pet.
-fn ingest_ally_pet_leader(st: &mut EngineState, ev: &Event) {
-    let (Some(pet), Some(owner)) = (ev.str(Key::Pet), ev.str(Key::Owner)) else {
+/// The speaker just named somebody its leader, which settles what it IS whether or not the ally model
+/// goes on to bind it: a row recorded under its name as another player moves to the ally-pet row the
+/// bind credits (owner, 2026-10-22: Malkil's Jeber), and is dropped as before when there is no bind.
+fn ally_pet_leader(st: &mut EngineState, ev: &Event) {
+    let bound = ingest_ally_pet_leader(st, ev);
+    let Some(pet) = ev.str(Key::Pet) else {
         return;
+    };
+    let why = format!(
+        "named {} its leader",
+        ev.str(Key::Owner).unwrap_or_default()
+    );
+    match bound {
+        Some(to) => st.rekey_other(&id_key(pet), &to, &why),
+        None => st.retract_other(&id_key(pet), &why),
+    }
+}
+
+/// `<PetName> says, 'My leader is <Player>.'` about somebody else — the strongest ally bind, and the
+/// only one that reaches a stranger's summoned pet. The row its damage is credited to, when it binds.
+fn ingest_ally_pet_leader(st: &mut EngineState, ev: &Event) -> Option<SourceRef> {
+    let (Some(pet), Some(owner)) = (ev.str(Key::Pet), ev.str(Key::Owner)) else {
+        return None;
     };
     let (pet, owner) = (pet.to_string(), owner.to_string());
     let owner_key = id_key(&owner);
     let pet_key = id_key(&pet);
     if !st.ally_caster_allowed(&owner_key) {
-        return;
+        return None;
     }
     // Your own pet is yours, whatever a broadcast says. `says` is forgeable and the cost of getting
     // this wrong is deleting a real pet's damage, so the refusal is absolute.
     if st.pet_names.contains(&pet_key) || st.ever_pet.contains(&pet_key) {
-        return;
+        return None;
     }
     let ever_charmed = st.charm.ever_charmed(&pet_key);
     let bind = st.ally.bind_by_leader(&AllyLeaderLine {
@@ -373,6 +382,7 @@ fn ingest_ally_pet_leader(st: &mut EngineState, ev: &Event) {
             bind.charmer
         ),
     );
+    Some(routing::ally_pet_source(&bind))
 }
 
 /// Crowd control (mez/root, not charm). Evaluate any pending closure at this ts FIRST, so a CC on a
