@@ -7,7 +7,8 @@
 //   talk (`You say, '...'`, `: NPC says, '...'`), a blank line after each, hand-ins as `Give [[X]] to
 //   [[NPC]]:`, the task lines in bold, a `facblock` and `{{YouGainExperience}}`. A cell the log cannot
 //   fill is `?`, as the wiki writes Classes and Minimum Level; a row no page fills with `?` (Required
-//   Faction) is left out. The player's own names read `Soandso`, as 37 cached pages write it.
+//   Faction) is left out. The player's own names read `Soandso`, as the cached pages write a player (27 NPC lines on 8
+//   pages; `<name>` 9).
 //
 //   A PAGE EXISTS, read offline: only what the page is missing, as the top-table rows to paste. The
 //   live comparison, walkthrough included, is gapQuestMerge.ts (owner, 2026-10-23: "implement the
@@ -16,6 +17,7 @@
 import { CURRENT_ERA } from './planner/era'
 import { wikiZoneLink } from './gapWikiZone'
 import { roleLine, roleOf } from './gapRoles'
+import { npcImageName } from './mobPageTitle'
 import { questLogOf, questPageTitle, questRewards, questRowLines, relatedNpcs, relatedZones, stepKeyword, type QuestCatalogEntry, type QuestJournalFacts, type QuestLog, type QuestStep } from './gapQuests'
 
 /** What the page text needs beside the log: the wiki's spellings and the journal's reading. */
@@ -35,9 +37,6 @@ export function scrubPlayers(text: string, players: readonly string[] = []): str
   return players.filter((p) => p.length > 1).reduce((t, p) => t.replace(new RegExp(`\\b${p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'g'), 'Soandso'), text)
 }
 const linkList = (names: readonly string[], link: (n: string) => string): string => (names.length === 0 ? 'None' : names.map(link).join(', '))
-
-/** `npc_nikko_canti.png`, as the wiki names an NPC's picture (wikiPage.ts npcImageName, restated: no import cycle). */
-const npcFile = (name: string): string => `npc_${name.trim().toLowerCase().replace(/[\\/:*?"<>|#[\]{}]/g, '_').replace(/[\s_]+/g, '_').replace(/^_|_$/g, '')}.png`
 
 /** One `questTopTable` row. */
 export const topRow = (label: string, value: string): string => `! ''' ${label}: '''\n| ${value}`
@@ -146,7 +145,7 @@ export const zoneCategory = (zone: string, c: QuestPageContext): string => `[[Ca
 export function questDraftPage(name: string, log: QuestLog, c: QuestPageContext = {}): string {
   const era = `{{${CURRENT_ERA.charAt(0).toUpperCase()}${CURRENT_ERA.slice(1)} Era}}`
   const giver = log.giver ?? undefined
-  const picture = giver === undefined ? [] : [`[[File:${npcFile(giver)}|thumb|${giver}]]`]
+  const picture = giver === undefined ? [] : [`[[File:${npcImageName(giver)}|thumb|${giver}]]`]
   const walk = walkLines(questWalkBlocks(name, log, c))
   // The class category is the editor's to pick: the log never states which classes may take it.
   const cats = ['[[Category:Quests]]', ...(log.zone === undefined || log.zone === null ? [] : [zoneCategory(log.zone, c)]), '<!-- [[Category:All Classes Quests]] or [[Category:<Class> Quests]] -->']
