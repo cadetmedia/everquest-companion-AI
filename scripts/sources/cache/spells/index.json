@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-22T08:40:22.773Z",
+  "updatedAt": "2026-10-23T04:05:45.103Z",
   "revs": {
     "45502": 165835,
     "46874": 192869,
@@ -2047,7 +2047,9 @@
     "60322": 179504,
     "60546": 176325,
     "60567": 176738,
-    "60656": 178166
+    "60656": 178166,
+    "72728": 198885,
+    "72729": 198886
   },
   "titles": {
     "45502": "Anthem de Arms",
@@ -4096,6 +4098,8 @@
     "60322": "Summon Drogmor",
     "60546": "Summon Familiar: Murderbee",
     "60567": "Reanimation Efficiency III",
-    "60656": "Wind Resonance 8"
+    "60656": "Wind Resonance 8",
+    "72728": "Pet Illusion: Werewolf",
+    "72729": "Summon Familiar: Werewolf"
   }
 }

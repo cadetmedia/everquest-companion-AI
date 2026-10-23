@@ -1,5 +1,5 @@
 {
- "updatedAt": "2026-10-22T08:40:22.855Z",
+ "updatedAt": "2026-10-23T04:05:45.115Z",
  "redirects": [
   {
    "from": "1 Hand Blunt",
@@ -7118,6 +7118,10 @@
    "to": "Fairie"
   },
   {
+   "from": "Familiar: Werewolf",
+   "to": "Summon Familiar: Werewolf"
+  },
+  {
    "from": "Fang amulet of calling",
    "to": "Fang Amulet of Calling"
   },
@@ -8360,10 +8364,6 @@
   {
    "from": "Half-Elves",
    "to": "Half-Elf"
-  },
-  {
-   "from": "Halfling Blood",
-   "to": "Vial of Halfling Blood"
   },
   {
    "from": "Halfling Swashbuckler",
