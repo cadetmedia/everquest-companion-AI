@@ -444,7 +444,9 @@ mod tests {
             // local-data-refresh's spells.json each pass the old counts alone and move them together;
             // pinned here because this branch merges after the data (the dataWeight precedent).
             vec![
-                ("Buff", 494),
+                // 494 -> 496 after the 2026-10-22 evening delta: Summon Familiar: Werewolf (6:00:00)
+                // and Pet Illusion: Werewolf (16:40:00), two timed beneficial spells.
+                ("Buff", 496),
                 ("CrowdControl", 90),
                 ("Debuff", 124),
                 ("DotHot", 196),
