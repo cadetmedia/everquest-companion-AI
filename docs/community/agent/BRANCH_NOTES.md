@@ -489,6 +489,12 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   (Gaps spell check, its own light parse of spells.json); app `itemsDb.buildItemDbIndex` (itemLookup,
   character sheet), `itemOtherNames.itemsByAnyName` (gapItemMobs, gapItemForage, mobDropEra,
   wornFocusIndex); `gapDrops.filedAs` reads a looted name through the aliases; `shotIpc` catalog names.
+- Safeguard (gaps-tab): `GapIndex.item_redirects` / `mob_redirects` (spells from spells.json otherNames) kept apart
+  from own keys; `ItemIndex::with_redirects`, `MobNames::with_redirects`, `spell_via_redirect` name the target only
+  when the name has no record of its own and the redirect is more than a respelling (`gaps_keys::same_name`).
+  `gaps_redirects.rs` files it with `viaRedirect`; `gapRedirects.ts`; uncertain, an update, nothing needed. `known()`
+  still counts redirects (event feed and the rest unchanged). A wrong redirect is fixed on the wiki; the next delta
+  drops it from the cache (Halfling Blood, 2026-10-22).
 - Not read: walks over every item (planner indexes, zone ports, clickies) keep the file's own map, so no
   page is visited twice; Spells search leaves the redirect shorthand (`DT`, `Dmf`) out.
 
