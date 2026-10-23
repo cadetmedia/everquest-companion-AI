@@ -282,3 +282,12 @@ test('"This zone" keeps the rows named in the place you stand, any tier, past th
   assert.equal(gapsCaption(snap, 'item', 'Befallen'), '3 here')
   assert.equal(gapsCaption(snap, 'item'), '5 unknown')
 })
+
+test("A ROW HELD OR CAPTURED WITH NO LINE NAMING IT PASSES ZONE I'M IN; A ROW WITH ZONES STILL NEEDS ITS ZONE (OWNER, 2026-10-22)", async () => {
+  const { gapInZone } = await import('../src/shared/gaps')
+  const base = { domain: 'item' as const, count: 1, first: '', last: '' }
+  assert.equal(gapInZone({ ...base, name: 'Petamorph Wand: Gelatinous Cube', kinds: ['held'], details: { samples: [] } }, 'Nektulos Forest'), true)
+  assert.equal(gapInZone({ ...base, name: 'Rat Ear', kinds: ['held', 'looted'], details: { samples: [] } }, 'Nektulos Forest'), false)
+  const zoned = { entries: [{ name: 'Lake Nerius', n: 1 }], distinct: 1, all: ['Lake Nerius'] }
+  assert.equal(gapInZone({ ...base, name: 'Rat Ear', kinds: ['captured'], details: { samples: [], zones: zoned } }, 'Nektulos Forest'), false)
+})
