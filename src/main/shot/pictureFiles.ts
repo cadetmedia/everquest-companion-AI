@@ -3,6 +3,7 @@
 // folder or a file another program holds). ELECTRON-FREE, so the failure path is tested.
 
 import { existsSync, unlinkSync, writeFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
 
 /** Write the file; a failure comes back as the player's words, never as a throw. */
 export function writeSafely(path: string, data: Uint8Array): { ok: true } | { ok: false; message: string } {
@@ -24,4 +25,14 @@ export function deleteSafely(path: string): boolean {
   } catch {
     return false
   }
+}
+
+/**
+ * Whether `path` is a `.png` directly inside one of `dirs`, after resolving both (no `..` way out):
+ * the only files the details pane may be shown (Windows: any case). A path anywhere else is refused.
+ */
+export function pictureIn(path: string, dirs: readonly string[]): boolean {
+  if (!/\.png$/i.test(path)) return false
+  const dir = dirname(resolve(path)).toLowerCase()
+  return dirs.some((d) => resolve(d).toLowerCase() === dir)
 }

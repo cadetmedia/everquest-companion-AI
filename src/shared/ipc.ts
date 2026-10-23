@@ -1188,6 +1188,9 @@ export const IPC = {
   // The .png files in the picture folders (auto-save, then the last saved to), by lower-cased name:
   // a picture put there by hand counts as saved. No payload. Answers FolderPictures.
   shotFolderPictures: 'shot:folderPictures',
+  // A picture for a row's details pane, as a data URL: only a .png directly in a picture folder.
+  // Payload: the path (from FolderPictures or a save). Answers the data URL or null.
+  shotPictureData: 'shot:pictureData',
   // Keep an item window, Lore tab or spell window picture under the picture root
   // (<root>/item, <root>/spell), replacing that part's earlier copy. Payload: ('item' | 'lore' |
   // 'spell', row name, png bytes). Answers PictureKeep ('off' when no folder is chosen).
