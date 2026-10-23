@@ -14,19 +14,23 @@
 // - Drops and forage lines: Ready by nature; the copy is the line to add.
 
 import type { GapRow } from './gaps'
-import { pictureFile } from './mobPicture'
+import { heldPicture, NO_FOLDER_PICTURES, pictureFile, type FolderPictures } from './mobPicture'
 import { IMAGE_NEED } from './wikiPage'
 
-/** What the player kept beyond the item and spell windows: the mob pictures saved, by file name. */
+/**
+ * What the player kept beyond the item and spell windows: the mob pictures saved, by file name, and
+ * the pictures already in the picture folders (owner, 2026-10-22: a file put there by hand counts).
+ */
 export interface KeptCaptures {
   pictures: Readonly<Record<string, unknown>>
+  folder?: FolderPictures
 }
 
 /** The page fields still open for this row, in full; `needed` is its `stillNeeded`. Empty = Ready. */
 export function openNeeds(row: GapRow, needed: readonly string[], kept: KeptCaptures): string[] {
   // A near miss copies as a redirect, which needs nothing from the game.
   if (row.suggest !== undefined && (row.domain === 'item' || row.domain === 'spell')) return []
-  const pictured = kept.pictures[pictureFile(row)] !== undefined
+  const pictured = heldPicture(pictureFile(row), kept.pictures, kept.folder ?? NO_FOLDER_PICTURES) !== undefined
   if (row.domain === 'image') return pictured ? [] : [IMAGE_NEED]
   return pictured ? needed.filter((n) => n !== IMAGE_NEED) : [...needed]
 }

@@ -91,6 +91,11 @@ export interface Captured {
   /** The captured window's title (several clients: which one was read). */
   window?: string
   reply?: ItemShotReply
+  /**
+   * That one window's picture, as PNG: kept under the picture root's item folder when the reading is
+   * filed on a row (owner, 2026-10-22: "this way all items pasted get stored").
+   */
+  png?: Uint8Array
   /** Why nothing was read. */
   error?: string
   ms: number

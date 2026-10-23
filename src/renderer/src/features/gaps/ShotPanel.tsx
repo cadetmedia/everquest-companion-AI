@@ -15,8 +15,9 @@ import { formatCoin, type GapRow } from '@shared/gaps'
 import type { ItemShotReply } from '@shared/itemWindow'
 import { cleared, hasWindowPart, isItemShotRow, keptAfter, otherItemNote, PART_WORDS, shotKind, shotProblem, unplaced, type ShotKind } from '@shared/itemShotKeep'
 import type { ItemPageShot } from '@shared/wikiPage'
-import { itemRowNamesNow, itemShotNow, setCapturedRead, setItemShot, useCapturedRead, useItemShots, type StoredShot } from './itemShotsStore'
-import { Line, PasteZone, WrongItem } from './PasteZone'
+import { partPicture } from '@shared/mobPicture'
+import { itemRowNamesNow, itemShotNow, keepPartPicture, setCapturedRead, setItemShot, useCapturedRead, useItemShots, type StoredShot } from './itemShotsStore'
+import { KeptPicture, Line, PasteZone, WrongItem } from './PasteZone'
 import SpellShot from './SpellShot'
 import MobPicture from './MobPicture'
 
@@ -149,6 +150,8 @@ interface Pending {
   kind: ShotKind
   /** Why it waits: another item's part, or no name read. */
   note: string
+  /** The picture it was read from, kept under the item folder once it is used. */
+  png?: Uint8Array
 }
 
 /**
@@ -160,7 +163,7 @@ function useCaptured(name: string, clear: () => void): { ask: Pending | null; re
   // eslint-disable-next-line react-hooks/exhaustive-deps -- `clear` only sets state; a new capture is the trigger
   useEffect(clear, [c])
   if (c === undefined) return { ask: null, reply: null }
-  return c.note === undefined ? { ask: null, reply: c.reply } : { ask: { reply: c.reply, kind: c.kind, note: c.note }, reply: null }
+  return c.note === undefined ? { ask: null, reply: c.reply } : { ask: { reply: c.reply, kind: c.kind, note: c.note, ...(c.png === undefined ? {} : { png: c.png }) }, reply: null }
 }
 
 function ItemShot({ row }: { row: GapRow }): JSX.Element {
@@ -170,9 +173,18 @@ function ItemShot({ row }: { row: GapRow }): JSX.Element {
   /** Why the last paste kept nothing, in words; null when it kept something. */
   const [failed, setFailed] = useState<string | null>(null)
   const [pending, setPending] = useState<Pending | null>(null)
+  /** Where this row's last kept picture was saved (owner, 2026-10-22: item pictures under the item folder). */
+  const [picture, setPicture] = useState<string | null>(null)
   // Merged against what is stored NOW, not this render's copy (review, 2026-10-21: a Lore paste that
   // landed right after a window paste merged against the older reading and dropped one of them).
-  const apply = useCallback((p: Pending) => keep(row.name, keptAfter(itemShotNow(row.name), p.reply, p.kind)), [row.name])
+  // The picture is written after, and never holds up the reading.
+  const apply = useCallback(
+    (p: Pending) => {
+      keep(row.name, keptAfter(itemShotNow(row.name), p.reply, p.kind))
+      void keepPartPicture(partPicture(p.kind), row.name, p.png).then((path) => path !== null && setPicture(path))
+    },
+    [row.name]
+  )
   const read = useCallback(
     (png: Uint8Array) => {
       setBusy(true)
@@ -187,8 +199,8 @@ function ItemShot({ row }: { row: GapRow }): JSX.Element {
           // Another item's window or Lore tab, or one with no name read, waits for the player; so does a
           // slip when a known item or another row is as near (`sameItem`).
           const note = kind === 'icon' ? undefined : otherItemNote(r.read.name, row.name, PART_WORDS[kind], [...(r.known ?? []), ...itemRowNamesNow()])
-          if (note !== undefined) setPending({ reply: r, kind, note })
-          else apply({ reply: r, kind, note: '' })
+          if (note !== undefined) setPending({ reply: r, kind, note, png })
+          else apply({ reply: r, kind, note: '', png })
         })
         .catch((e: unknown) => setFailed(`The reader did not answer (${e instanceof Error ? e.message : String(e)}). Try the paste again.`))
         .finally(() => setBusy(false))
@@ -217,7 +229,7 @@ function ItemShot({ row }: { row: GapRow }): JSX.Element {
           note={ask.note}
           onUse={() => {
             apply(ask)
-            if (pending === null) setCapturedRead(row.name, { reply: ask.reply, kind: ask.kind })
+            if (pending === null) setCapturedRead(row.name, { reply: ask.reply, kind: ask.kind, ...(ask.png === undefined ? {} : { png: ask.png }) })
             setPending(null)
           }}
           onDiscard={() => {
@@ -228,6 +240,7 @@ function ItemShot({ row }: { row: GapRow }): JSX.Element {
         />
       )}
       {kept !== undefined && <Parts name={row.name} kept={kept} />}
+      <KeptPicture path={picture} />
       {checks.map((c) => (
         <Line key={c} warn>
           {c}

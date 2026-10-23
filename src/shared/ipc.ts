@@ -1182,8 +1182,16 @@ export const IPC = {
   shotCheckMob: 'shot:checkMob',
   // The mob-picture auto-save folder. Payload: ('get' | 'pick' | 'clear'). Answers the folder or null.
   shotAutoDir: 'shot:autoDir',
-  // A picture this run saved: ('show' | 'delete', path). Answers whether the path was one.
+  // A picture this run saved: ('show' | 'delete', path). Answers whether the path was one. A picture
+  // found in a picture folder may be shown, never deleted.
   shotSavedFile: 'shot:savedFile',
+  // The .png files in the picture folders (auto-save, then the last saved to), by lower-cased name:
+  // a picture put there by hand counts as saved. No payload. Answers FolderPictures.
+  shotFolderPictures: 'shot:folderPictures',
+  // Keep an item window, Lore tab or spell window picture under the picture root
+  // (<root>/item, <root>/spell), replacing that part's earlier copy. Payload: ('item' | 'lore' |
+  // 'spell', row name, png bytes). Answers PictureKeep ('off' when no folder is chosen).
+  shotKeepPicture: 'shot:keepPicture',
 
   // ---- error harness (renderer -> main, fire-and-forget) ----
   // window.onerror / onunhandledrejection / React ErrorBoundary report here so

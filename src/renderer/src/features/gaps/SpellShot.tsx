@@ -10,8 +10,8 @@ import type { GapRow } from '@shared/gaps'
 import { otherItemNote } from '@shared/itemShotKeep'
 import { fileDescription, isSpellWindow, RANKS, readSpellWindow, spellProblem, type SpellPageShot, type SpellWindowRead } from '@shared/spellWindow'
 import { useSpellFacts } from '../../lib/gapSpellFacts'
-import { setSpellShot, useSpellShots } from './itemShotsStore'
-import { Line, PasteZone, WrongItem } from './PasteZone'
+import { keepPartPicture, setSpellShot, useSpellShots } from './itemShotsStore'
+import { KeptPicture, Line, PasteZone, WrongItem } from './PasteZone'
 
 const keepOf = (r: SpellWindowRead): SpellPageShot => ({ ...(r.description === undefined ? {} : { description: r.description }), fields: r.fields })
 
@@ -51,7 +51,17 @@ export default function SpellShot({ row }: { row: GapRow }): JSX.Element {
   /** Why the last paste kept nothing, in words; null when it kept something. */
   const [failed, setFailed] = useState<string | null>(null)
   const [read, setRead] = useState<SpellWindowRead | null>(null)
-  const [pending, setPending] = useState<{ read: SpellWindowRead; note: string } | null>(null)
+  const [pending, setPending] = useState<{ read: SpellWindowRead; note: string; png: Uint8Array } | null>(null)
+  /** Where the kept window's picture was saved (owner, 2026-10-22: spell pictures under the spell folder). */
+  const [picture, setPicture] = useState<string | null>(null)
+  // The picture is written after the reading is kept, and never holds it up.
+  const keepWindow = useCallback(
+    (r: SpellWindowRead, png: Uint8Array) => {
+      setSpellShot(row.name, keepOf(r))
+      void keepPartPicture('spell', row.name, png).then((path) => path !== null && setPicture(path))
+    },
+    [row.name]
+  )
   const onPicture = useCallback(
     (png: Uint8Array) => {
       setBusy(true)
@@ -67,13 +77,13 @@ export default function SpellShot({ row }: { row: GapRow }): JSX.Element {
           if (!ok) return
           // A window that names another spell, or whose name was not read, waits for the player, as an item's does.
           const note = otherItemNote(r.name, row.name, 'spell window', names.slice(1).filter(isSpell))
-          if (note === undefined) setSpellShot(row.name, keepOf(r))
-          else setPending({ read: r, note })
+          if (note === undefined) keepWindow(r, png)
+          else setPending({ read: r, note, png })
         })
         .catch((e: unknown) => setFailed(`The reader did not answer (${e instanceof Error ? e.message : String(e)}). Try the paste again.`))
         .finally(() => setBusy(false))
     },
-    [row.name, facts, known, names]
+    [row.name, facts, known, names, keepWindow]
   )
   return (
     <Stack spacing={0.75} data-testid="gaps-shot">
@@ -87,7 +97,7 @@ export default function SpellShot({ row }: { row: GapRow }): JSX.Element {
         <WrongItem
           note={pending.note}
           onUse={() => {
-            setSpellShot(row.name, keepOf(pending.read))
+            keepWindow(pending.read, pending.png)
             setPending(null)
           }}
           onDiscard={() => {
@@ -101,6 +111,7 @@ export default function SpellShot({ row }: { row: GapRow }): JSX.Element {
           {c}
         </Line>
       ))}
+      <KeptPicture path={picture} />
       {kept !== undefined && <Kept name={row.name} kept={kept} fromFile={fileDescription(facts?.description) !== undefined} />}
     </Stack>
   )

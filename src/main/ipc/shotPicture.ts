@@ -5,14 +5,21 @@
 // nameplate is in the picture is checked AFTER the save, off the main thread (OCR can take seconds
 // on a full screenshot); the panel then offers to delete a file this run saved.
 //
+// THE FOLDER IS A ROOT (owner, 2026-10-22: "<dir-they-chose>/npc, <dir-they-chose>/item,
+// <dir-they-chose>/spell ... this way all items pasted get stored"): the auto-save folder, else the
+// last folder saved to. Mob pictures go to <root>/npc, item windows and Lore tabs to <root>/item,
+// spell windows to <root>/spell (shared/mobPicture.ts names them). A picture already there, or at the
+// root where the owner's earlier ones sit, counts as saved. The player's files are never moved,
+// renamed or deleted; main writes only .png, only under the root.
+//
 // Nothing here throws to the renderer (review, 2026-10-21): a failed write or dialog answers
 // `{ status: 'error' }` with the player's words, so the panel never spins forever.
 
 import { app, BrowserWindow, dialog, ipcMain, nativeImage, shell } from 'electron'
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { dirname, join, resolve } from 'node:path'
 import { IPC } from '../../shared/ipc'
-import { pictureFileName, type PictureSave } from '../../shared/mobPicture'
+import { folderPictures, keptPictureFile, PICTURE_FOLDER, pictureFileName, pictureRoot, type FolderPictures, type PictureKeep, type PictureKind, type PictureSave } from '../../shared/mobPicture'
 import { showsName } from '../shot/nameplate'
 import { deleteSafely, writeSafely } from '../shot/pictureFiles'
 import { bgraToRgba, isNearSolid, type Rgba } from '../shot/pixels'
@@ -57,6 +64,23 @@ function setSettings(patch: PictureSettings): void {
 /** A folder from the settings that still exists. */
 const live = (dir: string | undefined): string | undefined => (dir !== undefined && existsSync(dir) ? dir : undefined)
 
+/** The picture root: the auto-save folder, else the last folder saved to (a kind's folder stands for its root). */
+function pictureRootDir(s: PictureSettings = settings()): string | undefined {
+  const dir = live(s.autoDir) ?? live(s.lastDir)
+  return dir === undefined ? undefined : live(pictureRoot(dir))
+}
+
+/** `<root>/<kind's folder>`, made when missing; undefined when it cannot be. */
+function kindDir(root: string, kind: PictureKind): string | undefined {
+  const dir = join(root, PICTURE_FOLDER[kind])
+  try {
+    mkdirSync(dir, { recursive: true })
+    return dir
+  } catch {
+    return undefined
+  }
+}
+
 /** Files this run saved: the only ones the panel may delete. */
 const saved = new Set<string>()
 
@@ -72,7 +96,8 @@ function writePicture(path: string, png: Buffer, rgba: Rgba): PictureSave {
   const wrote = writeSafely(file, png)
   if (!wrote.ok) return { status: 'error', message: wrote.message }
   saved.add(file)
-  setSettings({ lastDir: dirname(file) })
+  // The root, not its npc folder: the next save files under the same root.
+  setSettings({ lastDir: pictureRoot(dirname(file)) })
   checkSlot = { id: nextCheckId++, rgba }
   return { status: 'saved', path: file, checkId: checkSlot.id }
 }
@@ -86,6 +111,14 @@ function pictureOf(bytes: unknown, fileName: unknown): { png: Buffer; rgba: Rgba
   return { png: nativeImage.createFromBuffer(Buffer.from(bytes)).toPNG(), rgba, name: pictureFileName(fileName) }
 }
 
+/** Straight into `<auto-save root>/npc`, no dialog; an existing file is replaced only on `overwrite`. */
+function autoSave(auto: string, pic: { png: Buffer; rgba: Rgba; name: string }, overwrite: unknown): PictureSave {
+  const dir = kindDir(pictureRoot(auto), 'npc')
+  if (dir === undefined) return { status: 'error', message: `Could not make the npc folder in ${auto}.` }
+  const path = join(dir, pic.name)
+  return existsSync(path) && overwrite !== true ? { status: 'exists', path } : writePicture(path, pic.png, pic.rgba)
+}
+
 async function savePicture(bytes: unknown, fileName: unknown, overwrite: unknown): Promise<PictureSave> {
   try {
     const pic = pictureOf(bytes, fileName)
@@ -93,12 +126,11 @@ async function savePicture(bytes: unknown, fileName: unknown, overwrite: unknown
     const { png, rgba, name } = pic
     const s = settings()
     const auto = live(s.autoDir)
-    if (auto !== undefined) {
-      const path = join(auto, name)
-      return existsSync(path) && overwrite !== true ? { status: 'exists', path } : writePicture(path, png, rgba)
-    }
+    if (auto !== undefined) return autoSave(auto, pic, overwrite)
+    const root = pictureRootDir(s)
+    const start = root === undefined ? app.getPath('pictures') : (kindDir(root, 'npc') ?? root)
     const owner = BrowserWindow.getFocusedWindow()
-    const opts = { defaultPath: join(live(s.lastDir) ?? app.getPath('pictures'), name), filters: [{ name: 'PNG image', extensions: ['png'] }] }
+    const opts = { defaultPath: join(start, name), filters: [{ name: 'PNG image', extensions: ['png'] }] }
     const pick = owner === null ? await dialog.showSaveDialog(opts) : await dialog.showSaveDialog(owner, opts)
     return pick.canceled || pick.filePath === undefined ? { status: 'cancelled' } : writePicture(pick.filePath, png, rgba)
   } catch (e) {
@@ -131,9 +163,80 @@ async function autoDir(action: unknown): Promise<string | null> {
   return live(settings().autoDir) ?? null
 }
 
-/** A file this run saved: show it in its folder, or delete it (a picture the player discarded). */
+/**
+ * The folders a mob picture may already sit in, first wins a name: for the auto-save root, then the
+ * last folder's root, its npc folder and the root itself (the owner's earlier pictures sit at the
+ * root); each once, each still there.
+ */
+function pictureDirs(): string[] {
+  const s = settings()
+  const roots = [live(s.autoDir), live(s.lastDir)].filter((d): d is string => d !== undefined).map(pictureRoot)
+  const dirs = roots.flatMap((r) => [join(r, PICTURE_FOLDER.npc), r]).filter((d) => existsSync(d))
+  return dirs.filter((d, i) => dirs.findIndex((o) => resolve(o).toLowerCase() === resolve(d).toLowerCase()) === i)
+}
+
+const isKeepKind = (k: unknown): k is 'item' | 'lore' | 'spell' => k === 'item' || k === 'lore' || k === 'spell'
+const isPictureBytes = (b: unknown): b is Uint8Array => b instanceof Uint8Array && b.length > 0 && b.length <= MAX_PICTURE_BYTES
+
+/**
+ * Keep an item window, Lore tab or spell window picture as a working copy under the root
+ * (`<root>/item/item_<name>.png`, `..._lore.png`, `<root>/spell/spell_<name>.png`): replaced by the next
+ * paste of the same part, never a dialog. `off` when no folder is chosen yet; never throws.
+ */
+function keepPicture(kind: unknown, name: unknown, bytes: unknown): PictureKeep {
+  try {
+    if (!isKeepKind(kind) || typeof name !== 'string' || !isPictureBytes(bytes)) return { status: 'error', message: 'Not a picture.' }
+    const root = pictureRootDir()
+    if (root === undefined) return { status: 'off' }
+    const img = nativeImage.createFromBuffer(Buffer.from(bytes))
+    if (img.isEmpty()) return { status: 'error', message: 'Not a picture.' }
+    const dir = kindDir(root, kind)
+    if (dir === undefined) return { status: 'error', message: `Could not make the ${PICTURE_FOLDER[kind]} folder in ${root}.` }
+    const path = join(dir, keptPictureFile(kind, name))
+    const wrote = writeSafely(path, img.toPNG())
+    if (!wrote.ok) return { status: 'error', message: wrote.message }
+    saved.add(path)
+    return { status: 'saved', path }
+  } catch (e) {
+    return { status: 'error', message: `Could not keep the picture: ${e instanceof Error ? e.message : String(e)}` }
+  }
+}
+
+/**
+ * The `.png` files in the picture folders (owner, 2026-10-22: "sometimes i may put an image in the
+ * directory, if I do, the tool should see that the image is there and not ask for it"). Read-only:
+ * names only, nothing opened, nothing changed. A folder that cannot be read lists nothing.
+ */
+function listFolderPictures(): FolderPictures {
+  return folderPictures(
+    pictureDirs().map((dir) => {
+      try {
+        const names = readdirSync(dir, { withFileTypes: true }).filter((e) => e.isFile() && /\.png$/i.test(e.name))
+        return { dir, files: names.map((e) => ({ name: e.name, path: join(dir, e.name) })) }
+      } catch {
+        return { dir, files: [] }
+      }
+    })
+  )
+}
+
+/** A picture in one of the picture folders that is there now: the player's own file, shown never deleted. */
+function inPictureDir(path: string): boolean {
+  const dir = resolve(dirname(path)).toLowerCase()
+  return /\.png$/i.test(path) && existsSync(path) && pictureDirs().some((d) => resolve(d).toLowerCase() === dir)
+}
+
+/**
+ * A file this run saved: show it in its folder, or delete it (a picture the player discarded). A
+ * picture found in a picture folder may be shown too, never deleted: the app did not write it.
+ */
 function savedFile(action: unknown, path: unknown): boolean {
-  if (typeof path !== 'string' || !saved.has(path)) return false
+  if (typeof path !== 'string') return false
+  if (!saved.has(path)) {
+    if (action !== 'show' || !inPictureDir(path)) return false
+    shell.showItemInFolder(path)
+    return true
+  }
   if (action === 'show') shell.showItemInFolder(path)
   if (action !== 'delete') return true
   const gone = deleteSafely(path)
@@ -146,4 +249,12 @@ export function registerShotPictureIpc(): void {
   ipcMain.handle(IPC.shotCheckMob, (_e, checkId: unknown, name: unknown) => hasMobName(checkId, name))
   ipcMain.handle(IPC.shotAutoDir, (_e, action: unknown) => autoDir(action).catch(() => null))
   ipcMain.handle(IPC.shotSavedFile, (_e, action: unknown, path: unknown) => savedFile(action, path))
+  ipcMain.handle(IPC.shotKeepPicture, (_e, kind: unknown, name: unknown, png: unknown) => keepPicture(kind, name, png))
+  ipcMain.handle(IPC.shotFolderPictures, () => {
+    try {
+      return listFolderPictures()
+    } catch {
+      return { dirs: [], files: {} }
+    }
+  })
 }

@@ -116,6 +116,20 @@ export interface CapturedRead {
   reply: ItemShotReply
   kind: ShotKind
   note?: string
+  /** The captured window's picture, kept under the item folder once the reading is used. */
+  png?: Uint8Array
+}
+
+/**
+ * Keep an item part's or a spell window's picture under the picture root (main/ipc/shotPicture.ts);
+ * the path written, or null (no folder chosen, an icon alone, or it failed: the reading never waits on it).
+ */
+export function keepPartPicture(kind: 'item' | 'lore' | 'spell' | undefined, name: string, png: Uint8Array | undefined): Promise<string | null> {
+  if (kind === undefined || png === undefined) return Promise.resolve(null)
+  return window.eq
+    .shotKeepPicture(kind, name, png)
+    .then((r) => (r.status === 'saved' ? r.path : null))
+    .catch(() => null)
 }
 
 /**

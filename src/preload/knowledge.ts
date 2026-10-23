@@ -137,6 +137,11 @@ export const knowledgeBridge = {
   shotCheckMob: (checkId: number, name: string): Promise<boolean | null> => ipcRenderer.invoke(IPC.shotCheckMob, checkId, name),
   /** The mob-picture auto-save folder: read, pick (a folder dialog) or turn off; the folder or null. */
   shotAutoDir: (action: 'get' | 'pick' | 'clear'): Promise<string | null> => ipcRenderer.invoke(IPC.shotAutoDir, action),
-  /** A picture this run saved: show it in its folder, or delete it. */
-  shotSavedFile: (action: 'show' | 'delete', path: string): Promise<boolean> => ipcRenderer.invoke(IPC.shotSavedFile, action, path)
+  /** A picture this run saved: show it in its folder, or delete it. A picture found in a picture folder: show only. */
+  shotSavedFile: (action: 'show' | 'delete', path: string): Promise<boolean> => ipcRenderer.invoke(IPC.shotSavedFile, action, path),
+  /** The .png files in the picture folders, by lower-cased name: a picture put there by hand counts. */
+  shotFolderPictures: (): Promise<import('../shared/mobPicture').FolderPictures> => ipcRenderer.invoke(IPC.shotFolderPictures),
+  /** Keep an item window, Lore tab or spell window picture under the picture root, replacing that part's earlier copy. */
+  shotKeepPicture: (kind: 'item' | 'lore' | 'spell', name: string, png: Uint8Array): Promise<import('../shared/mobPicture').PictureKeep> =>
+    ipcRenderer.invoke(IPC.shotKeepPicture, kind, name, png)
 }

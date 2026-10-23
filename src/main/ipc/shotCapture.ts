@@ -10,7 +10,7 @@
 // the camera button on an overlay. Both pass shared/shotTrigger.ts's gate. The latest Channels line
 // is kept too, so the Gaps tab can show the macro with the channel's number.
 
-import { desktopCapturer, ipcMain, screen } from 'electron'
+import { desktopCapturer, ipcMain, nativeImage, screen } from 'electron'
 import { IPC } from '../../shared/ipc'
 import { CAPTURE_LINE_REGEX, CAPTURE_MARKER, captureGate, channelNumbers, CHANNELS_LINE_REGEX, DEBOUNCE_MS, isCaptureLine, type Captured } from '../../shared/shotTrigger'
 import type { AlertDef } from '../../shared/types'
@@ -18,7 +18,7 @@ import type { FireMessage } from '../../shared/dataServer/protocol.generated'
 import { DEFAULT_ALERT_PACK_ID, DEFAULT_ALERT_SOUNDS } from '../data/defaultPacks'
 import { setOwnFires } from '../dataServer/ownFires'
 import { captureSize, gameWindow, readCapture } from '../shot/captureRead'
-import { bgraToRgba } from '../shot/pixels'
+import { bgraToRgba, cropRgba, type Box, type Rgba } from '../shot/pixels'
 import { UNRELEASED } from '../unreleased'
 import { getMainWindow } from '../windows'
 import { READERS } from './shotIpc'
@@ -58,6 +58,23 @@ async function grabGame(): Promise<{ name: string; img: ReturnType<typeof bgraTo
   return { name: eq.name, img: bgraToRgba(new Uint8Array(eq.thumbnail.toBitmap()), width, height) }
 }
 
+/** One window of the capture as PNG, for its row's picture folder; undefined when it cannot be made. */
+function windowPng(img: Rgba, box: Box): Uint8Array | undefined {
+  try {
+    const crop = cropRgba(img, box)
+    const bgra = Buffer.alloc(crop.data.length)
+    for (let i = 0; i < crop.data.length; i += 4) {
+      bgra[i] = crop.data[i + 2]
+      bgra[i + 1] = crop.data[i + 1]
+      bgra[i + 2] = crop.data[i]
+      bgra[i + 3] = crop.data[i + 3]
+    }
+    return new Uint8Array(nativeImage.createFromBitmap(bgra, { width: crop.w, height: crop.h }).toPNG())
+  } catch {
+    return undefined
+  }
+}
+
 async function capture(via: 'macro' | 'overlay'): Promise<void> {
   const t0 = performance.now()
   const ms = (): number => Math.round(performance.now() - t0)
@@ -72,7 +89,10 @@ async function capture(via: 'macro' | 'overlay'): Promise<void> {
     const read = await readCapture(got.img, READERS)
     if (read.windows.length === 0) keep({ at: new Date().toISOString(), via, window: got.name, ms: ms(), error: 'No item window found: snip it and paste on the row.' })
     // Two windows open side by side are two readings, each filed on its own row.
-    for (const w of read.windows) keep({ at: new Date().toISOString(), via, window: got.name, ms: ms(), reply: w.reply })
+    for (const w of read.windows) {
+      const png = windowPng(got.img, w.box)
+      keep({ at: new Date().toISOString(), via, window: got.name, ms: ms(), reply: w.reply, ...(png === undefined ? {} : { png }) })
+    }
   } catch (e) {
     keep({ at: new Date().toISOString(), via, error: `Could not capture: ${e instanceof Error ? e.message : String(e)}`, ms: ms() })
   } finally {

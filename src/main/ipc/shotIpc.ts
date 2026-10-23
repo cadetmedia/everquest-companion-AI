@@ -64,9 +64,14 @@ function skinTextures(): Rgba[] {
 
 let catalog: string[] | null = null
 
-/** The item catalog's names (items.json, already in this bundle), listed on the first read. */
+/**
+ * The item catalog's names (items.json, already in this bundle), listed on the first read, with each
+ * record's otherNames: the wiki redirects that land on its page are names of that item too (owner,
+ * 2026-10-22: Halfling Blood is Vial of Halfling Blood).
+ */
 function catalogNames(): string[] {
-  catalog ??= [...new Set(Object.values((itemsJson as unknown as ItemDbFile).items).map((e) => e.name ?? e.page))]
+  const entries = Object.values((itemsJson as unknown as ItemDbFile).items) as (ItemDbFile['items'][string] & { otherNames?: string[] })[]
+  catalog ??= [...new Set(entries.flatMap((e) => [e.name ?? e.page, ...(e.otherNames ?? [])]))]
   return catalog
 }
 

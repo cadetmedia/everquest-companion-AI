@@ -16,6 +16,87 @@ export function pictureFile(row: Pick<GapRow, 'domain' | 'name' | 'image'>): str
 }
 
 /**
+ * The picture folder's layout (owner, 2026-10-22: "<dir-they-chose>/npc, <dir-they-chose>/item,
+ * <dir-they-chose>/spell ... this way all items pasted get stored"): the chosen folder is the root,
+ * each kind of picture in its own folder under it. A Lore tab sits beside its item window.
+ */
+export type PictureKind = 'npc' | 'item' | 'lore' | 'spell'
+export const PICTURE_FOLDER: Readonly<Record<PictureKind, string>> = { npc: 'npc', item: 'item', lore: 'item', spell: 'spell' }
+
+/** A name as the wiki's picture names write it: lower case, every run of other characters one `_`. */
+const fileStem = (name: string): string => name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') || 'picture'
+
+/**
+ * The working copy an item or spell picture is kept under, in its kind's folder: `item_<name>.png`,
+ * `item_<name>_lore.png`, `spell_<name>.png`, named as `npc_<name>.png` is. A new paste of the same
+ * part replaces it (they are working copies, not wiki uploads).
+ */
+export function keptPictureFile(kind: Exclude<PictureKind, 'npc'>, name: string): string {
+  const stem = fileStem(name)
+  return kind === 'spell' ? `spell_${stem}.png` : kind === 'lore' ? `item_${stem}_lore.png` : `item_${stem}.png`
+}
+
+/** The picture an item paste's part is kept as: its window or its Lore tab; an icon alone is not kept. */
+export const partPicture = (kind: 'window' | 'lore' | 'icon'): 'item' | 'lore' | undefined => (kind === 'window' ? 'item' : kind === 'lore' ? 'lore' : undefined)
+
+/** The root a folder stands for: a kind's own folder (`<root>/npc`) stands for its parent. */
+export function pictureRoot(dir: string): string {
+  const m = /^(.*?)[\\/]+([^\\/]+)[\\/]*$/.exec(dir)
+  if (m === null || m[1] === '' || !Object.values(PICTURE_FOLDER).includes(m[2].toLowerCase())) return dir
+  // `C:\npc` stands for the drive's root, `C:\`, never the bare `C:` (the drive's current folder).
+  return /^[A-Za-z]:$/.test(m[1]) ? `${m[1]}\\` : m[1]
+}
+
+/** What keeping an item or spell picture came to: written, no folder chosen yet, or why not. */
+export type PictureKeep = { status: 'saved'; path: string } | { status: 'off' } | { status: 'error'; message: string }
+
+/**
+ * The pictures the player's picture folders hold (the auto-save folder, then the last folder saved
+ * to), by lower-cased file name -> full path (owner, 2026-10-22: "sometimes i may put an image in
+ * the directory, if I do, the tool should see that the image is there and not ask for it").
+ */
+export interface FolderPictures {
+  /** The folders read, first wins on a name in both. */
+  dirs: readonly string[]
+  files: Readonly<Record<string, string>>
+}
+
+export const NO_FOLDER_PICTURES: FolderPictures = { dirs: [], files: {} }
+
+/** A folder listing as `FolderPictures`: `.png` files only, any case; the first folder's file wins a name. */
+export function folderPictures(listings: readonly { dir: string; files: readonly { name: string; path: string }[] }[]): FolderPictures {
+  const files: Record<string, string> = {}
+  for (const l of listings) {
+    for (const f of l.files) {
+      const key = f.name.toLowerCase()
+      if (key.endsWith('.png') && files[key] === undefined) files[key] = f.path
+    }
+  }
+  return { dirs: listings.map((l) => l.dir), files }
+}
+
+/**
+ * Where the player holds a row's picture: saved from the tab (`saved`, by file name), else a file of
+ * that name in a picture folder, in any case (Windows names are not case-sensitive). Undefined: none.
+ */
+export function heldPicture(file: string, saved: Readonly<Record<string, unknown>>, folder: FolderPictures): string | undefined {
+  const inFolder = folder.files[file.toLowerCase()]
+  if (inFolder !== undefined) return inFolder
+  const s = saved[file]
+  if (s === undefined) return undefined
+  const path = s !== null && typeof s === 'object' && 'path' in s && typeof s.path === 'string' ? s.path : undefined
+  // A save into a folder the listing read, and no longer there: the player deleted or moved it.
+  return path !== undefined && listed(folder, path) ? undefined : (path ?? file)
+}
+
+/** Whether `path` sits directly in one of the folders the listing read (Windows: any case, either slash). */
+function listed(folder: FolderPictures, path: string): boolean {
+  const norm = (p: string): string => p.replace(/[\\/]+/g, '/').replace(/\/$/, '').toLowerCase()
+  const dir = norm(path).replace(/\/[^/]*$/, '')
+  return folder.dirs.some((d) => norm(d) === dir)
+}
+
+/**
  * The file name a picture is written under: no folder parts, no characters Windows refuses, and always
  * `.png` (main writes PNG bytes, and a renderer that asked for `x.bat` must not get one).
  */
