@@ -173,6 +173,8 @@ export interface MobKnowledge {
   cached: boolean
   /** the wiki lookup ran and found no page for this mob (a real negative) */
   notFound?: boolean
+  /** the page `page` names exists but is no mob page: no {{Namedmobpage}} / {{MerchantPage}} (wikiTemplates.ts) */
+  notMobPage?: boolean
   /** the wiki was unreachable — local sources may still have answered */
   offline?: boolean
 }

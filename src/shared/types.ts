@@ -643,6 +643,8 @@ export interface ItemKnowledge {
   cached: boolean
   /** true when the wiki lookup was attempted but found no page (negative result) */
   notFound?: boolean
+  /** the page `page` names exists but is no item page: free text, no {{Itempage}} (wikiTemplates.ts) */
+  notItemPage?: boolean
   /** true when the wiki was unreachable (offline) — local posky data may still apply */
   offline?: boolean
 }
