@@ -36,6 +36,13 @@ export interface GapHeld {
   exportedAt: string
   /** The holder's name; absent for the attached character in the one-character view ("You"). */
   who?: string
+  /**
+   * What the export itself says: the item's name as it spells it and the slots it fills
+   * (`General 6-Slot3`). Absent for an item only the loot since the export shows. An item the log
+   * never names (a store purchase) is known by these alone (owner, 2026-10-22: Petamorph Wand:
+   * Gelatinous Cube).
+   */
+  exported?: { name: string; slots: string[] }
 }
 
 /** Every holder of each item, keyed by `itemTierKey`. */
@@ -70,6 +77,13 @@ function dumpCounts(rows: OwnershipEntry[1]): Counts {
   return by
 }
 
+/** The export's own spelling of an item and its slots, exaltation rows left out; none when it lists only those. */
+function exportedOf(rows: OwnershipEntry[1]): { name: string; slots: string[] }[] {
+  const own = rows.filter((r) => !r.exaltation)
+  if (own.length === 0) return []
+  return [{ name: own[0].name, slots: [...new Set(own.map((r) => r.location || r.place))] }]
+}
+
 /** Take `n` destroyed copies off, bags first. */
 function takeOff(by: Counts, n: number): void {
   let left = n
@@ -94,6 +108,7 @@ export function heldIndex(
   const out = new Map<string, GapHeld[]>()
   if (dump.loadedAt === null) return out
   const byKey = new Map<string, Counts>(dump.entries.map(([key, rows]) => [itemTierKey(key), dumpCounts(rows)]))
+  const named = new Map(dump.entries.flatMap(([key, rows]) => exportedOf(rows).map((e) => [itemTierKey(key), e] as const)))
   for (const [raw, n] of Object.entries(lootSince)) {
     const key = itemTierKey(raw)
     const by: Counts = byKey.get(key) ?? new Map<OwnershipPlace, number>()
@@ -104,7 +119,8 @@ export function heldIndex(
     takeOff(by, destroyedSince[key] ?? 0)
     const parts = PLACE_ORDER.flatMap((p) => ((by.get(p) ?? 0) > 0 ? [{ label: PLACE_WORD[p], count: by.get(p) ?? 0, place: p }] : []))
     const total = parts.reduce((s, p) => s + p.count, 0)
-    if (total > 0) out.set(key, [{ total, parts, exportedAt: dump.loadedAt, ...(who === undefined ? {} : { who }) }])
+    const exported = named.get(key)
+    if (total > 0) out.set(key, [{ total, parts, exportedAt: dump.loadedAt, ...(who === undefined ? {} : { who }), ...(exported === undefined ? {} : { exported }) }])
   }
   return out
 }
