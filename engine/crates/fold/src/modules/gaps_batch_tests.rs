@@ -48,11 +48,31 @@ fn a_catch_files_a_fished_item_with_its_zone_and_a_turn_in_files_the_item() {
     // Owner, 2026-10-22, 23:28:58: Plea to Freeport, only ever in the export, turned in.
     feed(&mut m, 5, json!({ "kind": "offer", "item": "Plea to Freeport", "npc": "Sir Mollin", "raw": "[Thu Oct 22 23:28:58 2026] You offered 1 Plea to Freeport to Sir Mollin." }));
     let plea = row(&m, "item", "Plea to Freeport");
-    assert_eq!(plea["kinds"], json!(["turned-in"]));
+    assert_eq!(plea["kinds"], json!(["offered"]));
     assert_eq!(plea["questFacts"]["turnedInTo"], json!([{ "npc": "Sir Mollin", "n": 1 }]));
     // A hand-over to a player proves nothing to file.
     feed(&mut m, 6, json!({ "kind": "offer", "item": "Ancient Signet Ring", "npc": "Malkil" }));
     assert!(row(&m, "item", "Ancient Signet Ring").is_null());
+}
+
+/// Owner's log, 2026-10-22 23:41:53 and 23:29: Appeal of Neriak taken by Pishtian F`Lok, and A Curt
+/// Dismissal handed back by Sir Mollin, which is no turn-in (the coordinator's rule).
+#[test]
+fn a_refused_hand_in_is_no_turn_in_but_the_item_is_still_filed() {
+    let mut m = module();
+    let offer = |item: &str, npc: &str| json!({ "kind": "offer", "item": item, "npc": npc, "raw": format!("[Thu Oct 22 23:41:53 2026] You offered 1 {item} to {npc}.") });
+    feed(&mut m, 1, offer("Appeal of Neriak", "Pishtian F`Lok"));
+    feed(&mut m, 2, json!({ "kind": "itemReceived", "item": "Exorbitant Commission", "via": "given" }));
+    feed(&mut m, 3, line("Your task 'Call for Aid' has been updated."));
+    feed(&mut m, 4, json!({ "kind": "trade", "npc": "Pishtian F`Lok" }));
+    let appeal = row(&m, "item", "Appeal of Neriak");
+    assert_eq!(appeal["questFacts"]["turnedInTo"], json!([{ "npc": "Pishtian F`Lok", "n": 1 }]));
+    assert_eq!(appeal["questFacts"]["quests"], json!(["Call for Aid"]));
+    feed(&mut m, 5000, offer("A Curt Dismissal", "Sir Mollin"));
+    feed(&mut m, 5001, line("Sir Mollin says, 'I have no need for this, Drywrought. You can have it back.'"));
+    let curt = row(&m, "item", "A Curt Dismissal");
+    assert_eq!(curt["kinds"], json!(["offered"]), "the item exists all the same");
+    assert!(curt.get("questFacts").is_none(), "Sir Mollin is no turn-in target: {curt}");
 }
 
 #[test]

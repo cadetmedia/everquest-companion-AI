@@ -31,7 +31,7 @@ use serde::Serialize;
 use serde_json::{json, Value};
 use std::collections::{BTreeMap, HashSet, VecDeque};
 
-use super::quests::task_of;
+use super::quests::{task_of, REFUSAL, REFUSE_MS};
 
 /// The exchange that leads to a step: a minute at most.
 const TALK_MS: i64 = 60_000;
@@ -172,6 +172,13 @@ impl QuestLogs {
     }
 
     fn speaker(&mut self, name: &str, text: &str, ts: i64) {
+        // The NPC handed the last item offered to it back: no hand-in to log (gaps_quests.rs REFUSAL).
+        if text.contains(REFUSAL) {
+            if let Some(i) = self.offers.iter().rposition(|(at, _, n)| n == name && ts - at <= REFUSE_MS) {
+                self.offers.remove(i);
+            }
+            return;
+        }
         if text.contains('[') {
             self.keyword_speakers.insert(name.to_string());
         }
