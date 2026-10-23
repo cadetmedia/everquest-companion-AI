@@ -1079,7 +1079,8 @@ export const IPC = {
   // (src/main/ipc/shotIpc.ts). Payload: (png: Uint8Array).
   shotReadItem: 'shot:readItem',
   // A pasted screenshot read as text lines (a spell display window; shared/spellWindow.ts maps them).
-  // Payload: (png: Uint8Array). Answers ShotTextReply.
+  // Payload: (png: Uint8Array, mode?: 'journal'): a Quest Journal is read its own way, with each
+  // line's shade (shared/questJournal.ts). Answers ShotTextReply.
   shotReadText: 'shot:readText',
   // overlay -> main: capture the EverQuest window now (an overlay's camera button; shotCapture.ts). Payload: none.
   shotCaptureNow: 'shot:captureNow',

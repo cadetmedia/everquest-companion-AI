@@ -34,6 +34,8 @@ export interface SpellWindowRead {
 export interface ShotTextReply {
   /** The OCR lines, top to bottom. */
   lines: string[]
+  /** A Quest Journal's read only: each line's background brightness (main/shot/journalLines.ts). */
+  shades?: number[]
   ms: number
   /** Set when the picture could not be read at all. */
   error?: string

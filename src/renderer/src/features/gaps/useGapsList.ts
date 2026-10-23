@@ -136,7 +136,8 @@ export function useGapsList(opts: { background?: boolean } = {}): GapsList {
   const holding = useAllHeld(engineData.ownLoot, me, allChars)
   // Items no log line names (owner, 2026-10-22: a store purchase): held in an export or captured,
   // with no wiki page, are Items rows too, in the one snapshot every view reads.
-  const extra = useExtraItemRows(engineData.snap?.rows, holding)
+  const viewer = useMemo(() => ({ me: me?.name ?? null, all: allChars.all !== null }), [me, allChars.all])
+  const extra = useExtraItemRows(engineData.snap?.rows, holding, viewer)
   const data = useMemo(() => (engineData.snap && extra.length > 0 ? { ...engineData, snap: withExtraItemRows(engineData.snap, extra) } : engineData), [engineData, extra])
   const shownQuery = useGapsQuery()
   // "Zone I'm in" (owner ask, 2026-10-17): only what was named where you stand, every tier of it.
