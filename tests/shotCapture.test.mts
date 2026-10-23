@@ -11,7 +11,7 @@ import { after, test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { captureSize, gameWindow, MAX_CAPTURE_PIXELS, readCapture } from '../src/main/shot/captureRead.ts'
+import { captureSize, gameWindow, isTabWord, MAX_CAPTURE_PIXELS, readCapture } from '../src/main/shot/captureRead.ts'
 import { tabLabels, windowAround } from '../src/main/shot/findWindow.ts'
 import { stopOcr, withTimeout } from '../src/main/shot/ocr.ts'
 import type { Rgba } from '../src/main/shot/pixels.ts'
@@ -98,6 +98,25 @@ test("TWO ITEM WINDOWS SIDE BY SIDE (THE OWNER'S, 2026-10-21) ARE TWO READINGS, 
     'Race: ALL<br>'
   ])
   assert.equal(got.windows[0].reply.read.loreTab, true)
+})
+
+test("EVERY ITEM WINDOW ON SCREEN IS READ, HOWEVER MANY OTHER YELLOW WORDS RANK AHEAD (OWNER'S SCREENSHOTS, 2026-10-22)", async () => {
+  // The Halfling tabs ranked 10th-11th of 24 yellow words (Main Chat, map buttons, gauges, chat), and
+  // only the first 4 were read: the overlay's camera filed nothing on two Gaps rows.
+  const two = await readCapture(readPng(join(SHOTS, 'capture-halfling-blood-and-meat.png')), textOnly)
+  assert.deepEqual(two.windows.map((w) => w.reply.read.name).sort(), ['Halfling Blood', 'Sample of Halfling Meat'])
+  // Four linked items open side by side: each window's sides are its own frame, not the neighbour's.
+  const four = await readCapture(readPng(join(SHOTS, 'capture-four-linked-items.png')), textOnly)
+  const names = four.windows.map((w) => w.reply.read.name ?? '')
+  assert.equal(four.windows.length, 4, JSON.stringify(names))
+  for (const want of ['Robe of the Betrayed', 'Ring of the Eldest', 'Helical Band of the Unyielding']) assert.ok(names.includes(want), JSON.stringify(names))
+  assert.ok(names.some((n) => n.startsWith('Bloodsoaked')), JSON.stringify(names))
+  for (const w of four.windows) assert.equal(w.reply.lines.filter((l) => /^Class:/.test(l.trim())).length, 1, w.reply.lines.join(' | '))
+})
+
+test('ONLY A YELLOW WORD THAT READS AS A TAB GETS THE FULL READ: DESCRIPTION OR LORE, AN OCR SLIP OR TWO', () => {
+  for (const t of ['Description', 'Descnption', '| Description', 'Lore', 'Lore.']) assert.ok(isTabWord(t), t)
+  for (const t of ['Main Chat', 'Important', 'Combat', 'Base', 'follow', 'Auto Z', '', 'Lo']) assert.ok(!isTabWord(t), t)
 })
 
 test('A CAPTURE WITH NO ITEM WINDOW FINDS NONE (THE PLAYER IS SENT TO THE SNIP, NEVER TO A GAME SETTING)', async () => {

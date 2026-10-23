@@ -1,19 +1,39 @@
 // captureRead.ts — a capture of the whole EverQuest window -> the item windows in it, read (phase 3
 // of screenshot to wiki). The yellow tab labels are tried best first (findWindow.ts); every one whose
 // window reads as an item window or a Lore tab is kept, so two windows open side by side are two
-// readings (owner's screenshot, 2026-10-21: Mud Stained Skin Tunic beside Rusty Battle Axe). A yellow
-// word that is not a tab (a chat line, a gauge) reads as nothing and the next is tried.
+// readings (owner's screenshot, 2026-10-21: Mud Stained Skin Tunic beside Rusty Battle Axe). Every
+// yellow word's own text is read first (a tiny crop, ~10 ms), and only one that says `Description`
+// or `Lore` gets the full read: a chat window's title, a map button or a hotbar icon is yellow too,
+// and when the full read went to the 4 best-shaped words those took every try (owner's screenshots,
+// 2026-10-22: the tabs ranked 10th-11th of 24 and 5th-8th of 19, so nothing was filed).
 //
 // ELECTRON-FREE.
 
 import { shotKind } from '../../shared/itemShotKeep'
+import { editDistance } from '../../shared/itemVocab'
 import type { ItemShotReply } from '../../shared/itemWindow'
 import { tabLabels, windowAround } from './findWindow'
-import { cropRgba, type Box, type Rgba } from './pixels'
+import { readLines } from './ocr'
+import { clipBox, cropRgba, type Box, type Rgba } from './pixels'
 import { readItemShot, type ShotReaders } from './readItemShot'
 
-/** Labels tried at most: each costs a read (0.5-2 s). */
-const TRIES = 4
+/** Yellow words whose text is read at most: ~10 ms each (0.4-0.8 s for 19-24 on the owner's screenshots). */
+const LABELS_MAX = 60
+/** Item windows read at most in one capture: each costs a full read (0.5-2 s). */
+const WINDOWS_MAX = 10
+
+/** A tab label's text: `Description` or `Lore`, an OCR slip or two allowed. */
+export function isTabWord(text: string): boolean {
+  const w = text.toLowerCase().replace(/[^a-z]/g, '')
+  return editDistance(w, 'description') <= 2 || (w.length >= 3 && editDistance(w, 'lore') <= 1)
+}
+
+/** The text of a yellow word, read from the word alone with a little margin. */
+async function labelText(img: Rgba, label: Box): Promise<string> {
+  const m = Math.ceil(label.h * 0.6)
+  const box = clipBox({ x: label.x - m, y: label.y - m, w: label.w + 2 * m, h: label.h + 2 * m }, img.w, img.h)
+  return box === null ? '' : (await readLines(cropRgba(img, box))).map((l) => l.text).join(' ')
+}
 
 export interface CaptureWindow {
   reply: ItemShotReply
@@ -27,7 +47,7 @@ export interface CaptureRead {
   /** The first of them (one window open is the usual case). */
   reply?: ItemShotReply
   box?: Box
-  /** How many candidate labels were read. */
+  /** How many windows got the full read. */
   tried: number
   ms: number
 }
@@ -66,8 +86,10 @@ export async function readCapture(img: Rgba, readers: ShotReaders): Promise<Capt
   const t0 = performance.now()
   let tried = 0
   const windows: CaptureWindow[] = []
-  for (const label of tabLabels(img).slice(0, TRIES)) {
+  for (const label of tabLabels(img).slice(0, LABELS_MAX)) {
+    if (windows.length >= WINDOWS_MAX) break
     if (windows.some((w) => within(w.box, label))) continue
+    if (!isTabWord(await labelText(img, label))) continue
     const box = windowAround(img, label)
     if (box === null) continue
     tried++

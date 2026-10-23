@@ -474,11 +474,23 @@ const TIER = /\s*\+\s*(\d{1,2})\b.*$/
 /** A name with its `+N` tier dropped. */
 export const withoutTier = (name: string): string => name.replace(TIER, '').trim()
 
+/**
+ * The name line's first token dropped when it is the icon read as a character: the title bar above
+ * names the item without it (owner's screenshots, 2026-10-22: `S Halfling Blood`, `1 Robe of the
+ * Betrayed`). A name that starts so itself (`5 Dose Potion of Cold`) keeps it: its title has it too.
+ */
+function iconJunkDropped(name: string, above: readonly string[]): string {
+  const rest = name.replace(/^\S{1,2}\s+/, '')
+  if (rest === name) return name
+  const norm = (s: string): string => withoutTier(s).toLowerCase().replace(/[^a-z0-9]/g, '')
+  return above.some((l) => norm(bareTitle(cleanLine(l, true)) ?? '') === norm(rest)) ? rest : name
+}
+
 /** The name: the line above the flags line, else above Class; junk dropped, a `+N` tier apart. `raw`: the lines before cleaning. */
 function nameAbove(lines: readonly string[], raw: readonly string[], at: number): { name?: string; tier?: number } {
   const i = lines.slice(0, at).map((l) => /[A-Za-z]{2}/.test(l) && !NOT_ITEM.test(l)).lastIndexOf(true)
   if (i < 0) return {}
-  const bare = bareTitle(cleanLine(raw[i], true)) ?? ''
+  const bare = iconJunkDropped(bareTitle(cleanLine(raw[i], true)) ?? '', raw.slice(0, i))
   const tier = TIER.exec(bare)
   return { name: withoutTier(bare), ...(tier === null || Number(tier[1]) === 0 ? {} : { tier: Number(tier[1]) }) }
 }

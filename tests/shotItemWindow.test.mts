@@ -282,3 +282,12 @@ test("AN EXALTATION SLOT WITH NO VALUE READ, OR EMPTY WITH AN OCR SLIP, IS EMPTY
     assert.ok(!(r.checks ?? []).some((c) => /not written/.test(c)), `${slot}: ${JSON.stringify(r.checks)}`)
   }
 })
+
+test("THE ICON READ AS A CHARACTER BEFORE THE NAME GOES WHEN THE TITLE BAR NAMES THE ITEM WITHOUT IT (OWNER'S SCREENSHOTS, 2026-10-22)", () => {
+  const read = (title: string, name: string): string | undefined => readItemWindow([title, 'Description', name, 'No Trade', 'Class: ALL', 'Race: ALL']).name
+  assert.equal(read('Halfling Blood =', 'S Halfling Blood'), 'Halfling Blood')
+  assert.equal(read('Robe of the Betrayed [EE', '1 Robe of the Betrayed'), 'Robe of the Betrayed')
+  // A name that starts so keeps it: the title has it too.
+  assert.equal(read('5 Dose Potion of Cold [=', '5 Dose Potion of Cold'), '5 Dose Potion of Cold')
+  assert.equal(read('A Faded Page', 'A Faded Page'), 'A Faded Page')
+})

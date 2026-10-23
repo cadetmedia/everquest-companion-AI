@@ -102,26 +102,50 @@ function rowEdge(img: Rgba, y: number, x0: number, x1: number): number {
   return s / Math.max(1, x1 - x0)
 }
 
-/** The x in [from, to) with the strongest vertical edge over the rows given. */
-function strongestCol(img: Rgba, from: number, to: number, rows: readonly [number, number]): number {
-  let best = { x: from, e: -1 }
-  for (let x = Math.max(0, from); x < Math.min(img.w - 1, to); x++) {
-    const e = colEdge(img, x, rows[0], rows[1])
-    if (e > best.e) best = { x, e }
+/** Share of rows a side's edge must hold on: a frame steps on every row, an icon or a word on some. */
+const STEADY_SHARE = 0.8
+
+/** The |step| across x at column x that STEADY_SHARE of rows y0..y1 reach. */
+function colSteady(img: Rgba, x: number, y0: number, y1: number): number {
+  const steps: number[] = []
+  for (let y = y0; y < y1; y++) {
+    const p = (y * img.w + x) * 4
+    steps.push(Math.abs(img.data[p + 1] - img.data[p + 5]))
   }
-  return best.x
+  steps.sort((a, b) => a - b)
+  return steps.length === 0 ? 0 : steps[Math.floor(steps.length * (1 - STEADY_SHARE))]
+}
+
+/** A side is any column this share of the steadiest one in reach; the nearest such wins. */
+const FRAME_SHARE = 0.6
+
+/**
+ * The window's side in [from, to): the column nearest the label (`near`) whose edge holds down the
+ * rows given, at least FRAME_SHARE of the steadiest in reach. Not the strongest: with windows side
+ * by side, the neighbour's frame, further out, is stronger than this window's own (owner's
+ * screenshots, 2026-10-22: 97 against 85), and the item icon is nearly as strong (82) but only for
+ * part of the rows, which STEADY_SHARE drops.
+ */
+function sideCol(img: Rgba, reach: { from: number; to: number; near: number }, rows: readonly [number, number]): number {
+  const cols: { x: number; e: number }[] = []
+  for (let x = Math.max(0, reach.from); x < Math.min(img.w - 1, reach.to); x++) cols.push({ x, e: colSteady(img, x, rows[0], rows[1]) })
+  const best = Math.max(0, ...cols.map((c) => c.e))
+  const sides = cols.filter((c) => best > 0 && c.e >= FRAME_SHARE * best)
+  return sides.reduce((a, c) => (Math.abs(c.x - reach.near) < Math.abs(a.x - reach.near) ? c : a), sides[0] ?? { x: reach.from }).x
 }
 
 /**
- * The item window around a tab label. Sides: the strongest vertical edges within 24 label heights
- * left and right, over the rows just under the tab row. Bottom: the first row below the text whose
+ * The item window around a tab label. Sides: the nearest steady vertical edges within 24 label
+ * heights left and right (`sideCol`), over the rows just under the tab row. Bottom: the first row below the text whose
  * edge runs across the window (the frame), else the capture's bottom. The title bar above the label is kept.
  */
 export function windowAround(img: Rgba, label: Box): Box | null {
   const u = label.h
   const rows: [number, number] = [Math.min(img.h - 1, Math.round(label.y + 3 * u)), Math.min(img.h - 1, Math.round(label.y + 10 * u))]
-  const left = strongestCol(img, Math.round(label.x - 24 * u), Math.round(label.x - u), rows)
-  const right = strongestCol(img, Math.round(label.x + label.w + u), Math.round(label.x + label.w + 24 * u), rows)
+  // Sides over a taller band than `rows`: the item icon fills most of 3-10 heights, about half of 3-16.
+  const body: [number, number] = [rows[0], Math.min(img.h - 1, Math.round(label.y + 16 * u))]
+  const left = sideCol(img, { from: Math.round(label.x - 24 * u), to: Math.round(label.x - u), near: label.x }, body)
+  const right = sideCol(img, { from: Math.round(label.x + label.w + u), to: Math.round(label.x + label.w + 24 * u), near: label.x + label.w }, body)
   const span = right - left
   if (span < 8 * u) return null
   const bottom = bottomOf(img, { left, right, from: Math.round(label.y + 12 * u), side: (colEdge(img, left, rows[0], rows[1]) + colEdge(img, right, rows[0], rows[1])) / 2 }, u)
