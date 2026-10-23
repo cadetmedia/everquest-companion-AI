@@ -472,6 +472,20 @@ const descriptionWord = (w: string): boolean => {
  */
 export const isTabRow = (l: string): boolean => TAB_ROW.test(l) || (/\bLore\b/i.test(l) && l.split(/\s+/).some(descriptionWord))
 
+/** Lines the tab row can be: under the title bar, at the top of the window. */
+const TAB_ROW_TOP = 3
+
+/**
+ * Where the tab row is: a line that reads as one anywhere, else a line near the top with a slipped
+ * `Description` and nothing of `Lore` left (owner's enlarged Lore tab, 2026-10-22:
+ * `Wr ~~ Descriplic TRVAC) N "ra . Coe:`). -1 for none.
+ */
+export function tabRowAt(lines: readonly string[]): number {
+  const at = lines.findIndex(isTabRow)
+  if (at >= 0) return at
+  return lines.slice(0, TAB_ROW_TOP).findIndex((l) => l.split(/\s+/).some(descriptionWord))
+}
+
 /** A lore line less what the frame leaves after its last sentence: the scrollbar read as `1`, `|`, `}`. */
 const loreLine = (l: string): string => l.replace(/([.!?'"])\s+[^\sA-Za-z]{1,2}$/, '$1')
 
@@ -480,7 +494,7 @@ const loreLine = (l: string): string => l.replace(/([.!?'"])\s+[^\sA-Za-z]{1,2}$
  * one line. With no tab row read, the longest line that is not a tab word.
  */
 function loreRead(lines: readonly string[], raw: readonly string[]): ItemWindowRead {
-  const tabAt = lines.findIndex(isTabRow)
+  const tabAt = tabRowAt(lines)
   // Words, not OCR's junk off the frame: mostly letters and spaces.
   const prose = (l: string): boolean => !/^Lore$/i.test(l) && !isTabRow(l) && /[a-z]{3}/i.test(l) && (l.match(/[A-Za-z ]/g) ?? []).length >= 0.8 * l.length
   const kept = lines.map(loreLine)
