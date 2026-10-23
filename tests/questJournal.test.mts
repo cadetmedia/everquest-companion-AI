@@ -191,6 +191,17 @@ test('THE TRAGIC TALE OF HOUSE EVERLING: ZONE ALL, SIX HIDDEN STEPS, AND THE ROW
   }
 })
 
+test("A TITLE'S OWN Q IS NEVER TAKEN FOR THE ROW'S ICON", () => {
+  for (const row of [
+    '[4 Q Quest for the Lost Unlimited ALL 1 50',
+    // The icon unread: the row pattern refuses `Quest`, and the grey bar's line keeps the whole title.
+    '[4 Quest for the Lost Unlimited ALL 1 50'
+  ]) {
+    const w = tragic(row)
+    assert.deepEqual(readQuestJournal(w.lines, w.shades, PLACES).tasks.map((t) => t.title), ['Quest for the Lost'], row)
+  }
+})
+
 test('A ZONE AND ITS LEVELS READ AS ONE SPLIT ONLY WHEN ONE SPLIT FITS', () => {
   assert.deepEqual(splitLevels('150'), { min: 1, max: 50 })
   assert.deepEqual(splitLevels('1050'), { min: 10, max: 50 })

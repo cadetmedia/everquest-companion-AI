@@ -75,9 +75,12 @@ export function journalStatus(token: string): string | undefined {
 /**
  * A task row: the junk the row's icon reads as, `Q` (OCR may run it into the title: `QThe Tragic
  * Tale`), the title, the time left, then the zone and the levels (OCR may run those together too:
- * `ALL150`, owner's window 2026-10-23).
+ * `ALL150`, owner's window 2026-10-23). A run-together `Q` is taken only before a capital, so a
+ * title's own Q (`Quest for ...`, icon unread) is never cut to `uest for ...`.
  */
-const TASK_ROW = /(?:^|[^a-z])Q\s*([A-Za-z].*?)\s+(Unlimited|\d+[dhms:][\d dhms:]*?)\s+(.+?)\s*$/
+const ICON_Q = String.raw`(?:^|[^a-z])Q(?:\s+|(?=[A-Z]))`
+const TASK_ROW = new RegExp(`${ICON_Q}([A-Za-z].*?)\\s+(Unlimited|\\d+[dhms:][\\d dhms:]*?)\\s+(.+?)\\s*$`)
+const ICON_TITLE = new RegExp(`${ICON_Q}([A-Za-z].*)$`)
 
 /** The highest level a task row can state; a run of digits above it is a min and max read as one. */
 const MAX_LEVEL = 125
@@ -129,7 +132,7 @@ const timeWord = (w: string): boolean => editDistance(letters(w), 'unlimited') <
  * (or after the icon's junk), cut at the time left, or else before an `ALL` or level digits.
  */
 function looseTask(line: string, places: readonly string[]): JournalTask | undefined {
-  const body = (/(?:^|[^a-z])Q\s*([A-Za-z].*)$/.exec(line)?.[1] ?? line.replace(/^[^A-Za-z]+/, '')).trim()
+  const body = (ICON_TITLE.exec(line)?.[1] ?? line.replace(/^[^A-Za-z]+/, '')).trim()
   const w = body.split(/\s+/)
   const time = w.findIndex((x, i) => i > 0 && timeWord(x))
   const end = time > 0 ? time : w.findIndex((x, i) => i > 0 && /^(?:A[Ll1I|]{2}(?![A-Za-z])|\d)/.test(x))
