@@ -9,7 +9,7 @@ import { Autocomplete, Button, Checkbox, Chip, Dialog, DialogActions, DialogCont
 import AddCommentIcon from '@mui/icons-material/AddCommentOutlined'
 import LinkOffIcon from '@mui/icons-material/LinkOff'
 import type { GapRow } from '@shared/gaps'
-import { addedVisits, isForcedRow, pickedVisits, visitGist, type TalkVisit } from '@shared/gapForcedQuests'
+import { addedVisits, isForcedRow, pickedVisits, visitGist, type QuestNameClash, type TalkVisit } from '@shared/gapForcedQuests'
 import type { RowFactContext } from '@shared/gapQuestPage'
 import { QuestCopyScope } from './QuestCopyDialog'
 import type { ForcedQuests } from './useForcedQuests'
@@ -22,6 +22,8 @@ export interface ForcedScope extends ForcedQuests {
   threads: readonly QuestThread[]
   /** The catalog's quest titles, offered as names so an existing page can be picked. */
   titles: readonly string[]
+  /** The clash a new quest name would make with the player's, the log's or the wiki's quests. */
+  nameClash: (name: string) => QuestNameClash | undefined
 }
 
 const ForcedContext = createContext<ForcedScope | null>(null)

@@ -35,7 +35,7 @@ import { forageProofNames } from '@shared/gapForage'
 import { mobPageFinder } from '@shared/mobPageTitle'
 import { catalogStates } from '@shared/gapMerchantDescription'
 import { useQuestLivePages } from '../../lib/questLivePages'
-import { withForcedQuests, withQuestLinks, type ForcedQuestMap, type TalkSnap, type TalkVisit } from '@shared/gapForcedQuests'
+import { questNameClash, withForcedQuests, withQuestLinks, type ForcedQuestMap, type QuestNameClash, type TalkSnap, type TalkVisit } from '@shared/gapForcedQuests'
 import type { QuestThread } from '@shared/gapQuestThreads'
 import { popupLinksOfRows } from '@shared/questPopup'
 import { withZoneRedirects } from '@shared/gapZoneRedirects'
@@ -197,11 +197,17 @@ function joinedSnap(derived: GapsSnap, x: JoinInputs): GapsSnap {
 }
 
 /** "Add quest" and "Add talk"'s scope: the named quests, the visits left to pick from, the names offered. */
-function useForcedScope(forced: ForcedQuests, snap: TalkSnap | null | undefined): ForcedScope {
+function useForcedScope(forced: ForcedQuests, snap: (GapsSnap & TalkSnap) | null | undefined, livePages: ReadonlyMap<string, string>): ForcedScope {
   const talks = snap?.talks ?? NO_TALKS
   // The chains the log rebuilt (gaps_threads.rs), for Suggested quests.
   const threads = snap?.questThreads ?? NO_THREADS
-  return useMemo(() => ({ ...forced, talks, threads, titles: QUEST_TITLES }), [forced, talks, threads])
+  const rows = snap?.rows
+  // A new quest name is checked against the player's, the log's and the wiki's quests before Accept.
+  return useMemo(() => {
+    const pageOf = questPageOf(livePages)
+    const nameClash = (name: string): QuestNameClash | undefined => questNameClash(name, forced.forced, rows ?? [], (n) => pageOf(n)?.page)
+    return { ...forced, talks, threads, titles: QUEST_TITLES, nameClash }
+  }, [forced, talks, threads, rows, livePages])
 }
 
 export function useGapsData(all: AllCharacters | null = null, opts: GapsDataOptions = {}): GapsData {
@@ -244,5 +250,5 @@ export function useGapsData(all: AllCharacters | null = null, opts: GapsDataOpti
   const shown = inWindow(snap, joined === null ? cut : deferredAll?.cut, only)
   // The rows the player corrected by hand (owner, 2026-10-23: "EDIT values in the gaps tab").
   const edited = useEditedSnap(shown, live)
-  return { snap: edited, engine, loot, ownLoot: liveLoot, kills, seenBy: joined?.seenBy, joining: all !== deferredAll, forced: useForcedScope(forced, talkSnapOf(snap)) }
+  return { snap: edited, engine, loot, ownLoot: liveLoot, kills, seenBy: joined?.seenBy, joining: all !== deferredAll, forced: useForcedScope(forced, snap, livePages) }
 }

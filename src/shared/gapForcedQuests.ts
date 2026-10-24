@@ -189,3 +189,33 @@ export function visitGist(v: TalkVisit, max = 90): string {
   const line = v.talk.find((t) => t.who !== 'You')?.text ?? v.talk[0]?.text ?? ''
   return line.length > max ? `${line.slice(0, max - 1).trimEnd()}…` : line
 }
+
+/** Why a name cannot be taken as is: a quest of the player's or the log's has it, or a wiki page does. */
+export interface QuestNameClash {
+  /** `yours`: accepted or named before; `logged`: a task line names it; `wiki`: a quest page of that title. */
+  kind: 'yours' | 'logged' | 'wiki'
+  /** The other's name as it is spelled there. */
+  title: string
+}
+
+/**
+ * The clash a new quest name would make (owner, 2026-10-23: "can we do quest name collision checks after
+ * the rename, before accepting the quest?"), compared as the page check compares titles. A quest of the
+ * player's or the log's blocks Accept, which would replace it or fold into it; a wiki page only warns,
+ * as the steps may belong on it.
+ */
+export function questNameClash(
+  name: string,
+  forced: ForcedQuestMap,
+  rows: readonly GapRow[],
+  wikiPage: (name: string) => string | undefined
+): QuestNameClash | undefined {
+  const key = questTitleKey(name)
+  if (key === '') return undefined
+  const mine = forced[key]
+  if (mine !== undefined) return { kind: 'yours', title: mine.name }
+  const logged = rows.find((r) => r.domain === 'quest' && !isForcedRow(r) && questTitleKey(r.name) === key)
+  if (logged !== undefined) return { kind: 'logged', title: logged.name }
+  const page = wikiPage(name)
+  return page === undefined ? undefined : { kind: 'wiki', title: page }
+}

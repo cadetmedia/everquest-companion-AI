@@ -3,7 +3,7 @@
 
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { isForcedRow, questLogFromVisits, visitGist, withForcedQuests, withoutQuest, withQuestLinks, withVisitsAdded, type TalkVisit } from '../src/shared/gapForcedQuests'
+import { isForcedRow, questLogFromVisits, questNameClash, visitGist, withForcedQuests, withoutQuest, withQuestLinks, withVisitsAdded, type TalkVisit } from '../src/shared/gapForcedQuests'
 import { wikiZoneNamer } from '../src/shared/gapWikiZone'
 import { questDraftPage } from '../src/shared/gapQuestPage'
 import type { GapsSnap } from '../src/shared/gaps'
@@ -93,4 +93,16 @@ test('THE TUTORIAL IS THE WIKI\'S TUTORIAL ZONE: ITS LINK AND ITS CATEGORY', () 
   assert.ok(page.includes("! ''' Starts In: '''\n| [[Tutorial Zone]]"))
   assert.ok(page.includes('[[Category:Tutorial Zone]]'))
   assert.ok(!page.includes('EverQuest Legends Tutorial'))
+})
+
+test("A SUGGESTED QUEST'S NAME IS CHECKED BEFORE ACCEPT: YOURS AND THE LOG'S BLOCK, A WIKI PAGE WARNS", () => {
+  const task = { domain: 'quest', name: 'What`s going on here?', kinds: ['assigned'], count: 1, first: '', last: '', details: {}, quest: { giver: 'Nikko Canti', npcs: [], steps: [], reruns: 0 } } as unknown as GapsSnap['rows'][number]
+  const forced = withVisitsAdded({}, 'Letter For Doug', [DOUG])
+  const wiki = (n: string): string | undefined => (n.toLowerCase() === 'unfortunate news' ? 'Unfortunate news' : undefined)
+  const clash = (n: string): unknown => questNameClash(n, forced, [task], wiki)
+  assert.deepEqual(clash('letter for doug'), { kind: 'yours', title: 'Letter For Doug' })
+  assert.deepEqual(clash("What's going on here"), { kind: 'logged', title: 'What`s going on here?' })
+  assert.deepEqual(clash('Unfortunate News'), { kind: 'wiki', title: 'Unfortunate news' })
+  assert.equal(clash("let's talk"), undefined)
+  assert.equal(clash('   '), undefined)
 })
