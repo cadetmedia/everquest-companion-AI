@@ -57,7 +57,9 @@ full scrapers). A 3-week window was ~1,200 pages in ~25 batched requests.
 5. Each changed file to its branch: quests and the quest cache to faction-tab, mobFactions and
    mobRaces to slayer-tab, the spell overlay to catch_all, everything else (items, mobs, spells and
    their cache, classes and its cache, pageEra and its cache, respawns, posky, images, the ledger)
-   to local-data-refresh; dropGroups.json and `cache/drop-groups` to gaps-tab.
+   to local-data-refresh; dropGroups.json and `cache/drop-groups` to gaps-tab. The run's line in
+   `docs/community/wiki-usage/ledger.jsonl` (its requests and bytes, printed at the end too) to
+   main_community_rules; cite its counts in the data commits.
 6. Gate the merged result in a second scratch tree and compare `^✖` lines against
    `main_community`'s head; clear the census reds (next section).
 7. Remove the junctions first (`(Get-Item <wt>\node_modules).Delete()`, the same for the three cache

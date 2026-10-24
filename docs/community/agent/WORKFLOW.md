@@ -98,7 +98,7 @@ disagree, RULES.md wins; fix this file.
   scrape-delta-tool; `scripts/sources/mobCache.ts` on slayer-tab (home) and scrape-delta-tool; `scripts/sources/mobFaction.ts`
   on slayer-tab (home) and wiki-scraper-fixes; `src/shared/rewardChest.ts` + `tests/rewardChestSource.test.mts`
   on catch_all, log-archive and gaps-tab; `src/main/itemOtherNames.ts` + `tests/itemOtherNames.test.mts`
-  on catch_all (home), gaps-tab and gaps-item-facts; `src/main/wikiClient.ts` on catch_all (home) and gaps-tab (the quest Copy live read). Verify pairs with `git merge-tree --write-tree <a> <b>`.
+  on catch_all (home), gaps-tab and gaps-item-facts; `src/main/wikiClient.ts`, `src/main/wikiUsage.ts` and `tests/wikiUsage.test.mts` on catch_all (home) and gaps-tab (the quest Copy live read). Verify pairs with `git merge-tree --write-tree <a> <b>`.
 - **Branches with two UNRELEASED splices** in `appViews.ts`: `tests/telemetryContract.test.mts`
   on main reads only the first; take spell-upgrades' version of that test.
 
@@ -196,6 +196,10 @@ disagree, RULES.md wins; fix this file.
   the branch's COMMITTED file, not a worktree's uncommitted edit; a scraper copied that way had no
   `--offline` flag and ran its revision check. Copy from the worktree path, and before running any
   scraper check the flag is in the file you are about to run (`grep -c offline`).
+  A wiki read by hand, for any reason, goes through `npx tsx scripts/wiki-call.mts --reason "<why>"
+  action=...` (on scrape-delta-tool, merged into main_community), never curl or WebFetch: it is
+  counted in `docs/community/wiki-usage/ledger.jsonl` and names the fork (owner, 2026-10-23: "he
+  doesn't care for what reason we hit the EQLWiki, so i want to track it all"). Commit its line.
 - **Screen text is short** (owner, 2026-10-21: "Do we really need them to checkout a book from the
   library to understand the drop down? ... a single 7-15 word sentence"; "we just hit them with so
   much text to read"). A tooltip is one sentence of 7-15 words; a caption or status line says the one

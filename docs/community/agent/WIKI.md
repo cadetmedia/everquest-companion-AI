@@ -25,6 +25,12 @@ long gap. How to refresh the app's copy of the wiki: `DATA_REFRESH.md`.
   50 pages per request where the API allows it.
 - **Development, testing and validation send zero requests** (owner, 2026-10-10). A `--dry-run`
   that reads the wiki counts as a request. Real runs are the owner's call.
+- **Every request is in the ledger** (owner, 2026-10-23: "i want to track it all"):
+  `docs/community/wiki-usage/ledger.jsonl`, one line per script run, written by
+  `scripts/sources/wikiLedger.ts` through `wikiApi.ts` and `deltaApi.ts`. A wiki read by hand goes
+  through `npx tsx scripts/wiki-call.mts --reason "<why>" action=...`, never curl or WebFetch, so it
+  is counted and names the fork. `npx tsx scripts/wiki-usage.mts` is the audit. The app's own
+  requests go to `wiki-requests.jsonl` in its userData (`src/main/wikiUsage.ts`).
 - **No runtime fetch for Gaps.** The tab reads committed data and local caches only.
 - **The wiki's own rule on AI text** (Help:Contents, Editing Standards): "All graphics and readable
   page text should be crafted by real human contributors". Tools may polish spelling and grammar.

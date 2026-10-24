@@ -14,6 +14,7 @@ into `main_community`, and push with the rest of the work.
 | [../requirements/](../requirements/) | Before changing a feature. What was asked (rule 19). |
 | [MEASURED.md](MEASURED.md) | Before reasoning about game mechanics or mining a log. |
 | [DATA_REFRESH.md](DATA_REFRESH.md) | Before any wiki scrape or data top-up. |
+| [../wiki-usage/README.md](../wiki-usage/README.md) | Before any wiki read, by hand or by script: every request goes in the ledger. |
 | [WIKI.md](WIKI.md) | Before parsing wiki pages or writing pages for the wiki: links, page templates, conventions, caches, what the log can give a page. |
 | [../RELEASING.md](../RELEASING.md) | Before a release (on `community_release_rules`). |
 | [../plans/2026-10-18-scrape-rebaseline.md](../plans/2026-10-18-scrape-rebaseline.md) | Open: the era rules, the stale-scrape defect, the August catch-up (phases and status). |
