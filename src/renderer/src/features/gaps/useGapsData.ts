@@ -99,7 +99,7 @@ export function useGapsData(): GapsData {
   const forced = useForcedQuests(talkSnap?.character)
   const snap = useMemo(() => {
     if (!engine) return engine
-    const derived = { ...snapOf(engine, { loot, kills: killMobs, cons, itemMobs }, WIKI), talks: talkSnap?.talks ?? [] }
+    const derived = { ...snapOf(engine, { loot, kills: killMobs, cons, itemMobs }, WIKI), talks: talkSnap?.talks ?? [], questThreads: talkSnap?.questThreads ?? [] }
     // Zones: a zone the log names under another spelling than its wiki page, as a redirect to copy.
     return withZoneRedirects(withQuestPages(withForcedQuests(derived, forced.forced), questPageOf(livePages)), CATALOG_ZONES)
   }, [engine, talkSnap, loot, killMobs, itemMobs, cons, livePages, forced.forced])
