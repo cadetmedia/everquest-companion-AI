@@ -45,6 +45,17 @@ function refusal(e: ClipboardEvent): string {
 
 const fileJob = (source: PictureSource) => (f: File): Job => ({ source, label: source === 'drop' ? f.name : '', bytes: async () => new Uint8Array(await f.arrayBuffer()) })
 
+/** One picture through the readers; whatever they throw becomes its "not read" note. */
+async function readOne(raw: Uint8Array, job: Job, journals: Readonly<Record<string, QuestJournalFacts>>): Promise<Outcome> {
+  try {
+    return await readAndRoute(await asPng(raw, job.label), journals, job.source, job.label)
+  } catch (e) {
+    const why = e instanceof Error ? e.message : String(e)
+    pictureLog(`${job.source} ${job.label} could not be read: ${why}`)
+    return { kind: 'error', text: `Could not read ${job.label === '' ? 'the picture' : job.label}: ${why}` }
+  }
+}
+
 /** The queue: one picture at a time, in the order given; a batch ends in one summary note. */
 export function usePictureQueue(journals: MutableRefObject<Readonly<Record<string, QuestJournalFacts>>>, show: (o: Outcome) => void): (jobs: Job[]) => void {
   const queue = useRef<Job[]>([])
@@ -57,7 +68,9 @@ export function usePictureQueue(journals: MutableRefObject<Readonly<Record<strin
       for (let job = queue.current.shift(); job !== undefined; job = queue.current.shift()) {
         show({ kind: 'unknown', text: `Reading ${job.label === '' ? 'the picture' : job.label}…`, progress: true })
         const raw = await job.bytes().catch(() => null)
-        const out: Outcome = raw === null ? { kind: 'error', text: 'Could not read that file.' } : await readAndRoute(await asPng(raw, job.label), journals.current, job.source, job.label)
+        // A file no reader can open is "not read", never the end of the batch (it threw out of the loop, so
+        // the rest went unread and the file stayed in the inbox to fail again at every launch).
+        const out: Outcome = raw === null ? { kind: 'error', text: 'Could not read that file.' } : await readOne(raw, job, journals.current)
         job.done?.(out.kind !== 'error' && out.kind !== 'unknown', out.text)
         outcomes.push(out)
       }
