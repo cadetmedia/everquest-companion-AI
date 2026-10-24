@@ -58,6 +58,8 @@ export interface ItemCategoryFacts {
   soldBy: boolean
   /** The zones the log saw it drop in. */
   zones: readonly string[]
+  /** Other kinds a caller knows of (`Foraged`, `Tradeskill Ingredient`), filed with the rest. */
+  kinds?: readonly string[]
 }
 
 /** The page's category groups, in the blueprint's order; empty groups dropped. */
@@ -72,7 +74,7 @@ export function itemCategoryGroups(statsblock: string | undefined, facts: ItemCa
     worn && cls !== undefined ? classesOf(cls) : [],
     worn ? [...new Set(slot.toUpperCase().split(/\s+/).flatMap((s) => (SLOTS[s] === undefined ? [] : [SLOTS[s]])))] : [],
     skill !== undefined && SKILLS[skill] !== undefined ? [SKILLS[skill]] : [],
-    kindsOf(block, facts),
+    [...kindsOf(block, facts), ...(facts.kinds ?? [])].sort((a, b) => a.localeCompare(b)),
     [...new Set(facts.zones.filter((z) => z !== ''))].sort((a, b) => a.localeCompare(b))
   ]
   return groups.filter((g) => g.length > 0)
