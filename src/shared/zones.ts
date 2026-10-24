@@ -133,7 +133,7 @@ export function zoneKey(zone: string | undefined | null): string {
  * Long zone name -> map stem. HAND-AUTHORED and COMMITTED (map-viewer.md §5.2).
  *
  * Section 1 is the 51 distinct zone names the live log has actually printed; every one of them
- * resolves except the EQL-new tutorial (see the TODO below). Sections 2-4 extend toward the map
+ * resolves. Sections 2-4 extend toward the map
  * corpus with the classic / Kunark / Velious zones an EQL log could plausibly print next.
  */
 export const ZONES: readonly ZoneEntry[] = [
@@ -168,6 +168,10 @@ export const ZONES: readonly ZoneEntry[] = [
   { short: 'lakenerius', name: 'Lake Nerius' },
   { short: 'nektropos', name: 'Nektropos Castle', aliases: ['Castle Nektropos'] },
   { short: 'nektrunder', name: 'Nektropos Undercrofts' },
+  // The EQL tutorial (Doug, Dougina). The game ships three tutorial maps: `tutoriala` and `tutorialb`
+  // are Gloomingdeep's (labels Kobold Jailor, Gloomfang Lair), so `tutorial` is the one left (owner to
+  // confirm on screen, 2026-10-23). The wiki's page is `Tutorial Zone`.
+  { short: 'tutorial', name: 'EverQuest Legends Tutorial', aliases: ['Tutorial Zone'] },
   { short: 'freportn', name: 'North Freeport', era: 'classic' },
   // KALADIM'S STEMS RUN THE OTHER WAY, AND BOTH SOURCES SAY SO (JOS-415, reported 8AX84S:
   // "When I zone into or manually select South Kaladim the North Kaladim map loads and visa
@@ -420,10 +424,7 @@ export const ZONES: readonly ZoneEntry[] = [
 ]
 
 // TODO(zone table) — candidates deliberately LEFT OUT because they could not be verified:
-//   - `EverQuest Legends Tutorial`: the one observed log zone with no stem. It is EQL-new content
-//     (NPCs Doug / Dougina / "a rambunctious pet"), NOT Gloomingdeep, so `tutorial` / `tutoriala` /
-//     `tutorialb` would all be a guess. Resolves to null -> the viewer's zone picker.
-//   - `aviak` (Aviak Village), `erudsxing2` (Marauder's Mire), `nektropos`, `cshome` (Sunset Home):
+//   - `aviak` (Aviak Village), `erudsxing2` (Marauder's Mire), `cshome` (Sunset Home):
 //     on eqlwiki's table but with NO file in either pack, so nothing to point at.
 //   - `oldkaesoraa`: in the default set, no long name in any source. EQL-new or a variant of Kaesora.
 //   - The Live-EQ revamp stems the classic rows deliberately shadow — `northro`/`southro`,
