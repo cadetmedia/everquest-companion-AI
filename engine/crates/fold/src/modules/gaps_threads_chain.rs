@@ -232,5 +232,7 @@ fn thread(nodes: &[Node], es: &[Edge], set: &[usize]) -> QuestThread {
         (None, Some(i)) => format!("{giver}: {i}"),
         _ => giver.clone(),
     };
-    QuestThread { id: format!("{giver}@{start_ms}"), zone: steps.iter().find_map(|s| s.zone.clone()), giver, start_ms, end_ms, name, steps, rewards: items_of(&rewards) }
+    // Unique per chain: errands opened by the same greeting share a start, never a last step.
+    let last = steps.last().map_or("", |s| s.id.as_str());
+    QuestThread { id: format!("{giver}@{start_ms}:{last}"), zone: steps.iter().find_map(|s| s.zone.clone()), giver, start_ms, end_ms, name, steps, rewards: items_of(&rewards) }
 }
