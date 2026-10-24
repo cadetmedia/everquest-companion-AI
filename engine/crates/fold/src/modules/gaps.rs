@@ -555,7 +555,7 @@ impl EqModule for GapsModule {
         let kill_factions = self.kill_factions.serve();
         let mob_locs = self.mob_locs.serve();
         let mob_specials = self.specials.serve();
-        json!({ "seq": self.seq, "state": { "rows": rows, "totals": totals, "seen": seen, "killFactions": kill_factions, "mobLocs": mob_locs, "mobSpecials": mob_specials, "mobCoin": self.kill_coin.serve(), "ownPets": self.own_pets } })
+        json!({ "seq": self.seq, "state": { "rows": rows, "totals": totals, "seen": seen, "killFactions": kill_factions, "mobLocs": mob_locs, "mobSpecials": mob_specials, "mobCoin": self.kill_coin.serve(), "ownPets": self.own_pets, "talks": self.quest_log.served_talks(), "character": self.quest_log.player() } })
     }
 
     fn install_knowledge(&mut self, k: &Arc<dyn Knowledge>) {
