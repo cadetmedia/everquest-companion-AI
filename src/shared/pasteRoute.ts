@@ -59,6 +59,11 @@ export interface RouteTarget {
   kind: 'quest' | 'thread'
   /** When it started (epoch ms), for an ordinal among ties. */
   startMs: number
+  /**
+   * When its own errand started: a chain's first step that is not a bare greeting (the tutorial's Doug
+   * chains all open on the same "Hail, Doug", so their starts tie). Absent: `startMs`.
+   */
+  orderMs?: number
   steps: RouteStep[]
   rewards: string[]
 }
@@ -69,11 +74,14 @@ export interface ThreadLike {
   name: string
   zone?: string
   startMs: number
-  steps: { kind: string; npc?: string; zone?: string; said?: string[]; items?: { name: string }[]; mob?: string }[]
+  steps: { kind: string; ms?: number; npc?: string; zone?: string; said?: string[]; items?: { name: string }[]; mob?: string }[]
   rewards?: { name: string }[]
 }
 
 const some = (s: string | undefined | null): string[] => (s === undefined || s === null || s === '' ? [] : [s])
+
+/** A chain's own start: its first step past a bare greeting (a talk with nothing said). */
+const errandMs = (t: ThreadLike): number => t.steps.find((s) => (s.kind !== 'talk' || (s.said ?? []).length > 0) && s.ms !== undefined)?.ms ?? t.startMs
 
 /** The chains' targets: their popups kept under `thread:<id>` until the player accepts one. */
 export function threadTargets(threads: readonly ThreadLike[]): RouteTarget[] {
@@ -82,6 +90,7 @@ export function threadTargets(threads: readonly ThreadLike[]): RouteTarget[] {
     label: t.name,
     kind: 'thread',
     startMs: t.startMs,
+    orderMs: errandMs(t),
     steps: t.steps.map((s) => ({ npcs: some(s.npc), mobs: some(s.mob), items: (s.items ?? []).map((i) => i.name), said: s.said ?? [], zones: some(s.zone ?? t.zone), kind: s.kind })),
     rewards: (t.rewards ?? []).map((r) => r.name)
   }))
@@ -280,7 +289,7 @@ function rewardByOrdinal(p: QuestPopup, targets: readonly RouteTarget[]): RouteT
   if ((p.rewards ?? []).length === 0 && p.experience !== true) return undefined
   const nth = ordinalOf(popupText(p))
   if (nth === undefined) return undefined
-  const done = targets.filter((t) => t.steps.some((s) => s.kind === 'handin')).sort((a, b) => a.startMs - b.startMs)
+  const done = targets.filter((t) => t.steps.some((s) => s.kind === 'handin')).sort((a, b) => (a.orderMs ?? a.startMs) - (b.orderMs ?? b.startMs))
   return done[nth]
 }
 

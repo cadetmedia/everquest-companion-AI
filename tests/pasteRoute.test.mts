@@ -176,3 +176,15 @@ test('reward windows on chains with no reward line (as the engine serves the tut
   assert.equal(routePopup(reward as QuestPopup, bare).hit?.key, 'thread:Doug@1')
   assert.equal(routePopup(merging as QuestPopup, bare).hit?.key, 'thread:Doug@2')
 })
+
+test('chains that open on the same greeting are ordered by their own errand; ids may hold a colon', async () => {
+  const greet = { kind: 'talk', npc: 'Doug', ms: 100 }
+  const tied: ThreadLike[] = [
+    { id: 'Doug@100:handin:Dead Doug:Skull', name: 'Doug: more work', zone, startMs: 100, steps: [greet, { kind: 'talk', npc: 'Doug', said: ['more work'], ms: 900 }, { kind: 'handin', npc: 'Dead Doug', ms: 1200, items: [{ name: 'Skull' }] }] },
+    { id: 'Doug@100:handin:Old Doug:Package', name: "Doug: let's talk", zone, startMs: 100, steps: [greet, { kind: 'talk', npc: 'Doug', said: ["let's talk"], ms: 300 }, { kind: 'handin', npc: 'Old Doug', ms: 600, items: [{ name: 'Package' }] }] }
+  ]
+  const targets = threadTargets(tied)
+  const viaApp = async (file: string): Promise<QuestPopup | null> => readPopup(popupRead({ ...(await readPopupLines(readPng(join(SHOTS, file)))) }))
+  assert.equal(routePopup((await viaApp('popup-tutorial-first-quest-reward.png')) as QuestPopup, targets).hit?.key, "thread:Doug@100:handin:Old Doug:Package")
+  assert.equal(routePopup((await viaApp('popup-tutorial-item-merging.png')) as QuestPopup, targets).hit?.key, 'thread:Doug@100:handin:Dead Doug:Skull')
+})
