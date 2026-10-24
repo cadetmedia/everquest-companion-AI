@@ -7,7 +7,7 @@ import { join } from 'node:path'
 import { readPopupLines } from '../src/main/shot/popupLines.ts'
 import { stopOcr } from '../src/main/shot/ocr.ts'
 import { readPopup, type QuestPopup } from '../src/shared/questPopup.ts'
-import { nameplateRow, namesIn, ordinalOf, pictureKind, routePopup, threadTargets, type ThreadLike } from '../src/shared/pasteRoute.ts'
+import { nameplateRow, namesIn, ordinalOf, pictureKind, placesKey, routePopup, threadTargets, type ThreadLike } from '../src/shared/pasteRoute.ts'
 import { readPng } from './shotPng.mts'
 
 after(() => stopOcr())
@@ -154,4 +154,12 @@ test('a nameplate picture names its Mobs row, through a slip; a short name only 
   assert.equal(nameplateRow(['ay 5 ht Raul: » od | -'], names), 'Raul')
   assert.equal(nameplateRow(['TERN =F SAE', 'Ser a f we, g'], names), undefined)
   assert.equal(nameplateRow(['Dougal'], names), undefined)
+})
+
+test('placesKey moves when a Quests row or a chain appears, and only then', () => {
+  const rows = [{ domain: 'quest' }, { domain: 'mob' }]
+  const a = placesKey(rows, [{ id: 't1' }])
+  assert.equal(a, placesKey([...rows, { domain: 'item' }], [{ id: 't1' }]))
+  assert.notEqual(a, placesKey([...rows, { domain: 'quest' }], [{ id: 't1' }]))
+  assert.notEqual(a, placesKey(rows, [{ id: 't1' }, { id: 't2' }]))
 })

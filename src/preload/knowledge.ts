@@ -112,6 +112,20 @@ export const knowledgeBridge = {
   // The type is named inline so the import line spell-upgrades also edits stays untouched.
   gapSpellFacts: (names: readonly string[]): Promise<Record<string, import('../shared/gaps').ClientSpellFacts>> =>
     ipcRenderer.invoke(IPC.gapSpellFacts, [...names]),
+  /** The picture inbox (<userData>/picture-inbox): its folder and the pictures waiting, in name order. */
+  pictureInboxList: (): Promise<{ dir: string; files: string[] }> => ipcRenderer.invoke(IPC.pictureInboxList),
+  /** One waiting picture's bytes; null when it is gone or too large. */
+  pictureInboxRead: (name: string): Promise<Uint8Array | null> => ipcRenderer.invoke(IPC.pictureInboxRead, name),
+  /** A waiting picture was read: moved to done/ (ok) or failed/, the reason in the dev log. */
+  pictureInboxDone: (name: string, ok: boolean, reason: string): Promise<boolean> => ipcRenderer.invoke(IPC.pictureInboxDone, name, ok, reason),
+  /** A line for the dev log about a paste, drop or inbox picture. */
+  pictureLog: (line: string): void => ipcRenderer.send(IPC.pictureLog, line),
+  /** A picture landed in the inbox; the returned function stops listening. */
+  onPictureInbox: (cb: () => void): (() => void) => {
+    const listener = (): void => cb()
+    ipcRenderer.on(IPC.onPictureInbox, listener)
+    return () => ipcRenderer.removeListener(IPC.onPictureInbox, listener)
+  },
   /** The clipboard's picture as PNG bytes (a click on a paste box); null when it holds none. */
   shotClipboard: (): Promise<Uint8Array | null> => ipcRenderer.invoke(IPC.shotClipboard),
   /** A pasted item-window screenshot, read on this machine: page fields and icon ids (src/main/ipc/shotIpc.ts). */

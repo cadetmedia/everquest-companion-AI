@@ -33,7 +33,9 @@ export function PasteZone({ label, busy, onPicture }: { label: string; busy: boo
   )
   useEffect(() => {
     const onPaste = (e: ClipboardEvent): void => {
-      if (typingIn(e.target)) return
+      // Only the player's own paste into the focused window (owner, 2026-10-23: a save dialog "out of nowhere").
+      if (typingIn(e.target) || !e.isTrusted || !document.hasFocus()) return
+      window.eq.pictureLog("paste into a row's paste box")
       void pictureFrom(e.clipboardData?.items ?? null, null).then((png) => png !== null && take(png))
     }
     window.addEventListener('paste', onPaste)

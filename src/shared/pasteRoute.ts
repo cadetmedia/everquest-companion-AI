@@ -319,3 +319,8 @@ export const movePicksBut = (ranked: readonly RouteHit[], key: string): RouteHit
 
 /** The rows a nameplate picture can belong to: mobs, merchants and the Images rows. */
 export const pictureRows = <R extends { domain: string }>(rows: readonly R[]): R[] => rows.filter((r) => ['mob', 'merchant', 'image'].includes(r.domain))
+
+/** A key that moves when the places a popup can go change: the Quests rows and the engine's chains. */
+export function placesKey(rows: readonly { domain: string }[], threads: readonly { id: string }[] = []): string {
+  return `${String(rows.filter((r) => r.domain === 'quest').length)}|${threads.map((t) => t.id).join(',')}`
+}

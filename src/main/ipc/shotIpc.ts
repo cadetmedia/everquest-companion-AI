@@ -22,6 +22,7 @@ import { readLines } from '../shot/ocr'
 import type { Rgba } from '../shot/pixels'
 import { readItemShot, type ShotReaders } from '../shot/readItemShot'
 import { decodePicture, MAX_PICTURE_BYTES as MAX_BYTES, registerShotPictureIpc } from './shotPicture'
+import { registerPictureInboxIpc } from '../pictureInbox'
 
 /** The skins' window backgrounds that the item window can draw (EQUI_Templates.xml `WDT_Inner`). */
 const TEXTURES = ['default/wnd_bg_dark_rock.tga', 'default/wnd_bg_mid_rock.tga', 'default/wnd_bg_light_rock.tga', 'default_modern/wnd_bg_dark_rock.tga']
@@ -150,4 +151,5 @@ export function registerShotIpc(): void {
   ipcMain.handle(IPC.shotReadText, (_e, png: unknown, mode?: unknown) => readText(png, mode))
   ipcMain.handle(IPC.shotIcon, (_e, id: unknown) => iconUrl(id))
   registerShotPictureIpc()
+  registerPictureInboxIpc()
 }
