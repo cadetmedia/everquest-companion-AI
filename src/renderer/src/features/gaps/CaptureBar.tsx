@@ -25,7 +25,7 @@ import type { CharacterSnap } from '@shared/types'
 import { copyText } from '../../lib/clipboard'
 import { Tooltip } from '../../lib/Tooltip'
 import { useModule } from '../../lib/useModule'
-import { itemShotNow, keepPartPicture, setCapturedRead, setItemRowNames, setItemShot } from './itemShotsStore'
+import { itemRowNamesNow, itemShotNow, keepPartPicture, setCapturedRead, setItemRowNames, setItemShot } from './itemShotsStore'
 import { addCapturedItem } from './capturedItemsStore'
 
 const HOW_TIP = "The macro, or an overlay's 📷, reads the item window open in game."
@@ -92,6 +92,15 @@ function fileNew(c: Captured, unknown: ReadonlySet<string>): string | undefined 
   void keepPartPicture(partPicture(kind), name, c.png)
   setCapturedRead(name, { reply: c.reply, kind, ...(c.png === undefined ? {} : { png: c.png }) })
   return name
+}
+
+/**
+ * One picture of an item window pasted anywhere in the app (GlobalPaste.tsx), filed the capture's way:
+ * its row's name, or undefined when no row takes it.
+ */
+export async function fileOneCapture(c: Captured): Promise<string | undefined> {
+  const [r] = await withNewRows([file(c, itemRowNamesNow())])
+  return typeof r === 'string' ? r : undefined
 }
 
 /** What a batch of captures leaves the bar showing: the rows filed, else a failure, else no window, else idle. */
