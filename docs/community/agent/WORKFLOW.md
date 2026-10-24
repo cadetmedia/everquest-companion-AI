@@ -107,7 +107,10 @@ disagree, RULES.md wins; fix this file.
 - **Make all the changes, then gate once** (owner, 2026-10-21: "why run it on every change, make
   all the changes, run it once"). While fixing, run only the focused test files for what changed;
   the full gate runs once per branch at the end, and the merged check once. Parallel agents share
-  the machine, so repeated full runs slow every one of them.
+  the machine, so repeated full runs slow every one of them. Helper agents run only their focused
+  tests and hand back commits; the coordinating session runs the one full gate and the app check over
+  everything at the end (owner, 2026-10-23: "test at the end so we don't waste time waiting for
+  agents to test").
 - `npm run typecheck`, then restore tsbuildinfo; `rm -rf node_modules/.cache/eslint && npm run
   lint`; `npm test` (Node 24). On `main_community` use `bash scripts/community/known-reds.sh`
   (the unit suite where only names in `scripts/community/known-reds.txt` may fail).
