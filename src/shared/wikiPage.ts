@@ -27,6 +27,8 @@ import type { VendorFinder } from './gapMobPage'
 import type { LootEvent } from './types'
 import { SPELL_HEAD, SPELL_TAIL, spellPageValues, type SpellPageShot } from './spellWindow'
 import { npcImageName, withPageTitles } from './mobPageTitle'
+import { itemCategoryGroups } from './itemCategories'
+import { baseStatsblock, shotFields, type ItemPageShot } from './itemPageShot'
 import { noticeProof } from './gapNotices'
 import { locFinder, questFactsOf, questPageParts, withQuestFields } from './itemQuestFacts'
 import { roleClass, roleField, roleOf, withFishedNote } from './gapRoles'
@@ -40,6 +42,8 @@ import { pageOrAdd, withDescription, withoutStated, type MerchantExtras, type Pa
 export type ZoneNamer = (raw: string) => string
 const asPrinted: ZoneNamer = (z) => z
 
+export { STATS_SKELETON, wikiCoin, type ItemPageShot } from './itemPageShot'
+
 // ---- the parts ---------------------------------------------------------------------------------
 
 /** `{{Classic Era}}`: the era the game is in, which is the era anything the player met is in. */
@@ -48,18 +52,6 @@ export function eraBanner(era: string = CURRENT_ERA): string {
 }
 
 export const wikiLink = (page: string): string => `[[${page}]]`
-
-/** Copper as the wiki writes a price: `2s 7c`, `1p 4g`, zero parts left out. */
-export function wikiCoin(copper: number): string {
-  let rest = Math.max(0, Math.round(copper))
-  const parts: string[] = []
-  for (const [unit, per] of [['p', 1000], ['g', 100], ['s', 10], ['c', 1]] as const) {
-    const n = Math.floor(rest / per)
-    rest -= n * per
-    if (n > 0) parts.push(`${String(n)}${unit}`)
-  }
-  return parts.length > 0 ? parts.join(' ') : '0c'
-}
 
 /** `dropsfrom`: `[[Zone]]`, a blank line and its mobs, per zone, zones and mobs A to Z. */
 export function zoneBlocks(byZone: ReadonlyMap<string, readonly string[]>): string {
@@ -407,51 +399,6 @@ function pctLine(link: string, pct: number): string {
   return `<li> ${link} <span class='drare'>(${rarityWord(pct)})</span> <span class='ddb'>[Overall: ~${String(pct)}%]</span> </li>`
 }
 
-/**
- * The Item Page Blueprint's closing `statsblock` lines, empty, for the player to type from the
- * item's window (owner, 2026-10-20: "items need the WT stat so i can fill it in", "use the template
- * data"). Read from https://eqlwiki.com/Help:Contents#Item_Page_Blueprint on 2026-10-20: `Size: ...
- * WT: 0.0<br>`, `Class: ...<br>`, `Race: ALL<br>`, in that order. Only these: the owner ruled
- * (2026-10-18) that a page carries no blueprint option lists; a flags line (`Quest<br>`) and gear
- * lines (Slot, AC, stats) go above them when the item has them.
- */
-export const STATS_SKELETON = '\nSize:   WT: <br>\nClass: <br>\nRace: <br>'
-
-/**
- * What a screenshot of the item's window gave, as the player kept it (shared/itemWindow.ts; owner ask,
- * 2026-10-21). Field order follows the page the owner wrote for Ruined Robe: itemname, lucy_img_ID,
- * notes, statsblock. The window's Value line is the game's own number, so it wins over the estimate.
- */
-export interface ItemPageShot {
-  statsblock?: string
-  iconId?: number
-  focusEffect?: string
-  valueCopper?: number
-  lore?: string
-  /** The window showed a Lore tab: the item has lore, so a page without it says `{{Item Lore Missing}}`. */
-  loreTab?: boolean
-  /** A `+N` window: `statsblock` is that tier's numbers, so the page keeps the skeleton until the player takes it to +0 (D3). */
-  tier?: number
-  /** The upgrade rule's +0 guess for `statsblock`, offered to the player (shared/itemDelevel.ts). */
-  baseStatsblock?: string
-}
-
-/** The fields a screenshot fills, in the page's order, around the log's merchant_value. */
-function shotFields(shot: ItemPageShot, merchantValue: number | undefined): [string, string][] {
-  const value = shot.valueCopper ?? merchantValue
-  const fields: [string, string][] = []
-  if (shot.iconId !== undefined) fields.push(['lucy_img_ID', String(shot.iconId)])
-  if (value !== undefined) fields.push(['merchant_value', wikiCoin(value)])
-  // The wiki's own marker for lore not yet transcribed (466 pages), so the page is listed with them.
-  if (shot.lore) fields.push(['notes', `{{Item Lore|${shot.lore}}}`])
-  else if (shot.loreTab === true) fields.push(['notes', '{{Item Lore Missing}}'])
-  // Never a +N number as a base one (owner, 2026-10-21, D3).
-  const base = (shot.tier ?? 0) === 0 && shot.statsblock !== undefined && shot.statsblock !== ''
-  fields.push(['statsblock', base ? (shot.statsblock ?? STATS_SKELETON) : STATS_SKELETON])
-  if (shot.focusEffect) fields.push(['focus_effect', shot.focusEffect])
-  return fields
-}
-
 export function itemPage(f: ItemFacts, shot: ItemPageShot = {}): string {
   const byZone = new Map<string, string[]>()
   for (const d of f.drops) byZone.set(d.zone, [...(byZone.get(d.zone) ?? []), d.mob])
@@ -464,18 +411,25 @@ export function itemPage(f: ItemFacts, shot: ItemPageShot = {}): string {
   if (tradeskills.length > 0) fields.push(['playercrafted', bullets(tradeskills.map(wikiLink))])
   if (f.soldBy.length > 0) fields.push(['soldby', itemWhereTable(f.soldBy)])
   if (foragedIn.length > 0) fields.push(['foraged', bullets(foragedIn.map(wikiZoneLink))])
-  return page(templateBlock('Itempage', withQuestFields(fields, f)), itemCategories(f, [...byZone.keys(), ...foragedIn]))
+  // The blueprint's groups: classes, slots, skill, kinds, zones (itemCategories.ts).
+  const groups = itemCategoryGroups(baseStatsblock(shot), categoryFacts(f, shot, [...byZone.keys(), ...foragedIn]))
+  return pageGroups(templateBlock('Itempage', withQuestFields(fields, f)), groups)
 }
 
-/** How it came, then each zone it dropped or was foraged in (a zone in both, once). */
-function itemCategories(f: ItemFacts, zones: readonly string[]): string[] {
-  return [
-    ...(f.soldBy.length > 0 ? ['Vendor Sold'] : []),
-    ...(f.crafted ? ['Player Crafted'] : []),
-    ...(f.tradeskillIngredient === true ? ['Tradeskill Ingredient'] : []),
-    ...((f.foragedIn ?? []).length > 0 ? ['Foraged'] : []),
-    ...zones.filter((z) => z !== '').sort((a, b) => a.localeCompare(b))
-  ]
+/** What the categories read: the window's focus, how it came, where, and how it is gathered (a zone in both, once). */
+function categoryFacts(f: ItemFacts, shot: ItemPageShot, zones: readonly string[]): Parameters<typeof itemCategoryGroups>[1] {
+  return {
+    ...(shot.focusEffect === undefined ? {} : { focusEffect: shot.focusEffect }),
+    crafted: f.crafted,
+    soldBy: f.soldBy.length > 0,
+    zones,
+    kinds: [...((f.foragedIn ?? []).length > 0 ? ['Foraged'] : []), ...(f.tradeskillIngredient === true ? ['Tradeskill Ingredient'] : [])]
+  }
+}
+
+/** The page with its categories in groups, a blank line between, as the Werewolf page writes them. */
+function pageGroups(template: string, groups: readonly (readonly string[])[]): string {
+  return [eraBanner(), template, ...groups.flatMap((g) => ['', categoryLines(g)])].join('\n') + '\n'
 }
 
 // ---- NPC and merchant pages: the blueprints' full layout ------------------------------------------

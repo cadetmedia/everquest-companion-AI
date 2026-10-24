@@ -13,6 +13,8 @@
 // the one repair is Weight's decimal, which the game always prints and OCR loses (3 windows of 3).
 
 import { delevel } from './itemDelevel'
+import { effectText, petIllusionLine, petIllusionOf } from './itemEffects'
+import { bestLoreLine, withSplitCapital } from './itemLore'
 import { isTabRow, tabRowAt } from './itemTabRow'
 import { CLASS_CODES, codeWords, deityText, FLAG_WORDS, isDeityLine, RACE_CODES, SIZES, slotWord, snap, type Snapped } from './itemVocab'
 
@@ -23,6 +25,8 @@ export interface ItemWindowRead {
   statsblock: string
   /** `|focus_effect`: the wiki keeps a focus outside the stats block. */
   focusEffect?: string
+  /** The pet illusion the item grants (`Pet Illusion: Mummy`): its line ends the stats block, its category the page. */
+  petIllusion?: string
   /** The window's Value line, in copper: the vendor's base value, `|merchant_value`. */
   valueCopper?: number
   /** The Lore tab's text, for `|notes = {{Item Lore|...}}`. */
@@ -96,7 +100,7 @@ const LABELS: readonly (readonly [string, string, Kind])[] = [
   ['Focus Effect', 'Focus', 'effect'], ['Click Effect', 'Click', 'effect'], ['Worn Effect', 'Worn', 'effect'],
   ['Proc Effect', 'Combat', 'effect'], ['Combat Effect', 'Combat', 'effect'],
   ['Cast Time', 'Casting Time', 'effectInfo'], ['Casting Time', 'Casting Time', 'effectInfo'],
-  ['Required Level', 'Level', 'effectInfo'], ['Cooldown', 'Cooldown', 'skip'], ['Recast', 'Cooldown', 'skip']
+  ['Required Level', 'Level', 'effectInfo'], ['Cooldown', 'Cooldown', 'effectInfo'], ['Recast', 'Cooldown', 'effectInfo']
 ]
 
 /** `SV.` and `SV ` both, colon optional (OCR drops it or reads `;` or `.`). Longest label first. */
@@ -276,12 +280,8 @@ const noted = (g: Gathered, v: { value: string; note?: string }): string => {
 /** `Firestrike (Must Equip)` + the info lines under it -> `[[Firestrike]] (Must Equip, Casting Time: Instant) at Level 40`. */
 function effectLine(kind: string, value: string, info: ReadonlyMap<string, string>): string {
   const m = /^(.*?)\s*(?:\(([^)]*)\))?$/.exec(value) ?? ['', value]
-  const name = rankFix((m[1] ?? value).trim())
-  const notes = [kind === 'Click' ? m[2] : kind, info.has('Casting Time') ? `Casting Time: ${info.get('Casting Time') ?? ''}` : undefined].filter(
-    (s): s is string => s !== undefined && s !== ''
-  )
-  const level = info.get('Level')
-  return `Effect: [[${name}]]${notes.length > 0 ? ` (${notes.join(', ')})` : ''}${level === undefined ? '' : ` at Level ${level}`}`
+  // The blueprint's form: a styled link, the kind and timing in one bracket (itemEffects.ts).
+  return effectText(kind, rankFix((m[1] ?? value).trim()), m[2], info)
 }
 
 interface Effect {
@@ -482,8 +482,8 @@ function loreRead(lines: readonly string[], raw: readonly string[]): ItemWindowR
   const tabAt = tabRowAt(lines)
   // Words, not OCR's junk off the frame: mostly letters, numbers and spaces (`Attempt # 326`).
   const prose = (l: string): boolean => !/^Lore$/i.test(l) && !isTabRow(l) && /[a-z]{3}/i.test(l) && (l.match(/[A-Za-z0-9 #]/g) ?? []).length >= 0.8 * l.length
-  const kept = lines.map(loreLine)
-  const text = tabAt >= 0 ? kept.slice(tabAt + 1).filter(prose).join(' ') : kept.filter(prose).sort((a, b) => b.length - a.length)[0]
+  const kept = lines.map((l, i) => loreLine(withSplitCapital(raw[i] ?? '', l)))
+  const text = tabAt >= 0 ? kept.slice(tabAt + 1).filter(prose).join(' ') : bestLoreLine(kept.filter(prose))
   // The title bar above the tab row names the item: a captured Lore tab finds its row by it.
   const titleAt = tabAt > 0 ? lines.slice(0, tabAt).map((l) => /[A-Za-z]{3}/.test(l)).lastIndexOf(true) : -1
   const title = titleAt < 0 ? undefined : withoutTier(bareTitle(cleanLine(raw[titleAt], true)) ?? '')
@@ -576,6 +576,17 @@ function raceAfter(lines: readonly string[], after: number): { line: string; end
 
 export { isTabRow, tabRowAt }
 
+/**
+ * A pet illusion under Race: its own line on the page after a blank line (the Werewolf page), never a
+ * stat or an unread line. The lines left for the stats, the page's tail, and the read's field.
+ */
+function petBelow(below: readonly string[]): { rest: string[]; tail: string; read: { petIllusion?: string } } {
+  const pet = petIllusionOf(below)
+  const rest = below.filter((_, i) => !pet.taken.has(i))
+  if (pet.name === undefined) return { rest, tail: '', read: {} }
+  return { rest, tail: `\n\n${petIllusionLine(pet.name)}`, read: { petIllusion: pet.name } }
+}
+
 /** OCR lines of one item window (top to bottom) -> the page's fields. */
 export function readItemWindow(raw: readonly string[]): ItemWindowRead {
   const kept = raw.filter((l) => cleanLine(l) !== '')
@@ -585,9 +596,11 @@ export function readItemWindow(raw: readonly string[]): ItemWindowRead {
   const cls = listAt(lines, clsAt, CLASS_CODES)
   const race = raceAfter(lines, cls.end)
   const head = headOf(lines, clsAt, cls.line, race?.line)
-  const g = gather(lines.slice((race ?? cls).end + 1))
+  const below = lines.slice((race ?? cls).end + 1)
+  const pet = petBelow(below)
+  const g = gather(pet.rest)
   const ratio = checkRatio(g.weapon)
-  const statsblock = `\n${statsLines(head, g).map((l) => `${l}<br>`).join('\n')}`
+  const statsblock = `\n${statsLines(head, g).map((l) => `${l}<br>`).join('\n')}${pet.tail}`
   const { name, tier } = nameAbove(lines, kept, head.flagAt < 0 ? clsAt : head.flagAt)
   const up = tierParts(tier, statsblock)
   const checks = [...(up.checks ?? []), ...(ratio === undefined ? [] : [ratio]), ...head.notes, ...g.notes]
@@ -599,6 +612,7 @@ export function readItemWindow(raw: readonly string[]): ItemWindowRead {
     ...(name === undefined ? {} : { name }),
     ...(hasLoreTab(lines, clsAt) ? { loreTab: true } : {}),
     ...(g.focus === undefined ? {} : { focusEffect: g.focus }),
+    ...pet.read,
     ...(g.value === undefined ? {} : { valueCopper: g.value })
   }
 }

@@ -53,7 +53,8 @@ test('an item page holds the banner, only the filled fields, the zone blocks and
 test('a bought or crafted item says so; nothing seen leaves only the name and the open stats', () => {
   const text = itemPage({ name: 'Bread', drops: [], soldBy: [{ vendor: 'Baker Ian', zone: 'Qeynos Hills' }], crafted: true })
   assert.match(text, /\|soldby = \n\n\{\{ItemWhereTable\|\n/)
-  assert.match(text, /\[\[Category:Vendor Sold\]\]\n\[\[Category:Player Crafted\]\]/)
+  // The blueprint's kinds, alphabetical (Help:Contents, Item Page Blueprint).
+  assert.match(text, /\[\[Category:Player Crafted\]\]\n\[\[Category:Vendor Sold\]\]/)
   const bare = itemPage({ name: 'X', drops: [], soldBy: [], crafted: false })
   assert.equal(bare, '{{Classic Era}}\n<onlyinclude>{{Itempage\n|itemname = X\n|statsblock = \nSize:   WT: <br>\nClass: <br>\nRace: <br>\n}}</onlyinclude>\n')
 })
@@ -276,9 +277,10 @@ test('a foraged, depot-stored, tradeskill item page lists the forage zones, the 
       '',
       '}}</onlyinclude>',
       '',
+      '[[Category:Foraged]]',
       '[[Category:Player Crafted]]',
       '[[Category:Tradeskill Ingredient]]',
-      '[[Category:Foraged]]',
+      '',
       '[[Category:Qeynos Hills]]',
       '[[Category:Rathe Mountains]]',
       ''

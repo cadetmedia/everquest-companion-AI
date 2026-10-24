@@ -13,7 +13,9 @@ import { decodeTga } from '../src/main/shot/gameTextures.ts'
 import { buildIconIndex, iconSheets, readIconIndex, sheetsFingerprint, SheetCells, writeIconIndex, type IconIndex } from '../src/main/shot/iconIndex.ts'
 import { readLines, stopOcr } from '../src/main/shot/ocr.ts'
 import { readItemShot, type ItemShot, type ShotReaders } from '../src/main/shot/readItemShot.ts'
-import { shotKind } from '../src/shared/itemShotKeep.ts'
+import { keptAfter, shotKind } from '../src/shared/itemShotKeep.ts'
+import type { ItemShotReply } from '../src/shared/itemWindow.ts'
+import { itemPage } from '../src/shared/wikiPage.ts'
 import { readSpellWindow } from '../src/shared/spellWindow.ts'
 import { readPng } from './shotPng.mts'
 import { imageGaps } from '../src/shared/gapImages.ts'
@@ -244,7 +246,7 @@ test("PETAMORPH WAND: WEREWOLF, ENLARGED (THE OWNER'S, 2026-10-22): THE CLICK EF
   const w = await read('petamorph-wand-werewolf.png', textOnly)
   assert.equal(w.read.name, 'Petamorph Wand: Werewolf')
   assert.equal(w.read.loreTab, true)
-  assert.ok(w.read.statsblock.includes('Effect: [[Summon Familiar: Werewolf]] (Can Equip, Casting Time: 5.0)<br>'), w.read.statsblock)
+  assert.ok(w.read.statsblock.includes("Effect: [[Summon Familiar: Werewolf|<span class='itemeff'>Summon Familiar: Werewolf</span>]] (Clicky, Can Equip, Casting Time: 5.0, Cooldown: 10 seconds)<br>"), w.read.statsblock)
   assert.ok(w.read.statsblock.includes('No Trade, Attunable, Heirloom<br>') && w.read.statsblock.includes('Slot: AMMO<br>'), w.read.statsblock)
   // The tab row read as `Wr ~~ Descriplic TRVAC) N "ra . Coe:`: no Lore word, a slipped Description near the top.
   const l = await read('petamorph-wand-werewolf-lore-large.png', textOnly)
@@ -289,4 +291,58 @@ test("WU'S FIST OF MASTERY +10 (AUGMENTED) (THE OWNER'S, 2026-10-21): THE +10 PA
   // The +10 numbers are the upgraded item's: no +0 guess where they do not take back exactly.
   assert.ok(checks.some((c) => c.startsWith('This window is +10')), JSON.stringify(checks))
   assert.equal(s.read.baseStatsblock, undefined)
+})
+
+test("PETAMORPH WAND: MUMMY (THE OWNER'S, 2026-10-23): THE WINDOW AND ITS LORE TAB GIVE THE PAGE THE WEREWOLF PAGE IS, LINE FOR LINE", async () => {
+  // The owner: "how come the app doesn't have as much details for my new pet summon mummy than the old one does?"
+  const w = await read('petamorph-wand-mummy.png', textOnly)
+  // The Lore tab's row read as garble (`"FCT Desorgwtngy 7 WIC 2d 0d 7 PAC`): still the tab row, so the lore is the sentence.
+  const l = await read('petamorph-wand-mummy-lore.png', textOnly)
+  const asReply = (s: ItemShot): ItemShotReply => ({ read: s.read, lines: s.lines, icons: [], ms: 0 })
+  assert.equal(shotKind(asReply(w)), 'window')
+  assert.equal(shotKind(asReply(l)), 'lore')
+  const kept = keptAfter(keptAfter(undefined, asReply(w), 'window'), asReply(l), 'lore')
+  const page = itemPage({ name: 'Petamorph Wand: Mummy', drops: [], soldBy: [], crafted: false }, { ...kept, iconId: 1282 })
+  const classes = ['Bard', 'Beastlord', 'Berserker', 'Cleric', 'Druid', 'Enchanter', 'Magician', 'Monk', 'Necromancer', 'Paladin', 'Ranger', 'Rogue', 'Shadow Knight', 'Shaman', 'Warrior', 'Wizard']
+  assert.equal(
+    page,
+    [
+      '{{Classic Era}}',
+      '<onlyinclude>{{Itempage',
+      '|itemname = Petamorph Wand: Mummy',
+      '|lucy_img_ID = 1282',
+      "|notes = {{Item Lore|They haven't unraveled yet!}}",
+      '|statsblock = ',
+      'No Trade, Attunable, Heirloom<br>',
+      'Slot: AMMO<br>',
+      "Effect: [[Summon Familiar: Mummy|<span class='itemeff'>Summon Familiar: Mummy</span>]] (Clicky, Can Equip, Casting Time: 5.0, Cooldown: 10 seconds)<br>",
+      'Size: SMALL WT: 0.9<br>',
+      'Class: ALL<br>',
+      'Race: ALL<br>',
+      '',
+      "Pet Illusion: [[Pet Illusion: Mummy|<span class='itemeff'>Mummy</span>]]<br>",
+      '}}</onlyinclude>',
+      '',
+      ...classes.map((c) => `[[Category:${c} Equipment]]`),
+      '',
+      '[[Category:Ammo]]',
+      '',
+      '[[Category:Pet Illusion Items]]',
+      ''
+    ].join('\n')
+  )
+})
+
+test("THE MUMMY'S TWO SPELL WINDOWS (THE OWNER'S, 2026-10-23): NO CLASS LINE, NO FRAME JUNK IN THE DESCRIPTION; THE WEARS-OFF MESSAGE IS ITS FIELD", async () => {
+  const fam = readSpellWindow((await readLines(readPng(join(SHOTS, 'spell-familiar-mummy.png')))).map((x) => x.text))
+  assert.equal(fam.name, 'Familiar: Mummy')
+  assert.equal(fam.description, 'Summons a Mummy')
+  assert.deepEqual(
+    { d: fam.fields.duration, t: fam.fields.target_type, you: fam.fields.msg_cast_on_you, other: fam.fields.msg_cast_on_other, off: fam.fields.msg_wears_off },
+    { d: '6:00:00', t: 'Self', you: 'You summon forth a small mummy.', other: 'Someone summons forth a small mummy.', off: 'Your small mummy departs.' }
+  )
+  const pet = readSpellWindow((await readLines(readPng(join(SHOTS, 'spell-pet-illusion-mummy.png')))).map((x) => x.text))
+  assert.equal(pet.name, 'Pet Illusion: Mummy')
+  assert.equal(pet.description, 'Changes your pet to look like a Mummy')
+  assert.deepEqual({ d: pet.fields.duration, c: pet.fields.casting_time, t: pet.fields.target_type, r: pet.fields.range }, { d: '1:00:00', c: 'Instant', t: 'Summoned Pet', r: '200' })
 })

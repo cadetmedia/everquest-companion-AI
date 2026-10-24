@@ -24,6 +24,7 @@ import { AllCharactersBox, CharactersLine } from './AllCharactersControls'
 import type { HideUncertain } from './useHideUncertain'
 import { AddQuestButton, QuestScopes } from './ForcedQuests'
 import { SuggestedQuests } from './SuggestedQuests'
+import { UnsortedLine } from './UnsortedPictures'
 import { useGrouping } from './useGrouping'
 import { useGapsList } from './useGapsList'
 import { useGapsOverlayFeed } from './useGapsOverlayFeed'
@@ -294,6 +295,7 @@ export default function GapsView(): JSX.Element {
         <ListActions domain={domain} onCopy={() => void copy()} disabled={visible.length === 0} copied={copied} />
       </Stack>
       {domain === 'quest' && <SuggestedQuests />}
+      {domain === 'quest' && <UnsortedLine />}
       {domain === 'item' && <CaptureBar rows={itemNames} />}
       <ShownLine counts={{ visible: visible.length, held, served, hidden, uncertain: sure.hidden }} domain={domain} zone={zone} mine={mineWords(mine.pick, mine.active, allChars.on) + GAP_SHOW_WORDS[job.show]} tail={allChars.caption} />
       {allChars.on && <CharactersLine live={allChars.liveLabel} others={allChars.others} />}

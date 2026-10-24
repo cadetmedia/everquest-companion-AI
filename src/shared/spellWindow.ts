@@ -60,7 +60,7 @@ const UNUSED = '-'
 const LABELS: readonly (readonly [string, string])[] = [
   ['Recast Time', 'recast_time'], ['Refresh Time', 'recast_time'], ['Casting Time', 'casting_time'], ['Cast Time', 'casting_time'],
   ['Target Type', 'target_type'], ['Spell Type', 'spell_type'], ['Reflectable', UNUSED], ['Duration', 'duration'], ['Recovery', UNUSED],
-  ['On Other', 'msg_cast_on_other'], ['On You', 'msg_cast_on_you'], ['Recast', 'recast_time'], ['Target', 'target_type'], ['Resist', 'resist'],
+  ['On Other', 'msg_cast_on_other'], ['On You', 'msg_cast_on_you'], ['Wears Off', 'msg_wears_off'], ['Recast', 'recast_time'], ['Target', 'target_type'], ['Resist', 'resist'],
   ['Reuse', UNUSED], ['Range', 'range'], ['Skill', 'skill'], ['Level', UNUSED], ['Spell', UNUSED], ['Mana', 'mana'], ['Cast', 'casting_time']
 ]
 const LABEL_ALT = LABELS.map(([l]) => l.replace(/ /g, '\\s*')).join('|')
@@ -152,7 +152,9 @@ export function fillTemplate(template: string, text: string): string | undefined
 // ---- the window ---------------------------------------------------------------------------------
 
 /** Words, not OCR's junk off the frame: three words or more, mostly letters. */
-const prose = (l: string): boolean => l.split(/\s+/).length >= 3 && (l.match(/[A-Za-z ]/g) ?? []).length >= 0.7 * l.length
+// Two words of three letters or more: the frame's junk under the text (`Ta . —— Co`) is not prose.
+const prose = (l: string): boolean =>
+  l.split(/\s+/).length >= 3 && (l.match(/[A-Za-z ]/g) ?? []).length >= 0.7 * l.length && (l.match(/[A-Za-z]{3,}/g) ?? []).length >= 2
 
 /** A spell's effect slot line (`1: Increase Hitpoints by 20`): not the description. */
 const SLOT_LINE = /^(?:Slot\s*)?\d{1,2}\s*[:.]/i
@@ -165,7 +167,8 @@ const titleOf = (l: string | undefined): string | undefined =>
  * Lines of the window that are not the spell's: the upgrade block a Legends spell shows. OCR puts junk
  * before them (`Mots This spell can be upgraded.`, `Uporade. Place Tier0 0/1`), so they match anywhere.
  */
-const NOT_SPELL = /This spell can be upgraded|\bTier\s*\d|^\W*Up\w{0,2}ade\b|\bPlace Mote\b/i
+// `No eligible class` is the class line of a spell no class scribes (Familiar: Mummy, Pet Illusion: Mummy).
+const NOT_SPELL = /This spell can be upgraded|\bTier\s*\d|^\W*Up\w{0,2}ade\b|\bPlace Mote\b|^No eligible class\b/i
 
 const SPELL_LINE = /\bSpell\s*[:;]\s*(.+)$/i
 
@@ -222,7 +225,8 @@ export function readSpellWindow(raw: readonly string[], template?: string, rowNa
     takePairs(pairs, fields, modified)
     // A short line right after the description is its wrapped end (`damage.`).
     wrapping = pairs.length === 0 && descriptionLine(line, name) && (prose(line) || (wrapping && /[a-z]{3}/i.test(line)))
-    if (wrapping) text.push(line)
+    // The scrollbar beside the text reads as a trailing `|` (Familiar: Mummy, `Summons a Mummy |`).
+    if (wrapping) text.push(line.replace(/\s+[|}\]]+$/, ''))
   }
   const told = describe(text.join(' '), template)
   const checks = [...told.checks, ...rankChecks({ name, rank }, fields, modified)]

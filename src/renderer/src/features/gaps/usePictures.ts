@@ -55,7 +55,7 @@ export function usePictureQueue(journals: MutableRefObject<Readonly<Record<strin
     const outcomes: Outcome[] = []
     try {
       for (let job = queue.current.shift(); job !== undefined; job = queue.current.shift()) {
-        show({ kind: 'unknown', text: `Reading ${job.label === '' ? 'the picture' : job.label}…` })
+        show({ kind: 'unknown', text: `Reading ${job.label === '' ? 'the picture' : job.label}…`, progress: true })
         const raw = await job.bytes().catch(() => null)
         const out: Outcome = raw === null ? { kind: 'error', text: 'Could not read that file.' } : await readAndRoute(await asPng(raw, job.label), journals.current, job.source, job.label)
         job.done?.(out.kind !== 'error' && out.kind !== 'unknown', out.text)
