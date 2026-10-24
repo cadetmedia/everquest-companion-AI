@@ -11,6 +11,7 @@ import type { RowFactContext } from '@shared/gapQuestPage'
 import { questPageTitle } from '@shared/gapQuests'
 import { wikiCreateUrl, wikiEditUrl } from '@shared/gapUrls'
 import { copyText } from '../../lib/clipboard'
+import { applyEditText } from '@shared/gapEdits'
 import { noteQuestPage } from '../../lib/questLivePages'
 import { useOwnCharacterNames } from './useOwnCharacters'
 
@@ -87,7 +88,12 @@ export function QuestCopyDialog({ row, read, offline, onClose }: { row: GapRow; 
   const [copied, setCopied] = useState(false)
   // Merged once per answer, not on every render (the Copied flag re-renders it).
   const copy = useMemo<QuestLiveCopy | undefined>(
-    () => (read.state === 'reading' ? undefined : merge !== null ? merge(row, read.live) : { kind: 'offline', title: row.name, text: offline(), added: [], changes: [], notes: [] }),
+    () => {
+      if (read.state === 'reading') return undefined
+      const made: QuestLiveCopy = merge !== null ? merge(row, read.live) : { kind: 'offline', title: row.name, text: offline(), added: [], changes: [], notes: [] }
+      // The player's own corrections, written into what is shown and copied (shared/gapEdits.ts).
+      return { ...made, text: applyEditText(made.text, row) }
+    },
     [read, merge, row, offline]
   )
   const exists = copy?.kind === 'merged'

@@ -23,6 +23,8 @@ import { questPageTitle } from '@shared/gapQuests'
 import { readGapVerdict } from '../../lib/gapVerdicts'
 import { QuestCopyDialog, readQuestPage, type QuestRead } from './QuestCopyDialog'
 import { ForcedRowButtons } from './ForcedQuests'
+import { EditRowButton } from './GapRowEdit'
+import { applyEditText, shownRow } from '@shared/gapEdits'
 
 const stop = (e: MouseEvent): void => e.stopPropagation()
 
@@ -206,9 +208,10 @@ export default function GapRowButtons({
 }): JSX.Element {
   const buttons = (
     <>
-      <CopyPageButton key={row.name} text={() => pageText(row)} row={row} compact={compact} />
-      <WikiLinks row={row} compact={compact} />
+      <CopyPageButton key={row.name} text={() => applyEditText(pageText(row), row)} row={shownRow(row)} compact={compact} />
+      <WikiLinks row={shownRow(row)} compact={compact} />
       <ForcedRowButtons row={row} compact={compact} Action={ActionButton} />
+      <EditRowButton row={row} compact={compact} Action={ActionButton} />
       <DoneButton isDone={isDone} onDone={() => onDone(row)} compact={compact} />
       {!compact && <RemoveCaptureButton row={row} />}
     </>

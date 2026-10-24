@@ -8,6 +8,7 @@
 // rows (owner ruling 4); the Copy list text is rendered here for the same reason.
 
 import type { FactionFix, KillFaction } from './gapFactions'
+import type { GapEdit } from './gapEdits'
 import { replaceWhy } from './gapDrops'
 import { pageCheckAction } from './gapRedirects'
 import { offerCheckText, offerText } from './gapOffers'
@@ -302,6 +303,8 @@ export interface GapRow {
   /** A faction row for a faction the page LISTS: what to fix, and what the page says (`-30..-10?`). */
   fix?: FactionFix
   pageSays?: string
+  /** The player's own corrections to this row, by hand (shared/gapEdits.ts). */
+  edit?: GapEdit
 }
 
 export interface GapsSnap {
@@ -354,23 +357,22 @@ export function gapInZone(row: GapRow, zone: string): boolean {
   // An item held or captured with no line naming it was seen nowhere: it is in every zone's list.
   if (row.details.zones === undefined && row.kinds.length > 0 && row.kinds.every((k) => k === 'held' || k === 'captured')) return true
   const here = zoneKey(zone)
-  const zones = row.details.zones
-  const names = zones?.all ?? zones?.entries.map((e) => e.name) ?? []
-  return here !== '' && names.some((z) => zoneKey(z) === here)
+  return here !== '' && zoneNames(row).some((z) => zoneKey(z) === here)
 }
 
+/** Every zone the row was named in. */
+const zoneNames = (row: GapRow): readonly string[] => row.details.zones?.all ?? row.details.zones?.entries.map((e) => e.name) ?? []
+
 /**
- * The rows of one domain whose name or kinds contain the query, case-folded, and, given a zone,
- * only those named there; engine order kept.
+ * The rows of one domain whose name, kinds or zones contain the query, case-folded (owner,
+ * 2026-10-23: "search should search name AND zone": `tutorial` finds the EverQuest Legends
+ * Tutorial's rows), and, given a zone, only those named there; engine order kept.
  */
 export function visibleGaps(rows: readonly GapRow[], domain: GapDomain, query: string, zone: string | null = null): GapRow[] {
   const q = query.trim().toLowerCase()
-  return rows.filter(
-    (r) =>
-      r.domain === domain &&
-      (q === '' || r.name.toLowerCase().includes(q) || r.kinds.some((k) => k.includes(q))) &&
-      (zone === null || gapInZone(r, zone))
-  )
+  const hit = (r: GapRow): boolean =>
+    r.name.toLowerCase().includes(q) || r.kinds.some((k) => k.includes(q)) || zoneNames(r).some((z) => z.toLowerCase().includes(q))
+  return rows.filter((r) => r.domain === domain && (q === '' || hit(r)) && (zone === null || gapInZone(r, zone)))
 }
 
 /** `a treant (11), a kobold (2) +3 more` — one tally as a phrase. */

@@ -23,6 +23,7 @@ import { GAPS_DATA_DATE, PAGE_EXTRAS } from './useGapsData'
 import { AllCharactersBox, CharactersLine } from './AllCharactersControls'
 import type { HideUncertain } from './useHideUncertain'
 import { AddQuestButton, QuestScopes } from './ForcedQuests'
+import { SuggestedQuests } from './SuggestedQuests'
 import { useGrouping } from './useGrouping'
 import { useGapsList } from './useGapsList'
 import { useGapsOverlayFeed } from './useGapsOverlayFeed'
@@ -290,6 +291,7 @@ export default function GapsView(): JSX.Element {
         <AllCharactersBox on={allChars.on} onChange={allChars.setOn} days={allChars.days} onDays={allChars.setDays} working={allChars.others === undefined || joining} />
         <ListActions domain={domain} onCopy={() => void copy()} disabled={visible.length === 0} copied={copied} />
       </Stack>
+      {domain === 'quest' && <SuggestedQuests />}
       {domain === 'item' && <CaptureBar rows={itemNames} />}
       <ShownLine counts={{ visible: visible.length, held, served, hidden, uncertain: sure.hidden }} domain={domain} zone={zone} mine={mineWords(mine.pick, mine.active, allChars.on) + GAP_SHOW_WORDS[job.show]} tail={allChars.caption} />
       {allChars.on && <CharactersLine live={allChars.liveLabel} others={allChars.others} />}

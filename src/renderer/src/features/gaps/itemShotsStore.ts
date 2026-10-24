@@ -115,6 +115,19 @@ export const questJournalNow = (name: string): QuestJournalFacts | undefined => 
 /** One quest's kept readings by its key, outside a render: a paste merges into what is there now. */
 export const questJournalByKey = (key: string): QuestJournalFacts | undefined => journals.all()[key]
 
+/**
+ * What was kept under one key moves to another (a suggested chain's `thread:<id>` to the quest it was
+ * accepted as): the popups join the target's, and the target keeps anything it already had.
+ */
+export function moveQuestJournal(from: string, to: string): void {
+  const held = journals.all()[from]
+  if (held === undefined || from === to) return
+  const there = journals.all()[to]
+  const popups = [...(there?.popups ?? []), ...(held.popups ?? [])]
+  setQuestJournal(to, { ...held, ...there, ...(popups.length > 0 ? { popups } : {}) })
+  setQuestJournal(from, null)
+}
+
 const pictures = shotStore<{ path: string }>(PICTURES_KEY)
 /** Note a mob picture saved under `file` (MobPicture); `null` when it was deleted. */
 export const setMobPicture = (file: string, path: string | null): void => pictures.set(file, path === null ? null : { path })

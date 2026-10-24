@@ -34,10 +34,12 @@ import { mobPageFinder } from '@shared/mobPageTitle'
 import { catalogStates } from '@shared/gapMerchantDescription'
 import { useQuestLivePages } from '../../lib/questLivePages'
 import { withForcedQuests, withQuestLinks, type ForcedQuestMap, type TalkSnap, type TalkVisit } from '@shared/gapForcedQuests'
+import type { QuestThread } from '@shared/gapQuestThreads'
 import { popupLinksOfRows } from '@shared/questPopup'
 import { withZoneRedirects } from '@shared/gapZoneRedirects'
 import { zoneKey } from '@shared/zones'
 import { useForcedQuests, type ForcedQuests } from './useForcedQuests'
+import { useEditedSnap } from './gapEditsStore'
 import type { ForcedScope } from './ForcedQuests'
 
 /** Each drop group's members, and the drop-list links that redirect to an item (scrape-drop-groups.ts). */
@@ -94,6 +96,7 @@ export interface GapsData {
 const NO_TALKS: readonly TalkVisit[] = []
 /** A snapshot's talks and character (gaps.rs `snapshot`), which `GapsSnap` does not type. */
 const talkSnapOf = (snap: object | null | undefined): TalkSnap | null => snap ?? null
+const NO_THREADS: readonly QuestThread[] = []
 
 /** After the derivation (`joinedSnap`): the tab's slot and the overlay's. */
 const lastJoined = memoLast<GapsSnap>()
@@ -183,7 +186,9 @@ function joinedSnap(derived: GapsSnap, x: JoinInputs): GapsSnap {
 /** "Add quest" and "Add talk"'s scope: the named quests, the visits left to pick from, the names offered. */
 function useForcedScope(forced: ForcedQuests, snap: TalkSnap | null | undefined): ForcedScope {
   const talks = snap?.talks ?? NO_TALKS
-  return useMemo(() => ({ ...forced, talks, titles: QUEST_TITLES }), [forced, talks])
+  // The chains the log rebuilt (gaps_threads.rs), for Suggested quests.
+  const threads = snap?.questThreads ?? NO_THREADS
+  return useMemo(() => ({ ...forced, talks, threads, titles: QUEST_TITLES }), [forced, talks, threads])
 }
 
 export function useGapsData(all: AllCharacters | null = null, opts: GapsDataOptions = {}): GapsData {
@@ -220,5 +225,7 @@ export function useGapsData(all: AllCharacters | null = null, opts: GapsDataOpti
     [derive, engine, loot, killMobs, itemMobs, cons, only, livePages, live, forced.forced, journals]
   )
   const kills = lastKills([killMobs], () => killIndex(killMobs))
-  return { snap, engine, loot, ownLoot: liveLoot, kills, seenBy: joined?.seenBy, joining: all !== deferredAll, forced: useForcedScope(forced, talkSnapOf(snap)) }
+  // The rows the player corrected by hand (owner, 2026-10-23: "EDIT values in the gaps tab").
+  const edited = useEditedSnap(snap, live)
+  return { snap: edited, engine, loot, ownLoot: liveLoot, kills, seenBy: joined?.seenBy, joining: all !== deferredAll, forced: useForcedScope(forced, talkSnapOf(snap)) }
 }
