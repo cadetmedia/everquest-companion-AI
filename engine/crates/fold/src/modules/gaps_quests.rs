@@ -42,6 +42,14 @@ const KEYWORD_WORDS: usize = 5;
 pub const REFUSE_MS: i64 = 10_000;
 /// The NPC's words when it hands an offered item back: no turn-in.
 pub const REFUSAL: &str = "I have no need for this";
+/// A trade stays open this long at most: its offers end at `You complete the trade with X.` or a cancel.
+pub const TRADE_MS: i64 = 300_000;
+
+/// `You have cancelled the trade.` or `<Someone> has cancelled the trade.`: its offers are no turn-in
+/// (owner, 2026-10-23: "if i cancel the trade ... it shouldn't [count]").
+pub fn trade_cancelled(text: &str) -> bool {
+    text == "You have cancelled the trade." || text.ends_with(" has cancelled the trade.")
+}
 
 /// A refusal is the player's when it names the player, or names no one, or the player is unknown:
 /// `I have no need for this, Bacon. You can have it back.` hands another player's item back.
@@ -108,7 +116,7 @@ pub struct QuestFacts {
     by_item: HashMap<String, Facts>,
     /// The last NPC an item was turned in to, and when.
     last_offer: Option<(String, i64)>,
-    /// The offers of the last REFUSE_MS (item key, NPC, when): a refusal takes its own back.
+    /// The open trades' offers (item key, NPC, when): a refusal takes its own back, a cancel all.
     offers: Vec<(String, String, i64)>,
     /// Each NPC's quests, by its mob key: a task line within TASK_MS after it spoke or took an item
     /// (owner, 2026-10-22: Nikko Canti's page left `related_quests` empty; `You have been assigned
@@ -170,6 +178,9 @@ impl QuestFacts {
             }
             return false;
         }
+        if trade_cancelled(text) {
+            return self.cancelled();
+        }
         if let Some(name) = speaker_of(text) {
             if text.contains(REFUSAL) {
                 return refused_here(text, self.player.as_deref()) && self.refused(name, ts);
@@ -215,7 +226,7 @@ impl QuestFacts {
         }
         self.pending_item(item, ts);
         self.last_offer = Some((npc.to_string(), ts));
-        self.offers.retain(|(_, _, at)| ts - at <= REFUSE_MS);
+        self.offers.retain(|(_, _, at)| ts - at <= TRADE_MS);
         self.offers.push((item_gap_key(item), npc.to_string(), ts));
         *self
             .by_item
@@ -234,7 +245,27 @@ impl QuestFacts {
         let Some(i) = self.offers.iter().rposition(|(_, n, at)| n == npc && ts - at <= REFUSE_MS) else {
             return false;
         };
-        let (key, _, at) = self.offers.remove(i);
+        self.take_back(i)
+    }
+
+    /// A cancelled trade: every open offer goes back (8 trades on the owner's log, 2026-10-23).
+    fn cancelled(&mut self) -> bool {
+        let mut any = false;
+        while !self.offers.is_empty() {
+            any |= self.take_back(self.offers.len() - 1);
+        }
+        any
+    }
+
+    /// `You complete the trade with <NPC>.`: the offers to it stand, and its trade is closed.
+    pub fn trade_done(&mut self, npc: &str) {
+        self.offers.retain(|(_, n, _)| n != npc);
+    }
+
+    /// Offer `i` was no turn-in: off its item's count, its pending task match and the last offer.
+    fn take_back(&mut self, i: usize) -> bool {
+        let (key, npc, at) = self.offers.remove(i);
+        let npc = npc.as_str();
         self.pending.retain(|(k, t)| !(*k == key && *t == at));
         if self.last_offer.as_ref().is_some_and(|(n, t)| n == npc && *t == at) {
             self.last_offer = None;
@@ -373,96 +404,5 @@ impl GapsModule {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::{refused_here, said_of, task_of, QuestFacts};
-    use serde_json::json;
-
-    #[test]
-    fn the_task_and_keyword_lines_read_as_the_log_prints_them() {
-        assert_eq!(
-            task_of("Your task 'Alchemical Solution' has been updated."),
-            Some("Alchemical Solution")
-        );
-        assert_eq!(
-            task_of("You have been assigned the task 'Hate, Betrayal, and Trust'."),
-            Some("Hate, Betrayal, and Trust")
-        );
-        assert_eq!(said_of("You say, 'ready'"), Some("ready"));
-        assert_eq!(said_of("You say, 'Hail, Ty`Klerr'"), None);
-        assert_eq!(
-            said_of("You say, 'this is a whole long sentence of chat to the group'"),
-            None
-        );
-    }
-
-    /// The owner's log, 2026-10-22: Encoded Missive from Ty`Klerr, turned in to Dorian G`Wyn.
-    #[test]
-    fn a_quest_item_knows_its_giver_its_keywords_its_turn_in_and_its_quest() {
-        let mut q = QuestFacts::default();
-        let t = |s: i64| 1_787_000_000_000 + s * 1000;
-        q.said.push_back((t(0), "Dorian".into()));
-        // Ty`Klerr is shaped like a player name: her [keyword] lines make her an NPC.
-        q.keyword_speakers.insert("Ty`Klerr".into());
-        q.last_npc = Some(("Ty`Klerr".into(), t(10)));
-        q.said.push_back((t(5), "ready".into()));
-        q.said.push_back((t(8), "report".into()));
-        assert!(q.given("Encoded Missive", t(11), Some("Neriak - Foreign Quarter")));
-        assert!(q.task("Alchemical Solution", t(11)));
-        assert!(q.offered("Encoded Missive", "Dorian G`Wyn", t(200)));
-        assert!(
-            !q.offered("Ancient Signet Ring", "Malkil", t(201)),
-            "a player is no turn-in"
-        );
-        assert!(
-            q.task("Alchemical Solution", t(206)),
-            "the task line after the turn-in ties the quest to Dorian"
-        );
-        assert!(
-            !q.task("Alchemical Solution", t(207)),
-            "the same quest again changes nothing"
-        );
-        assert_eq!(
-            serde_json::to_value(q.of("encoded missive")).unwrap(),
-            json!({
-                "givenBy": { "npc": "Ty`Klerr", "zone": "Neriak - Foreign Quarter", "keywords": ["Dorian", "ready", "report"] },
-                "turnedInTo": [{ "npc": "Dorian G`Wyn", "n": 1 }],
-                "quests": ["Alchemical Solution"]
-            })
-        );
-        assert!(q.of("ancient signet ring").is_none());
-        // Dorian took the missive just before the task line: his quest.
-        assert_eq!(
-            q.served(super::Domain::Mob, "dorian g'wyn"),
-            Some(json!({ "quests": ["Alchemical Solution"] }))
-        );
-    }
-
-    /// Owner's log, 2026-10-22: `Nikko Canti says, '... [help] me restock my catch ...'` then a second
-    /// later `You have been assigned the task 'Something Fishy'.`: Nikko's page lists the quest.
-    #[test]
-    fn an_npc_that_spoke_just_before_a_task_line_gives_that_quest() {
-        let mut q = QuestFacts::default();
-        let t = |s: i64| 1_787_000_000_000 + s * 1000;
-        q.last_npc = Some(("Nikko Canti".into(), t(0)));
-        assert!(q.task("Something Fishy", t(1)));
-        assert_eq!(
-            q.served(super::Domain::Mob, "nikko canti"),
-            Some(json!({ "quests": ["Something Fishy"] }))
-        );
-        // A task line long after says nothing of him.
-        q.last_npc = Some(("Guard Shilster".into(), t(100)));
-        assert!(!q.task("Something Fishy", t(200)));
-        assert_eq!(q.served(super::Domain::Mob, "guard shilster"), None);
-    }
-
-    /// 2026-10-22 23:53:30: Dorian G`Wyn handed another player's offer back beside the player's own.
-    #[test]
-    fn a_refusal_is_the_players_only_when_said_to_the_player() {
-        let other = "I have no need for this, Otherguy. You can have it back.";
-        let mine = "I have no need for this, Testplayer. You can have it back.";
-        assert!(!refused_here(other, Some("Testplayer")));
-        assert!(refused_here(mine, Some("Testplayer")));
-        assert!(refused_here(other, None), "an unknown player keeps every refusal");
-        assert!(!refused_here("Well met.", Some("Testplayer")));
-    }
-}
+#[path = "gaps_quests_tests.rs"]
+mod tests;
