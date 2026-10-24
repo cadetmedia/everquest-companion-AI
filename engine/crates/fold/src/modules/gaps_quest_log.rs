@@ -328,7 +328,7 @@ impl QuestLogs {
             if !refused_here(said, self.player.as_deref()) {
                 return;
             }
-            if let Some(i) = self.offers.iter().rposition(|(at, _, n)| n == name && ts - at <= REFUSE_MS) {
+            if let Some(i) = self.offers.iter().rposition(|(at, _, n)| n.eq_ignore_ascii_case(name) && ts - at <= REFUSE_MS) {
                 self.offers.remove(i);
             }
             self.threads.refused(name);

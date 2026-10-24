@@ -143,7 +143,8 @@ fn hand_ins(talk: &VecDeque<Raw>) -> Vec<HandIn> {
         match r {
             Raw::Offer { npc, item } => open.push((npc.clone(), item.clone())),
             Raw::Refused { npc } => {
-                if let Some(i) = open.iter().rposition(|(n, _)| n == npc) {
+                // The line opens on the name: `A fallen froglok says` for the offer's `a fallen froglok`.
+                if let Some(i) = open.iter().rposition(|(n, _)| n.eq_ignore_ascii_case(npc)) {
                     open.remove(i);
                 }
             }
