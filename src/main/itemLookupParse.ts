@@ -950,9 +950,7 @@ export function parseItemWikitext(
 
   const questUses = relatedRaw ? parseQuestLinks(relatedRaw) : []
   const quest = questFlag || questUses.length > 0
-  const summary = notesRaw ? cleanSummary(notesRaw) : undefined
 
-  const iconId = parseIconId(iconRaw)
 
   // Tradeskill knowledge. `playerCrafted` is asserted only from a STRUCTURED craft recipe;
   // a prose-only `|playercrafted` ("Non-Tradeskill (Quest)") is reported as craftedNote and
@@ -965,9 +963,9 @@ export function parseItemWikitext(
     quest,
     questUses,
     dropsFrom,
-    summary,
+    summary: notesRaw ? cleanSummary(notesRaw) : undefined,
     stats,
-    iconId,
+    iconId: parseIconId(iconRaw),
     eraTag: pageEraTag(wikitext),
     ...tradeskillFields(recipeParse, craftParse),
     ...foragedFields(wikitext),
