@@ -14,8 +14,11 @@
 //!     or cancel, OFFER_MS at most. The task lines print before the trade's own end line.
 //!   * THE TALK. The player's `You say` lines and the step NPC's lines since the player's last hail of
 //!     that NPC, else in the TALK_MS before (and since the task's step before), and that NPC's answer
-//!     after, newest TALK_CAP. Other players' lines never count; an NPC's answer to them may (the log
-//!     cannot tell whom an NPC answers). An emote with a quote from the NPC just hailed or handed an
+//!     after, newest TALK_CAP. Other players' lines never count, nor an NPC line within OTHER_MS of
+//!     another player's hail of it or say, when the player said nothing to it in the HAIL_ANSWER_MS
+//!     before: that answers them (owner, 2026-10-22 23:53:41: Dorian G`Wyn's hail greeting, logged a
+//!     second before `Bacon says, 'Hail, Dorian G`Wyn'`, was in Unfortunate news's walkthrough). A
+//!     line in the step's own second is kept. An emote with a quote from the NPC just hailed or handed an
 //!     item is its line too. The player's own name is written `Soandso`, as the wiki's quest pages
 //!     write a player (27 NPC lines on 8 pages; `<name>` 9).
 //!   * WHAT CAME OF IT. Items given in the GIVE_MS before, faction lines and `You gain experience!`
@@ -56,6 +59,8 @@ const PLAYER_NAME: &str = "Soandso";
 const SPOKE_MS: i64 = 10_000;
 /// An answer to the player's hail comes in the same second or the next (Doug: 0-1 s).
 const HAIL_ANSWER_MS: i64 = 3_000;
+/// Another player's hail and the NPC's answer to it, either order (Dorian's logged 1 s before Bacon's hail).
+const OTHER_MS: i64 = 2_000;
 /// An item given before the step (0-6 s measured).
 const GIVE_MS: i64 = 10_000;
 /// Steps logged per quest, and lines of talk per step.
@@ -118,6 +123,9 @@ pub struct Step {
     /// The NPC came from its answer after the line, so its earlier lines join the talk at serve time.
     #[serde(skip)]
     heard: Vec<(i64, Option<String>, String)>,
+    /// Other players' lines near the step: when, and the NPC hailed (none for any other say).
+    #[serde(skip)]
+    others: Vec<(i64, Option<String>)>,
     /// An assignment printed in the second of another quest's step: that step (quest key, index),
     /// which keeps the talk, the hand-in and what came after (Call for Aid's last hand-in assigns
     /// Unfortunate news).
@@ -155,6 +163,8 @@ pub struct QuestLogs {
     quests: BTreeMap<String, Quest>,
     /// The last TALK_MS of `You say` lines (None) and NPC lines (Some), oldest first.
     heard: VecDeque<(i64, Option<String>, String)>,
+    /// Other players' `says` lines in the same window: when, and the NPC a hail named.
+    others: VecDeque<(i64, Option<String>)>,
     /// Speakers that spoke a `[keyword]` line: NPCs whatever their names look like.
     keyword_speakers: HashSet<String>,
     /// The open trade's offers (when, item, NPC).
@@ -236,6 +246,9 @@ impl QuestLogs {
         // OFFER_MS, not TALK_MS: a step's talk may start at a hail that long before (`talk_of`).
         while self.heard.front().is_some_and(|(at, _, _)| ts - at > OFFER_MS) {
             self.heard.pop_front();
+        }
+        while self.others.front().is_some_and(|(at, _)| ts - at > OFFER_MS) {
+            self.others.pop_front();
         }
         while self.offers.front().is_some_and(|(at, _, _)| ts - at > OFFER_MS) {
             self.offers.pop_front();
@@ -338,6 +351,7 @@ impl QuestLogs {
             self.keyword_speakers.insert(name.to_string());
         }
         if is_player_shaped_name(name) && !self.keyword_speakers.contains(name) {
+            self.other_said(said, ts);
             return;
         }
         let said = self.scrub(said);
@@ -350,6 +364,16 @@ impl QuestLogs {
         }
         if s.npc.as_deref() == Some(name) && !s.answers.iter().any(|t| t.text == said) {
             s.answers.push(Talk { who: name.to_string(), text: said, ms: ts });
+        }
+    }
+
+    /// Another player's line: an NPC's line beside it may answer them (`talk_of`). The newest step
+    /// hears of it too, as an answer after its line may be theirs.
+    fn other_said(&mut self, said: &str, ts: i64) {
+        let hailed = said.strip_prefix("Hail, ").map(str::to_string);
+        self.others.push_back((ts, hailed.clone()));
+        if let Some(s) = self.answer_step(ts, AFTER_MS + OTHER_MS) {
+            s.others.push((ts, hailed));
         }
     }
 
@@ -425,7 +449,8 @@ impl QuestLogs {
             spoke.and_then(|(_, who, _)| who.clone())
         });
         let heard = self.heard.iter().filter(|(t, _, _)| *t > since).cloned().collect();
-        Step { npc, offered, offered_ms, given, given_ms, heard, ..base }
+        let others = self.others.iter().filter(|(t, _)| *t > since).cloned().collect();
+        Step { npc, offered, offered_ms, given, given_ms, heard, others, ..base }
     }
 
     /// A Quest row's `quest`: the giver, the zone, the steps with their talk, the NPCs met, re-runs.
@@ -450,6 +475,18 @@ impl QuestLogs {
     }
 }
 
+/// Whether `npc`'s line at `at` answers another player: one hailed it, or said something, within
+/// OTHER_MS, and the player said nothing in the HAIL_ANSWER_MS before. A line in the step's own
+/// second (a hand-in's answer) is the player's.
+fn answers_other(s: &Step, npc: &str, at: i64) -> bool {
+    if at / 1000 == s.ts / 1000 {
+        return false;
+    }
+    let near = s.others.iter().any(|(o, hailed)| (o - at).abs() <= OTHER_MS && hailed.as_deref().is_none_or(|h| h == npc));
+    let mine = s.heard.iter().any(|(t, who, _)| who.is_none() && *t <= at && at - t <= HAIL_ANSWER_MS);
+    near && !mine
+}
+
 /// The step's talk: the player's lines and its NPC's before it, then the NPC's answer. The talk
 /// starts at the player's last hail of that NPC, else TALK_MS before the step (Lord Lyfyx was
 /// hailed 108 s before the hand-in that answered with the next quest).
@@ -461,7 +498,7 @@ fn talk_of(s: &Step) -> Vec<Talk> {
     for (at, who, text) in s.heard.iter().filter(|(at, _, _)| *at >= start) {
         let who = match who {
             None => "You".to_string(),
-            Some(n) if s.npc.as_deref() == Some(n.as_str()) => n.clone(),
+            Some(n) if s.npc.as_deref() == Some(n.as_str()) && !answers_other(s, n, *at) => n.clone(),
             Some(_) => continue,
         };
         if !talk.iter().any(|t| t.who == who && t.text == *text) {
@@ -469,7 +506,7 @@ fn talk_of(s: &Step) -> Vec<Talk> {
         }
     }
     for t in &s.answers {
-        if !talk.iter().any(|x| x.who == t.who && x.text == t.text) {
+        if !answers_other(s, &t.who, t.ms) && !talk.iter().any(|x| x.who == t.who && x.text == t.text) {
             talk.push(t.clone());
         }
     }
