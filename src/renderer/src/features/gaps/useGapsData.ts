@@ -176,8 +176,9 @@ interface JoinInputs {
  * copy), in their own slot so a remount hits; the overlay's one-domain copy apart.
  */
 function joinedSnap(derived: GapsSnap, x: JoinInputs): GapsSnap {
-  return (x.only === undefined ? lastJoined : lastJoinedOnly)([derived, x.live?.talks, x.forced, x.livePages, x.journals], () => {
-    const named = withForcedQuests({ ...derived, talks: x.live?.talks ?? [] }, x.forced)
+  return (x.only === undefined ? lastJoined : lastJoinedOnly)([derived, x.live?.talks, x.live?.questThreads, x.forced, x.livePages, x.journals], () => {
+    // The live snapshot's talks and chains: a joined or day-cut snapshot is rebuilt without them.
+    const named = withForcedQuests({ ...derived, talks: x.live?.talks ?? [], questThreads: x.live?.questThreads ?? [] }, x.forced)
     const linked = { ...named, rows: withQuestLinks(named.rows, popupLinksOfRows(named.rows, (q) => x.journals[questTitleKey(q)]?.popups)) }
     return withZoneRedirects(withQuestPages(linked, questPageOf(x.livePages)), CATALOG_ZONES)
   })
