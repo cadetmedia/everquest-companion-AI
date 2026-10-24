@@ -446,12 +446,15 @@ mod tests {
             vec![
                 // 494 -> 496 after the 2026-10-22 evening delta: Summon Familiar: Werewolf (6:00:00)
                 // and Pet Illusion: Werewolf (16:40:00), two timed beneficial spells.
-                ("Buff", 496),
+                // 496 -> 498 and Unstated 3 -> 4 after the 2026-10-24 delta: Summon Familiar: Mummy and
+                // Pet Illusion: Mummy (the Werewolf pair's twins), and Familiar: Gelatinous Cube, whose
+                // new page states a duration and no type.
+                ("Buff", 498),
                 ("CrowdControl", 90),
                 ("Debuff", 124),
                 ("DotHot", 196),
                 ("ProcBuff", 1),
-                ("Unstated", 3),
+                ("Unstated", 4),
             ]
         );
         // The reported spell: its page lists a curse counter and no damage line, so the catalog
