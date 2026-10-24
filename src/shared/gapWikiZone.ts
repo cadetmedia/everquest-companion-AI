@@ -31,10 +31,24 @@ export function zoneBaseName(raw: string): string {
  * is one edit.
  */
 export const ZONE_ALIASES: readonly { zone: string; page?: string; log: readonly string[] }[] = [
-  { zone: 'Cazic Thule', page: 'Cazic Thule (Zone)', log: ['Temple of Cazic-Thule'] }
+  { zone: 'Cazic Thule', page: 'Cazic Thule (Zone)', log: ['Temple of Cazic-Thule'] },
+  // The log's starting zone; the wiki's page and category are Tutorial Zone (its data pack's wikiTitle, 2026-10-23).
+  { zone: 'Tutorial Zone', log: ['EverQuest Legends Tutorial'] }
 ]
 const ALIAS_OF = new Map(ZONE_ALIASES.flatMap((a) => a.log.map((l) => [zoneKey(l), a.zone] as const)))
 const PAGE_OF = new Map(ZONE_ALIASES.flatMap((a) => (a.page === undefined ? [] : [[a.zone, a.page] as const])))
+
+/**
+ * The wiki page a log zone spelling should redirect to: an alias's page when the log's spelling is
+ * not that title (`EverQuest Legends Tutorial` → `Tutorial Zone`). Only aliases, whose pages were
+ * checked by hand: a sure target. Undefined when the spelling is the page, or no alias names it.
+ */
+export function zoneRedirectTarget(raw: string): string | undefined {
+  const zone = ALIAS_OF.get(zoneKey(raw))
+  if (zone === undefined) return undefined
+  const page = PAGE_OF.get(zone) ?? zone
+  return zoneKey(zoneBaseName(raw)) === zoneKey(page) ? undefined : page
+}
 
 /** A wiki zone name as a link: `[[Erudin]]`, or `[[Cazic Thule (Zone)|Cazic Thule]]` where the zone's page is titled apart. */
 export function wikiZoneLink(zone: string): string {

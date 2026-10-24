@@ -22,13 +22,13 @@ import GapsTable from './GapsTable'
 import { GAPS_DATA_DATE, PAGE_EXTRAS } from './useGapsData'
 import { AllCharactersBox, CharactersLine } from './AllCharactersControls'
 import type { HideUncertain } from './useHideUncertain'
+import { AddQuestButton, QuestScopes } from './ForcedQuests'
 import { useGrouping } from './useGrouping'
 import { useGapsList } from './useGapsList'
 import { useGapsOverlayFeed } from './useGapsOverlayFeed'
 import CaptureBar from './CaptureBar'
 import { itemRowNames } from '@shared/itemShotKeep'
 import GroupHeaderControls from './GroupHeaderControls'
-import { QuestCopyScope } from './QuestCopyDialog'
 
 // One line (owner, 2026-10-11): the how is in the module header, not on the page. Since 2026-10-18
 // the line says what the chosen domain's rows are (GAP_DOMAIN_HELP); since 2026-10-21 the hint is its
@@ -208,12 +208,23 @@ function ShownLine({
 const mineWords = (pick: HeldPick, active: boolean, allCharacters: boolean): string =>
   !active ? '' : `${allCharacters ? ', that one of your characters holds' : ', that you hold'}${HELD_PLACE[pick]}`
 
+/** The list's actions, at the row's right end: "Add quest" on Quests (ForcedQuests.tsx), then Copy list. */
+function ListActions({ domain, onCopy, disabled, copied }: { domain: GapDomain; onCopy: () => void; disabled: boolean; copied: number | null }): JSX.Element {
+  return (
+    <>
+      {domain === 'quest' && <AddQuestButton />}
+      <Box sx={{ flexGrow: 1 }} />
+      <CopyList onCopy={onCopy} disabled={disabled} copied={copied} />
+    </>
+  )
+}
+
 export default function GapsView(): JSX.Element {
   // The list itself, from the engine's rows to the order on screen, is the hook the Wiki Gaps
   // overlay's publisher runs too (useGapsList), so the overlay lists what this tab lists.
   const list = useGapsList()
   const { allChars, domain, setDomain, query, setQuery, hereOnly, setHereOnly, current, zone, playerList, rows, marks, showDone, setShowDone, holding, job, readiness, mine, sure, visible, verdicts, sort, onSort, sorted } = list
-  const { snap, loot, kills, seenBy, joining } = list.data
+  const { snap, loot, kills, seenBy, joining, forced } = list.data
   // While this tab is mounted it feeds the overlay itself, and the headless publisher stands down.
   useMarkGapsTabMounted()
   useGapsOverlayFeed(list)
@@ -239,9 +250,9 @@ export default function GapsView(): JSX.Element {
   const hidden = sure.rows.length - visible.length
 
   // A full-height column whose last child, the table box, is the page's only scroller (GapsTable).
-  // A quest row's Copy reads its live page and merges against the same page context (QuestCopyDialog).
+  // A quest row's Copy reads its live page against the same page context; Add quest / Add talk name quests (ForcedQuests).
   return (
-    <QuestCopyScope extras={sightings}>
+    <QuestScopes extras={sightings} forced={forced}>
     <Stack spacing={2} data-testid="gaps-view" sx={{ height: '100%', minHeight: 0 }}>
       <Tooltip title={CLICK_HINT}>
         <Typography variant="body2" color="text.secondary" sx={{ alignSelf: 'flex-start' }}>
@@ -277,8 +288,7 @@ export default function GapsView(): JSX.Element {
         <Pref label="Show done" checked={showDone} onChange={setShowDone} testId="gaps-show-done" />
         <HideUncertainBox state={sure} />
         <AllCharactersBox on={allChars.on} onChange={allChars.setOn} days={allChars.days} onDays={allChars.setDays} working={allChars.others === undefined || joining} />
-        <Box sx={{ flexGrow: 1 }} />
-        <CopyList onCopy={() => void copy()} disabled={visible.length === 0} copied={copied} />
+        <ListActions domain={domain} onCopy={() => void copy()} disabled={visible.length === 0} copied={copied} />
       </Stack>
       {domain === 'item' && <CaptureBar rows={itemNames} />}
       <ShownLine counts={{ visible: visible.length, held, served, hidden, uncertain: sure.hidden }} domain={domain} zone={zone} mine={mineWords(mine.pick, mine.active, allChars.on) + GAP_SHOW_WORDS[job.show]} tail={allChars.caption} />
@@ -302,6 +312,6 @@ export default function GapsView(): JSX.Element {
         nameLead={<GroupHeaderControls group={group} />}
       />
     </Stack>
-    </QuestCopyScope>
+    </QuestScopes>
   )
 }

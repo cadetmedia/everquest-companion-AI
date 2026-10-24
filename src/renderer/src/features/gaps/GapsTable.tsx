@@ -60,6 +60,7 @@ import ShotPanel from './ShotPanel'
 import { WithRowPicture } from './RowPicture'
 import GapRowButtons from './GapRowButtons'
 import MobHeadingButtons from './MobHeadingButtons'
+import { ForcedChip } from './ForcedQuests'
 
 /** One line of small cells with a small chip: 6px padding above and below a 24px chip, plus the border. */
 const ROW_HEIGHT = 37
@@ -194,6 +195,7 @@ const GapTableRow = memo(function GapTableRow({
         {/* Under its mob's heading a faction or drop row is the faction or item alone. */}
         {depth === 2 && onMobPage(row) ? factionOf(row) : row.name}
         <NeedsHint need={need} />
+        <ForcedChip row={row} />
         {row.suggest !== undefined && <SuggestCaption s={row.suggest} />}
         <PageTitleCaption row={row} />
         {row.maybePlayer === true && <Chip label="may be a player" size="small" color="warning" variant="outlined" sx={{ ml: 1 }} data-testid="gaps-maybe-player" />}
