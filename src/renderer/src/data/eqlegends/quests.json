@@ -1,6 +1,6 @@
 {
-  "scrapedAt": "2026-10-23T11:30:09.046Z",
-  "source": "eqlwiki.com — Category:Quests + quest subcategories + recentchanges delta (scripts/scrape-delta.mts)",
+  "scrapedAt": "2026-10-24T12:48:53.466Z",
+  "source": "eqlwiki.com — Category:Quests + quest subcategories",
   "quests": [
     {
       "name": "10th Coldain Ring Quest",
@@ -371,6 +371,38 @@
       ]
     },
     {
+      "name": "Alchemical Solution",
+      "page": "Alchemical Solution",
+      "eraTag": "Classic",
+      "startZone": "Lake Nerius",
+      "giver": "Dorian G`Wym",
+      "classes": [
+        "ALL"
+      ],
+      "relatedZones": [
+        "Lavastorm Mountains"
+      ],
+      "relatedNpcs": [
+        "NPC_NAME"
+      ],
+      "requiredItems": [
+        "Defiled Fish Scales",
+        "Putrid Bile",
+        "Imp Blood",
+        "Dusty Scroll Case",
+        "Encoded Missive",
+        "Fetid Lake Muck"
+      ],
+      "expReward": true,
+      "factions": [
+        {
+          "name": "Nerius Trade Association",
+          "up": true,
+          "amount": 25
+        }
+      ]
+    },
+    {
       "name": "Ale for Beur",
       "page": "Ale for Beur",
       "eraTag": "Classic",
@@ -552,6 +584,7 @@
         "Mold of Ro Bracer",
         "Deepwater Goblin Net",
         "Mold of Ro Breastplate",
+        "Dark Cauldron",
         "Mold of Ro Gauntlets",
         "A Locket",
         "Mold of Ro Greaves",
@@ -4029,6 +4062,43 @@
         "Magnetized Platinum Bar",
         "Icon of Sacrament",
         "Ingot of Sacrament"
+      ]
+    },
+    {
+      "name": "Call for Aid",
+      "page": "Call for Aid",
+      "eraTag": "Classic",
+      "startZone": "Lake Nerius",
+      "giver": "Nikko Canti",
+      "classes": [
+        "ALL"
+      ],
+      "relatedZones": [
+        "North Freeport",
+        "Neriak - Commons",
+        "The Temple of Solusek Ro"
+      ],
+      "relatedNpcs": [
+        "Dorian G`Wyn",
+        "Sir Mollin",
+        "Pishtian F`Lok",
+        "Lord Lyfyx of Burwood"
+      ],
+      "requiredItems": [
+        "Plea to Freeport",
+        "Appeal of Neriak",
+        "Solusek Petition",
+        "A Curt Dismissal",
+        "Exorbitant Commission",
+        "Ordination of Might"
+      ],
+      "expReward": true,
+      "factions": [
+        {
+          "name": "Nerius Trade Association",
+          "up": true,
+          "amount": 150
+        }
       ]
     },
     {
@@ -15950,6 +16020,48 @@
       ],
       "relatedNpcs": [
         "?"
+      ]
+    },
+    {
+      "name": "Hate, Betrayal, and Trust",
+      "page": "Hate, Betrayal, and Trust",
+      "eraTag": "Classic",
+      "startZone": "Lake Nerius",
+      "giver": "Retainer Ozval",
+      "minLevel": 55,
+      "classes": [
+        "Berserker",
+        "Bard",
+        "Beastlord",
+        "Cleric",
+        "Druid",
+        "Enchanter",
+        "Magician",
+        "Monk",
+        "Necromancer",
+        "Paladin",
+        "Ranger",
+        "Rogue",
+        "Shaman",
+        "Shadow Knight",
+        "Warrior",
+        "Wizard"
+      ],
+      "relatedZones": [
+        "Lake Nerius",
+        "Northern Felwithe",
+        "Ak'Anon"
+      ],
+      "relatedNpcs": [
+        "Retainer Ozval",
+        "Rylin Coil",
+        "Merchant Tyslin (North Felwithe)"
+      ],
+      "requiredItems": [
+        "Ancient Signet Ring of House Everling",
+        "Peerless Sapphire",
+        "Exquisite Gem Setter",
+        "Blessing of the Betrayer"
       ]
     },
     {
@@ -28013,6 +28125,7 @@
       "requiredItems": [
         "Sealed Note",
         "Clockwork Oil Stout",
+        "Sparkle",
         "Underfoot Triple Bock",
         "Tunare's Finest",
         "Blood Spirit",
@@ -31108,6 +31221,30 @@
       "expReward": true
     },
     {
+      "name": "Something Fishy",
+      "page": "Something Fishy",
+      "eraTag": "Classic",
+      "startZone": "Lake Nerius",
+      "giver": "Nikko Canti",
+      "classes": [
+        "ALL"
+      ],
+      "requiredItems": [
+        "Fresh Fish",
+        "Defiled Fish Scales",
+        "Rickety Fishing Pole",
+        "Fishing Bait"
+      ],
+      "expReward": true,
+      "factions": [
+        {
+          "name": "Nerius Trade Association",
+          "up": true,
+          "amount": 10
+        }
+      ]
+    },
+    {
       "name": "Something is Wrrrong",
       "page": "Something is Wrrrong",
       "eraTag": "Classic",
@@ -32738,6 +32875,38 @@
         "Bayle List I",
         "Bayle List II",
         "Bayle List III"
+      ]
+    },
+    {
+      "name": "The Betrayer",
+      "page": "The Betrayer",
+      "eraTag": "Classic",
+      "startZone": "Nektropos Castle",
+      "giver": "Lady Sileniu Everling",
+      "classes": [
+        "ALL"
+      ],
+      "relatedZones": [
+        "Nektropos Castle"
+      ],
+      "relatedNpcs": [
+        "Lady Sileniu Everling",
+        "Plimptos",
+        "Alexa`s Handmaiden",
+        "Alexa Everling",
+        "Lord Rikantus Everling"
+      ],
+      "requiredItems": [
+        "Blood's Unity",
+        "Nektropos Great Room Key"
+      ],
+      "expReward": true,
+      "factions": [
+        {
+          "name": "Host of Nektropos",
+          "up": false,
+          "amount": -2
+        }
       ]
     },
     {
@@ -36352,6 +36521,36 @@
       "coin": "5 gold"
     },
     {
+      "name": "The Tragic Tale of House Everling",
+      "page": "The Tragic Tale of House Everling",
+      "eraTag": "Classic",
+      "startZone": "Nektropos Castle",
+      "giver": "Lord Ollix Everling",
+      "classes": [
+        "ALL"
+      ],
+      "relatedZones": [
+        "Nektropos Castle"
+      ],
+      "relatedNpcs": [
+        "Lord Ollix Everling",
+        "Lady Sileniu Everling",
+        "Plimptos",
+        "Alexa`s Handmaiden",
+        "Lord Rikantus Everling"
+      ],
+      "requiredItems": [
+        "Blood's Unity"
+      ],
+      "expReward": true,
+      "factions": [
+        {
+          "name": "Beta Dubious",
+          "up": false
+        }
+      ]
+    },
+    {
       "name": "The Traitor",
       "page": "The Traitor",
       "startZone": "West Freeport",
@@ -38177,6 +38376,75 @@
       ]
     },
     {
+      "name": "Unfortunate news",
+      "page": "Unfortunate news",
+      "startZone": "Finishing the quest Call for Aid",
+      "classes": [
+        "Berserker",
+        "Bard",
+        "Beastlord",
+        "Cleric",
+        "Druid",
+        "Enchanter",
+        "Magician",
+        "Monk",
+        "Necromancer",
+        "Paladin",
+        "Ranger",
+        "Rogue",
+        "Shaman",
+        "Shadow Knight",
+        "Warrior",
+        "Wizard"
+      ],
+      "relatedZones": [
+        "Lake Nerius"
+      ],
+      "relatedNpcs": [
+        "Dorian G`Wyn"
+      ]
+    },
+    {
+      "name": "Unfortunate News",
+      "page": "Unfortunate News",
+      "startZone": "Finishing the quest Call for Aid",
+      "classes": [
+        "Berserker",
+        "Bard",
+        "Beastlord",
+        "Cleric",
+        "Druid",
+        "Enchanter",
+        "Magician",
+        "Monk",
+        "Necromancer",
+        "Paladin",
+        "Ranger",
+        "Rogue",
+        "Shaman",
+        "Shadow Knight",
+        "Warrior",
+        "Wizard"
+      ],
+      "relatedZones": [
+        "Lake Nerius"
+      ],
+      "relatedNpcs": [
+        "Dorian G`Wyn"
+      ],
+      "requiredItems": [
+        "Exorbitant Commission"
+      ],
+      "expReward": true,
+      "factions": [
+        {
+          "name": "Nerius Trade Association",
+          "up": true,
+          "amount": 200
+        }
+      ]
+    },
+    {
       "name": "Unkempt Druids (Quest)",
       "page": "Unkempt Druids (Quest)",
       "startZone": "Southern Karana",
@@ -39457,6 +39725,47 @@
       ],
       "requiredItems": [
         "Werewolf Pelt"
+      ]
+    },
+    {
+      "name": "What's going on here",
+      "page": "What's going on here",
+      "startZone": "Lake Nerius",
+      "giver": "Dorian G`Wyn",
+      "minLevel": 1,
+      "classes": [
+        "Berserker",
+        "Bard",
+        "Beastlord",
+        "Cleric",
+        "Druid",
+        "Enchanter",
+        "Magician",
+        "Monk",
+        "Necromancer",
+        "Paladin",
+        "Ranger",
+        "Rogue",
+        "Shaman",
+        "Shadow Knight",
+        "Warrior",
+        "Wizard"
+      ],
+      "relatedNpcs": [
+        "Yelayna",
+        "Konro Strongfoot",
+        "Blergagh",
+        "Neuven F`Lok",
+        "The Great Zultor",
+        "Nikko Canti"
+      ],
+      "expReward": true,
+      "factions": [
+        {
+          "name": "Nerius Trade Association",
+          "up": true,
+          "amount": 50
+        }
       ]
     },
     {
