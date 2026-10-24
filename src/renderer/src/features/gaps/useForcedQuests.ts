@@ -3,7 +3,8 @@
 // (useDoneMarks.ts). Never cleared on its own: a named quest stays until the player removes it.
 
 import { useCallback, useMemo, useState } from 'react'
-import { withoutQuest, withVisitsAdded, type ForcedQuestMap, type TalkVisit } from '@shared/gapForcedQuests'
+import { withoutQuest, withThreadAccepted, withVisitsAdded, type ForcedQuestMap, type TalkVisit } from '@shared/gapForcedQuests'
+import type { QuestThread } from '@shared/gapQuestThreads'
 
 const FORCED_KEY = 'eq.gaps.forcedQuests'
 const NONE: ForcedQuestMap = {}
@@ -32,6 +33,8 @@ export interface ForcedQuests {
   add: (name: string, visits: readonly TalkVisit[]) => void
   /** The quest `name`'s association, gone: a named quest's row, or the visits added to a logged one. */
   remove: (name: string) => void
+  /** A chain the log rebuilt, accepted as the quest `name`. */
+  accept: (name: string, thread: QuestThread) => void
 }
 
 export function useForcedQuests(character: string | null | undefined): ForcedQuests {
@@ -48,6 +51,7 @@ export function useForcedQuests(character: string | null | undefined): ForcedQue
   )
   const add = useCallback((name: string, visits: readonly TalkVisit[]) => update((m) => withVisitsAdded(m, name, visits)), [update])
   const remove = useCallback((name: string) => update((m) => withoutQuest(m, name)), [update])
+  const accept = useCallback((name: string, thread: QuestThread) => update((m) => withThreadAccepted(m, name, thread)), [update])
   const forced = all[who] ?? NONE
-  return useMemo(() => ({ forced, add, remove }), [forced, add, remove])
+  return useMemo(() => ({ forced, add, remove, accept }), [forced, add, remove, accept])
 }

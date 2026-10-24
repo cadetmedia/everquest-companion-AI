@@ -43,6 +43,7 @@ import { usePageSightings } from './usePageSightings'
 import GapsTable from './GapsTable'
 import { GAPS_DATA_DATE, PAGE_EXTRAS, useGapsData } from './useGapsData'
 import { AddQuestButton, QuestScopes } from './ForcedQuests'
+import { SuggestedQuests } from './SuggestedQuests'
 import { useDoneMarks, usePlayerList } from './useDoneMarks'
 import { useHeld } from './useHeld'
 import { useHeldOnly } from './useHeldOnly'
@@ -333,6 +334,7 @@ export default function GapsView(): JSX.Element {
         <HideUncertainBox state={sure} />
         <ListActions domain={domain} onCopy={() => void copy()} disabled={visible.length === 0} copied={copied} />
       </Stack>
+      {domain === 'quest' && <SuggestedQuests />}
       <ShownLine counts={{ visible: visible.length, held, served, hidden, uncertain: sure.hidden }} domain={domain} zone={zone} mine={(mine.active ? HELD_WORDS[mine.pick] : '') + GAP_SHOW_WORDS[job.show]} />
       <GapsTable
         entries={group.entries}

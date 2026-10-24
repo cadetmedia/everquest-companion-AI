@@ -31,6 +31,7 @@ import { mobPageFinder } from '@shared/mobPageTitle'
 import { catalogStates } from '@shared/gapMerchantDescription'
 import { useQuestLivePages } from '../../lib/questLivePages'
 import { withForcedQuests, type TalkSnap, type TalkVisit } from '@shared/gapForcedQuests'
+import type { QuestThread } from '@shared/gapQuestThreads'
 import { withZoneRedirects } from '@shared/gapZoneRedirects'
 import { zoneKey } from '@shared/zones'
 import { useForcedQuests } from './useForcedQuests'
@@ -80,6 +81,7 @@ export interface GapsData {
 }
 
 const NO_TALKS: readonly TalkVisit[] = []
+const NO_THREADS: readonly QuestThread[] = []
 
 export function useGapsData(): GapsData {
   const engine = useModule<GapsSnap>(GAPS_MODULE_ID)
@@ -103,7 +105,8 @@ export function useGapsData(): GapsData {
   }, [engine, talkSnap, loot, killMobs, itemMobs, cons, livePages, forced.forced])
   const kills = lastKills([killMobs], () => killIndex(killMobs))
   const talks = (snap as TalkSnap | null | undefined)?.talks ?? NO_TALKS
-  const scope = useMemo(() => ({ ...forced, talks, titles: QUEST_TITLES }), [forced, talks])
+  const threads = (snap as TalkSnap | null | undefined)?.questThreads ?? NO_THREADS
+  const scope = useMemo(() => ({ ...forced, talks, threads, titles: QUEST_TITLES }), [forced, talks, threads])
   // The rows the player corrected by hand (owner, 2026-10-23: "EDIT values in the gaps tab").
   const edited = useEditedSnap(snap, talkSnap)
   return { snap: edited, engine, loot, kills, forced: scope }

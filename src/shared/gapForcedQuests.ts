@@ -8,6 +8,7 @@
 import type { GapDetails, GapRow, GapsSnap } from './gaps'
 import { questLogOf, questTitleKey, type QuestLog, type QuestStep, type QuestTalk } from './gapQuests'
 import { questFactsOf } from './itemQuestFacts'
+import { questLogFromThread, type QuestThread } from './gapQuestThreads'
 
 /** One NPC visit as the engine serves it (gaps_exchanges.rs `Exchange`). */
 export interface TalkVisit {
@@ -24,10 +25,11 @@ export interface TalkVisit {
   given?: string[]
 }
 
-/** A quest the player named, and the visits it holds. */
+/** A quest the player named, and the visits it holds, or the chain the log rebuilt that they accepted. */
 export interface ForcedQuest {
   name: string
   visits: TalkVisit[]
+  thread?: QuestThread
 }
 
 /** One character's forced quests, by `questTitleKey` of the name. */
@@ -36,6 +38,8 @@ export type ForcedQuestMap = Record<string, ForcedQuest>
 /** What the engine serves beside the rows for this (gaps.rs `snapshot`). */
 export interface TalkSnap {
   talks?: TalkVisit[]
+  /** The chains rebuilt from the log for quests with no task line (gaps_threads.rs). */
+  questThreads?: QuestThread[]
   character?: string | null
 }
 
@@ -71,7 +75,17 @@ export const isForcedRow = (row: object): boolean => questLogOf(row)?.forced ===
 /** How many visits the player added to a row, forced or not. */
 export const addedVisits = (row: object): number => (row as { addedVisits?: number }).addedVisits ?? 0
 
+/** An accepted chain's row: its steps' time span and zones, the log the page writer reads. */
+function threadRow(q: ForcedQuest, t: QuestThread): GapRow {
+  const zones = [...new Set(t.steps.map((s) => s.zone).filter((z): z is string => z !== undefined))]
+  const samples = t.steps.flatMap((s) => (s.lines ?? []).map((l) => (l.who === 'You' ? `You say, '${l.text}'` : `${l.who} says, '${l.text}'`))).slice(-3)
+  const details: GapDetails = { samples, ...(zones.length === 0 ? {} : { zones: { entries: zones.map((name) => ({ name, n: 1 })), distinct: zones.length, all: zones } }) }
+  const row: GapRow = { domain: 'quest', name: q.name, kinds: ['hailed'], count: t.steps.length, first: t.steps[0]?.at ?? '', last: t.steps.at(-1)?.at ?? '', details }
+  return Object.assign(row, { quest: questLogFromThread(t), addedVisits: 0 })
+}
+
 function forcedRow(q: ForcedQuest): GapRow {
+  if (q.thread !== undefined) return threadRow(q, q.thread)
   const sorted = [...q.visits].sort((a, b) => a.startMs - b.startMs)
   const zones = [...new Set(sorted.map((v) => v.zone).filter((z): z is string => z !== undefined))]
   // The last three lines, as the log printed them: the row's samples.
@@ -119,7 +133,12 @@ export function withQuestLinks<R extends { domain: string; name: string }>(rows:
 }
 
 /** A named quest's links: every NPC in its visits, every item handed over or received. */
-const linkOf = (q: ForcedQuest): QuestLink => ({ quest: q.name, npcs: q.visits.map((v) => v.npc), items: q.visits.flatMap((v) => [...(v.offered ?? []), ...(v.given ?? [])]) })
+const linkOf = (q: ForcedQuest): QuestLink => {
+  const steps = q.thread?.steps ?? []
+  const npcs = [...q.visits.map((v) => v.npc), ...steps.map((s) => s.npc).filter((n): n is string => n !== undefined)]
+  const items = [...q.visits.flatMap((v) => [...(v.offered ?? []), ...(v.given ?? [])]), ...steps.flatMap((s) => (s.items ?? []).map((i) => i.name))]
+  return { quest: q.name, npcs, items }
+}
 
 /**
  * The snapshot with the player's quests in it: a name the log already has as a task gains the visits
@@ -127,7 +146,7 @@ const linkOf = (q: ForcedQuest): QuestLink => ({ quest: q.name, npcs: q.visits.m
  * and the quest joins its NPCs' and items' quest facts (`withQuestLinks`).
  */
 export function withForcedQuests<S extends GapsSnap & TalkSnap>(snap: S, forced: ForcedQuestMap | undefined): S {
-  const quests = Object.values(forced ?? {}).filter((q) => q.visits.length > 0)
+  const quests = Object.values(forced ?? {}).filter((q) => q.visits.length > 0 || q.thread !== undefined)
   if (quests.length === 0) return snap
   const used = new Set(quests.flatMap((q) => q.visits.map((v) => v.id)))
   const byKey = new Map(quests.map((q) => [questTitleKey(q.name), q]))
@@ -139,7 +158,8 @@ export function withForcedQuests<S extends GapsSnap & TalkSnap>(snap: S, forced:
     return { ...r, quest: withVisits(log, q.visits), addedVisits: q.visits.length } as GapRow
   })
   const all = withQuestLinks([...rows, ...[...byKey.values()].map(forcedRow)], quests.map(linkOf))
-  return { ...snap, rows: all, talks: (snap.talks ?? []).filter((v) => !used.has(v.id)) }
+  const taken = new Set(quests.map((q) => q.thread?.id).filter((id): id is string => id !== undefined))
+  return { ...snap, rows: all, talks: (snap.talks ?? []).filter((v) => !used.has(v.id)), questThreads: (snap.questThreads ?? []).filter((t) => !taken.has(t.id)) }
 }
 
 /** `forced` with `visits` added to the quest `name` (a new one when it has none yet). */
@@ -148,6 +168,11 @@ export function withVisitsAdded(forced: ForcedQuestMap, name: string, visits: re
   const had = forced[key]?.visits ?? []
   const fresh = visits.filter((v) => !had.some((h) => h.id === v.id))
   return { ...forced, [key]: { name: forced[key]?.name ?? name.trim(), visits: [...had, ...fresh] } }
+}
+
+/** `forced` with the chain `thread` accepted as the quest `name`. */
+export function withThreadAccepted(forced: ForcedQuestMap, name: string, thread: QuestThread): ForcedQuestMap {
+  return { ...forced, [questTitleKey(name)]: { name: name.trim(), visits: [], thread } }
 }
 
 /** `forced` without the quest `name`: a forced row goes, a task row loses the visits added to it. */

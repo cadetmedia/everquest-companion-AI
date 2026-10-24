@@ -99,6 +99,7 @@ const itemLink = ([item, n]: [string, number]): string => `${n > 1 ? `${String(n
 
 /** One step as a checklist line: who, what was said or handed over, what came of it. */
 function checkLine(s: QuestStep, c: QuestPageContext): string | undefined {
+  if (s.note !== undefined) return `* ${s.note}`
   const who = s.npc === undefined ? undefined : npcOf(s.npc, c)
   const where = s.zone === undefined ? '' : ` in ${zoneOf(s.zone, c)}`
   const said = stepKeyword(s)
@@ -127,7 +128,7 @@ function summarySection(name: string, log: QuestLog, c: QuestPageContext): strin
  * lines. A block is one line, but a facblock is its `<div>` and every faction line inside it.
  */
 export interface WalkBlock {
-  kind: 'say' | 'npc' | 'give' | 'receive' | 'task' | 'faction' | 'experience' | 'achievement'
+  kind: 'say' | 'npc' | 'give' | 'receive' | 'task' | 'faction' | 'experience' | 'achievement' | 'note'
   lines: string[]
   /** What the block names: the words said, the item, the faction lines, the achievement. */
   keys: string[]
@@ -163,6 +164,7 @@ function walkStep(name: string, s: QuestStep, c: QuestPageContext): WalkBlock[] 
   const task = s.kind === 'assigned' ? `'''You have been assigned the task '${name}'.'''` : `'''Your task '${name}' has been updated.'''`
   const fac = (s.factions ?? []).map((f) => `* ${f.line.replace(` with ${f.faction} `, ` with [[${f.faction}]] `)}`)
   return [
+    ...(s.note === undefined ? [] : [{ kind: 'note' as const, lines: [s.note], keys: [s.note] }]),
     ...stepParts(s, c),
     // A visit the player tied to the quest printed no task line: none is written.
     ...(s.kind === 'talk' ? [] : [{ kind: 'task' as const, lines: [task], keys: [task] }]),
