@@ -105,6 +105,6 @@ export function useGapsData(): GapsData {
   const talks = (snap as TalkSnap | null | undefined)?.talks ?? NO_TALKS
   const scope = useMemo(() => ({ ...forced, talks, titles: QUEST_TITLES }), [forced, talks])
   // The rows the player corrected by hand (owner, 2026-10-23: "EDIT values in the gaps tab").
-  const edited = useEditedSnap(snap, talkSnap?.character)
+  const edited = useEditedSnap(snap, talkSnap)
   return { snap: edited, engine, loot, kills, forced: scope }
 }

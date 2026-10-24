@@ -55,8 +55,8 @@ export function useGapEdits(character: string | null | undefined): GapEditMap {
   return useSyncExternalStore(subscribe, () => all[name] ?? NONE)
 }
 
-/** The snap with the character's hand edits on its rows: the same object while there are none. */
-export function useEditedSnap<S extends { rows: GapRow[] }>(snap: S | null | undefined, character: string | null | undefined): S | null | undefined {
-  const edits = useGapEdits(character)
+/** The snap with the character's hand edits on its rows (`of` names the character): the same object while there are none. */
+export function useEditedSnap<S extends { rows: GapRow[] }>(snap: S | null | undefined, of: { character?: string | null } | null | undefined): S | null | undefined {
+  const edits = useGapEdits(of?.character)
   return useMemo(() => (snap && Object.keys(edits).length > 0 ? { ...snap, rows: withGapEdits(snap.rows, edits) } : snap), [snap, edits])
 }
