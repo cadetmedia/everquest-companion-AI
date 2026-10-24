@@ -9,6 +9,7 @@ import { stopOcr } from '../src/main/shot/ocr.ts'
 import { popupRead, readPopup, type QuestPopup } from '../src/shared/questPopup.ts'
 import { nameplateRow, namesIn, ordinalOf, pictureKind, placesKey, routePopup, threadTargets, type ThreadLike } from '../src/shared/pasteRoute.ts'
 import { readPng } from './shotPng.mts'
+import { titledName } from '../src/shared/pasteRoute.ts'
 
 after(() => stopOcr())
 
@@ -188,4 +189,13 @@ test('chains that open on the same greeting are ordered by their own errand; ids
   const viaApp = async (file: string): Promise<QuestPopup | null> => readPopup(popupRead({ ...(await readPopupLines(readPng(join(SHOTS, file)))) }))
   assert.equal(routePopup((await viaApp('popup-tutorial-first-quest-reward.png')) as QuestPopup, targets).hit?.key, "thread:Doug@100:handin:Old Doug:Package")
   assert.equal(routePopup((await viaApp('popup-tutorial-item-merging.png')) as QuestPopup, targets).hit?.key, 'thread:Doug@100:handin:Dead Doug:Skull')
+})
+
+test("a Lore tab's name cut short by its tab row is made whole from the title bar (the owner's Mummy wand, 2026-10-23)", async () => {
+  const r = await readPopupLines(readPng(join(SHOTS, 'petamorph-wand-mummy-lore.png')))
+  assert.equal(titledName('Petamorph Wand: Mumm', r.titleLines ?? []), 'Petamorph Wand: Mummy')
+  assert.equal(titledName('Petamorph Wand: Mummy', ['Petamorph Wand: Mummy']), 'Petamorph Wand: Mummy')
+  assert.equal(titledName('Earring', ['Earring of Experimentation']), 'Earring of Experimentation')
+  assert.equal(titledName('Ring', ['Ring of Things']), 'Ring')
+  assert.equal(titledName(undefined, ['Anything']), undefined)
 })

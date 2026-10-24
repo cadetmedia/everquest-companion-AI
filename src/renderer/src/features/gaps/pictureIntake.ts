@@ -8,10 +8,12 @@ import { GAPS_MODULE_ID, type GapRow, type GapsSnap } from '@shared/gaps'
 import type { QuestJournalFacts } from '@shared/gapQuests'
 import { withForcedQuests, type TalkSnap } from '@shared/gapForcedQuests'
 import { pictureFile } from '@shared/mobPicture'
-import { movePicksBut, nameplateRow, pictureKind, pictureRows, questTargets, routePopup, spellRowNames, threadTargets, type RouteHit, type ThreadLike } from '@shared/pasteRoute'
+import { movePicksBut, nameplateRow, pictureKind, pictureRows, questTargets, routePopup, spellRowNames, threadTargets, titledName, type RouteHit, type ThreadLike } from '@shared/pasteRoute'
 import { isSpellWindow, readSpellWindow, spellProblem } from '@shared/spellWindow'
 import { journalPlaces } from '@shared/questJournal'
 import { popupRead, readPopup, withPopup, withoutPopup, type QuestPopup } from '@shared/questPopup'
+import { shotKind } from '@shared/itemShotKeep'
+import type { ItemShotReply } from '@shared/itemWindow'
 import { fileOneCapture } from './CaptureBar'
 import { keepPartPicture, questJournalByKey, setMobPicture, setQuestJournal, setSpellShot } from './itemShotsStore'
 import { keepOf } from './SpellShot'
@@ -120,8 +122,16 @@ async function journal(png: Uint8Array): Promise<Outcome> {
 }
 
 /** An item window or its Lore tab: filed on its Items row the capture's way (CaptureBar.tsx). */
+/** A Lore tab's name from the title bar when the tab row cut it short (titledName). */
+async function wholeName(png: Uint8Array, reply: ItemShotReply): Promise<ItemShotReply> {
+  if (reply.read.name === undefined || shotKind(reply) !== 'lore') return reply
+  const look = await window.eq.shotReadText(png, 'popup')
+  const name = titledName(reply.read.name, look.titleLines ?? [])
+  return name === reply.read.name ? reply : { ...reply, read: { ...reply.read, name } }
+}
+
 async function itemWindow(png: Uint8Array): Promise<Outcome> {
-  const reply = await window.eq.shotReadItem(png)
+  const reply = await wholeName(png, await window.eq.shotReadItem(png))
   const row = await fileOneCapture({ at: new Date().toISOString(), reply, png, ms: reply.ms })
   return row === undefined ? { kind: 'item', text: `Item window read: no Gaps row for ${reply.read.name ?? 'it'}.` } : { kind: 'item', text: `Item window → ${row}.` }
 }

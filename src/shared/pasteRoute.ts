@@ -361,3 +361,13 @@ export function placesKey(rows: readonly { domain: string }[], threads: readonly
 
 /** The Spells rows' names, where a pasted spell window is kept. */
 export const spellRowNames = (rows: readonly { domain: string; name: string }[]): string[] => rows.filter((r) => r.domain === 'spell').map((r) => r.name)
+
+/**
+ * A Lore tab's item name, whole: the tab row crowds the name's last letters (`Petamorph Wand: Mumm`), while
+ * the window's title bar holds it entire. The title line that starts with the name read and runs on wins.
+ */
+export function titledName(name: string | undefined, titleLines: readonly string[]): string | undefined {
+  if (name === undefined || name.length < 6) return name
+  const whole = titleLines.map((l) => l.trim().replace(/[^\w)'"]+$/, '')).find((l) => l.length > name.length && l.startsWith(name))
+  return whole ?? name
+}
