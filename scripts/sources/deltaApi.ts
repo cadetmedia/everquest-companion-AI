@@ -127,7 +127,8 @@ export async function changedPages(sinceIso: string, newerThan: string, namespac
       list: 'recentchanges',
       rcend: sinceIso, // rc walks backward in time; end = oldest bound
       rclimit: '500',
-      rcprop: 'title|ids|loginfo|timestamp',
+      // sha1 rides the same rows: a page whose newest text is the text we hold is not read again.
+      rcprop: 'title|ids|sha1|loginfo|timestamp',
       rctype: 'edit|new|log',
       rcnamespace: namespace
     }

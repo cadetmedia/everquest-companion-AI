@@ -22,6 +22,9 @@ export interface RcRow {
   logparams?: { target_title?: string }
   /** ISO time of the change */
   timestamp?: string
+  /** the revision an edit or creation made, and its text's sha1 (rcprop ids and sha1) */
+  revid?: number
+  sha1?: string
 }
 
 /** What the feed says to re-read: edited pages by id, titles named by log rows by title. */
@@ -36,6 +39,9 @@ export interface FeedChanges {
   titleTime: Map<string, string>
   /** an edited page's title as its newest row gave it */
   pageTitle: Map<number, string>
+  /** an edited page's newest revision and its sha1, when the feed gave them */
+  pageRev: Map<number, number>
+  pageSha1: Map<number, string>
 }
 
 export const emptyFeed = (): FeedChanges => ({
@@ -45,12 +51,22 @@ export const emptyFeed = (): FeedChanges => ({
   named: new Set(),
   pageTime: new Map(),
   titleTime: new Map(),
-  pageTitle: new Map()
+  pageTitle: new Map(),
+  pageRev: new Map(),
+  pageSha1: new Map()
 })
 
 function stamp<K>(times: Map<K, string>, key: K, at: string | undefined): void {
   const prev = times.get(key)
   if (at && (!prev || at > prev)) times.set(key, at)
+}
+
+/** The newest edit's revision and sha1, or neither: a row without them must not leave an older pair. */
+function newestRevision(rc: RcRow, pageid: number, feed: FeedChanges): void {
+  if (rc.revid) feed.pageRev.set(pageid, rc.revid)
+  else feed.pageRev.delete(pageid)
+  if (rc.sha1) feed.pageSha1.set(pageid, rc.sha1)
+  else feed.pageSha1.delete(pageid)
 }
 
 /**
@@ -65,6 +81,7 @@ export function foldRcRow(rc: RcRow, feed: FeedChanges): void {
       feed.pageids.add(rc.pageid)
       if (!feed.pageTime.has(rc.pageid) || (rc.timestamp ?? '') > (feed.pageTime.get(rc.pageid) ?? '')) {
         feed.pageTitle.set(rc.pageid, rc.title)
+        newestRevision(rc, rc.pageid, feed)
       }
       stamp(feed.pageTime, rc.pageid, rc.timestamp)
     } else {

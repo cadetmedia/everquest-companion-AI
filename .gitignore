@@ -67,6 +67,9 @@ scripts/sources/cache/mobs/
 # fetch is batched). The DATASET it produces — src/main/data/items.json — is committed,
 # which is what reproducibility actually needs.
 scripts/sources/cache/items/
+# The wiki's GitHub data pack and its compare reports (scripts/eoz-compare.mts): ~4 MB, re-fetched
+# only when its manifest's sha256 changes.
+scripts/sources/cache/eoz/
 
 # clean-machine sandbox harness writes results here; keep the folder, not the output
 scripts/sandbox/results/*
