@@ -274,7 +274,7 @@ export function localKnowledge(name: string): ItemQuestUse[] | null {
 
 /** This service's OWN client — its own Retry-After cooldown and its own serialized, politely
  *  spaced queue (wikiClient.ts; mobLookup.ts's header says why each service keeps its own). */
-const wiki = createWikiClient()
+const wiki = createWikiClient('item lookup')
 
 /**
  * Resolve an item name to its wiki page title via search. Distinguishes a NETWORK failure

@@ -83,6 +83,7 @@ import {
 } from './windows'
 import { watchDisplays } from './windowPlacement'
 import { OVERLAY_KINDS } from '../shared/types'
+import { setWikiUsageFile, wikiUsageSummary } from './wikiUsage'
 
 // --- custom schemes: the permanent image cache (eqimg://) and the speech cache (eqspeech://) ---
 // Scheme privileges MUST be declared before the app's `ready` event, so this runs at module
@@ -233,6 +234,8 @@ if (!gotSingleInstanceLock) {
     logInfo(
       `[everquest-companion] Channel '${CHANNEL}' - userData ${USER_DATA}, error log ${errorLogPath()}`
     )
+    // This machine's wiki ledger (wikiUsage.ts): every wiki request the app sends, one line each.
+    setWikiUsageFile(`${USER_DATA}/wiki-requests.jsonl`)
     registerIpc()
     registerDevTriageIpc()
     // Trust boundary, installed BEFORE the first window exists: the catch-all fires for every
@@ -484,6 +487,9 @@ app.on('before-quit', () => {
   // `stopTelemetry` in `window-all-closed`.
   teardownStep('main:flushTelemetryRing', flushRingSync)
   logTopmostSavings()
+  // The session's wiki requests, so a dev run says how often it hit the wiki (owner, 2026-10-23).
+  const wikiUse = wikiUsageSummary()
+  if (wikiUse !== null) logInfo(wikiUse)
   // LAST, and it must stay last: the error log appends asynchronously now (JOS-371), so every line
   // any step above just wrote — including a teardown step that threw into `teardownStep`'s own
   // `logError` — is still in a queue that this process may never turn the event loop for again.

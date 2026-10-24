@@ -81,7 +81,7 @@ export { localMobEntry, localMobQuests, MOB_CATALOG_SIZE } from './mobLookupLoca
 
 /** This service's OWN client — its own Retry-After cooldown and its own serialized, politely
  *  spaced queue (wikiClient.ts; the header above says why it is not itemLookup's). */
-const wiki = createWikiClient()
+const wiki = createWikiClient('mob lookup')
 
 /**
  * Resolve a mob name to candidate wiki page titles. Distinguishes a NETWORK failure ('offline')

@@ -10,9 +10,13 @@
 //
 // AGENTS.md "Scraper etiquette" is a LAW here: a 429/5xx silences the whole queue of the client
 // that received it until the server's cooldown expires.
+//
+// Every request is counted in this machine's wiki ledger under the client's feature name, and sends
+// the fork's User-Agent (wikiUsage.ts, owner 2026-10-23).
+
+import { recordAppWikiCall, WIKI_UA, wikiKindOf } from './wikiUsage'
 
 const API = 'https://eqlwiki.com/api.php'
-const UA = 'everquest-companion/0.1 (personal quest tracker)'
 const REQUEST_SPACING_MS = 150 // polite inter-request delay (wiki)
 const REQUEST_TIMEOUT_MS = 8000
 const RETRY_AFTER_FALLBACK_MS = 60_000
@@ -31,8 +35,9 @@ export interface WikiClient {
   enqueue<T>(job: () => Promise<T>): Promise<T>
 }
 
-/** One service's wiki client, with its OWN cooldown and queue (see the header). */
-export function createWikiClient(): WikiClient {
+/** One service's wiki client, with its OWN cooldown and queue (see the header); `feature` names it in
+ *  the wiki ledger. */
+export function createWikiClient(feature = 'wiki'): WikiClient {
   /**
    * Server-asked-us-to-back-off state. When the wiki answers 429 (or any 5xx), its Retry-After
    * (seconds; falls back to 60s when absent/unparseable) is honoured by refusing to issue ANY
@@ -48,8 +53,15 @@ export function createWikiClient(): WikiClient {
     const url = API + '?' + new URLSearchParams({ format: 'json', formatversion: '2', ...params }).toString()
     const ctrl = new AbortController()
     const t = setTimeout(() => ctrl.abort(), REQUEST_TIMEOUT_MS)
+    const t0 = Date.now()
+    const note = (status: number | null, bytes = 0): void =>
+      recordAppWikiCall({ feature, kind: wikiKindOf(params), url, status, bytes, ms: Date.now() - t0 })
     try {
-      const res = await fetch(url, { headers: { 'User-Agent': UA }, signal: ctrl.signal })
+      const res = await fetch(url, { headers: { 'User-Agent': WIKI_UA }, signal: ctrl.signal }).catch((err: unknown) => {
+        note(null)
+        throw err
+      })
+      if (!res.ok) note(res.status)
       if (res.status === 429 || res.status >= 500) {
         const retryAfter = Number(res.headers.get('retry-after'))
         const waitMs =
@@ -58,7 +70,12 @@ export function createWikiClient(): WikiClient {
         return null
       }
       if (!res.ok) return null
-      return await res.json()
+      const body = await res.text().catch((err: unknown) => {
+        note(res.status)
+        throw err
+      })
+      note(res.status, Buffer.byteLength(body))
+      return JSON.parse(body) as unknown
     } catch {
       return null // offline / abort / parse error — caller distinguishes null via the throw path
     } finally {
