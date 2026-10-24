@@ -8,7 +8,8 @@ import assert from 'node:assert/strict'
 import { join } from 'node:path'
 import { readPopupLines } from '../src/main/shot/popupLines.ts'
 import { stopOcr } from '../src/main/shot/ocr.ts'
-import { cleanPopupLine, isJournalPicture, namesWindow, orderPopups, popupCheckLines, popupRewards, readPopup, type PopupLineRead, type QuestPopup } from '../src/shared/questPopup.ts'
+import { cleanPopupLine, isJournalPicture, namesWindow, orderPopups, popupCheckLines, popupLinksOfRows, popupRewards, readPopup, type PopupLineRead, type QuestPopup } from '../src/shared/questPopup.ts'
+import { withQuestLinks } from '../src/shared/gapForcedQuests.ts'
 import { questDraftPage } from '../src/shared/gapQuestPage.ts'
 import { mergeQuestPage } from '../src/shared/gapQuestMerge.ts'
 import type { QuestLog } from '../src/shared/gapQuests.ts'
@@ -181,4 +182,19 @@ test('Item Merging: a long punctuated title with I misread, the merge order as a
   // Only an award is a reward: Motes of Potential and the +1 are items the window mentions.
   assert.deepEqual(p.rewards, ['Boots of the Long Road'])
   assert.ok(p.paragraphs.some((x) => x.text.includes('first Item’s Detailed Information window')), 'ltem read as Item')
+})
+
+test("a popup's reward joins its item's page: the Boots list the quest the popup was pasted on", async () => {
+  const reward = await popupOf('popup-tutorial-first-quest-reward.png')
+  assert.ok(reward !== null)
+  const rows = [
+    { domain: 'quest', name: "Doug's errands" },
+    { domain: 'quest', name: 'No Popups Here' },
+    { domain: 'item', name: 'Boots of the Long Road' }
+  ]
+  const popups: Record<string, QuestPopup[]> = { "Doug's errands": [reward] }
+  const links = popupLinksOfRows(rows, (q) => popups[q])
+  assert.deepEqual(links, [{ quest: "Doug's errands", items: ['Boots of the Long Road'] }])
+  const linked = withQuestLinks(rows, links)
+  assert.deepEqual((linked[2] as unknown as { questFacts: { quests: string[] } }).questFacts.quests, ["Doug's errands"])
 })

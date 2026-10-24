@@ -365,3 +365,14 @@ export function popupQuestLink(quest: string, popups: readonly QuestPopup[] = []
   const items = popupRewards(popups)
   return items.length === 0 ? null : { quest, items }
 }
+
+/**
+ * Every Quests row's popup rewards as quest links, for `withQuestLinks` (owner, 2026-10-23: "update the
+ * wiki pages with all the correct quest links and items"): a reward's item row then lists the quest.
+ */
+export function popupLinksOfRows(rows: readonly { domain: string; name: string }[], popupsOf: (quest: string) => readonly QuestPopup[] | undefined): { quest: string; items: string[] }[] {
+  return rows.flatMap((r) => {
+    const link = r.domain === 'quest' ? popupQuestLink(r.name, popupsOf(r.name)) : null
+    return link === null ? [] : [link]
+  })
+}
