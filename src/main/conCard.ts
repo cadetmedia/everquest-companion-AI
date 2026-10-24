@@ -46,6 +46,7 @@ import {
   cappedName,
   conCardChips,
   conCardIsPlayer,
+  conCardKillHits,
   conCardStanding,
   conCardSuppressed,
   type ConCardPayload
@@ -119,7 +120,8 @@ function firstPass(ev: ConsiderEvent, zone: string | undefined, key: string): Co
     name: display,
     chips,
     spellData,
-    ...conCardStanding(ev.faction, ev.difficulty)
+    ...conCardStanding(ev.faction, ev.difficulty),
+    ...conCardKillHits(localMobEntry(display))
   }
   if (ev.level !== undefined) payload.level = ev.level
   if (zone !== undefined) payload.zone = zone
@@ -239,7 +241,8 @@ export async function noteEngineConCard(card: ServedConCard, now = Date.now()): 
     name: card.name,
     chips,
     spellData,
-    ...conCardStanding(card.faction, card.difficulty)
+    ...conCardStanding(card.faction, card.difficulty),
+    ...conCardKillHits(localMobEntry(card.name))
   }
   if (card.level !== undefined) payload.level = card.level
   if (card.zone !== undefined) payload.zone = card.zone

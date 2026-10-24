@@ -24,6 +24,9 @@ import {
   cappedName,
   conCardChips,
   conCardHoldMs,
+  conCardKillHits,
+  OLD_CON_CARD_AUTO_HIDE_MS,
+  CON_CARD_CONFIG_VERSION,
   conCardIsPlayer,
   conCardSuppressed,
   normalizeConCardConfig
@@ -416,16 +419,14 @@ test('the hint the card wears is ONE sentence, said as a destination rather than
 
 // ---- the one knob -----------------------------------------------------------------------
 
-test('the auto-hide clamps, defaults to THREE seconds, and ZERO survives as "never"', () => {
+test('the auto-hide clamps, defaults to EIGHT seconds, and ZERO survives as "never"', () => {
   assert.deepEqual(normalizeConCardConfig(undefined), DEFAULT_CON_CARD_CONFIG)
   assert.equal(DEFAULT_CON_CARD_CONFIG.autoHideMs, DEFAULT_CON_CARD_AUTO_HIDE_MS)
   // JOS-390, and the number is half the ticket: an untouched store and a fresh install both read
   // THIS, so it is asserted literally rather than through the constant it is compared to above.
-  assert.equal(DEFAULT_CON_CARD_AUTO_HIDE_MS, 3_000, 'the owner’s default (2026-08-16: was 5 s)')
-  // AND IT IS EXACTLY THE FLOOR, which is one statement read twice: three seconds is the least a
-  // card can be read in, and the shipped hold is that. A default BELOW its own floor would be a
-  // number no store could ever hold.
-  assert.equal(DEFAULT_CON_CARD_AUTO_HIDE_MS, CON_CARD_MIN_AUTO_HIDE_MS, 'the default IS the floor')
+  assert.equal(DEFAULT_CON_CARD_AUTO_HIDE_MS, 8_000, 'the owner’s default (2026-10-23: was 3 s, 5 s before that)')
+  // Three seconds is still the floor: the least a card can be read in.
+  assert.equal(CON_CARD_MIN_AUTO_HIDE_MS, 3_000, 'the floor')
   // …and it is a value the knob can actually express, above the floor and below the cap, so nobody
   // arrives at Preferences to find the control showing a duration it does not offer.
   assert.ok(
@@ -443,7 +444,43 @@ test('the auto-hide clamps, defaults to THREE seconds, and ZERO survives as "nev
   assert.equal(normalizeConCardConfig({ autoHideMs: 0 }).autoHideMs, CON_CARD_NEVER_HIDES)
   assert.equal(normalizeConCardConfig({ autoHideMs: -5 }).autoHideMs, CON_CARD_NEVER_HIDES)
   // A hand-edited key is dropped rather than honoured.
-  assert.deepEqual(normalizeConCardConfig({ autoHideMs: 20_000, sound: 'ding' }), { autoHideMs: 20_000 })
+  assert.deepEqual(normalizeConCardConfig({ autoHideMs: 20_000, sound: 'ding' }), { autoHideMs: 20_000, v: CON_CARD_CONFIG_VERSION })
+})
+
+test('a stored 3 s from before the version is the old default and moves to 8 s; a 3 s chosen since stays', () => {
+  // The owner's own store, 2026-10-23: {"autoHideMs":3000}, written by every build whether or not anyone chose it.
+  assert.equal(normalizeConCardConfig({ autoHideMs: OLD_CON_CARD_AUTO_HIDE_MS }).autoHideMs, DEFAULT_CON_CARD_AUTO_HIDE_MS)
+  assert.equal(normalizeConCardConfig({ autoHideMs: 3_000, v: CON_CARD_CONFIG_VERSION }).autoHideMs, 3_000)
+  // Any other old value was a choice, and is kept.
+  assert.equal(normalizeConCardConfig({ autoHideMs: 20_000 }).autoHideMs, 20_000)
+  assert.equal(normalizeConCardConfig({ autoHideMs: 0 }).autoHideMs, CON_CARD_NEVER_HIDES)
+  // Once normalized, it says so, and normalizing again changes nothing.
+  const once = normalizeConCardConfig({ autoHideMs: 3_000 })
+  assert.deepEqual(normalizeConCardConfig(once), once)
+})
+
+test('the card lists what a kill does to factions, as the mob page states it', () => {
+  // mobs.json, a deathfist legionnaire: five factions, amounts in the same order.
+  const legionnaire = {
+    factions: ['Death Fist Orcs', 'Ashen Order', 'Commons Residents', 'Guardians of the Vale', 'Knights of Truth'],
+    factionAmounts: ['-30', '10', '10', '10', '10']
+  }
+  assert.deepEqual(conCardKillHits(legionnaire).killHits?.slice(0, 2), [
+    { faction: 'Death Fist Orcs', amount: '-30', raises: false },
+    { faction: 'Ashen Order', amount: '+10', raises: true }
+  ])
+  // Ranges, guesses and unstated amounts read as the page wrote them.
+  const odd = { factions: ['A', 'B', 'C', 'D'], factionAmounts: ['-30..-10?', '+', '-', '5?'] }
+  assert.deepEqual(conCardKillHits(odd).killHits?.map((h) => [h.amount, h.raises]), [
+    ['-30..-10?', false], ['+', true], ['-', false], ['+5?', true]
+  ])
+  // An amount the page left out says neither way.
+  assert.deepEqual(conCardKillHits({ factions: ['Lone'] }).killHits, [{ faction: 'Lone', amount: '?' }])
+  // No factions, no entry: no line at all.
+  assert.deepEqual(conCardKillHits({ factions: [] }), {})
+  assert.deepEqual(conCardKillHits(null), {})
+  // A card is read in seconds: six at most.
+  assert.equal(conCardKillHits({ factions: Array.from({ length: 10 }, (_, i) => `F${String(i)}`) }).killHits?.length, 6)
 })
 
 test('"never" reaches the queue as an infinite hold, and never as a number on the wire', () => {

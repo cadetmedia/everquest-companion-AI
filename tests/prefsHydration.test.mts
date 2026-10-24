@@ -170,7 +170,7 @@ test('one read answers every card in the pane, and it snaps the text size to the
   })
   // And the con card's three (JOS-383). The switch is the one that ships ON, so a stored OFF is the
   // flash this gate exists to prevent; the out-of-range auto-hide arrives clamped.
-  assert.deepEqual(snap.conCard, { open: false, locked: true, cfg: { autoHideMs: 120_000 } })
+  assert.deepEqual(snap.conCard, { open: false, locked: true, cfg: { autoHideMs: 120_000, v: 2 } })
 })
 
 test('an off-ladder text size is snapped rather than stored as it was found', async () => {
