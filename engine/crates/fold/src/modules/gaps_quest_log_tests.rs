@@ -58,6 +58,9 @@ fn a_hand_in_is_the_open_trade_however_long_it_stood() {
             (103, "OFFER:A Curt Dismissal|Dorian G`Wyn"),
             (104, "OFFER:Ordination of Might|Dorian G`Wyn"),
             (141, "Dorian G`Wyn says, 'I have no need for this, Otherguy. You can have it back.'"),
+            // His hail greeting to another player, logged a second before their hail: not this quest's.
+            (152, "Dorian G`Wyn says, 'You seem to have survived the ghosts and zombies out there!'"),
+            (153, "Otherguy says, 'Hail, Dorian G`Wyn'"),
             (161, "Your task 'Unfortunate news' has been updated."),
             (161, "Dorian G`Wyn says, 'Curses! ... You, however, Testplayer , you will always be welcome amongst our kind.'"),
             (161, "Your task 'Unfortunate news' has been updated."),
@@ -75,6 +78,7 @@ fn a_hand_in_is_the_open_trade_however_long_it_stood() {
     let said = step["talk"].as_array().unwrap().iter().map(|t| t["text"].as_str().unwrap()).collect::<Vec<_>>().join(" ");
     assert!(said.contains("You, however, Soandso , you"), "the player's name is the wiki's Soandso: {said}");
     assert!(!said.contains("Testplayer"));
+    assert!(!said.contains("ghosts and zombies"), "an answer to another player's hail: {said}");
     assert_eq!(v["zone"], json!("The Temple of Solusek Ro"), "the start zone is where the task was assigned");
 }
 

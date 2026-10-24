@@ -20,7 +20,10 @@
 // game's backtick folded away; a long NPC line by its first 40 letters, since editors trim them. A
 // hand-in is present when a Hand/Give line of the walkthrough links its item, and a link an article
 // or a letter or two off the game's item name is reported (Unfortunate News links Curt Dismissal and
-// Orgination of Might; the game hands over A Curt Dismissal and Ordination of Might).
+// Orgination of Might; the game hands over A Curt Dismissal and Ordination of Might). When the link
+// leads to no item page and the game's item has one (main's read says so, `itemPages`), the link is
+// a provable error and is corrected to that page (owner, 2026-10-23: "aren't there ISSUES with this
+// though, like the quest item names?": both rendered as missing pages).
 //
 // THE PAGE'S OWN LAYOUT: older pages write level-1 headings (`= Walkthrough =`, 10 of the cache) and
 // `Starts In`; sections are found at any level and a new one takes the page's level.
@@ -62,6 +65,8 @@ class Doc {
   added: boolean[]
   changes: string[] = []
   notes: string[] = []
+  /** Item pages a broken link on the page nearly names (`LiveQuestPage.itemPages`). */
+  itemPages: readonly string[] = []
   constructor(text: string) {
     this.lines = text.replace(/\r\n/g, '\n').split('\n')
     this.added = this.lines.map(() => false)
@@ -284,7 +289,7 @@ function editDistance(a: string, b: string): number {
 }
 
 /** How a page's link names the game's item: the same, near (an article or a letter or two off), or not. */
-function itemMatch(item: string, link: string): 'same' | 'near' | undefined {
+export function itemMatch(item: string, link: string): 'same' | 'near' | undefined {
   const a = plainWords(item)
   const b = plainWords(link)
   if (a === b) return 'same'
@@ -294,13 +299,50 @@ function itemMatch(item: string, link: string): 'same' | 'near' | undefined {
   return undefined
 }
 
+/** An item page's title and its length in plain words, so a link is compared only with titles near its length. */
+export interface ItemTitle {
+  page: string
+  words: number
+}
+
+export const itemTitles = (pages: Iterable<string>): ItemTitle[] => [...pages].map((page) => ({ page, words: plainWords(page).length }))
+
+/**
+ * The item pages a link on the page nearly names (an article or a letter or two off) where the link
+ * itself leads to no item (`isItem` says no): what the merge may correct a hand-in's link to.
+ */
+export function nearItemPages(text: string, isItem: (link: string) => boolean, titles: readonly ItemTitle[]): string[] {
+  const links = new Set([...text.matchAll(LINKS)].map((m) => m[1].trim()))
+  const out = new Set<string>()
+  for (const link of links) {
+    if (link.includes(':') || isItem(link)) continue
+    const len = plainWords(link).length
+    for (const t of titles) if (Math.abs(t.words - len) <= 4 && itemMatch(t.page, link) === 'near') out.add(t.page)
+  }
+  return [...out]
+}
+
+/** A near link on line `i`: corrected to the item's page when the link leads to none, else noted. */
+function fixOrNote(doc: Doc, i: number, m: RegExpMatchArray, item: string): void {
+  const link = m[1].trim()
+  const page = doc.itemPages.find((p) => plainWords(p) === plainWords(item))
+  if (page === undefined) {
+    doc.note(`The page links ${link}; the item is ${item}.`)
+    return
+  }
+  // The link's own text after a `|` stays as the editor wrote it.
+  const shown = m[0].slice(2 + m[1].length, -2)
+  doc.replace(i, doc.lines[i].replace(m[0], `[[${page}${shown}]]`))
+  doc.changes.push(`Link fixed: ${link} is no page; the item's page is ${page}`)
+}
+
 /** The walkthrough line that hands this item over (any Hand/Give line linking it), or -1; a near link is noted. */
 function handLineOf(doc: Doc, item: string, from: number, to: number): number {
   for (let i = from; i < to; i++) {
     if (!HAND_LINE.test(doc.lines[i])) continue
     for (const m of doc.lines[i].matchAll(LINKS)) {
       const match = itemMatch(item, m[1])
-      if (match === 'near') doc.note(`The page links ${m[1].trim()}; the item is ${item}.`)
+      if (match === 'near') fixOrNote(doc, i, m, item)
       if (match !== undefined) return i
     }
   }
@@ -421,8 +463,9 @@ function mergeCategories(doc: Doc, log: QuestLog, c: QuestPageContext, zoneOk: b
 }
 
 /** The log's quest against the page the wiki has: the page with only additions. */
-export function mergeQuestPage(live: string, name: string, log: QuestLog, c: QuestPageContext & { entry?: QuestCatalogEntry } = {}): Omit<QuestLiveCopy, 'kind' | 'title'> {
+export function mergeQuestPage(live: string, name: string, log: QuestLog, c: QuestPageContext & { entry?: QuestCatalogEntry; itemPages?: readonly string[] } = {}): Omit<QuestLiveCopy, 'kind' | 'title'> {
   const doc = new Doc(live)
+  doc.itemPages = c.itemPages ?? []
   // The walkthrough's blocks read the player's names as Soandso themselves (questWalkBlocks).
   const zoneOk = mergeTopTable(doc, log, c)
   mergeReward(doc, log)
@@ -437,6 +480,11 @@ export interface LiveQuestPage {
   text: string
   /** A second page the read passed through: the game's title, holding only a link to this one. */
   stubOf?: string
+  /**
+   * Item page titles a link on the page nearly names (an article or a letter or two off) where the
+   * link itself leads to no item page, from main's catalog (gapQuestLive.ts `nearItemPages`).
+   */
+  itemPages?: string[]
 }
 
 /**
@@ -469,7 +517,7 @@ export function questLiveCopy(q: { name: string; log: QuestLog; offline: string 
     const text = questDraftPage(name, log, c)
     return { kind: 'draft', title: live.title, text, added: flat(text), changes: [], notes: [] }
   }
-  const merged = mergeQuestPage(live.text, name, log, c)
+  const merged = mergeQuestPage(live.text, name, log, { ...c, itemPages: live.itemPages })
   const stub = live.stubOf === undefined ? [] : [`${live.stubOf} is a second page holding only a link here; this compares against ${live.title}.`]
   return { kind: 'merged', title: live.title, ...merged, notes: [...stub, ...merged.notes] }
 }

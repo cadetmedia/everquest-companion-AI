@@ -5,7 +5,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { mergeQuestPage, plainWords, questLiveCopy, stubLinkTarget } from '../src/shared/gapQuestMerge'
+import { itemTitles, mergeQuestPage, nearItemPages, plainWords, questLiveCopy, stubLinkTarget } from '../src/shared/gapQuestMerge'
 import { questDraftPage } from '../src/shared/gapQuestPage'
 import type { QuestLog } from '../src/shared/gapQuests'
 
@@ -205,6 +205,25 @@ test('THE REAL PAGE ALREADY HAS WHAT THE LOG SAW: NOTHING ADDED, THE TWO MISNAME
     'The page links Curt Dismissal; the item is A Curt Dismissal.',
     'The page links Orgination of Might; the item is Ordination of Might.'
   ])
+})
+
+test("A NEAR LINK THAT LEADS TO NO PAGE IS FIXED TO THE ITEM'S PAGE WHEN THE CATALOG HAS IT; ANOTHER STAYS A NOTE", () => {
+  // Main's read found A Curt Dismissal's page near the broken [[Curt Dismissal]]; Ordination of Might's page it did not.
+  const out = mergeQuestPage(REAL, 'Unfortunate news', chained, { itemPages: ['A Curt Dismissal'] })
+  const lines = out.text.split('\n')
+  const hand = lines.find((l) => l.startsWith('Hand ')) ?? ''
+  assert.ok(hand.includes('[[A Curt Dismissal]]') && !hand.includes('[[Curt Dismissal]]'), hand)
+  assert.ok(hand.includes('[[Orgination of Might]]'), 'unproven: left as the page has it')
+  assert.ok(out.added[lines.indexOf(hand)], 'the fixed line is shown as changed')
+  assert.deepEqual(out.changes, ["Link fixed: Curt Dismissal is no page; the item's page is A Curt Dismissal"])
+  assert.deepEqual(out.notes, ['The page links Orgination of Might; the item is Ordination of Might.'])
+})
+
+test('the catalog side: a broken link finds the item page it nearly names; a working link or a category finds none', () => {
+  const titles = itemTitles(['A Curt Dismissal', 'Ordination of Might', 'Exorbitant Commission', 'Curtain Rod'])
+  const isItem = (l: string): boolean => ['exorbitant commission'].includes(l.toLowerCase())
+  const near = nearItemPages(REAL, isItem, titles)
+  assert.deepEqual(near.sort(), ['A Curt Dismissal', 'Ordination of Might'])
 })
 
 test('A PAGE IN THE OLDER LAYOUT GETS ADDITIONS IN ITS OWN LAYOUT', () => {
