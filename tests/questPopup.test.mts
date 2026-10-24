@@ -198,3 +198,10 @@ test("a popup's reward joins its item's page: the Boots list the quest the popup
   const linked = withQuestLinks(rows, links)
   assert.deepEqual((linked[2] as unknown as { questFacts: { quests: string[] } }).questFacts.quests, ["Doug's errands"])
 })
+
+test('Your first quest!: an instruction that opens in orange and runs on in white is a step; an orange UI word mid-line is not', async () => {
+  const p = await popupOf('popup-tutorial-your-first-quest.png')
+  assert.ok(p !== null)
+  assert.equal(p.steps.length, 1, JSON.stringify(p.steps))
+  assert.match(p.steps[0], /^Continue to talk with Doug\b/)
+})

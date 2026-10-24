@@ -114,6 +114,14 @@ function bandTone(img: Rgba, box: Box, top: number, height: number): PopupTone {
   return (Object.keys(n) as PopupTone[]).reduce((a, k) => (n[k] > n[a] ? k : a), 'white')
 }
 
+/**
+ * The colour a band OPENS in: its first fifth. `Continue to talk with Doug` is orange and the rest of
+ * its line white (Your first quest!), so the line's majority alone hides the instruction.
+ */
+function leadTone(img: Rgba, box: Box, top: number, height: number): PopupTone {
+  return bandTone(img, { ...box, w: box.w / 5 }, top, height)
+}
+
 /** Whether a band holds an item link's magenta (`Boots of the Long Road` on the reward popup). */
 function hasMagenta(img: Rgba, box: Box, top: number, height: number): boolean {
   let n = 0
@@ -144,7 +152,7 @@ function strip(img: Rgba, y0: number, y1: number, share: number): Rgba {
  * small grey text ran together (`YourFirstQuestRewara`) while the strip alone reads `Your First Quest
  * Reward!`. `titleBottom` is where the body starts.
  */
-export async function readPopupLines(img: Rgba): Promise<{ lines: string[]; tops: number[]; heights: number[]; tones: PopupTone[]; items: boolean[]; titleLines: string[]; titleBottom: number }> {
+export async function readPopupLines(img: Rgba): Promise<{ lines: string[]; tops: number[]; heights: number[]; tones: PopupTone[]; leads: PopupTone[]; items: boolean[]; titleLines: string[]; titleBottom: number }> {
   const read = await readLines(popupPrep(img))
   const k = POPUP_SCALE
   const boxes = read.map((l): Box => ({ x: l.box.x / k, y: l.box.y / k, w: l.box.w / k, h: l.box.h / k }))
@@ -159,6 +167,7 @@ export async function readPopupLines(img: Rgba): Promise<{ lines: string[]; tops
     tops: bands.map((b) => b.top),
     heights: bands.map((b) => b.height),
     tones: boxes.map((b, i) => bandTone(img, b, bands[i].top, bands[i].height)),
+    leads: boxes.map((b, i) => leadTone(img, b, bands[i].top, bands[i].height)),
     items: boxes.map((b, i) => hasMagenta(img, b, bands[i].top, bands[i].height)),
     titleLines,
     titleBottom

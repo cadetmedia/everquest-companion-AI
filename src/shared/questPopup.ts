@@ -22,6 +22,8 @@ export interface PopupLineRead {
   tops: number[]
   heights: number[]
   tones: ('white' | 'yellow' | 'orange')[]
+  /** The colour each line opens in (an orange instruction that runs on in white). */
+  leads?: ('white' | 'yellow' | 'orange')[]
   /** Lines holding an item link's magenta. */
   items?: boolean[]
   /** The title bar read on its own. */
@@ -116,6 +118,8 @@ interface Kept {
   top: number
   height: number
   tone: 'white' | 'yellow' | 'orange'
+  /** Opens in orange though mostly white: `Continue to talk with Doug as he'll ...`. */
+  leadsOrange: boolean
   item: boolean
 }
 
@@ -134,7 +138,7 @@ function keptLines(r: PopupLineRead): { kept: Kept[]; next?: string } {
       closed = true
       return
     }
-    kept.push({ text, top: r.tops[i] ?? 0, height: r.heights[i] ?? 0, tone: r.tones[i] ?? 'white', item: r.items?.[i] === true })
+    kept.push({ text, top: r.tops[i] ?? 0, height: r.heights[i] ?? 0, tone: r.tones[i] ?? 'white', leadsOrange: r.leads?.[i] === 'orange', item: r.items?.[i] === true })
   })
   return next === undefined ? { kept } : { kept, next }
 }
@@ -173,11 +177,17 @@ function paragraphsOf(body: readonly Kept[]): Para[] {
 }
 
 /** Verbs an instruction opens on: what the player is sent to do. */
-const INSTRUCTION = /^(?:find|buy|go|head|travel|talk|speak|return|give|hand|deliver|bring|kill|slay|collect|gather|loot|hail|say|seek|visit|enter|meet|purchase|take|use|equip|merge|combine|scribe|memorize|craft)\b/i
+const INSTRUCTION = /^(?:find|buy|go|head|travel|talk|speak|continue|return|give|hand|deliver|bring|kill|slay|collect|gather|loot|hail|say|seek|visit|enter|meet|purchase|take|use|equip|merge|combine|scribe|memorize|craft)\b/i
 
-/** A paragraph's instruction: its orange text up to the first sentence's end, when it opens on a verb. */
+/**
+ * A paragraph's instruction: its orange text up to the first sentence's end, when it opens on a verb.
+ * A paragraph whose first line only OPENS in orange reads that whole first sentence (the OCR gives no
+ * word positions to cut at the colour change).
+ */
 function instructionOf(p: Para): string | undefined {
-  const orange = p.lines.filter((l) => l.tone === 'orange').map((l) => l.text).join(' ')
+  const first = p.lines.at(0)
+  const lead = first !== undefined && first.leadsOrange && first.tone !== 'orange'
+  const orange = lead ? p.lines.map((l) => l.text).join(' ') : p.lines.filter((l) => l.tone === 'orange').map((l) => l.text).join(' ')
   if (!INSTRUCTION.test(orange)) return undefined
   const end = orange.search(/[.!?](\s|$)/)
   return end < 0 ? orange : orange.slice(0, end + 1)
