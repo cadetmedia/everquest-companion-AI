@@ -19,6 +19,7 @@ import { CURRENT_ERA } from './planner/era'
 import { wikiZoneLink } from './gapWikiZone'
 import { roleLine, roleOf } from './gapRoles'
 import { npcImageName } from './mobPageTitle'
+import { popupCheckLines, popupExperience, popupRewards, popupWalkBlocks } from './questPopup'
 import { ownSteps, questLogOf, questPageTitle, questRewards, questRowLines, receivedOf, relatedNpcs, relatedZones, stepKeyword, type QuestCatalogEntry, type QuestJournalFacts, type QuestLog, type QuestStep } from './gapQuests'
 
 /** What the page text needs beside the log: the wiki's spellings and the journal's reading. */
@@ -80,10 +81,12 @@ function topTable(log: QuestLog, c: QuestPageContext): string {
 /** The reward items as the blueprint lists them: `<ul>`, one `<li>{{:Item}}</li>` each, `</ul>`. */
 export const rewardList = (items: readonly string[]): string[] => (items.length === 0 ? [] : ['<ul>', ...items.map((i) => `<li>{{:${i}}}</li>`), '</ul>'])
 
-function rewardSection(log: QuestLog): string {
+function rewardSection(log: QuestLog, c: QuestPageContext): string {
   const r = questRewards(log)
-  const items = rewardList(r?.items ?? [])
-  const lines = items.length > 0 ? items : r?.experience === true ? ['* Experience'] : ['?']
+  // A pasted popup's award (`awarded a pair of Boots of the Long Road and some experience`) counts too.
+  const popups = c.journal?.popups
+  const items = rewardList([...new Set([...(r?.items ?? []), ...popupRewards(popups)])])
+  const lines = items.length > 0 ? items : r?.experience === true || popupExperience(popups) ? ['* Experience'] : ['?']
   return ['= Reward =', '', ...lines].join('\n')
 }
 
@@ -115,7 +118,8 @@ function checkLine(s: QuestStep, c: QuestPageContext): string | undefined {
 }
 
 function summarySection(name: string, log: QuestLog, c: QuestPageContext): string {
-  const lines = ownSteps(log).map((s) => checkLine(s, c)).filter((l): l is string => l !== undefined)
+  // A pasted popup's instructions come first: the tutorial shows them before the talk (questPopup.ts).
+  const lines = [...popupCheckLines(c.journal?.popups), ...ownSteps(log).map((s) => checkLine(s, c)).filter((l): l is string => l !== undefined)]
   const next = questRewards(log)?.next
   if (next !== undefined) lines.push(`* Receive the [[${next}]] quest.`)
   if (lines.length === 0) lines.push(`* Finish ${name}.`)
@@ -127,7 +131,7 @@ function summarySection(name: string, log: QuestLog, c: QuestPageContext): strin
  * lines. A block is one line, but a facblock is its `<div>` and every faction line inside it.
  */
 export interface WalkBlock {
-  kind: 'say' | 'npc' | 'give' | 'receive' | 'task' | 'faction' | 'experience' | 'achievement'
+  kind: 'say' | 'npc' | 'give' | 'receive' | 'task' | 'faction' | 'experience' | 'achievement' | 'popup'
   lines: string[]
   /** What the block names: the words said, the item, the faction lines, the achievement. */
   keys: string[]
@@ -178,7 +182,8 @@ function walkStep(name: string, s: QuestStep, c: QuestPageContext): WalkBlock[] 
  */
 export function questWalkBlocks(name: string, log: QuestLog, c: QuestPageContext = {}): WalkBlock[] {
   const seen = new Set<string>()
-  const out: WalkBlock[] = []
+  // Pasted popup windows lead, in paste order: the tutorial shows each before the talk it sends you to.
+  const out: WalkBlock[] = [...popupWalkBlocks(c.journal?.popups)]
   /** A task line already written this second, or the line just written. */
   const repeat = (at: string, b: WalkBlock): boolean => {
     const prev = out[out.length - 1]
@@ -218,7 +223,7 @@ export function questDraftPage(name: string, log: QuestLog, c: QuestPageContext 
   const home = homeZone(log)
   // The class category is the editor's to pick: the log never states which classes may take it.
   const cats = ['[[Category:Quests]]', ...(home === undefined ? [] : [zoneCategory(home, c)]), '<!-- [[Category:All Classes Quests]] or [[Category:<Class> Quests]] -->']
-  return [era, ...picture, topTable(log, c), '', rewardSection(log), '', summarySection(name, log, c), '', '= Walkthrough =', '', ...walk, ...relatedQuests(log), ...cats].join('\n') + '\n'
+  return [era, ...picture, topTable(log, c), '', rewardSection(log, c), '', summarySection(name, log, c), '', '= Walkthrough =', '', ...walk, ...relatedQuests(log), ...cats].join('\n') + '\n'
 }
 
 /** `= Related Quests =`: the quest this one follows and the one it hands out, when the log saw them. */

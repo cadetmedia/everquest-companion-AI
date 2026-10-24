@@ -112,6 +112,8 @@ export const setQuestJournal = (key: string, facts: QuestJournalFacts | null): v
 export const useQuestJournals = (): Readonly<Record<string, Stored<QuestJournalFacts>>> => journals.use()
 /** One quest's kept journal reading, by its task name, outside a render (Copy wiki page, the details). */
 export const questJournalNow = (name: string): QuestJournalFacts | undefined => journals.all()[questTitleKey(name)]
+/** One quest's kept readings by its key, outside a render: a paste merges into what is there now. */
+export const questJournalByKey = (key: string): QuestJournalFacts | undefined => journals.all()[key]
 
 const pictures = shotStore<{ path: string }>(PICTURES_KEY)
 /** Note a mob picture saved under `file` (MobPicture); `null` when it was deleted. */

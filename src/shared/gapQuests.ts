@@ -9,6 +9,7 @@
 // (owner: "make sure the tool can extract this on it's own in the future without using you").
 
 import { wikiCreateUrl, wikiEditUrl } from './gapUrls'
+import type { QuestPopup } from './questPopup'
 import { ZONES } from './zones'
 
 /** One line of a step's talk: `You` or the NPC. */
@@ -100,6 +101,10 @@ export interface QuestJournalFacts {
   /** `? ? ?` objective rows: steps the game has not shown yet. */
   hiddenSteps?: number
   description?: string
+  /** Popup windows pasted for this quest, in paste order (shared/questPopup.ts). */
+  popups?: QuestPopup[]
+  /** A small picture of the Quest Journal paste, for its thumbnail (a data URL). */
+  thumb?: string
 }
 
 /**

@@ -100,7 +100,7 @@ export const knowledgeBridge = {
   /** A pasted item-window screenshot, read on this machine: page fields and icon ids (src/main/ipc/shotIpc.ts). */
   shotReadItem: (png: Uint8Array): Promise<import('../shared/itemWindow').ItemShotReply> => ipcRenderer.invoke(IPC.shotReadItem, png),
   /** A pasted picture's text lines, read on this machine (a spell display window). */
-  shotReadText: (png: Uint8Array, mode?: 'journal'): Promise<import('../shared/spellWindow').ShotTextReply> => ipcRenderer.invoke(IPC.shotReadText, png, mode),
+  shotReadText: (png: Uint8Array, mode?: 'journal' | 'popup'): Promise<import('../shared/spellWindow').ShotTextReply> => ipcRenderer.invoke(IPC.shotReadText, png, mode),
   /** The captures (the macro's line, an overlay's button) waiting to be filed; the call takes them. */
   shotCaptures: (): Promise<import('../shared/shotTrigger').Captured[]> => ipcRenderer.invoke(IPC.shotCaptures),
   /** The latest Channels line's numbers by channel name, for the capture macro. */

@@ -36,6 +36,10 @@ export interface ShotTextReply {
   lines: string[]
   /** A Quest Journal's read only: each line's background brightness (main/shot/journalLines.ts). */
   shades?: number[]
+  /** A popup's read only (main/shot/popupLines.ts): each line's top and height in pixels, and its colour. */
+  tops?: number[]
+  heights?: number[]
+  tones?: ('white' | 'yellow' | 'orange')[]
   ms: number
   /** Set when the picture could not be read at all. */
   error?: string
