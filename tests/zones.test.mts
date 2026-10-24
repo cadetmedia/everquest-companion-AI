@@ -59,9 +59,9 @@ const OBSERVED: readonly (readonly [string, string | null])[] = [
   ["Erud's Crossing", 'erudsxing'],
   ['Erudin', 'erudnext'],
   ['Erudin Palace', 'erudnint'],
-  // EQL-new content (its NPCs are Doug / Dougina, not Gloomingdeep's), so no live-EQ stem fits and
-  // guessing `tutorial` would draw a map of somewhere else.
-  ['EverQuest Legends Tutorial', null],
+  // EQL-new content (its NPCs are Doug / Dougina): `tutoriala`/`tutorialb` are Gloomingdeep's maps,
+  // so it is `tutorial`, the game's third tutorial map (2026-10-23).
+  ['EverQuest Legends Tutorial', 'tutorial'],
   ['Everfrost Peaks', 'everfrost'],
   ['Grobb', 'grobb'],
   ['Highpass Hold', 'highpass'],
@@ -209,12 +209,12 @@ test('every zone the live log has printed resolves to its map stem', () => {
     assert.equal(zoneShortName(raw), expected, `"${raw}" resolved wrong`)
   }
   // 50 of the 51 canonical zone names, spelled 61 ways here because the instance-tier variants
-  // are listed alongside their base name. Only the EQL-new tutorial is unmapped.
+  // are listed alongside their base name. Every one resolves (the EQL tutorial since 2026-10-23).
   const resolved = OBSERVED.filter(([, s]) => s !== null).length
-  assert.equal(resolved, OBSERVED.length - 1, 'exactly one observed zone is deliberately unmapped')
+  assert.equal(resolved, OBSERVED.length, 'every observed zone resolves')
   assert.ok(resolved >= 61, `expected the observed corpus to resolve, got ${String(resolved)}`)
   const stems = new Set(OBSERVED.map(([, s]) => s).filter((s): s is string => s !== null))
-  assert.equal(stems.size, 49, 'the 50 resolvable log names cover 49 stems (permafrost carries two)')
+  assert.equal(stems.size, 50, 'the 51 log names cover 50 stems (permafrost carries two)')
 })
 
 test('an unknown zone returns null — never a nearest guess', () => {
