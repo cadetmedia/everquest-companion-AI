@@ -39,8 +39,11 @@ test("an accepted chain's page: Summary in the chain's order, the kill and loot 
   const summary = page.slice(page.indexOf('= Summary ='), page.indexOf('{{End}}'))
   const at = (s: string): number => summary.indexOf(s)
   assert.ok(at("* Say 'more work' to [[Doug]]") >= 0, summary)
-  assert.ok(at('* Kill 6 [[a fragile pet]].') > at("* Say 'more work'"), summary)
-  assert.ok(at("* Loot 6 [[Fragile Pet's Skull]] from [[a fragile pet]].") > at('* Kill 6'), summary)
+  // A kill and its loot are one line, counted as the hand-in took them (reviewer, 2026-10-23).
+  assert.ok(at("* Kill [[a fragile pet]] and loot 6 [[Fragile Pet's Skull]].") > at("* Say 'more work'"), summary)
+  assert.equal(at('* Kill 6 [[a fragile pet]].'), -1, summary)
   assert.ok(page.includes("Hand 6 [[Fragile Pet's Skull]] to [[Dead Doug]]:"), page)
+  // The hand-over comes before Dead Doug's answer to it.
+  assert.ok(page.indexOf("Hand 6 [[Fragile Pet's Skull]]") < page.indexOf('Here, take these boots!'), page)
   assert.ok(page.includes('{{YouGainExperience}}'), page)
 })
