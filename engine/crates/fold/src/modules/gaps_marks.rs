@@ -24,7 +24,7 @@ use super::{Domain, GapRow, GapsModule};
 use crate::event::Event;
 use crate::knowledge::Knowledge;
 use crate::modules::consider::mob_key;
-use crate::modules::gaps_names::owner_of_pet;
+use crate::modules::gaps_names::{is_tutorial_zone, owner_of_pet};
 use crate::modules::resist::world::is_player_shaped_name;
 use serde::Serialize;
 use std::cell::Cell;
@@ -72,9 +72,13 @@ impl GapsModule {
 
     /// Whether the catalog knows the name, and the name a Mobs row for it is filed under: an unknown
     /// mob's pet is filed under the mob (`gaps_names.rs`).
+    /// Not in the EQ Legends Tutorial, whose `a fragile pet` and `a rambunctious pet` are mobs by those
+    /// whole names (owner, 2026-10-23: "there is no 'a fragile'"). Elsewhere the shape is a mob's pet:
+    /// the owner's log has 918 lines of `a dar ghoul knight pet`, 570 of `a worry wraith pet`.
     pub(super) fn filed_as<'a>(&self, k: &dyn Knowledge, name: &'a str) -> (bool, &'a str) {
         let known = self.mob_names.known(k, name);
-        (known, if known { name } else { owner_of_pet(name) })
+        let whole = self.zone.as_deref().is_some_and(is_tutorial_zone);
+        (known, if known || whole { name } else { owner_of_pet(name) })
     }
 
     /// The tab's "may be a player": a one-word name only hailed or conned that the log has not yet
