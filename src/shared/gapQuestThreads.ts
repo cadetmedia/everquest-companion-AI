@@ -7,7 +7,7 @@
 import type { QuestLog, QuestStep } from './gapQuests'
 
 /** What a step is. `travel` is a zone change inside the chain. */
-export type ThreadStepKind = 'talk' | 'kill' | 'loot' | 'buy' | 'receive' | 'handin' | 'reward' | 'travel'
+export type ThreadStepKind = 'talk' | 'kill' | 'loot' | 'buy' | 'receive' | 'handin' | 'reward' | 'travel' | 'collect'
 
 /**
  * Why a step follows another (owner, 2026-10-23: "a graph of nodes"): `keyword` (the player said the NPC's
@@ -56,6 +56,11 @@ export interface ThreadStep {
   /** A kill step's mob, and how many were slain. */
   mob?: string
   count?: number
+  /** A hand-in's items as one trade held them (the requirement), and how many trades repeated it. */
+  perTrade?: ThreadItem[]
+  trades?: number
+  /** A collect step's droppers per item, the most frequent first (threadDisplaySteps). */
+  drops?: { item: string; mobs: string[] }[]
   experience?: boolean
   factions?: { faction: string; line: string }[]
   achievements?: string[]
@@ -84,51 +89,146 @@ export const threadKey = (t: Pick<QuestThread, 'id'>): string => t.id
 /** `6 [[a fragile pet]]`: a count and a link, as the pages write them. */
 const counted = (n: number | undefined, name: string): string => `${n !== undefined && n > 1 ? `${String(n)} ` : ''}[[${name}]]`
 
-/** How many of each item the chain's hand-ins took: what a page says to loot, not every drop. */
-function handedCounts(t: QuestThread): Map<string, number> {
-  const n = new Map<string, number>()
-  for (const s of t.steps) if (s.kind === 'handin') for (const i of s.items ?? []) n.set(i.name, (n.get(i.name) ?? 0) + i.n)
-  return n
-}
+/** Words too common to tell items apart. */
+const STOP = new Set(['a', 'an', 'the', 'of', 'from', 'and', 'out', 'old', 'some', 'one', 'with', 'that', 'has', 'its', 'for', 'to', 'in', 'on', 'my', 'your'])
+
+/** An item name's words worth matching, singular: `Burned Out Lightstone` → burned, lightstone. */
+const keyWords = (name: string): string[] =>
+  name.toLowerCase().split(/[^a-z]+/).filter((w) => w.length > 2 && !STOP.has(w)).map((w) => w.replace(/(?<=[a-z]{3})s$/, ''))
+
+const COUNT_WORDS: Record<string, number> = { a: 1, an: 1, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10 }
 
 /**
- * A kill, loot or purchase as the line the page says it in. A loot whose mob the chain also killed is
- * one line, the count the hand-in took: "Kill [[a fragile pet]] and loot 6 [[Fragile Pet's Skull]]."
+ * How many of an item an NPC's words ask for, or undefined when they do not name it. A word of the line
+ * matches an item word whole, as its singular, or as part of a compound (`stone` in Lightstone); the word
+ * before it gives the count (`a`, `two`, `4`). Vlad Sterovich: "I need a wing from a flying creature of
+ * the night, a fang ..., a chip from the aged dead, and a stone that has lost its light" asks 1 of each.
  */
-function noteOf(s: ThreadStep, handed: ReadonlyMap<string, number>, killed: ReadonlySet<string>): string | undefined {
-  const needed = (s.items ?? []).map((i) => counted(Math.min(i.n, handed.get(i.name) ?? i.n), i.name)).join(' and ')
-  if (s.kind === 'kill' && s.mob !== undefined) return `Kill ${counted(s.count, s.mob)}.`
-  if (s.kind === 'loot' && s.mob !== undefined) return killed.has(s.mob) ? `Kill [[${s.mob}]] and loot ${needed}.` : `Loot ${needed} from [[${s.mob}]].`
-  if (s.kind === 'buy' && s.npc !== undefined) return `Buy ${needed} from [[${s.npc}]].`
+export function askedCount(line: string, item: string): number | undefined {
+  const words = line.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean)
+  const keys = keyWords(item)
+  for (let i = 0; i < words.length; i++) {
+    const w = words[i].replace(/(?<=[a-z]{3})s$/, '')
+    if (w.length < 4 || STOP.has(w)) continue
+    if (!keys.some((k) => k === w || (k.length > w.length && k.includes(w)))) continue
+    const before = words[i - 1] ?? ''
+    const n = COUNT_WORDS[before] ?? (/^\d+$/.test(before) ? Number(before) : undefined)
+    return n ?? 1
+  }
   return undefined
 }
 
-/** One chain step as the page writer's step: talk with its lines, a hand-in's items, the rest as a note. */
-function questStep(s: ThreadStep, handed: ReadonlyMap<string, number>, killed: ReadonlySet<string>): QuestStep {
-  const base: QuestStep = { at: s.at, kind: 'talk', ...(s.npc === undefined ? {} : { npc: s.npc }), ...(s.zone === undefined ? {} : { zone: s.zone }) }
-  const talk = (s.lines ?? []).map((l) => ({ who: l.who, text: l.text, ...(l.ms === undefined ? {} : { ms: l.ms }) }))
-  if (s.kind === 'handin') {
-    const offered = (s.items ?? []).flatMap((i) => Array.from({ length: i.n }, () => i.name))
-    // The hand-over comes before the NPC's answer to it, as the pages write it ("Hand X to NPC:", then its words).
-    const first = Math.min(s.ms, ...talk.map((l) => l.ms ?? s.ms))
-    const answers = talk.map((l) => ({ ...l, ms: l.ms ?? s.ms }))
-    return { ...base, talk: answers, offered, offeredMs: offered.map(() => first - 1), ...(s.experience === true ? { experience: true } : {}), ...(s.factions === undefined ? {} : { factions: s.factions }), ...(s.achievements === undefined ? {} : { achievements: s.achievements }) }
+/** The NPC line that asks for a hand-in's items: the last line of that NPC, before the hand-in, naming one of them. */
+function askingLine(steps: readonly ThreadStep[], h: ThreadStep): string | undefined {
+  const names = (h.items ?? []).map((i) => i.name)
+  let found: string | undefined
+  for (const s of steps) {
+    if (s === h) break
+    for (const l of s.lines ?? []) if (l.who === h.npc && names.some((n) => askedCount(l.text, n) !== undefined)) found = l.text
   }
-  const note = noteOf(s, handed, killed)
-  return note === undefined ? { ...base, talk } : { ...base, note }
+  return found
 }
 
-/** A chain as the QuestLog the page writer reads: its steps in the chain's order, its giver and zone. */
-export function questLogFromThread(t: QuestThread): QuestLog {
-  const npcs = [...new Set(t.steps.map((s) => s.npc).filter((n): n is string => n !== undefined))]
-  const handed = handedCounts(t)
-  // A kill whose mob a later loot names is said in that loot's line.
-  const killed = new Set(t.steps.flatMap((s) => (s.kind === 'loot' && s.mob !== undefined ? [s.mob] : [])))
-  // A keyword said to the wrong NPC, answered only with "go ask X for 'kw'", is the next step's to say.
+/** The quote a step's reason shows: the start of the line, cut at about 80 letters. */
+const quote = (t: string): string => (t.length > 80 ? `'${t.slice(0, 79).trimEnd()}…'` : `'${t}'`)
+
+/**
+ * A hand-in's requirement (owner, 2026-10-23): what the asking NPC's words name ("a wing", "a chip"), else
+ * one trade's offers (`perTrade`), never the sum of several trades. Items handed but never named still
+ * count, from the trade.
+ */
+function required(h: ThreadStep, asked: string | undefined): ThreadItem[] {
+  const per = new Map((h.perTrade ?? h.items ?? []).map((i) => [i.name, i.n]))
+  return (h.items ?? []).map((i) => {
+    const said = asked === undefined ? undefined : askedCount(asked, i.name)
+    return { name: i.name, n: said ?? per.get(i.name) ?? i.n }
+  })
+}
+
+/** Where each handed item was looted, its droppers the most frequent first. */
+function droppers(t: QuestThread): Map<string, string[]> {
+  const by = new Map<string, Map<string, number>>()
+  for (const s of t.steps) {
+    if (s.kind !== 'loot' || s.mob === undefined) continue
+    for (const i of s.items ?? []) {
+      const m = by.get(i.name) ?? new Map<string, number>()
+      m.set(s.mob, (m.get(s.mob) ?? 0) + i.n)
+      by.set(i.name, m)
+    }
+  }
+  return new Map([...by].map(([item, m]) => [item, [...m].sort((a, b) => b[1] - a[1]).map(([mob]) => mob)]))
+}
+
+/**
+ * What a chain shows and its page says (owner, 2026-10-23: "just because i killed 4 skeletons and got 2
+ * bone chips, doesn't mean the quest requires that"). A quest's requirements are what was HANDED IN, as
+ * the asking NPC named them; kills and loots only say where an item came from, so they are no steps. The
+ * talk comes first; each hand-in gets one "Collect" step right before it listing its looted items with
+ * their droppers (loot time is evidence of the source, not of the order), then the hand-in, counted per
+ * trade, with how many trades repeated it. A purchase says the required count. A keyword said to the wrong
+ * NPC and answered only with "go ask X for 'kw'" is the next step's to say.
+ */
+export function threadDisplaySteps(t: QuestThread): ThreadStep[] {
+  const drops = droppers(t)
+  const bought = new Set(t.steps.flatMap((s) => (s.kind === 'buy' ? (s.items ?? []).map((i) => i.name) : [])))
   const redirected = new Set(t.steps.flatMap((s) => (s.links ?? []).filter((l) => l.why === 'goask').map((l) => l.from)))
   const resaid = (s: ThreadStep): boolean => s.kind === 'talk' && redirected.has(s.id) && t.steps.some((n) => n.kind === 'talk' && n.npc !== s.npc && n.said?.[0] === s.said?.[0])
-  const steps = t.steps.filter((s) => !(s.kind === 'kill' && s.mob !== undefined && killed.has(s.mob)) && !resaid(s))
-  return { giver: t.giver, zone: t.zone ?? null, npcs, steps: steps.map((s) => questStep(s, handed, killed)), reruns: 0, forced: true }
+  const need = new Map<string, number>()
+  const out: ThreadStep[] = []
+  for (const s of t.steps) {
+    if (s.kind === 'kill' || s.kind === 'loot' || resaid(s)) continue
+    if (s.kind !== 'handin') {
+      out.push(s)
+      continue
+    }
+    const asked = askingLine(t.steps, s)
+    const items = required(s, asked)
+    for (const i of items) need.set(i.name, i.n)
+    const looted = items.filter((i) => drops.has(i.name) && !bought.has(i.name))
+    if (looted.length > 0) {
+      const sources = looted.map((i) => `${i.name}: ${(drops.get(i.name) ?? []).join(', ')}`)
+      const reasons = [...(asked === undefined ? [] : [`asked: ${quote(asked)}`]), ...sources]
+      const links: ThreadLink[] = reasons.map((detail) => ({ from: '', why: 'item', detail }))
+      out.push({ id: `collect:${s.id}`, at: s.at, ms: s.ms, kind: 'collect', why: 'item', items: looted, drops: looted.map((i) => ({ item: i.name, mobs: drops.get(i.name) ?? [] })), links, ...(s.zone === undefined ? {} : { zone: s.zone }) })
+    }
+    out.push({ ...s, items })
+  }
+  // A purchase of a handed item buys what the hand-in needs.
+  return out.map((s) => (s.kind === 'buy' ? { ...s, items: (s.items ?? []).map((i) => ({ name: i.name, n: need.get(i.name) ?? i.n })) } : s))
+}
+
+/** A collect step as the Summary's lines, one an item: "Collect 1 [[Bone Chips]] (dropped by [[a skeleton]])." */
+function collectNotes(s: ThreadStep): string[] {
+  return (s.items ?? []).map((i) => {
+    const mobs = s.drops?.find((d) => d.item === i.name)?.mobs ?? []
+    return `Collect ${counted(i.n, i.name)}${mobs.length === 0 ? '' : ` (dropped by ${mobs.map((m) => `[[${m}]]`).join(', ')})`}.`
+  })
+}
+
+/** A hand-in as the page writer's step: the hand-over comes before the NPC's answer to it, as the pages write it. */
+function handinStep(s: ThreadStep, base: QuestStep, talk: QuestStep['talk'] & object): QuestStep {
+  const offered = (s.items ?? []).flatMap((i) => Array.from({ length: i.n }, () => i.name))
+  const first = Math.min(s.ms, ...talk.map((l) => l.ms ?? s.ms))
+  const answers = talk.map((l) => ({ ...l, ms: l.ms ?? s.ms }))
+  return { ...base, talk: answers, offered, offeredMs: offered.map(() => first - 1), ...(s.experience === true ? { experience: true } : {}), ...(s.factions === undefined ? {} : { factions: s.factions }), ...(s.achievements === undefined ? {} : { achievements: s.achievements }) }
+}
+
+/** A chain step as the page writer's steps: talk with its lines, a hand-in's items, collects and buys as notes. */
+function questSteps(s: ThreadStep): QuestStep[] {
+  const base: QuestStep = { at: s.at, kind: 'talk', ...(s.npc === undefined ? {} : { npc: s.npc }), ...(s.zone === undefined ? {} : { zone: s.zone }) }
+  const talk = (s.lines ?? []).map((l) => ({ who: l.who, text: l.text, ...(l.ms === undefined ? {} : { ms: l.ms }) }))
+  if (s.kind === 'collect') return collectNotes(s).map((note) => ({ ...base, note }))
+  if (s.kind === 'buy' && s.npc !== undefined) return [{ ...base, note: `Buy ${(s.items ?? []).map((i) => counted(i.n, i.name)).join(' and ')} from [[${s.npc}]].` }]
+  if (s.kind === 'handin') return [handinStep(s, base, talk)]
+  return [{ ...base, talk }]
+}
+
+/** A chain as the QuestLog the page writer reads: its shown steps in order, its giver and zone; a repeated hand-in is a rerun. */
+export function questLogFromThread(t: QuestThread): QuestLog {
+  const npcs = [...new Set(t.steps.map((s) => s.npc).filter((n): n is string => n !== undefined))]
+  const shown = threadDisplaySteps(t)
+  const reruns = Math.max(0, ...shown.map((s) => (s.trades ?? 1) - 1))
+  return { giver: t.giver, zone: t.zone ?? null, npcs, steps: shown.flatMap(questSteps), reruns, forced: true }
 }
 
 const itemsText = (s: ThreadStep): string => (s.items ?? []).map((i) => `${i.n > 1 ? `${String(i.n)} ` : ''}${i.name}`).join(' and ')
@@ -141,7 +241,8 @@ const LABELS: Partial<Record<ThreadStepKind, (s: ThreadStep, who: string) => str
   kill: (s, who) => `Kill ${many(s.count)}${who}`,
   loot: (s, who) => `Loot ${itemsText(s)} from ${who}`,
   buy: (s, who) => `Buy ${itemsText(s)} from ${who}`,
-  handin: (s, who) => `Hand ${itemsText(s)} to ${who}${s.experience === true ? ' (experience)' : ''}`
+  collect: (s) => `Collect ${itemsText(s)}`,
+  handin: (s, who) => `Hand ${itemsText(s)} to ${who}${s.experience === true ? ' (experience)' : ''}${(s.trades ?? 1) > 1 ? ` (repeatable: done ${String(s.trades)} times)` : ''}`
 }
 
 /** A step in a few words, for the Suggested quests list: "Say 'help' to Old Doug", "Kill 6 a fragile pet". */

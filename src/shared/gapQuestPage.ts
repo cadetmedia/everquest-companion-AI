@@ -220,8 +220,12 @@ export function questDraftPage(name: string, log: QuestLog, c: QuestPageContext 
   const walk = walkLines(questWalkBlocks(name, log, c))
   const home = homeZone(log)
   // The class category is the editor's to pick: the log never states which classes may take it.
-  const cats = ['[[Category:Quests]]', ...(home === undefined ? [] : [zoneCategory(home, c)]), '<!-- [[Category:All Classes Quests]] or [[Category:<Class> Quests]] -->']
-  return [era, ...picture, topTable(log, c), '', rewardSection(log), '', summarySection(name, log, c), '', '= Walkthrough =', '', ...walk, ...relatedQuests(log), ...cats].join('\n') + '\n'
+  // A chain whose same hand-in the log saw again is one the wiki files as repeatable (its category of that
+  // name); a task assigned again may only have been dropped and taken up, so it says nothing.
+  const again = log.forced === true && log.reruns > 0
+  const notes = again ? ['= Notes =', '', '* This quest can be repeated.', ''] : []
+  const cats = ['[[Category:Quests]]', ...(home === undefined ? [] : [zoneCategory(home, c)]), ...(again ? ['[[Category:Repeatable Turn-in Quests]]'] : []), '<!-- [[Category:All Classes Quests]] or [[Category:<Class> Quests]] -->']
+  return [era, ...picture, topTable(log, c), '', rewardSection(log), '', summarySection(name, log, c), '', '= Walkthrough =', '', ...walk, ...notes, ...relatedQuests(log), ...cats].join('\n') + '\n'
 }
 
 /** `= Related Quests =`: the quest this one follows and the one it hands out, when the log saw them. */
