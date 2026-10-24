@@ -20,11 +20,16 @@ import type { GapRow } from './gaps'
 import { questLogOf, questRewards, questTitleKey, receivedOf } from './gapQuests'
 import { isJournalPicture, namesWindow, type QuestPopup } from './questPopup'
 
-export type PictureKind = 'popup' | 'journal' | 'item' | 'other'
+export type PictureKind = 'popup' | 'journal' | 'item' | 'spell' | 'other'
 
 /** An item window's stats lines, or its tab row (`Description | Lore`). */
 const ITEM_LINE = /^\W{0,3}(?:Class|Race|Size|Slot|Weight|Value|WT)\b\s*:?/i
 const ITEM_TABS = /\bDescr\w*.{0,8}\bLore\b/i
+/** The Description tab's label near the top: a Lore tab whose own label (yellow, selected) reads as noise. */
+const DESCRIPTION_TAB = /\bDescr\w{3,}/i
+/** A spell display window's lines (`Duration: 6:00:00`, `On You: ...`) and its title (`Spell: Familiar: Mummy`). */
+const SPELL_LINE = /^\W{0,3}(?:Duration|Cast|Recovery|Reuse|Target|Range|On You|On Other|Wears Off)\b\s*:/i
+const SPELL_TITLE = /^\W{0,3}Spell\s*:/i
 /** The game's closing line under a popup (`Click 'OK' to continue.`, `Press `OK` to continue.`). */
 const CLOSING = /\b(?:click|press)\b.{0,6}\bok\b.{0,6}\bto\b/i
 
@@ -35,7 +40,11 @@ const CLOSING = /\b(?:click|press)\b.{0,6}\bok\b.{0,6}\bto\b/i
  */
 export function pictureKind(lines: readonly string[], popup: QuestPopup | null): PictureKind {
   if (isJournalPicture(lines)) return 'journal'
+  const spellLines = lines.filter((l) => SPELL_LINE.test(l)).length
+  if (spellLines >= 2 || (spellLines >= 1 && lines.some((l) => SPELL_TITLE.test(l)))) return 'spell'
   if (lines.filter((l) => ITEM_LINE.test(l)).length >= 2 || lines.some((l) => ITEM_TABS.test(l))) return 'item'
+  // A Lore tab: the Description label in the first lines and no closing line (Petamorph Wand: Mummy).
+  if (lines.slice(0, 3).some((l) => DESCRIPTION_TAB.test(l)) && !lines.some((l) => CLOSING.test(l))) return 'item'
   if (popup === null) return 'other'
   const prose = lines.filter((l) => (l.match(/[A-Za-z]{2,}/g) ?? []).length >= 8).length
   return lines.some((l) => CLOSING.test(l)) || prose >= 2 ? 'popup' : 'other'
@@ -349,3 +358,6 @@ export const pictureRows = <R extends { domain: string }>(rows: readonly R[]): R
 export function placesKey(rows: readonly { domain: string }[], threads: readonly { id: string }[] = []): string {
   return `${String(rows.filter((r) => r.domain === 'quest').length)}|${threads.map((t) => t.id).join(',')}`
 }
+
+/** The Spells rows' names, where a pasted spell window is kept. */
+export const spellRowNames = (rows: readonly { domain: string; name: string }[]): string[] => rows.filter((r) => r.domain === 'spell').map((r) => r.name)

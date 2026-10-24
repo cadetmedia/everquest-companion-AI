@@ -30,12 +30,13 @@ const POPUPS = [
   'popup-first-aa-point.png'
 ]
 
-test('what a pasted picture is: popups (one with no title), a Quest Journal, item windows and Lore tabs, and the rest', async () => {
+test('what a pasted picture is: popups (one with no title), a Quest Journal, item windows and Lore tabs, spell windows, and the rest', async () => {
   for (const f of POPUPS) assert.equal(pictureKind(...Object.values(await read(f)) as [string[], QuestPopup | null]), 'popup', f)
   assert.equal(pictureKind(...Object.values(await read('quest-journal-something-fishy.png')) as [string[], QuestPopup | null]), 'journal')
-  for (const f of ['earring-of-experimentation.png', 'black-lizard-scale.png', 'earring-of-experimentation-lore.png', 'plea-to-freeport-lore.png']) {
+  for (const f of ['earring-of-experimentation.png', 'black-lizard-scale.png', 'earring-of-experimentation-lore.png', 'plea-to-freeport-lore.png', 'petamorph-wand-mummy.png', 'petamorph-wand-mummy-lore.png']) {
     assert.equal(pictureKind(...Object.values(await read(f)) as [string[], QuestPopup | null]), 'item', f)
   }
+  for (const f of ['spell-familiar-mummy.png', 'spell-pet-illusion-mummy.png']) assert.equal(pictureKind(...Object.values(await read(f)) as [string[], QuestPopup | null]), 'spell', f)
   for (const f of ['raul-npc.png', 'a-white-wolf-npc.png']) assert.equal(pictureKind(...Object.values(await read(f)) as [string[], QuestPopup | null]), 'other', f)
 })
 
