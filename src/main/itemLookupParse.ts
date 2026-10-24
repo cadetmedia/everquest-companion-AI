@@ -176,6 +176,7 @@ import { itemBaseName, parseStatsBlock, type ItemStatBlock } from '../shared/ite
 // category reader below. What a token MEANS is still decided only in shared/planner/era.ts.
 import { namesEra } from '../shared/planner/era'
 import { stripFormatChars } from '../shared/wikiTitle'
+import { isUnfilledItemBlueprint } from './itemBlueprint'
 
 /** Strip a trailing ` +N` upgrade suffix. Applied before lookup + as the cache key. ONE
  *  definition of the rule for every main-side caller — see shared/itemStats.itemBaseName. */
@@ -947,6 +948,7 @@ export function parseItemWikitext(
   | 'foragedNote'
   | 'foragedCategory'
 > {
+  if (isUnfilledItemBlueprint(wikitext)) return { lore: false, quest: false, questUses: [], dropsFrom: [] }
   const statsBlock = templateField(wikitext, 'statsblock') ?? undefined
   const relatedRaw = templateField(wikitext, 'relatedquests')
   const notesRaw = templateField(wikitext, 'notes')
@@ -961,9 +963,6 @@ export function parseItemWikitext(
 
   const questUses = relatedRaw ? parseQuestLinks(relatedRaw) : []
   const quest = questFlag || questUses.length > 0
-  const summary = notesRaw ? cleanSummary(notesRaw) : undefined
-
-  const iconId = parseIconId(iconRaw)
 
   // Tradeskill knowledge. `playerCrafted` is asserted only from a STRUCTURED craft recipe;
   // a prose-only `|playercrafted` ("Non-Tradeskill (Quest)") is reported as craftedNote and
@@ -976,9 +975,9 @@ export function parseItemWikitext(
     quest,
     questUses,
     dropsFrom,
-    summary,
+    summary: notesRaw ? cleanSummary(notesRaw) : undefined,
     stats,
-    iconId,
+    iconId: parseIconId(iconRaw),
     eraTag: pageEraTag(wikitext),
     ...tradeskillFields(recipeParse, craftParse),
     ...foragedFields(wikitext),

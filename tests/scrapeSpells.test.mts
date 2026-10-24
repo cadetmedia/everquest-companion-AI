@@ -2,7 +2,7 @@
 // cache. Fixtures are trimmed copies of the pages named; nothing touches the network.
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { parseSpell, parseSpellpageFields, shrinkProblem, spellName } from '../scripts/scrape-spells'
+import { isUnfilledSpellBlueprint, parseSpell, parseSpellpageFields, shrinkProblem, spellName } from '../scripts/scrape-spells'
 
 test('a doubled-pipe field is its own field, not the tail of the one before (50178 Harmshield)', () => {
   const wt = '{{Spellpage\n| spellname = Harmshield\n| msg_wears_off = Your invulnerability fades.\n|| where_to_obtain = Necromancer Spell Vendors\n}}'
@@ -69,4 +69,15 @@ test("the page's era banner is kept as eraTag right after name, and absent when 
   assert.deepEqual(Object.keys(sloth).slice(0, 2), ['name', 'eraTag'])
   assert.equal('eraTag' in parseSpell('Sloths Healing', parseSpellpageFields(body), body), false)
   assert.equal('eraTag' in parseSpell('Sloths Healing', parseSpellpageFields(kunark)), false)
+})
+
+test('AN UNFILLED SPELL BLUEPRINT STATES ONLY ITS NAME (ILLUSION: HALF DARK ELF, 2026-10-24)', () => {
+  const page = ['{{Era}}', '{{Spellpage|', '| spellname = Illusion: Half Dark Elf', '| description = Describe the spell.', '| classes =', '* [[Class]] - Level ?', '| slots =', '{{SpellSlotRow | 1 | Spell effect }}', '| target_type = ?', '| spell_type = Beneficial / Detrimental / Heal', '}}'].join('\n')
+  const fields = parseSpellpageFields(page)
+  assert.equal(isUnfilledSpellBlueprint(fields), true)
+  const s = parseSpell('Illusion: Half Dark Elf', fields, page)
+  assert.equal(s.name, 'Illusion: Half Dark Elf')
+  assert.equal(s.spellType, undefined)
+  assert.equal(s.classes, undefined)
+  assert.equal(s.effects, undefined)
 })

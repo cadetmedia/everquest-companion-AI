@@ -382,8 +382,21 @@ function pageEra(wikitext: string | undefined): Pick<SpellEntry, 'eraTag'> {
   return eraTag === undefined ? {} : { eraTag }
 }
 
+/**
+ * A Spell Page Blueprint saved with its placeholders unfilled (owner, 2026-10-24: Illusion: Half Dark Elf,
+ * `description = Describe the spell.`, `[[Class]] - Level ?`, `spell_type = Beneficial / Detrimental / Heal`).
+ */
+export function isUnfilledSpellBlueprint(fields: Record<string, string>): boolean {
+  return /^\s*Describe the spell\.?\s*$/i.test(fields.description ?? '') || /\[\[Class\]\]\s*-\s*Level \?/.test(fields.classes ?? '') || (fields.spell_type ?? '').includes('Beneficial / Detrimental / Heal')
+}
+
 /** One spell row from its page's fields; `wikitext`, when given, contributes the page's era banner. */
-export function parseSpell(title: string, fields: Record<string, string>, wikitext?: string): SpellEntry {
+export function parseSpell(title: string, pageFields: Record<string, string>, wikitext?: string): SpellEntry {
+  // An unfilled blueprint states nothing but its name: its placeholders are no facts.
+  return spellOf(title, isUnfilledSpellBlueprint(pageFields) ? { spellname: pageFields.spellname ?? '' } : pageFields, wikitext)
+}
+
+function spellOf(title: string, fields: Record<string, string>, wikitext?: string): SpellEntry {
   const name = spellName(title, clean(fields.spellname)).name
   const durationText = clean(fields.duration)
   const castRaw = clean(fields.casting_time)
