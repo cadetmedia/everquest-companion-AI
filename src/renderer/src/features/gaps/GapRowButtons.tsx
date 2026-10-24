@@ -83,7 +83,7 @@ function pageExists(row: GapRow): boolean {
 
 /** The Copy button's words and tip for a row. */
 function copyWords(row: GapRow): { label: string; tip: string } {
-  if (row.suggest !== undefined && (row.domain === 'item' || row.domain === 'spell')) {
+  if (row.suggest !== undefined && (row.domain === 'item' || row.domain === 'spell' || row.domain === 'zone')) {
     return { label: 'Copy redirect', tip: `A redirect from the game's spelling to ${row.suggest.page}, so both spellings reach one page.` }
   }
   if (row.domain === 'notice') return { label: 'Copy proof', tip: 'What your log proves (how often, when, where, the lines), for the talk page or the edit summary.' }

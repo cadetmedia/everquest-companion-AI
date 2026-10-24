@@ -38,6 +38,18 @@ export const ZONE_ALIASES: readonly { zone: string; page?: string; log: readonly
 const ALIAS_OF = new Map(ZONE_ALIASES.flatMap((a) => a.log.map((l) => [zoneKey(l), a.zone] as const)))
 const PAGE_OF = new Map(ZONE_ALIASES.flatMap((a) => (a.page === undefined ? [] : [[a.zone, a.page] as const])))
 
+/**
+ * The wiki page a log zone spelling should redirect to: an alias's page when the log's spelling is
+ * not that title (`EverQuest Legends Tutorial` → `Tutorial Zone`). Only aliases, whose pages were
+ * checked by hand: a sure target. Undefined when the spelling is the page, or no alias names it.
+ */
+export function zoneRedirectTarget(raw: string): string | undefined {
+  const zone = ALIAS_OF.get(zoneKey(raw))
+  if (zone === undefined) return undefined
+  const page = PAGE_OF.get(zone) ?? zone
+  return zoneKey(zoneBaseName(raw)) === zoneKey(page) ? undefined : page
+}
+
 /** A wiki zone name as a link: `[[Erudin]]`, or `[[Cazic Thule (Zone)|Cazic Thule]]` where the zone's page is titled apart. */
 export function wikiZoneLink(zone: string): string {
   const page = PAGE_OF.get(zone)

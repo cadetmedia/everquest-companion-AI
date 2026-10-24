@@ -31,6 +31,8 @@ import { mobPageFinder } from '@shared/mobPageTitle'
 import { catalogStates } from '@shared/gapMerchantDescription'
 import { useQuestLivePages } from '../../lib/questLivePages'
 import { withForcedQuests, type TalkSnap, type TalkVisit } from '@shared/gapForcedQuests'
+import { withZoneRedirects } from '@shared/gapZoneRedirects'
+import { zoneKey } from '@shared/zones'
 import { useForcedQuests } from './useForcedQuests'
 import type { ForcedScope } from './ForcedQuests'
 
@@ -39,7 +41,10 @@ const DROPS = dropGroupsJson as { groups: DropGroups; aliases?: DropAliases }
 /** The wiki data's date, `2026-10-19`: the chips' tooltips and the tab's caption say it. */
 export const GAPS_DATA_DATE = ((mobsJson as { scrapedAt?: string }).scrapedAt ?? '').slice(0, 10)
 
-const ZONE_NAME: ZoneNamer = wikiZoneNamer(catalogZoneCounts(MOB_CATALOG))
+const ZONE_COUNTS = catalogZoneCounts(MOB_CATALOG)
+const ZONE_NAME: ZoneNamer = wikiZoneNamer(ZONE_COUNTS)
+/** The zone spellings the mob catalog links: a page by that name exists, so no redirect is offered (gapZoneRedirects.ts). */
+const CATALOG_ZONES: ReadonlySet<string> = new Set([...ZONE_COUNTS.keys()].map(zoneKey))
 const IS_MOB = catalogNameTest(MOB_CATALOG)
 /** A quest's catalog entry when the wiki has its page (the Quests rows' Make page / Update page). */
 const QUEST_ENTRY = questCatalogFinder((questsJson as { quests: QuestCatalogEntry[] }).quests)
@@ -92,7 +97,8 @@ export function useGapsData(): GapsData {
   const snap = useMemo(() => {
     if (!engine) return engine
     const derived = { ...snapOf(engine, { loot, kills: killMobs, cons, itemMobs }, WIKI), talks: talkSnap?.talks ?? [] }
-    return withQuestPages(withForcedQuests(derived, forced.forced), questPageOf(livePages))
+    // Zones: a zone the log names under another spelling than its wiki page, as a redirect to copy.
+    return withZoneRedirects(withQuestPages(withForcedQuests(derived, forced.forced), questPageOf(livePages)), CATALOG_ZONES)
   }, [engine, talkSnap, loot, killMobs, itemMobs, cons, livePages, forced.forced])
   const kills = lastKills([killMobs], () => killIndex(killMobs))
   const talks = (snap as TalkSnap | null | undefined)?.talks ?? NO_TALKS
