@@ -1,8 +1,8 @@
 {
-  "scrapedAt": "2026-10-23T11:30:09.046Z",
+  "scrapedAt": "2026-10-24T12:42:26.299Z",
   "schema": 3,
-  "count": 2014,
-  "withEffects": 2011,
+  "count": 2018,
+  "withEffects": 2014,
   "spells": [
     {
       "name": "Aanya's Animation",
@@ -11575,6 +11575,19 @@
       ]
     },
     {
+      "name": "Familiar: Gelatinous Cube",
+      "eraTag": "Classic",
+      "durationText": "6:00:00 (6:54:00) 1",
+      "durationMs": 21600000,
+      "castTimeMs": 14000,
+      "recastMs": 1500,
+      "targetType": "Self",
+      "msgCastOnYou": "Your familiar joins you.",
+      "msgCastOnOther": "Someone is joined by a familiar.",
+      "msgWearsOff": "Your familiar rolls away.",
+      "illusion": false
+    },
+    {
       "name": "Fangol's Breath",
       "durationText": "Instant",
       "durationMs": null,
@@ -16421,6 +16434,18 @@
       "mana": 10,
       "effects": [
         "Illusion: Froglok"
+      ]
+    },
+    {
+      "name": "Illusion: Half Dark Elf",
+      "durationText": "?",
+      "durationMs": null,
+      "targetType": "?",
+      "spellType": "Beneficial / Detrimental / Heal",
+      "classes": "* Class - Level ?",
+      "illusion": true,
+      "effects": [
+        "Spell effect"
       ]
     },
     {
@@ -23243,6 +23268,21 @@
       "illusion": false,
       "effects": [
         "Increases the power of percussion instrument based bard songs by up to 160%"
+      ]
+    },
+    {
+      "name": "Pet Illusion: Mummy",
+      "eraTag": "Classic",
+      "durationText": "1:00:00",
+      "durationMs": 3600000,
+      "castTimeMs": 0,
+      "targetType": "Summoned Pet",
+      "spellType": "Beneficial",
+      "classes": "NPC Only Spell",
+      "msgCastOnYou": "You alter your pet.",
+      "illusion": true,
+      "effects": [
+        "Pet Illusion: Mummy"
       ]
     },
     {
@@ -31657,6 +31697,24 @@
       "mana": 40,
       "effects": [
         "Summon Item: Summoned: Elemental Defender"
+      ]
+    },
+    {
+      "name": "Summon Familiar: Mummy",
+      "eraTag": "Classic",
+      "durationText": "6:00:00",
+      "durationMs": 21600000,
+      "castTimeMs": 14000,
+      "recastMs": 1000,
+      "targetType": "Self",
+      "spellType": "Beneficial",
+      "classes": "NPC Only Spell",
+      "msgCastOnYou": "You summon forth a small mummy.",
+      "msgCastOnOther": "Soandso summons forth a small mummy.",
+      "msgWearsOff": "Your small mummy departs.",
+      "illusion": false,
+      "effects": [
+        "Summon Familiar: Mummy"
       ]
     },
     {

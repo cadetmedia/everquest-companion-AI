@@ -1,5 +1,5 @@
 {
-  "scrapedAt": "2026-10-23T11:30:09.046Z",
+  "scrapedAt": "2026-10-24T12:42:26.299Z",
   "source": "eqlwiki.com — Category:NPCs/Named Mobs/Merchants/Raid Encounters ∪ embeddedin Template:Namedmobpage/MerchantPage, filtered to pages opening a mob template + recentchanges delta (scripts/scrape-delta.mts)",
   "mobs": [
     {
@@ -923,14 +923,14 @@
       "name": "a black bat",
       "level": "1",
       "zones": [
-        "Paineel"
+        "Paineel",
+        "Lake Nerius"
       ],
       "drops": [
         "Bat Wing",
         "Bat Fur"
       ],
-      "image": "npc_a_black_bat.png",
-      "noImage": true
+      "image": "npc_a_black_bat.png"
     },
     {
       "page": "A Black Bear",
@@ -38698,8 +38698,7 @@
         "Spiderling Legs",
         "Spiderling Silk"
       ],
-      "image": "npc_a_nektulos_spiderling.png",
-      "noImage": true
+      "image": "npc_a_nektulos_spiderling.png"
     },
     {
       "page": "A Nektulos widow",
@@ -52727,6 +52726,20 @@
       "noImage": true
     },
     {
+      "page": "A Spectral Handmaiden",
+      "eraTag": "Classic",
+      "name": "A Spectral Handmaiden",
+      "zones": [
+        "Nektropos Castle"
+      ],
+      "drops": [
+        "Handmaiden's Earring",
+        "Handmaiden's Ring",
+        "Handmaiden's Handwrap"
+      ],
+      "image": "A_Spectral_Handmaiden.png"
+    },
+    {
       "page": "A spectral shimmer",
       "eraTag": "Classic",
       "name": "a spectral shimmer",
@@ -63827,6 +63840,21 @@
       "noImage": true
     },
     {
+      "page": "Alexa Everling",
+      "eraTag": "Classic",
+      "name": "Alexa Everling",
+      "level": "61",
+      "zones": [
+        "Nektropos Castle"
+      ],
+      "drops": [
+        "Alexa's Robe",
+        "Ring of the Eldest",
+        "Nektropos Private Chamber Key"
+      ],
+      "image": "Alexa Everling.png"
+    },
+    {
       "page": "Alga Bruntbuckler",
       "name": "Alga Bruntbuckler",
       "level": "41",
@@ -64258,6 +64286,23 @@
       ],
       "image": "npc_alysa_eltern.png",
       "noImage": true
+    },
+    {
+      "page": "Alysia",
+      "eraTag": "Classic",
+      "name": "Alysia",
+      "level": "35",
+      "zones": [
+        "Lake Nerius"
+      ],
+      "loc": [
+        {
+          "ns": -1,
+          "ew": 52
+        }
+      ],
+      "merchant": true,
+      "image": "npc_alysia.png"
     },
     {
       "page": "Alzekar Kerda",
@@ -97493,7 +97538,8 @@
         "Lake Nerius"
       ],
       "drops": [
-        "Ancient Signet Ring of House Everling"
+        "Ancient Signet Ring of House Everling",
+        "Angler's Finery"
       ],
       "image": "npc_corrupted_kedgespawn.png"
     },
@@ -99404,6 +99450,21 @@
         "10"
       ],
       "image": "npc_cryssia_stardreamer.png"
+    },
+    {
+      "page": "Crysta Everling",
+      "eraTag": "Classic",
+      "name": "Crysta Everling",
+      "level": "58",
+      "zones": [
+        "Nektropos Castle"
+      ],
+      "drops": [
+        "Crysta's Robe",
+        "Pyrosilk Leggings"
+      ],
+      "image": "Crysta Everling.png",
+      "noImage": true
     },
     {
       "page": "Crystal Eyes",
@@ -102416,6 +102477,20 @@
       "image": "deillia.png"
     },
     {
+      "page": "Deirdre Everling",
+      "eraTag": "Classic",
+      "name": "Deirdre Everling",
+      "level": "58",
+      "zones": [
+        "Nektropos Castle"
+      ],
+      "drops": [
+        "Deirdre's Robe",
+        "Pyrosilk Sleeves"
+      ],
+      "image": "Deirdre Everling.png"
+    },
+    {
       "page": "Del Sapara",
       "eraTag": "Velious",
       "name": "Del Sapara",
@@ -105052,6 +105127,12 @@
       ],
       "drops": [
         "Earring of Experimentation"
+      ],
+      "loc": [
+        {
+          "ns": -1005,
+          "ew": 824
+        }
       ],
       "image": "npc_discarded_experiment.png"
     },
@@ -110554,6 +110635,27 @@
       ],
       "image": "npc_elisabeth.png",
       "noImage": true
+    },
+    {
+      "page": "Elise Everling",
+      "eraTag": "Classic",
+      "name": "Elise Everling",
+      "level": "57",
+      "zones": [
+        "Nektropos Castle"
+      ],
+      "drops": [
+        "Elise's Robe",
+        "Pyrosilk Lined Shoes"
+      ],
+      "loc": [
+        {
+          "ns": -157,
+          "ew": 321,
+          "z": 17
+        }
+      ],
+      "image": "Elise_Everling.png"
     },
     {
       "page": "Elisi Nasin",
@@ -128391,6 +128493,25 @@
       "noImage": true
     },
     {
+      "page": "Guard B`Ynak",
+      "eraTag": "Classic",
+      "name": "Guard B`Ynak",
+      "level": "50",
+      "zones": [
+        "Lake Nerius"
+      ],
+      "drops": [
+        "Long Sword"
+      ],
+      "loc": [
+        {
+          "ns": -659,
+          "ew": -447
+        }
+      ],
+      "image": "npc_guard_b`ynak.png"
+    },
+    {
       "page": "Guard Bach",
       "eraTag": "Classic",
       "name": "Guard Bach",
@@ -129321,6 +129442,19 @@
       ],
       "image": "npc_guard_calin.png",
       "noImage": true
+    },
+    {
+      "page": "Guard Captain Ga`Vin",
+      "eraTag": "Classic",
+      "name": "Guard Captain Ga`Vin",
+      "level": "63",
+      "zones": [
+        "Nektropos Castle"
+      ],
+      "drops": [
+        "Burning Fighters Blade"
+      ],
+      "image": "Guard Captain Ga`Vin.png"
     },
     {
       "page": "Guard Captain Latorl",
@@ -134533,6 +134667,22 @@
         "10"
       ],
       "image": "npc_guard_justyn.png"
+    },
+    {
+      "page": "Guard K`Biet",
+      "eraTag": "Classic",
+      "name": "Guard K`Biet",
+      "level": "50",
+      "zones": [
+        "Lake Nerius"
+      ],
+      "loc": [
+        {
+          "ns": -48,
+          "ew": -11
+        }
+      ],
+      "image": "npc_guard_k`biet.png"
     },
     {
       "page": "Guard K`Jartan",
@@ -141651,8 +141801,7 @@
         "-30",
         "10"
       ],
-      "image": "npc_guard_v`lex.png",
-      "noImage": true
+      "image": "npc_guard_v`lex.png"
     },
     {
       "page": "Guard V`Resh",
@@ -141930,6 +142079,25 @@
       ],
       "image": "npc_guard_vydel.jpg",
       "noImage": true
+    },
+    {
+      "page": "Guard W`Syft",
+      "eraTag": "Classic",
+      "name": "Guard W`Syft",
+      "level": "50",
+      "zones": [
+        "Lake Nerius"
+      ],
+      "drops": [
+        "Long Sword"
+      ],
+      "loc": [
+        {
+          "ns": 845,
+          "ew": 306
+        }
+      ],
+      "image": "npc_guard_w`syft.png"
     },
     {
       "page": "Guard Wefnin",
@@ -142236,6 +142404,22 @@
       ],
       "image": "npc_freeporteast_-_guard_wytiffin.png",
       "noImage": true
+    },
+    {
+      "page": "Guard X`Chanal",
+      "eraTag": "Classic",
+      "name": "Guard X`Chanal",
+      "level": "39-50",
+      "zones": [
+        "Lake Nerius"
+      ],
+      "loc": [
+        {
+          "ns": -354,
+          "ew": 174
+        }
+      ],
+      "image": "npc_guard_x`chanal.png"
     },
     {
       "page": "Guard X`Onnu",
@@ -145592,6 +145776,32 @@
         }
       ],
       "image": "Hatar3.png"
+    },
+    {
+      "page": "Head Chef Vy`zen",
+      "name": "NPC Name",
+      "level": "52",
+      "zones": [
+        "Nektropos Castle"
+      ],
+      "drops": [
+        "Worn Corpse Chopper",
+        "Chef's Surprise"
+      ],
+      "loc": [
+        {
+          "ns": 497,
+          "ew": 83,
+          "z": -7
+        }
+      ],
+      "factions": [
+        "Host of Nektropos"
+      ],
+      "factionAmounts": [
+        "-"
+      ],
+      "image": "Head Chef Vy`zen.png"
     },
     {
       "page": "Headara Ponido",
@@ -151427,6 +151637,26 @@
       "noImage": true
     },
     {
+      "page": "Inquisitor of Ulkorruuk",
+      "eraTag": "Classic",
+      "name": "NPC Name",
+      "zones": [
+        "Nektropos Castle"
+      ],
+      "drops": [
+        "Cloak of Treason"
+      ],
+      "loc": [
+        {
+          "ns": -32,
+          "ew": -167,
+          "z": -7
+        }
+      ],
+      "image": "npc_name.png",
+      "noImage": true
+    },
+    {
       "page": "Inte Akera",
       "name": "Inte Akera",
       "level": "55",
@@ -153895,6 +154125,26 @@
       "merchant": true,
       "image": "npc_jenna_smith.png",
       "noImage": true
+    },
+    {
+      "page": "Jenni Everling",
+      "name": "Jenni Everling",
+      "level": "56",
+      "zones": [
+        "Nektropos Castle"
+      ],
+      "drops": [
+        "Jenni's Robe",
+        "Pyrosilk Veil"
+      ],
+      "loc": [
+        {
+          "ns": 342,
+          "ew": -423,
+          "z": 17
+        }
+      ],
+      "image": "Jenni_Everling.png"
     },
     {
       "page": "Jennus Lyklobar",
@@ -163761,6 +164011,26 @@
       "image": "npc_lady_shae.png"
     },
     {
+      "page": "Lady Sileniu Everling",
+      "eraTag": "Classic",
+      "name": "Lady Sileniu Everling",
+      "level": "63",
+      "zones": [
+        "Nektropos Castle"
+      ],
+      "drops": [
+        "None"
+      ],
+      "loc": [
+        {
+          "ns": 552,
+          "ew": -132,
+          "z": 17
+        }
+      ],
+      "image": "Lady Sileniu Everling.png"
+    },
+    {
       "page": "Lady Vox",
       "eraTag": "Classic",
       "name": "Lady Vox",
@@ -170786,6 +171056,19 @@
       "image": "npc_lord_of_loathing.png"
     },
     {
+      "page": "Lord Ollix Everling",
+      "eraTag": "Classic",
+      "name": "NPC Name",
+      "zones": [
+        "Nektropos Castle"
+      ],
+      "drops": [
+        "None"
+      ],
+      "image": "npc_name.png",
+      "noImage": true
+    },
+    {
       "page": "Lord Pickclaw",
       "eraTag": "Classic",
       "name": "Lord Pickclaw",
@@ -170916,6 +171199,33 @@
       ],
       "image": "npc_lord_rak`ashiir.png",
       "noImage": true
+    },
+    {
+      "page": "Lord Rikantus Everling",
+      "eraTag": "Classic",
+      "name": "Lord Rikantus Everling",
+      "level": "65",
+      "zones": [
+        "Nektropos Castle"
+      ],
+      "drops": [
+        "Signet Ring of Lord Everling",
+        "Blood's Unity"
+      ],
+      "loc": [
+        {
+          "ns": -382,
+          "ew": 181,
+          "z": -112
+        }
+      ],
+      "factions": [
+        "Host of Nektropos"
+      ],
+      "factionAmounts": [
+        "-2"
+      ],
+      "image": "Lord_Rikantus_Everling.png"
     },
     {
       "page": "Lord Searfire",
@@ -175990,6 +176300,18 @@
       ],
       "image": "npc_westernwastes_-_melalafen.png",
       "noImage": true
+    },
+    {
+      "page": "Melanie Everling",
+      "name": "Melanie Everling",
+      "zones": [
+        "Nektropos Castle"
+      ],
+      "drops": [
+        "Melanie's Robe",
+        "Pyrosilk Sash"
+      ],
+      "image": "Melanie Everling.png"
     },
     {
       "page": "Meldikor the Windchaser",
@@ -190373,6 +190695,25 @@
       "image": "npc_plagus_ladeson.png"
     },
     {
+      "page": "Plimptos",
+      "name": "Plimptos",
+      "level": "60",
+      "zones": [
+        "Nektropos Castle"
+      ],
+      "drops": [
+        "None"
+      ],
+      "loc": [
+        {
+          "ns": 102,
+          "ew": -151,
+          "z": 7
+        }
+      ],
+      "image": "Plimptos.png"
+    },
+    {
       "page": "Plnorrick Spinecracker",
       "name": "Plnorrick Spinecracker",
       "level": "30",
@@ -199445,8 +199786,7 @@
         }
       ],
       "merchant": true,
-      "image": "npc_rylin_coil.png",
-      "noImage": true
+      "image": "npc_rylin_coil.png"
     },
     {
       "page": "Ryoz K`Tarn",
@@ -208342,6 +208682,24 @@
       "noImage": true
     },
     {
+      "page": "Sergeant Tvyn",
+      "name": "Sergeant Tvyn",
+      "zones": [
+        "Nektropos Castle"
+      ],
+      "drops": [
+        "Layered Guards"
+      ],
+      "loc": [
+        {
+          "ns": 162,
+          "ew": 162,
+          "z": -7
+        }
+      ],
+      "image": "Sergeant Tvyn.png"
+    },
+    {
       "page": "Sergeant Yggrellnik",
       "eraTag": "Velious",
       "name": "Sergeant Yggrellnik",
@@ -209493,6 +209851,27 @@
       ],
       "image": "npc_sheldon.png",
       "noImage": true
+    },
+    {
+      "page": "Shelia Everling",
+      "eraTag": "Classic",
+      "name": "Shelia Everling",
+      "level": "56",
+      "zones": [
+        "Nektropos Castle"
+      ],
+      "drops": [
+        "Shelia's Robe",
+        "Pyrosilk Gloves"
+      ],
+      "loc": [
+        {
+          "ns": 352,
+          "ew": 428,
+          "z": 17
+        }
+      ],
+      "image": "Shelia everling.png"
     },
     {
       "page": "Shellara Ebbhunter",
@@ -216498,6 +216877,23 @@
       "image": "Stable_Hand_Kaye.png"
     },
     {
+      "page": "Stable Hand V`Shal",
+      "eraTag": "Classic",
+      "name": "Stable Hand V`Shal",
+      "level": "35",
+      "zones": [
+        "Lake Nerius"
+      ],
+      "loc": [
+        {
+          "ns": -255,
+          "ew": 301
+        }
+      ],
+      "merchant": true,
+      "image": "npc_stable_hand_v`shal.png"
+    },
+    {
       "page": "Stablehand Fleeb",
       "name": "Stablehand Fleeb",
       "level": "60",
@@ -222440,6 +222836,32 @@
       "image": "npc_the_froglok_warden.png"
     },
     {
+      "page": "The Game Master",
+      "eraTag": "Classic",
+      "name": "The Game Master",
+      "level": "54",
+      "zones": [
+        "Nektropos Castle"
+      ],
+      "drops": [
+        "Schemer's Guise"
+      ],
+      "loc": [
+        {
+          "ns": -34,
+          "ew": 118,
+          "z": -7
+        }
+      ],
+      "factions": [
+        "Host of Nektropos"
+      ],
+      "factionAmounts": [
+        "-"
+      ],
+      "image": "The Game Master.png"
+    },
+    {
       "page": "The Ghost of Kindle",
       "eraTag": "EpicQuests",
       "name": "the Ghost of Kindle",
@@ -222844,6 +223266,27 @@
       "image": "npc_the_hand_of_veeshan.png"
     },
     {
+      "page": "The Head Librarian",
+      "eraTag": "Classic",
+      "name": "The Head Librarian",
+      "level": "55",
+      "zones": [
+        "Nektropos Castle"
+      ],
+      "drops": [
+        "Unbroken Golem Core"
+      ],
+      "loc": [
+        {
+          "ns": -83,
+          "ew": -201,
+          "z": 17
+        }
+      ],
+      "image": "npc_name.png",
+      "noImage": true
+    },
+    {
       "page": "The Head Usher",
       "eraTag": "Velious",
       "name": "The Head Usher",
@@ -222903,6 +223346,34 @@
         "10"
       ],
       "image": "npc_the_ishva_mal.png"
+    },
+    {
+      "page": "The Juggernaught",
+      "eraTag": "Classic",
+      "name": "The Juggernaught",
+      "level": "62",
+      "zones": [
+        "Nektropos Castle"
+      ],
+      "drops": [
+        "Nektropos Basement Key",
+        "Scars of the Indominable",
+        "Unstoppable Girdle"
+      ],
+      "loc": [
+        {
+          "ns": -331,
+          "ew": 310,
+          "z": -112
+        }
+      ],
+      "factions": [
+        "Host of Nektropos"
+      ],
+      "factionAmounts": [
+        "-2"
+      ],
+      "image": "The_Juggernaught_Nek.png"
     },
     {
       "page": "The Kerran Sha`rr",
