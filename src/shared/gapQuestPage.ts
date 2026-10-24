@@ -164,7 +164,8 @@ function walkStep(name: string, s: QuestStep, c: QuestPageContext): WalkBlock[] 
   const fac = (s.factions ?? []).map((f) => `* ${f.line.replace(` with ${f.faction} `, ` with [[${f.faction}]] `)}`)
   return [
     ...stepParts(s, c),
-    { kind: 'task', lines: [task], keys: [task] },
+    // A visit the player tied to the quest printed no task line: none is written.
+    ...(s.kind === 'talk' ? [] : [{ kind: 'task' as const, lines: [task], keys: [task] }]),
     ...(fac.length === 0 ? [] : [{ kind: 'faction' as const, lines: ['<div class="facblock">', ...fac, '</div>'], keys: fac }]),
     ...(s.experience === true ? [{ kind: 'experience' as const, lines: ['{{YouGainExperience}}'], keys: [] }] : []),
     ...(s.achievements ?? []).map((a): WalkBlock => ({ kind: 'achievement', lines: [`'''You have completed achievement: ${a}'''`], keys: [a] }))

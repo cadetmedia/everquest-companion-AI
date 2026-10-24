@@ -40,6 +40,7 @@ use serde_json::{json, Value};
 use std::collections::{BTreeMap, HashSet, VecDeque};
 
 use super::quests::{refused_here, task_of, trade_cancelled, REFUSAL, REFUSE_MS, TRADE_MS};
+use exchanges::{Exchange, Exchanges};
 
 /// The exchange that leads to a step, when no hail of its NPC starts it: a minute.
 const TALK_MS: i64 = 60_000;
@@ -53,6 +54,8 @@ const ACHIEVE_MS: i64 = 15_000;
 const PLAYER_NAME: &str = "Soandso";
 /// The NPC that spoke just before the step.
 const SPOKE_MS: i64 = 10_000;
+/// An answer to the player's hail comes in the same second or the next (Doug: 0-1 s).
+const HAIL_ANSWER_MS: i64 = 3_000;
 /// An item given before the step (0-6 s measured).
 const GIVE_MS: i64 = 10_000;
 /// Steps logged per quest, and lines of talk per step.
@@ -166,6 +169,8 @@ pub struct QuestLogs {
     /// The character the log belongs to, kept across a clear, and its name as a word.
     player: Option<String>,
     player_word: Option<Regex>,
+    /// Visits with an NPC, for the quests no task line names (`gaps_exchanges.rs`).
+    talks: Exchanges,
 }
 
 /// A task's key: case folded, a backtick spelled as the wiki's apostrophe.
@@ -204,6 +209,7 @@ impl QuestLogs {
         self.zone = zone.map(str::to_string);
         self.offers.clear();
         self.addressed = None;
+        self.talks.close_all();
     }
 
     /// `You gain experience!` (kind `expGain`, never an unparsed line): the step it came of.
@@ -237,6 +243,7 @@ impl QuestLogs {
     pub fn given(&mut self, item: &str, ts: i64) {
         self.trim(ts);
         self.gives.push_back((ts, item.to_string()));
+        self.talks.given(item, ts);
     }
 
     /// `You offered 1 <item> to <NPC>.`, an NPC already (gaps_quests.rs `offered` said so), in `zone`.
@@ -247,6 +254,7 @@ impl QuestLogs {
         }
         self.offers.push_back((ts, item.to_string(), npc.to_string()));
         self.addressed = Some((npc.to_string(), ts));
+        self.talks.offer(npc, item, ts);
     }
 
     /// An unparsed line. A task line returns its quest and kind, for the row.
@@ -261,15 +269,20 @@ impl QuestLogs {
             return Some((q.to_string(), kind));
         }
         if let Some(s) = text.strip_prefix("You say, '").and_then(|r| r.strip_suffix('\'')) {
+            let s = self.scrub(s);
             if let Some(npc) = hail_of(text) {
                 self.addressed = Some((npc.to_string(), ts));
+                self.talks.hail(npc, &s, ts, zone, at);
+            } else {
+                self.talks.say(&s, ts);
             }
-            let s = self.scrub(s);
             self.heard.push_back((ts, None, s));
         } else if let Some(name) = speaker_of(text) {
             let said = text.split_once(" says, '").map_or(text, |(_, s)| s.strip_suffix('\'').unwrap_or(s));
+            self.npc_talk(name, said, ts, (zone, at));
             self.speaker(name, said, ts);
         } else if let Some((name, said)) = self.emote_of(text, ts) {
+            self.npc_talk(&name, &said, ts, (zone, at));
             self.speaker(&name, &said, ts);
         } else {
             self.outcome(text, ts);
@@ -291,6 +304,32 @@ impl QuestLogs {
                 s.achievements.push(a.to_string());
             }
         }
+    }
+
+    /// An NPC's line for the visits (`gaps_exchanges.rs`): an NPC is a name that spoke a `[keyword]`,
+    /// or is no player's shape, or answered the player's hail of it within HAIL_ANSWER_MS.
+    fn npc_talk(&mut self, name: &str, said: &str, ts: i64, at: (Option<&str>, &str)) {
+        if said.contains(REFUSAL) {
+            return;
+        }
+        let keyword = said.contains('[') || self.keyword_speakers.contains(name);
+        let answered = self.addressed.as_ref().is_some_and(|(n, t)| n == name && ts - t <= HAIL_ANSWER_MS);
+        if is_player_shaped_name(name) && !keyword && !answered {
+            return;
+        }
+        let said = self.scrub(said);
+        self.talks.npc_line(name, &said, ts, at, said.contains('[') || answered);
+    }
+
+    /// The visits no task step falls in, oldest first: what a quest the player names is made of.
+    pub fn served_talks(&self) -> Vec<&Exchange> {
+        let steps: Vec<&Step> = self.quests.values().flat_map(|q| q.steps.iter()).collect();
+        self.talks.served(move |e| steps.iter().any(|s| e.covers(s.npc.as_deref(), s.ts, AFTER_MS)))
+    }
+
+    /// The log's character, as `set_player` was told it.
+    pub fn player(&self) -> Option<&str> {
+        self.player.as_deref()
     }
 
     /// One line an NPC said (`said` without its quote marks).
@@ -486,6 +525,9 @@ impl GapsModule {
         m
     }
 }
+
+#[path = "gaps_exchanges.rs"]
+mod exchanges;
 
 #[cfg(test)]
 #[path = "gaps_quest_log_tests.rs"]

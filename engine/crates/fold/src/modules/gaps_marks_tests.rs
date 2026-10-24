@@ -196,3 +196,21 @@ fn the_names_gaps_files_as_mob_rows_are_exactly_the_names_the_feed_marks() {
         .collect();
     assert_eq!(marked, expect);
 }
+
+/// The tutorial's mobs `a fragile pet` and `a rambunctious pet` (owner, 2026-10-23: "these 'pets' are
+/// actually mobs, there is no 'a fragile'"): mobs by those whole names there. Elsewhere `<mob> pet` is
+/// a mob's pet (`a dar ghoul knight pet`, 918 lines on the owner's log), filed under its mob.
+#[test]
+fn a_pet_shaped_name_is_a_mob_in_the_tutorial_and_a_mobs_pet_elsewhere() {
+    let mut p = Pair::new();
+    p.send(1, json!({ "kind": "zone", "zone": "EverQuest Legends Tutorial" }));
+    p.con(2, "a fragile pet", 1);
+    p.con(3, "a rambunctious pet", 2);
+    let rows = p.mob_rows();
+    assert!(rows.contains_key("a fragile pet") && rows.contains_key("a rambunctious pet"), "{rows:?}");
+    assert!(!rows.contains_key("a fragile") && !rows.contains_key("a rambunctious"), "{rows:?}");
+    p.send(4, json!({ "kind": "zone", "zone": "Lake Nerius" }));
+    p.con(5, "a dar ghoul knight pet", 50);
+    let rows = p.mob_rows();
+    assert!(rows.contains_key("a dar ghoul knight") && !rows.contains_key("a dar ghoul knight pet"), "{rows:?}");
+}

@@ -9,6 +9,7 @@
 
 import type { FactionFix, KillFaction } from './gapFactions'
 import { forageWhy, type ForageUpdate } from './gapForage'
+import type { GapEdit } from './gapEdits'
 import { replaceWhy } from './gapDrops'
 import { pageCheckAction } from './gapRedirects'
 import { offerCheckText, offerText } from './gapOffers'
@@ -27,9 +28,9 @@ export const GAPS_MODULE_ID = 'gaps'
  *  has no image (shared/gapImages.ts) (owner asks, 2026-10-18); `notice`: a mob or item the log met
  *  whose page says it may not be in Legends, `{{DNE}}` or `{{delete}}` (gaps_notices.rs; owner, 2026-10-22);
  *  `quest`: a task the log named, its page made or filled (gaps_quest_log.rs, shared/gapQuests.ts). */
-export type GapDomain = 'item' | 'mob' | 'spell' | 'merchant' | 'faction' | 'drop' | 'image' | 'notice' | 'quest'
-export const GAP_DOMAINS: readonly GapDomain[] = ['item', 'mob', 'spell', 'merchant', 'faction', 'drop', 'image', 'notice', 'quest']
-export const GAP_DOMAIN_LABELS: Record<GapDomain, string> = { item: 'Items', mob: 'Mobs', spell: 'Spells', merchant: 'Merchants', faction: 'Factions', drop: 'Drops', image: 'Images', notice: 'Notices', quest: 'Quests' }
+export type GapDomain = 'item' | 'mob' | 'spell' | 'merchant' | 'faction' | 'drop' | 'image' | 'notice' | 'quest' | 'zone'
+export const GAP_DOMAINS: readonly GapDomain[] = ['item', 'mob', 'spell', 'merchant', 'faction', 'drop', 'image', 'notice', 'quest', 'zone']
+export const GAP_DOMAIN_LABELS: Record<GapDomain, string> = { item: 'Items', mob: 'Mobs', spell: 'Spells', merchant: 'Merchants', faction: 'Factions', drop: 'Drops', image: 'Images', notice: 'Notices', quest: 'Quests', zone: 'Zones' }
 
 /** What the shown-count line calls a domain's rows: "Showing 11 of 395 mobs missing a wiki picture" (owner, 2026-10-19: "unknown images" read oddly). */
 export const GAP_SHOWN_NOUN: Record<GapDomain, string> = {
@@ -41,7 +42,8 @@ export const GAP_SHOWN_NOUN: Record<GapDomain, string> = {
   drop: 'drops missing from mob pages',
   image: 'mobs missing a wiki picture',
   notice: 'pages that say they are not in Legends',
-  quest: 'quests your log took part in'
+  quest: 'quests your log took part in',
+  zone: 'zone names that need a redirect'
 }
 
 /** One line under the toggle saying what the chosen domain's rows are (owner ask, 2026-10-18). */
@@ -54,7 +56,8 @@ export const GAP_DOMAIN_HELP: Record<GapDomain, string> = {
   drop: "Items you looted that the mob's page doesn't list (Motes excluded): add them to its loot.",
   image: 'Mobs you met whose wiki page has no picture: screenshot one and upload it.',
   notice: 'Mobs and items you met whose page says "not in Legends" or "up for deletion": remove the notice, since your log proves they exist.',
-  quest: 'Quests your log took part in: make the page, or fill what its page is missing.'
+  quest: 'Quests your log took part in: make the page, or fill what its page is missing.',
+  zone: 'Zone names your log printed that the wiki titles otherwise: make a redirect page.'
 }
 
 /**
@@ -70,7 +73,8 @@ export const GAP_CAPTURE: Record<GapDomain, string> = {
   drop: "Paste it into the mob page's known_loot list.",
   image: 'Screenshot it; upload under the file name shown.',
   notice: 'Nothing: remove the notice and cite the lines below.',
-  quest: 'Paste the Quest Journal for its level; hail and say each [keyword].'
+  quest: 'Paste the Quest Journal for its level; hail and say each [keyword].',
+  zone: 'Nothing: copy the redirect and save it as a new page.'
 }
 
 /** A row's key in the Done marks (owner ask, 2026-10-19). */
@@ -185,8 +189,8 @@ export type GapKind =
    * a row of only these passes "Zone I'm in" (owner, 2026-10-22; shared/gapExtraItems.ts).
    */
   | 'held' | 'captured'
-  /** `fished`: caught fishing (gaps_fished.rs); `assigned` / `updated`: a Quests row's task lines. */
-  | 'fished' | 'assigned' | 'updated'
+  /** `fished`: caught fishing (gaps_fished.rs); `assigned` / `updated`: a Quests row's task lines; `entered`: a Zones row's zone. */
+  | 'fished' | 'assigned' | 'updated' | 'entered'
 
 /**
  * One distinct merchant offer for an item, from the sell slot (`X told you, 'I'll give you ...'`;
@@ -308,6 +312,8 @@ export interface GapRow {
   pageSays?: string
   /** An Items row for a page that exists: the forage zones or category it lacks (shared/gapForage.ts). */
   forageUpdate?: ForageUpdate
+  /** The player's own corrections to this row, by hand (shared/gapEdits.ts). */
+  edit?: GapEdit
 }
 
 export interface GapsSnap {
@@ -362,23 +368,22 @@ export function gapInZone(row: GapRow, zone: string): boolean {
   // An item held or captured with no line naming it was seen nowhere: it is in every zone's list.
   if (row.details.zones === undefined && row.kinds.length > 0 && row.kinds.every((k) => k === 'held' || k === 'captured')) return true
   const here = zoneKey(zone)
-  const zones = row.details.zones
-  const names = zones?.all ?? zones?.entries.map((e) => e.name) ?? []
-  return here !== '' && names.some((z) => zoneKey(z) === here)
+  return here !== '' && zoneNames(row).some((z) => zoneKey(z) === here)
 }
 
+/** Every zone the row was named in. */
+const zoneNames = (row: GapRow): readonly string[] => row.details.zones?.all ?? row.details.zones?.entries.map((e) => e.name) ?? []
+
 /**
- * The rows of one domain whose name or kinds contain the query, case-folded, and, given a zone,
- * only those named there; engine order kept.
+ * The rows of one domain whose name, kinds or zones contain the query, case-folded (owner,
+ * 2026-10-23: "search should search name AND zone": `tutorial` finds the EverQuest Legends
+ * Tutorial's rows), and, given a zone, only those named there; engine order kept.
  */
 export function visibleGaps(rows: readonly GapRow[], domain: GapDomain, query: string, zone: string | null = null): GapRow[] {
   const q = query.trim().toLowerCase()
-  return rows.filter(
-    (r) =>
-      r.domain === domain &&
-      (q === '' || r.name.toLowerCase().includes(q) || r.kinds.some((k) => k.includes(q))) &&
-      (zone === null || gapInZone(r, zone))
-  )
+  const hit = (r: GapRow): boolean =>
+    r.name.toLowerCase().includes(q) || r.kinds.some((k) => k.includes(q)) || zoneNames(r).some((z) => z.toLowerCase().includes(q))
+  return rows.filter((r) => r.domain === domain && (q === '' || hit(r)) && (zone === null || gapInZone(r, zone)))
 }
 
 /** `a treant (11), a kobold (2) +3 more` — one tally as a phrase. */

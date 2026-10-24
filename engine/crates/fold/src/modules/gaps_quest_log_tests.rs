@@ -314,3 +314,67 @@ fn a_zone_change_ends_an_open_trade() {
     assert!(step.get("offered").is_none(), "{step}");
     assert_eq!(step["npc"], json!("Guard Jup"));
 }
+
+/// The EverQuest Legends Tutorial, 2026-10-23 (owner: "i need to be able to force a quest
+/// association"): Doug gives errands with no task line at all. His visit is served whole, once, the
+/// player's name written Soandso; chat on a channel and a player's say never join it.
+#[test]
+fn a_visit_no_task_line_claims_is_served_for_the_player_to_name() {
+    let mut q = played();
+    let hello = "Hail and well met, Testplayer. If you'd like to help me with a couple of errands, [let's talk].";
+    let errand = "Let's stretch out those legs a bit. Go talk to my old man in the cave to the south.";
+    feed(
+        &mut q,
+        &[
+            (0, "ZONE:EverQuest Legends Tutorial"),
+            (0, "You say, 'Hail, Doug'"),
+            (0, &format!("Doug says, '{hello}'")),
+            (2, "Steelriver tells General:2, 'i dont want to be a cleric'"),
+            (50, "You say, 'Hail, Doug'"),
+            (50, &format!("Doug says, '{hello}'")),
+            (57, "You say, 'let's talk'"),
+            (58, &format!("Doug says, '{errand}'")),
+            (60, "Bacon says, 'hi all'"),
+        ],
+    );
+    let talks = q.served_talks();
+    assert_eq!(talks.len(), 1, "one visit: the second hail is inside it");
+    let v = serde_json::to_value(talks[0]).unwrap();
+    assert_eq!(v["npc"], "Doug");
+    assert_eq!(v["zone"], "EverQuest Legends Tutorial");
+    assert_eq!(v["id"], format!("Doug@{}", at(0)));
+    let lines: Vec<(&str, &str)> = v["talk"].as_array().unwrap().iter().map(said).collect();
+    assert_eq!(
+        lines,
+        vec![
+            ("You", "Hail, Doug"),
+            ("Doug", "Hail and well met, Soandso. If you'd like to help me with a couple of errands, [let's talk]."),
+            ("You", "let's talk"),
+            ("Doug", errand),
+        ]
+    );
+}
+
+/// A visit a task step falls in is that quest's already; a zone change ends a visit, so the next hail
+/// opens another.
+#[test]
+fn a_visit_with_a_task_step_in_it_is_claimed_and_a_zone_change_ends_one() {
+    let mut q = played();
+    feed(
+        &mut q,
+        &[
+            (0, "You say, 'Hail, Nikko Canti'"),
+            (0, "Nikko Canti says, 'Would you be willing to [help] me restock my catch?'"),
+            (3, "You say, 'help'"),
+            (4, "You have been assigned the task 'Something Fishy'."),
+            (4, "Nikko Canti says, 'That's so kind of you!'"),
+            (30, "ZONE:Nektulos Forest"),
+            (40, "You say, 'Hail, a Nektulos ranger'"),
+            (40, "a Nektulos ranger says, 'Well met.'"),
+            (50, "ZONE:Lake Nerius"),
+            (60, "You say, 'Hail, a Nektulos ranger'"),
+        ],
+    );
+    let ids: Vec<String> = q.served_talks().iter().map(|e| serde_json::to_value(e).unwrap()["id"].as_str().unwrap_or("").to_string()).collect();
+    assert_eq!(ids, vec![format!("a Nektulos ranger@{}", at(40)), format!("a Nektulos ranger@{}", at(60))]);
+}

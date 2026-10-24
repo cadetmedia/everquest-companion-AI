@@ -23,7 +23,8 @@ export interface QuestTalk {
 export interface QuestStep {
   /** The log's stamp, `2026-10-22 21:00:12`. */
   at: string
-  kind: 'assigned' | 'updated'
+  /** `talk`: a visit the player tied to the quest by hand (gapForcedQuests.ts), no task line. */
+  kind: 'assigned' | 'updated' | 'talk'
   npc?: string
   zone?: string
   talk?: QuestTalk[]
@@ -52,6 +53,8 @@ export interface QuestLog {
    * Call for Aid): that second's talk, hand-ins and rewards are the other quest's.
    */
   chainedFrom?: string
+  /** Named by the player from NPC visits, not by any task line (gapForcedQuests.ts). */
+  forced?: true
 }
 
 /**

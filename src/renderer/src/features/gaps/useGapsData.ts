@@ -35,16 +35,27 @@ import { forageProofNames } from '@shared/gapForage'
 import { mobPageFinder } from '@shared/mobPageTitle'
 import { catalogStates } from '@shared/gapMerchantDescription'
 import { useQuestLivePages } from '../../lib/questLivePages'
+import { withForcedQuests, type ForcedQuestMap, type TalkSnap, type TalkVisit } from '@shared/gapForcedQuests'
+import { withZoneRedirects } from '@shared/gapZoneRedirects'
+import { zoneKey } from '@shared/zones'
+import { useForcedQuests, type ForcedQuests } from './useForcedQuests'
+import type { ForcedScope } from './ForcedQuests'
+import { useEditedSnap } from './gapEditsStore'
 
 /** Each drop group's members, and the drop-list links that redirect to an item (scrape-drop-groups.ts). */
 const DROPS = dropGroupsJson as { groups: DropGroups; aliases?: DropAliases }
 /** The wiki data's date, `2026-10-19`: the chips' tooltips and the tab's caption say it. */
 export const GAPS_DATA_DATE = ((mobsJson as { scrapedAt?: string }).scrapedAt ?? '').slice(0, 10)
 
-const ZONE_NAME: ZoneNamer = wikiZoneNamer(catalogZoneCounts(MOB_CATALOG))
+const ZONE_COUNTS = catalogZoneCounts(MOB_CATALOG)
+const ZONE_NAME: ZoneNamer = wikiZoneNamer(ZONE_COUNTS)
+/** The zone spellings the mob catalog links: a page by that name exists, so no redirect is offered (gapZoneRedirects.ts). */
+const CATALOG_ZONES: ReadonlySet<string> = new Set([...ZONE_COUNTS.keys()].map(zoneKey))
 const IS_MOB = catalogNameTest(MOB_CATALOG)
 /** A quest's catalog entry when the wiki has its page (the Quests rows' Make page / Update page). */
 const QUEST_ENTRY = questCatalogFinder((questsJson as { quests: QuestCatalogEntry[] }).quests)
+/** The catalog's quest titles: names "Add quest" offers, so a page the wiki has can be picked. */
+export const QUEST_TITLES: readonly string[] = (questsJson as { quests: QuestCatalogEntry[] }).quests.map((q) => q.page)
 /** The catalog's entry, else a page a Copy click found on the wiki this session (questLivePages.ts). */
 const questPageOf = (live: ReadonlyMap<string, string>) => (name: string): QuestCatalogEntry | undefined => {
   const found = QUEST_ENTRY(name) === undefined ? live.get(questTitleKey(name)) : undefined
@@ -67,6 +78,9 @@ const lastOwnCut = memoLast<OwnGaps>()
 const lastOwnCutOnly = memoLast<OwnGaps>()
 const lastShown = memoLast<GapsSnap | null | undefined>()
 const lastShownOnly = memoLast<GapsSnap | null | undefined>()
+/** After the derivation: the named quests, quest pages and Zones joined (the tab's slot and the overlay's). */
+const lastJoined = memoLast<GapsSnap>()
+const lastJoinedOnly = memoLast<GapsSnap>()
 
 export interface GapsData {
   /** The engine's snapshot with the derived domains joined in; undefined until it lands. */
@@ -81,7 +95,13 @@ export interface GapsData {
   seenBy?: ReadonlyMap<string, readonly string[]>
   /** All characters: the join is still being worked on; the list shows the last one meanwhile. */
   joining: boolean
+  /** The quests the player named by hand (the attached character's), the visits to pick from and the names offered. */
+  forced: ForcedScope
 }
+
+const NO_TALKS: readonly TalkVisit[] = []
+/** A snapshot's talks and character (gaps.rs `snapshot`), which `GapsSnap` does not type. */
+const talkSnapOf = (snap: object | null | undefined): TalkSnap | null => snap ?? null
 
 /** All characters ticked: the others' inputs, the attached one's label, and the day window. */
 export interface AllCharacters {
@@ -149,6 +169,22 @@ function inWindow(snap: GapsSnap | null | undefined, cut: { stamp: string } | nu
   return (only === undefined ? lastShown : lastShownOnly)([snap, cut?.stamp], () => (snap && cut ? gapsSince(snap, cut.stamp) : snap))
 }
 
+/**
+ * After the derivation: the named quests (and the visits left to pick from), quest pages and Zones (a
+ * zone's redirect to copy), in their own slot so a remount hits; the overlay's one-domain copy apart.
+ */
+function joinedSnap(derived: GapsSnap, x: { live: TalkSnap | null; forced: ForcedQuestMap; livePages: ReadonlyMap<string, string>; only: GapDomain | undefined }): GapsSnap {
+  return (x.only === undefined ? lastJoined : lastJoinedOnly)([derived, x.live?.talks, x.forced, x.livePages], () =>
+    withZoneRedirects(withQuestPages(withForcedQuests({ ...derived, talks: x.live?.talks ?? [] }, x.forced), questPageOf(x.livePages)), CATALOG_ZONES)
+  )
+}
+
+/** "Add quest" and "Add talk"'s scope: the named quests, the visits left to pick from, the names offered. */
+function useForcedScope(forced: ForcedQuests, snap: TalkSnap | null | undefined): ForcedScope {
+  const talks = snap?.talks ?? NO_TALKS
+  return useMemo(() => ({ ...forced, talks, titles: QUEST_TITLES }), [forced, talks])
+}
+
 export function useGapsData(all: AllCharacters | null = null, opts: GapsDataOptions = {}): GapsData {
   const { only, holdMs = 0, cut = null } = opts
   const { engine: liveEngine, loot: liveLoot, kills: liveKills, cons } = useGapsFeeds(holdMs)
@@ -175,11 +211,17 @@ export function useGapsData(all: AllCharacters | null = null, opts: GapsDataOpti
   const derive = only === undefined ? snapOf : snapOfOnly
   // A page the wiki answered with on a Copy click turns its row into Update page (owner, 2026-10-23).
   const livePages = useQuestLivePages()
+  // The quests the player named (owner, 2026-10-23: "force a quest association"): the attached
+  // character's, from its own snapshot, also under All characters (another character's are not loaded).
+  const live = talkSnapOf(liveEngine)
+  const forced = useForcedQuests(live?.character)
   const snap = useMemo(
-    () => (engine ? withQuestPages(derive(engine, { loot, kills: killMobs, cons, itemMobs, itemForage }, WIKI, only), questPageOf(livePages)) : engine),
-    [derive, engine, loot, killMobs, itemMobs, itemForage, cons, only, livePages]
+    () => (engine ? joinedSnap(derive(engine, { loot, kills: killMobs, cons, itemMobs, itemForage }, WIKI, only), { live, forced: forced.forced, livePages, only }) : engine),
+    [derive, engine, loot, killMobs, itemMobs, itemForage, cons, only, livePages, live, forced.forced]
   )
   const kills = lastKills([killMobs], () => killIndex(killMobs))
   const shown = inWindow(snap, joined === null ? cut : deferredAll?.cut, only)
-  return { snap: shown, engine, loot, ownLoot: liveLoot, kills, seenBy: joined?.seenBy, joining: all !== deferredAll }
+  // The rows the player corrected by hand (owner, 2026-10-23: "EDIT values in the gaps tab").
+  const edited = useEditedSnap(shown, live)
+  return { snap: edited, engine, loot, ownLoot: liveLoot, kills, seenBy: joined?.seenBy, joining: all !== deferredAll, forced: useForcedScope(forced, talkSnapOf(snap)) }
 }

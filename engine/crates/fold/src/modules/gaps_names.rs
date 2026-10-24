@@ -10,7 +10,7 @@
 //!     sides; the raid roster's stated aliases (`Innoruuk, the Prince of Hate`) are read too.
 //!   * A MOB'S PET, `<mob> pet` (`a shadowknight pet`, `Lady Vox pet`): the wiki pages the mob,
 //!     never its pet, so the name is known when the mob is, and an unknown mob's pet is filed
-//!     under the mob ([`owner_of_pet`]).
+//!     under the mob ([`owner_of_pet`]); not in the EQ Legends Tutorial, whose `a fragile pet` is a mob.
 //!   * NO MOB: the `Reward Chest` a raid's loot is taken from.
 //!   * A PLAYER'S: a pet that spoke as a pet or named its leader (`Zonarer says, 'As you wish, oh
 //!     great one.'`) is filed as a player by the module; a mount or familiar a single-word name
@@ -104,6 +104,11 @@ fn mob_loose(name: &str) -> String {
 /// `a necro initiate pet` → `a necro initiate`: the name an unknown mob's pet is filed under.
 pub fn owner_of_pet(name: &str) -> &str {
     name.strip_suffix(" pet").unwrap_or(name)
+}
+
+/// The EQ Legends Tutorial, where `a fragile pet` and `a rambunctious pet` are mobs by their whole names.
+pub fn is_tutorial_zone(zone: &str) -> bool {
+    zone.trim().eq_ignore_ascii_case("EverQuest Legends Tutorial")
 }
 
 /// The game's ability switch (`<player> begins casting Disable Ability.`): no spell, no page.

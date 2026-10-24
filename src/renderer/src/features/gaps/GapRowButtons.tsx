@@ -23,6 +23,9 @@ import { wikiPageUrl } from '@shared/gapUrls'
 import { questPageTitle } from '@shared/gapQuests'
 import { readGapVerdict } from '../../lib/gapVerdicts'
 import { QuestCopyDialog, readQuestPage, type QuestRead } from './QuestCopyDialog'
+import { ForcedRowButtons } from './ForcedQuests'
+import { EditRowButton } from './GapRowEdit'
+import { applyEditText, shownRow } from '@shared/gapEdits'
 
 const stop = (e: MouseEvent): void => e.stopPropagation()
 
@@ -86,7 +89,7 @@ function pageExists(row: GapRow): boolean {
 /** The Copy button's words and tip for a row. */
 function copyWords(row: GapRow): { label: string; tip: string } {
   if (row.forageUpdate !== undefined) return { label: 'Copy wiki page', tip: forageButtons(row.forageUpdate).copyTip }
-  if (row.suggest !== undefined && (row.domain === 'item' || row.domain === 'spell')) {
+  if (row.suggest !== undefined && (row.domain === 'item' || row.domain === 'spell' || row.domain === 'zone')) {
     return { label: 'Copy redirect', tip: `A redirect from the game's spelling to ${row.suggest.page}, so both spellings reach one page.` }
   }
   if (row.domain === 'notice') return { label: 'Copy proof', tip: 'What your log proves (how often, when, where, the lines), for the talk page or the edit summary.' }
@@ -211,8 +214,10 @@ export default function GapRowButtons({
 }): JSX.Element {
   const buttons = (
     <>
-      <CopyPageButton key={row.name} text={() => pageText(row)} row={row} compact={compact} />
-      <WikiLinks row={row} compact={compact} />
+      <CopyPageButton key={row.name} text={() => applyEditText(pageText(row), row)} row={shownRow(row)} compact={compact} />
+      <WikiLinks row={shownRow(row)} compact={compact} />
+      <ForcedRowButtons row={row} compact={compact} Action={ActionButton} />
+      <EditRowButton row={row} compact={compact} Action={ActionButton} />
       <DoneButton isDone={isDone} onDone={() => onDone(row)} compact={compact} />
       {!compact && <RemoveCaptureButton row={row} />}
     </>

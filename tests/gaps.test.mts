@@ -72,6 +72,8 @@ test('visibleGaps keeps one domain in the served order and matches the query aga
     ['Envenomed Bolt']
   )
   assert.deepEqual(visibleGaps(ROWS, 'spell', 'wooden'), [])
+  // A zone matches too (owner, 2026-10-23): `karana` finds the Wooden Heart, named in the Southern Plains.
+  assert.deepEqual(visibleGaps(ROWS, 'item', 'karana').map((r) => r.name), ['Wooden Heart'])
 })
 
 test('tallyText names the entries with counts and says how many a capped list left out', () => {
