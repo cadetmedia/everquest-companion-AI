@@ -23,19 +23,20 @@ import type { PageExtras, ZoneNamer } from '@shared/wikiPage'
 import dropGroupsJson from '../../data/eqlegends/dropGroups.json'
 import mobsJson from '../../data/eqlegends/mobs.json'
 import questsJson from '../../data/eqlegends/quests.json'
-import { questCatalogFinder, questTitleKey, withQuestPages, type QuestCatalogEntry } from '@shared/gapQuests'
+import { questCatalogFinder, questTitleKey, withQuestPages, type QuestCatalogEntry, type QuestJournalFacts } from '@shared/gapQuests'
 import { MOB_CATALOG } from '../mobs/mobSearch'
 import { gapsSince, joinCharacters, otherInputs, ownSince, type CharacterGaps, type JoinedGaps, type OwnGaps } from '@shared/gapsAllCharacters'
 import { useModule } from '../../lib/useModule'
 import { useItemMobs } from '../../lib/gapItemMobs'
 import { useThrottled } from '../../lib/useThrottled'
-import { questJournalNow } from './itemShotsStore'
+import { questJournalNow, useQuestJournals } from './itemShotsStore'
 import { useItemForage } from '../../lib/gapItemForage'
 import { forageProofNames } from '@shared/gapForage'
 import { mobPageFinder } from '@shared/mobPageTitle'
 import { catalogStates } from '@shared/gapMerchantDescription'
 import { useQuestLivePages } from '../../lib/questLivePages'
-import { withForcedQuests, type ForcedQuestMap, type TalkSnap, type TalkVisit } from '@shared/gapForcedQuests'
+import { withForcedQuests, withQuestLinks, type ForcedQuestMap, type TalkSnap, type TalkVisit } from '@shared/gapForcedQuests'
+import { popupLinksOfRows } from '@shared/questPopup'
 import { withZoneRedirects } from '@shared/gapZoneRedirects'
 import { zoneKey } from '@shared/zones'
 import { useForcedQuests, type ForcedQuests } from './useForcedQuests'
@@ -169,14 +170,27 @@ function inWindow(snap: GapsSnap | null | undefined, cut: { stamp: string } | nu
   return (only === undefined ? lastShown : lastShownOnly)([snap, cut?.stamp], () => (snap && cut ? gapsSince(snap, cut.stamp) : snap))
 }
 
+/** What the join after the derivation reads beside the rows (`joinedSnap`). */
+interface JoinInputs {
+  live: TalkSnap | null
+  forced: ForcedQuestMap
+  livePages: ReadonlyMap<string, string>
+  /** The pasted Quest Journal and popup readings, by quest key (itemShotsStore.ts). */
+  journals: Readonly<Record<string, QuestJournalFacts>>
+  only: GapDomain | undefined
+}
+
 /**
- * After the derivation: the named quests (and the visits left to pick from), quest pages and Zones (a
- * zone's redirect to copy), in their own slot so a remount hits; the overlay's one-domain copy apart.
+ * After the derivation: the named quests (and the visits left to pick from), each quest's popup rewards
+ * on their item rows (questPopup.ts `popupLinksOfRows`), quest pages and Zones (a zone's redirect to
+ * copy), in their own slot so a remount hits; the overlay's one-domain copy apart.
  */
-function joinedSnap(derived: GapsSnap, x: { live: TalkSnap | null; forced: ForcedQuestMap; livePages: ReadonlyMap<string, string>; only: GapDomain | undefined }): GapsSnap {
-  return (x.only === undefined ? lastJoined : lastJoinedOnly)([derived, x.live?.talks, x.forced, x.livePages], () =>
-    withZoneRedirects(withQuestPages(withForcedQuests({ ...derived, talks: x.live?.talks ?? [] }, x.forced), questPageOf(x.livePages)), CATALOG_ZONES)
-  )
+function joinedSnap(derived: GapsSnap, x: JoinInputs): GapsSnap {
+  return (x.only === undefined ? lastJoined : lastJoinedOnly)([derived, x.live?.talks, x.forced, x.livePages, x.journals], () => {
+    const named = withForcedQuests({ ...derived, talks: x.live?.talks ?? [] }, x.forced)
+    const linked = { ...named, rows: withQuestLinks(named.rows, popupLinksOfRows(named.rows, (q) => x.journals[questTitleKey(q)]?.popups)) }
+    return withZoneRedirects(withQuestPages(linked, questPageOf(x.livePages)), CATALOG_ZONES)
+  })
 }
 
 /** "Add quest" and "Add talk"'s scope: the named quests, the visits left to pick from, the names offered. */
@@ -215,9 +229,11 @@ export function useGapsData(all: AllCharacters | null = null, opts: GapsDataOpti
   // character's, from its own snapshot, also under All characters (another character's are not loaded).
   const live = talkSnapOf(liveEngine)
   const forced = useForcedQuests(live?.character)
+  // A popup's reward joins its item's page as soon as the popup is pasted (useQuestJournals is live).
+  const journals = useQuestJournals()
   const snap = useMemo(
-    () => (engine ? joinedSnap(derive(engine, { loot, kills: killMobs, cons, itemMobs, itemForage }, WIKI, only), { live, forced: forced.forced, livePages, only }) : engine),
-    [derive, engine, loot, killMobs, itemMobs, itemForage, cons, only, livePages, live, forced.forced]
+    () => (engine ? joinedSnap(derive(engine, { loot, kills: killMobs, cons, itemMobs, itemForage }, WIKI, only), { live, forced: forced.forced, livePages, journals, only }) : engine),
+    [derive, engine, loot, killMobs, itemMobs, itemForage, cons, only, livePages, live, forced.forced, journals]
   )
   const kills = lastKills([killMobs], () => killIndex(killMobs))
   const shown = inWindow(snap, joined === null ? cut : deferredAll?.cut, only)

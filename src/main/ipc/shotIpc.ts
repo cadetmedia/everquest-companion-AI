@@ -17,6 +17,7 @@ import { effectiveEqRoot } from '../log/config'
 import { decodeTga } from '../shot/gameTextures'
 import { buildIconIndex, iconSheets, readIconIndex, sheetsFingerprint, SheetCells, writeIconIndex, type IconIndex } from '../shot/iconIndex'
 import { readJournalLines } from '../shot/journalLines'
+import { readPopupLines } from '../shot/popupLines'
 import { readLines } from '../shot/ocr'
 import type { Rgba } from '../shot/pixels'
 import { readItemShot, type ShotReaders } from '../shot/readItemShot'
@@ -112,6 +113,11 @@ async function readText(png: unknown, mode?: unknown): Promise<ShotTextReply> {
       const read = await readJournalLines(img)
       // The lines as read, so a journal the reader refuses can be checked from the dev log.
       logInfo(`[everquest-companion] quest journal read: ${read.lines.map((l, i) => `${l} [${String(read.shades[i])}]`).join(' | ')}`)
+      return { ...read, ms: Math.round(performance.now() - t0) }
+    }
+    if (mode === 'popup') {
+      // A popup window or a Quest Journal pasted on a Quests row: lines with where they sit and their colour.
+      const read = await readPopupLines(img)
       return { ...read, ms: Math.round(performance.now() - t0) }
     }
     const lines = (await readLines(img)).map((l) => l.text)

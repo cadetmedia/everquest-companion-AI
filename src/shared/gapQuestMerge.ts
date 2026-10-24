@@ -320,7 +320,8 @@ function blockWords(b: WalkBlock): string[] {
   if (b.kind === 'experience') return ['yougainexperience']
   return b.keys.map((k) => {
     const w = plainWords(k)
-    return b.kind === 'npc' && w.length > 40 ? w.slice(0, 40).replace(/\s\S*$/, '') : w
+    // A long NPC line or popup paragraph is found by its start: a page may quote the rest its own way.
+    return (b.kind === 'npc' || b.kind === 'popup') && w.length > 40 ? w.slice(0, 40).replace(/\s\S*$/, '') : w
   })
 }
 
