@@ -39,14 +39,14 @@ use serde::Serialize;
 use serde_json::{json, Value};
 use std::collections::{BTreeMap, HashSet, VecDeque};
 
-use super::quests::{refused_here, task_of, REFUSAL, REFUSE_MS};
+use super::quests::{refused_here, task_of, trade_cancelled, REFUSAL, REFUSE_MS, TRADE_MS};
 
 /// The exchange that leads to a step, when no hail of its NPC starts it: a minute.
 const TALK_MS: i64 = 60_000;
 /// The NPC's answer, a faction line, experience or the next task: the same second or the next.
 const AFTER_MS: i64 = 2_000;
 /// The cap on an open trade: Unfortunate news's three letters went in 57-61 s before its task line.
-const OFFER_MS: i64 = 300_000;
+const OFFER_MS: i64 = TRADE_MS;
 /// An achievement a step earned (Race Unlock - Half Dark Elves, 11 s after the step that earned it).
 const ACHIEVE_MS: i64 = 15_000;
 /// How quest pages write the player's name: 9 of the 20 cached pages with a placeholder.
@@ -279,7 +279,7 @@ impl QuestLogs {
 
     /// What follows a step: a faction line or an achievement; or a trade called off.
     fn outcome(&mut self, text: &str, ts: i64) {
-        if text == "You have cancelled the trade." || text.ends_with(" has cancelled the trade.") {
+        if trade_cancelled(text) {
             self.offers.clear();
         } else if let Some((faction, _, _)) = faction_of(text) {
             let moved = FactionMoved { faction: faction.to_string(), line: text.to_string() };
@@ -466,7 +466,10 @@ impl GapsModule {
     /// (kind `trade`) spends the trade's offers; `You gain experience!` (kind `expGain`) is a step's.
     pub(super) fn quest_event(&mut self, ev: &Event) -> bool {
         match (ev.kind(), ev.str("npc")) {
-            ("trade", Some(npc)) => self.quest_log.trade_done(npc),
+            ("trade", Some(npc)) => {
+                self.quest_log.trade_done(npc);
+                self.quests.trade_done(npc);
+            }
             ("expGain", _) => self.quest_log.experience(ev.ts()),
             _ => {}
         }
