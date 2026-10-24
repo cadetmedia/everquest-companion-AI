@@ -166,10 +166,10 @@ STR: +?  STA: +?<br>
 * [[Quest_Name]]
 }}</onlyinclude>`
 
-test('AN UNFILLED ITEM BLUEPRINT STATES NOTHING: NO SLOTS, STATS, DROPS OR QUESTS, ONLY ITS ERA AND ICON', () => {
+test('AN UNFILLED ITEM BLUEPRINT STATES NOTHING: NO SLOTS, STATS, DROPS, QUESTS, ERA OR ICON', () => {
   assert.equal(isUnfilledItemBlueprint(BLUEPRINT), true)
   const r = parseItemWikitext('Cloak of Treason', BLUEPRINT)
-  assert.deepEqual(r, { lore: false, quest: false, questUses: [], dropsFrom: [], iconId: 1234, eraTag: 'Classic' })
+  assert.deepEqual(r, { lore: false, quest: false, questUses: [], dropsFrom: [] })
   // A real page that names a mob is no blueprint.
   assert.equal(isUnfilledItemBlueprint(BLUEPRINT.replace(/Mob_Name/, 'Lord Rikantus Everling').replace(/Zone_Name/, 'Nektropos Castle').replace(/Quest_Name/, 'The Betrayer').replace(/Slot: PRIMARY[^<]*/, 'Slot: BACK')), false)
 })

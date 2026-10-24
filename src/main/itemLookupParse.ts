@@ -935,7 +935,7 @@ export function parseItemWikitext(
   | 'foragedNote'
   | 'foragedCategory'
 > {
-  if (isUnfilledItemBlueprint(wikitext)) return { lore: false, quest: false, questUses: [], dropsFrom: [], iconId: parseIconId(templateField(wikitext, 'lucy_img_ID')), eraTag: pageEraTag(wikitext) }
+  if (isUnfilledItemBlueprint(wikitext)) return { lore: false, quest: false, questUses: [], dropsFrom: [] }
   const statsBlock = templateField(wikitext, 'statsblock') ?? undefined
   const relatedRaw = templateField(wikitext, 'relatedquests')
   const notesRaw = templateField(wikitext, 'notes')
