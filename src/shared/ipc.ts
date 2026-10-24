@@ -1094,6 +1094,15 @@ export const IPC = {
   onShotCapturing: 'shot:capturing',
   // The clipboard's picture as PNG bytes, or null (a click on the paste box). Payload: none.
   shotClipboard: 'shot:clipboard',
+  // The picture inbox (src/main/pictureInbox.ts): <userData>/picture-inbox, read like a paste.
+  // list: () -> { dir, files }; read: (name) -> bytes | null; done: (name, ok, reason) moves it to
+  // done/ or failed/; log: (line) a paste, drop or inbox read for the dev log.
+  pictureInboxList: 'pictureInbox:list',
+  pictureInboxRead: 'pictureInbox:read',
+  pictureInboxDone: 'pictureInbox:done',
+  pictureLog: 'pictureInbox:log',
+  // main -> renderer: a picture landed in the inbox. Payload: none.
+  onPictureInbox: 'pictureInbox:changed',
   // An item icon drawn from the install's own sheets, as a data URL. Payload: (id: number).
   shotIcon: 'shot:icon',
   // Save a pasted mob picture under the wiki's file name: the auto-save folder, else a save dialog
