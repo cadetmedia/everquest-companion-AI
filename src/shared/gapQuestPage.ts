@@ -1,11 +1,12 @@
 // shared/gapQuestPage.ts — Copy wiki page for a Quests row (owner, 2026-10-22). Two jobs:
 //
-//   NO PAGE YET: a full draft in the layout most of the ~930 cached quest pages share (owner,
-//   2026-10-23: "validate that"; page-60172, Acquire a Mark of Karana): the `questTopTable` (Start
-//   Zone, Quest Giver, Minimum Level, Classes, Related Zones, Related NPCs), `== Reward ==`,
-//   `== Checklist ==` as a `{{CheckboxList}}` ... `{{End}}`, and `== Walkthrough ==` with the log's own
-//   talk (`You say, '...'`, `: NPC says, '...'`), a blank line after each, hand-ins as `Give [[X]] to
-//   [[NPC]]:`, the task lines in bold, a `facblock` and `{{YouGainExperience}}`. A cell the log cannot
+//   NO PAGE YET: a full draft in the wiki's Quest Page Blueprint (Help:Contents, read 2026-10-23; the
+//   new Lake Nerius pages follow it, while most older cached pages write `Start Zone` and `== X ==`):
+//   the `questTopTable` (Starts In, Quest Giver, Minimum Level, Classes, Related Zones, Related NPCs),
+//   `= Reward =`, `= Summary =` as a `{{CheckboxList}}` ... `{{End}}`, `= Walkthrough =` with the log's
+//   own talk (`You say, '...'`, `: NPC says, '...'`), a blank line after each, hand-ins as `Hand [[X]]
+//   to [[NPC]]:`, the task lines in bold, a `facblock` and `{{YouGainExperience}}`, then `= Related
+//   Quests =` when the log saw the quest before or after. None of the blueprint's option lists: a cell the log cannot
 //   fill is `?`, as the wiki writes Classes and Minimum Level; a row no page fills with `?` (Required
 //   Faction) is left out. The player's own names read `Soandso`, as the cached pages write a player (27 NPC lines on 8
 //   pages; `<name>` 9).
@@ -66,7 +67,7 @@ export function homeZone(log: QuestLog): string | undefined {
 function topTable(log: QuestLog, c: QuestPageContext): string {
   const giver = giverOf(log)
   const rows = [
-    topRow('Start Zone', startCell(log, c) ?? '?'),
+    topRow('Starts In', startCell(log, c) ?? '?'),
     ...(log.chainedFrom !== undefined ? [] : [topRow('Quest Giver', giver === undefined ? '?' : npcOf(giver, c))]),
     topRow('Minimum Level', minLevel(c)),
     topRow('Classes', '?'),
@@ -76,14 +77,14 @@ function topTable(log: QuestLog, c: QuestPageContext): string {
   return `{| class="questTopTable"\n${rows.join('\n|-\n')}\n|}`
 }
 
-/** The reward items as the wiki lists them: `<ul><li>{{:Item}}</li></ul>`. */
-export const rewardList = (items: readonly string[]): string[] => items.map((i, n) => `${n === 0 ? '<ul>' : ''}<li>{{:${i}}}</li>${n === items.length - 1 ? '</ul>' : ''}`)
+/** The reward items as the blueprint lists them: `<ul>`, one `<li>{{:Item}}</li>` each, `</ul>`. */
+export const rewardList = (items: readonly string[]): string[] => (items.length === 0 ? [] : ['<ul>', ...items.map((i) => `<li>{{:${i}}}</li>`), '</ul>'])
 
 function rewardSection(log: QuestLog): string {
   const r = questRewards(log)
   const items = rewardList(r?.items ?? [])
   const lines = items.length > 0 ? items : r?.experience === true ? ['* Experience'] : ['?']
-  return ['== Reward ==', '', ...lines].join('\n')
+  return ['= Reward =', '', ...lines].join('\n')
 }
 
 /** Each distinct item with how many times it appears, in first-seen order. */
@@ -118,7 +119,7 @@ function summarySection(name: string, log: QuestLog, c: QuestPageContext): strin
   const next = questRewards(log)?.next
   if (next !== undefined) lines.push(`* Receive the [[${next}]] quest.`)
   if (lines.length === 0) lines.push(`* Finish ${name}.`)
-  return ['== Checklist ==', '{{CheckboxList}}', ...lines, '{{End}}'].join('\n')
+  return ['= Summary =', '{{CheckboxList}}', ...lines, '{{End}}'].join('\n')
 }
 
 /**
@@ -150,7 +151,7 @@ function stepParts(s: QuestStep, c: QuestPageContext): WalkBlock[] {
       const block: WalkBlock = t.who === 'You' ? { kind: 'say', lines: [`You say, '${text}'`], keys: [text] } : { kind: 'npc', lines: [`: ${t.who} says, '${text}'`], keys: [text] }
       return { ms: t.ms, block }
     }),
-    ...counted(s.offered ?? []).map(([i, n]): Timed => ({ ms: firstMs(s.offered, s.offeredMs, i), block: { kind: 'give', lines: [`Give ${itemLink([i, n])}${to}:`], keys: [i] } })),
+    ...counted(s.offered ?? []).map(([i, n]): Timed => ({ ms: firstMs(s.offered, s.offeredMs, i), block: { kind: 'give', lines: [`Hand ${itemLink([i, n])}${to}:`], keys: [i] } })),
     ...counted(receivedOf(s)).map(([i, n]): Timed => ({ ms: firstMs(s.given, s.givenMs, i), block: { kind: 'receive', lines: [`'''You receive ${itemLink([i, n])}.'''`], keys: [i] } }))
   ]
   const timed = parts.every((p) => p.ms !== undefined)
@@ -217,7 +218,13 @@ export function questDraftPage(name: string, log: QuestLog, c: QuestPageContext 
   const home = homeZone(log)
   // The class category is the editor's to pick: the log never states which classes may take it.
   const cats = ['[[Category:Quests]]', ...(home === undefined ? [] : [zoneCategory(home, c)]), '<!-- [[Category:All Classes Quests]] or [[Category:<Class> Quests]] -->']
-  return [era, ...picture, topTable(log, c), '', rewardSection(log), '', summarySection(name, log, c), '', '== Walkthrough ==', '', ...walk, ...cats].join('\n') + '\n'
+  return [era, ...picture, topTable(log, c), '', rewardSection(log), '', summarySection(name, log, c), '', '= Walkthrough =', '', ...walk, ...relatedQuests(log), ...cats].join('\n') + '\n'
+}
+
+/** `= Related Quests =`: the quest this one follows and the one it hands out, when the log saw them. */
+function relatedQuests(log: QuestLog): string[] {
+  const chain = [log.chainedFrom, questRewards(log)?.next].filter((q): q is string => q !== undefined)
+  return chain.length === 0 ? [] : ['= Related Quests =', '', ...chain.map((q) => `* [[${questPageTitle(q)}]]`), '']
 }
 
 /** A start cell that names a quest (`Finishing the quest [[Call for Aid]]`), not a zone. */
@@ -237,7 +244,7 @@ export function questPageGaps(entry: QuestCatalogEntry, log: QuestLog, c: QuestP
   const level = c.journal?.minLevel
   const blank = (v: string | undefined): boolean => (v ?? '') === ''
   return [
-    ...(blank(entry.startZone) && start !== undefined ? [['Start Zone', start] as [string, string]] : []),
+    ...(blank(entry.startZone) && start !== undefined ? [['Starts In', start] as [string, string]] : []),
     ...(blank(entry.giver) && giver !== undefined ? [['Quest Giver', npcOf(giver, c)] as [string, string]] : []),
     ...(entry.minLevel === undefined && level !== undefined ? [['Minimum Level', String(level)] as [string, string]] : []),
     ...relatedNpcGap(entry, log, c)

@@ -86,7 +86,7 @@ test('THE PAGE KEEPS EVERY LINE IT HAD, AND GAINS ONLY WHAT THE LOG SAW THAT IT 
   // The hand-ins, the faction block and experience land in the walkthrough, after the talk; the task
   // line is never added (12 of the 931 cached pages write one).
   assert.ok(!lines.some((l) => l.includes("Your task 'Unfortunate news'")))
-  for (const want of ['Give [[Exorbitant Commission]] to [[Dorian G`Wyn]]:', '* Your faction standing with [[Nerius Trade Association]] has been adjusted by 200.', '{{YouGainExperience}}']) {
+  for (const want of ['Hand [[Exorbitant Commission]] to [[Dorian G`Wyn]]:', '* Your faction standing with [[Nerius Trade Association]] has been adjusted by 200.', '{{YouGainExperience}}']) {
     const i = lines.indexOf(want)
     assert.ok(i > lines.indexOf('== Walkthrough =='), want)
     assert.equal(out.added[i], true, `${want} is marked new`)
@@ -126,7 +126,7 @@ test('A PAGE WITH NO WALKTHROUGH OR REWARD GETS THEM WHOLE, BEFORE ITS CATEGORIE
   assert.equal(lines.filter((l) => /Start(s In| Zone)/.test(l)).length, 1)
   assert.ok(lines.indexOf('== Reward ==') < lines.indexOf('== Walkthrough =='))
   assert.ok(lines.indexOf('== Walkthrough ==') < lines.indexOf('[[Category:Quests]]'))
-  assert.ok(lines.includes('<ul><li>{{:Cloak of the Nerius}}</li></ul>'))
+  assert.ok(lines.includes('<li>{{:Cloak of the Nerius}}</li>'), 'the blueprint lists one reward per line')
 })
 
 test('NO PAGE IS A DRAFT, AND A FAILED READ IS THE OFFLINE TEXT, SAID TO BE OFFLINE', () => {
@@ -213,7 +213,7 @@ test('A PAGE IN THE OLDER LAYOUT GETS ADDITIONS IN ITS OWN LAYOUT', () => {
   const lines = out.text.split('\n')
   assert.ok(lines.includes('= Walkthrough ='), 'level-1, as the page writes its headings')
   assert.ok(!lines.includes('== Walkthrough =='))
-  assert.ok(lines.includes('Give [[A Curt Dismissal]] to [[Dorian G`Wyn]]:'))
+  assert.ok(lines.includes('Hand [[A Curt Dismissal]] to [[Dorian G`Wyn]]:'))
   assert.ok(lines.includes("'''You have completed achievement: Race Unlock - Half Dark Elves'''"))
   // The chained quest's assigning trade belongs to Call for Aid: none of it is written here.
   assert.ok(!out.text.includes('Solusek Petition') && !out.text.includes('A petition for aid'))
@@ -221,7 +221,7 @@ test('A PAGE IN THE OLDER LAYOUT GETS ADDITIONS IN ITS OWN LAYOUT', () => {
 
 test('A CHAINED QUEST STARTS FROM THE QUEST BEFORE, NAMES NO GIVER, AND IS FILED UNDER ITS OWN ZONE', () => {
   const page = questDraftPage('Unfortunate news', chained)
-  assert.ok(page.includes("! ''' Start Zone: '''\n| Finishing the quest [[Call for Aid]]"))
+  assert.ok(page.includes("! ''' Starts In: '''\n| Finishing the quest [[Call for Aid]]"))
   assert.ok(!page.includes('Quest Giver') && !page.includes('[[File:'))
   assert.ok(page.includes('[[Category:Lake Nerius]]') && !page.includes('Category:The Temple of Solusek Ro'))
   // Three updates in one second are one task line.

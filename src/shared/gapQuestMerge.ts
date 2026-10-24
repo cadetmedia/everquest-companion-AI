@@ -140,11 +140,14 @@ function table(doc: Doc): { open: number; close: number; rows: Map<string, numbe
 }
 
 /** A new row in its place: before the first later row the table has (above that row's `|-`), else at the close. */
+/** A row's key in the table: `Starts In` (the blueprint's label) and `Start Zone` are one row. */
+const rowKey = (label: string): string => (label.toLowerCase() === 'starts in' ? 'start zone' : label.toLowerCase())
+
 function addRow(doc: Doc, label: string, value: string): void {
   const t = table(doc)
   if (t === undefined) return
   const row = topRow(label, value).split('\n')
-  for (const later of ROW_ORDER.slice(ROW_ORDER.indexOf(label.toLowerCase()) + 1)) {
+  for (const later of ROW_ORDER.slice(ROW_ORDER.indexOf(rowKey(label)) + 1)) {
     const at = t.rows.get(later)
     if (at === undefined) continue
     if (doc.lines[at - 1]?.trim().startsWith('|-')) doc.insert(at - 1, ['|-', ...row])
@@ -171,9 +174,9 @@ function cellText(doc: Doc, label: string): string {
 function fillRow(doc: Doc, label: string, value: string): void {
   const t = table(doc)
   if (t === undefined) return
-  if (!t.rows.has(label.toLowerCase())) addRow(doc, label, value)
+  if (!t.rows.has(rowKey(label))) addRow(doc, label, value)
   else {
-    const v = cellOf(doc, label)
+    const v = cellOf(doc, rowKey(label))
     if (v < 0 || !emptyCell(doc.lines[v])) return
     doc.replace(v, `| ${value}`)
   }
@@ -211,7 +214,7 @@ function mergeStart(doc: Doc, log: QuestLog, c: QuestPageContext): boolean {
   if (want === undefined) return true
   const cell = cellText(doc, 'start zone')
   if (cell === '') {
-    fillRow(doc, 'Start Zone', want)
+    fillRow(doc, 'Starts In', want)
     return true
   }
   if (startsFromQuest(cell) || plainWords(cell) === plainWords(want)) return true
