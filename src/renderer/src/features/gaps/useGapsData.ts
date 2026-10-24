@@ -30,7 +30,7 @@ import { useItemMobs } from '../../lib/gapItemMobs'
 import { mobPageFinder } from '@shared/mobPageTitle'
 import { catalogStates } from '@shared/gapMerchantDescription'
 import { useQuestLivePages } from '../../lib/questLivePages'
-import { withForcedQuests, type TalkSnap, type TalkVisit } from '@shared/gapForcedQuests'
+import { questNameClash, withForcedQuests, type QuestNameClash, type TalkSnap, type TalkVisit } from '@shared/gapForcedQuests'
 import type { QuestThread } from '@shared/gapQuestThreads'
 import { withZoneRedirects } from '@shared/gapZoneRedirects'
 import { zoneKey } from '@shared/zones'
@@ -106,7 +106,12 @@ export function useGapsData(): GapsData {
   const kills = lastKills([killMobs], () => killIndex(killMobs))
   const talks = (snap as TalkSnap | null | undefined)?.talks ?? NO_TALKS
   const threads = (snap as TalkSnap | null | undefined)?.questThreads ?? NO_THREADS
-  const scope = useMemo(() => ({ ...forced, talks, threads, titles: QUEST_TITLES }), [forced, talks, threads])
+  // A new quest name is checked against the player's, the log's and the wiki's quests before Accept.
+  const scope = useMemo(() => {
+    const pageOf = questPageOf(livePages)
+    const nameClash = (name: string): QuestNameClash | undefined => questNameClash(name, forced.forced, engine?.rows ?? [], (n) => pageOf(n)?.page)
+    return { ...forced, talks, threads, titles: QUEST_TITLES, nameClash }
+  }, [forced, talks, threads, livePages, engine])
   // The rows the player corrected by hand (owner, 2026-10-23: "EDIT values in the gaps tab").
   const edited = useEditedSnap(snap, talkSnap)
   return { snap: edited, engine, loot, kills, forced: scope }
