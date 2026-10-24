@@ -95,7 +95,7 @@ test('WINDSTRIKER: THREE COLUMNS, WEAPON LINES, EFFECTS; THE FOCUS GOES OUTSIDE 
     'Range: 300<br>',
     'STR: +15  AGI: +15  DEX: +15  HP: +100  Accuracy: +25%<br>',
     'SV VOID: +10<br>',
-    'Effect: [[Firestrike]] (Must Equip, Casting Time: Instant) at Level 40<br>',
+    "Effect: [[Firestrike|<span class='itemeff'>Firestrike</span>]] (Clicky, Must Equip, Casting Time: Instant, Cooldown: 120 seconds) at Level 40<br>",
     'Size: MEDIUM WT: 0.4<br>',
     'Class: RNG<br>',
     'Race: ALL<br>'
@@ -244,7 +244,7 @@ test('AN (AUGMENTED) TITLE IS THE +N PATH; A FILLED EXALTATION SLOT KEEPS ITS KI
   assert.equal(r.tier, 10)
   const lines = r.statsblock.split('\n').filter(Boolean)
   // The Worn slot is empty: a worn effect is the item's own.
-  assert.ok(lines.includes('Effect: [[Spirit of Wolf]] (Worn)<br>'), JSON.stringify(lines))
+  assert.ok(lines.includes("Effect: [[Spirit of Wolf|<span class='itemeff'>Spirit of Wolf</span>]] (Worn)<br>"), JSON.stringify(lines))
   assert.ok(!lines.some((l) => /Pillage|Lifebite|Exaltation/.test(l)), JSON.stringify(lines))
   assert.equal(r.checks?.filter((c) => / not written: /.test(c)).length, 2)
 })
@@ -278,7 +278,7 @@ test('THE NAME LINE IS NEVER THE FLAG LINE: LORE OF MALIGNANCY HAS NO LORE FLAG;
 test("AN EXALTATION SLOT WITH NO VALUE READ, OR EMPTY WITH AN OCR SLIP, IS EMPTY: THE ITEM'S OWN CLICK IS WRITTEN", () => {
   for (const slot of ['Click Exaltation:', 'Click Exaltation: empty', 'Click Exaltation: Empty |', 'Click Exaltation: emply']) {
     const r = readItemWindow(['Ring of Gates', 'Magic', 'Class: ALL', 'Race: ALL', 'Fingers', 'Size: TINY Weight: 0.1', slot, 'Click Effect: Gate (Any Slot)', 'Cast Time: 10.0 seconds'])
-    assert.ok(r.statsblock.includes('[[Gate]]'), `${slot}: ${r.statsblock}`)
+    assert.ok(r.statsblock.includes('[[Gate|'), `${slot}: ${r.statsblock}`)
     assert.ok(!(r.checks ?? []).some((c) => /not written/.test(c)), `${slot}: ${JSON.stringify(r.checks)}`)
   }
 })
@@ -307,5 +307,5 @@ test("A LEGENDS CLICK EFFECT WITH ITS CASTING TIME IN ITS OWN BRACKETS IS ONE CL
     'Cast Time: 5.0 seconds',
     'Cooldown: 10 seconds'
   ])
-  assert.ok(read.statsblock.includes('Effect: [[Summon Familiar: Werewolf]] (Can Equip, Casting Time: 5.0)<br>'), read.statsblock)
+  assert.ok(read.statsblock.includes("Effect: [[Summon Familiar: Werewolf|<span class='itemeff'>Summon Familiar: Werewolf</span>]] (Clicky, Can Equip, Casting Time: 5.0"), read.statsblock)
 })

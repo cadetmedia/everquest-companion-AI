@@ -2,6 +2,7 @@
 // slipped as OCR reads it. Split out of itemWindow.ts (its size bar); pure.
 
 import { editDistance } from './itemVocab'
+import { wordShare } from './itemLore'
 
 /** The tab row reads as junk around `Description` (`| /~ SPDesciption 3, © [[ 4" “Lore`). */
 const TAB_ROW = /Des\w{0,4}ption/i
@@ -29,8 +30,15 @@ const TAB_ROW_TOP = 3
 export function tabRowAt(lines: readonly string[]): number {
   const at = lines.findIndex(isTabRow)
   if (at >= 0) return at
-  return lines.slice(0, TAB_ROW_TOP).findIndex((l) => l.split(/\s+/).some(descriptionWord) || splitDescription(l))
+  return lines.slice(0, TAB_ROW_TOP).findIndex((l) => l.split(/\s+/).some(descriptionWord) || splitDescription(l) || garbledTabRow(l))
 }
+
+/**
+ * A near-top line that is the tab row read as garble: a `Des...` word in a line that is otherwise not
+ * words (owner's Petamorph Wand: Mummy Lore tab, 2026-10-23: `"FCT Desorgwtngy 7 WIC 2d 0d 7 PAC`).
+ * A lore line opening `Destiny ...` reads as words, so it is never one.
+ */
+const garbledTabRow = (l: string): boolean => /\bDes[a-z]{4,}/i.test(l) && wordShare(l) < 0.5
 
 /**
  * A line near the top whose letters, the spaces and marks OCR put in dropped, open with `Description`
