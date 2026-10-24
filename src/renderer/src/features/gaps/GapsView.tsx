@@ -334,7 +334,7 @@ export default function GapsView(): JSX.Element {
         <HideUncertainBox state={sure} />
         <ListActions domain={domain} onCopy={() => void copy()} disabled={visible.length === 0} copied={copied} />
       </Stack>
-      {domain === 'quest' && <SuggestedQuests />}
+      {domain === 'quest' && <SuggestedQuests query={deferredQuery} zone={zone} />}
       <ShownLine counts={{ visible: visible.length, held, served, hidden, uncertain: sure.hidden }} domain={domain} zone={zone} mine={(mine.active ? HELD_WORDS[mine.pick] : '') + GAP_SHOW_WORDS[job.show]} />
       <GapsTable
         entries={group.entries}

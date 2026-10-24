@@ -5,7 +5,7 @@
 
 import { useState, type JSX } from 'react'
 import { Box, Button, Stack, TextField, Tooltip, Typography } from '@mui/material'
-import { threadDisplaySteps, threadKey, threadStepLabel, threadStepWhy, type QuestThread } from '@shared/gapQuestThreads'
+import { threadDisplaySteps, threadKey, threadStepLabel, threadStepWhy, visibleThreads, type QuestThread } from '@shared/gapQuestThreads'
 import type { QuestNameClash } from '@shared/gapForcedQuests'
 import { useForcedScope } from './ForcedQuests'
 
@@ -67,16 +67,30 @@ function ThreadCard({ thread, nameClash, onAccept }: CardProps): JSX.Element {
   )
 }
 
-/** "Suggested quests" above the Quests list: nothing when the log rebuilt no chain. */
-export function SuggestedQuests(): JSX.Element | null {
+/** How many chains the filters hide, said so they are not taken for gone. */
+const hiddenNote = (n: number): string => (n === 0 ? '' : ` (${String(n)} more hidden by Zone I'm in or the search)`)
+
+/**
+ * "Suggested quests" above the Quests list, under the list's own "Zone I'm in" and search; nothing
+ * when the log rebuilt no chain.
+ */
+export function SuggestedQuests({ query, zone }: { query: string; zone: string | null }): JSX.Element | null {
   const scope = useForcedScope()
   if (scope === null || scope.threads.length === 0) return null
+  const shown = visibleThreads(scope.threads, query, zone)
+  const hidden = scope.threads.length - shown.length
+  if (shown.length === 0)
+    return (
+      <Typography variant="body2" color="text.secondary" data-testid="suggested-quests-hidden">
+        {hidden} suggested {hidden === 1 ? 'quest' : 'quests'} hidden by Zone I'm in or the search.
+      </Typography>
+    )
   return (
     <Box sx={{ mb: 1.5 }} data-testid="suggested-quests">
       <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
-        Suggested quests, tied together from your log
+        Suggested quests, tied together from your log{hiddenNote(hidden)}
       </Typography>
-      {scope.threads.map((t) => (
+      {shown.map((t) => (
         <ThreadCard key={threadKey(t)} thread={t} nameClash={scope.nameClash} onAccept={(name) => scope.accept(name, t)} />
       ))}
     </Box>

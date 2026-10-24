@@ -2,7 +2,7 @@
 // them: steps in the chain's order, kills, loots and purchases as their own lines.
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { askedCount, questLogFromThread, threadDisplaySteps, threadStepLabel, threadStepWhy, type QuestThread } from '../src/shared/gapQuestThreads'
+import { askedCount, questLogFromThread, threadDisplaySteps, threadStepLabel, threadStepWhy, visibleThreads, type QuestThread } from '../src/shared/gapQuestThreads'
 import { questDraftPage } from '../src/shared/gapQuestPage'
 
 const bones: QuestThread = {
@@ -124,4 +124,15 @@ test("an NPC's words give the count: 'a wing' is 1 Bat Wing, 'two fangs' 2, 'a s
   assert.equal(askedCount('and a stone that has lost its light', 'Burned Out Lightstone'), 1)
   assert.equal(askedCount('a chip from the aged dead', 'Bone Chips'), 1)
   assert.equal(askedCount('Thank you so much', 'Bone Chips'), undefined)
+})
+
+test("suggested chains follow the list's filters: Zone I'm in keeps a chain that went through the zone, the search its name, NPCs and zones", () => {
+  const doug = { id: 'Doug@1', giver: 'Doug', zone: 'EverQuest Legends Tutorial', startMs: 1, endMs: 2, name: "Doug: let's talk", steps: [{ id: 's1', at: '', ms: 1, kind: 'hail', npc: 'Old Doug', zone: 'EverQuest Legends Tutorial' }] } as unknown as QuestThread
+  const note = { id: 'Nezzka@1', giver: 'Nezzka Tolax', zone: 'Neriak - Third Gate', startMs: 1, endMs: 2, name: 'Nezzka Tolax: Tattered Note', steps: [{ id: 's1', at: '', ms: 1, kind: 'handin', npc: 'Nezzka Tolax', zone: 'Nektulos Forest' }] } as unknown as QuestThread
+  const ids = (q: string, z: string | null): string[] => visibleThreads([doug, note], q, z).map((t) => t.id)
+  assert.deepEqual(ids('', null), ['Doug@1', 'Nezzka@1'])
+  assert.deepEqual(ids('', 'Nektulos Forest'), ['Nezzka@1'])
+  assert.deepEqual(ids('', 'Lake Nerius'), [])
+  assert.deepEqual(ids('tutorial', null), ['Doug@1'])
+  assert.deepEqual(ids('old doug', null), ['Doug@1'])
 })
