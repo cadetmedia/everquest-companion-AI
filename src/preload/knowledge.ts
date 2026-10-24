@@ -99,6 +99,8 @@ export const knowledgeBridge = {
     ipcRenderer.invoke(IPC.gapVerdicts, domain, [...names]),
   /** The item names the wiki data has no page for (src/main/gapUnknownItems.ts): the export's, a capture's. */
   gapUnknownItems: (names: readonly string[]): Promise<string[]> => ipcRenderer.invoke(IPC.gapUnknownItems, [...names]),
+  /** The spell names the wiki data has no page for: a pasted spell window's (src/main/gapUnknownItems.ts). */
+  gapUnknownSpells: (names: readonly string[]): Promise<string[]> => ipcRenderer.invoke(IPC.gapUnknownSpells, [...names]),
   /** The Drops domain's other side: the mobs each item page names (src/main/gapItemMobs.ts). */
   gapItemMobs: (names: readonly string[]): Promise<Record<string, string[] | null>> => ipcRenderer.invoke(IPC.gapItemMobs, [...names]),
   /** The forage rows' other side: what each item page states of foraging (src/main/gapItemForage.ts). */

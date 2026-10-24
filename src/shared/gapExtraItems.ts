@@ -124,10 +124,32 @@ export function extraItemRows(extras: readonly ExtraItem[], rows: readonly GapRo
   })
 }
 
-/** The snapshot with the extra rows after the engine's, the Items total counting them. */
+/**
+ * One Spells row per pasted spell window whose spell the wiki data lacks (`unknown`) and no row names
+ * (owner, 2026-10-23: "i pasted this image and it's not creating a spell row": Pet Illusion: Gelatinous
+ * Cube, never cast where the log could see it). Like a captured item: no zone, so every zone's list.
+ */
+export function extraSpellRows(windows: readonly { name: string; at: string }[], unknown: ReadonlySet<string>, rows: readonly GapRow[]): GapRow[] {
+  const named = new Set(rows.filter((r) => r.domain === 'spell').map((r) => r.name.toLowerCase()))
+  return windows
+    .filter((w) => unknown.has(w.name) && !named.has(w.name.toLowerCase()))
+    .map((w) => ({
+      domain: 'spell' as const,
+      name: w.name,
+      kinds: ['captured' as const],
+      count: 1,
+      first: logStamp(w.at),
+      last: logStamp(w.at),
+      details: { samples: [`Spell window pasted ${logStamp(w.at)}`] }
+    }))
+}
+
+/** The snapshot with the extra rows after the engine's, each domain's total counting its own. */
 export function withExtraItemRows<S extends { rows: GapRow[]; totals: Record<string, number> }>(snap: S, extra: readonly GapRow[]): S {
   if (extra.length === 0) return snap
-  return { ...snap, rows: [...snap.rows, ...extra], totals: { ...snap.totals, item: (snap.totals.item ?? 0) + extra.length } }
+  const totals = { ...snap.totals }
+  for (const r of extra) totals[r.domain] = (totals[r.domain] ?? 0) + 1
+  return { ...snap, rows: [...snap.rows, ...extra], totals }
 }
 
 /** The kept captured items, read back from storage; anything malformed dropped. */

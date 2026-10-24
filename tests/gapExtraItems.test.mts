@@ -4,9 +4,9 @@
 // owner's own export (Drywrought_oggok-Inventory.txt, 20:49), fixtures otherwise.
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { knownIndex, knownItem, unknownOf } from '../src/main/gapUnknownItems'
+import { knownIndex, knownItem, unknownOf, unknownSpells } from '../src/main/gapUnknownItems'
 import { parseInventoryDump } from '../src/main/outputs/inventoryParse'
-import { capturedExtras, capturedItemsOf, extraItemRows, heldCandidates, heldExtras, withCapturedItem, withExtraItemRows, withoutCapturedItem } from '../src/shared/gapExtraItems'
+import { capturedExtras, capturedItemsOf, extraItemRows, extraSpellRows, heldCandidates, heldExtras, withCapturedItem, withExtraItemRows, withoutCapturedItem } from '../src/shared/gapExtraItems'
 import { heldIndex } from '../src/shared/gapHeld'
 import { gapInZone, type GapRow } from '../src/shared/gaps'
 import { ownershipPayload } from '../src/shared/planner/ownership'
@@ -76,4 +76,20 @@ test('THE KEPT CAPTURES READ BACK WHOLE; A SECOND CAPTURE OF A NAME MOVES ITS TI
   assert.equal(withCapturedItem(list, 'C', '4', 2).length, 2)
   // Remove capture (owner, 2026-10-23: a misread `Altunable`): that name goes, any case; the rest stay.
   assert.deepEqual(withoutCapturedItem(list, 'A'), [{ name: 'B', at: '2' }])
+})
+
+test('A PASTED SPELL WINDOW WHOSE SPELL THE WIKI DATA LACKS IS A SPELLS ROW, IN EVERY ZONE; A KNOWN SPELL OR ONE A ROW HAS IS NOT', () => {
+  // The bundle's data knows Summon Fang (any case); the Gelatinous Cube illusion it does not.
+  assert.deepEqual(unknownSpells(['Pet Illusion: Gelatinous Cube', 'Summon Fang', 'summon fang']), ['Pet Illusion: Gelatinous Cube'])
+  const windows = [
+    { name: 'Pet Illusion: Gelatinous Cube', at: '2026-10-23T21:55:00.000Z' },
+    { name: 'Familiar: Mummy', at: '2026-10-23T21:50:00.000Z' },
+    { name: 'Summon Familiar: Werewolf', at: '2026-10-23T21:40:00.000Z' }
+  ]
+  const logged = { domain: 'spell', name: 'Familiar: Mummy', kinds: ['cast'], count: 1, first: '', last: '', details: {} } as unknown as GapRow
+  const rows = extraSpellRows(windows, new Set(['Pet Illusion: Gelatinous Cube', 'Familiar: Mummy']), [logged])
+  assert.deepEqual(rows.map((r) => [r.domain, r.name, r.kinds]), [['spell', 'Pet Illusion: Gelatinous Cube', ['captured']]])
+  assert.ok(gapInZone(rows[0], 'Lake Nerius'), 'no zone of its own: shown wherever you stand')
+  const snap = withExtraItemRows({ rows: [logged], totals: { spell: 1, item: 0 } as Record<string, number> }, rows)
+  assert.deepEqual(snap.totals, { spell: 2, item: 0 })
 })
