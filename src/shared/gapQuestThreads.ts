@@ -5,6 +5,7 @@
 // thread is known by, and the walk from a thread to the QuestLog the page writer reads.
 
 import type { QuestLog, QuestStep } from './gapQuests'
+import { zoneKey } from './zones'
 
 /** What a step is. `travel` is a zone change inside the chain. */
 export type ThreadStepKind = 'talk' | 'kill' | 'loot' | 'buy' | 'receive' | 'handin' | 'reward' | 'travel' | 'collect'
@@ -81,6 +82,27 @@ export interface QuestThread {
   steps: ThreadStep[]
   /** Items that arrived in a hand-in's second: the chain's rewards. */
   rewards?: ThreadItem[]
+}
+
+/** Every zone the chain went through: where it started, then each step's. */
+const threadZones = (t: QuestThread): string[] => [...new Set([t.zone, ...t.steps.map((s) => s.zone)].filter((z): z is string => z !== undefined && z !== ''))]
+
+/**
+ * The chains the Quests list's own filters let through (owner, 2026-10-23: "why are they not showing
+ * the zone i was in, and being filtered when i'm in a different zone?"): "Zone I'm in" keeps a chain
+ * that went through that zone, as `gapInZone` keeps a row; the search matches its name, its NPCs and
+ * its zones, as `visibleGaps` does.
+ */
+export function visibleThreads(threads: readonly QuestThread[], query: string, zone: string | null = null): QuestThread[] {
+  const q = query.trim().toLowerCase()
+  const here = zone === null ? '' : zoneKey(zone)
+  return threads.filter((t) => {
+    const zones = threadZones(t)
+    if (zone !== null && (here === '' || !zones.some((z) => zoneKey(z) === here))) return false
+    if (q === '') return true
+    const words = [t.name, t.giver, ...zones, ...t.steps.map((s) => s.npc ?? '')]
+    return words.some((w) => w.toLowerCase().includes(q))
+  })
 }
 
 /** The key a thread is stored and matched by. */
