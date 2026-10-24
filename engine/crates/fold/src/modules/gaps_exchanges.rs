@@ -13,7 +13,7 @@
 //!
 //! A child of `gaps_quest_log.rs`, which reads the lines and hands them here.
 
-use super::Talk;
+use super::{is_player_shaped_name, Step, Talk, AFTER_MS, HAIL_ANSWER_MS, REFUSAL};
 use serde::Serialize;
 use std::collections::VecDeque;
 
@@ -139,5 +139,29 @@ impl Exchanges {
     /// The visits `claimed` does not take, oldest first.
     pub fn served<'a>(&'a self, claimed: impl Fn(&Exchange) -> bool + 'a) -> Vec<&'a Exchange> {
         self.list.iter().filter(|e| !claimed(e)).collect()
+    }
+}
+
+impl super::QuestLogs {
+    /// An NPC's line for the visits (`gaps_exchanges.rs`): an NPC is a name that spoke a `[keyword]`,
+    /// or is no player's shape, or answered the player's hail of it within HAIL_ANSWER_MS.
+    pub(super) fn npc_talk(&mut self, name: &str, said: &str, ts: i64, at: (Option<&str>, &str)) {
+        if said.contains(REFUSAL) {
+            return;
+        }
+        let keyword = said.contains('[') || self.keyword_speakers.contains(name);
+        let answered = self.addressed.as_ref().is_some_and(|(n, t)| n == name && ts - t <= HAIL_ANSWER_MS);
+        if is_player_shaped_name(name) && !keyword && !answered {
+            return;
+        }
+        let said = self.scrub(said);
+        self.threads.npc(name, &said, ts);
+        self.talks.npc_line(name, &said, ts, at, said.contains('[') || answered);
+    }
+
+    /// The visits no task step falls in, oldest first: what a quest the player names is made of.
+    pub fn served_talks(&self) -> Vec<&Exchange> {
+        let steps: Vec<&Step> = self.quests.values().flat_map(|q| q.steps.iter()).collect();
+        self.talks.served(move |e| steps.iter().any(|s| e.covers(s.npc.as_deref(), s.ts, AFTER_MS)))
     }
 }

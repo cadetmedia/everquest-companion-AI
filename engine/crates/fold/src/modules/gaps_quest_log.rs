@@ -40,7 +40,7 @@ use serde_json::{json, Value};
 use std::collections::{BTreeMap, HashSet, VecDeque};
 
 use super::quests::{refused_here, task_of, trade_cancelled, REFUSAL, REFUSE_MS, TRADE_MS};
-use exchanges::{Exchange, Exchanges};
+use exchanges::Exchanges;
 
 /// The exchange that leads to a step, when no hail of its NPC starts it: a minute.
 const TALK_MS: i64 = 60_000;
@@ -171,6 +171,9 @@ pub struct QuestLogs {
     player_word: Option<Regex>,
     /// Visits with an NPC, for the quests no task line names (`gaps_exchanges.rs`).
     talks: Exchanges,
+    /// The chains rebuilt from the log for those quests (`gaps_threads.rs`), and the newest line's time.
+    threads: threads::Threads,
+    now: i64,
 }
 
 /// A task's key: case folded, a backtick spelled as the wiki's apostrophe.
@@ -201,6 +204,7 @@ impl QuestLogs {
 
     /// `You complete the trade with <NPC>.`: its offers are spent.
     pub fn trade_done(&mut self, npc: &str) {
+        self.threads.trade_done(npc, self.now);
         self.offers.retain(|(_, _, n)| n != npc);
     }
 
@@ -214,6 +218,7 @@ impl QuestLogs {
 
     /// `You gain experience!` (kind `expGain`, never an unparsed line): the step it came of.
     pub fn experience(&mut self, ts: i64) {
+        self.threads.xp(ts);
         if let Some(s) = self.answer_step(ts, AFTER_MS) {
             s.experience = true;
         }
@@ -227,6 +232,7 @@ impl QuestLogs {
     }
 
     fn trim(&mut self, ts: i64) {
+        self.now = ts;
         // OFFER_MS, not TALK_MS: a step's talk may start at a hail that long before (`talk_of`).
         while self.heard.front().is_some_and(|(at, _, _)| ts - at > OFFER_MS) {
             self.heard.pop_front();
@@ -244,6 +250,7 @@ impl QuestLogs {
         self.trim(ts);
         self.gives.push_back((ts, item.to_string()));
         self.talks.given(item, ts);
+        self.threads.given(item, ts);
     }
 
     /// `You offered 1 <item> to <NPC>.`, an NPC already (gaps_quests.rs `offered` said so), in `zone`.
@@ -255,11 +262,13 @@ impl QuestLogs {
         self.offers.push_back((ts, item.to_string(), npc.to_string()));
         self.addressed = Some((npc.to_string(), ts));
         self.talks.offer(npc, item, ts);
+        self.threads.offer(npc, item);
     }
 
     /// An unparsed line. A task line returns its quest and kind, for the row.
     pub fn line(&mut self, text: &str, ts: i64, zone: Option<&str>, at: &str) -> Option<(String, &'static str)> {
         self.trim(ts);
+        self.threads.line(text, ts, at, zone);
         if self.zone.as_deref() != zone {
             self.zoned(zone);
         }
@@ -306,27 +315,6 @@ impl QuestLogs {
         }
     }
 
-    /// An NPC's line for the visits (`gaps_exchanges.rs`): an NPC is a name that spoke a `[keyword]`,
-    /// or is no player's shape, or answered the player's hail of it within HAIL_ANSWER_MS.
-    fn npc_talk(&mut self, name: &str, said: &str, ts: i64, at: (Option<&str>, &str)) {
-        if said.contains(REFUSAL) {
-            return;
-        }
-        let keyword = said.contains('[') || self.keyword_speakers.contains(name);
-        let answered = self.addressed.as_ref().is_some_and(|(n, t)| n == name && ts - t <= HAIL_ANSWER_MS);
-        if is_player_shaped_name(name) && !keyword && !answered {
-            return;
-        }
-        let said = self.scrub(said);
-        self.talks.npc_line(name, &said, ts, at, said.contains('[') || answered);
-    }
-
-    /// The visits no task step falls in, oldest first: what a quest the player names is made of.
-    pub fn served_talks(&self) -> Vec<&Exchange> {
-        let steps: Vec<&Step> = self.quests.values().flat_map(|q| q.steps.iter()).collect();
-        self.talks.served(move |e| steps.iter().any(|s| e.covers(s.npc.as_deref(), s.ts, AFTER_MS)))
-    }
-
     /// The log's character, as `set_player` was told it.
     pub fn player(&self) -> Option<&str> {
         self.player.as_deref()
@@ -343,6 +331,7 @@ impl QuestLogs {
             if let Some(i) = self.offers.iter().rposition(|(at, _, n)| n == name && ts - at <= REFUSE_MS) {
                 self.offers.remove(i);
             }
+            self.threads.refused(name);
             return;
         }
         if said.contains('[') {
@@ -528,6 +517,9 @@ impl GapsModule {
 
 #[path = "gaps_exchanges.rs"]
 mod exchanges;
+
+#[path = "gaps_threads.rs"]
+mod threads;
 
 #[cfg(test)]
 #[path = "gaps_quest_log_tests.rs"]
