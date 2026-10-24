@@ -8,6 +8,7 @@
 // rows (owner ruling 4); the Copy list text is rendered here for the same reason.
 
 import type { FactionFix, KillFaction } from './gapFactions'
+import type { GapEdit } from './gapEdits'
 import { replaceWhy } from './gapDrops'
 import { pageCheckAction } from './gapRedirects'
 import { offerCheckText, offerText } from './gapOffers'
@@ -298,6 +299,8 @@ export interface GapRow {
   /** A faction row for a faction the page LISTS: what to fix, and what the page says (`-30..-10?`). */
   fix?: FactionFix
   pageSays?: string
+  /** The player's own corrections to this row, by hand (shared/gapEdits.ts). */
+  edit?: GapEdit
 }
 
 export interface GapsSnap {

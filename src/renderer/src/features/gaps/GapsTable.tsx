@@ -57,6 +57,8 @@ import GapDetailsPanel from './GapDetailsPanel'
 import GapRowButtons from './GapRowButtons'
 import MobHeadingButtons from './MobHeadingButtons'
 import { ForcedChip } from './ForcedQuests'
+import { EditedChip } from './GapRowEdit'
+import { shownName } from '@shared/gapEdits'
 
 /** One line of small cells with a small chip: 6px padding above and below a 24px chip, plus the border. */
 const ROW_HEIGHT = 37
@@ -163,8 +165,9 @@ const GapTableRow = memo(function GapTableRow({
         )}
         <JobChip job={gapJob(row, chipContext)} />
         {/* Under its mob's heading a faction or drop row is the faction or item alone. */}
-        {depth === 2 && onMobPage(row) ? factionOf(row) : row.name}
+        {depth === 2 && onMobPage(row) ? factionOf(row) : shownName(row)}
         <ForcedChip row={row} />
+        <EditedChip row={row} />
         {row.suggest !== undefined && <SuggestCaption s={row.suggest} />}
         <PageTitleCaption row={row} />
         {row.maybePlayer === true && <Chip label="may be a player" size="small" color="warning" variant="outlined" sx={{ ml: 1 }} data-testid="gaps-maybe-player" />}
@@ -218,7 +221,7 @@ function DetailsPane({ row, actions }: { row: GapRow; actions: PaneActions }): J
   return (
     <Paper variant="outlined" sx={{ px: 1.5, py: 0.5, flexShrink: 0, maxHeight: '40vh', overflow: 'auto' }} data-testid="gaps-details-pane">
       <Stack direction="row" spacing={1} alignItems="center">
-        <Typography variant="subtitle2">{row.name}</Typography>
+        <Typography variant="subtitle2">{shownName(row)}</Typography>
         <GapRowButtons row={row} pageText={actions.pageText} isDone={isDone} onDone={actions.onDone} />
         {row.maybePlayer === true && (
           <Tooltip title="Hides this name for good; one-word names you only hailed may be players.">
