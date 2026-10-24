@@ -951,7 +951,6 @@ export function parseItemWikitext(
   const questUses = relatedRaw ? parseQuestLinks(relatedRaw) : []
   const quest = questFlag || questUses.length > 0
 
-
   // Tradeskill knowledge. `playerCrafted` is asserted only from a STRUCTURED craft recipe;
   // a prose-only `|playercrafted` ("Non-Tradeskill (Quest)") is reported as craftedNote and
   // nothing more.
