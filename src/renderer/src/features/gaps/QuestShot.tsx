@@ -37,7 +37,7 @@ const hasJournal = (f: QuestJournalFacts | undefined): boolean =>
   f !== undefined && (f.zone !== undefined || f.minLevel !== undefined || f.objectives !== undefined || f.description !== undefined || f.hiddenSteps !== undefined)
 
 /** A small JPEG of the paste for its thumbnail; undefined when the picture cannot be drawn. */
-async function thumbOf(png: Uint8Array): Promise<string | undefined> {
+export async function thumbOf(png: Uint8Array): Promise<string | undefined> {
   try {
     const bmp = await createImageBitmap(new Blob([new Uint8Array(png)], { type: 'image/png' }))
     const w = Math.min(160, bmp.width)
@@ -53,7 +53,7 @@ async function thumbOf(png: Uint8Array): Promise<string | undefined> {
 }
 
 /** A journal paste: each quest it lists keeps its popups; this row's keeps the thumbnail. */
-function keepJournal(read: { lines: string[]; shades?: number[] }, places: string[], at: { key: string; thumb: string | undefined }): boolean {
+export function keepJournal(read: { lines: string[]; shades?: number[] }, places: string[], at: { key: string; thumb: string | undefined }): boolean {
   const { key, thumb } = at
   const r = readQuestJournal(read.lines, read.shades, places)
   if (!isQuestJournal(r)) return false
@@ -93,7 +93,7 @@ export default function QuestShot({ row }: { row: GapRow }): JSX.Element {
           if (j.error !== undefined) return j.error
           return keepJournal(j, places, { key, thumb }) ? null : journalMissText(j.lines)
         }
-        const popup = readPopup({ lines: look.lines, tops: look.tops ?? [], heights: look.heights ?? [], tones: look.tones ?? [] })
+        const popup = readPopup({ lines: look.lines, tops: look.tops ?? [], heights: look.heights ?? [], tones: look.tones ?? [], ...(look.leads === undefined ? {} : { leads: look.leads }) })
         if (popup === null) return popupMissText(look.lines)
         const was = questJournalByKey(key)
         setQuestJournal(key, { ...was, popups: withPopup(was?.popups, { ...popup, ...(thumb === undefined ? {} : { thumb }) }) })

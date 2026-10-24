@@ -19,6 +19,9 @@ function load(): Record<string, ForcedQuestMap> {
   }
 }
 
+/** One character's named quests as stored now, outside a render (a paste anywhere routes against them). */
+export const forcedQuestsNow = (character: string | null | undefined): ForcedQuestMap => load()[(character ?? '').toLowerCase()] ?? NONE
+
 function save(all: Record<string, ForcedQuestMap>): void {
   try {
     localStorage.setItem(FORCED_KEY, JSON.stringify(all))

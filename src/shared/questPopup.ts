@@ -54,6 +54,8 @@ export interface QuestPopup {
   next?: string
   /** A small picture of the paste, for its thumbnail (a data URL). */
   thumb?: string
+  /** The window's title bar was empty: `title` is its first sentence. */
+  untitled?: true
 }
 
 /**
@@ -259,12 +261,24 @@ function titleOf(r: PopupLineRead, kept: readonly Kept[]): { title: string; skip
 }
 
 /**
+ * A window with an empty title bar (the first Alternate Advancement point's, owner 2026-10-23): titled
+ * by its first sentence, the line kept in the body. Only a line of six words or more qualifies.
+ */
+function untitledHead(kept: readonly Kept[]): { title: string; skip: number; untitled: true } | null {
+  const first = kept.find((l) => l.text.split(/\s+/).length >= 6)
+  if (first === undefined) return null
+  const sentence = /^.*?[.!?](?=\s|$)/.exec(first.text)?.[0] ?? first.text
+  return { title: sentence.length > 60 ? `${sentence.slice(0, 59)}…` : sentence, skip: 0, untitled: true }
+}
+
+/**
  * A popup window's title, paragraphs, instructions and reward; null when the picture holds no titled
- * prose (not a popup: a Quest Journal, an item window, a screenshot of the world).
+ * prose (not a popup: a Quest Journal, an item window, a screenshot of the world). A window whose title
+ * bar is empty is read under its first sentence and marked `untitled`.
  */
 export function readPopup(r: PopupLineRead): QuestPopup | null {
   const { kept, next } = keptLines(r)
-  const head = titleOf(r, kept)
+  const head = titleOf(r, kept) ?? untitledHead(kept)
   if (head === null) return null
   const paras = joinLists(paragraphsOf(kept.slice(head.skip)))
   const paragraphs = paras.map((p): PopupParagraph => {
@@ -280,7 +294,8 @@ export function readPopup(r: PopupLineRead): QuestPopup | null {
     steps: paras.map(instructionOf).filter((s): s is string => s !== undefined),
     ...(items.length === 0 ? {} : { rewards: items }),
     ...(rewards.some((x) => x.experience) ? { experience: true } : {}),
-    ...(next === undefined ? {} : { next })
+    ...(next === undefined ? {} : { next }),
+    ...('untitled' in head ? { untitled: true } : {})
   }
 }
 

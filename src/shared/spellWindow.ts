@@ -40,6 +40,8 @@ export interface ShotTextReply {
   tops?: number[]
   heights?: number[]
   tones?: ('white' | 'yellow' | 'orange')[]
+  /** The colour each popup line opens in (an orange instruction running on in white). */
+  leads?: ('white' | 'yellow' | 'orange')[]
   ms: number
   /** Set when the picture could not be read at all. */
   error?: string

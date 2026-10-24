@@ -6,7 +6,9 @@
 import { useState, type JSX } from 'react'
 import { Box, Button, Stack, TextField, Tooltip, Typography } from '@mui/material'
 import { threadKey, threadStepLabel, threadStepWhy, type QuestThread } from '@shared/gapQuestThreads'
+import { questTitleKey } from '@shared/gapQuests'
 import { useForcedScope } from './ForcedQuests'
+import { moveQuestJournal } from './itemShotsStore'
 
 function ThreadCard({ thread, onAccept }: { thread: QuestThread; onAccept: (name: string) => void }): JSX.Element {
   const [name, setName] = useState(thread.name)
@@ -53,7 +55,11 @@ export function SuggestedQuests(): JSX.Element | null {
         Suggested quests, tied together from your log
       </Typography>
       {scope.threads.map((t) => (
-        <ThreadCard key={threadKey(t)} thread={t} onAccept={(name) => scope.accept(name, t)} />
+        <ThreadCard key={threadKey(t)} thread={t} onAccept={(name) => {
+            scope.accept(name, t)
+            // Popups pasted onto the chain before it was a quest follow it (GlobalPaste.tsx keeps them under thread:<id>).
+            moveQuestJournal(`thread:${t.id}`, questTitleKey(name))
+          }} />
       ))}
     </Box>
   )

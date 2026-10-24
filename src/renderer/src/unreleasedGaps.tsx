@@ -15,6 +15,16 @@ import { useGapsTabMounted } from './lib/gapsTabMounted'
 
 const LazyGapsView = UNRELEASED ? lazy(() => import('./features/gaps/GapsView')) : null
 const LazyGapsOverlayPublisher = UNRELEASED ? lazy(() => import('./features/gaps/GapsOverlayPublisher')) : null
+const LazyGlobalPaste = UNRELEASED ? lazy(() => import('./features/gaps/GlobalPaste')) : null
+
+/** A picture pasted anywhere in the main window, read and sent where it belongs (features/gaps/GlobalPaste.tsx). */
+export const UnreleasedGlobalPaste = memo(function UnreleasedGlobalPaste(): JSX.Element | null {
+  return LazyGlobalPaste === null ? null : (
+    <Suspense fallback={null}>
+      <LazyGlobalPaste />
+    </Suspense>
+  )
+})
 
 /** The Gaps tab: nothing at all in a build without the flag, or on any other view. */
 export default function UnreleasedGapsView({ view, viewKey }: { view: View; viewKey: string }): JSX.Element | null {
