@@ -37,7 +37,7 @@ import {
   pacing,
   type Reads
 } from './sources/deltaApi'
-import { writeItemCache, writeMobCache, type FreshPage } from './sources/deltaCache'
+import { writeBackCaches } from './sources/deltaCache'
 import { foldItems, isItemPage, type ItemFold } from './sources/deltaItems'
 import {
   foldMobs,
@@ -91,6 +91,7 @@ import { FOLLOWED, followDelta } from './sources/deltaFollow'
 import { isMobPage } from './sources/mobPage'
 import type { NamedMob } from './sources/mobRedirects'
 import { redirectsOntoData } from './sources/deltaRedirects'
+import { skipHeldPages } from './sources/deltaSkip'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 
@@ -223,8 +224,9 @@ export async function run(paths: DeltaPaths, opts: DeltaOptions): Promise<void> 
     return
   }
   const universe = w.spells ? await spellUniverse(db, opts) : null
+  const proven = skipHeldPages(plan, feed, paths)
   const reads = await readPlanned(paths, plan, universe)
-  await applyDelta({ paths, db, w, feed, reads, universe })
+  await applyDelta({ paths, db, w, feed, reads, universe, proven })
 }
 
 /** list=embeddedin answers 500 titles a request. */
@@ -263,6 +265,8 @@ interface DeltaCtx {
   feed: FeedChanges
   reads: Reads
   universe: Record<string, string> | null
+  /** pageid -> the newest revision, for pages skipped because we hold it */
+  proven: Map<number, number>
 }
 
 /** Items over their window; a key whose last claimant let go may still have a page of that name. */
@@ -362,7 +366,7 @@ async function applyDelta(ctx: DeltaCtx): Promise<void> {
     refreshed.add(QUESTS_FILE)
   }
   printStamp([...reads.unapplied, ...(questFold?.unapplied ?? []), ...spellStuck])
-  writeBackCaches(paths, reads, new Set([...itemFold.folded, ...mobFold.folded]), new Set(mobFold.folded))
+  writeBackCaches(paths, reads, { items: new Set([...itemFold.folded, ...mobFold.folded]), mobs: new Set(mobFold.folded) }, ctx.proven)
   const spellPages = spellRun?.fold.folded ?? []
   await followAndReport(ctx, { mobs, refreshed, items: itemFold, mob: mobFold, redirected, spells: spellPages, quests: questFold?.folded ?? [] })
 }
@@ -437,30 +441,6 @@ function censusPages(ctx: DeltaCtx): PageTexts {
     out.set(title, wt)
   }
   return out
-}
-
-/** The fresh wikitext into the gitignored item and mob caches this checkout has (sources/deltaCache). */
-function writeBackCaches(paths: DeltaPaths, reads: Reads, keep: ReadonlySet<string>, mobKeep: ReadonlySet<string>): void {
-  const fresh: FreshPage[] = []
-  for (const [title, pageid] of reads.pageids) {
-    const content = reads.pages.get(title)
-    if (content != null) fresh.push({ pageid, title, content })
-  }
-  const gone = new Set([...reads.pages].filter(([, wt]) => wt === null).map(([t]) => t))
-  const absent: string[] = []
-  if (existsSync(paths.itemCache)) {
-    const files = writeItemCache(paths.itemCache, { fresh, gone, keep })
-    console.log(`Item cache: ${files} batch files updated`)
-  } else absent.push('scripts/sources/cache/items')
-  if (existsSync(paths.mobCache)) {
-    console.log(`Mob cache: ${writeMobCache(paths.mobCache, { fresh, gone, keep: mobKeep })} pages updated`)
-  } else absent.push('scripts/sources/cache/mobs')
-  if (absent.length === 0) return
-  console.log(
-    `No ${absent.join(' or ')} in this checkout, so it was not refreshed: scrape-page-era.ts, ` +
-      'gen-mob-races.mts and gen-mob-factions.mts read that cache wherever they run, and there it ' +
-      'still holds the text of the last full scrape.'
-  )
 }
 
 function deltaSource(source: string): string {

@@ -73,6 +73,9 @@ scripts/sources/cache/items/
 # RENDERED-PAGE cache (sources/renderCache.ts): Plane of Sky and boss pages as the wiki renders
 # them, by revision. Megabytes of HTML, rebuilt by the next run like the item and mob caches.
 scripts/sources/cache/rendered/
+# The wiki's GitHub data pack and its compare reports (scripts/eoz-compare.mts): ~4 MB, re-fetched
+# only when its manifest's sha256 changes.
+scripts/sources/cache/eoz/
 
 # clean-machine sandbox harness writes results here; keep the folder, not the output
 scripts/sandbox/results/*

@@ -5,6 +5,8 @@
 
 import { existsSync, readdirSync, readFileSync, renameSync, writeFileSync } from 'fs'
 import { join } from 'path'
+import type { Reads } from './deltaApi'
+import { cacheFamilies, readRevisions, recordCacheRevs } from './deltaSkip'
 
 /** One page as a `prop=revisions` batch holds it, the shape every cache reader takes. */
 export interface CachedPage {
@@ -114,4 +116,37 @@ export function writeMobCache(dir: string, change: CacheChange): number {
   }
   if (n > 0 || index.length < read.length) writeAtomic(indexPath, JSON.stringify(index))
   return n
+}
+
+/**
+ * The run's fresh wikitext into the gitignored item and mob caches this checkout has, then each
+ * read (or proven current, `proven`) page's revision into that cache's index (sources/revIndex.ts).
+ */
+export function writeBackCaches(
+  caches: { itemCache: string; mobCache: string },
+  reads: Reads,
+  keep: { items: ReadonlySet<string>; mobs: ReadonlySet<string> },
+  proven: Map<number, number>
+): void {
+  const fresh: FreshPage[] = []
+  for (const [title, pageid] of reads.pageids) {
+    const content = reads.pages.get(title)
+    if (content != null) fresh.push({ pageid, title, content })
+  }
+  const gone = new Set([...reads.pages].filter(([, wt]) => wt === null).map(([t]) => t))
+  const absent: string[] = []
+  if (existsSync(caches.itemCache)) {
+    const files = writeItemCache(caches.itemCache, { fresh, gone, keep: keep.items })
+    console.log(`Item cache: ${String(files)} batch files updated`)
+  } else absent.push('scripts/sources/cache/items')
+  if (existsSync(caches.mobCache)) {
+    console.log(`Mob cache: ${String(writeMobCache(caches.mobCache, { fresh, gone, keep: keep.mobs }))} pages updated`)
+  } else absent.push('scripts/sources/cache/mobs')
+  recordCacheRevs(cacheFamilies(caches.itemCache, caches.mobCache), new Map([...readRevisions(reads), ...proven]), gone, new Date().toISOString())
+  if (absent.length === 0) return
+  console.log(
+    `No ${absent.join(' or ')} in this checkout, so it was not refreshed: scrape-page-era.ts, ` +
+      'gen-mob-races.mts and gen-mob-factions.mts read that cache wherever they run, and there it ' +
+      'still holds the text of the last full scrape.'
+  )
 }
