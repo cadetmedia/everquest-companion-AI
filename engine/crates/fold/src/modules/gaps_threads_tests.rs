@@ -121,3 +121,19 @@ fn a_paid_hand_in_nothing_leads_to_is_a_quest_of_its_own() {
     assert_eq!(ids(&threads, "Doug: Letter For Doug").len(), 1, "{threads}");
     assert!(!ids(&threads, "Doug: let's talk").iter().any(|s| s.contains("Letter For Doug")), "{threads}");
 }
+
+/// The owner's Valtari log, 2026-10-23: four trades of one each to Vlad Sterovich. The requirement is one
+/// trade's offers (owner: "all the quest needs is 1 bat wing, 1 burned out lightstone, 1 snake fang, 1
+/// bone chips"), the trades how often it was done.
+#[test]
+fn a_hand_in_repeated_over_trades_requires_one_trades_offers() {
+    let mut t = Threads::default();
+    for s in [10, 20, 30, 40] {
+        hand(&mut t, s, "Vlad Sterovich", &["Bat Wing", "Bone Chips", "Burned Out Lightstone", "Snake Fang"]);
+    }
+    let threads = t.served();
+    let step = threads.as_array().unwrap().iter().flat_map(|c| c["steps"].as_array().unwrap().iter()).find(|s| s["kind"] == "handin").unwrap_or_else(|| panic!("{threads}"));
+    assert_eq!(step["trades"], 4, "{step}");
+    assert!(step["perTrade"].as_array().unwrap().iter().all(|i| i["n"] == 1), "{step}");
+    assert!(step["items"].as_array().unwrap().iter().all(|i| i["n"] == 4), "{step}");
+}

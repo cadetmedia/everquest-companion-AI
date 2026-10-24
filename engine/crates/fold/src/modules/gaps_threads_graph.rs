@@ -75,6 +75,11 @@ pub(super) struct Node {
     pub factions: Vec<FactionLine>,
     pub achievements: Vec<String>,
     pub rewards: BTreeMap<String, u32>,
+    /// A hand-in's requirement: the fewest of each item any one trade held (owner, 2026-10-23: four
+    /// trades of one each are "1 bat wing ...", never 4).
+    pub per_trade: BTreeMap<String, u32>,
+    /// How many trades handed this same set in.
+    pub trades: u32,
     pub claimed: bool,
 }
 
@@ -96,6 +101,8 @@ impl Node {
             factions: Vec::new(),
             achievements: Vec::new(),
             rewards: BTreeMap::new(),
+            per_trade: BTreeMap::new(),
+            trades: 0,
             claimed: false,
         }
     }
@@ -294,9 +301,19 @@ fn hand_in_nodes(hs: &[HandIn], nodes: &mut Vec<Node>) {
             n
         });
         node.experience |= h.experience;
+        let mut this: BTreeMap<String, u32> = BTreeMap::new();
         for i in &h.items {
             *node.items.entry(i.clone()).or_insert(0) += 1;
+            *this.entry(i.clone()).or_insert(0) += 1;
         }
+        if node.trades == 0 {
+            node.per_trade = this;
+        } else {
+            for (k, v) in &this {
+                node.per_trade.entry(k.clone()).and_modify(|n| *n = (*n).min(*v)).or_insert(*v);
+            }
+        }
+        node.trades += 1;
         for g in &h.given {
             *node.rewards.entry(g.clone()).or_insert(0) += 1;
         }
