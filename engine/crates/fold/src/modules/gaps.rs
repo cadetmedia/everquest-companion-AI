@@ -203,9 +203,9 @@ impl GapsModule {
             // The player's own `/who` row, parsed apart, names a player like any /who row (gaps_players.rs),
             // so a self-con (a /con with nothing targeted) is never a row (owner, 2026-10-22: "this is me").
             "selfWho" => self.unparsed(ev),
-            "loot" | "itemReceived" | "itemMerge" => self.item_event(ev),
-            "purchase" | "coin" | "unknown" => self.trade(ev),
-            "death" => self.kill_factions_of(ev) | self.specials.death(ev) | self.death(ev),
+            "loot" | "itemReceived" | "itemMerge" => self.fought(ev) | self.item_event(ev),
+            "purchase" | "coin" | "unknown" => self.fought(ev) | self.trade(ev),
+            "death" => self.fought(ev) | self.kill_factions_of(ev) | self.specials.death(ev) | self.death(ev),
             "consider" => self.considered(ev),
             "damage" | "miss" => self.specials.event(ev),
             "castBegin" | "otherCastBegin" => self.spell(ev),
@@ -557,7 +557,7 @@ impl EqModule for GapsModule {
         let kill_factions = self.kill_factions.serve();
         let mob_locs = self.mob_locs.serve();
         let mob_specials = self.specials.serve();
-        json!({ "seq": self.seq, "state": { "rows": rows, "totals": totals, "seen": seen, "killFactions": kill_factions, "mobLocs": mob_locs, "mobSpecials": mob_specials, "mobCoin": self.kill_coin.serve(), "ownPets": self.own_pets, "talks": self.quest_log.served_talks(), "character": self.quest_log.player() } })
+        json!({ "seq": self.seq, "state": { "rows": rows, "totals": totals, "seen": seen, "killFactions": kill_factions, "mobLocs": mob_locs, "mobSpecials": mob_specials, "mobCoin": self.kill_coin.serve(), "ownPets": self.own_pets, "talks": self.quest_log.served_talks(), "questThreads": self.quest_log.served_threads(), "character": self.quest_log.player() } })
     }
 
     fn install_knowledge(&mut self, k: &Arc<dyn Knowledge>) {

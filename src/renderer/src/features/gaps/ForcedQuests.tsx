@@ -13,15 +13,21 @@ import { addedVisits, isForcedRow, pickedVisits, visitGist, type TalkVisit } fro
 import type { RowFactContext } from '@shared/gapQuestPage'
 import { QuestCopyScope } from './QuestCopyDialog'
 import type { ForcedQuests } from './useForcedQuests'
+import type { QuestThread } from '@shared/gapQuestThreads'
 
 export interface ForcedScope extends ForcedQuests {
   /** The visits no task line or named quest holds yet. */
   talks: readonly TalkVisit[]
+  /** The chains the log rebuilt that are not accepted yet (gapQuestThreads.ts). */
+  threads: readonly QuestThread[]
   /** The catalog's quest titles, offered as names so an existing page can be picked. */
   titles: readonly string[]
 }
 
 const ForcedContext = createContext<ForcedScope | null>(null)
+
+/** The named quests' scope, for the Suggested quests list (SuggestedQuests.tsx). */
+export const useForcedScope = (): ForcedScope | null => useContext(ForcedContext)
 
 /** What every quest row under it reads: the Copy merge's page context, and the named quests. */
 export function QuestScopes({ extras, forced, children }: { extras: RowFactContext; forced: ForcedScope; children: ReactNode }): JSX.Element {

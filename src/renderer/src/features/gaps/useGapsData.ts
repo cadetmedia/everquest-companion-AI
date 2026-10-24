@@ -37,6 +37,7 @@ import { catalogStates } from '@shared/gapMerchantDescription'
 import { useQuestLivePages } from '../../lib/questLivePages'
 import { withForcedQuests, withQuestLinks, type ForcedQuestMap, type TalkSnap, type TalkVisit } from '@shared/gapForcedQuests'
 import { popupLinksOfRows } from '@shared/questPopup'
+import type { QuestThread } from '@shared/gapQuestThreads'
 import { withZoneRedirects } from '@shared/gapZoneRedirects'
 import { zoneKey } from '@shared/zones'
 import { useForcedQuests, type ForcedQuests } from './useForcedQuests'
@@ -103,6 +104,7 @@ export interface GapsData {
 const NO_TALKS: readonly TalkVisit[] = []
 /** A snapshot's talks and character (gaps.rs `snapshot`), which `GapsSnap` does not type. */
 const talkSnapOf = (snap: object | null | undefined): TalkSnap | null => snap ?? null
+const NO_THREADS: readonly QuestThread[] = []
 
 /** All characters ticked: the others' inputs, the attached one's label, and the day window. */
 export interface AllCharacters {
@@ -196,7 +198,9 @@ function joinedSnap(derived: GapsSnap, x: JoinInputs): GapsSnap {
 /** "Add quest" and "Add talk"'s scope: the named quests, the visits left to pick from, the names offered. */
 function useForcedScope(forced: ForcedQuests, snap: TalkSnap | null | undefined): ForcedScope {
   const talks = snap?.talks ?? NO_TALKS
-  return useMemo(() => ({ ...forced, talks, titles: QUEST_TITLES }), [forced, talks])
+  // The chains the log rebuilt (gaps_threads.rs), for Suggested quests.
+  const threads = snap?.questThreads ?? NO_THREADS
+  return useMemo(() => ({ ...forced, talks, threads, titles: QUEST_TITLES }), [forced, talks, threads])
 }
 
 export function useGapsData(all: AllCharacters | null = null, opts: GapsDataOptions = {}): GapsData {

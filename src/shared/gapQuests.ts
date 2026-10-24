@@ -40,6 +40,8 @@ export interface QuestStep {
   offeredMs?: number[]
   /** Each `given` item's time (epoch ms), parallel to it, when served. */
   givenMs?: number[]
+  /** A kill, loot or purchase a quest chain holds (gapQuestThreads.ts): its Summary and walkthrough line. */
+  note?: string
 }
 
 /** A Quests row's `quest`. */
