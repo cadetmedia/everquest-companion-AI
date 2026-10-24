@@ -102,29 +102,29 @@ test('THE REWARDS ARE THE LAST STEP WITH A FACTION LINE OR EXPERIENCE', () => {
   assert.ok(lines.includes('Done again 2 times (steps from the first run)'))
 })
 
-test('A QUEST THE WIKI LACKS GETS A DRAFT IN THE LAYOUT MOST CACHED QUEST PAGES SHARE', () => {
+test('A QUEST THE WIKI LACKS GETS A DRAFT IN THE QUEST PAGE BLUEPRINT', () => {
   const page = questDraftPage('Something Fishy', fishy, { journal: { minLevel: 1 } })
   for (const part of [
     '{{Classic Era}}',
     '[[File:npc_nikko_canti.png|thumb|Nikko Canti]]',
     '{| class="questTopTable"',
-    // `Start Zone` on 885 of the ~930 pages, `Starts In` on 6 (owner, 2026-10-23: "validate that").
-    "! ''' Start Zone: '''\n| [[Lake Nerius]]",
+    // The wiki's Quest Page Blueprint (Help:Contents): `Starts In`, level-1 sections, `Hand [[X]] to [[NPC]]:` (owner, 2026-10-23).
+    "! ''' Starts In: '''\n| [[Lake Nerius]]",
     "! ''' Quest Giver: '''\n| [[Nikko Canti]]",
     "! ''' Minimum Level: '''\n| 1",
     "! ''' Classes: '''\n| ?",
     "! ''' Related NPCs: '''\n| None\n|}",
-    // Level-2 headings, as ~1,700 of the cache's headings are; the checklist under `Checklist`.
-    '== Reward ==\n\n* Experience',
-    '== Checklist ==\n{{CheckboxList}}',
+    // Level-1 sections, as the blueprint and the new Lake Nerius pages write them; the checklist under Summary.
+    '= Reward =\n\n* Experience',
+    '= Summary =\n{{CheckboxList}}',
     "* Say 'help' to [[Nikko Canti]] in [[Lake Nerius]].",
     '* Give [[Defiled Fish Scales]] to [[Nikko Canti]] in [[Lake Nerius]].',
     '* Receive the [[Alchemical Solution]] quest.\n{{End}}',
     // A blank line after every walkthrough line, so each renders as its own paragraph.
-    "== Walkthrough ==\n\nYou say, 'Hail, Nikko Canti'\n\n: Nikko Canti says, 'Oi, you there!",
+    "= Walkthrough =\n\nYou say, 'Hail, Nikko Canti'\n\n: Nikko Canti says, 'Oi, you there!",
     ": Nikko Canti says, 'That's so kind of you! Here I have an old fishing pole you can use, and some bait!'\n\n",
     "'''You have been assigned the task 'Something Fishy'.'''\n\n",
-    'Give [[Defiled Fish Scales]] to [[Nikko Canti]]:\n\n',
+    'Hand [[Defiled Fish Scales]] to [[Nikko Canti]]:\n\n',
     "'''Your task 'Something Fishy' has been updated.'''",
     '<div class="facblock">\n* Your faction standing with [[Nerius Trade Association]] has been adjusted by 10.\n</div>\n{{YouGainExperience}}',
     '[[Category:Quests]]\n[[Category:Lake Nerius]]\n<!-- [[Category:All Classes Quests]] or [[Category:<Class> Quests]] -->'
@@ -133,7 +133,7 @@ test('A QUEST THE WIKI LACKS GETS A DRAFT IN THE LAYOUT MOST CACHED QUEST PAGES 
   }
   // No page writes `Required Faction: ?`: the row is left out when the log cannot know it.
   assert.ok(!page.includes('Required Faction'))
-  assert.ok(!/^= [A-Z]/m.test(page), 'no level-1 heading')
+  assert.ok(!/^== [A-Z]/m.test(page), 'the blueprint writes level-1 sections')
   // The player's own name reads Soandso, as the wiki writes a player.
   const named: QuestLog = { ...fishy, steps: [{ ...fishy.steps[0], talk: [{ who: 'Nikko Canti', text: 'Thank you, Drywrought!' }] }] }
   assert.ok(questDraftPage('Something Fishy', named, { players: ['Drywrought'] }).includes(": Nikko Canti says, 'Thank you, Soandso!'"))
@@ -208,9 +208,9 @@ test('REPEATS ARE A COUNT, AND A STEP READS IN THE ORDER THE LOG PRINTED IT', ()
   }
   const page = questDraftPage('Something Fishy', fish)
   assert.ok(page.includes('* Give 3 [[Fresh Fish]] to [[Nikko Canti]] in [[Lake Nerius]].'))
-  assert.equal(page.split('Give 3 [[Fresh Fish]] to [[Nikko Canti]]:').length - 1, 1)
+  assert.equal(page.split('Hand 3 [[Fresh Fish]] to [[Nikko Canti]]:').length - 1, 1)
   // The hail, then the hand-in, then the reply it caused.
-  const order = ["You say, 'Hail, Nikko Canti'", 'Give 3 [[Fresh Fish]] to [[Nikko Canti]]:', ": Nikko Canti says, 'My fish! Thank you!'"].map((l) => page.indexOf(l))
+  const order = ["You say, 'Hail, Nikko Canti'", 'Hand 3 [[Fresh Fish]] to [[Nikko Canti]]:', ": Nikko Canti says, 'My fish! Thank you!'"].map((l) => page.indexOf(l))
   assert.deepEqual([...order].sort((a, b) => a - b), order)
   assert.ok(order.every((i) => i >= 0))
 })

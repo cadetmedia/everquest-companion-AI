@@ -103,7 +103,8 @@ impl Pair {
         rows.as_array()
             .expect("rows")
             .iter()
-            .filter(|r| r["domain"] == "mob" && r.get("viaRedirect").is_none())
+            // A merchant's con row is served under Merchants (owner, 2026-10-23); it is the same NPC row.
+            .filter(|r| (r["domain"] == "mob" || r["domain"] == "merchant") && r.get("viaRedirect").is_none())
             .map(|r| (mob_key(r["name"].as_str().unwrap_or("")), r["maybePlayer"] == true))
             .collect()
     }

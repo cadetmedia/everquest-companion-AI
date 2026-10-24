@@ -381,6 +381,8 @@ impl GapsModule {
     /// What a row serves beyond its own fields: an item's or an NPC's quest facts, a quest's steps,
     /// an NPC's role from its target line, the zones an item was fished in.
     pub(super) fn serve_extras(&self, domain: Domain, key: &str, v: &mut Value) {
+        // The domain it is served under: a Mobs row served as a merchant's says so (gaps_roles.rs `served_under`).
+        v["domain"] = json!(domain.as_str());
         if let Some(f) = self.quests.served(domain, key) {
             v["questFacts"] = f;
         }

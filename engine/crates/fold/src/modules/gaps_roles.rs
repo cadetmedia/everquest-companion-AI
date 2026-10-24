@@ -68,6 +68,20 @@ impl Roles {
 }
 
 impl GapsModule {
+    /// The domain a row is served under, or none. A merchant is a Merchants row only (owner, 2026-10-23:
+    /// "if an NPC is a merchant, do not show it on mobs, only show it on merchants"): its Mobs row is
+    /// not served beside a Merchants row, and a Mobs row whose target line names a merchant (no trade
+    /// yet) is served under Merchants. The row itself stays, so a later trade or role finds it.
+    pub(super) fn served_under(&self, domain: Domain, key: &str) -> Option<Domain> {
+        if domain != Domain::Mob {
+            return Some(domain);
+        }
+        if self.rows.contains_key(&(Domain::Merchant, key.to_string())) {
+            return None;
+        }
+        Some(if self.roles.of(key) == Some("Merchant") { Domain::Merchant } else { Domain::Mob })
+    }
+
     /// A target line or a bank greeting: a player withdrawn, or an NPC's role noted. True: rows moved.
     pub(super) fn targeted(&mut self, t: &Target<'_>) -> bool {
         match *t {

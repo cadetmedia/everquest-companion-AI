@@ -17,7 +17,7 @@ import { IPC } from '../shared/ipc'
 import { stubLinkTarget, type LiveQuestPage } from '../shared/gapQuestMerge'
 import { createWikiClient } from './wikiClient'
 
-const wiki = createWikiClient()
+const wiki = createWikiClient('quest copy')
 
 /** The page, or the bare title's when the asked one ends in `?` and the wiki lacks it. */
 async function pageOrBare(title: string): Promise<LiveQuestPage | null> {
