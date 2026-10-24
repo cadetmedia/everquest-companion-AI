@@ -1,5 +1,6 @@
 // deltaApi.ts — scrape-delta.mts's only network code. One serialized GET at a time, a gap after
-// every request (failed ones included), 50 pages per content request, no retry on a 4xx.
+// every request (failed ones included), 50 pages per content request, no retry on a 4xx. Every attempt
+// is counted in the run's wiki ledger (wikiLedger.ts).
 
 import {
   emptyFeed,
@@ -11,6 +12,7 @@ import {
   type RcRow,
   type RevPage
 } from './deltaPages'
+import { hostOf, kindOf, recordWikiCall, type WikiCall } from './wikiLedger'
 
 const API = 'https://eqlwiki.com/api.php'
 const UA = 'eqcompanion-delta (+https://github.com/kaltinril/everquest-companion; one serialized req/s)'
@@ -28,14 +30,19 @@ function retryDelayMs(res: Response, backoff: number): number {
   return Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : backoff
 }
 
-/** The response, or null for a network failure worth retrying (the last one is thrown). */
-async function fetchOnce(url: string, lastTry: boolean): Promise<Response | null> {
+/** The response, or null for a network failure worth retrying (the last one is thrown); and its ledger record. */
+async function fetchOnce(url: string, lastTry: boolean, kind: string, retry: boolean): Promise<{ res: Response | null; rec: WikiCall }> {
   pacing.requests++
+  const t0 = Date.now()
+  const note = (status: number | null): WikiCall =>
+    recordWikiCall({ kind, host: hostOf(url), status, ms: Date.now() - t0, retry, error: status === null || status >= 400 })
   try {
-    return await fetch(url, { headers: { 'User-Agent': UA } })
+    const res = await fetch(url, { headers: { 'User-Agent': UA } })
+    return { res, rec: note(res.status) }
   } catch (err) {
+    const rec = note(null)
     if (lastTry) throw err
-    return null
+    return { res: null, rec }
   }
 }
 
@@ -44,12 +51,15 @@ async function fetchOnce(url: string, lastTry: boolean): Promise<Response | null
  * A permanent 4xx throws at once. Any other error body throws too: a delta built on a
  * half-answered query is silently wrong.
  */
-async function readBody<T>(res: Response, lastTry: boolean, what: string): Promise<T | null> {
+async function readBody<T>(res: Response, rec: WikiCall, lastTry: boolean, what: string): Promise<T | null> {
   if (!res.ok) {
     if ((res.status === 429 || res.status >= 500) && !lastTry) return null
     throw new Error(`${res.status} ${res.statusText} for ${what}`)
   }
-  const j = (await res.json()) as T & { error?: { code?: string } }
+  const body = await res.text()
+  rec.bytes = Buffer.byteLength(body)
+  const j = JSON.parse(body) as T & { error?: { code?: string } }
+  rec.error = j.error !== undefined
   if (j.error?.code === 'maxlag' && !lastTry) return null
   if (j.error) throw new Error(`wiki error ${j.error.code ?? '?'} for ${what}`)
   return j
@@ -63,9 +73,9 @@ async function api<T>(params: Record<string, string>): Promise<T> {
   let wait = Math.max(pacing.delayMs, 1)
   for (let attempt = 0; ; attempt++) {
     const lastTry = attempt >= MAX_RETRIES
-    const res = await fetchOnce(url, lastTry)
+    const { res, rec } = await fetchOnce(url, lastTry, kindOf(params), attempt > 0)
     await sleep(pacing.delayMs)
-    const j = res ? await readBody<T>(res, lastTry, what) : null
+    const j = res ? await readBody<T>(res, rec, lastTry, what) : null
     if (j) return j
     await sleep(res ? retryDelayMs(res, wait) : wait)
     wait *= 2
