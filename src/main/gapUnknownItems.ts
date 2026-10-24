@@ -71,12 +71,23 @@ export function unknownOf(names: readonly string[], index: KnownIndex): string[]
 
 let index: KnownIndex | null = null
 
+/** Each spell's page name and the names its redirects give it (`Familiar: Werewolf` -> Summon Familiar: Werewolf). */
+const spellNames = (): string[] =>
+  applySpellRemovals((spellsJson as SpellDbFile).spells).spells.flatMap((s) => [s.name, ...((s as { otherNames?: string[] }).otherNames ?? [])])
+
 /** `unknownOf` over the corpus in this bundle (items.json with its redirect names, spells.json). */
 export function unknownItems(names: readonly string[]): string[] {
   index ??= knownIndex(
     Object.keys(itemsByAnyName((itemsJson as unknown as ItemDbFile).items)),
     // Through the removals seam: a scroll of a spell EQ Legends does not have is no known item.
-    applySpellRemovals((spellsJson as SpellDbFile).spells).spells.map((s) => s.name)
+    spellNames()
   )
   return unknownOf(names, index)
+}
+
+/** The spell names the wiki data has no page for, each once (owner, 2026-10-23: a pasted Pet Illusion: Gelatinous Cube window made no row). */
+export function unknownSpells(names: readonly string[]): string[] {
+  index ??= knownIndex(Object.keys(itemsByAnyName((itemsJson as unknown as ItemDbFile).items)), spellNames())
+  const known = index.spells
+  return [...new Set(names.map((n) => n.trim()).filter((n) => /[A-Za-z]{2}/.test(n)))].filter((n) => !known.has(looseKey(foldQuotes(n.toLowerCase()))))
 }

@@ -29,6 +29,7 @@ import { useGapReady, type GapReadiness } from './useGapReady'
 import type { HeldIndex } from '@shared/gapHeld'
 import { withExtraItemRows } from '@shared/gapExtraItems'
 import { useExtraItemRows } from './useExtraItemRows'
+import { useExtraSpellRows } from './useExtraSpellRows'
 
 /** Where the "Zone I'm in" choice is remembered, per viewer, as the Achievements tab remembers its own. */
 const ZONE_HERE_KEY = 'eq.gaps.zoneHere'
@@ -137,7 +138,10 @@ export function useGapsList(opts: { background?: boolean } = {}): GapsList {
   // Items no log line names (owner, 2026-10-22: a store purchase): held in an export or captured,
   // with no wiki page, are Items rows too, in the one snapshot every view reads.
   const viewer = useMemo(() => ({ me: me?.name ?? null, all: allChars.all !== null }), [me, allChars.all])
-  const extra = useExtraItemRows(engineData.snap?.rows, holding, viewer)
+  const extraItems = useExtraItemRows(engineData.snap?.rows, holding, viewer)
+  // And spells no log line names, from a pasted spell window (owner, 2026-10-23).
+  const extraSpells = useExtraSpellRows(engineData.snap?.rows)
+  const extra = useMemo(() => (extraSpells.length === 0 ? extraItems : [...extraItems, ...extraSpells]), [extraItems, extraSpells])
   const data = useMemo(() => (engineData.snap && extra.length > 0 ? { ...engineData, snap: withExtraItemRows(engineData.snap, extra) } : engineData), [engineData, extra])
   const shownQuery = useGapsQuery()
   // "Zone I'm in" (owner ask, 2026-10-17): only what was named where you stand, every tier of it.
