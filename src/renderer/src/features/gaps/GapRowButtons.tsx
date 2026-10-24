@@ -20,6 +20,7 @@ import { wikiPageUrl } from '@shared/gapUrls'
 import { questPageTitle } from '@shared/gapQuests'
 import { readGapVerdict } from '../../lib/gapVerdicts'
 import { QuestCopyDialog, readQuestPage, type QuestRead } from './QuestCopyDialog'
+import { ForcedRowButtons } from './ForcedQuests'
 
 const stop = (e: MouseEvent): void => e.stopPropagation()
 
@@ -187,6 +188,7 @@ export default function GapRowButtons({
     <>
       <CopyPageButton key={row.name} text={() => pageText(row)} row={row} compact={compact} />
       <WikiLinks row={row} compact={compact} />
+      <ForcedRowButtons row={row} compact={compact} Action={ActionButton} />
       <DoneButton isDone={isDone} onDone={() => onDone(row)} compact={compact} />
     </>
   )

@@ -30,6 +30,9 @@ import { useItemMobs } from '../../lib/gapItemMobs'
 import { mobPageFinder } from '@shared/mobPageTitle'
 import { catalogStates } from '@shared/gapMerchantDescription'
 import { useQuestLivePages } from '../../lib/questLivePages'
+import { withForcedQuests, type TalkSnap, type TalkVisit } from '@shared/gapForcedQuests'
+import { useForcedQuests } from './useForcedQuests'
+import type { ForcedScope } from './ForcedQuests'
 
 /** Each drop group's members, and the drop-list links that redirect to an item (scrape-drop-groups.ts). */
 const DROPS = dropGroupsJson as { groups: DropGroups; aliases?: DropAliases }
@@ -40,6 +43,8 @@ const ZONE_NAME: ZoneNamer = wikiZoneNamer(catalogZoneCounts(MOB_CATALOG))
 const IS_MOB = catalogNameTest(MOB_CATALOG)
 /** A quest's catalog entry when the wiki has its page (the Quests rows' Make page / Update page). */
 const QUEST_ENTRY = questCatalogFinder((questsJson as { quests: QuestCatalogEntry[] }).quests)
+/** The catalog's quest titles: names "Add quest" offers, so a page the wiki has can be picked. */
+export const QUEST_TITLES: readonly string[] = (questsJson as { quests: QuestCatalogEntry[] }).quests.map((q) => q.page)
 /** The catalog's entry, else a page a Copy click found on the wiki this session (questLivePages.ts). */
 const questPageOf = (live: ReadonlyMap<string, string>) => (name: string): QuestCatalogEntry | undefined => {
   const found = QUEST_ENTRY(name) === undefined ? live.get(questTitleKey(name)) : undefined
@@ -64,7 +69,11 @@ export interface GapsData {
   engine: GapsSnap | null | undefined
   loot: LootSnap
   kills: KillMap
+  /** The quests the player named by hand (this character's), the visits to pick from and the names offered. */
+  forced: ForcedScope
 }
+
+const NO_TALKS: readonly TalkVisit[] = []
 
 export function useGapsData(): GapsData {
   const engine = useModule<GapsSnap>(GAPS_MODULE_ID)
@@ -77,7 +86,16 @@ export function useGapsData(): GapsData {
   const itemMobs = useItemMobs(looted)
   // A page the wiki answered with on a Copy click turns its row into Update page (owner, 2026-10-23).
   const livePages = useQuestLivePages()
-  const snap = useMemo(() => (engine ? withQuestPages(snapOf(engine, { loot, kills: killMobs, cons, itemMobs }, WIKI), questPageOf(livePages)) : engine), [engine, loot, killMobs, itemMobs, cons, livePages])
+  // The quests the player named (owner, 2026-10-23: "force a quest association"), per character.
+  const talkSnap = engine as (GapsSnap & TalkSnap) | null | undefined
+  const forced = useForcedQuests(talkSnap?.character)
+  const snap = useMemo(() => {
+    if (!engine) return engine
+    const derived = { ...snapOf(engine, { loot, kills: killMobs, cons, itemMobs }, WIKI), talks: talkSnap?.talks ?? [] }
+    return withQuestPages(withForcedQuests(derived, forced.forced), questPageOf(livePages))
+  }, [engine, talkSnap, loot, killMobs, itemMobs, cons, livePages, forced.forced])
   const kills = lastKills([killMobs], () => killIndex(killMobs))
-  return { snap, engine, loot, kills }
+  const talks = (snap as TalkSnap | null | undefined)?.talks ?? NO_TALKS
+  const scope = useMemo(() => ({ ...forced, talks, titles: QUEST_TITLES }), [forced, talks])
+  return { snap, engine, loot, kills, forced: scope }
 }

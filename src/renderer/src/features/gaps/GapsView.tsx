@@ -42,6 +42,7 @@ import { useGapVerdicts } from '../../lib/gapVerdicts'
 import { usePageSightings } from './usePageSightings'
 import GapsTable from './GapsTable'
 import { GAPS_DATA_DATE, PAGE_EXTRAS, useGapsData } from './useGapsData'
+import { AddQuestButton, QuestScopes } from './ForcedQuests'
 import { useDoneMarks, usePlayerList } from './useDoneMarks'
 import { useHeld } from './useHeld'
 import { useHeldOnly } from './useHeldOnly'
@@ -49,7 +50,6 @@ import { useGapShow } from './useGapShow'
 import { useHideUncertain, type HideUncertain } from './useHideUncertain'
 import { useGrouping } from './useGrouping'
 import GroupHeaderControls from './GroupHeaderControls'
-import { QuestCopyScope } from './QuestCopyDialog'
 
 // One line (owner, 2026-10-11): the how is in the module header, not on the page. Since 2026-10-18
 // the line says what the chosen domain's rows are (GAP_DOMAIN_HELP); since 2026-10-21 the hint is its
@@ -228,8 +228,19 @@ function ShownLine({
   )
 }
 
+/** The list's actions, at the row's right end: "Add quest" on Quests (ForcedQuests.tsx), then Copy list. */
+function ListActions({ domain, onCopy, disabled, copied }: { domain: GapDomain; onCopy: () => void; disabled: boolean; copied: number | null }): JSX.Element {
+  return (
+    <>
+      {domain === 'quest' && <AddQuestButton />}
+      <Box sx={{ flexGrow: 1 }} />
+      <CopyList onCopy={onCopy} disabled={disabled} copied={copied} />
+    </>
+  )
+}
+
 export default function GapsView(): JSX.Element {
-  const { snap, engine, loot, kills } = useGapsData()
+  const { snap, engine, loot, kills, forced } = useGapsData()
   const [domain, setDomain] = useState<GapDomain>('item')
   const [query, setQuery] = useState('')
   const [copied, setCopied] = useState<number | null>(null)
@@ -283,9 +294,9 @@ export default function GapsView(): JSX.Element {
   const hidden = sure.rows.length - visible.length
 
   // A full-height column whose last child, the table box, is the page's only scroller (GapsTable).
-  // A quest row's Copy reads its live page and merges against the same page context (QuestCopyDialog).
+  // A quest row's Copy reads its live page against the same page context; Add quest / Add talk name quests (ForcedQuests).
   return (
-    <QuestCopyScope extras={sightings}>
+    <QuestScopes extras={sightings} forced={forced}>
     <Stack spacing={2} data-testid="gaps-view" sx={{ height: '100%', minHeight: 0 }}>
       <Tooltip title={CLICK_HINT}>
         <Typography variant="body2" color="text.secondary" sx={{ alignSelf: 'flex-start' }}>
@@ -320,8 +331,7 @@ export default function GapsView(): JSX.Element {
         <Pref label="Group by zone, then mob" checked={group.grouped} onChange={group.setGrouped} testId="gaps-grouped" />
         <Pref label="Show done" checked={showDone} onChange={setShowDone} testId="gaps-show-done" />
         <HideUncertainBox state={sure} />
-        <Box sx={{ flexGrow: 1 }} />
-        <CopyList onCopy={() => void copy()} disabled={visible.length === 0} copied={copied} />
+        <ListActions domain={domain} onCopy={() => void copy()} disabled={visible.length === 0} copied={copied} />
       </Stack>
       <ShownLine counts={{ visible: visible.length, held, served, hidden, uncertain: sure.hidden }} domain={domain} zone={zone} mine={(mine.active ? HELD_WORDS[mine.pick] : '') + GAP_SHOW_WORDS[job.show]} />
       <GapsTable
@@ -342,6 +352,6 @@ export default function GapsView(): JSX.Element {
         nameLead={<GroupHeaderControls group={group} />}
       />
     </Stack>
-    </QuestCopyScope>
+    </QuestScopes>
   )
 }
