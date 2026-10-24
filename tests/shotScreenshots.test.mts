@@ -346,3 +346,14 @@ test("THE MUMMY'S TWO SPELL WINDOWS (THE OWNER'S, 2026-10-23): NO CLASS LINE, NO
   assert.equal(pet.description, 'Changes your pet to look like a Mummy')
   assert.deepEqual({ d: pet.fields.duration, c: pet.fields.casting_time, t: pet.fields.target_type, r: pet.fields.range }, { d: '1:00:00', c: 'Instant', t: 'Summoned Pet', r: '200' })
 })
+
+test("SIGNET RING OF LORD EVERLING (THE OWNER'S, 2026-10-24): `Focus Effect` WITH ITS COLON UNREAD IS THE FOCUS, NOT A MANA STAT", async () => {
+  const s = await read('signet-ring-of-lord-everling.png', textOnly)
+  assert.equal(s.read.focusEffect, 'Mana Preservation III')
+  assert.ok(lines(s).includes('STR: +7  DEX: +5  INT: +7  HP: +15  MANA: +15<br>'), s.read.statsblock)
+  assert.ok(!s.read.statsblock.includes('Preservation'), 'the focus is no stat')
+  const asReply = (x: ItemShot): ItemShotReply => ({ read: x.read, lines: x.lines, icons: [], ms: 0 })
+  const page = itemPage({ name: 'Signet Ring of Lord Everling', drops: [], soldBy: [], crafted: false }, { ...keptAfter(undefined, asReply(s), 'window'), iconId: 1148 })
+  assert.ok(page.includes('|focus_effect = Mana Preservation III'), page)
+  assert.ok(page.includes('[[Category:Focus Items]]'), page)
+})

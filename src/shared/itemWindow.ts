@@ -237,7 +237,10 @@ export function pairsOf(line: string): Pair[] {
   for (const m of line.matchAll(LABEL_RE)) {
     const def = labelOf(m[1])
     const from = (m.index ?? 0) + m[0].indexOf(m[1])
-    if (def !== undefined) hits.push({ def, from, to: (m.index ?? 0) + m[0].length })
+    // An effect's name runs to the line's end, its cast time and cooldown aside: `Focus Effect Mana
+    // Preservation lll` (the colon unread) is no MANA stat (owner, 2026-10-24: Signet Ring of Lord Everling).
+    const inEffect = hits.some((h) => h.def[2] === 'effect')
+    if (def !== undefined && (!inEffect || def[2] === 'effectInfo')) hits.push({ def, from, to: (m.index ?? 0) + m[0].length })
   }
   return hits.map((h, i) => ({
     key: h.def[1],
