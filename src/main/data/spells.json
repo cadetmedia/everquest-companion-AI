@@ -2,7 +2,7 @@
   "scrapedAt": "2026-10-24T12:42:26.299Z",
   "schema": 3,
   "count": 2018,
-  "withEffects": 2014,
+  "withEffects": 2013,
   "spells": [
     {
       "name": "Aanya's Animation",
@@ -16438,15 +16438,8 @@
     },
     {
       "name": "Illusion: Half Dark Elf",
-      "durationText": "?",
       "durationMs": null,
-      "targetType": "?",
-      "spellType": "Beneficial / Detrimental / Heal",
-      "classes": "* Class - Level ?",
-      "illusion": true,
-      "effects": [
-        "Spell effect"
-      ]
+      "illusion": true
     },
     {
       "name": "Illusion: Half-Elf",
