@@ -197,6 +197,27 @@ function Standing({ payload }: { payload: ConCardPayload }): JSX.Element | null 
 }
 
 /**
+ * WHAT A KILL DOES TO YOUR FACTIONS (owner, 2026-10-23), as the mob's wiki page states it: green for a
+ * raise, red for a drop, in the rung colours above. The tag says where the numbers came from.
+ */
+function KillHits({ payload }: { payload: ConCardPayload }): JSX.Element | null {
+  const hits = payload.killHits ?? []
+  if (hits.length === 0) return null
+  const hue = (raises: boolean | undefined): string =>
+    raises === undefined ? MUTED : CONSIDER_FACTION_COLOR[raises ? 'ally' : 'scowls']
+  return (
+    <div data-testid="con-card-kill-hits" style={{ display: 'flex', flexWrap: 'wrap', gap: '2px 10px', fontSize: 12, marginTop: 2 }}>
+      <span style={{ color: DIM }}>On kill (wiki):</span>
+      {hits.map((h) => (
+        <span key={h.faction} data-testid="con-card-kill-hit" style={{ color: hue(h.raises) }}>
+          <span style={{ fontWeight: 700 }}>{h.amount}</span> {h.faction}
+        </span>
+      ))}
+    </div>
+  )
+}
+
+/**
  * ONE AXIS CHIP: colour, word, tag — and, underneath in smaller type, the estimate and its interval.
  * The number NEVER appears without its interval and its count, which is JOS-382's rule and the
  * difference between "nuke cold" and "we have no idea yet".
@@ -431,6 +452,7 @@ export function ConCard({
           it, not a standing number, which the con line does not state. */}
       <div data-testid="con-card-faction">
         <Standing payload={payload} />
+        <KillHits payload={payload} />
       </div>
     </div>
   )

@@ -32,6 +32,7 @@
 // it. Everything here is a type, a constant or a total function, so `npm test` exercises every rule.
 
 import { isPlayerShapedName } from './playerShape'
+import { decodeFactionAmount } from './mobFactionAmounts'
 import { CONSIDER_FACTION_RUNGS, type ConsiderFaction } from './considerFaction'
 import { conColorOf, type ConColor } from './conColor'
 import {
@@ -63,16 +64,23 @@ export interface ConCardOverlayConfig {
    * preference for someone who reads it while deciding rather than at a glance.
    */
   autoHideMs: number
+  /** The blob's version. Absent on stores written before the 8 s default (see normalizeConCardConfig). */
+  v?: number
 }
 
-/** THREE SECONDS (owner, 2026-08-16, JOS-390 — it was five, and twenty before that). A con is a
+/** THE DEFAULT UNTIL 2026-10-23, AND STILL THE FLOOR. THREE SECONDS (owner, 2026-08-16, JOS-390 — it was five, and twenty before that). A con is a
  *  glance while you decide whether to pull, and a card that outlasts the decision is a box sitting
  *  on the game. Three is that glance, and it is what the card is now sized for: the drops and the
  *  respawn are one click away rather than on it (the header), so there is less to read and no reason
  *  to hold the screen longer. The knob below is still there for the reader who wants more time, up
  *  to and including "never" — and it is exactly the FLOOR, which is the same statement read twice:
  *  below three seconds a card could not be read at all. */
-export const DEFAULT_CON_CARD_AUTO_HIDE_MS = 3_000
+export const OLD_CON_CARD_AUTO_HIDE_MS = 3_000
+/** EIGHT SECONDS (owner, 2026-10-23: "when you con something it can stay up a little longer"): the card
+ *  now also lists the factions a kill moves, which is more to read than the three seconds above allowed. */
+export const DEFAULT_CON_CARD_AUTO_HIDE_MS = 8_000
+/** Version 2 is the 8 s default. A version-1 blob holding exactly 3 s is an untouched install: it reads as 8 s. */
+export const CON_CARD_CONFIG_VERSION = 2
 /** The sentinel the owner asked for: 0 = never hides. */
 export const CON_CARD_NEVER_HIDES = 0
 /** Below this a card could not be read at all, so a stored 1 s is a mistake rather than a choice. */
@@ -81,7 +89,8 @@ export const CON_CARD_MIN_AUTO_HIDE_MS = 3_000
 export const CON_CARD_MAX_AUTO_HIDE_MS = 120_000
 
 export const DEFAULT_CON_CARD_CONFIG: ConCardOverlayConfig = {
-  autoHideMs: DEFAULT_CON_CARD_AUTO_HIDE_MS
+  autoHideMs: DEFAULT_CON_CARD_AUTO_HIDE_MS,
+  v: CON_CARD_CONFIG_VERSION
 }
 
 const asRecord = (v: unknown): Record<string, unknown> =>
@@ -97,10 +106,15 @@ const asRecord = (v: unknown): Record<string, unknown> =>
  * a different question from the one the control asks.
  */
 export function normalizeConCardConfig(v: unknown): ConCardOverlayConfig {
-  const raw = asRecord(v).autoHideMs
-  const ms = typeof raw === 'number' && Number.isFinite(raw) ? Math.floor(raw) : DEFAULT_CON_CARD_AUTO_HIDE_MS
-  if (ms <= 0) return { autoHideMs: CON_CARD_NEVER_HIDES }
-  return { autoHideMs: Math.min(CON_CARD_MAX_AUTO_HIDE_MS, Math.max(CON_CARD_MIN_AUTO_HIDE_MS, ms)) }
+  const rec = asRecord(v)
+  const raw = rec.autoHideMs
+  let ms = typeof raw === 'number' && Number.isFinite(raw) ? Math.floor(raw) : DEFAULT_CON_CARD_AUTO_HIDE_MS
+  // Every store before version 2 wrote the old default whether or not anyone chose it, so an
+  // unversioned 3 s is that default and moves with it; a 3 s chosen since carries the version.
+  if (rec.v !== CON_CARD_CONFIG_VERSION && ms === OLD_CON_CARD_AUTO_HIDE_MS) ms = DEFAULT_CON_CARD_AUTO_HIDE_MS
+  const v2 = { v: CON_CARD_CONFIG_VERSION }
+  if (ms <= 0) return { autoHideMs: CON_CARD_NEVER_HIDES, ...v2 }
+  return { autoHideMs: Math.min(CON_CARD_MAX_AUTO_HIDE_MS, Math.max(CON_CARD_MIN_AUTO_HIDE_MS, ms)), ...v2 }
 }
 
 /**
@@ -112,7 +126,9 @@ export function normalizeConCardConfig(v: unknown): ConCardOverlayConfig {
  * ceiling and because this is a fact about the kind, not about the store.
  */
 export function applyConCardKnob(kind: OverlayKind, cfg: OverlayConfig): void {
-  if (kind === 'conCard') cfg.conCard = normalizeConCardConfig({ ...DEFAULT_CON_CARD_CONFIG, ...cfg.conCard })
+  // The stored blob is normalized as it stands, not over the defaults: its missing version is what says
+  // an old 3 s was never chosen. A missing hold still reads as the default.
+  if (kind === 'conCard') cfg.conCard = normalizeConCardConfig(cfg.conCard ?? DEFAULT_CON_CARD_CONFIG)
   else delete cfg.conCard
 }
 
@@ -262,6 +278,47 @@ export interface ConCardPayload {
   /** False when the client's `spells_us.txt` could not be read; the card says so instead of
    *  drawing five identical "not enough data" chips with no explanation. */
   spellData: boolean
+  /** The factions a kill of this mob moves, as its wiki page states them (owner, 2026-10-23). */
+  killHits?: ConCardKillHit[]
+}
+
+/** One faction a kill moves: `+10`, `-30..-10`, or `-`/`+` when the page states no amount. */
+export interface ConCardKillHit {
+  faction: string
+  /** Signed as the page writes it; a trailing `?` when the page marks it a guess. */
+  amount: string
+  /** Up or down; absent when the page's amount says neither. */
+  raises?: boolean
+}
+
+/** The two mob-page fields this reads, declared here: the catalog type gains them on the data branch. */
+export interface KillHitSource {
+  factions?: readonly string[]
+  factionAmounts?: readonly string[]
+}
+
+/** A card is read in seconds: the first few hits, as the page lists them (95% of pages list 5 or fewer). */
+const MAX_KILL_HITS = 6
+
+/** The page's amount string as the card prints it: signed, a range as `a..b`, `?` kept. */
+function hitAmount(stored: string | undefined): Pick<ConCardKillHit, 'amount' | 'raises'> {
+  if (stored === undefined || stored.trim() === '') return { amount: '?' }
+  const hit = decodeFactionAmount(stored.trim())
+  const guess = hit.unconfirmed ? '?' : ''
+  const signed = (n: number): string => (n > 0 ? `+${String(n)}` : String(n))
+  const raises = hit.side === 'raises'
+  if (hit.min === undefined || hit.max === undefined) return { amount: (raises ? '+' : '-') + guess, raises }
+  const body = hit.min === hit.max ? signed(hit.min) : `${signed(hit.min)}..${signed(hit.max)}`
+  return { amount: body + guess, raises }
+}
+
+/** What killing this mob does to the player's factions, off its catalog entry; absent when the page names none. */
+export function conCardKillHits(found: object | null | undefined): Pick<ConCardPayload, 'killHits'> {
+  const entry = found as KillHitSource | null | undefined
+  const names = entry?.factions ?? []
+  if (names.length === 0) return {}
+  const killHits = names.slice(0, MAX_KILL_HITS).map((faction, i) => ({ faction, ...hitAmount(entry?.factionAmounts?.[i]) }))
+  return { killHits }
 }
 
 /**

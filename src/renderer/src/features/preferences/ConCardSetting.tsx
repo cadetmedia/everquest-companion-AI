@@ -44,7 +44,7 @@ import { recordPref, usePrefsSeed, type ConCardSeed } from './prefsHydration'
  * law — a control never paints a value it does not know (the header above). THREE is also the
  * floor (`CON_CARD_MIN_AUTO_HIDE_MS`), so the list starts exactly where the normalizer does.
  */
-const HIDE_CHOICES_SEC = [3, 5, 10, 15, 20, 30, 45, 60, CON_CARD_NEVER_HIDES]
+const HIDE_CHOICES_SEC = [3, 5, 8, 10, 15, 20, 30, 45, 60, CON_CARD_NEVER_HIDES]
 
 const hideLabel = (sec: number): string =>
   sec === CON_CARD_NEVER_HIDES ? 'until I close it' : `${String(sec)} seconds`
