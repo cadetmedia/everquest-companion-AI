@@ -242,7 +242,8 @@ impl QuestFacts {
     /// so it was no turn-in (owner's log, 2026-10-22: A Curt Dismissal to Sir Mollin). True when a
     /// turn-in was taken back.
     fn refused(&mut self, npc: &str, ts: i64) -> bool {
-        let Some(i) = self.offers.iter().rposition(|(_, n, at)| n == npc && ts - at <= REFUSE_MS) else {
+        // Case-blind: a line opens `A fallen froglok says` for an offer to `a fallen froglok`.
+        let Some(i) = self.offers.iter().rposition(|(_, n, at)| n.eq_ignore_ascii_case(npc) && ts - at <= REFUSE_MS) else {
             return false;
         };
         self.take_back(i)

@@ -101,12 +101,20 @@ fn back(start: usize, p: &[Vec<usize>], nodes: &[Node]) -> Vec<usize> {
 }
 
 /// One graph per hand-in; a hand-in nothing leads to that starts another errand is that errand's first
-/// step (the tutorial's Letter For Doug); then the talk-only chains.
+/// step, unless it paid a reward: then it is a quest of its own (the tutorial's Letter For Doug gives
+/// experience and the game's "Your first quest!" window calls it one); then the talk-only chains.
 fn errands(nodes: &[Node], es: &[Edge]) -> Vec<Vec<usize>> {
     let p = preds(nodes.len(), es);
     let sets: Vec<(usize, Vec<usize>)> = (0..nodes.len()).filter(|&i| nodes[i].kind == Kind::HandIn).map(|h| (h, back(h, &p, nodes))).collect();
-    let absorbed: HashSet<usize> = sets.iter().filter(|(h, _)| p[*h].is_empty() && sets.iter().any(|(o, s)| o != h && s.contains(h))).map(|(h, _)| *h).collect();
-    let mut out: Vec<Vec<usize>> = sets.into_iter().filter(|(h, _)| !absorbed.contains(h)).map(|(_, s)| s).collect();
+    let paid = |i: usize| nodes[i].experience || !nodes[i].factions.is_empty() || !nodes[i].rewards.is_empty() || !nodes[i].achievements.is_empty();
+    let opener = |h: usize| p[h].is_empty() && sets.iter().any(|(o, s)| *o != h && s.contains(&h));
+    let absorbed: HashSet<usize> = sets.iter().map(|(h, _)| *h).filter(|&h| opener(h) && !paid(h)).collect();
+    let own: HashSet<usize> = sets.iter().map(|(h, _)| *h).filter(|&h| opener(h) && paid(h)).collect();
+    let mut out: Vec<Vec<usize>> = sets
+        .into_iter()
+        .filter(|(h, _)| !absorbed.contains(h))
+        .map(|(h, s)| if own.contains(&h) { vec![h] } else { s.into_iter().filter(|i| *i == h || !own.contains(i)).collect() })
+        .collect();
     let talk = talk_chains(nodes, es, &out);
     out.extend(talk);
     out
@@ -232,5 +240,7 @@ fn thread(nodes: &[Node], es: &[Edge], set: &[usize]) -> QuestThread {
         (None, Some(i)) => format!("{giver}: {i}"),
         _ => giver.clone(),
     };
-    QuestThread { id: format!("{giver}@{start_ms}"), zone: steps.iter().find_map(|s| s.zone.clone()), giver, start_ms, end_ms, name, steps, rewards: items_of(&rewards) }
+    // Unique per chain: errands opened by the same greeting share a start, never a last step.
+    let last = steps.last().map_or("", |s| s.id.as_str());
+    QuestThread { id: format!("{giver}@{start_ms}:{last}"), zone: steps.iter().find_map(|s| s.zone.clone()), giver, start_ms, end_ms, name, steps, rewards: items_of(&rewards) }
 }

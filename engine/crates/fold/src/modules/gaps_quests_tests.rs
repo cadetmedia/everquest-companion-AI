@@ -122,3 +122,16 @@ fn a_refused_or_cancelled_offer_is_no_turn_in_and_a_completed_one_is() {
     assert!(!q.cancelled(), "nothing open to take back");
     assert_eq!(turned_in(&q, "fresh fish"), Some(json!([{ "npc": "Nikko Canti", "n": 1 }])));
 }
+
+/// The owner's log, 2026-10-19: `You offered 1 Pod of Water to a fallen froglok.` then `A fallen froglok
+/// says, 'I have no need for this, ...'` — the line opens on the name with a capital, the offer does not.
+#[test]
+fn a_refusal_opening_on_a_capitalised_article_takes_the_offer_back() {
+    let mut q = QuestFacts::default();
+    q.set_player(Some("Testplayer"));
+    let t = |s: i64| 1_787_000_000_000 + s * 1000;
+    assert!(q.offered("Pod of Water", "a fallen froglok", t(0)));
+    assert!(q.refused("A fallen froglok", t(1)));
+    q.trade_done("a fallen froglok");
+    assert!(q.of("pod of water").and_then(|f| serde_json::to_value(f).ok()?.get("turnedInTo").cloned()).is_none());
+}
