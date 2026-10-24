@@ -72,6 +72,10 @@
   "content": "{{Classic Era}}\n<onlyinclude>{{Itempage\n|notes       = {{Item Lore|Treant heart}}<br>\nMay be obtained as a reward (small chance) from turning in [[Small Lantern]] to [[Jyle Windshot]] in [[West Freeport]]\n|itemname    = Wooden Heart\n|lucy_img_ID = 1003\n|statsblock  = \nNo Trade, Quest<br>\nWT: 2.0  Size: SMALL<br>\nClass: ALL<br>\nRace: ALL<br>\n|dropsfrom = \n\n[[Southern Karana]]\n\n* [[a treant]]\n\n|relatedquests = \n\n* [[Rain Caller Quest]]\n\n}}</onlyinclude>\n\n\n[[Category:Southern Karana]]\n\n[[Category:Quest Items]]"
  },
  {
+  "title": "Alexa's Robe",
+  "content": ""
+ },
+ {
   "title": "An Alligator Tooth",
   "content": "{{Classic Era}}\n<onlyinclude>{{Itempage\n|notes       = For the earring, see [[Alligator Tooth Earring]]. No use in Classic, but for quests in Planes of Power expansion.\n|itemname    = Alligator Tooth\n|lucy_img_ID = 803\n|merchant_value = 7s 1c\n|statsblock  = \nQuest<br>\nWT: 0.1  Size: TINY<br>\nClass: ALL<br>\nRace: ALL<br>\n|dropsfrom = \n\n[[Innothule Swamp]]\n\n* [[a bull alligator]]\n* [[a swamp alligator]]\n\n|relatedquests =\n\n* [[Dark One's Armor]]\n* [[Spiritcharmer Final Job]]\n}}</onlyinclude>\n\n\n[[Category:Innothule Swamp]]\n\n[[Category:Quest Items]]"
  },
@@ -132,6 +136,10 @@
   "content": "Bronze weapons typically drop off of humanoids at ~20+. They generally have better ratios than [[Rusty Weapons]] and inferior ratios to [[Fine Steel Weapons]], although there are exceptions to this.\n\nA great spot early on to get this, is at sister camp in Lesser Faydark.\n\n\n{| class=\"wikitable sortable\"\n|-\n! Name\n! Damage\n! Delay\n! Ratio\n! Type\n! Notes\n|-\n|{{:Bronze Axe}}\n|5\n|33\n|0.1515\n|1H Slashing\n|\n|-\n|{{:Bronze Bastard Sword}}\n|7\n|42\n|0.1667\n|2H Slashing\n|\n|-\n|{{:Bronze Battle Axe}}\n|6\n|37\n|0.1622\n|1H Slashing\n|\n|-\n|{{:Bronze Broad Sword}}\n|5\n|32\n|0.1563\n|1H Slashing\n|\n|-\n|{{:Bronze Dagger}}\n|3\n|22\n|0.1364\n|Piercing\n|\n|-\n|{{:Bronze Flail}}\n|6\n|37\n|0.1622\n|Piercing\n|\n|-\n|{{:Bronze Halberd}}\n|10\n|52\n|0.1923\n|2H Slashing\n|\n|-\n|{{:Bronze Knuckles}}\n|3\n|22\n|0.1364\n|Hand to Hand\n|\n|-\n|{{:Bronze Long Sword}}\n|5\n|32\n|0.1563\n|1H Slashing\n|\n|-\n|{{:Bronze Mace}}\n|6\n|38\n|0.1579\n|1H Blunt\n|\n|-\n|{{:Bronze Main Gauche}}\n|3\n|23\n|0.1304\n|Piercing\n|\n|-\n|{{:Bronze Morning Star}}\n|7\n|43\n|0.1628\n|1H Blunt\n|\n|-\n|{{:Bronze Rapier}}\n|4\n|28\n|0.1429\n|Piercing\n|\n|-\n|{{:Bronze Scimitar}}\n|5\n|32\n|0.15625\n|1H Slashing\n|\n|-\n|{{:Bronze Shortened Spear}}\n|5\n|34\n|0.1471\n|Piercing\n|\n|-\n|{{:Bronze Short Sword}}\n|4\n|27\n|0.1481\n|1H Slashing\n|\n|-\n|{{:Bronze Spear}}\n|5\n|32\n|0.1563\n|Piercing\n|\n|-\n|{{:Bronze Two Handed Battle Axe}}\n|9\n|46\n|0.1957\n|2H Slashing\n|\n|-\n|{{:Bronze Two Handed Hammer}}\n|8\n|45\n|0.1778\n|2H Blunt\n|\n|-\n|{{:Bronze Two Handed Sword}}\n|9\n|47\n|0.1915\n|2H Slashing\n|\n|-\n|{{:Bronze Wakizashi}}\n|4\n|27\n|0.1481\n|1H Slashing\n|\n|-\n|{{:Bronze Warclub}}\n|5\n|35\n|0.1429\n|1H Blunt\n|\n|-\n|{{:Bronze Warhammer}}\n|5\n|33\n|0.1515\n|1H Blunt\n|\n|-\n|}\n\n\n[[Category: Armor Sets]]"
  },
  {
+  "title": "Burning Fighters Blade",
+  "content": ""
+ },
+ {
   "title": "Burnout IV",
   "content": "<noinclude>{{Velious Era}}</noinclude>{{Spellpagesmart|\n\n| spellname = Burnout IV\n| spellicon = O\n| description = Infuses your elemental companion with energy, increasing their attack speed, armor class, and strength.\n\n| Table = {{{Table|0}}}\n| TableLevel = {{{TableLevel|}}}\n| classes = \n\n* [[Magician]] - Level 55\n\n| slots = \n\n{{SpellSlotRowSmart | 3 | Increase STR by 60 | simple = {{#ifeq:{{{Table|0}}}|0|0|1}} }}\n{{SpellSlotRowSmart | 4 | Increase Attack Speed by 65% | simple = {{#ifeq:{{{Table|0}}}|0|0|1}} }}\n\n| skill = [[Skill Alteration | Alteration]]\n\n| mana = 150\n| range = 100\n| casting_time = 6.00\n| fizzle_time = 2.50\n| recast_time = 12.00\n| duration = 15 minutes\n| target_type = Pet\n| spell_type = Beneficial\n| resist = Unresistable\n\n| msg_cast_on_you =  \n| msg_cast_on_other = Someone  goes berserk.\n| msg_wears_off =  \n\n| where_to_obtain = \n\n* Velious Level 50+ Mob Drop\n| TableLocations = Level 50+ Mobs\n| TableEra = {{{TableEra|Velious}}}\n\n}}"
  },
@@ -158,14 +166,6 @@
  {
   "title": "Cantata of Soothing",
   "content": "<noinclude>{{Classic Era}}</noinclude>\n{{Spellpagesmart|\n\n| spellname = Cantana of Soothing\n| spellicon = 99\n| description = A light cantata that regenerates the health, mana, and endurance of your entire group.\n| Table = {{{Table|0}}}\n| TableLevel = {{{TableLevel|}}}\n\n| classes = \n\n* [[Bard]] - Level 34\n\n| slots = \n\n{{SpellSlotRowSmart | 1 | Increase Hitpoints by 4 per tick | simple = {{#ifeq:{{{Table|0}}}|0|0|1}} }}\n{{SpellSlotRowSmart | 2 | Increase Mana by 5 per tick | simple = {{#ifeq:{{{Table|0}}}|0|0|1}} }}\n{{SpellSlotRowSmart | 3 | Decrease Stamina Loss by 4 | simple = {{#ifeq:{{{Table|0}}}|0|0|1}} }}\n{{SpellSlotRowSmart | Enhanced by instrument? | '''Required''' | simple = {{#ifeq:{{{Table|0}}}|0|0|1}} }}\n\n| skill = [[Skill Stringed | Stringed]] †\n\n| mana = 0\n| range = 0\n| casting_time = 3.00\n| fizzle_time = 0.00\n| recast_time = 0.00\n| duration = 3 ticks\n| target_type = Group\n| spell_type = Beneficial\n| resist = Unresistable\n\n| other = \n\n* '''Focus:''' Lute\n\n| msg_cast_on_you = You feel replenished.\n| msg_cast_on_other =  \n| msg_wears_off = The cantata of soothing fades.\n\n| where_to_obtain = \n\n<ul>\n<li>[[Bard#Song_Vendors|Bard Song Vendors]]</li>\n</ul>\n}}"
- },
- {
-  "title": "Chief Ferilsars' Prayer Beads",
-  "content": ""
- },
- {
-  "title": "Chief Wasolors' Prayer Beads",
-  "content": "[[File:Chief Wasolors' Prayer Beads.png|thumb|Chief Wasolors' Prayer Beads that drop in Nektulos Forest off the Chief (Rare Spawn) at the southern Orc camp.]]"
  },
  {
   "title": "Chipped Onyx",
@@ -224,6 +224,10 @@
   "content": "{{Classic Era}}\nCryosilk Armor is special planar armor usable only by INT casters. In Everquest Legends, it is confirmed to drop from [[a haunted chest]] in [[Plane of Hate]] - but only from the two chests that spawn during the Innoruuk raid instance.\n\n\n{{Gear Set\n|Cryosilk Amice\n|Cryosilk Bracelet\n|Cryosilk Cap\n|Cryosilk Choker\n|Cryosilk Cloak\n|Cryosilk Gloves\n|Cryosilk Lined Shoes\n|Cryosilk Pantaloons\n|Cryosilk Robe\n|Cryosilk Sash\n|Cryosilk Sleeves\n|Cryosilk Veil\n|Cryosilk Webshield\n}}\n\n[[Category:Armor Sets]]"
  },
  {
+  "title": "Crysta's Robe",
+  "content": ""
+ },
+ {
   "title": "Crystallized Shadow Weapons",
   "content": "{{Velious Era}}\n\nA set of FS-like weapons with stats, that drops in the [[Tower of Frozen Shadow]].\n\nAlso see [[Purified Crystal Weapons]].\n\n{{Gear Set\n|Crystallized Shadow Claymore\n|Crystallized Shadow Dagger\n|Crystallized Shadow Long Sword\n|Crystallized Shadow Rapier\n|Crystallized Shadow Scimitar\n|Crystallized Shadow Short Sword\n|Crystallized Shadow Spear\n|Crystallized Shadow Star\n|Crystallized Shadow Warhammer\n}}\n\n[[Category:Armor Sets]]"
  },
@@ -246,6 +250,10 @@
  {
   "title": "Doll",
   "content": "{{Classic Era}}\n<onlyinclude>{{Itempage\n|notes       = \n|itemname    = A Doll\n|lucy_img_ID = 720\n|statsblock  = \nWT: 1.0  Size: TINY<br>\nClass: ALL<br>\nRace: ALL<br>\n|dropsfrom = \n\n[[East Freeport]]\n\n* [[a shark]]\n\n[[Erudin]]\n\n* [[a sand shark]]\n* [[a young shark]]\n\n[[Ocean of Tears]]\n\n* [[a shark]]\n\n[[Qeynos Aqueducts]]\n\n* [[a shark]]\n\n|relatedquests = \n\n* [[Indaria's Doll]]\n\n}}</onlyinclude>\n\n\n[[Category:Erudin]]\n[[Category:Ocean of Tears]]\n[[Category:East Freeport]]\n\n[[Category:Quest Items]]"
+ },
+ {
+  "title": "Elise's Robe",
+  "content": ""
  },
  {
   "title": "Etched Iron Armor",
@@ -336,6 +344,10 @@
   "content": "{{Classic Era}}\n<onlyinclude>{{Itempage\n|notes       = \n|itemname    = A Gypsy Medallion\n|lucy_img_ID = 566\n|statsblock  = \nMAGIC ITEM<br>\nSlot: NECK<br>\nAC: 2<br>\nCHA: +9<br>\nSV DISEASE: +10<br>\nWT: 0.1  Size: SMALL<br>\nClass: ALL<br>\nRace: ALL<br>\n|dropsfrom = \n\n[[Northern Karana]]\n\n* [[Korvik the Cursed]]\n\n}}</onlyinclude>\n\n[[Category:Bard Equipment]]\n[[Category:Cleric Equipment]]\n[[Category:Druid Equipment]]\n[[Category:Enchanter Equipment]]\n[[Category:Magician Equipment]]\n[[Category:Monk Equipment]]\n[[Category:Necromancer Equipment]]\n[[Category:Paladin Equipment]]\n[[Category:Ranger Equipment]]\n[[Category:Rogue Equipment]]\n[[Category:Shaman Equipment]]\n[[Category:Shadow Knight Equipment]]\n[[Category:Warrior Equipment]]\n[[Category:Wizard Equipment]]\n[[Category:Neck]]\n[[Category:Northern Karana]]"
  },
  {
+  "title": "Handmaiden's Handwrap",
+  "content": ""
+ },
+ {
   "title": "High Quality Bear Pelt",
   "content": "{{Classic Era}}\n\n<onlyinclude>{{Itempage\n|notes       = Coveted for [[tailoring]].\n|itemname    = High Quality Bear Skin\n|lucy_img_ID = 554\n|statsblock  = \nWT: 4.0  Size: LARGE<br>\nClass: ALL<br>\nRace: ALL<br>\n|dropsfrom = \n\n[[Blackburrow]]\n\n* [[a grizzly bear]]\n\n[[East Commonlands]]\n* [[a black bear]]\n* [[a young kodiak]]\n\n[[Eastern Plains of Karana]]\n\n* [[a brown bear]]\n\n[[Everfrost Peaks]]\n\n* [[a glacier bear]]\n* [[a polar bear]]\n* [[a polar bear cub]]\n\n[[Misty Thicket]]\n\n* [[a young kodiak]]\n\n[[Nektulos Forest]]\n\n* [[a black bear]]\n* [[a young kodiak]]\n\n[[Northern Plains of Karana]]\n\n* [[a brown bear]]\n* [[a grizzly bear]]\n* [[A Rabid Grizzly]]\n\n[[Rathe Mountains]]\n\n* [[a black bear]]\n* [[a brown bear]]\n* [[a grizzly bear]]\n\n[[Qeynos Hills]]\n\n* [[a brown bear]]\n\n[[Southern Plains of Karana]]\n\n* [[a brown bear]]\n\n[[Surefall Glade]]\n\n* [[a bear cub]]\n\n[[The Feerrott]]\n\n* [[A Marsh Bear]]\n* [[a marsh bear cub]]\n\n[[West Commonlands]]\n\n* [[a black bear]]\n* [[a kodiak]]\n* [[a young kodiak]]\n\n[[Western Plains of Karana]]\n\n* [[a brown bear]]\n* [[a grizzly bear]]\n* [[A Rabid Grizzly]]\n\n|relatedquests = \n\n* [[Bearskin Gloves Quest]]\n* [[Bear Hide Armor]]\n\n\n|recipes = \n\n* [[Tailoring]]\n** [[Reinforced Armor]] (large sizes)(Trivial: 108)\n** [[Medium Quality Bear Skin]] (Trivial: 15)\n** [[Hand Made Backpack]] (Trivial: 88)\n\n}}</onlyinclude>\n\n[[Category:Tradeskill Ingredient]]\n\n[[Category:Quest Items]]"
  },
@@ -366,6 +378,10 @@
  {
   "title": "Jaelen`s Katana",
   "content": "{{Velious Era}}\n\n<onlyinclude>{{Itempage\n|notes       = {{Item Lore|Katana of the Chosen}} <br>\nConfirmed to proc at level 50, possibly even lower levels.\n|itemname    = Jaelen's Katana\n|lucy_img_ID = 890\n|statsblock  = \nMAGIC ITEM  LORE ITEM  NO DROP  <br>\nSlot: PRIMARY SECONDARY<br>\nSkill: 1H Slashing  Atk Delay: 19<br>\nDMG: 14 <br>\nSTR: +15  STA: +25  HP: +100<br>\nSV FIRE: +10  SV DISEASE: +10  SV COLD: +10  SV MAGIC: +10  SV POISON: +10<br>\nEffect: [[Strike of the Chosen]] (Combat, Casting Time: Instant)<br>\nWT: 1.0  Size: TINY<br>\nClass: WAR<br>\nRace: ALL<br>\n|dropsfrom = \n\n[[Temple of Veeshan]]\n\n* [[Vulak`Aerr]]\n\n}}</onlyinclude>\n\n[[Category:Warrior Equipment]]\n[[Category:Primary]]\n[[Category:Secondary]]\n[[Category:1H Slashing]]\n[[Category:Temple of Veeshan]]"
+ },
+ {
+  "title": "Jenni's Robe",
+  "content": ""
  },
  {
   "title": "King Cod Card",
@@ -500,6 +516,10 @@
   "content": "{{Classic Era}}\n\n<onlyinclude>{{Itempage\n|notes       = \n|itemname    = Medium Quality Bear Skin\n|lucy_img_ID = 554\n|statsblock  = \nQUEST ITEM<br>\nWT: 4.0  Size: LARGE<br>\nClass: ALL<br>\nRace: ALL<br>\n|dropsfrom = \n\n[[Commonlands]]\n\n* [[a black bear]]\n* [[a kodiak]]\n* [[a young kodiak]]\n\n[[Everfrost Peaks]]\n\n* [[a glacier bear]]\n* [[a polar bear]]\n* [[a polar bear cub]]\n\n[[Misty Thicket]]\n\n* [[a young kodiak]]\n\n[[Rathe Mountains]]\n\n* [[a black bear]]\n* [[a brown bear]]\n* [[a grizzly bear]]\n\n[[Nektulos Forest]]\n\n* [[a black bear]]\n* [[a young kodiak]]\n\n[[Permafrost]]\n\n* [[a giant polar bear]]\n\n[[Qeynos Hills]]\n\n* [[a brown bear]]\n\n[[Surefall Glade]]\n\n* [[a bear cub]]\n\n[[The Feerrott]]\n\n* [[A Marsh Bear]]\n* [[a marsh bear cub]]\n\n|relatedquests = \n\n* [[Bear Hide Armor]]\n* [[Upgraded Pelts]]\n\n|playercrafted = \n\n* [[Tailoring]] (Trivial: 15)\n** '''Yield: Medium Quality Bear Skin''' x1\n** In [[Sewing Kit]]:\n:: {{SmIcon|554}} 1 x [[High Quality Bear Skin]] - Quested, Dropped\n:: {{SmIcon|592}} 1 x [[Skinning Knife]] - Crafted, Returned on Failure, Returned on Success\n\n\n|recipes = \n\n* [[Tailoring]]\n** [[Low Quality Bear Skin]] (Trivial: 15)\n\n\n* [[Pottery]]\n** Recipe name(s)? (Trivial: ?)\n\n}}</onlyinclude>\n\n\n[[Category:Player Crafted]]\n[[Category:Tradeskill Ingredient]]\n\n[[Category:Quest Items]]"
  },
  {
+  "title": "Melanie's Robe",
+  "content": ""
+ },
+ {
   "title": "Melody of Ervaj",
   "content": "<noinclude>{{Classic Era}}</noinclude>\n{{Spellpagesmart|\n\n| spellname = Song: Melody of Ervaj\n| spellicon = 43\n| description = An archaic song that increases the attack speed of your group. This increase is cumulative with most other effects that increase attack speed.\n| Table = {{{Table|0}}}\n| TableLevel = {{{TableLevel|}}}\n\n| classes = \n\n* [[Bard]] - Level 50\n\n| slots = \n\n{{SpellSlotRowSmart | 1 | Increase Melee Haste by 5% | simple = {{#ifeq:{{{Table|0}}}|0|0|1}} }}\n{{SpellSlotRowSmart | 4 | Increase AC by 5 (L50) to 6 (L65) | simple = {{#ifeq:{{{Table|0}}}|0|0|1}} }}\n{{SpellSlotRowSmart | Enhanced by instrument? | '''Required''' | simple = {{#ifeq:{{{Table|0}}}|0|0|1}} }}\n\n| skill = [[Skill Brass | Brass]] †\n\n| mana = 0\n| range = 0\n| casting_time = 3.00\n| fizzle_time = 0.00\n| recast_time = 0.00\n| duration = 3 ticks\n| target_type = Group\n| spell_type = Beneficial\n| resist = Unresistable\n\n| other = \n\n* '''Focus:''' [[Horn]]\n\n| msg_cast_on_you = A song of inspiration fills your weapon arm with strength.\n| msg_cast_on_other =  \n| msg_wears_off = The inspiration fades.\n\n| where_to_obtain = \n\n<ul>\n<li>[[Bard#Song_Vendors|Bard Song Vendors]]</li>\n</ul>\n}}"
  },
@@ -592,6 +612,26 @@
   "content": ""
  },
  {
+  "title": "Pyrosilk Gloves",
+  "content": ""
+ },
+ {
+  "title": "Pyrosilk Leggings",
+  "content": ""
+ },
+ {
+  "title": "Pyrosilk Lined Shoes",
+  "content": ""
+ },
+ {
+  "title": "Pyrosilk Sash",
+  "content": ""
+ },
+ {
+  "title": "Pyrosilk Veil",
+  "content": ""
+ },
+ {
   "title": "Rare Leaf",
   "content": "{{Kunark Era}}\n\n<onlyinclude>{{Itempage\n|notes       = Ironically not that rare. \n\nNo known use.\n|itemname    = A Rare Leaf\n|lucy_img_ID = 795\n|statsblock  = \nWT: 0.1  Size: TINY<br>\nClass: NONE<br>\nRace: NONE<br>\n|dropsfrom = \n\n[[The Overthere]]\n\n* [[a barbed succulent]]\n* [[a bristly succulent]]\n* [[a thorny succulent]]\n\n|foraged = \n\n* [[The Overthere]]\n\n}}</onlyinclude>\n\n\n[[Category:Foraged]]\n[[Category:The Overthere]]"
  },
@@ -634,6 +674,10 @@
  {
   "title": "Research",
   "content": "{{delete}}\n#REDIRECT [[Skill Research]]"
+ },
+ {
+  "title": "Ring of the Eldest",
+  "content": ""
  },
  {
   "title": "Ringmail Armor",
@@ -684,6 +728,10 @@
   "content": "<onlyinclude>{{Itempage\n|notes       = \n|itemname    = A Scarlet Stone\n|lucy_img_ID = 964\n|statsblock  = \nLORE ITEM<br>\nWT: 0.1  Size: TINY<br>\nClass: ALL<br>\nRace: ALL<br>\n|dropsfrom = \n\n[[Firiona Vie]]\n* [[a drolvarg scavenger]]\n** Dropped twice 2015/07/04: Called \"A Scarlet Stone\" which identifies as \"Sulfur Stone\"\n|relatedquests = \n\n* [[Monk Shackle Quests|Shackle of Bronze]]\n\n}}</onlyinclude>\n\n\n[[Category:Firiona Vie]]\n\n[[Category:Quest Items]]"
  },
  {
+  "title": "Scars of the Indominable",
+  "content": ""
+ },
+ {
   "title": "Scribbled Prisoner's Note",
   "content": ""
  },
@@ -702,6 +750,10 @@
  {
   "title": "Shadowed Knife",
   "content": "{{Temple Era}}\n<onlyinclude>{{Itempage\n|notes       = {{Item Lore Missing}}\n|itemname    = A shadowed knife\n|lucy_img_ID = 592\n|statsblock  = \nMAGIC ITEM  LORE ITEM  NO DROP  <br>\nSlot: PRIMARY<br>\nSkill: Piercing  Atk Delay: 20<br>\nDMG: 3 <br>\nINT: +2<br>\nSV COLD: +2<br>\nWT: 2.5  Size: SMALL<br>\nClass: SHD NEC<br>\nRace: ALL<br>\n|dropsfrom = \n\n\n[[Ocean of Tears]]\n\n* [[a goblin headmaster]]\n\n|relatedquests = \n\n* [[The Harvester]]\n\n}}</onlyinclude>\n\n[[Category:Necromancer Equipment]]\n[[Category:Shadow Knight Equipment]]\n[[Category:Primary]]\n[[Category:Piercing]]\n[[Category:Lesser Faydark]]\n[[Category:Ocean of Tears]]\n\n[[Category:Quest Items]]"
+ },
+ {
+  "title": "Shelia's Robe",
+  "content": ""
  },
  {
   "title": "Shield of Thorns",
@@ -790,10 +842,6 @@
  {
   "title": "Small Cloth Armor Set",
   "content": "{{delete}} not relevent in EQ legends\n{{Classic Era}}\n{{Disambig3|[[Cloth Armor Set]]}} {{Disambig3|[[Large Cloth Armor Set]]}}\n\nThe Small Cloth Armor Set consists of 13 pieces for 23 AC. It can be worn by members who are one of both the following races and classes\n\n[[Classes]]: All Classes\n\n[[Races]]: [[ELF]], [[HIE]], [[DEF]], [[DWF]], [[HFL]], [[GNM]]\n\n{{Gear Set\n|Small Cloth Shirt\n|Small Cloth Sleeves\n|Small Cloth Pants\n|Small Cloth Gloves\n|Small Cloth Sandals\n|Small Cloth Cord\n|Small Cloth Wristband\n|Small Cloth Cap\n|Small Cloth Shawl\n|Small Cloth Veil\n}}\n\n\n[[Category:Armor Sets]]"
- },
- {
-  "title": "Small Cloth Choker",
-  "content": "{{Delete}} no longer relevent"
  },
  {
   "title": "Small Iron Visor",
@@ -1014,6 +1062,10 @@
  {
   "title": "Uliorn`s Fishing Pole",
   "content": "{{Classic Era}}\n\n<onlyinclude>{{Itempage\n|notes       = Note: This pole can be used for [[fishing]], but be warned: it can break, just like any other pole!\n|itemname    = Uliorn's Fishing Pole\n|lucy_img_ID = 749\n|statsblock  = \nMAGIC ITEM  NO DROP  <br>\nSlot: PRIMARY SECONDARY<br>\nSkill Mod: Fishing +2%  (4 Max)<br>\nDEX: +3  STA: +2  INT: +3<br>\nWT: 1.3  Size: MEDIUM<br>\nClass: MAG<br>\nRace: ALL<br>\n|dropsfrom = \n\n[[The Warrens]]\n\n* [[The Muglwump]]\n\n}}</onlyinclude>\n\n[[Category:Magician Equipment]]\n[[Category:Primary]]\n[[Category:Secondary]]\n[[Category:The Warrens]]"
+ },
+ {
+  "title": "Unstoppable Girdle",
+  "content": ""
  },
  {
   "title": "Upheaval",
