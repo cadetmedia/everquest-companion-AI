@@ -265,7 +265,23 @@ export function routePopup(p: QuestPopup, targets: readonly RouteTarget[], ctx: 
   const chained = Object.entries(ctx.attached ?? {}).find(([, list]) => list.some((x) => x.next !== undefined && namesWindow(x.next, p.title)))
   const chainHit = chained === undefined ? undefined : byKey.get(chained[0])
   if (chainHit !== undefined) return { hit: chainHit, why: 'chain', ranked }
+  const prize = rewardByOrdinal(p, targets)
+  const prizeHit = prize === undefined ? undefined : byKey.get(prize.key)
+  if (prizeHit !== undefined) return { hit: prizeHit, why: 'ordinal', ranked }
   return { why: 'none', ranked: movePicks(ranked, ctx) }
+}
+
+/**
+ * A reward window that names nothing a quest carries goes by the ordinal it states, among the quests and
+ * chains that end in a hand-in, in the order they started: "Your first quest reward!" to the first, "a
+ * second pair of Boots" to the second. The tutorial's boots print no item line, so no chain names them.
+ */
+function rewardByOrdinal(p: QuestPopup, targets: readonly RouteTarget[]): RouteTarget | undefined {
+  if ((p.rewards ?? []).length === 0 && p.experience !== true) return undefined
+  const nth = ordinalOf(popupText(p))
+  if (nth === undefined) return undefined
+  const done = targets.filter((t) => t.steps.some((s) => s.kind === 'handin')).sort((a, b) => a.startMs - b.startMs)
+  return done[nth]
 }
 
 /** Letters only, lower case: a nameplate read through OCR's slips. */

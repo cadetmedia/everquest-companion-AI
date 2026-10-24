@@ -10,7 +10,7 @@ import { withForcedQuests, type TalkSnap } from '@shared/gapForcedQuests'
 import { pictureFile } from '@shared/mobPicture'
 import { movePicksBut, nameplateRow, pictureKind, pictureRows, questTargets, routePopup, threadTargets, type RouteHit, type ThreadLike } from '@shared/pasteRoute'
 import { journalPlaces } from '@shared/questJournal'
-import { readPopup, withPopup, withoutPopup, type QuestPopup } from '@shared/questPopup'
+import { popupRead, readPopup, withPopup, withoutPopup, type QuestPopup } from '@shared/questPopup'
 import { fileOneCapture } from './CaptureBar'
 import { questJournalByKey, setMobPicture, setQuestJournal } from './itemShotsStore'
 import { keepJournal, thumbOf } from './QuestShot'
@@ -135,7 +135,7 @@ export async function readAndRoute(png: Uint8Array, journals: Readonly<Record<st
 async function classifyAndRoute(png: Uint8Array, journals: Readonly<Record<string, QuestJournalFacts>>): Promise<Outcome> {
   const look = await window.eq.shotReadText(png, 'popup')
   if (look.error !== undefined) return { kind: 'error', text: look.error }
-  const popup = readPopup({ lines: look.lines, tops: look.tops ?? [], heights: look.heights ?? [], tones: look.tones ?? [], ...(look.leads === undefined ? {} : { leads: look.leads }) })
+  const popup = readPopup(popupRead(look))
   const kind = pictureKind(look.lines, popup)
   if (kind === 'journal') return journal(png)
   if (kind === 'item') return itemWindow(png)

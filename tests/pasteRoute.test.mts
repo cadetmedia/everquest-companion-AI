@@ -6,7 +6,7 @@ import assert from 'node:assert/strict'
 import { join } from 'node:path'
 import { readPopupLines } from '../src/main/shot/popupLines.ts'
 import { stopOcr } from '../src/main/shot/ocr.ts'
-import { readPopup, type QuestPopup } from '../src/shared/questPopup.ts'
+import { popupRead, readPopup, type QuestPopup } from '../src/shared/questPopup.ts'
 import { nameplateRow, namesIn, ordinalOf, pictureKind, placesKey, routePopup, threadTargets, type ThreadLike } from '../src/shared/pasteRoute.ts'
 import { readPng } from './shotPng.mts'
 
@@ -162,4 +162,17 @@ test('placesKey moves when a Quests row or a chain appears, and only then', () =
   assert.equal(a, placesKey([...rows, { domain: 'item' }], [{ id: 't1' }]))
   assert.notEqual(a, placesKey([...rows, { domain: 'quest' }], [{ id: 't1' }]))
   assert.notEqual(a, placesKey(rows, [{ id: 't1' }, { id: 't2' }]))
+})
+
+test('reward windows on chains with no reward line (as the engine serves the tutorial): by the ordinal, read through the app path', async () => {
+  const bare = threadTargets(THREADS.map(({ rewards: _r, ...t }) => t))
+  // The app's reply: main's whole popup read, through popupRead (the item-link flags and the title bar kept).
+  const viaApp = async (file: string): Promise<QuestPopup | null> => readPopup(popupRead({ ...(await readPopupLines(readPng(join(SHOTS, file)))) }))
+  const reward = await viaApp('popup-tutorial-first-quest-reward.png')
+  const merging = await viaApp('popup-tutorial-item-merging.png')
+  const spells = await viaApp('popup-tutorial-spells.png')
+  assert.deepEqual(reward?.rewards, ['Boots of the Long Road'])
+  assert.equal(spells?.title, 'Spells')
+  assert.equal(routePopup(reward as QuestPopup, bare).hit?.key, 'thread:Doug@1')
+  assert.equal(routePopup(merging as QuestPopup, bare).hit?.key, 'thread:Doug@2')
 })

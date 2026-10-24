@@ -401,3 +401,21 @@ export function popupLinksOfRows(rows: readonly { domain: string; name: string }
     return link === null ? [] : [link]
   })
 }
+
+/**
+ * Main's popup read as the reader takes it, every part kept: the item-link flags (a reward) and the title
+ * bar read on its own. The app once passed only the lines and colours, so no popup had a reward in the app
+ * while the tests (which call the reader directly) did.
+ */
+export function popupRead(look: { lines: string[]; tops?: number[]; heights?: number[]; tones?: PopupLineRead['tones']; leads?: PopupLineRead['tones']; items?: boolean[]; titleLines?: string[]; titleBottom?: number }): PopupLineRead {
+  return {
+    lines: look.lines,
+    tops: look.tops ?? [],
+    heights: look.heights ?? [],
+    tones: look.tones ?? [],
+    ...(look.leads === undefined ? {} : { leads: look.leads }),
+    ...(look.items === undefined ? {} : { items: look.items }),
+    ...(look.titleLines === undefined ? {} : { titleLines: look.titleLines }),
+    ...(look.titleBottom === undefined ? {} : { titleBottom: look.titleBottom })
+  }
+}
