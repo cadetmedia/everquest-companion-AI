@@ -124,7 +124,10 @@ export function questLogFromThread(t: QuestThread): QuestLog {
   const handed = handedCounts(t)
   // A kill whose mob a later loot names is said in that loot's line.
   const killed = new Set(t.steps.flatMap((s) => (s.kind === 'loot' && s.mob !== undefined ? [s.mob] : [])))
-  const steps = t.steps.filter((s) => !(s.kind === 'kill' && s.mob !== undefined && killed.has(s.mob)))
+  // A keyword said to the wrong NPC, answered only with "go ask X for 'kw'", is the next step's to say.
+  const redirected = new Set(t.steps.flatMap((s) => (s.links ?? []).filter((l) => l.why === 'goask').map((l) => l.from)))
+  const resaid = (s: ThreadStep): boolean => s.kind === 'talk' && redirected.has(s.id) && t.steps.some((n) => n.kind === 'talk' && n.npc !== s.npc && n.said?.[0] === s.said?.[0])
+  const steps = t.steps.filter((s) => !(s.kind === 'kill' && s.mob !== undefined && killed.has(s.mob)) && !resaid(s))
   return { giver: t.giver, zone: t.zone ?? null, npcs, steps: steps.map((s) => questStep(s, handed, killed)), reruns: 0, forced: true }
 }
 

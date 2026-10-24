@@ -47,3 +47,21 @@ test("an accepted chain's page: Summary in the chain's order, the kill and loot 
   assert.ok(page.indexOf("Hand 6 [[Fragile Pet's Skull]]") < page.indexOf('Here, take these boots!'), page)
   assert.ok(page.includes('{{YouGainExperience}}'), page)
 })
+
+test("a keyword said to the wrong NPC, answered only with 'go ask X', is not a step of its own", () => {
+  const redirect: QuestThread = {
+    id: 'Doug@1:ask:Doug:more work',
+    name: 'Doug: more work',
+    giver: 'Doug',
+    zone: 'EverQuest Legends Tutorial',
+    startMs: 1,
+    endMs: 2,
+    steps: [
+      { id: 'ask:Old Doug:more work', at: 't1', ms: 1, kind: 'talk', why: 'start', npc: 'Old Doug', said: ['more work'], lines: [{ who: 'You', text: 'more work' }, { who: 'Old Doug', text: "Go ask my son Doug for 'more work'!" }] },
+      { id: 'ask:Doug:more work', at: 't2', ms: 2, kind: 'talk', why: 'goask', npc: 'Doug', said: ['more work'], links: [{ from: 'ask:Old Doug:more work', why: 'goask', detail: "go ask Doug for 'more work'" }], lines: [{ who: 'You', text: 'more work' }, { who: 'Doug', text: 'Go up the stairs.' }] }
+    ]
+  }
+  const page = questDraftPage('Doug: more work', questLogFromThread(redirect))
+  assert.ok(!page.includes("* Say 'more work' to [[Old Doug]]"), page)
+  assert.ok(page.includes("* Say 'more work' to [[Doug]]"), page)
+})
