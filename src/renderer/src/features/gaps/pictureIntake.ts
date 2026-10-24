@@ -31,6 +31,8 @@ export interface Outcome {
   move?: { popup: QuestPopup; from: string; picks: RouteHit[] }
   /** A nameplate: the save the player may ask for, never done on its own. */
   save?: { label: string; run: () => Promise<string> }
+  /** "Reading …" while a batch runs: not shown again once the player has closed the note. */
+  progress?: true
 }
 
 export const pictureLog = (line: string): void => window.eq.pictureLog(line)

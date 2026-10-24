@@ -64,9 +64,23 @@ function Row({ popup }: { popup: QuestPopup }): JSX.Element {
   )
 }
 
-/** Opens the list from anywhere (the paste note's button). */
+/** Opens the list from anywhere (the paste note's button, the Quests tab's line). */
 let opener: (() => void) | null = null
 export const openUnsorted = (): void => opener?.()
+
+/** The Quests tab's standing way in: "3 pictures matched no quest. Open". Nothing when none wait. */
+export function UnsortedLine(): JSX.Element | null {
+  const n = useQuestJournals()[UNSORTED]?.popups?.length ?? 0
+  if (n === 0) return null
+  return (
+    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }} data-testid="unsorted-line">
+      {n} picture{n === 1 ? '' : 's'} matched no quest.{' '}
+      <Button size="small" onClick={openUnsorted}>
+        Open
+      </Button>
+    </Typography>
+  )
+}
 
 export default function UnsortedPictures(): JSX.Element {
   const [open, setOpen] = useState(false)
