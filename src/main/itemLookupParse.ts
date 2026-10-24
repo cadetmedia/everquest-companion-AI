@@ -175,6 +175,7 @@ import { itemBaseName, parseStatsBlock, type ItemStatBlock } from '../shared/ite
 // category reader below. What a token MEANS is still decided only in shared/planner/era.ts.
 import { namesEra } from '../shared/planner/era'
 import { stripFormatChars } from '../shared/wikiTitle'
+import { isUnfilledItemBlueprint } from './itemBlueprint'
 
 /** Strip a trailing ` +N` upgrade suffix. Applied before lookup + as the cache key. ONE
  *  definition of the rule for every main-side caller — see shared/itemStats.itemBaseName. */
@@ -934,6 +935,7 @@ export function parseItemWikitext(
   | 'foragedNote'
   | 'foragedCategory'
 > {
+  if (isUnfilledItemBlueprint(wikitext)) return { lore: false, quest: false, questUses: [], dropsFrom: [], iconId: parseIconId(templateField(wikitext, 'lucy_img_ID')), eraTag: pageEraTag(wikitext) }
   const statsBlock = templateField(wikitext, 'statsblock') ?? undefined
   const relatedRaw = templateField(wikitext, 'relatedquests')
   const notesRaw = templateField(wikitext, 'notes')

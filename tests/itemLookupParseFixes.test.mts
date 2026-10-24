@@ -3,6 +3,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { cleanSummary, parseItemWikitext, parseQuestLinks, templateField } from '../src/main/itemLookupParse'
+import { isUnfilledItemBlueprint } from '../src/main/itemBlueprint'
 
 const LARGE_SKY_LAPIS = `<onlyinclude>{{Itempage
 |itemname = Large Sky Lapis
@@ -147,4 +148,28 @@ test('|foraged: only a bullet opening with a link names zones, comments are neve
   assert.deepEqual(k.foraged, ['Misty Thicket', 'Kedge Keep'])
   assert.equal(k.foragedNote, 'Can be foraged anywhere with the Forage skill; {{Zone|Lake Rathetear}}')
   assert.equal(k.foragedCategory, undefined)
+})
+
+// Cloak of Treason as the wiki held it on 2026-10-24: the Item Page Blueprint, saved unfilled.
+const BLUEPRINT = `{{Classic Era}}
+<onlyinclude>{{Itempage
+|itemname = Cloak of Treason
+|lucy_img_ID = 1234
+|statsblock =
+Attunable, Lore Equipped, Lore Item, No Trade, Placeable, Quest, Heirloom, Free Storage, No Destroy<br>
+Slot: PRIMARY / SECONDARY / RANGE / AMMO / ANY / ARMS / BACK / CHEST/ EAR / FACE / FEET / FINGER / HANDS / HEAD / LEGS / NECK / SHOULDERS / WAIST/ WRIST<br>
+STR: +?  STA: +?<br>
+|dropsfrom =
+[[Zone_Name]]
+* [[Mob_Name]]
+|relatedquests =
+* [[Quest_Name]]
+}}</onlyinclude>`
+
+test('AN UNFILLED ITEM BLUEPRINT STATES NOTHING: NO SLOTS, STATS, DROPS OR QUESTS, ONLY ITS ERA AND ICON', () => {
+  assert.equal(isUnfilledItemBlueprint(BLUEPRINT), true)
+  const r = parseItemWikitext('Cloak of Treason', BLUEPRINT)
+  assert.deepEqual(r, { lore: false, quest: false, questUses: [], dropsFrom: [], iconId: 1234, eraTag: 'Classic' })
+  // A real page that names a mob is no blueprint.
+  assert.equal(isUnfilledItemBlueprint(BLUEPRINT.replace(/Mob_Name/, 'Lord Rikantus Everling').replace(/Zone_Name/, 'Nektropos Castle').replace(/Quest_Name/, 'The Betrayer').replace(/Slot: PRIMARY[^<]*/, 'Slot: BACK')), false)
 })
