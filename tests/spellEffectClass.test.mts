@@ -447,11 +447,13 @@ test('JOS-251 R4e: the scrape captured an effect list for all but four spells', 
   // spell does nothing" (the scrape writes the field absent rather than `[]` for exactly that
   // reason), and a silent jump here would be the derived charm, mez and pet rosters quietly
   // losing members.
+  // 3 -> 5 (2026-10-24 delta): Familiar: Gelatinous Cube's new page has no slot table yet, and
+  // Illusion: Half Dark Elf is an unfilled blueprint the scraper reads as stating nothing.
   assert.deepEqual(
     RAW.filter((s) => !s.effects?.length).map((s) => s.name).sort(),
-    ['Improved Vampirism II', 'Improved Vampirism III', 'Instill']
+    ['Familiar: Gelatinous Cube', 'Illusion: Half Dark Elf', 'Improved Vampirism II', 'Improved Vampirism III', 'Instill']
   )
-  assert.equal(RAW.length - file.withEffects!, 3, 'exactly three pages state no slot table at all')
+  assert.equal(RAW.length - file.withEffects!, 5, 'exactly five pages state no slot table at all')
   assert.equal(RAW.filter((s) => s.instrumentEnhanced).length, 79, 'the bard pages')
 })
 
