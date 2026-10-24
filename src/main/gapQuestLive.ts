@@ -56,7 +56,8 @@ export function readQuestPage(title: string): Promise<LiveQuestPage | null> {
     const page = await pageOrBare(title)
     const target = page === null || page.text === '' ? undefined : stubLinkTarget(page.title, page.text)
     const read = page === null || target === undefined ? page : await stubTarget(page, target)
-    return read === null || read.text === '' ? read : { ...read, itemPages: itemPagesNear(read.text) }
+    const near = read === null || read.text === '' ? [] : itemPagesNear(read.text)
+    return read === null || near.length === 0 ? read : { ...read, itemPages: near }
   })
 }
 
