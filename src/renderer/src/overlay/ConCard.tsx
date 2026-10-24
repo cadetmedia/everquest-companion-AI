@@ -198,11 +198,19 @@ function Standing({ payload }: { payload: ConCardPayload }): JSX.Element | null 
 
 /**
  * WHAT A KILL DOES TO YOUR FACTIONS (owner, 2026-10-23), as the mob's wiki page states it: green for a
- * raise, red for a drop, in the rung colours above. The tag says where the numbers came from.
+ * raise, red for a drop, in the rung colours above. The tag says where the numbers came from. A mob
+ * whose page names none says so (owner, 2026-10-23: "when we don't know the faction say Factions:
+ * Unknown").
  */
-function KillHits({ payload }: { payload: ConCardPayload }): JSX.Element | null {
+function KillHits({ payload }: { payload: ConCardPayload }): JSX.Element {
   const hits = payload.killHits ?? []
-  if (hits.length === 0) return null
+  if (hits.length === 0) {
+    return (
+      <div data-testid="con-card-kill-hits" style={{ fontSize: 12, marginTop: 2, color: DIM }}>
+        Factions: Unknown
+      </div>
+    )
+  }
   const hue = (raises: boolean | undefined): string =>
     raises === undefined ? MUTED : CONSIDER_FACTION_COLOR[raises ? 'ally' : 'scowls']
   return (
