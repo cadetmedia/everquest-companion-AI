@@ -45,6 +45,16 @@ pub struct Step {
     pub achievements: Vec<String>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub links: Vec<Link>,
+    /// A hand-in's requirement per trade, and how many trades repeated it.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub per_trade: Vec<Item>,
+    #[serde(skip_serializing_if = "is_one_or_less")]
+    pub trades: u32,
+}
+
+#[allow(clippy::trivially_copy_pass_by_ref)]
+fn is_one_or_less(n: &u32) -> bool {
+    *n <= 1
 }
 
 #[derive(Serialize, Clone, Debug)]
@@ -214,6 +224,8 @@ fn step(nodes: &[Node], es: &[Edge], set: &HashSet<usize>, i: usize) -> Step {
         items: items_of(&n.items),
         mob: n.mob.clone(),
         count: (n.kind == Kind::Kill).then_some(n.count),
+        per_trade: items_of(&n.per_trade),
+        trades: n.trades,
         experience: n.experience,
         factions: n.factions.clone(),
         achievements: n.achievements.clone(),
