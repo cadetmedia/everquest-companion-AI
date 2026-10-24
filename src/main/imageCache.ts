@@ -83,6 +83,7 @@ import { logConsoleError, logInfo, logWarn } from './errorLog'
 // instead of logging an error. `telemetry/health.ts` imports nothing at all, so this cannot close
 // a cycle; see its header.
 import { noteImageCacheReadFailure, noteImageFetchFailure } from './telemetry/health'
+import { recordAppWikiCall, WIKI_UA } from './wikiUsage'
 
 /** The scheme the renderer asks for. */
 export const EQIMG_SCHEME = 'eqimg'
@@ -90,8 +91,8 @@ export const EQIMG_SCHEME = 'eqimg'
 /** Cache directory, relative to the channel's userData root. */
 export const IMAGE_CACHE_DIR_NAME = 'image-cache'
 
-/** Same polite identity every scraper in this repo sends (AGENTS.md scraper etiquette). */
-const UA = 'everquest-companion/0.1 (personal quest tracker)'
+/** The fork's identity, the one every app request to a wiki sends (wikiUsage.ts, owner 2026-10-23). */
+const UA = WIKI_UA
 
 const FETCH_TIMEOUT_MS = 10_000
 
@@ -691,6 +692,10 @@ export function installImageCacheProtocol(protocol: ProtocolLike, opts: ImageCac
     // NOTE: for the `url` route this is the ALREADY-ALLOWLISTED, normalized URL. `parseEqImgUrl`
     // is the only producer of an EqImgRequest, so nothing unvalidated can reach this fetch.
     const url = upstreamUrlFor(req)
+    const t0 = Date.now()
+    // Every download is counted in this machine's wiki ledger (wikiUsage.ts).
+    const note = (status: number | null, bytes = 0): void =>
+      recordAppWikiCall({ feature: 'images', kind: 'file', url, status, bytes, ms: Date.now() - t0 })
     let res: Response
     try {
       res = await doFetch(url, {
@@ -698,9 +703,11 @@ export function installImageCacheProtocol(protocol: ProtocolLike, opts: ImageCac
         signal: AbortSignal.timeout(FETCH_TIMEOUT_MS)
       })
     } catch (err) {
+      note(null)
       return fetchUnreachable(url, err, warn)
     }
     if (!res.ok) {
+      note(res.status)
       // THE HOST ANSWERED, AND SAID NO. Still an error, deliberately (JOS-133): a status means we
       // asked for something that is not there, which is a fact about this app's own data. And
       // since JOS-198 it is remembered for the session, so the renderer re-mounting that `<img>`
@@ -712,7 +719,9 @@ export function installImageCacheProtocol(protocol: ProtocolLike, opts: ImageCac
     let bytes: Uint8Array
     try {
       bytes = new Uint8Array(await res.arrayBuffer())
+      note(res.status, bytes.length)
     } catch (err) {
+      note(res.status)
       // The same leg, cut off mid-body (the timeout, a reset). Uncaught, it rejected the request
       // that every waiter on this image shares, past the counter.
       return fetchUnreachable(url, err, warn)
