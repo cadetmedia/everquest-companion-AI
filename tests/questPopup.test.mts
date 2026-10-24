@@ -205,3 +205,17 @@ test('Your first quest!: an instruction that opens in orange and runs on in whit
   assert.equal(p.steps.length, 1, JSON.stringify(p.steps))
   assert.match(p.steps[0], /^Continue to talk with Doug\b/)
 })
+
+test('a reward window follows the hand-in that earned it, in the walkthrough and the Summary; the others lead', async () => {
+  const nav = await popupOf('popup-tutorial-navigation.png')
+  const merge = await popupOf('popup-tutorial-item-merging.png')
+  const log: QuestLog = {
+    giver: 'Dead Doug', zone: 'EverQuest Legends Tutorial', npcs: ['Dead Doug'], reruns: 0,
+    steps: [{ at: '2026-10-23 18:00:00', kind: 'updated', npc: 'Dead Doug', offered: ["Fragile Pet's Skull"] }]
+  }
+  const page = questDraftPage('Bones', log, { journal: { popups: [merge as QuestPopup, nav as QuestPopup] } })
+  const at = (s: string): number => page.indexOf(s)
+  assert.ok(at("'''Navigation'''") < at("Hand [[Fragile Pet's Skull]]"), 'a guide window leads')
+  assert.ok(at("Hand [[Fragile Pet's Skull]]") < at("'''Why would I need 4 boots?! Item Merging'''"), 'the reward window follows the hand-in')
+  assert.ok(at('* Give [[Fragile Pet') < at('* Merge your two sets of boots!'), 'its instruction ends the Summary')
+})

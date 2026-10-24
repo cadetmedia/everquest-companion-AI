@@ -120,7 +120,7 @@ function checkLine(s: QuestStep, c: QuestPageContext): string | undefined {
 
 function summarySection(name: string, log: QuestLog, c: QuestPageContext): string {
   // A pasted popup's instructions come first: the tutorial shows them before the talk (questPopup.ts).
-  const lines = [...popupCheckLines(c.journal?.popups), ...ownSteps(log).map((s) => checkLine(s, c)).filter((l): l is string => l !== undefined)]
+  const lines = [...popupCheckLines(c.journal?.popups, 'lead'), ...ownSteps(log).map((s) => checkLine(s, c)).filter((l): l is string => l !== undefined), ...popupCheckLines(c.journal?.popups, 'after')]
   const next = questRewards(log)?.next
   if (next !== undefined) lines.push(`* Receive the [[${next}]] quest.`)
   if (lines.length === 0) lines.push(`* Finish ${name}.`)
@@ -186,7 +186,7 @@ function walkStep(name: string, s: QuestStep, c: QuestPageContext): WalkBlock[] 
 export function questWalkBlocks(name: string, log: QuestLog, c: QuestPageContext = {}): WalkBlock[] {
   const seen = new Set<string>()
   // Pasted popup windows lead, in paste order: the tutorial shows each before the talk it sends you to.
-  const out: WalkBlock[] = [...popupWalkBlocks(c.journal?.popups)]
+  const out: WalkBlock[] = [...popupWalkBlocks(c.journal?.popups, 'lead')]
   /** A task line already written this second, or the line just written. */
   const repeat = (at: string, b: WalkBlock): boolean => {
     const prev = out[out.length - 1]
@@ -198,7 +198,8 @@ export function questWalkBlocks(name: string, log: QuestLog, c: QuestPageContext
   for (const s of ownSteps(log)) {
     for (const b of walkStep(name, s, c)) if (b.kind !== 'task' || !repeat(s.at, b)) out.push(b)
   }
-  return out
+  // A reward window follows the hand-in that earned it.
+  return [...out, ...popupWalkBlocks(c.journal?.popups, 'after')]
 }
 
 /**
