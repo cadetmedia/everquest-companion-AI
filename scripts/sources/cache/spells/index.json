@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-23T11:30:09.046Z",
+  "updatedAt": "2026-10-24T12:42:26.299Z",
   "revs": {
     "45502": 165835,
     "46874": 192869,
@@ -2049,7 +2049,11 @@
     "60567": 176738,
     "60656": 178166,
     "72728": 198885,
-    "72729": 198886
+    "72729": 198886,
+    "72860": 199169,
+    "72922": 199373,
+    "72923": 199374,
+    "72927": 199388
   },
   "titles": {
     "45502": "Anthem de Arms",
@@ -4100,6 +4104,10 @@
     "60567": "Reanimation Efficiency III",
     "60656": "Wind Resonance 8",
     "72728": "Pet Illusion: Werewolf",
-    "72729": "Summon Familiar: Werewolf"
+    "72729": "Summon Familiar: Werewolf",
+    "72860": "Illusion: Half Dark Elf",
+    "72922": "Pet Illusion: Mummy",
+    "72923": "Summon Familiar: Mummy",
+    "72927": "Familiar: Gelatinous Cube"
   }
 }

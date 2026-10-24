@@ -1,6 +1,6 @@
 {
  "source": "eqlwiki.com — |respawn_time on every page in the committed mob catalog",
- "scrapedAt": "2026-10-23",
+ "scrapedAt": "2026-10-24",
  "rows": [
   {
    "key": "a alchemist`s acolyte",
@@ -1205,6 +1205,12 @@
    "page": "Derasinal",
    "text": "8 Hours",
    "seconds": 28800
+  },
+  {
+   "key": "discarded experiment",
+   "page": "Discarded Experiment",
+   "text": "12 min",
+   "seconds": 720
   },
   {
    "key": "doldigun steinwielder",
