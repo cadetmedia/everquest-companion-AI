@@ -244,7 +244,10 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   stays open for the player's screenshot. Blueprints:
   https://eqlwiki.com/Help:Contents#Item_Page_Blueprint, #NPC_Page_Blueprint,
   #Merchant_Page_Blueprint, #Spell_Page_Blueprint. Model output on real cached pages (Fire Beetle
-  Eye), not on the blueprint.
+  Eye), not on the blueprint. The other half of the rule (owner, 2026-10-23: "if we can get it from
+  the screenshots or log we need to put it into the item right?"): every fact a screenshot or the
+  log gives goes on the page, in the form the wiki's own pages write it (categories, the full click
+  line, Pet Illusion, drops, vendors, quests); a field left out needs a stated reason.
 - Drop rates go on the MOB's page, per `known_loot` item and per group line, as the wiki's own
   spans: `<span class='drare'>(Rare)</span> <span class='ddb'>[Overall: ~12.5%]</span>` (owner,
   2026-10-18: the drare word from the bands the wiki's 9,806 lines use); never the wiki's
