@@ -38,34 +38,38 @@ fn ids(threads: &Value, prefix: &str) -> Vec<String> {
 
 fn tutorial() -> Threads {
     let mut t = Threads::default();
-    you(&mut t, 0, "Hail, Doug");
-    said(&mut t, 0, "Doug", "Hail and well met, Soandso. If you'd like to help me with a couple of errands, [let's talk]. If you've already helped my father and still need [more work], just say the word!");
-    you(&mut t, 5, "let's talk");
-    said(&mut t, 5, "Doug", "Let's stretch out those legs a bit. Go talk to my old man in the cave to the south.");
-    you(&mut t, 9, "what else");
-    you(&mut t, 12, "more work");
-    said(&mut t, 12, "Doug", "Could you do just one more thing for me? Go up the stairs and check on my grandfather, the dead one.");
+    tutorial_on(&mut t);
+    t
+}
+
+fn tutorial_on(t: &mut Threads) {
+    you(t, 0, "Hail, Doug");
+    said(t, 0, "Doug", "Hail and well met, Soandso. If you'd like to help me with a couple of errands, [let's talk]. If you've already helped my father and still need [more work], just say the word!");
+    you(t, 5, "let's talk");
+    said(t, 5, "Doug", "Let's stretch out those legs a bit. Go talk to my old man in the cave to the south.");
+    you(t, 9, "what else");
+    you(t, 12, "more work");
+    said(t, 12, "Doug", "Could you do just one more thing for me? Go up the stairs and check on my grandfather, the dead one.");
     // The bones first, before Dead Doug says a word about them.
     t.kill("a fragile pet", ms(20), "t20", Some("EverQuest Legends Tutorial"));
     t.loot("Fragile Pet's Skull", "a fragile pet", ms(22), "t22");
     // The supplies errand, between the two halves of the bones one.
-    you(&mut t, 40, "Hail, Old Doug");
-    said(&mut t, 40, "Old Doug", "Oh ho! Did my son send you ta [help] me?");
-    you(&mut t, 42, "help");
-    said(&mut t, 42, "Old Doug", "If you could head down there and pick up my weekly [supplies] for me, it'd be most appreciated.");
-    you(&mut t, 44, "supplies");
-    said(&mut t, 44, "Old Doug", "I imagine that Dougina, the merchant down at Meeks Depot, has it all packaged up for me.");
-    said(&mut t, 50, "Dougina", "Welcome to my shop, Soandso. You would probably find a Decorative Mask handy.");
+    you(t, 40, "Hail, Old Doug");
+    said(t, 40, "Old Doug", "Oh ho! Did my son send you ta [help] me?");
+    you(t, 42, "help");
+    said(t, 42, "Old Doug", "If you could head down there and pick up my weekly [supplies] for me, it'd be most appreciated.");
+    you(t, 44, "supplies");
+    said(t, 44, "Old Doug", "I imagine that Dougina, the merchant down at Meeks Depot, has it all packaged up for me.");
+    said(t, 50, "Dougina", "Welcome to my shop, Soandso. You would probably find a Decorative Mask handy.");
     t.buy("Dougina", "Package for Old Doug", ms(52), "t52");
-    you(&mut t, 70, "Hail, Dead Doug");
-    said(&mut t, 70, "Dead Doug", "Hail yourself! I hope you're here to [help]!");
-    you(&mut t, 72, "help");
-    said(&mut t, 72, "Dead Doug", "Bring me the skull from one of the more rambunctious skeletons, and another skull from one of the [fragile ones].");
-    hand(&mut t, 90, "Old Doug", &["Package for Old Doug"]);
-    said(&mut t, 90, "Old Doug", "Oh ho! Thank you kindly. Here, take my old boots.");
-    hand(&mut t, 120, "Dead Doug", &["Fragile Pet's Skull"]);
-    said(&mut t, 120, "Dead Doug", "Here, take these boots, they need a new soul!");
-    t
+    you(t, 70, "Hail, Dead Doug");
+    said(t, 70, "Dead Doug", "Hail yourself! I hope you're here to [help]!");
+    you(t, 72, "help");
+    said(t, 72, "Dead Doug", "Bring me the skull from one of the more rambunctious skeletons, and another skull from one of the [fragile ones].");
+    hand(t, 90, "Old Doug", &["Package for Old Doug"]);
+    said(t, 90, "Old Doug", "Oh ho! Thank you kindly. Here, take my old boots.");
+    hand(t, 120, "Dead Doug", &["Fragile Pet's Skull"]);
+    said(t, 120, "Dead Doug", "Here, take these boots, they need a new soul!");
 }
 
 #[test]
@@ -103,4 +107,17 @@ fn each_step_says_why_it_follows() {
     assert!(why("handin:Old Doug:Package for Old Doug").contains(&"Package for Old Doug, bought from Dougina".to_string()));
     let hand = supplies["steps"].as_array().unwrap().last().unwrap();
     assert_eq!(hand["experience"], true);
+}
+
+/// The tutorial opens on a Letter For Doug handed to Doug for experience, before any errand: the game's
+/// "Your first quest!" window calls it a quest, so it is a chain of its own and no errand's first step.
+#[test]
+fn a_paid_hand_in_nothing_leads_to_is_a_quest_of_its_own() {
+    let mut t = Threads::default();
+    hand(&mut t, -10, "Doug", &["Letter For Doug"]);
+    said(&mut t, -10, "Doug", "A new recruit, eh? Once you've gotten your legs under you, [let's talk].");
+    tutorial_on(&mut t);
+    let threads = t.served();
+    assert_eq!(ids(&threads, "Doug: Letter For Doug").len(), 1, "{threads}");
+    assert!(!ids(&threads, "Doug: let's talk").iter().any(|s| s.contains("Letter For Doug")), "{threads}");
 }
