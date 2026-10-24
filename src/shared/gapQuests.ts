@@ -15,6 +15,8 @@ import { ZONES } from './zones'
 export interface QuestTalk {
   who: string
   text: string
+  /** The line's time (epoch ms), when the engine serves it: a step's parts are drawn in log order. */
+  ms?: number
 }
 
 /** One task line, as the engine serves it. */
@@ -30,6 +32,12 @@ export interface QuestStep {
   factions?: { faction: string; line: string }[]
   experience?: boolean
   next?: string
+  /** `You have completed achievement: X` within 15 s after the step. */
+  achievements?: string[]
+  /** Each `offered` item's time (epoch ms), parallel to it, when served. */
+  offeredMs?: number[]
+  /** Each `given` item's time (epoch ms), parallel to it, when served. */
+  givenMs?: number[]
 }
 
 /** A Quests row's `quest`. */
@@ -39,6 +47,21 @@ export interface QuestLog {
   npcs: string[]
   steps: QuestStep[]
   reruns: number
+  /**
+   * The task whose update printed in the same second this one was assigned (Unfortunate news follows
+   * Call for Aid): that second's talk, hand-ins and rewards are the other quest's.
+   */
+  chainedFrom?: string
+}
+
+/**
+ * The steps that are this quest's own: a chained quest's assigning step keeps only its task line,
+ * since the trade and rewards around it finished the quest before.
+ */
+export function ownSteps(log: QuestLog): QuestStep[] {
+  if (log.chainedFrom === undefined || log.steps[0]?.kind !== 'assigned') return log.steps
+  const [first, ...rest] = log.steps
+  return [{ at: first.at, kind: first.kind }, ...rest]
 }
 
 /** The engine's log on a Quests row; read here rather than typed on `GapRow`, which sits at its size bar. */
@@ -64,6 +87,8 @@ export interface QuestExtras {
   questEntry?: (name: string) => QuestCatalogEntry | undefined
   /** What a pasted Quest Journal said of it (screenshot-to-wiki `questJournal.ts`). */
   questJournal?: (name: string) => QuestJournalFacts | undefined
+  /** The player's own characters, written `Soandso` on a quest page. */
+  players?: readonly string[]
 }
 
 /** What a Quest Journal screenshot read (screenshot-to-wiki `questJournal.ts`), as the page needs it. */
@@ -108,10 +133,13 @@ export interface QuestRewards {
 }
 
 export function questRewards(log: QuestLog): QuestRewards | undefined {
-  const end = [...log.steps].reverse().find((s) => (s.factions?.length ?? 0) > 0 || s.experience === true)
+  const end = [...ownSteps(log)].reverse().find((s) => (s.factions?.length ?? 0) > 0 || s.experience === true)
   if (end === undefined) return undefined
-  return { items: end.given ?? [], factions: end.factions ?? [], experience: end.experience === true, ...(end.next === undefined ? {} : { next: end.next }) }
+  return { items: receivedOf(end), factions: end.factions ?? [], experience: end.experience === true, ...(end.next === undefined ? {} : { next: end.next }) }
 }
+
+/** What a step gave back: never an item the same step handed in (a turn-in is no reward). */
+export const receivedOf = (s: QuestStep): string[] => (s.given ?? []).filter((i) => !(s.offered ?? []).includes(i))
 
 /** The player's last words before a step: the keyword that moved it. */
 export function stepKeyword(s: QuestStep): string | undefined {
@@ -124,9 +152,13 @@ export function relatedNpcs(log: QuestLog): string[] {
   return log.npcs.filter((n) => n !== log.giver)
 }
 
-/** The zones a quest's steps were in beyond the one it started in. */
+/**
+ * The zones a quest's steps were in beyond the one it started in. A chained quest starts at the
+ * quest before, not in a zone: every zone of its own steps is related.
+ */
 export function relatedZones(log: QuestLog): string[] {
-  const zones = log.steps.map((s) => s.zone ?? '').filter((z) => z !== '' && z !== log.zone)
+  const start = log.chainedFrom === undefined ? log.zone : undefined
+  const zones = ownSteps(log).map((s) => s.zone ?? '').filter((z) => z !== '' && z !== start)
   return [...new Set(zones)]
 }
 
@@ -149,8 +181,9 @@ export function questRowLines(log: QuestLog | undefined, missing: readonly strin
   if (log === undefined) return []
   const r = questRewards(log)
   const reward = r === undefined ? [] : [`Reward: ${[...r.items, ...r.factions.map((f) => f.faction), ...(r.experience ? ['experience'] : [])].join(', ')}`]
+  const given = log.giver === undefined || log.giver === null ? [] : [`Given by ${log.giver}${log.zone === undefined || log.zone === null ? '' : ` in ${log.zone}`}`]
   return [
-    ...(log.giver === undefined || log.giver === null ? [] : [`Given by ${log.giver}${log.zone === undefined || log.zone === null ? '' : ` in ${log.zone}`}`]),
+    ...(log.chainedFrom === undefined ? given : [`Follows ${log.chainedFrom}`]),
     ...log.steps.map(stepLine),
     ...reward,
     ...(log.reruns > 0 ? [`Done again ${String(log.reruns)} time${log.reruns === 1 ? '' : 's'} (steps from the first run)`] : []),

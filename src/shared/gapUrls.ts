@@ -12,6 +12,11 @@ export function wikiEditUrl(page: string): string {
   return `https://eqlwiki.com/index.php?title=${encodeURIComponent(page.trim().replace(/ /g, '_'))}&action=edit`
 }
 
+/** The wiki's page itself, to read before adding to it (pre-release review, 2026-10-23). */
+export function wikiPageUrl(page: string): string {
+  return `https://eqlwiki.com/${encodeURIComponent(page.trim().replace(/ /g, '_'))}`
+}
+
 /** The wiki's upload form with the file name filled in. */
 export function wikiUploadUrl(file: string): string {
   return `https://eqlwiki.com/index.php?title=Special:Upload&wpDestFile=${encodeURIComponent(file.trim())}`

@@ -205,7 +205,8 @@ impl GapsModule {
             // Handing an item to it is meeting it (owner, 2026-10-19: a fallen froglok, only traded with).
             "offer" => self.turn_in(ev) | self.npc_met(ev.str("npc"), "offered", ev),
             "allyPetLeader" => self.player_pet(ev.str("pet")),
-            _ => false,
+            // A trade's end and experience, for the quest log (gaps_quest_log.rs); nothing else.
+            _ => self.quest_event(ev),
         }
     }
 
@@ -476,7 +477,7 @@ impl GapsModule {
         let mut rows: Vec<(&String, &GapRow)> = self
             .rows
             .iter()
-            .filter(|((d, _), _)| *d == domain)
+            .filter(|((d, k), _)| self.served_under(*d, k) == Some(domain))
             .map(|((_, k), r)| (k, r))
             .collect();
         rows.sort_by(|a, b| b.1.count.cmp(&a.1.count).then_with(|| a.1.name.cmp(&b.1.name)));
@@ -546,7 +547,7 @@ impl EqModule for GapsModule {
         let mut seen = serde_json::Map::new();
         for d in Domain::ALL {
             rows.extend(self.served(d).into_iter().map(|(k, r)| self.serve_row(d, k, r)));
-            let gaps = self.rows.keys().filter(|(k, _)| *k == d).count();
+            let gaps = self.rows.keys().filter(|(k, key)| self.served_under(*k, key) == Some(d)).count();
             totals.insert(d.as_str().to_string(), json!(gaps));
             let checked = self.seen.get(&d).map_or(0, HashSet::len);
             seen.insert(d.as_str().to_string(), json!(checked));

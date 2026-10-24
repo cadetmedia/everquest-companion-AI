@@ -23,7 +23,7 @@ import type { PageExtras, ZoneNamer } from '@shared/wikiPage'
 import dropGroupsJson from '../../data/eqlegends/dropGroups.json'
 import mobsJson from '../../data/eqlegends/mobs.json'
 import questsJson from '../../data/eqlegends/quests.json'
-import { questCatalogFinder, withQuestPages, type QuestCatalogEntry } from '@shared/gapQuests'
+import { questCatalogFinder, questTitleKey, withQuestPages, type QuestCatalogEntry } from '@shared/gapQuests'
 import { MOB_CATALOG } from '../mobs/mobSearch'
 import { questJournalNow } from './itemShotsStore'
 import { joinCharacters, otherInputs, ownSince, type CharacterGaps, type JoinedGaps, type OwnGaps } from '@shared/gapsAllCharacters'
@@ -32,6 +32,7 @@ import { useItemMobs } from '../../lib/gapItemMobs'
 import { useThrottled } from '../../lib/useThrottled'
 import { mobPageFinder } from '@shared/mobPageTitle'
 import { catalogStates } from '@shared/gapMerchantDescription'
+import { useQuestLivePages } from '../../lib/questLivePages'
 
 /** Each drop group's members, and the drop-list links that redirect to an item (scrape-drop-groups.ts). */
 const DROPS = dropGroupsJson as { groups: DropGroups; aliases?: DropAliases }
@@ -42,6 +43,11 @@ const ZONE_NAME: ZoneNamer = wikiZoneNamer(catalogZoneCounts(MOB_CATALOG))
 const IS_MOB = catalogNameTest(MOB_CATALOG)
 /** A quest's catalog entry when the wiki has its page (the Quests rows' Make page / Update page). */
 const QUEST_ENTRY = questCatalogFinder((questsJson as { quests: QuestCatalogEntry[] }).quests)
+/** The catalog's entry, else a page a Copy click found on the wiki this session (questLivePages.ts). */
+const questPageOf = (live: ReadonlyMap<string, string>) => (name: string): QuestCatalogEntry | undefined => {
+  const found = QUEST_ENTRY(name) === undefined ? live.get(questTitleKey(name)) : undefined
+  return found === undefined ? QUEST_ENTRY(name) : { name: found, page: found }
+}
 export const PAGE_EXTRAS: PageExtras = { zoneName: ZONE_NAME, isMob: IS_MOB, commonLoot: commonLootNames(MOB_CATALOG), vendorAt: vendorFinder(MOB_CATALOG), mobPage: mobPageFinder(MOB_CATALOG), questEntry: QUEST_ENTRY, questJournal: questJournalNow, pageStates: catalogStates(MOB_CATALOG) }
 
 /** The wiki side, one object for the session: the caches key on it. */
@@ -151,9 +157,11 @@ export function useGapsData(all: AllCharacters | null = null, opts: GapsDataOpti
   const itemMobs = useItemMobs(looted)
   // The overlay's one-domain copy keeps its own cache slot, so it and the tab never evict each other.
   const derive = only === undefined ? snapOf : snapOfOnly
+  // A page the wiki answered with on a Copy click turns its row into Update page (owner, 2026-10-23).
+  const livePages = useQuestLivePages()
   const snap = useMemo(
-    () => (engine ? withQuestPages(derive(engine, { loot, kills: killMobs, cons, itemMobs }, WIKI, only), QUEST_ENTRY) : engine),
-    [derive, engine, loot, killMobs, itemMobs, cons, only]
+    () => (engine ? withQuestPages(derive(engine, { loot, kills: killMobs, cons, itemMobs }, WIKI, only), questPageOf(livePages)) : engine),
+    [derive, engine, loot, killMobs, itemMobs, cons, only, livePages]
   )
   const kills = lastKills([killMobs], () => killIndex(killMobs))
   return { snap, engine, loot, ownLoot: liveLoot, kills, seenBy: joined?.seenBy, joining: all !== deferredAll }

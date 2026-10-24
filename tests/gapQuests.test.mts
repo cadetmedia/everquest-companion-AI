@@ -88,7 +88,8 @@ test('THE QUESTS TAB SAYS WHAT IT LISTS, AND A ROW IS A NEW PAGE OR AN UPDATE', 
 
 test('THE REWARDS ARE THE LAST STEP WITH A FACTION LINE OR EXPERIENCE', () => {
   assert.deepEqual(questRewards(fishy), {
-    items: ['Defiled Fish Scales'],
+    // The scales were handed in at that step: a turn-in is never its own reward.
+    items: [],
     factions: [{ faction: 'Nerius Trade Association', line: 'Your faction standing with Nerius Trade Association has been adjusted by 10.' }],
     experience: true,
     next: 'Alchemical Solution'
@@ -97,37 +98,45 @@ test('THE REWARDS ARE THE LAST STEP WITH A FACTION LINE OR EXPERIENCE', () => {
   const lines = questRowLines(fishy)
   assert.equal(lines[0], 'Given by Nikko Canti in Lake Nerius')
   assert.equal(lines[1], '21:00:12 assigned · Nikko Canti · said "help"')
-  assert.ok(lines.includes('Reward: Defiled Fish Scales, Nerius Trade Association, experience'))
+  assert.ok(lines.includes('Reward: Nerius Trade Association, experience'))
   assert.ok(lines.includes('Done again 2 times (steps from the first run)'))
 })
 
-test('A QUEST THE WIKI LACKS GETS A DRAFT IN THE CACHED PAGES LAYOUT', () => {
+test('A QUEST THE WIKI LACKS GETS A DRAFT IN THE QUEST PAGE BLUEPRINT', () => {
   const page = questDraftPage('Something Fishy', fishy, { journal: { minLevel: 1 } })
   for (const part of [
     '{{Classic Era}}',
     '[[File:npc_nikko_canti.png|thumb|Nikko Canti]]',
     '{| class="questTopTable"',
+    // The wiki's Quest Page Blueprint (Help:Contents): `Starts In`, level-1 sections, `Hand [[X]] to [[NPC]]:` (owner, 2026-10-23).
     "! ''' Starts In: '''\n| [[Lake Nerius]]",
     "! ''' Quest Giver: '''\n| [[Nikko Canti]]",
     "! ''' Minimum Level: '''\n| 1",
     "! ''' Classes: '''\n| ?",
-    "! ''' Related NPCs: '''\n| None",
-    "! ''' Required Faction: '''\n| ?",
-    '= Reward =\n\n<ul>\n<li>{{:Defiled Fish Scales}}</li>\n</ul>',
+    "! ''' Related NPCs: '''\n| None\n|}",
+    // Level-1 sections, as the blueprint and the new Lake Nerius pages write them; the checklist under Summary.
+    '= Reward =\n\n* Experience',
     '= Summary =\n{{CheckboxList}}',
     "* Say 'help' to [[Nikko Canti]] in [[Lake Nerius]].",
-    '* Give [[Defiled Fish Scales]] to [[Nikko Canti]] in [[Lake Nerius]], receive [[Defiled Fish Scales]].',
+    '* Give [[Defiled Fish Scales]] to [[Nikko Canti]] in [[Lake Nerius]].',
     '* Receive the [[Alchemical Solution]] quest.\n{{End}}',
-    '= Walkthrough =',
-    "You say, 'Hail, Nikko Canti'",
-    ": Nikko Canti says, 'That's so kind of you! Here I have an old fishing pole you can use, and some bait!'",
-    "'''You have been assigned the task 'Something Fishy'.'''",
+    // A blank line after every walkthrough line, so each renders as its own paragraph.
+    "= Walkthrough =\n\nYou say, 'Hail, Nikko Canti'\n\n: Nikko Canti says, 'Oi, you there!",
+    ": Nikko Canti says, 'That's so kind of you! Here I have an old fishing pole you can use, and some bait!'\n\n",
+    "'''You have been assigned the task 'Something Fishy'.'''\n\n",
+    'Hand [[Defiled Fish Scales]] to [[Nikko Canti]]:\n\n',
     "'''Your task 'Something Fishy' has been updated.'''",
     '<div class="facblock">\n* Your faction standing with [[Nerius Trade Association]] has been adjusted by 10.\n</div>\n{{YouGainExperience}}',
-    '[[Category:Quests]]\n[[Category:Lake Nerius]]'
+    '[[Category:Quests]]\n[[Category:Lake Nerius]]\n<!-- [[Category:All Classes Quests]] or [[Category:<Class> Quests]] -->'
   ]) {
     assert.ok(page.includes(part), part)
   }
+  // No page writes `Required Faction: ?`: the row is left out when the log cannot know it.
+  assert.ok(!page.includes('Required Faction'))
+  assert.ok(!/^== [A-Z]/m.test(page), 'the blueprint writes level-1 sections')
+  // The player's own name reads Soandso, as the wiki writes a player.
+  const named: QuestLog = { ...fishy, steps: [{ ...fishy.steps[0], talk: [{ who: 'Nikko Canti', text: 'Thank you, Drywrought!' }] }] }
+  assert.ok(questDraftPage('Something Fishy', named, { players: ['Drywrought'] }).includes(": Nikko Canti says, 'Thank you, Soandso!'"))
   // No level read: the wiki's own placeholder, never a guess.
   assert.ok(questDraftPage('Call for Aid', callForAid).includes("! ''' Minimum Level: '''\n| ?"))
   assert.ok(questDraftPage('Call for Aid', callForAid).includes("! ''' Related NPCs: '''\n| [[Dorian G`Wyn]]"))
@@ -186,4 +195,37 @@ test('A FISHED ITEM SAYS WHERE IT WAS FISHED UP, AND NOT WHERE IT IS CAUGHT ANYW
   const row = { domain: 'item', name: 'Fetid Lake Muck', kinds: ['fished'], count: 5, first: '', last: '', details: { samples: [] }, fishedIn: ['Lake Nerius'] } as unknown as GapRow
   assert.match(wikiPageText(row, [], {}), /\|notes = Fished up in \[\[Lake Nerius\]\]\.\n\|statsblock = /)
   assert.deepEqual(rowFactLines(row), ['Fished up in Lake Nerius'])
+})
+
+test('REPEATS ARE A COUNT, AND A STEP READS IN THE ORDER THE LOG PRINTED IT', () => {
+  const fish: QuestLog = {
+    giver: 'Nikko Canti', zone: 'Lake Nerius', npcs: ['Nikko Canti'], reruns: 0,
+    steps: [{
+      at: '2026-10-22 21:46:03', kind: 'updated', npc: 'Nikko Canti', zone: 'Lake Nerius',
+      offered: ['Fresh Fish', 'Fresh Fish', 'Fresh Fish'], offeredMs: [1000, 1001, 1002],
+      talk: [{ who: 'You', text: 'Hail, Nikko Canti', ms: 900 }, { who: 'Nikko Canti', text: 'My fish! Thank you!', ms: 1500 }]
+    }]
+  }
+  const page = questDraftPage('Something Fishy', fish)
+  assert.ok(page.includes('* Give 3 [[Fresh Fish]] to [[Nikko Canti]] in [[Lake Nerius]].'))
+  assert.equal(page.split('Hand 3 [[Fresh Fish]] to [[Nikko Canti]]:').length - 1, 1)
+  // The hail, then the hand-in, then the reply it caused.
+  const order = ["You say, 'Hail, Nikko Canti'", 'Hand 3 [[Fresh Fish]] to [[Nikko Canti]]:', ": Nikko Canti says, 'My fish! Thank you!'"].map((l) => page.indexOf(l))
+  assert.deepEqual([...order].sort((a, b) => a - b), order)
+  assert.ok(order.every((i) => i >= 0))
+})
+
+test("A CHAINED QUEST'S DETAILS SAY WHICH QUEST IT FOLLOWS, NOT WHO HANDED OVER THE OTHER QUEST", () => {
+  const log: QuestLog = { giver: 'Lord Lyfyx of Burwood', zone: 'The Temple of Solusek Ro', npcs: [], steps: [], reruns: 0, chainedFrom: 'Call for Aid' }
+  assert.equal(questRowLines(log)[0], 'Follows Call for Aid')
+})
+
+test('task lines back to back, seconds apart (three fish caught), are one line on the page', () => {
+  const upd = (at: string): QuestLog['steps'][number] => ({ at, kind: 'updated', npc: 'Nikko Canti' })
+  const log: QuestLog = {
+    giver: 'Nikko Canti', zone: 'Lake Nerius', npcs: ['Nikko Canti'], reruns: 0,
+    steps: [{ at: '2026-10-22 21:00:12', kind: 'assigned', npc: 'Nikko Canti' }, upd('2026-10-22 21:10:00'), upd('2026-10-22 21:12:30'), upd('2026-10-22 21:15:02')]
+  }
+  const page = questDraftPage('Something Fishy', log)
+  assert.equal(page.split("'''Your task 'Something Fishy' has been updated.'''").length - 1, 1)
 })

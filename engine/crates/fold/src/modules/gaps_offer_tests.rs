@@ -72,6 +72,7 @@ fn a_merchants_quotes_are_its_items_sold_priced_where_the_player_stood_at_ally_a
 /// The owner's Merchants rows, 2026-10-23: every one said "needs: level (/con)" though each was
 /// conned (`Mindiinya N`Zar regards you as an ally -- looks like quite a gamble. (Lvl: 50)`). The con
 /// files on the Mobs row; the Merchants row is served the name's cons too, so its page has a level.
+/// Since 2026-10-23 that Mobs row is not served beside it (a merchant is a Merchants row only).
 #[test]
 fn a_merchants_row_carries_the_cons_of_its_name() {
     let mut m = module();
@@ -81,5 +82,5 @@ fn a_merchants_row_carries_the_cons_of_its_name() {
     let served = m.snapshot()["state"]["rows"].clone();
     let row = |domain: &str| served.as_array().and_then(|r| r.iter().find(|r| r["domain"] == domain && r["name"] == "Mindiinya N`Zar")).cloned();
     assert_eq!(row("merchant").map(|r| r["details"]["cons"].clone()), Some(json!({ "entries": [{ "name": "L50 ally", "n": 1 }], "distinct": 1 })));
-    assert_eq!(row("mob").map(|r| r["details"]["cons"]["entries"][0]["name"].clone()), Some(json!("L50 ally")), "the Mobs row keeps its own");
+    assert_eq!(row("mob"), None, "a merchant is not served under Mobs (owner, 2026-10-23)");
 }

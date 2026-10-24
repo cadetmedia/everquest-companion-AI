@@ -1,0 +1,122 @@
+// wikiClient.ts — the eqlwiki.com MediaWiki client behind the two live knowledge services
+// (itemLookup.ts, mobLookup.ts). Electron-free: `fetch` and timers, nothing else.
+//
+// ONE SPELLING, SEPARATE STATE. Both services used to carry this client as a hand copy — the same
+// request, the same Retry-After cooldown, the same serialized queue with the same spacing. The
+// SPELLING is shared now; the STATE is not, and that is deliberate (mobLookup.ts's header, "WHY ITS
+// OWN QUEUE AND COOLDOWN"): each service calls `createWikiClient()` once and owns the cooldown and
+// queue it gets back. Two serialized queues each spaced 150ms is still two requests in flight at
+// most, and a cooldown honoured twice independently can only make the app quieter, never louder.
+//
+// AGENTS.md "Scraper etiquette" is a LAW here: a 429/5xx silences the whole queue of the client
+// that received it until the server's cooldown expires.
+//
+// Every request is counted in this machine's wiki ledger under the client's feature name, and sends
+// the fork's User-Agent (wikiUsage.ts, owner 2026-10-23).
+
+import { recordAppWikiCall, WIKI_UA, wikiKindOf } from './wikiUsage'
+
+const API = 'https://eqlwiki.com/api.php'
+const REQUEST_SPACING_MS = 150 // polite inter-request delay (wiki)
+const REQUEST_TIMEOUT_MS = 8000
+const RETRY_AFTER_FALLBACK_MS = 60_000
+
+export interface WikiClient {
+  /** A page's raw wikitext. '' when the page doesn't exist, null on network error. */
+  fetchWikitext(title: string): Promise<string | null>
+  /** The same read with the title it landed on (a redirect followed): text '' when the page doesn't
+   *  exist, null on network error. The Gaps tab's quest Copy names the page it compared against. */
+  fetchPage(title: string): Promise<{ title: string; text: string } | null>
+  /** The search hits for a query (up to 8), or null on network error. An EMPTY array is a real
+   *  zero-hit search — a negative worth caching — and distinct from null ('offline'). */
+  searchTitles(query: string): Promise<{ title: string }[] | null>
+  /** Run `job` on this client's serialized queue, spaced politely from the job before it whatever
+   *  that job's outcome. Resolves/rejects with the job's own result. */
+  enqueue<T>(job: () => Promise<T>): Promise<T>
+}
+
+/** One service's wiki client, with its OWN cooldown and queue (see the header); `feature` names it in
+ *  the wiki ledger. */
+export function createWikiClient(feature = 'wiki'): WikiClient {
+  /**
+   * Server-asked-us-to-back-off state. When the wiki answers 429 (or any 5xx), its Retry-After
+   * (seconds; falls back to 60s when absent/unparseable) is honoured by refusing to issue ANY
+   * request until the cooldown passes — the whole serialized queue goes quiet, not just the one
+   * lookup. During the cooldown `apiFetch` returns null, which callers already treat as "offline":
+   * the key caches as a short-TTL miss and is retried later, so being polite costs nothing.
+   */
+  let cooldownUntil = 0
+  let queue: Promise<unknown> = Promise.resolve()
+
+  async function apiFetch(params: Record<string, string>): Promise<unknown> {
+    if (Date.now() < cooldownUntil) return null // server asked for quiet — stay quiet
+    const url = API + '?' + new URLSearchParams({ format: 'json', formatversion: '2', ...params }).toString()
+    const ctrl = new AbortController()
+    const t = setTimeout(() => ctrl.abort(), REQUEST_TIMEOUT_MS)
+    const t0 = Date.now()
+    const note = (status: number | null, bytes = 0): void =>
+      recordAppWikiCall({ feature, kind: wikiKindOf(params), url, status, bytes, ms: Date.now() - t0 })
+    try {
+      const res = await fetch(url, { headers: { 'User-Agent': WIKI_UA }, signal: ctrl.signal }).catch((err: unknown) => {
+        note(null)
+        throw err
+      })
+      if (!res.ok) note(res.status)
+      if (res.status === 429 || res.status >= 500) {
+        const retryAfter = Number(res.headers.get('retry-after'))
+        const waitMs =
+          Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : RETRY_AFTER_FALLBACK_MS
+        cooldownUntil = Date.now() + waitMs
+        return null
+      }
+      if (!res.ok) return null
+      const body = await res.text().catch((err: unknown) => {
+        note(res.status)
+        throw err
+      })
+      note(res.status, Buffer.byteLength(body))
+      return JSON.parse(body) as unknown
+    } catch {
+      return null // offline / abort / parse error — caller distinguishes null via the throw path
+    } finally {
+      clearTimeout(t)
+    }
+  }
+
+  async function fetchPage(title: string): Promise<{ title: string; text: string } | null> {
+    const j = (await apiFetch({ action: 'parse', page: title, prop: 'wikitext', redirects: '1' })) as
+      | { parse?: { title?: string; wikitext?: string }; error?: { code?: string } }
+      | null
+    if (j === null) return null // network error (offline)
+    if (j.error) return { title, text: '' } // missingtitle etc. — a real negative
+    return { title: j.parse?.title ?? title, text: j.parse?.wikitext ?? '' }
+  }
+
+  async function fetchWikitext(title: string): Promise<string | null> {
+    const page = await fetchPage(title)
+    return page === null ? null : page.text
+  }
+
+  async function searchTitles(query: string): Promise<{ title: string }[] | null> {
+    const j = (await apiFetch({
+      action: 'query',
+      list: 'search',
+      srsearch: query,
+      srlimit: '8'
+    })) as { query?: { search?: { title: string }[] } } | null
+    if (j === null) return null
+    return j.query?.search ?? []
+  }
+
+  function enqueue<T>(job: () => Promise<T>): Promise<T> {
+    const run = queue.then(job)
+    // Keep the queue serialized + spaced regardless of this call's outcome.
+    queue = run.then(
+      () => new Promise((r) => setTimeout(r, REQUEST_SPACING_MS)),
+      () => new Promise((r) => setTimeout(r, REQUEST_SPACING_MS))
+    )
+    return run
+  }
+
+  return { fetchWikitext, fetchPage, searchTitles, enqueue }
+}

@@ -28,12 +28,31 @@ fn a_player_target_withdraws_its_row_and_an_npc_target_gives_the_row_its_role() 
     feed(&mut m, 4, json!({ "kind": "consider", "mob": "Neuven F`Lok", "level": 50 }));
     feed(&mut m, 5, line("Targeted (Banker): Neuven F`Lok"));
     assert_eq!(row(&m, "mob", "Neuven F`Lok")["role"], json!("Banker"));
-    // A one-word merchant is an NPC by its target line: never "may be a player".
+    // A one-word merchant is an NPC by its target line: never "may be a player". A merchant is a
+    // Merchants row only (owner, 2026-10-23), so its con's row is served there.
     feed(&mut m, 6, json!({ "kind": "consider", "mob": "Kogg", "level": 30 }));
     feed(&mut m, 7, line("Targeted (Merchant): Kogg"));
-    let kogg = row(&m, "mob", "Kogg");
+    assert!(row(&m, "mob", "Kogg").is_null());
+    let kogg = row(&m, "merchant", "Kogg");
     assert_eq!(kogg["role"], json!("Merchant"));
     assert!(kogg.get("maybePlayer").is_none());
+}
+
+/// Owner, 2026-10-23: "if an NPC is a merchant, do not show it on mobs, only show it on merchants".
+/// A conned vendor the catalog lacks, then a price quote: one Merchants row, no Mobs row, and the
+/// counts say the same. A plain mob beside it stays a Mobs row.
+#[test]
+fn a_merchant_is_served_under_merchants_only_and_counted_there() {
+    let mut m = module();
+    feed(&mut m, 1, json!({ "kind": "consider", "mob": "Mindiinya N`Zar", "level": 40 }));
+    feed(&mut m, 2, json!({ "kind": "consider", "mob": "a swamp lurker", "level": 12 }));
+    assert!(!row(&m, "mob", "Mindiinya N`Zar").is_null(), "before any trade, a conned NPC is a mob");
+    feed(&mut m, 3, line("Mindiinya N`Zar told you, 'That'll be 2 gold 9 copper per Cat's Eye Agate.'"));
+    assert!(row(&m, "mob", "Mindiinya N`Zar").is_null(), "no Mobs row beside its Merchants row");
+    assert!(!row(&m, "merchant", "Mindiinya N`Zar").is_null());
+    assert!(!row(&m, "mob", "a swamp lurker").is_null());
+    let totals = m.snapshot()["state"]["totals"].clone();
+    assert_eq!((totals["mob"].clone(), totals["merchant"].clone()), (json!(1), json!(1)));
 }
 
 #[test]

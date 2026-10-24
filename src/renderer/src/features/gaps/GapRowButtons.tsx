@@ -5,7 +5,7 @@
 //
 // A row click opens the details, so every compact button stops its click there.
 
-import { type JSX, type MouseEvent, type ReactNode, useState } from 'react'
+import { type JSX, type MouseEvent, type ReactNode, useRef, useState } from 'react'
 import { Button, IconButton, Stack } from '@mui/material'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import DoneIcon from '@mui/icons-material/Done'
@@ -18,8 +18,10 @@ import { GAP_CAPTURE, mobPageOf, onMobPage, wikiCreateUrl, wikiEditUrl, wikiSear
 import { copyText } from '../../lib/clipboard'
 import { Tooltip } from '../../lib/Tooltip'
 import { existingEditor } from '@shared/gapExistingPage'
+import { wikiPageUrl } from '@shared/gapUrls'
 import { questPageTitle } from '@shared/gapQuests'
 import { readGapVerdict } from '../../lib/gapVerdicts'
+import { QuestCopyDialog, readQuestPage, type QuestRead } from './QuestCopyDialog'
 
 const stop = (e: MouseEvent): void => e.stopPropagation()
 
@@ -70,19 +72,55 @@ function ActionButton({
   )
 }
 
+/**
+ * Whether the wiki already has the row's page, so its text is a draft to take fields from, never one to
+ * paste over the page (pre-release review, 2026-10-23). A forage row (another branch) copies only the
+ * lines to add, so it is no draft.
+ */
+function pageExists(row: GapRow): boolean {
+  if ((row as { forageUpdate?: unknown }).forageUpdate !== undefined) return false
+  return existingEditor(row, readGapVerdict(row.domain, row.name)) !== undefined
+}
+
+/** The Copy button's words and tip for a row. */
+function copyWords(row: GapRow): { label: string; tip: string } {
+  if (row.suggest !== undefined && (row.domain === 'item' || row.domain === 'spell')) {
+    return { label: 'Copy redirect', tip: `A redirect from the game's spelling to ${row.suggest.page}, so both spellings reach one page.` }
+  }
+  if (row.domain === 'notice') return { label: 'Copy proof', tip: 'What your log proves (how often, when, where, the lines), for the talk page or the edit summary.' }
+  // A quest reads its wiki page first and adds to it (owner, 2026-10-23: "implement the diff idea").
+  if (row.domain === 'quest') return { label: 'Copy wiki page', tip: 'Reads the wiki page and adds what your log saw, removing nothing.' }
+  const tip = `Wiki markup from what your log saw. ${GAP_CAPTURE[row.domain]}`
+  if (!pageExists(row)) return { label: 'Copy wiki page', tip }
+  return { label: 'Copy draft (page exists)', tip: `The wiki already has this page: copy only the fields it lacks from this draft. Pasting all of it replaces what people wrote there. ${tip}` }
+}
+
 /** A new wiki page for the row, built from what the log saw (shared/wikiPage.ts), onto the clipboard. */
 function CopyPageButton({ text, row, compact }: { text: () => string; row: GapRow; compact: boolean }): JSX.Element {
   const [copied, setCopied] = useState(false)
-  const redirect = row.suggest !== undefined && (row.domain === 'item' || row.domain === 'spell')
-  const notice = row.domain === 'notice'
-  const tip = redirect
-    ? `A redirect from the game's spelling to ${row.suggest?.page ?? ''}, so both spellings reach one page.`
-    : notice
-      ? 'What your log proves (how often, when, where, the lines), for the talk page or the edit summary.'
-      : `Wiki markup from what your log saw. ${GAP_CAPTURE[row.domain]}`
-  const label = copied ? 'Copied' : redirect ? 'Copy redirect' : notice ? 'Copy proof' : 'Copy wiki page'
+  // A quest's Copy opens the comparison with its live page; the read starts on this click, once.
+  const [read, setRead] = useState<QuestRead | null>(null)
+  const words = copyWords(row)
   const icon = copied && compact ? <DoneIcon fontSize="small" color="success" /> : <ContentCopyIcon fontSize="small" />
-  return <ActionButton compact={compact} label={label} tip={tip} icon={icon} onClick={() => void copyText(text()).then(setCopied)} testId="gaps-copy-page" />
+  // A read that answers after Close is dropped: the ticket moved on, so the dialog stays shut.
+  const ticket = useRef(0)
+  const openRead = (): void => {
+    const mine = ++ticket.current
+    readQuestPage(row, (r) => {
+      if (ticket.current === mine) setRead(r)
+    })
+  }
+  const close = (): void => {
+    ticket.current++
+    setRead(null)
+  }
+  const onClick = row.domain === 'quest' ? openRead : () => void copyText(text()).then(setCopied)
+  return (
+    <>
+      <ActionButton compact={compact} label={copied ? 'Copied' : words.label} tip={words.tip} icon={icon} onClick={onClick} testId="gaps-copy-page" />
+      {read !== null && <QuestCopyDialog row={row} read={read} offline={text} onClose={close} />}
+    </>
+  )
 }
 
 /**
@@ -90,7 +128,7 @@ function CopyPageButton({ text, row, compact }: { text: () => string; row: GapRo
  * row, the editor on the mob page the faction belongs on.
  */
 /** The page the editor opens and its button's words: a page that exists, or a new one. */
-function editorOf(row: GapRow): { target: string; create: string; existing: boolean } {
+function editorOf(row: GapRow): { target: string; create: string; existing: boolean; view?: boolean } {
   // A notice row's page exists: it is edited, the notice off (owner, 2026-10-22).
   if (row.domain === 'notice') return { target: row.page ?? row.name, create: 'Edit page', existing: true }
   if (onMobPage(row)) return { target: mobPageOf(row), create: 'Edit mob page', existing: true }
@@ -104,16 +142,16 @@ function editorOf(row: GapRow): { target: string; create: string; existing: bool
 }
 
 function WikiLinks({ row, compact }: { row: GapRow; compact: boolean }): JSX.Element {
-  const { target, create, existing } = editorOf(row)
+  const { target, create, existing, view = false } = editorOf(row)
   return (
     <>
       <ActionButton compact={compact} label="Search wiki" tip={`The wiki's search for ${target}.`} icon={<SearchIcon fontSize="small" />} href={wikiSearchUrl(target)} testId="gaps-wiki-search" />
       <ActionButton
         compact={compact}
         label={create}
-        tip={existing ? `The wiki's editor on ${target}.` : `The wiki's editor on a new page named ${target}.`}
+        tip={view ? `The wiki's page ${target}: it exists, so add to it from its Edit tab.` : existing ? `The wiki's editor on ${target}.` : `The wiki's editor on a new page named ${target}.`}
         icon={<NoteAddIcon fontSize="small" />}
-        href={existing ? wikiEditUrl(target) : wikiCreateUrl(target)}
+        href={view ? wikiPageUrl(target) : existing ? wikiEditUrl(target) : wikiCreateUrl(target)}
         testId="gaps-wiki-create"
       />
     </>
