@@ -8,11 +8,15 @@ import { GAPS_MODULE_ID, type GapRow, type GapsSnap } from '@shared/gaps'
 import type { QuestJournalFacts } from '@shared/gapQuests'
 import { withForcedQuests, type TalkSnap } from '@shared/gapForcedQuests'
 import { pictureFile } from '@shared/mobPicture'
-import { movePicksBut, nameplateRow, pictureKind, pictureRows, questTargets, routePopup, threadTargets, type RouteHit, type ThreadLike } from '@shared/pasteRoute'
+import { movePicksBut, nameplateRow, pictureKind, pictureRows, questTargets, routePopup, spellRowNames, threadTargets, titledName, type RouteHit, type ThreadLike } from '@shared/pasteRoute'
+import { isSpellWindow, readSpellWindow, spellProblem } from '@shared/spellWindow'
 import { journalPlaces } from '@shared/questJournal'
-import { readPopup, withPopup, withoutPopup, type QuestPopup } from '@shared/questPopup'
+import { popupRead, readPopup, withPopup, withoutPopup, type QuestPopup } from '@shared/questPopup'
+import { shotKind } from '@shared/itemShotKeep'
+import type { ItemShotReply } from '@shared/itemWindow'
 import { fileOneCapture } from './CaptureBar'
-import { questJournalByKey, setMobPicture, setQuestJournal } from './itemShotsStore'
+import { keepPartPicture, questJournalByKey, setMobPicture, setQuestJournal, setSpellShot } from './itemShotsStore'
+import { keepOf } from './SpellShot'
 import { keepJournal, thumbOf } from './QuestShot'
 import { forcedQuestsNow } from './useForcedQuests'
 
@@ -25,7 +29,7 @@ export type Snap = GapsSnap & TalkSnap & { questThreads?: ThreadLike[] }
 
 /** What became of one picture: where it went, for the note and the batch summary. */
 export interface Outcome {
-  kind: 'quest' | 'chain' | 'unsorted' | 'journal' | 'item' | 'nameplate' | 'unknown' | 'error'
+  kind: 'quest' | 'chain' | 'unsorted' | 'journal' | 'item' | 'spell' | 'nameplate' | 'unknown' | 'error'
   text: string
   undo?: () => void
   move?: { popup: QuestPopup; from: string; picks: RouteHit[] }
@@ -118,10 +122,35 @@ async function journal(png: Uint8Array): Promise<Outcome> {
 }
 
 /** An item window or its Lore tab: filed on its Items row the capture's way (CaptureBar.tsx). */
+/** A Lore tab's name from the title bar when the tab row cut it short (titledName). */
+async function wholeName(png: Uint8Array, reply: ItemShotReply): Promise<ItemShotReply> {
+  if (reply.read.name === undefined || shotKind(reply) !== 'lore') return reply
+  const look = await window.eq.shotReadText(png, 'popup')
+  const name = titledName(reply.read.name, look.titleLines ?? [])
+  return name === reply.read.name ? reply : { ...reply, read: { ...reply.read, name } }
+}
+
 async function itemWindow(png: Uint8Array): Promise<Outcome> {
-  const reply = await window.eq.shotReadItem(png)
+  const reply = await wholeName(png, await window.eq.shotReadItem(png))
   const row = await fileOneCapture({ at: new Date().toISOString(), reply, png, ms: reply.ms })
   return row === undefined ? { kind: 'item', text: `Item window read: no Gaps row for ${reply.read.name ?? 'it'}.` } : { kind: 'item', text: `Item window → ${row}.` }
+}
+
+/**
+ * A spell display window: kept on its Spells row the row's own way (SpellShot.tsx), or under the spell's
+ * name for a row that comes later (owner, 2026-10-23: the Mummy spell windows went to failed/).
+ */
+async function spellWindow(png: Uint8Array): Promise<Outcome> {
+  const { snap } = await targetsNow()
+  const rows = spellRowNames(snap?.rows ?? [])
+  const reply = await window.eq.shotReadText(png)
+  const r = reply.error === undefined ? readSpellWindow(reply.lines, undefined, undefined, (n) => rows.includes(n)) : null
+  if (r === null || !isSpellWindow(r) || r.name === undefined) return { kind: 'error', text: spellProblem(reply) }
+  const name = r.name
+  const row = rows.find((n) => n.toLowerCase() === name.toLowerCase())
+  setSpellShot(row ?? name, keepOf(r))
+  void keepPartPicture('spell', row ?? name, png)
+  return { kind: 'spell', text: row === undefined ? `Spell window: ${name} (kept for when its row comes).` : `Spell window → ${row}.` }
 }
 
 /** One picture, read and sent: what became of it. Logged with its source either way. */
@@ -135,10 +164,11 @@ export async function readAndRoute(png: Uint8Array, journals: Readonly<Record<st
 async function classifyAndRoute(png: Uint8Array, journals: Readonly<Record<string, QuestJournalFacts>>): Promise<Outcome> {
   const look = await window.eq.shotReadText(png, 'popup')
   if (look.error !== undefined) return { kind: 'error', text: look.error }
-  const popup = readPopup({ lines: look.lines, tops: look.tops ?? [], heights: look.heights ?? [], tones: look.tones ?? [], ...(look.leads === undefined ? {} : { leads: look.leads }) })
+  const popup = readPopup(popupRead(look))
   const kind = pictureKind(look.lines, popup)
   if (kind === 'journal') return journal(png)
   if (kind === 'item') return itemWindow(png)
+  if (kind === 'spell') return spellWindow(png)
   if (kind === 'popup' && popup !== null) {
     const thumb = await thumbOf(png)
     return routeOnePopup({ ...popup, ...(thumb === undefined ? {} : { thumb }) }, journals)
@@ -167,16 +197,20 @@ export async function rerouteUnsorted(journals: Readonly<Record<string, QuestJou
 }
 
 /** `9 pictures read: 4 to quests, 5 Unsorted`: one note for a batch. */
+/** "1 item window", "2 item windows" (owner, 2026-10-23: the summary said "1 item windows"). */
+const counted = (c: number, one: string, many: string): string => `${String(c)} ${c === 1 ? one : many}`
+
 export function batchSummary(outcomes: readonly Outcome[]): string {
   const n = (k: Outcome['kind'][]): number => outcomes.filter((o) => k.includes(o.kind)).length
   const parts = [
-    [n(['quest', 'chain']), 'to quests'],
-    [n(['unsorted']), 'Unsorted'],
-    [n(['journal']), 'journals'],
-    [n(['item']), 'item windows'],
-    [n(['nameplate']), 'nameplates to save'],
-    [n(['unknown', 'error']), 'not read']
+    [n(['quest', 'chain']), 'to a quest', 'to quests'],
+    [n(['unsorted']), 'Unsorted', 'Unsorted'],
+    [n(['journal']), 'journal', 'journals'],
+    [n(['item']), 'item window', 'item windows'],
+    [n(['spell']), 'spell window', 'spell windows'],
+    [n(['nameplate']), 'nameplate to save', 'nameplates to save'],
+    [n(['unknown', 'error']), 'not read', 'not read']
   ] as const
-  const said = parts.filter(([c]) => c > 0).map(([c, w]) => `${String(c)} ${w}`)
-  return `${String(outcomes.length)} picture${outcomes.length === 1 ? '' : 's'} read: ${said.join(', ')}.`
+  const said = parts.filter(([c]) => c > 0).map(([c, one, many]) => counted(c, one, many))
+  return `${counted(outcomes.length, 'picture', 'pictures')} read: ${said.join(', ')}.`
 }

@@ -42,6 +42,10 @@ export interface ShotTextReply {
   tones?: ('white' | 'yellow' | 'orange')[]
   /** The colour each popup line opens in (an orange instruction running on in white). */
   leads?: ('white' | 'yellow' | 'orange')[]
+  /** A popup's lines holding an item link's magenta, and its title bar read on its own. */
+  items?: boolean[]
+  titleLines?: string[]
+  titleBottom?: number
   ms: number
   /** Set when the picture could not be read at all. */
   error?: string

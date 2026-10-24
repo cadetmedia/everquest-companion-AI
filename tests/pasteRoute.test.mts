@@ -6,9 +6,10 @@ import assert from 'node:assert/strict'
 import { join } from 'node:path'
 import { readPopupLines } from '../src/main/shot/popupLines.ts'
 import { stopOcr } from '../src/main/shot/ocr.ts'
-import { readPopup, type QuestPopup } from '../src/shared/questPopup.ts'
+import { popupRead, readPopup, type QuestPopup } from '../src/shared/questPopup.ts'
 import { nameplateRow, namesIn, ordinalOf, pictureKind, placesKey, routePopup, threadTargets, type ThreadLike } from '../src/shared/pasteRoute.ts'
 import { readPng } from './shotPng.mts'
+import { titledName } from '../src/shared/pasteRoute.ts'
 
 after(() => stopOcr())
 
@@ -30,12 +31,13 @@ const POPUPS = [
   'popup-first-aa-point.png'
 ]
 
-test('what a pasted picture is: popups (one with no title), a Quest Journal, item windows and Lore tabs, and the rest', async () => {
+test('what a pasted picture is: popups (one with no title), a Quest Journal, item windows and Lore tabs, spell windows, and the rest', async () => {
   for (const f of POPUPS) assert.equal(pictureKind(...Object.values(await read(f)) as [string[], QuestPopup | null]), 'popup', f)
   assert.equal(pictureKind(...Object.values(await read('quest-journal-something-fishy.png')) as [string[], QuestPopup | null]), 'journal')
-  for (const f of ['earring-of-experimentation.png', 'black-lizard-scale.png', 'earring-of-experimentation-lore.png', 'plea-to-freeport-lore.png']) {
+  for (const f of ['earring-of-experimentation.png', 'black-lizard-scale.png', 'earring-of-experimentation-lore.png', 'plea-to-freeport-lore.png', 'petamorph-wand-mummy.png', 'petamorph-wand-mummy-lore.png']) {
     assert.equal(pictureKind(...Object.values(await read(f)) as [string[], QuestPopup | null]), 'item', f)
   }
+  for (const f of ['spell-familiar-mummy.png', 'spell-pet-illusion-mummy.png']) assert.equal(pictureKind(...Object.values(await read(f)) as [string[], QuestPopup | null]), 'spell', f)
   for (const f of ['raul-npc.png', 'a-white-wolf-npc.png']) assert.equal(pictureKind(...Object.values(await read(f)) as [string[], QuestPopup | null]), 'other', f)
 })
 
@@ -162,4 +164,38 @@ test('placesKey moves when a Quests row or a chain appears, and only then', () =
   assert.equal(a, placesKey([...rows, { domain: 'item' }], [{ id: 't1' }]))
   assert.notEqual(a, placesKey([...rows, { domain: 'quest' }], [{ id: 't1' }]))
   assert.notEqual(a, placesKey(rows, [{ id: 't1' }, { id: 't2' }]))
+})
+
+test('reward windows on chains with no reward line (as the engine serves the tutorial): by the ordinal, read through the app path', async () => {
+  const bare = threadTargets(THREADS.map(({ rewards: _r, ...t }) => t))
+  // The app's reply: main's whole popup read, through popupRead (the item-link flags and the title bar kept).
+  const viaApp = async (file: string): Promise<QuestPopup | null> => readPopup(popupRead({ ...(await readPopupLines(readPng(join(SHOTS, file)))) }))
+  const reward = await viaApp('popup-tutorial-first-quest-reward.png')
+  const merging = await viaApp('popup-tutorial-item-merging.png')
+  const spells = await viaApp('popup-tutorial-spells.png')
+  assert.deepEqual(reward?.rewards, ['Boots of the Long Road'])
+  assert.equal(spells?.title, 'Spells')
+  assert.equal(routePopup(reward as QuestPopup, bare).hit?.key, 'thread:Doug@1')
+  assert.equal(routePopup(merging as QuestPopup, bare).hit?.key, 'thread:Doug@2')
+})
+
+test('chains that open on the same greeting are ordered by their own errand; ids may hold a colon', async () => {
+  const greet = { kind: 'talk', npc: 'Doug', ms: 100 }
+  const tied: ThreadLike[] = [
+    { id: 'Doug@100:handin:Dead Doug:Skull', name: 'Doug: more work', zone, startMs: 100, steps: [greet, { kind: 'talk', npc: 'Doug', said: ['more work'], ms: 900 }, { kind: 'handin', npc: 'Dead Doug', ms: 1200, items: [{ name: 'Skull' }] }] },
+    { id: 'Doug@100:handin:Old Doug:Package', name: "Doug: let's talk", zone, startMs: 100, steps: [greet, { kind: 'talk', npc: 'Doug', said: ["let's talk"], ms: 300 }, { kind: 'handin', npc: 'Old Doug', ms: 600, items: [{ name: 'Package' }] }] }
+  ]
+  const targets = threadTargets(tied)
+  const viaApp = async (file: string): Promise<QuestPopup | null> => readPopup(popupRead({ ...(await readPopupLines(readPng(join(SHOTS, file)))) }))
+  assert.equal(routePopup((await viaApp('popup-tutorial-first-quest-reward.png')) as QuestPopup, targets).hit?.key, "thread:Doug@100:handin:Old Doug:Package")
+  assert.equal(routePopup((await viaApp('popup-tutorial-item-merging.png')) as QuestPopup, targets).hit?.key, 'thread:Doug@100:handin:Dead Doug:Skull')
+})
+
+test("a Lore tab's name cut short by its tab row is made whole from the title bar (the owner's Mummy wand, 2026-10-23)", async () => {
+  const r = await readPopupLines(readPng(join(SHOTS, 'petamorph-wand-mummy-lore.png')))
+  assert.equal(titledName('Petamorph Wand: Mumm', r.titleLines ?? []), 'Petamorph Wand: Mummy')
+  assert.equal(titledName('Petamorph Wand: Mummy', ['Petamorph Wand: Mummy']), 'Petamorph Wand: Mummy')
+  assert.equal(titledName('Earring', ['Earring of Experimentation']), 'Earring of Experimentation')
+  assert.equal(titledName('Ring', ['Ring of Things']), 'Ring')
+  assert.equal(titledName(undefined, ['Anything']), undefined)
 })

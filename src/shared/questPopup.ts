@@ -354,8 +354,8 @@ function paragraphLines(para: PopupParagraph): string[] {
 }
 
 /** A popup's walkthrough blocks, in the game's order: its opening line with the first paragraph, then one block each. */
-export function popupWalkBlocks(popups: readonly QuestPopup[] = []): { kind: 'popup'; lines: string[]; keys: string[] }[] {
-  return orderPopups(popups).flatMap((p) =>
+export function popupWalkBlocks(popups: readonly QuestPopup[] = [], part: 'lead' | 'after' | 'all' = 'all'): { kind: 'popup'; lines: string[]; keys: string[] }[] {
+  return popupPart(orderPopups(popups), part).flatMap((p) =>
     p.paragraphs.map((para, i) => {
       const lines = paragraphLines(para)
       const keys = para.list ?? [para.text === '' ? (para.heading ?? '') : para.text]
@@ -364,8 +364,18 @@ export function popupWalkBlocks(popups: readonly QuestPopup[] = []): { kind: 'po
   )
 }
 
-/** The popups' instructions as Summary entries, in the game's order. */
-export const popupCheckLines = (popups: readonly QuestPopup[] = []): string[] => orderPopups(popups).flatMap((p) => p.steps.map((s) => `* ${s}`))
+/**
+ * A window that hands out a reward comes after the hand-in that earned it ("Why would I need 4 boots?!"
+ * after the skulls); the rest lead, as the tutorial shows them before the talk they send you to.
+ */
+const awards = (p: QuestPopup): boolean => (p.rewards ?? []).length > 0 || p.experience === true
+function popupPart(popups: readonly QuestPopup[], part: 'lead' | 'after' | 'all'): QuestPopup[] {
+  return part === 'all' ? [...popups] : popups.filter((p) => awards(p) === (part === 'after'))
+}
+
+/** The popups' instructions as Summary entries, in the game's order (a reward window's after the rest). */
+export const popupCheckLines = (popups: readonly QuestPopup[] = [], part: 'lead' | 'after' | 'all' = 'all'): string[] =>
+  popupPart(orderPopups(popups), part).flatMap((p) => p.steps.map((s) => `* ${s}`))
 
 /** The items the popups say the quest awarded, in paste order, each once. */
 export const popupRewards = (popups: readonly QuestPopup[] = []): string[] => [...new Set(popups.flatMap((p) => p.rewards ?? []))]
@@ -400,4 +410,22 @@ export function popupLinksOfRows(rows: readonly { domain: string; name: string }
     const link = r.domain === 'quest' ? popupQuestLink(r.name, popupsOf(r.name)) : null
     return link === null ? [] : [link]
   })
+}
+
+/**
+ * Main's popup read as the reader takes it, every part kept: the item-link flags (a reward) and the title
+ * bar read on its own. The app once passed only the lines and colours, so no popup had a reward in the app
+ * while the tests (which call the reader directly) did.
+ */
+export function popupRead(look: { lines: string[]; tops?: number[]; heights?: number[]; tones?: PopupLineRead['tones']; leads?: PopupLineRead['tones']; items?: boolean[]; titleLines?: string[]; titleBottom?: number }): PopupLineRead {
+  return {
+    lines: look.lines,
+    tops: look.tops ?? [],
+    heights: look.heights ?? [],
+    tones: look.tones ?? [],
+    ...(look.leads === undefined ? {} : { leads: look.leads }),
+    ...(look.items === undefined ? {} : { items: look.items }),
+    ...(look.titleLines === undefined ? {} : { titleLines: look.titleLines }),
+    ...(look.titleBottom === undefined ? {} : { titleBottom: look.titleBottom })
+  }
 }

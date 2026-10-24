@@ -17,7 +17,7 @@ import { Box, Chip, Stack, Typography } from '@mui/material'
 import type { GapRow } from '@shared/gaps'
 import { questLogOf, questTitleKey, type QuestJournalFacts } from '@shared/gapQuests'
 import { isQuestJournal, journalFactsByQuest, journalMissText, journalPlaces, readQuestJournal } from '@shared/questJournal'
-import { isJournalPicture, popupKeptLines, popupMissText, readPopup, withoutPopup, withPopup } from '@shared/questPopup'
+import { isJournalPicture, popupKeptLines, popupMissText, popupRead, readPopup, withoutPopup, withPopup } from '@shared/questPopup'
 import { questJournalByKey, setQuestJournal, useQuestJournals } from './itemShotsStore'
 import { Line, PasteZone } from './PasteZone'
 
@@ -93,7 +93,7 @@ export default function QuestShot({ row }: { row: GapRow }): JSX.Element {
           if (j.error !== undefined) return j.error
           return keepJournal(j, places, { key, thumb }) ? null : journalMissText(j.lines)
         }
-        const popup = readPopup({ lines: look.lines, tops: look.tops ?? [], heights: look.heights ?? [], tones: look.tones ?? [], ...(look.leads === undefined ? {} : { leads: look.leads }) })
+        const popup = readPopup(popupRead(look))
         if (popup === null) return popupMissText(look.lines)
         const was = questJournalByKey(key)
         setQuestJournal(key, { ...was, popups: withPopup(was?.popups, { ...popup, ...(thumb === undefined ? {} : { thumb }) }) })

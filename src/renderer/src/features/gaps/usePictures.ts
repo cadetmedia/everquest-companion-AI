@@ -3,7 +3,7 @@
 // player made it, into the focused window, and into a text box only when the clipboard holds a picture
 // and no text; several pictures are read under one summary.
 
-import { type MutableRefObject, useCallback, useEffect, useRef } from 'react'
+import { type MutableRefObject, useCallback, useEffect, useRef, useState } from 'react'
 import { GAPS_MODULE_ID } from '@shared/gaps'
 import type { QuestJournalFacts } from '@shared/gapQuests'
 import { placesKey } from '@shared/pasteRoute'
@@ -45,6 +45,17 @@ function refusal(e: ClipboardEvent): string {
 
 const fileJob = (source: PictureSource) => (f: File): Job => ({ source, label: source === 'drop' ? f.name : '', bytes: async () => new Uint8Array(await f.arrayBuffer()) })
 
+/** One picture through the readers; whatever they throw becomes its "not read" note. */
+async function readOne(raw: Uint8Array, job: Job, journals: Readonly<Record<string, QuestJournalFacts>>): Promise<Outcome> {
+  try {
+    return await readAndRoute(await asPng(raw, job.label), journals, job.source, job.label)
+  } catch (e) {
+    const why = e instanceof Error ? e.message : String(e)
+    pictureLog(`${job.source} ${job.label} could not be read: ${why}`)
+    return { kind: 'error', text: `Could not read ${job.label === '' ? 'the picture' : job.label}: ${why}` }
+  }
+}
+
 /** The queue: one picture at a time, in the order given; a batch ends in one summary note. */
 export function usePictureQueue(journals: MutableRefObject<Readonly<Record<string, QuestJournalFacts>>>, show: (o: Outcome) => void): (jobs: Job[]) => void {
   const queue = useRef<Job[]>([])
@@ -57,7 +68,9 @@ export function usePictureQueue(journals: MutableRefObject<Readonly<Record<strin
       for (let job = queue.current.shift(); job !== undefined; job = queue.current.shift()) {
         show({ kind: 'unknown', text: `Reading ${job.label === '' ? 'the picture' : job.label}…`, progress: true })
         const raw = await job.bytes().catch(() => null)
-        const out: Outcome = raw === null ? { kind: 'error', text: 'Could not read that file.' } : await readAndRoute(await asPng(raw, job.label), journals.current, job.source, job.label)
+        // A file no reader can open is "not read", never the end of the batch (it threw out of the loop, so
+        // the rest went unread and the file stayed in the inbox to fail again at every launch).
+        const out: Outcome = raw === null ? { kind: 'error', text: 'Could not read that file.' } : await readOne(raw, job, journals.current)
         job.done?.(out.kind !== 'error' && out.kind !== 'unknown', out.text)
         outcomes.push(out)
       }
@@ -85,12 +98,32 @@ export function usePictureInbox(enqueue: (jobs: Job[]) => void): void {
       void window.eq.pictureInboxList().then(({ files }) => {
         const fresh = files.filter((f) => !seen.has(f))
         fresh.forEach((f) => seen.add(f))
-        enqueue(fresh.map((name) => ({ source: 'inbox', label: name, bytes: () => window.eq.pictureInboxRead(name), done: (ok, why) => void window.eq.pictureInboxDone(name, ok, why) })))
+        // Once moved aside the name is free again: a picture sent back from failed/ is read anew.
+        const done = (name: string) => (ok: boolean, why: string): void => void window.eq.pictureInboxDone(name, ok, why).finally(() => seen.delete(name))
+        enqueue(fresh.map((name) => ({ source: 'inbox', label: name, bytes: () => window.eq.pictureInboxRead(name), done: done(name) })))
       })
     }
     pull()
     return window.eq.onPictureInbox(pull)
   }, [enqueue])
+}
+
+/** The inbox pictures that could not be read (failed/), kept current as the inbox changes. */
+export function useFailedPictures(): string[] {
+  const [failed, setFailed] = useState<string[]>([])
+  useEffect(() => {
+    let live = true
+    const pull = (): void => {
+      void window.eq.pictureInboxList().then((r) => live && setFailed(r.failed))
+    }
+    pull()
+    const stop = window.eq.onPictureInbox(pull)
+    return () => {
+      live = false
+      stop()
+    }
+  }, [])
+  return failed
 }
 
 /** A paste or a drop anywhere in the main window. */

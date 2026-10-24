@@ -20,11 +20,16 @@ import type { GapRow } from './gaps'
 import { questLogOf, questRewards, questTitleKey, receivedOf } from './gapQuests'
 import { isJournalPicture, namesWindow, type QuestPopup } from './questPopup'
 
-export type PictureKind = 'popup' | 'journal' | 'item' | 'other'
+export type PictureKind = 'popup' | 'journal' | 'item' | 'spell' | 'other'
 
 /** An item window's stats lines, or its tab row (`Description | Lore`). */
 const ITEM_LINE = /^\W{0,3}(?:Class|Race|Size|Slot|Weight|Value|WT)\b\s*:?/i
 const ITEM_TABS = /\bDescr\w*.{0,8}\bLore\b/i
+/** The Description tab's label near the top: a Lore tab whose own label (yellow, selected) reads as noise. */
+const DESCRIPTION_TAB = /\bDescr\w{3,}/i
+/** A spell display window's lines (`Duration: 6:00:00`, `On You: ...`) and its title (`Spell: Familiar: Mummy`). */
+const SPELL_LINE = /^\W{0,3}(?:Duration|Cast|Recovery|Reuse|Target|Range|On You|On Other|Wears Off)\b\s*:/i
+const SPELL_TITLE = /^\W{0,3}Spell\s*:/i
 /** The game's closing line under a popup (`Click 'OK' to continue.`, `Press `OK` to continue.`). */
 const CLOSING = /\b(?:click|press)\b.{0,6}\bok\b.{0,6}\bto\b/i
 
@@ -35,7 +40,11 @@ const CLOSING = /\b(?:click|press)\b.{0,6}\bok\b.{0,6}\bto\b/i
  */
 export function pictureKind(lines: readonly string[], popup: QuestPopup | null): PictureKind {
   if (isJournalPicture(lines)) return 'journal'
+  const spellLines = lines.filter((l) => SPELL_LINE.test(l)).length
+  if (spellLines >= 2 || (spellLines >= 1 && lines.some((l) => SPELL_TITLE.test(l)))) return 'spell'
   if (lines.filter((l) => ITEM_LINE.test(l)).length >= 2 || lines.some((l) => ITEM_TABS.test(l))) return 'item'
+  // A Lore tab: the Description label in the first lines and no closing line (Petamorph Wand: Mummy).
+  if (lines.slice(0, 3).some((l) => DESCRIPTION_TAB.test(l)) && !lines.some((l) => CLOSING.test(l))) return 'item'
   if (popup === null) return 'other'
   const prose = lines.filter((l) => (l.match(/[A-Za-z]{2,}/g) ?? []).length >= 8).length
   return lines.some((l) => CLOSING.test(l)) || prose >= 2 ? 'popup' : 'other'
@@ -59,6 +68,11 @@ export interface RouteTarget {
   kind: 'quest' | 'thread'
   /** When it started (epoch ms), for an ordinal among ties. */
   startMs: number
+  /**
+   * When its own errand started: a chain's first step that is not a bare greeting (the tutorial's Doug
+   * chains all open on the same "Hail, Doug", so their starts tie). Absent: `startMs`.
+   */
+  orderMs?: number
   steps: RouteStep[]
   rewards: string[]
 }
@@ -69,11 +83,14 @@ export interface ThreadLike {
   name: string
   zone?: string
   startMs: number
-  steps: { kind: string; npc?: string; zone?: string; said?: string[]; items?: { name: string }[]; mob?: string }[]
+  steps: { kind: string; ms?: number; npc?: string; zone?: string; said?: string[]; items?: { name: string }[]; mob?: string }[]
   rewards?: { name: string }[]
 }
 
 const some = (s: string | undefined | null): string[] => (s === undefined || s === null || s === '' ? [] : [s])
+
+/** A chain's own start: its first step past a bare greeting (a talk with nothing said). */
+const errandMs = (t: ThreadLike): number => t.steps.find((s) => (s.kind !== 'talk' || (s.said ?? []).length > 0) && s.ms !== undefined)?.ms ?? t.startMs
 
 /** The chains' targets: their popups kept under `thread:<id>` until the player accepts one. */
 export function threadTargets(threads: readonly ThreadLike[]): RouteTarget[] {
@@ -82,6 +99,7 @@ export function threadTargets(threads: readonly ThreadLike[]): RouteTarget[] {
     label: t.name,
     kind: 'thread',
     startMs: t.startMs,
+    orderMs: errandMs(t),
     steps: t.steps.map((s) => ({ npcs: some(s.npc), mobs: some(s.mob), items: (s.items ?? []).map((i) => i.name), said: s.said ?? [], zones: some(s.zone ?? t.zone), kind: s.kind })),
     rewards: (t.rewards ?? []).map((r) => r.name)
   }))
@@ -265,7 +283,23 @@ export function routePopup(p: QuestPopup, targets: readonly RouteTarget[], ctx: 
   const chained = Object.entries(ctx.attached ?? {}).find(([, list]) => list.some((x) => x.next !== undefined && namesWindow(x.next, p.title)))
   const chainHit = chained === undefined ? undefined : byKey.get(chained[0])
   if (chainHit !== undefined) return { hit: chainHit, why: 'chain', ranked }
+  const prize = rewardByOrdinal(p, targets)
+  const prizeHit = prize === undefined ? undefined : byKey.get(prize.key)
+  if (prizeHit !== undefined) return { hit: prizeHit, why: 'ordinal', ranked }
   return { why: 'none', ranked: movePicks(ranked, ctx) }
+}
+
+/**
+ * A reward window that names nothing a quest carries goes by the ordinal it states, among the quests and
+ * chains that end in a hand-in, in the order they started: "Your first quest reward!" to the first, "a
+ * second pair of Boots" to the second. The tutorial's boots print no item line, so no chain names them.
+ */
+function rewardByOrdinal(p: QuestPopup, targets: readonly RouteTarget[]): RouteTarget | undefined {
+  if ((p.rewards ?? []).length === 0 && p.experience !== true) return undefined
+  const nth = ordinalOf(popupText(p))
+  if (nth === undefined) return undefined
+  const done = targets.filter((t) => t.steps.some((s) => s.kind === 'handin')).sort((a, b) => (a.orderMs ?? a.startMs) - (b.orderMs ?? b.startMs))
+  return done[nth]
 }
 
 /** Letters only, lower case: a nameplate read through OCR's slips. */
@@ -323,4 +357,17 @@ export const pictureRows = <R extends { domain: string }>(rows: readonly R[]): R
 /** A key that moves when the places a popup can go change: the Quests rows and the engine's chains. */
 export function placesKey(rows: readonly { domain: string }[], threads: readonly { id: string }[] = []): string {
   return `${String(rows.filter((r) => r.domain === 'quest').length)}|${threads.map((t) => t.id).join(',')}`
+}
+
+/** The Spells rows' names, where a pasted spell window is kept. */
+export const spellRowNames = (rows: readonly { domain: string; name: string }[]): string[] => rows.filter((r) => r.domain === 'spell').map((r) => r.name)
+
+/**
+ * A Lore tab's item name, whole: the tab row crowds the name's last letters (`Petamorph Wand: Mumm`), while
+ * the window's title bar holds it entire. The title line that starts with the name read and runs on wins.
+ */
+export function titledName(name: string | undefined, titleLines: readonly string[]): string | undefined {
+  if (name === undefined || name.length < 6) return name
+  const whole = titleLines.map((l) => l.trim().replace(/[^\w)'"]+$/, '')).find((l) => l.length > name.length && l.startsWith(name))
+  return whole ?? name
 }

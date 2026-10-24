@@ -13,7 +13,7 @@ import { useSpellFacts } from '../../lib/gapSpellFacts'
 import { keepPartPicture, setSpellShot, useSpellShots } from './itemShotsStore'
 import { KeptPicture, Line, PasteZone, WrongItem } from './PasteZone'
 
-const keepOf = (r: SpellWindowRead): SpellPageShot => ({ ...(r.description === undefined ? {} : { description: r.description }), fields: r.fields })
+export const keepOf = (r: SpellWindowRead): SpellPageShot => ({ ...(r.description === undefined ? {} : { description: r.description }), fields: r.fields })
 
 /** The kept window: its description (editable) and the labelled lines it gave. */
 function Kept({ name, kept, fromFile }: { name: string; kept: SpellPageShot; fromFile: boolean }): JSX.Element {
