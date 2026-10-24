@@ -1095,9 +1095,11 @@ export const IPC = {
   // The clipboard's picture as PNG bytes, or null (a click on the paste box). Payload: none.
   shotClipboard: 'shot:clipboard',
   // The picture inbox (src/main/pictureInbox.ts): <userData>/picture-inbox, read like a paste.
-  // list: () -> { dir, files }; read: (name) -> bytes | null; done: (name, ok, reason) moves it to
-  // done/ or failed/; log: (line) a paste, drop or inbox read for the dev log.
+  // list: () -> { dir, files, failed }; read: (name) -> bytes | null; done: (name, ok, reason) moves it
+  // to done/ or failed/; retry: (name) moves failed/<name> back to be read again; log: (line) a paste,
+  // drop or inbox read for the dev log.
   pictureInboxList: 'pictureInbox:list',
+  pictureInboxRetry: 'pictureInbox:retry',
   pictureInboxRead: 'pictureInbox:read',
   pictureInboxDone: 'pictureInbox:done',
   pictureLog: 'pictureInbox:log',

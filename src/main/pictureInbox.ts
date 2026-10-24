@@ -2,7 +2,8 @@
 // don't want to have to REPASTE the images I already gave you into the tool"). <userData>/picture-inbox:
 // a .png, .jpg or .webp dropped there is handed to the main window's paste pipeline (GlobalPaste.tsx),
 // in name order, then moved to done/ (or failed/, the reason in the dev log). The renderer pulls: it
-// lists and reads on launch and whenever the watcher says something landed.
+// lists and reads on launch and whenever the watcher says something landed. A failed picture can be
+// sent back to be read again (the Unsorted pictures list), once a later reader knows it.
 
 import { app, ipcMain } from 'electron'
 import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, watch, type FSWatcher } from 'fs'
@@ -23,8 +24,9 @@ function ensureDirs(): string {
   return dir
 }
 
-/** The pictures waiting, in name order. */
+/** The pictures waiting in a folder, in name order. */
 function waiting(dir: string): string[] {
+  if (!existsSync(dir)) return []
   return readdirSync(dir, { withFileTypes: true })
     .filter((d) => d.isFile() && PICTURE_EXT.has(extname(d.name).toLowerCase()))
     .map((d) => d.name)
@@ -45,6 +47,17 @@ function moveAside(dir: string, name: string, ok: boolean): string {
   return target
 }
 
+/** A failed picture back into the inbox; a name already waiting gets the time in front. */
+function retry(dir: string, name: unknown): boolean {
+  const file = own(join(dir, 'failed'), name)
+  if (file === null) return false
+  const target = existsSync(join(dir, file)) ? join(dir, `${String(Date.now())}-${file}`) : join(dir, file)
+  renameSync(join(dir, 'failed', file), target)
+  logInfo(`[pictures] inbox ${file}: read again`)
+  changed()
+  return true
+}
+
 let watcher: FSWatcher | null = null
 let pending: ReturnType<typeof setTimeout> | null = null
 
@@ -60,7 +73,8 @@ function changed(): void {
 export function registerPictureInboxIpc(): void {
   const dir = ensureDirs()
   logInfo(`[pictures] inbox: ${dir}`)
-  ipcMain.handle(IPC.pictureInboxList, () => ({ dir, files: waiting(dir) }))
+  ipcMain.handle(IPC.pictureInboxList, () => ({ dir, files: waiting(dir), failed: waiting(join(dir, 'failed')) }))
+  ipcMain.handle(IPC.pictureInboxRetry, (_e, name: unknown) => retry(dir, name))
   ipcMain.handle(IPC.pictureInboxRead, (_e, name: unknown) => {
     const file = own(dir, name)
     if (file === null) return null

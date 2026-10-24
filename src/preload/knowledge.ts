@@ -96,7 +96,9 @@ export const knowledgeBridge = {
   gapSpellFacts: (names: readonly string[]): Promise<Record<string, import('../shared/gaps').ClientSpellFacts>> =>
     ipcRenderer.invoke(IPC.gapSpellFacts, [...names]),
   /** The picture inbox (<userData>/picture-inbox): its folder and the pictures waiting, in name order. */
-  pictureInboxList: (): Promise<{ dir: string; files: string[] }> => ipcRenderer.invoke(IPC.pictureInboxList),
+  pictureInboxList: (): Promise<{ dir: string; files: string[]; failed: string[] }> => ipcRenderer.invoke(IPC.pictureInboxList),
+  /** A picture in failed/ goes back to the inbox to be read again; false when it is not there. */
+  pictureInboxRetry: (name: string): Promise<boolean> => ipcRenderer.invoke(IPC.pictureInboxRetry, name),
   /** One waiting picture's bytes; null when it is gone or too large. */
   pictureInboxRead: (name: string): Promise<Uint8Array | null> => ipcRenderer.invoke(IPC.pictureInboxRead, name),
   /** A waiting picture was read: moved to done/ (ok) or failed/, the reason in the dev log. */

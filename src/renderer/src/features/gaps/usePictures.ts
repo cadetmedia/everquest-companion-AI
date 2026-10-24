@@ -3,7 +3,7 @@
 // player made it, into the focused window, and into a text box only when the clipboard holds a picture
 // and no text; several pictures are read under one summary.
 
-import { type MutableRefObject, useCallback, useEffect, useRef } from 'react'
+import { type MutableRefObject, useCallback, useEffect, useRef, useState } from 'react'
 import { GAPS_MODULE_ID } from '@shared/gaps'
 import type { QuestJournalFacts } from '@shared/gapQuests'
 import { placesKey } from '@shared/pasteRoute'
@@ -85,12 +85,32 @@ export function usePictureInbox(enqueue: (jobs: Job[]) => void): void {
       void window.eq.pictureInboxList().then(({ files }) => {
         const fresh = files.filter((f) => !seen.has(f))
         fresh.forEach((f) => seen.add(f))
-        enqueue(fresh.map((name) => ({ source: 'inbox', label: name, bytes: () => window.eq.pictureInboxRead(name), done: (ok, why) => void window.eq.pictureInboxDone(name, ok, why) })))
+        // Once moved aside the name is free again: a picture sent back from failed/ is read anew.
+        const done = (name: string) => (ok: boolean, why: string): void => void window.eq.pictureInboxDone(name, ok, why).finally(() => seen.delete(name))
+        enqueue(fresh.map((name) => ({ source: 'inbox', label: name, bytes: () => window.eq.pictureInboxRead(name), done: done(name) })))
       })
     }
     pull()
     return window.eq.onPictureInbox(pull)
   }, [enqueue])
+}
+
+/** The inbox pictures that could not be read (failed/), kept current as the inbox changes. */
+export function useFailedPictures(): string[] {
+  const [failed, setFailed] = useState<string[]>([])
+  useEffect(() => {
+    let live = true
+    const pull = (): void => {
+      void window.eq.pictureInboxList().then((r) => live && setFailed(r.failed))
+    }
+    pull()
+    const stop = window.eq.onPictureInbox(pull)
+    return () => {
+      live = false
+      stop()
+    }
+  }, [])
+  return failed
 }
 
 /** A paste or a drop anywhere in the main window. */
