@@ -47,6 +47,11 @@ without either. Say "GitHub release" for this and "local build" for anything tha
 owner's PC; ask "Publish GitHub release test.N now?" and wait (owner: "be specific about releases
 going forward ... say github release").
 
+**Before the delta, compare with the wiki's GitHub data pack** (owner, 2026-10-23):
+`npx tsx scripts/eoz-compare.mts --release` (DATA_REFRESH.md, "The wiki's GitHub data pack"). When the
+pack was built within 5 hours, it stands in for the delta: nothing is imported or dropped, and the
+report's stale and missing pages go into the release notes' known issues. Otherwise run the delta.
+
 Since 2026-10-08 a release is built and published by GitHub Actions
 (`.github/workflows/community-release.yml`) when a `community-<version>` tag is pushed, as the
 creator's releases are by `build.yml` on a `v*` tag. Nothing is built on the owner's machine. The
