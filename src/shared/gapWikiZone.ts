@@ -31,7 +31,9 @@ export function zoneBaseName(raw: string): string {
  * is one edit.
  */
 export const ZONE_ALIASES: readonly { zone: string; page?: string; log: readonly string[] }[] = [
-  { zone: 'Cazic Thule', page: 'Cazic Thule (Zone)', log: ['Temple of Cazic-Thule'] }
+  { zone: 'Cazic Thule', page: 'Cazic Thule (Zone)', log: ['Temple of Cazic-Thule'] },
+  // The log's starting zone; the wiki's page and category are Tutorial Zone (its data pack's wikiTitle, 2026-10-23).
+  { zone: 'Tutorial Zone', log: ['EverQuest Legends Tutorial'] }
 ]
 const ALIAS_OF = new Map(ZONE_ALIASES.flatMap((a) => a.log.map((l) => [zoneKey(l), a.zone] as const)))
 const PAGE_OF = new Map(ZONE_ALIASES.flatMap((a) => (a.page === undefined ? [] : [[a.zone, a.page] as const])))

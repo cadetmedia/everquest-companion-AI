@@ -7,6 +7,7 @@
 
 import type { GapDetails, GapRow, GapsSnap } from './gaps'
 import { questLogOf, questTitleKey, type QuestLog, type QuestStep, type QuestTalk } from './gapQuests'
+import { questFactsOf } from './itemQuestFacts'
 
 /** One NPC visit as the engine serves it (gaps_exchanges.rs `Exchange`). */
 export interface TalkVisit {
@@ -80,9 +81,50 @@ function forcedRow(q: ForcedQuest): GapRow {
   return Object.assign(row, { quest: questLogFromVisits(sorted), addedVisits: sorted.length })
 }
 
+/** A quest and the NPCs and items it touched: what their own pages' quest lists gain. */
+export interface QuestLink {
+  quest: string
+  npcs?: readonly string[]
+  items?: readonly string[]
+}
+
+const nameKey = (s: string): string => s.trim().toLowerCase().replace(/[`’]/g, "'")
+
+/**
+ * The rows with each link's quest in its NPCs' and items' quest facts (`questFacts.quests`, which an
+ * NPC page's `related_quests` and an item page's `relatedquests` read), as a task quest's are filled by
+ * the engine (owner, 2026-10-23: "update the wiki pages with all the correct quest links and items and
+ * npc's"). The popup reader feeds a reward it read the same way.
+ */
+export function withQuestLinks<R extends { domain: string; name: string }>(rows: readonly R[], links: readonly QuestLink[]): R[] {
+  const want = new Map<string, Set<string>>()
+  const add = (domains: string, name: string, quest: string): void => {
+    for (const d of domains.split('|')) {
+      const k = `${d}:${nameKey(name)}`
+      want.set(k, (want.get(k) ?? new Set()).add(quest))
+    }
+  }
+  for (const l of links) {
+    for (const n of l.npcs ?? []) add('mob|merchant', n, l.quest)
+    for (const i of l.items ?? []) add('item', i, l.quest)
+  }
+  if (want.size === 0) return [...rows]
+  return rows.map((r) => {
+    const extra = want.get(`${r.domain}:${nameKey(r.name)}`)
+    if (extra === undefined) return r
+    const facts = questFactsOf(r) ?? {}
+    const quests = [...new Set([...(facts.quests ?? []), ...extra])]
+    return { ...r, questFacts: { ...facts, quests } }
+  })
+}
+
+/** A named quest's links: every NPC in its visits, every item handed over or received. */
+const linkOf = (q: ForcedQuest): QuestLink => ({ quest: q.name, npcs: q.visits.map((v) => v.npc), items: q.visits.flatMap((v) => [...(v.offered ?? []), ...(v.given ?? [])]) })
+
 /**
  * The snapshot with the player's quests in it: a name the log already has as a task gains the visits
- * as steps; any other becomes its own row. The visits they hold leave `talks`, the list to pick from.
+ * as steps; any other becomes its own row. The visits they hold leave `talks`, the list to pick from,
+ * and the quest joins its NPCs' and items' quest facts (`withQuestLinks`).
  */
 export function withForcedQuests<S extends GapsSnap & TalkSnap>(snap: S, forced: ForcedQuestMap | undefined): S {
   const quests = Object.values(forced ?? {}).filter((q) => q.visits.length > 0)
@@ -96,7 +138,8 @@ export function withForcedQuests<S extends GapsSnap & TalkSnap>(snap: S, forced:
     byKey.delete(questTitleKey(r.name))
     return { ...r, quest: withVisits(log, q.visits), addedVisits: q.visits.length } as GapRow
   })
-  return { ...snap, rows: [...rows, ...[...byKey.values()].map(forcedRow)], talks: (snap.talks ?? []).filter((v) => !used.has(v.id)) }
+  const all = withQuestLinks([...rows, ...[...byKey.values()].map(forcedRow)], quests.map(linkOf))
+  return { ...snap, rows: all, talks: (snap.talks ?? []).filter((v) => !used.has(v.id)) }
 }
 
 /** `forced` with `visits` added to the quest `name` (a new one when it has none yet). */

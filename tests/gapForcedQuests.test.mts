@@ -3,7 +3,8 @@
 
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { isForcedRow, questLogFromVisits, visitGist, withForcedQuests, withoutQuest, withVisitsAdded, type TalkVisit } from '../src/shared/gapForcedQuests'
+import { isForcedRow, questLogFromVisits, visitGist, withForcedQuests, withoutQuest, withQuestLinks, withVisitsAdded, type TalkVisit } from '../src/shared/gapForcedQuests'
+import { wikiZoneNamer } from '../src/shared/gapWikiZone'
 import { questDraftPage } from '../src/shared/gapQuestPage'
 import type { GapsSnap } from '../src/shared/gaps'
 
@@ -71,4 +72,25 @@ test('VISITS ADDED TO A QUEST THE LOG HAS JOIN ITS STEPS; THE ROW STAYS THE LOG'
 test('the picker shows a visit by its first NPC line, cut short', () => {
   assert.equal(visitGist(DOUG, 30), 'Hail and well met, Soandso. I…')
   assert.equal(visitGist(POPS), 'Supplies! Here, take my old Boots.')
+})
+
+test("A NAMED QUEST JOINS ITS NPCS' AND ITEMS' PAGES: RELATED QUESTS ON DOUG AND POPS, RELATEDQUESTS ON THE BOOTS", () => {
+  const row = (domain: string, name: string, extra: object = {}): GapsSnap['rows'][number] => ({ domain, name, kinds: ['hailed'], count: 1, first: '', last: '', details: { samples: [] }, ...extra }) as unknown as GapsSnap['rows'][number]
+  const rows = [row('mob', 'Doug'), row('merchant', 'pops'), row('item', 'Old Boots', { questFacts: { quests: ['Earlier Quest'] } }), row('mob', 'a rat')]
+  const out = withForcedQuests(snap(rows, [DOUG, POPS]), withVisitsAdded({}, 'Doug Needs a Hand', [DOUG, POPS]))
+  const quests = (name: string): unknown => (out.rows.find((r) => r.name === name) as unknown as { questFacts?: { quests: string[] } }).questFacts?.quests
+  assert.deepEqual(quests('Doug'), ['Doug Needs a Hand'])
+  assert.deepEqual(quests('pops'), ['Doug Needs a Hand'], 'a Merchants row, matched by name in any case')
+  assert.deepEqual(quests('Old Boots'), ['Earlier Quest', 'Doug Needs a Hand'], 'the item Pops gave keeps its other quests')
+  assert.equal(quests('a rat'), undefined)
+  // The popup reader's hook: a reward it read joins the item's page the same way.
+  const linked = withQuestLinks(rows, [{ quest: 'Doug Needs a Hand', items: ['Boots of the Long Road'] }, { quest: 'Doug Needs a Hand', items: ['old boots'] }])
+  assert.deepEqual((linked[2] as unknown as { questFacts: { quests: string[] } }).questFacts.quests, ['Earlier Quest', 'Doug Needs a Hand'])
+})
+
+test('THE TUTORIAL IS THE WIKI\'S TUTORIAL ZONE: ITS LINK AND ITS CATEGORY', () => {
+  const page = questDraftPage('Doug Needs a Hand', questLogFromVisits([DOUG]), { zoneName: wikiZoneNamer(new Map()) })
+  assert.ok(page.includes("! ''' Starts In: '''\n| [[Tutorial Zone]]"))
+  assert.ok(page.includes('[[Category:Tutorial Zone]]'))
+  assert.ok(!page.includes('EverQuest Legends Tutorial'))
 })
