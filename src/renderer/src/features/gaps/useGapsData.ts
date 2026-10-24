@@ -34,8 +34,7 @@ import { withForcedQuests, type TalkSnap, type TalkVisit } from '@shared/gapForc
 import { withZoneRedirects } from '@shared/gapZoneRedirects'
 import { zoneKey } from '@shared/zones'
 import { useForcedQuests } from './useForcedQuests'
-import { withGapEdits } from '@shared/gapEdits'
-import { useGapEdits } from './gapEditsStore'
+import { useEditedSnap } from './gapEditsStore'
 import type { ForcedScope } from './ForcedQuests'
 
 /** Each drop group's members, and the drop-list links that redirect to an item (scrape-drop-groups.ts). */
@@ -106,7 +105,6 @@ export function useGapsData(): GapsData {
   const talks = (snap as TalkSnap | null | undefined)?.talks ?? NO_TALKS
   const scope = useMemo(() => ({ ...forced, talks, titles: QUEST_TITLES }), [forced, talks])
   // The rows the player corrected by hand (owner, 2026-10-23: "EDIT values in the gaps tab").
-  const edits = useGapEdits(talkSnap?.character)
-  const edited = useMemo(() => (snap && Object.keys(edits).length > 0 ? { ...snap, rows: withGapEdits(snap.rows, edits) } : snap), [snap, edits])
+  const edited = useEditedSnap(snap, talkSnap?.character)
   return { snap: edited, engine, loot, kills, forced: scope }
 }

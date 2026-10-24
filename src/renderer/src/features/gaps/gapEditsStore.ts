@@ -3,9 +3,9 @@
 // A small store, not a hook's state: the row buttons save and the tab's data reads, in different parts
 // of the tree. The character is the one the tab's data is for, set by useGapEdits.
 
-import { useEffect, useSyncExternalStore } from 'react'
+import { useEffect, useMemo, useSyncExternalStore } from 'react'
 import { doneKey, type GapRow } from '@shared/gaps'
-import { tidyEdit, type GapEdit, type GapEditMap } from '@shared/gapEdits'
+import { tidyEdit, withGapEdits, type GapEdit, type GapEditMap } from '@shared/gapEdits'
 
 const EDITS_KEY = 'eq.gaps.edits'
 const NONE: GapEditMap = {}
@@ -53,4 +53,10 @@ export function useGapEdits(character: string | null | undefined): GapEditMap {
     notify()
   }, [name])
   return useSyncExternalStore(subscribe, () => all[name] ?? NONE)
+}
+
+/** The snap with the character's hand edits on its rows: the same object while there are none. */
+export function useEditedSnap<S extends { rows: GapRow[] }>(snap: S | null | undefined, character: string | null | undefined): S | null | undefined {
+  const edits = useGapEdits(character)
+  return useMemo(() => (snap && Object.keys(edits).length > 0 ? { ...snap, rows: withGapEdits(snap.rows, edits) } : snap), [snap, edits])
 }
