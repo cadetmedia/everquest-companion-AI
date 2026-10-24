@@ -36,6 +36,38 @@ nowhere, and closes with any wiki-derived file it left stale and the command tha
 
 A script missing from the checkout it runs in (the generators live on slayer-tab) is named stale.
 
+## The wiki's GitHub data pack, before a delta (since 2026-10-23)
+
+The wiki publishes its own parse of every NPC and item page to `Maergoth/EQL-EOZ`, branch `dataset`:
+`manifest.json` (version, `generatedAt`, the pack's `sha256` and size) and
+`eqlwiki-eye-of-zomm-data.json.gz` (~4 MB; 124 zones, ~8.7k NPCs, ~11.3k items, each with its page's
+`revisionId`; no quests, no spells, no wikitext). Third-party data: read as data, nothing from that
+repo is run.
+
+- `npx tsx scripts/eoz-compare.mts` (scrape-delta-tool) in dev pre-release, before the delta. It reads
+  GitHub, never the wiki: the manifest every run, the pack only when its sha256 changed (cached in the
+  gitignored `scripts/sources/cache/eoz/`, sha256 verified). It never writes our data files.
+- The report, per family: pages behind the wiki (`ours rev X -> wiki rev Y`, from the item and mob
+  caches' `index.json`), pages the pack has that we never listed or listed and did not keep, pages
+  only we have, and field disagreements at the same revision (level, zone, classes, slot, AC; zone
+  spellings fold through the zone table). Quests and spells are reported unchecked.
+- `--release` (owner rule, 2026-10-23): a pack built within 5 hours of the release stands in for the
+  delta. Nothing is imported or dropped: the stale and missing pages are named and wait for the next
+  delta (record them in the release notes' known issues), which resumes from the files' `scrapedAt`.
+  Older than 5 hours: run the delta.
+- Never import the pack's fields: its parse lacks otherNames, drop groups and faction amounts.
+- Revision indexes: `scripts/sources/cache/items/index.json` and `mobs/index.json`
+  (`{ revs: { pageid: revid } }`), written by every delta for the pages it reads or proves current.
+  `--seed-revs` seeds them once from the pack, only when our files are newer than the pack, marking
+  the entries `seeded` (a lower bound: a later pack can at worst flag a page that is not stale).
+- The delta skips a changed page whose newest revision we hold: the feed carries each edit's `sha1`
+  and revid (same requests); a page is not read when its recorded revid equals the feed's, or the hex
+  sha1 of our cached text equals the feed's sha1. Never a moved or logged title.
+- First run (2026-10-23, pack 00:25Z, our data 11:30Z): nothing behind; items 31 listed-not-kept,
+  353 ours-only, 30 field disagreements (`FINGERS` for `FINGER`, `Type: Shield` in our slot, wiki
+  typos `SECONDAY`, `RND`); mobs 44 ours-only, 539 disagreements, mostly our raw zone prose
+  (`East Cabilis, also in Chardok?`) and placement (`Erudin Palace` against `Erudin`).
+
 ## Delta procedure
 
 The script is `scripts/scrape-delta.mts` on `scrape-delta-tool`. It reads MediaWiki
@@ -57,7 +89,9 @@ full scrapers). A 3-week window was ~1,200 pages in ~25 batched requests.
 5. Each changed file to its branch: quests and the quest cache to faction-tab, mobFactions and
    mobRaces to slayer-tab, the spell overlay to catch_all, everything else (items, mobs, spells and
    their cache, classes and its cache, pageEra and its cache, respawns, posky, images, the ledger)
-   to local-data-refresh; dropGroups.json and `cache/drop-groups` to gaps-tab.
+   to local-data-refresh; dropGroups.json and `cache/drop-groups` to gaps-tab. The run's line in
+   `docs/community/wiki-usage/ledger.jsonl` (its requests and bytes, printed at the end too) to
+   main_community_rules; cite its counts in the data commits.
 6. Gate the merged result in a second scratch tree and compare `^✖` lines against
    `main_community`'s head; clear the census reds (next section).
 7. Remove the junctions first (`(Get-Item <wt>\node_modules).Delete()`, the same for the three cache

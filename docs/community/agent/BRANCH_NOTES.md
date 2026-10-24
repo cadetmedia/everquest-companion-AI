@@ -344,11 +344,15 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   `withForageRows`, add `met.itemForage` to `keyOf`), `wikiPage.ts` (`row.forageUpdate ?
   forageAddText(...) : itemPage(...)`; NEEDED_OF `[]` for a forage row) and `useGapsData.ts` (forage
   names from the snapshot the derivation receives, the joined one under All characters).
-- Quest pages follow the wiki's own quest pages, not the Help blueprint (2026-10-23, measured on the
-  931 cached): `{{<Era> Era}}`, picture, `questTopTable` with `Start Zone` (885; `Starts In` 6),
-  `== Reward ==`, `== Checklist ==`, `== Walkthrough ==` with a blank line after every block,
-  `Give [[X]] to [[NPC]]:` for a hand-in, `[[Category:Quests]]` then the zone. The player's name in an
-  NPC line is `Soandso` (27 lines on 8 pages; `<name>` 9) in both the engine and `gapQuestPage.ts`.
+- A new quest page follows the wiki's Quest Page Blueprint (Help:Contents, read 2026-10-23; the new
+  Lake Nerius pages follow it): `{{<Era> Era}}`, picture, `questTopTable` with `Starts In`,
+  `= Reward =` (`<ul>`, one `<li>{{:X}}</li>` a line), `= Summary =` (`{{CheckboxList}}`),
+  `= Walkthrough =` with a blank line after every block, `Hand [[X]] to [[NPC]]:` for a hand-in,
+  `= Related Quests =` when the chain is known, `[[Category:Quests]]` then the zone. The blueprint's
+  option lists (Classes, Required Faction) are not copied: a cell the log cannot fill is `?` or left
+  out. Most of the 931 older cached pages write `Start Zone` and `== X ==`; the merge reads both and
+  adds in the page's own layout. The player's name in an NPC line is `Soandso` (27 lines on 8 pages;
+  `<name>` 9) in both the engine and `gapQuestPage.ts`.
 - Quest Copy reads the live page: one `action=parse` read per Copy click (owner-approved: "i'd have to
   go look it up myself anyways"), never on render or a timer (`src/main/gapQuestLive.ts`); a title
   ending in `?` that the wiki lacks is asked once more without it. `gapQuestMerge.ts` only adds: rows
