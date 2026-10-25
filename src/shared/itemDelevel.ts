@@ -93,7 +93,9 @@ export function delevel(statsblock: string, tier: number): Delevel {
   const inexact: string[] = []
   // The upgrade's own SV VOID is +full exactly; a native one scales past it (itemUpgrade.ts).
   const voidLine = new RegExp(`(^|\\s)SV VOID: \\+${String(full)}(?=\\s|$)`)
-  const synthetic = full > 0 && earnsVoid(lines)
+  // An SV VOID of exactly the tier is the upgrade's own whatever else the item states: a native one
+  // scales past it (owner, 2026-10-24: Bloodsoaked Gauntlets +1, only AC HP MANA END, read SV VOID 1).
+  const synthetic = full > 0 && (earnsVoid(lines) || lines.some((l) => voidLine.test(l)))
   // An upgraded weapon's Accuracy is the upgrade's own (2.5% a tier, none at +0: owner, 2026-10-24).
   const weapon = full > 0 && lines.some((l) => /(^|\s)DMG: \d/.test(l))
   const own = (l: string): string => (weapon ? l.replace(/(^|\s+)Accuracy: \+?[\d.]+%/, '').trim() : l)

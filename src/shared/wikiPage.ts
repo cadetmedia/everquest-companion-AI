@@ -662,14 +662,24 @@ const PAGE_OF: Record<GapDomain, (row: GapRow, c: PageContext) => string> = {
 export const IMAGE_NEED = 'image (a screenshot)'
 
 /** The domains whose page needs the same thing whatever the log saw; mobs and merchants are read below. */
+/**
+ * An item seen only in a capture or the bags, with no quest facts: nothing says where it comes from
+ * (owner, 2026-10-24: "why does this say ready if we don't know where it drops from?").
+ */
+function sourceNeed(row: GapRow): string[] {
+  const unsourced = row.kinds.length > 0 && row.kinds.every((k) => k === 'captured' || k === 'held') && (row as { questFacts?: unknown }).questFacts === undefined
+  return unsourced ? ['where it comes from (loot it, buy it, or a quest hands it over)'] : []
+}
+
 const NEEDED_OF: Partial<Record<GapDomain, (row: GapRow, seen: PageExtras) => string[]>> = {
   item: (row, seen) => {
     if (row.forageUpdate) return []
     const shot = seen.itemShots?.[row.name]
     // The window showed a Lore tab: the page wants its text (owner, 2026-10-21: "item data and/or lore").
     const lore = shot?.loreTab === true && !shot.lore ? ['lore (paste the Lore tab below)'] : []
-    if ((shot?.tier ?? 0) > 0) return ['stats at +0 (the window pasted is upgraded)', ...lore]
-    return [...(shot?.statsblock ? [] : ['stats (paste a screenshot of the item window below)']), ...lore]
+    const source = sourceNeed(row)
+    if ((shot?.tier ?? 0) > 0) return ['stats at +0 (the window pasted is upgraded)', ...lore, ...source]
+    return [...(shot?.statsblock ? [] : ['stats (paste a screenshot of the item window below)']), ...lore, ...source]
   },
   spell: (row, seen) => (spellPageValues(seen.spellFacts?.[row.name], seen.spellShots?.[row.name]).description === undefined ? ['description (paste the spell display window below)'] : []),
   faction: (row) => (row.adjust === undefined ? ['the amount (a kill that is not capped)'] : []),

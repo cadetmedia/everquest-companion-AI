@@ -2,7 +2,7 @@
 // `Fire Beetle Eye` page: the era banner, only the fields the log fills, `dropsfrom` by zone.
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { dropsSeen, itemPage, itemWhereTable, mobFacts, mobPage, spellPage, wikiCoin, wikiPageText } from '../src/shared/wikiPage'
+import { dropsSeen, itemPage, itemWhereTable, mobFacts, mobPage, spellPage, stillNeeded, wikiCoin, wikiPageText } from '../src/shared/wikiPage'
 import { vendorFinder } from '../src/shared/gapMobPage'
 import { wikiZoneNamer } from '../src/shared/gapWikiZone'
 import { killIndex, type KillMap } from '../src/shared/kills'
@@ -300,4 +300,12 @@ test('a zone it both dropped and was foraged in is one category; an item never f
   assert.equal(text.match(/\[\[Category:Kedge Keep\]\]/g)?.length, 1)
   assert.match(text, /\|foraged = \n\n\* \[\[Kedge Keep\]\]\n/)
   assert.doesNotMatch(itemPage({ name: 'X', drops: [], soldBy: [], crafted: true }), /foraged|playercrafted|Tradeskill Ingredient/)
+})
+
+test('AN ITEM SEEN ONLY IN A CAPTURE OR THE BAGS IS NOT READY UNTIL SOMETHING SAYS WHERE IT COMES FROM (owner, 2026-10-24)', () => {
+  const captured = { domain: 'item', name: 'Burning Fighters Blade', kinds: ['captured'], count: 1, first: '', last: '', details: {} } as unknown as GapRow
+  const shots = { itemShots: { 'Burning Fighters Blade': { statsblock: 'DMG: 9<br>' } } }
+  assert.ok(stillNeeded(captured, [], {}, shots).some((n) => n.startsWith('where it comes from')))
+  const looted = { ...captured, kinds: ['looted'] } as GapRow
+  assert.deepEqual(stillNeeded(looted, [], {}, shots), [])
 })
