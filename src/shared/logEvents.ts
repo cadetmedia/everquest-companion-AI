@@ -189,8 +189,9 @@ export interface DeathEvent extends LogEventBase {
 /**
  * A single damage application. Names are RAW (display case) — canonicalization
  * via idKey() stays the engine's job. `attacker` is null for caster-less
- * other-player DoT lines (`X has taken N damage by <Spell>.`); the engine ignores
- * null-attacker damage.
+ * other-player DoT lines (`X has taken N damage by <Spell>.`), which the engine
+ * ignores, and for a hit on you that names no source (`You were hit by non-melee
+ * for N damage.`), which it books under an Environment incoming row.
  */
 export interface DamageEventE extends LogEventBase {
   kind: 'damage'

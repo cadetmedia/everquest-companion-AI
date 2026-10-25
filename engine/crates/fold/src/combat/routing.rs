@@ -1157,6 +1157,34 @@ fn route_ally_pet_miss(st: &mut EngineState, ev: &MissLine, fold: &MissFold) {
     );
 }
 
+/// The incoming row for damage the log gives no source (`You were hit by non-melee for N damage.`).
+pub const ENVIRONMENT: &str = "Environment";
+/// No `#`, so no world instance (`<name>#<gen>`) can share the row.
+const ENVIRONMENT_ID: &str = "environment";
+
+/// Lava, a trap, a fall: damage you took, booked where damage taken is (the fresh fight, if one is
+/// open, and the zone session) but aggregate-only, so it opens no fight, extends none, engages
+/// nothing and is credited to no mob (owner, 2026-10-25).
+pub fn route_environment_damage(st: &mut EngineState, ev: &DamageEvent<'_>) {
+    if ev.amount <= 0 {
+        return;
+    }
+    both(st, ev.ts, true, |agg| {
+        agg.add_inc(ENVIRONMENT_ID, ENVIRONMENT, ev)
+    });
+    let instant = TimelineRaw {
+        target: None,
+        ..damage_instant(ev, "enemy", String::new())
+    };
+    push_fresh_timeline(st, ev.ts, instant);
+    st.log(
+        ev.ts,
+        ev.dtype,
+        "enemy",
+        format!("{ENVIRONMENT} → You  {}  {}", ev.amount, ev.skill),
+    );
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

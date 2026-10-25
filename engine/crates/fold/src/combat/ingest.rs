@@ -631,6 +631,14 @@ fn ingest_damage(st: &mut EngineState, ev: &Event) {
     // Caster-less other-player DoTs (`attacker: null`) are not our fight, and the raw line is what
     // the ring keeps: there is nothing else to say about a line nobody owns.
     let Some(attacker) = ev.str(Key::Attacker) else {
+        // …except a hit on YOU that names no source (lava, a fall): damage taken all the same.
+        if id_key_ref(ev.str(Key::Target).unwrap_or_default()) == "you" {
+            eval_closure(st, ev.ts());
+            let modifiers = ev.arr_str(Key::Modifiers);
+            let dmg = to_damage_event(st, ev, routing::ENVIRONMENT, &modifiers);
+            routing::route_environment_damage(st, &dmg);
+            return;
+        }
         st.log(ev.ts(), "other", "dropped", ev.raw().to_owned());
         return;
     };
