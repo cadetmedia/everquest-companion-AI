@@ -69,14 +69,13 @@
 //     and never added together (law 6: say what the sources cannot say). Those stated values are
 //     the SCALED ones now; what is refused is the addition, which no ruling has touched.
 
-import type { CarryAll } from './carryAll'
+import { laneLabel, laneOfEntry, type CarryAll } from './carryAll'
 import type { ItemStat, ItemStatBlock } from './itemStats'
 import { statLabel } from './itemStats'
 import { scaleStatBlock, upgradeStateForTier } from './itemUpgrade'
 import {
   parseItemName,
-  PRIMARY_ITEM_SECTION,
-  splitLocationPath,
+  PRIMARY_ITEM_SECTION,
   walkEntries,
   type EquipLocationToken,
   type InventoryDump,
@@ -224,7 +223,7 @@ export interface OwnedExaltation {
   name: string
   /** `ownershipKey(name)` — the gear-index join the renderer's audit makes */
   key: string
-  /** where the row sits, in the file's own vocabulary: `socketed in Primary`, `General 8`, … */
+  /** where the copy is, in a player's words: `equipped`, `your bags`, `your bank`, … (placeWords) */
   where: string
   /** true when it sits in a socket of a WORN item — in force, not spare */
   socketed: boolean
@@ -233,6 +232,26 @@ export interface OwnedExaltation {
 /** The `where` of a keyring-shaped row: the game's Storage > Exaltations window, which the dump
  *  files as `Augmentation` rows of the `KeyRing` table. */
 export const EXALTATION_STORAGE = 'Exaltations storage'
+
+/**
+ * Where a copy is, the way a player says it (owner, 2026-10-25: "general 6 means nothing to a
+ * player, just says in bags or in bank or in dragons horde or equipped"): the carry-all lane the
+ * row falls in, never the file's `General 6-Slot1-Slot10`. A gem socketed in a bagged item is in
+ * your bags; a section of its own (the Dragon's Hoard) keeps the section's name.
+ */
+const PLACE_WORDS: Record<string, string> = {
+  worn: 'equipped',
+  bags: 'your bags',
+  bank: 'your bank',
+  depot: 'your depot',
+  keyring: 'your key rings',
+  elsewhere: 'another place'
+}
+
+export function placeWords(entry: InventoryEntry): string {
+  const lane = laneOfEntry(entry)
+  return PLACE_WORDS[lane] ?? `your ${laneLabel(lane)}`
+}
 
 /**
  * Every exaltation copy the dump names, wherever it names one: worn sockets, bags, the bank, the
@@ -247,18 +266,8 @@ export function ownedExaltations(dump: InventoryDump): OwnedExaltation[] {
   for (const entry of walkEntries(dump.items)) {
     if (entry.empty || !entry.parsedName.exaltation) continue
     const name = entry.parsedName.base
-    if (entry.section !== PRIMARY_ITEM_SECTION) {
-      out.push({ name, key: ownershipKey(name), where: entry.section, socketed: false })
-      continue
-    }
-    const socketed = entry.place.kind === 'equip' && entry.path.length === 1
-    const base = splitLocationPath(entry.location).base
-    out.push({
-      name,
-      key: ownershipKey(name),
-      where: socketed ? `socketed in ${base}` : base,
-      socketed
-    })
+    const socketed = entry.section === PRIMARY_ITEM_SECTION && entry.place.kind === 'equip' && entry.path.length === 1
+    out.push({ name, key: ownershipKey(name), where: placeWords(entry), socketed })
   }
   for (const entry of dump.keyRing) {
     if (!entry.parsedName.exaltation) continue
