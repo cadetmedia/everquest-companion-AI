@@ -29,7 +29,7 @@ import { DEFAULT_TOAST_CONFIG, introToastPayload, type ToastPayload } from '@sha
 import type { OverlayConfig } from '@shared/types'
 import { ToastCard } from './ToastCard'
 import { ScaledContent } from './overlayScale'
-import { useUnpinOnPointerExit } from './cardQueue'
+import { useCardTick, useUnpinOnPointerExit } from './cardQueue'
 import { toastReduce, type ToastAction, type ToastCardState } from './toastQueue'
 import { DragFrame } from './DragFrame'
 import { useOverlayChrome } from './useOverlayChrome'
@@ -98,10 +98,8 @@ export default function ToastOverlay(): JSX.Element {
     return window.eqOverlay.onToast((payload: ToastPayload) => dispatch({ type: 'show', payload }))
   }, [])
 
-  useEffect(() => {
-    const id = setInterval(() => dispatch({ type: 'tick', dtMs: TICK_MS }), TICK_MS)
-    return () => clearInterval(id)
-  }, [])
+  // Only while a card is on screen: an empty strip keeps no timer (the banner's and con card's way).
+  useCardTick(cards.length > 0, () => dispatch({ type: 'tick', dtMs: TICK_MS }))
 
   useMouseCapture(chrome.ready, chrome.locked, cards.length > 0)
   // A pointer that left without saying so must not leave a card pinned forever (JOS-381) — the

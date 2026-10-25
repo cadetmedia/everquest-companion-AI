@@ -78,6 +78,7 @@ import { IPC } from '../../shared/ipc'
 import { MODULE_WORLD_CHANGED, type ModuleChanged } from '../../shared/types'
 import { sendToCharacterAwareOverlays, sendToModuleOverlays } from '../worldRebuilt'
 import { sendToMain } from '../windows'
+import { getOverlayWindow } from '../windows'
 import { noteTailLine } from '../switchNudge'
 import { noteEventKind } from '../telemetry/breadcrumbs'
 import { noteModuleMoved } from '../gapSourceMoves'
@@ -153,19 +154,32 @@ export function pushModuleChanged(moduleId: string, seq: number): void {
 const COMBAT_ACTIVITY_THROTTLE_MS = 250
 let combatActivityLast = 0
 let combatActivityTimer: ReturnType<typeof setTimeout> | null = null
+
+/** The overlays that poll `combat.snapshot` (`useOverlayCombat`): without the ping they lag up to
+ *  their 1 s fallback poll behind the main window's meters. */
+const METER_OVERLAYS = ['fight', 'overall', 'heal-fight', 'heal-overall'] as const
+
+function sendCombatActivity(): void {
+  sendToMain(IPC.onCombatActivity)
+  for (const kind of METER_OVERLAYS) {
+    const w = getOverlayWindow(kind)
+    if (w && !w.isDestroyed()) w.webContents.send(IPC.onCombatActivity)
+  }
+}
+
 function notifyCombatActivity(): void {
   const now = Date.now()
   const since = now - combatActivityLast
   if (since >= COMBAT_ACTIVITY_THROTTLE_MS) {
     combatActivityLast = now
-    sendToMain(IPC.onCombatActivity)
+    sendCombatActivity()
     return
   }
   if (combatActivityTimer) return
   combatActivityTimer = setTimeout(() => {
     combatActivityTimer = null
     combatActivityLast = Date.now()
-    sendToMain(IPC.onCombatActivity)
+    sendCombatActivity()
   }, COMBAT_ACTIVITY_THROTTLE_MS - since)
   combatActivityTimer.unref?.()
 }
