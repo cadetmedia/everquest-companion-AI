@@ -69,16 +69,21 @@ function Bar({
 export function DroppedByColumn({
   sources,
   max,
-  onOpenMob
+  onOpenMob,
+  empty
 }: {
   sources: LootTally[]
   max: number
   onOpenMob?: (t: MobTarget) => void
+  /** What the column says with no mob to list; absent ⇒ "You have not looted this yet." */
+  empty?: string
 }): JSX.Element {
   return (
     <Box sx={{ flex: 1, minWidth: 0 }}>
       <ObservedHead title="Dropped by" hint="(times seen)" />
-      {sources.length === 0 && <Typography variant="caption">You have not looted this yet.</Typography>}
+      {sources.length === 0 && (
+        <Typography variant="caption">{empty ?? 'You have not looted this yet.'}</Typography>
+      )}
       {sources.map((s) => (
         <Bar
           key={s.name}
