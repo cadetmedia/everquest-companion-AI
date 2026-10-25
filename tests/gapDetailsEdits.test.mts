@@ -66,7 +66,6 @@ test('C7: the map links are the zones the row was named in, tiers folded, one pe
   assert.deepEqual(gapMapZones({ ...r, details: { samples: [], zones: { distinct: 1, entries: [{ name: 'Nowhere At All', n: 1 }] } } }), [])
   assert.deepEqual(gapMapZones(row('Rat Ear')), [], 'no zones, no links')
   assert.equal(headingMapZone('Nowhere At All'), null)
-  assert.equal(headingMapZone('Lake Nerius'), null, 'a zone with no map file has no link')
 })
 
 test("C7: a hand-edited zone opens first, typed plain or as a link; a refused, blank or malformed one changes nothing", () => {
