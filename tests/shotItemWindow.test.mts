@@ -106,9 +106,10 @@ test('WINDSTRIKER: THREE COLUMNS, WEAPON LINES, EFFECTS; THE FOCUS GOES OUTSIDE 
   // a filled slot's kind of effect is never written as the item's own (owner, 2026-10-21).
   assert.equal(r.focusEffect, undefined)
   // DMG 920 is corrected by the window's own Ratio and Delay, and the player is told.
-  // ... and the window is +10 (D3): Weight's ceiling keeps it from one +0 value, so no guess is offered.
+  // ... and the window is +10 (D3): Weight's ceiling keeps it from one +0 value, so it alone is left `?`.
   assert.deepEqual(r.checks, [
-    "This window is +10: its numbers are the upgraded item's, not the page's. These do not take back to one +0 value: WT: 0.4.",
+    `This window is +10: its numbers are the upgraded item's, not the page's. "Use the +0 stats" takes back all but WT: 0.4, left as ? for you to fill.`,
+    'WT 0.4 at +10: any of 3.0 to 3.9 at +0 gives it, so it is left as ? for you to fill.',
     'DMG read as 920; the window\'s Ratio (1.5) and Delay (60) say 90.',
     "Focus effect Improved Healing III not written: the item's Focus Exaltation slot holds Idol of the Underking (Exaltation), and the window cannot tell its effect from the item's own. Check the item's page."
   ])

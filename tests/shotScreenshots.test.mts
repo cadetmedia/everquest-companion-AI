@@ -288,9 +288,12 @@ test("WU'S FIST OF MASTERY +10 (AUGMENTED) (THE OWNER'S, 2026-10-21): THE +10 PA
   const checks = s.read.checks ?? []
   assert.ok(checks.some((c) => c.startsWith('Click effect Pillage Enchantment not written') && c.includes('Golem Metal Wand (Exaltation)')), JSON.stringify(checks))
   assert.ok(checks.some((c) => c.startsWith('Combat effect Lifebite not written') && c.includes("Proc Exaltation slot holds Cherista's Fangs (Exaltation)")), JSON.stringify(checks))
-  // The +10 numbers are the upgraded item's: no +0 guess where they do not take back exactly.
+  // The +10 numbers are the upgraded item's: taken back by the upgrade rules (DMG 32 at +10 is 16; the
+  // Accuracy is the upgrade's own), and Weight, which several +0 values give, left `?` (owner, 2026-10-25).
   assert.ok(checks.some((c) => c.startsWith('This window is +10')), JSON.stringify(checks))
-  assert.equal(s.read.baseStatsblock, undefined)
+  assert.ok(s.read.baseStatsblock?.includes('DMG: 16<br>'), s.read.baseStatsblock)
+  assert.ok(s.read.baseStatsblock.includes('Size: TINY WT: ?<br>'), s.read.baseStatsblock)
+  assert.ok(!s.read.baseStatsblock.includes('Accuracy'), s.read.baseStatsblock)
 })
 
 test("PETAMORPH WAND: MUMMY (THE OWNER'S, 2026-10-23): THE WINDOW AND ITS LORE TAB GIVE THE PAGE THE WEREWOLF PAGE IS, LINE FOR LINE", async () => {

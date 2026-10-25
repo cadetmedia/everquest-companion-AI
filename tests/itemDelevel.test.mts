@@ -15,18 +15,25 @@ test('AT THE CAP EVERY STAT TAKES BACK TO ONE BASE; THE UPGRADE\'S OWN SV VOID G
   const back = delevel(plus10, 10)
   assert.equal(back.block, '\nSlot: RANGE<br>\nDMG: 45<br>\nSTR: +5  AGI: +5  DEX: +5  HP: +50<br>\nClass: RNG<br>')
   const heavy = delevel('\nSTR: +15<br>\nSize: MEDIUM WT: 0.4<br>', 10)
-  assert.equal(heavy.block, undefined)
+  // Weight's ceiling maps many bases to one: that number is left `?` and named, the rest taken back (owner, 2026-10-25).
+  assert.equal(heavy.block, '\nSTR: +5<br>\nSize: MEDIUM WT: ?<br>')
+  assert.equal(heavy.exact, false)
   assert.deepEqual(heavy.inexact, ['WT: 0.4'])
+  assert.deepEqual(heavy.notes, ['WT 0.4 at +10: any of 3.0 to 3.9 at +0 gives it, so it is left as ? for you to fill.'])
 })
 
 test('THE INVERSE AGREES WITH THE FORWARD RULE: A BASE SCALED UP AND TAKEN BACK IS ITSELF', () => {
   for (const tier of [1, 3, 10]) {
     const fwd = scaleStatBlock({ stats: [{ key: 'STR', value: '+12' }, { key: 'HP', value: '+40' }], saves: [{ key: 'SV FIRE', value: '-8' }], flags: [], effects: [], exaltationSlots: [], extras: [], ac: 25 } as never, { full: tier, fraction: 0 })
     const block = `\nAC: ${String(fwd.ac)}<br>\n${fwd.stats.map((s) => `${s.key}: ${s.value}`).join('  ')}<br>\n${fwd.saves.filter((s) => s.key !== 'SV VOID').map((s) => `${s.key}: ${s.value}`).join('  ')}<br>`
+    // The Tier bar's progress read: one state, every number back exactly; at +10 the -8 penalty reads 0,
+    // which every penalty of ten or less (and more) gives, so it alone is left `?`.
+    const fire = tier === 10 ? '?' : '-8'
+    assert.equal(delevel(block, tier, 0).block, `\nAC: 25<br>\nSTR: +12  HP: +40<br>\nSV FIRE: ${fire}<br>`, `tier ${String(tier)}`)
+    // Unread below the cap: a stat over ten that another fraction explains as well is left `?`, never guessed.
     const back = delevel(block, tier)
-    // below the cap the merge fraction is unknown, so a stat over ten may not be one number: then no guess
-    if (back.block !== undefined) assert.equal(back.block, '\nAC: 25<br>\nSTR: +12  HP: +40<br>\nSV FIRE: -8<br>', `tier ${String(tier)}`)
-    else assert.ok(back.inexact.length > 0)
+    if (back.exact) assert.equal(back.block, `\nAC: 25<br>\nSTR: +12  HP: +40<br>\nSV FIRE: ${fire}<br>`, `tier ${String(tier)}`)
+    else assert.ok(back.inexact.length > 0 && (back.block ?? '').includes('?'))
   }
 })
 

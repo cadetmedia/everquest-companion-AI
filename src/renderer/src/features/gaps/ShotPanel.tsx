@@ -100,6 +100,15 @@ function KeptFacts({ kept }: { kept: StoredShot }): JSX.Element {
 }
 
 /**
+ * The +0 button's words: worked back exactly, or how many numbers it leaves `?` for the player (owner,
+ * 2026-10-25: the upgrade rules in reverse, shared/itemDelevel.ts).
+ */
+function baseLabel(block: string): string {
+  const left = (block.match(/:\s*\?/g) ?? []).length
+  return left === 0 ? 'Use the +0 stats (worked back exactly)' : `Use the +0 stats (${String(left)} left as ? for you)`
+}
+
+/**
  * A +N window: the page keeps its skeleton until the player takes the box to +0 (owner, 2026-10-21,
  * D3): the upgrade rule's guess when it inverts exactly, or the box as the player corrected it.
  */
@@ -112,7 +121,7 @@ function TierChoice({ name, kept }: { name: string; kept: StoredShot }): JSX.Ele
       <Line warn>+{tier}: Copy wiki page leaves the stats out until they are the +0 item's.</Line>
       {baseStatsblock !== undefined && (
         <Button size="small" onClick={() => atBase(baseStatsblock)} data-testid="gaps-shot-estimate">
-          Estimate +0 stats (a guess)
+          {baseLabel(baseStatsblock)}
         </Button>
       )}
       <Button size="small" onClick={() => atBase(kept.statsblock)}>
