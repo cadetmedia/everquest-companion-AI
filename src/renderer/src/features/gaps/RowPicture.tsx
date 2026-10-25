@@ -48,7 +48,9 @@ function RowPicture({ row }: { row: GapRow }): JSX.Element | null {
   useEffect(() => setAt(0), [row.name, row.domain])
   const shown = pictures.at(Math.min(at, pictures.length - 1))
   const url = usePictureData(shown?.path, folder)
-  if (shown === undefined || url === null) return null
+  if (shown === undefined) return null
+  // The file is there and being read: its place, saying so (owner, 2026-10-24: "show the area it will load").
+  if (url === null) return <PictureLoading />
   const path = shown.path
   const name = path.split(/[\\/]/).pop() ?? path
   const step = (by: number): void => setAt((i) => (i + by + pictures.length) % pictures.length)
@@ -76,6 +78,15 @@ function RowPicture({ row }: { row: GapRow }): JSX.Element | null {
           sx={{ display: 'block', width: '100%', height: 'auto', maxHeight: '36vh', objectFit: 'contain', borderRadius: 1, border: 1, borderColor: 'divider', cursor: 'pointer' }}
         />
       </Tooltip>
+    </Box>
+  )
+}
+
+/** The picture's place while it is read. */
+function PictureLoading(): JSX.Element {
+  return (
+    <Box sx={{ flex: '0 1 420px', maxWidth: '100%', minWidth: 0, height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 1, borderColor: 'divider', borderRadius: 1 }} data-testid="gaps-row-picture-loading">
+      <Typography variant="body2" color="text.secondary">Loading picture…</Typography>
     </Box>
   )
 }
