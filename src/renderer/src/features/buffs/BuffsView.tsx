@@ -243,12 +243,16 @@ function AllowModeSwitch({ optIn, onChange }: { optIn: boolean; onChange: (v: bo
 
 export default function BuffsView(): JSX.Element {
   const snap = useModule<BuffsSnap>('buffs') ?? EMPTY_BUFFS
-  // Tick once a second so active-buff elapsed/remaining stay live between deltas.
+  // Tick once a second so active-buff elapsed/remaining stay live between deltas, and only while a
+  // row is there to count down: with none, the page has no clock to redraw.
   const [now, setNow] = useState(() => Date.now())
+  const ticking = snap.active.length > 0
   useEffect(() => {
+    if (!ticking) return
+    setNow(Date.now())
     const id = setInterval(() => setNow(Date.now()), 1000)
     return () => clearInterval(id)
-  }, [])
+  }, [ticking])
 
   // HIDDEN BY DEFAULT (JOS-215) — a display filter over the snapshot, never a request to the
   // model. `snap.active` keeps every row; this page just chooses which to draw.
