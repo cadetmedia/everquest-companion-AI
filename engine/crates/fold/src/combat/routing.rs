@@ -251,8 +251,8 @@ pub fn route(st: &mut EngineState, ev: &DamageEvent<'_>) -> Option<Attribution> 
     }
     // Before the ignore gate and the outgoing/incoming split: a bound ally pet swinging at YOU
     // classifies as `Incoming` rather than `Ignore`, and that line is the strongest soft-hostile
-    // proof there is.
-    note_ally_pet_evidence(st, ev.attacker, ev.target, ev.ts);
+    // proof there is (a DoT tick on you excepted, see below).
+    note_ally_pet_damage_evidence(st, ev);
     // …and the same line for the other model: something that landed damage on you is a hostile,
     // whatever its name looks like.
     if at == Attribution::Incoming {
@@ -1052,6 +1052,17 @@ pub(crate) fn ally_pet_source(bind: &AllyBind) -> SourceRef {
         name: format!("Pet ({}) - {}", bind.display, bind.charmer),
         kind: SourceKind::AllyPet,
     }
+}
+
+/// A landed line, offered to the ally-charm model — unless it is a DoT tick on you. A tick names who
+/// cast it, not when, and keeps ticking after its caster is charmed (`You have taken 3 damage from
+/// Strong Disease by a scorn banshee.` three times after Kamas charmed it, 2026-10-07), so it proves
+/// nothing about the pet now. A tick on anyone else is offered as before.
+fn note_ally_pet_damage_evidence(st: &mut EngineState, ev: &DamageEvent<'_>) {
+    if ev.dtype == "dot" && id_key_ref(ev.target) == "you" {
+        return;
+    }
+    note_ally_pet_evidence(st, ev.attacker, ev.target, ev.ts);
 }
 
 /// What one swing by a third party's charm pet proves — read off every attributed and every ignored
