@@ -41,7 +41,7 @@ import { copyText } from '../../lib/clipboard'
 import { useGapVerdicts } from '../../lib/gapVerdicts'
 import { usePageSightings } from './usePageSightings'
 import GapsTable from './GapsTable'
-import { GAPS_DATA_DATE, PAGE_EXTRAS, useGapsData } from './useGapsData'
+import { GAPS_DATA_DATE, GAPS_DATA_STAMP, PAGE_EXTRAS, useGapsData } from './useGapsData'
 import { AddQuestButton, QuestScopes } from './ForcedQuests'
 import { SuggestedQuests } from './SuggestedQuests'
 import { useDoneMarks, usePlayerList } from './useDoneMarks'
@@ -253,7 +253,7 @@ export default function GapsView(): JSX.Element {
   // Mobs rows the player marked as players are gone for good (owner, 2026-10-19).
   const playerList = usePlayerList()
   const rows = useMemo(() => (snap ? withoutPlayers(snap.rows, playerList.players) : undefined), [snap, playerList.players])
-  const marks = useDoneMarks(new Date().toISOString().slice(0, 10), GAPS_DATA_DATE)
+  const marks = useDoneMarks(GAPS_DATA_STAMP)
   const [showDone, setShowDone] = useBoolPref(SHOW_DONE_KEY, false)
   // The list follows the query a beat behind the keystroke, so typing never waits on a filter.
   const deferredQuery = useDeferredValue(query)

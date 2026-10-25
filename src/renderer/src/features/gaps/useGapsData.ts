@@ -42,6 +42,8 @@ import type { ForcedScope } from './ForcedQuests'
 const DROPS = dropGroupsJson as { groups: DropGroups; aliases?: DropAliases }
 /** The wiki data's date, `2026-10-19`: the chips' tooltips and the tab's caption say it. */
 export const GAPS_DATA_DATE = ((mobsJson as { scrapedAt?: string }).scrapedAt ?? '').slice(0, 10)
+/** When the wiki data was scraped, to the second: a Done mark made before it clears (keptDoneMarks). */
+export const GAPS_DATA_STAMP = (mobsJson as { scrapedAt?: string }).scrapedAt ?? ''
 
 const ZONE_COUNTS = catalogZoneCounts(MOB_CATALOG)
 const ZONE_NAME: ZoneNamer = wikiZoneNamer(ZONE_COUNTS)

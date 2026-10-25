@@ -80,23 +80,26 @@ export const GAP_CAPTURE: Record<GapDomain, string> = {
 export const doneKey = (row: GapRow): string => `${row.domain}:${row.name}`
 
 /**
- * The Done marks to keep (`key -> the day it was marked`): every mark made before the wiki data's
- * date is cleared (owner, 2026-10-19: "after a scrape, wipe all DONE entries"), so a row the refresh
- * still lacks comes back. A row's absence is never the test: the list fills in stages at launch and
- * swaps with the character, and dropping on absence lost marks.
+ * The Done marks to keep (`key -> when it was marked`, an ISO time): every mark made before the wiki
+ * data was scraped is cleared (owner, 2026-10-19: "after a scrape, wipe all DONE entries"), so a row
+ * the refresh still lacks comes back. By the time, not the day (owner, 2026-10-25: "it should go off
+ * TIME"): a mark made the evening after a scrape stays. A mark stored as a bare day (before that
+ * ruling) is compared by day. A row's absence is never the test: the list fills in stages at launch
+ * and swaps with the character, and dropping on absence lost marks.
  */
-export function keptDoneMarks(marks: Readonly<Record<string, string>>, dataDate: string): Record<string, string> {
-  return Object.fromEntries(Object.entries(marks).filter(([, markedOn]) => markedOn >= dataDate))
+export function keptDoneMarks(marks: Readonly<Record<string, string>>, scrapedAt: string): Record<string, string> {
+  const kept = (markedAt: string): boolean => (markedAt.length <= 10 ? markedAt >= scrapedAt.slice(0, 10) : markedAt >= scrapedAt)
+  return Object.fromEntries(Object.entries(marks).filter(([, markedAt]) => kept(markedAt)))
 }
 
 /**
- * The Done marks with every one of `rows` marked on `today`, or every one cleared: a mob heading's
- * one Done for every line under it (owner ask, 2026-10-21). A mark already made keeps its day.
+ * The Done marks with every one of `rows` marked at `at`, or every one cleared: a mob heading's
+ * one Done for every line under it (owner ask, 2026-10-21). A mark already made keeps its time.
  */
-export function withDoneMarks(marks: Readonly<Record<string, string>>, rows: readonly GapRow[], on: boolean, today: string): Record<string, string> {
+export function withDoneMarks(marks: Readonly<Record<string, string>>, rows: readonly GapRow[], on: boolean, at: string): Record<string, string> {
   const keys = new Set(rows.map(doneKey))
   if (!on) return Object.fromEntries(Object.entries(marks).filter(([k]) => !keys.has(k)))
-  return { ...Object.fromEntries([...keys].map((k) => [k, today])), ...marks }
+  return { ...Object.fromEntries([...keys].map((k) => [k, at])), ...marks }
 }
 
 /** Every one of `rows` is marked done, and there is at least one. */
