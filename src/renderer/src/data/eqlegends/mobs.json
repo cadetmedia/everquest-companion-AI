@@ -1,5 +1,5 @@
 {
-  "scrapedAt": "2026-10-25T09:22:49.525Z",
+  "scrapedAt": "2026-10-25T10:49:49.985Z",
   "source": "eqlwiki.com — Category:NPCs/Named Mobs/Merchants/Raid Encounters ∪ embeddedin Template:Namedmobpage/MerchantPage, filtered to pages opening a mob template + recentchanges delta (scripts/scrape-delta.mts)",
   "mobs": [
     {
@@ -36204,11 +36204,10 @@
           "pct": 100
         }
       ],
-      "image": "npc_a_lizardman_scout.png",
+      "image": "npc_a_lizard_man_scout.png",
       "otherNames": [
         "A lizard man scout"
-      ],
-      "noImage": true
+      ]
     },
     {
       "page": "A lizardman watcher",
@@ -38051,7 +38050,8 @@
         "Kithicor Forest",
         "Misty Thicket",
         "Southern Desert of Ro",
-        "Toxxulia Forest"
+        "Toxxulia Forest",
+        "Lake Nerius"
       ],
       "drops": [
         "Snake Fang",
@@ -89352,6 +89352,32 @@
       "noImage": true
     },
     {
+      "page": "C`rate",
+      "eraTag": "Classic",
+      "name": "C`rate",
+      "level": "59",
+      "zones": [
+        "Nektropos Castle"
+      ],
+      "drops": [
+        "Corroded Spiked Club",
+        "Distressed Mithril Shortbow"
+      ],
+      "loc": [
+        {
+          "ns": 740,
+          "ew": -345
+        }
+      ],
+      "factions": [
+        "Host of Nektropos"
+      ],
+      "factionAmounts": [
+        "-2"
+      ],
+      "image": "npc_c`rate.png"
+    },
+    {
       "page": "Cain Darkmoore",
       "eraTag": "Classic",
       "name": "Cain Darkmoore",
@@ -111195,6 +111221,25 @@
         "-30"
       ],
       "image": "npc_elisi_nasin.png"
+    },
+    {
+      "page": "Elite Guard",
+      "eraTag": "Classic",
+      "name": "Elite Guard",
+      "level": "60",
+      "zones": [
+        "Nektropos Castle"
+      ],
+      "drops": [
+        "Long Sword"
+      ],
+      "loc": [
+        {
+          "ns": 286,
+          "ew": -67
+        }
+      ],
+      "image": "npc_elite_guard.png"
     },
     {
       "page": "Ella Foodcrafter",
