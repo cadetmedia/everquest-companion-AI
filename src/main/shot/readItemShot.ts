@@ -24,6 +24,23 @@ export interface ShotReaders {
   textures: () => Rgba[]
   /** The catalog's item names within OCR's slips of a name read (itemShotKeep.ts `sameItem`). */
   known?: (name: string) => string[]
+  /** The slots the catalog's items with this icon are worn in; undefined when no item states one. */
+  iconSlots?: (id: number) => ReadonlySet<string> | undefined
+}
+
+/**
+ * The icons with the window's slot as a tiebreak (owner, 2026-10-24: a belt's window got 764, an icon
+ * the wiki gives only to boots): an icon the catalog shows only in OTHER slots goes after the rest, the
+ * look's order kept within each part. No slot read, or no slot table, leaves them as they are.
+ */
+export function bySlot(icons: readonly IconHit[], statsblock: string, iconSlots: ShotReaders['iconSlots']): IconHit[] {
+  const slots = (/Slot: ([A-Z ]+)<br>/.exec(statsblock)?.[1] ?? '').split(' ').filter(Boolean)
+  if (slots.length === 0 || iconSlots === undefined) return [...icons]
+  const elsewhere = (h: IconHit): boolean => {
+    const seen = iconSlots(h.id)
+    return seen !== undefined && !slots.some((s) => seen.has(s))
+  }
+  return [...icons.filter((h) => !elsewhere(h)), ...icons.filter(elsewhere)]
 }
 
 export interface ItemShot {
@@ -97,8 +114,8 @@ export async function readItemShot(img: Rgba, r: ShotReaders): Promise<ItemShot>
   const iconOnly = img.w <= ICON_ONLY_MAX && img.h <= ICON_ONLY_MAX
   const lines = iconOnly ? [] : await readLines(img)
   const region = iconOnly ? { x: 0, y: 0, w: img.w, h: img.h } : iconRegion(lines, img.w, img.h)
-  const icons = await iconsIn(img, region, r)
   const read: ItemWindowRead = iconOnly ? { statsblock: '', unread: [] } : readItemWindow(lines.map((l) => l.text))
+  const icons = bySlot(await iconsIn(img, region, r), read.statsblock, r.iconSlots)
   return {
     read,
     lines: lines.map((l) => l.text),

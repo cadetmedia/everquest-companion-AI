@@ -79,11 +79,30 @@ function catalogNames(): string[] {
   return catalog
 }
 
+let slotsByIcon: Map<number, Set<string>> | null = null
+
+/** The slots the catalog's items with each icon are worn in, built once (readItemShot.ts `bySlot`). */
+function iconSlots(id: number): ReadonlySet<string> | undefined {
+  slotsByIcon ??= buildIconSlots()
+  return slotsByIcon.get(id)
+}
+
+function buildIconSlots(): Map<number, Set<string>> {
+  const out = new Map<number, Set<string>>()
+  for (const e of Object.values((itemsJson as unknown as ItemDbFile).items) as { iconId?: number; stats?: { slot?: string } }[]) {
+    if (e.iconId === undefined || e.stats?.slot === undefined) continue
+    const words = e.stats.slot.split(/\s+/).filter((s) => s !== '')
+    out.set(e.iconId, new Set([...(out.get(e.iconId) ?? []), ...words]))
+  }
+  return out
+}
+
 export const READERS: ShotReaders = {
   index: iconIndex,
   cell: (id) => cells?.cell(id) ?? null,
   textures: skinTextures,
-  known: (name) => nearNames(name, catalogNames())
+  known: (name) => nearNames(name, catalogNames()),
+  iconSlots
 }
 
 async function readItem(png: unknown): Promise<ItemShotReply> {
