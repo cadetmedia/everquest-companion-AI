@@ -27,6 +27,7 @@ import { forageAddText } from './gapForage'
 import type { VendorFinder } from './gapMobPage'
 import type { LootEvent } from './types'
 import { SPELL_HEAD, SPELL_TAIL, spellPageValues, type SpellPageShot } from './spellWindow'
+import { castBySentence, withCastBy } from './spellCastBy'
 import { npcImageName, withPageTitles } from './mobPageTitle'
 import { itemCategoryGroups } from './itemCategories'
 import { baseStatsblock, shotFields, type ItemPageShot } from './itemPageShot'
@@ -196,6 +197,8 @@ export interface SpellFacts {
   client?: ClientSpellFacts
   /** What a pasted spell window gave (shared/spellWindow.ts). */
   shot?: SpellPageShot
+  /** `Cast by [[X]].` (spellCastBy.ts), added to an NPC-only page's description. */
+  castBy?: string
 }
 
 const same = (a: string, b: string): boolean => a.toLowerCase() === b.toLowerCase()
@@ -583,9 +586,11 @@ const SPELL_FIELDS = ['spellicon', 'description', 'classes', 'items_with_effect'
 /** The wiki's Spell Page Blueprint layout: `{{Spellpage|`, blank lines between, `| key = value`, every field. */
 export function spellPage(f: SpellFacts): string {
   const stated = new Map([...clientFields(f, SPELL_HEAD), ...classesField(f), ...clientFields(f, SPELL_TAIL)].map((l) => [/^\| (\w+) =/.exec(l)?.[1] ?? '', l]))
+  const npcOnly = f.npcOnly && (f.client?.classes.length ?? 0) === 0
+  const description = withCastBy(stated.get('description'), npcOnly ? f.castBy : undefined)
+  if (description !== undefined) stated.set('description', description)
   const fields = [`| spellname = ${f.name}`, ...SPELL_FIELDS.map((k) => stated.get(k) ?? `| ${k} =`)]
   const body = `{{Spellpage|\n\n${fields.join('\n\n')}\n\n}}`
-  const npcOnly = f.npcOnly && (f.client?.classes.length ?? 0) === 0
   return page(`\n${body}`, npcOnly ? ['NPC Only Spells'] : [])
 }
 
@@ -643,7 +648,7 @@ const PAGE_OF: Record<GapDomain, (row: GapRow, c: PageContext) => string> = {
   // a new mob page takes its fight estimates in its blank fields (shared/gapFight.ts).
   mob: (row, c) => (roleOf(row) === 'Merchant' ? merchantPage(withDescription(mobFacts(row, [], c.kills, { ...c.seen, zoneName: c.zoneName }), row, c)) : withFightFields(mobPage(mobFacts(row, c.loot, c.kills, { ...c.seen, zoneName: c.zoneName }), c.commonLoot), row)),
   merchant: (row, c) => merchantPage(withDescription(mobFacts(row, [], c.kills, { ...c.seen, zoneName: c.zoneName }), row, c)),
-  spell: (row, c) => spellPage({ name: row.name, npcOnly: npcOnlySpell(row, c.isMob), client: c.spellFacts?.[row.name], shot: c.spellShots?.[row.name] }),
+  spell: (row, c) => spellPage({ name: row.name, npcOnly: npcOnlySpell(row, c.isMob), client: c.spellFacts?.[row.name], shot: c.spellShots?.[row.name], castBy: castBySentence(row, c.isMob) }),
   faction: (row) => `${factionLine({ faction: factionOf(row), adjust: row.adjust, raised: row.raised })}\n`,
   image: (row) => `| ${'imagefilename'.padEnd(17)} = ${row.image ?? ''}\n`,
   notice: (row) => noticeProof(row),
