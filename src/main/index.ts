@@ -53,6 +53,8 @@ import { getProcessPriorityPrefs } from './storeProcessPriority'
 import { initPresenceEffects, stopPresenceEffects } from './presenceEffects'
 import { provisionDefaultPacks } from './provisionPacks'
 import { removedPackIds } from './storeSoundPacks'
+// Item icons from the wiki's GitHub data pack, before the wiki (imageCache.ts asks it on a miss).
+import { createItemIconPack } from './itemIconPack'
 import { startTailing, stopSession } from './session'
 import { runSmokeFeedback } from './smokeFeedback'
 import { STORE_READY_MS, getOverlayConfig, getPerfHudPrefs } from './store'
@@ -267,6 +269,7 @@ if (!gotSingleInstanceLock) {
       `[everquest-companion] Bundled wiki images: ${bundledDir ?? 'none (falling back to the runtime cache)'}`
     )
     installImageCacheProtocol(protocol, {
+      itemIconPack: createItemIconPack({ userData: USER_DATA }).iconBytes,
       userData: USER_DATA,
       bundledDir,
       onError: (msg, err) => logError('main:imageCache', { message: msg, err })

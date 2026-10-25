@@ -50,6 +50,9 @@
 // id landed in items.json after the last `npm run fetch:images`, or a source build that never
 // ran it. Bundled BEFORE the userData cache on purpose — the shipped bytes are the ones the
 // manifest can account for, so a fresh install and an upgraded one serve the same pixels.
+// Since 2026-10-25 an ITEM icon missing from both is taken from the wiki's own GitHub data pack
+// first (`itemIconPack.ts`, owner: "from the WIKI Github first, and the wiki directly next. Either
+// way should cache it."); only an icon the pack lacks reaches the wiki. Both land in the cache.
 //
 // SECURITY. `parseEqImgUrl` is the ONLY thing that turns a renderer string into a filesystem
 // path, and for the `url` route it is also the only thing that decides what the app is
@@ -407,6 +410,11 @@ export interface ImageCacheOptions {
    * reaches dev stdout and NEVER `<userData>/errors.log`, so it cannot become an error count.
    */
   readonly warn?: (msg: string) => void
+  /**
+   * An item icon from the wiki's GitHub data pack (`itemIconPack.ts`), asked before the wiki for an
+   * icon neither bundled nor cached. Null, a throw or bytes that are not a PNG fall through to the wiki.
+   */
+  readonly itemIconPack?: (id: string) => Promise<Uint8Array | null>
 }
 
 const NOT_FOUND = (): GlobalResponse => new Response(null, { status: 404, statusText: 'Not Found' })
@@ -435,6 +443,29 @@ const E2E_BLANK_PNG = Buffer.from(
  */
 const ignoreCleanupFailure = (): void => {
   /* silence on purpose — see above */
+}
+
+/**
+ * Write one entry under its final name, ATOMICALLY: a unique temp file in the SAME directory, then
+ * a rename over the target. A concurrent writer (another app instance on the same channel —
+ * impossible today, but free to be correct about) either wins or loses the rename; neither can
+ * produce a torn file, and both bytes are identical anyway. False when it could not be kept.
+ */
+async function storeEntry(
+  path: string,
+  bytes: Uint8Array,
+  onError: (msg: string, err: unknown) => void
+): Promise<boolean> {
+  const tmp = `${path}.${process.pid}.${Math.random().toString(36).slice(2, 8)}.tmp`
+  try {
+    await writeFile(tmp, bytes)
+    await rename(tmp, path)
+    return true
+  } catch (err) {
+    onError(`[everquest-companion:error] image cache: could not store ${path}`, err)
+    await unlink(tmp).catch(ignoreCleanupFailure)
+    return false
+  }
 }
 
 // ---- a failed network fetch is a COUNTER, not an error (JOS-133) -------------------------
@@ -716,24 +747,23 @@ export function installImageCacheProtocol(protocol: ProtocolLike, opts: ImageCac
     }
     // The name is decided by the SNIFF, not by the URL's spelling (see cacheFileName).
     const name = cacheFileName(req, mime)
-    const path = join(dir, name)
-    // ATOMIC: write a unique temp file in the SAME directory, then rename over the target.
-    // A concurrent writer (another app instance on the same channel — impossible today, but
-    // free to be correct about) either wins or loses the rename; neither can produce a torn
-    // file, and both bytes are identical anyway.
-    const tmp = `${path}.${process.pid}.${Math.random().toString(36).slice(2, 8)}.tmp`
-    try {
-      await writeFile(tmp, bytes)
-      await rename(tmp, path)
-    } catch (err) {
-      onError(`[everquest-companion:error] image cache: could not store ${path}`, err)
-      await unlink(tmp).catch(ignoreCleanupFailure)
-      return bytes // still serve this request; we just didn't get to keep it
-    }
     // FIRST FETCH ONLY. A steady-state launch prints none of these at all — which is exactly
     // the property "no image is ever downloaded twice" is asserted by.
-    log(`[everquest-companion] Image cache: fetched ${name} (${bytes.length} bytes) <- ${url}`)
-    return bytes
+    if (await storeEntry(join(dir, name), bytes, onError)) {
+      log(`[everquest-companion] Image cache: fetched ${name} (${bytes.length} bytes) <- ${url}`)
+    }
+    return bytes // served either way; a failed store only means it was not kept
+  }
+
+  /** An item icon from the GitHub data pack, cached like a fetch; anything else (or a pack miss) goes to the wiki. */
+  async function packOrFetch(req: EqImgRequest): Promise<Uint8Array | null> {
+    const packed = req.kind === 'item' && opts.itemIconPack ? await opts.itemIconPack(req.id).catch(() => null) : null
+    if (!packed || sniffImageMime(packed) !== 'image/png') return fetchAndStore(req)
+    const name = cacheFileName(req, 'image/png')
+    if (await storeEntry(join(dir, name), packed, onError)) {
+      log(`[everquest-companion] Image cache: ${name} (${packed.length} bytes) <- the wiki's GitHub data pack`)
+    }
+    return packed
   }
 
   /**
@@ -799,7 +829,7 @@ export function installImageCacheProtocol(protocol: ProtocolLike, opts: ImageCac
 
     let pending = inFlight.get(key)
     if (!pending) {
-      pending = fetchAndStore(req).finally(() => inFlight.delete(key))
+      pending = packOrFetch(req).finally(() => inFlight.delete(key))
       inFlight.set(key, pending)
     }
     const bytes = await pending
