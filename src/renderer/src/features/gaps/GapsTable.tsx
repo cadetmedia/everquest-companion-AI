@@ -223,10 +223,11 @@ function DetailsPane({ row, actions }: { row: GapRow; actions: PaneActions }): J
       <Stack direction="row" spacing={1} alignItems="center">
         <Typography variant="subtitle2">{shownName(row)}</Typography>
         <GapRowButtons row={row} pageText={actions.pageText} isDone={isDone} onDone={actions.onDone} />
-        {row.maybePlayer === true && (
-          <Tooltip title="Hides this name for good; one-word names you only hailed may be players.">
+        {(row.maybePlayer === true || row.domain === 'mob') && (
+          // A pet hides the same way (owner, 2026-10-24: "mark a mob as a pet ... maybe i just use that same button").
+          <Tooltip title={row.maybePlayer === true ? 'Hides this name for good; one-word names you only hailed may be players.' : 'Hides this name for good: a pet, not a mob that needs a page.'}>
             <Button size="small" color="warning" onClick={() => actions.onPlayer(row.name)} data-testid="gaps-mark-player">
-              Mark as player
+              {row.maybePlayer === true ? 'Mark as player' : 'Mark as pet'}
             </Button>
           </Tooltip>
         )}
