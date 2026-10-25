@@ -23,20 +23,8 @@ import type { AlertGroup } from './alertGroups'
 
 /** The sets that cannot ship, newest last. Concatenated onto ALERT_GROUPS. */
 export const REFUSED_ALERT_GROUPS: AlertGroup[] = [
-  {
-    id: 'feignDeath',
-    title: 'Feign death failed',
-    subtitle: 'Not available - the log never says a feign failed.',
-    verified: false,
-    unverifiedReason:
-      'Full-log sweep: the ONLY feign-death lines are the success emote "<Name> has fallen to ' +
-      'the ground." (103), the spell casts ("Rigamortis begins casting Feign Death."), the ' +
-      'interrupt of that spell, and skill-ups ("You have become better at Feign Death!"). ' +
-      'There is no failure line at all - no "ruse", no "fooled", no "not successful". A failed ' +
-      'feign is invisible in the log (world-model law 6: say what the log cannot say), so any ' +
-      'regex here would be a guess that never fires.',
-    defs: []
-  },
+  // Feign death left this register 2026-10-25: "<Name> has fallen to the ground." is the
+  // failure line, not the success emote it was read as here (alertGroups.ts, `feignDeath`).
   {
     id: 'petDeath',
     title: 'Pet died',

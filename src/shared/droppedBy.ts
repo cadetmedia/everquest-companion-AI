@@ -30,3 +30,7 @@ export function tallyDroppedBy(events: readonly { source?: string }[]): DroppedB
 /** The Distinct mobs card's note when some of the loot came out of a Reward Chest. */
 export const rewardChestNote = (chest: number): string | undefined =>
   chest > 0 ? `${chest} from a Reward Chest (no mob)` : undefined
+
+/** The Dropped by column's line when no mob is listed but a chest paid out; else the column's own. */
+export const chestOnlyNote = (chest: number): string | undefined =>
+  chest > 0 ? `Only from a Reward Chest so far (${chest} ${chest === 1 ? 'payout' : 'payouts'}).` : undefined

@@ -20,7 +20,7 @@ import type { ItemKnowledge, LootEvent } from '@shared/types'
 import type { ZoneShort } from '@shared/maps'
 import type { Timeslice } from '@shared/timeslice'
 import { isAcquisition } from '@shared/lootDisposition'
-import { rewardChestNote, tallyDroppedBy } from '@shared/droppedBy'
+import { chestOnlyNote, rewardChestNote, tallyDroppedBy } from '@shared/droppedBy'
 import { formatDate } from '../../lib/formatDate'
 import { sourceItemKey } from '../../lib/itemSources'
 import { EQ_ITEM_COLORS } from '../../lib/ItemWindow'
@@ -306,7 +306,7 @@ function ObservedColumn({
       {/* WHO drops it beside WHERE — and the where half is a RATE now (JOS-78), because a zone's
           count alone cannot tell eleven-in-an-evening from eleven-over-a-fortnight. */}
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3}>
-        <DroppedByColumn sources={agg.sources} max={agg.sources[0]?.count ?? 1} onOpenMob={onOpenMob} />
+        <DroppedByColumn sources={agg.sources} max={agg.sources[0]?.count ?? 1} onOpenMob={onOpenMob} empty={chestOnlyNote(agg.chest)} />
         <ItemZoneTable
           rows={zoneRates.rows}
           clipped={zoneRates.clipped}
