@@ -34,6 +34,7 @@
 import type { JSX } from 'react'
 import { Box, Chip } from '@mui/material'
 import { EQ_ITEM_COLORS } from '../../lib/ItemWindow'
+import { unusableLabel, type UnusableReason } from '@shared/planner/usability'
 import { eraChip, type EraSubject } from './plannerData'
 import type { DonorProgress, DonorState } from './plannerProgress'
 
@@ -149,6 +150,29 @@ export function OwnedChip({ owned }: { owned?: boolean }): JSX.Element | null {
       color={owned ? 'success' : 'warning'}
       variant="outlined"
       sx={CHIP_SX}
+    />
+  )
+}
+
+/**
+ * WHY THIS CHARACTER CANNOT USE IT (owner, 2026-10-25: "mark the items they can't wear somehow so
+ * they know they can't wear it because of race or class or deity or whatever"). Every reason that
+ * applies is named on the chip (`can't use: deity, level 45`), and the hover states each rule
+ * against the character's own answer. Nothing at all when the row is usable or nothing known says
+ * otherwise - `planner/usability.ts` says why an unknown never marks.
+ */
+export function CantUseChip({ reasons }: { reasons?: readonly UnusableReason[] }): JSX.Element | null {
+  if (reasons === undefined || reasons.length === 0) return null
+  return (
+    <Chip
+      size="small"
+      label={unusableLabel(reasons)}
+      title={reasons.map((r) => r.why).join('\n')}
+      data-testid="planner-cant-use"
+      data-reasons={reasons.map((r) => r.kind).join(' ')}
+      color="error"
+      variant="outlined"
+      sx={{ ...CHIP_SX, flexShrink: 0 }}
     />
   )
 }

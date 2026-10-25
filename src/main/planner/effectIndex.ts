@@ -89,6 +89,7 @@ import {
   socketTypeOf
 } from '../../shared/planner/normalize'
 import { extractionTier } from '../../shared/planner/rules'
+import { deitiesOf } from '../../shared/planner/deity'
 import type { EffectFacts } from '../../shared/planner/effectText'
 import type { ClassAbbr } from '../../shared/classCombo'
 import type { ItemEffect } from '../../shared/itemStats'
@@ -153,6 +154,8 @@ interface PageCtx {
   eraTag?: string
   /** the `Charges:` stat row, verbatim; absent when the block stated none */
   charges?: string
+  /** the deities the raw stats block restricts the item to, folded; absent when it states none */
+  deities?: string[]
   /** the page TITLE keys to the item name — this is the item's own page, not a variant of it */
   canonical: boolean
   /** nothing on this item can be donated (V9) — its effects are counted and never emitted */
@@ -285,6 +288,12 @@ export function slotsOf(k: ResearchedKnowledge, scraped: readonly EquipSlot[]): 
  * the in-game `|itemname` when the page states one — which is what a loot line spells, and what
  * the rest of the app already keys items by.
  */
+/** The page's deity restriction, or undefined on the ordinary page that states none. */
+function deityList(statsBlock: string | undefined): string[] | undefined {
+  const deities = deitiesOf(statsBlock)
+  return deities.length === 0 ? undefined : deities
+}
+
 function pageContext(
   entry: ItemDbEntry,
   research: ItemResearchFile
@@ -310,6 +319,9 @@ function pageContext(
       wikiSources: k.dropsFrom,
       eraTag: k.eraTag,
       charges: k.stats?.stats.find((r) => r.key.trim().toUpperCase() === 'CHARGES')?.value,
+      // Read off the RAW block, as the gear index does (`deity.deitiesOf` says why the parsed flags
+      // cannot be trusted with this line). The browser marks what the character cannot use by it.
+      deities: deityList(entry.statsBlock),
       canonical: itemKey(entry.page) === key,
       excluded: excludedDonor(k.name, k.research)
     },
@@ -352,7 +364,8 @@ function donorRow(
     // second index to answer "where does this one drop".
     wikiSources: ctx.wikiSources ? ctx.wikiSources.map((s) => ({ ...s })) : undefined,
     eraTag: ctx.eraTag,
-    charges: ctx.charges
+    charges: ctx.charges,
+    ...(ctx.deities === undefined ? {} : { deities: [...ctx.deities] })
   }
 }
 

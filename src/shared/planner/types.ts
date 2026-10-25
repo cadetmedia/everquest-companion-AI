@@ -332,6 +332,13 @@ export interface PlannerDonor extends EffectFacts {
    *  page stated none. A stated FINITE value marks a consumable click - the "hide charged"
    *  filter's whole evidence (fork ask, kaltinril 2026-09-10). */
   charges?: string
+  /**
+   * The deities the item's stats block restricts it to, FOLDED (`planner/deity.deitiesOf`, the
+   * same read `GearRow.deities` makes); absent on the ordinary page that states none, which is no
+   * restriction rather than "nobody" (law 1). The browser marks a donor the character's deity
+   * cannot use by it (owner, 2026-10-25).
+   */
+  deities?: string[]
   socket: SocketType
   /** merge tier required to extract it (R1: focus +1, click +2, worn +3, proc +4) */
   tierRequired: ExtractTier

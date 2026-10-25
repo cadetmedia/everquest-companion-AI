@@ -61,11 +61,20 @@
 // filters" — a true sentence that told them nothing (feedback 01KZCGXY8WC6YCD8W44W7EAS5H). An empty
 // result now counts what the two view toggles are holding back and names them, because a filter
 // that can hide everything must be able to admit it (`hiddenByView`, plannerData.ts).
+//
+// AND WHAT THIS CHARACTER CANNOT USE IS MARKED, OR HIDDEN, BY THE PLAYER'S CHOICE (owner,
+// 2026-10-25: "Give the user the choice, and mark the items they can't wear somehow"). Each such
+// row names every reason it fails - no class in the filter, a deity the character does not follow,
+// an effect level above theirs (`shared/planner/usability.ts`) - and sinks below the usable rows
+// of its group; the `Usable by me` chip hides them instead, remembered per viewer, default off.
 
 import { type JSX, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { Box, Typography } from '@mui/material'
 import type { ClassAbbr } from '@shared/classCombo'
 import type { SocketType } from '@shared/planner/types'
+import type { CharacterSnap } from '@shared/types'
+import type { UnusableReason } from '@shared/planner/usability'
+import { useModule } from '../../lib/useModule'
 import { useWindowedRows } from '../../lib/useWindowedRows'
 import EffectFilterBar from './EffectFilterBar'
 import { DonorLine, GroupLine, ROW_HEIGHT } from './EffectRows'
@@ -73,6 +82,7 @@ import {
   CURRENT_ERA_LABEL,
   DEFAULT_FILTERS,
   donorEraOf,
+  donorUnusable,
   filterDonors,
   hiddenByView,
   useDonors,
@@ -85,7 +95,7 @@ import {
   type HiddenByView,
   type OwnedMode
 } from './plannerData'
-import { browserRows, groupDonors, type BrowserRow, type GroupAxis } from './plannerGroups'
+import { browserRows, groupDonors, usableFirst, type BrowserRow, type GroupAxis } from './plannerGroups'
 import { itemFits, type ItemFocus } from './plannerPreset'
 import { sourceIndex } from './sourceIndex'
 // JOS-329 — the gear area's one form-memory mechanism. It lives beside the Gear tab because the
@@ -102,6 +112,10 @@ import { useRemembered, useRememberedSearch } from '../gear/useAreaMemory'
 // across the same seam the four lines above already cross; see `compare` in the component.
 import { ITEM_UPGRADE_BASE } from '@shared/itemUpgrade'
 import { useGearCompare, useGearIndex, useGearOwnership, type GearCompareData } from '../gear/gearData'
+// Owner, 2026-10-25 — the marks for what this character cannot use: the deity the Character tab's
+// socket advice already reads, and the generic per-viewer boolean pref for the show/hide choice.
+import { useDeity } from '../character/useDeity'
+import { useBoolPref } from '../combat/useCombatPrefs'
 
 // ---- the row pipeline ------------------------------------------------------------------
 
@@ -123,6 +137,18 @@ interface RowsInput {
   open: ReadonlySet<string>
 }
 
+/** The donors on screen this character cannot use, each with its reasons. Absent = usable. */
+type UnusableMap = ReadonlyMap<DonorRow, UnusableReason[]>
+
+function unusableMap(rows: readonly DonorRow[], planClasses: readonly ClassAbbr[], view: DonorView): UnusableMap {
+  const out = new Map<DonorRow, UnusableReason[]>()
+  for (const d of rows) {
+    const reasons = donorUnusable(d, planClasses, view)
+    if (reasons.length > 0) out.set(d, reasons)
+  }
+  return out
+}
+
 /**
  * Donors → the flat, windowable row array, in the THREE MEMOS the search law wants and not one —
  * plus, when the answer is EMPTY, what the view toggles are holding back (JOS-67).
@@ -132,7 +158,7 @@ interface RowsInput {
  * is about to redo; the row flattening keys off the groups and the expanded set. The fourth memo
  * only ever runs when there is nothing to draw, and `NOTHING_HIDDEN` keeps that case free.
  */
-function useVisibleRows(input: RowsInput): { rows: BrowserRow[]; hidden: HiddenByView } {
+function useVisibleRows(input: RowsInput): { rows: BrowserRow[]; hidden: HiddenByView; unusable: UnusableMap } {
   const { donors, filters, text, planClasses, view, focus, axis, open } = input
   const filtered = useMemo(() => {
     const rows = filterDonors(donors, { ...filters, text }, planClasses, view)
@@ -143,20 +169,26 @@ function useVisibleRows(input: RowsInput): { rows: BrowserRow[]; hidden: HiddenB
     const wearer = filters.trioOnly ? planClasses : []
     return focus === null ? rows : rows.filter((d) => itemFits(d, focus, wearer))
   }, [donors, filters, text, planClasses, view, focus])
-  const groups = useMemo(() => groupDonors(filtered, axis, donorEraOf), [filtered, axis])
+  // What the character cannot use is marked and sinks below what it can (owner, 2026-10-25); the
+  // hide choice already ran inside `filterDonors`, so whatever is left here is shown marked.
+  const unusable = useMemo(() => unusableMap(filtered, planClasses, view), [filtered, planClasses, view])
+  const groups = useMemo(
+    () => usableFirst(groupDonors(filtered, axis, donorEraOf), (d) => unusable.has(d)),
+    [filtered, axis, unusable]
+  )
   const rows = useMemo(() => browserRows(groups, open), [groups, open])
   const hidden = useMemo(
     () =>
       rows.length > 0 ? NOTHING_HIDDEN : hiddenByView(donors, { ...filters, text }, planClasses, view),
     [rows.length, donors, filters, text, planClasses, view]
   )
-  return { rows, hidden }
+  return { rows, hidden, unusable }
 }
 
 // ---- the browser ---------------------------------------------------------------------
 
 /** The answer for every render that HAS rows — a constant, so the memo below never allocates. */
-const NOTHING_HIDDEN: HiddenByView = { era: 0, nonEquip: 0 }
+const NOTHING_HIDDEN: HiddenByView = { era: 0, nonEquip: 0, unusable: 0 }
 
 interface RowListProps {
   rows: readonly BrowserRow[]
@@ -181,6 +213,8 @@ interface RowListProps {
    * it fell on — `PlannerChips.OwnedChip` states why absent must draw nothing.
    */
   ownedKeys?: ReadonlySet<string>
+  /** the rows this character cannot use, with why — each one is marked (owner, 2026-10-25) */
+  unusable: UnusableMap
 }
 
 /**
@@ -200,6 +234,7 @@ function emptyText(ready: boolean, hidden: HiddenByView, item: string | null): s
   const parts: string[] = []
   if (hidden.era > 0) parts.push(`${String(hidden.era)} outside ${CURRENT_ERA_LABEL}`)
   if (hidden.nonEquip > 0) parts.push(`${String(hidden.nonEquip)} with no equipment slot`)
+  if (hidden.unusable > 0) parts.push(`${String(hidden.unusable)} you cannot use`)
   const head = item === null ? 'No effects match these filters' : `Nothing here can be socketed into ${item}`
   if (parts.length === 0) return `${head}.`
   return `${head} - but ${parts.join(' and ')} are hidden by the toggles above.`
@@ -208,13 +243,19 @@ function emptyText(ready: boolean, hidden: HiddenByView, item: string | null): s
 /** The bounded scroll box (AGENTS.md UI conventions) and the window of rows inside it. */
 function RowList(props: RowListProps): JSX.Element {
   const { rows, win, planClasses, wished, ready, hidden, item, onToggle, onToggleWish, onOpenLoot, compare } = props
-  const { ownedKeys } = props
+  const { ownedKeys, unusable } = props
   return (
     <>
       <Box sx={{ height: win.topPad }} />
       {rows.slice(win.start, win.end).map((row: BrowserRow) =>
         row.kind === 'header' ? (
-          <GroupLine key={row.group.id} group={row.group} expanded={row.expanded} onToggle={onToggle} />
+          <GroupLine
+            key={row.group.id}
+            group={row.group}
+            expanded={row.expanded}
+            noneUsable={row.group.donors.every((d) => unusable.has(d))}
+            onToggle={onToggle}
+          />
         ) : (
           <DonorLine
             key={`${row.groupId}:${row.donor.key}:${row.donor.effect}`}
@@ -225,6 +266,7 @@ function RowList(props: RowListProps): JSX.Element {
             namesEffect={row.namesEffect}
             namesSays={row.namesSays}
             owned={ownedKeys === undefined ? undefined : ownedKeys.has(row.donor.key)}
+            unusable={unusable.get(row.donor)}
             onToggleWish={onToggleWish}
             onOpenLoot={onOpenLoot}
             compare={compare}
@@ -327,6 +369,25 @@ function useOwnedFilterState(): {
   return { ownedMode, setOwnedMode, hideCharged, setHideCharged, ownedKeys }
 }
 
+/**
+ * WHO THE MARKS ARE FOR, AND WHETHER THEY HIDE (owner, 2026-10-25: "Give the user the choice").
+ *
+ * The deity is the progress store's (`useDeity`, null until `/outputfile achievements` states it);
+ * the level is the character module's stated one (a ding or your own `/who`), null until either
+ * has been seen. Each null checks nothing. The choice is remembered per viewer, default SHOW: a
+ * row you cannot use stays listed, marked, after the ones you can.
+ */
+function useUsableFilter(): {
+  wearer: { deity: string | null; level: number | null }
+  hide: [boolean, (v: boolean) => void]
+} {
+  const deity = useDeity()
+  const level = useModule<CharacterSnap>('character')?.level?.level ?? null
+  const wearer = useMemo(() => ({ deity, level }), [deity, level])
+  const hide = useBoolPref('eq.planner.hideUnusable', false)
+  return { wearer, hide }
+}
+
 export default function EffectBrowser({
   classes,
   wished,
@@ -383,13 +444,16 @@ export default function EffectBrowser({
   // (`useOwnedOrLooted`'s reading, folded to a key set here so the pure filter takes no hook).
   const ownedFilter = useOwnedFilterState()
   const { ownedMode, setOwnedMode, hideCharged, setHideCharged, ownedKeys } = ownedFilter
+  const usableFilter = useUsableFilter()
+  const { wearer } = usableFilter
+  const hideUnusable = usableFilter.hide[0]
   // Read out of the tuples so the memo's dependency list names the VALUES: the setter half of
   // each tuple is a fresh identity nothing here depends on.
   const view = useMemo<DonorView>(
-    () => ({ eraOnly: era[0], nonEquip: nonEquip[0], owned: ownedMode, ownedKeys, hideCharged }),
-    [era, nonEquip, ownedMode, ownedKeys, hideCharged]
+    () => ({ eraOnly: era[0], nonEquip: nonEquip[0], owned: ownedMode, ownedKeys, hideCharged, wearer, hideUnusable }),
+    [era, nonEquip, ownedMode, ownedKeys, hideCharged, wearer, hideUnusable]
   )
-  const { rows, hidden } = useVisibleRows({
+  const { rows, hidden, unusable } = useVisibleRows({
     donors,
     filters,
     text: deferredText,
@@ -440,6 +504,8 @@ export default function EffectBrowser({
         owned={[ownedMode, setOwnedMode]}
         charged={[hideCharged, setHideCharged]}
         ownedKnown={ownedKeys !== undefined}
+        unusable={usableFilter.hide}
+        deityKnown={wearer.deity !== null}
         focus={focus}
         setFocus={pickItem}
       />
@@ -462,6 +528,7 @@ export default function EffectBrowser({
           onOpenLoot={onOpenLoot}
           compare={compare}
           ownedKeys={ownedKeys}
+          unusable={unusable}
         />
       </Box>
     </Box>

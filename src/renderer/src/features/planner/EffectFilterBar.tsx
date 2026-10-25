@@ -244,6 +244,10 @@ export interface EffectFilterBarProps {
   /** false while no inventory dump exists: the control renders disabled with the reason on hover,
    *  because a filter that silently does nothing is worse than one that says why it cannot */
   ownedKnown: boolean
+  /** hide what the character cannot use instead of listing it marked (owner, 2026-10-25) */
+  unusable: [boolean, (v: boolean) => void]
+  /** false while no deity has been stated: the chip's hint says deity is not checked yet */
+  deityKnown: boolean
   /** the item the browser is narrowed to, from either door, or null */
   focus?: ItemFocus | null
   /** pick one by hand, or clear whatever is there (`null`) */
@@ -262,6 +266,8 @@ export default function EffectFilterBar({
   owned,
   charged,
   ownedKnown,
+  unusable,
+  deityKnown,
   focus = null,
   setFocus
 }: EffectFilterBarProps): JSX.Element {
@@ -338,6 +344,8 @@ export default function EffectFilterBar({
         hint="Hide donors none of the classes in the filter can use"
       />
 
+      <UsableChip unusable={unusable} deityKnown={deityKnown} />
+
       <ViewToggles era={era} nonEquip={nonEquip} />
 
       {/* Click effects only: elsewhere charges are rare enough that the chip would be dead UI. */}
@@ -353,6 +361,38 @@ export default function EffectFilterBar({
 
       <OwnedChips owned={owned} known={ownedKnown} />
     </Stack>
+  )
+}
+
+/** Said when no deity is known, because then the deity half of the chip checks nothing. */
+const DEITY_UNKNOWN =
+  ' Deity is not checked until /outputfile achievements in game states yours.'
+
+/**
+ * THE CHOICE THE OWNER ASKED FOR (2026-10-25: "Give the user the choice"). Off, the default: a donor
+ * this character cannot use stays listed, marked with why, below the ones it can. Lit: it is gone.
+ * The marks are `planner/usability.ts`'s, so the chip hides exactly what the rows would mark.
+ */
+function UsableChip({
+  unusable,
+  deityKnown
+}: {
+  unusable: [boolean, (v: boolean) => void]
+  deityKnown: boolean
+}): JSX.Element {
+  const [hide, setHide] = unusable
+  return (
+    <ToggleChip
+      label="Usable by me"
+      testId="planner-usable-toggle"
+      on={hide}
+      onToggle={() => setHide(!hide)}
+      hint={
+        'Hide donors you cannot use - no class in the filter, a deity you do not follow, or a level above yours.' +
+        ' Off, they stay listed and marked, after the ones you can use.' +
+        (deityKnown ? '' : DEITY_UNKNOWN)
+      }
+    />
   )
 }
 
