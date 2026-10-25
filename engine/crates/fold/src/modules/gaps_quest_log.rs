@@ -489,13 +489,14 @@ impl GapsModule {
         }
     }
 
-    /// The typed lines the quest log reads, no row changes: `You complete the trade with <NPC>.`
-    /// (kind `trade`) spends the trade's offers; `You gain experience!` (kind `expGain`) is a step's.
+    /// The typed lines the quest log reads: `You complete the trade with <NPC>.` (kind `trade`)
+    /// spends the trade's offers and makes them an item's turn-ins (true when one did);
+    /// `You gain experience!` (kind `expGain`) is a step's.
     pub(super) fn quest_event(&mut self, ev: &Event) -> bool {
         match (ev.kind(), ev.str("npc")) {
             ("trade", Some(npc)) => {
                 self.quest_log.trade_done(npc);
-                self.quests.trade_done(npc);
+                return self.quests.trade_done(npc);
             }
             ("expGain", _) => self.quest_log.experience(ev.ts()),
             _ => {}

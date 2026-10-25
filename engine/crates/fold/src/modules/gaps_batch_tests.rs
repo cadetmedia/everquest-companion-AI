@@ -68,9 +68,12 @@ fn a_catch_files_a_fished_item_with_its_zone_and_a_turn_in_files_the_item() {
     feed(&mut m, 5, json!({ "kind": "offer", "item": "Plea to Freeport", "npc": "Sir Mollin", "raw": "[Thu Oct 22 23:28:58 2026] You offered 1 Plea to Freeport to Sir Mollin." }));
     let plea = row(&m, "item", "Plea to Freeport");
     assert_eq!(plea["kinds"], json!(["offered"]));
+    assert!(plea["questFacts"].is_null(), "an offer is no turn-in until its trade completes (review E4)");
+    feed(&mut m, 6, json!({ "kind": "trade", "npc": "Sir Mollin" }));
+    let plea = row(&m, "item", "Plea to Freeport");
     assert_eq!(plea["questFacts"]["turnedInTo"], json!([{ "npc": "Sir Mollin", "n": 1 }]));
     // A hand-over to a player proves nothing to file.
-    feed(&mut m, 6, json!({ "kind": "offer", "item": "Ancient Signet Ring", "npc": "Malkil" }));
+    feed(&mut m, 7, json!({ "kind": "offer", "item": "Ancient Signet Ring", "npc": "Malkil" }));
     assert!(row(&m, "item", "Ancient Signet Ring").is_null());
 }
 
