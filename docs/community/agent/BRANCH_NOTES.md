@@ -227,8 +227,13 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
 - Spell pages fill from the install's spells_us.txt / spells_us_str.txt (`src/main/gapSpellFacts.ts`,
   owner 2026-10-19). Level 254 (AA rows) and 255 mean no scroll; the other-person message is joined to
   "Someone" as it stands (`'s skin` or ` staggers`).
-- Rows: Done marks are per viewer (`eq.gaps.done`, dropped when the row leaves the snapshot); a
-  faction, drop or image chip opens the catalog page title picked by zone (`shared/gapMobPage.ts`).
+- Rows: Done marks are per viewer and per origin (`eq.gaps.done` in localStorage: the dev server
+  `localhost:5173` and a `-Prod`/installed build `file://` keep separate marks). A mark holds the ISO
+  time it was made and clears when the wiki data's `scrapedAt` is later (owner, 2026-10-25: "it
+  should go off TIME"; a bare-day mark from before compares by day); never on the row's absence.
+  `useDoneMarks(GAPS_DATA_STAMP)`: on main_community the call is in `useGapsList.ts` (gaps-overlay,
+  screenshot-to-wiki carry that file with the old two-argument call, fixed in the merge; a branch
+  that merges gaps-tab makes the same one-line change). A faction, drop or image chip opens the catalog page title picked by zone (`shared/gapMobPage.ts`).
 - Held now (C6, `shared/gapHeld.ts`): the last `/outputfile inventory` export through
   `useGearOwnership`, plus kept loot since (`computeHeldCountsAfter`), less destroys since; no
   export, no claim (a loot line cannot tell a copy held from one sold). Items domain only.
@@ -548,17 +553,29 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
 
 ## Unassigned open items (no branch yet)
 
-- A chest-only item's Dropped by column still says "You have not looted this yet." while Times
-  looted counts the payouts (catch_all (68) notes them on the Distinct mobs card). The line is in
-  `ItemDroppedBy.tsx` on gear-tab-improvements; the dialog that knows the chest count is catch_all's.
-  A small two-branch change: an optional empty-state prop there, passed from the dialog here.
-
 - The Recommended tab ignores layer-3 era derivations on purpose (`progressionPlan.ts`
   `eraLegal`).
 - The Exaltations browser has no deity gate; the bagged-gem `where` label is unclear.
 - Spell page ladder base carries no magnitudes.
-- `INVULNERABLE` miss form, outgoing damage-shield absorbs, environmental non-melee hits: no fold
-  arm.
+- Three line shapes parse as `unknown` (measured 2026-10-25 on the owner's logs; each needs an
+  owner ruling on where it counts):
+  - INVULNERABLE: 8 lines, all `A turmoil toad tries to <hit|cleave|bash|kick> Kamas, but Kamas is
+    INVULNERABLE!` in one 3 s burst after `Kamas fades away.` (gating). A seventh miss outcome
+    touches `MissType`/`miss: [i64; 6]`, the protocol, TS `MissBreakdown` and the UI.
+  - Outgoing damage-shield absorbs: `<Mob>'s magical skin absorbs the damage of YOUR
+    <thorns|flames>.` 219 (52 mobs); third-party `<A>'s magical skin absorbs the damage of <B>'s
+    flames|thorns.` 314. No amount; counting them as DS-lane misses changes its hit stats. The
+    incoming `YOUR magical skin absorbs…` (204) is parsed.
+  - `You were hit by non-melee for N damage.` 38 lines, 679 damage: lava/hazards (Nagafen's Lair,
+    Plane of Fear, always 10) and falls (Stonebrunt 312, ...). No source named.
+- Performance quick wins skipped 2026-10-25, each needing a ruling or another branch:
+  `heal-*` in `CHARACTER_AWARE_OVERLAYS` (the list exists only on `community/pr-67-self-meter-name`;
+  one-liner `[...MODULE_READING_OVERLAYS, 'fight', 'overall', 'heal-fight', 'heal-overall']`; until
+  then the heal meters do not reset on a character switch); moving `killFactions` out of the gaps
+  snapshot (an engine op, protocol, gaps-tab, log-archive, gaps-all-characters, screenshot-to-wiki
+  and the saved-file format); gating `useSecondsClock` (lives on catch_all); a `getProgress` cache
+  (must clear in step with catch_all's character-switch fix); a `gearOwnership` cache (would change
+  the visible per-window "read at" time).
 - Rust ProcBuff duration floor 0 vs measured growth (the creator's deliberate floor).
 - `tests/e2e/sky-inventory-autoload.e2e.mts` was red on `main_community` independent of any
   branch (2026-09-25, geometry "counts top was 280, now 336"); unknown on plain main.
