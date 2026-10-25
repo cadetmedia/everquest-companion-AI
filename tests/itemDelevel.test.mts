@@ -68,3 +68,9 @@ test("A +N WEAPON TAKES BACKSTAB BACK AND DROPS THE UPGRADE'S ACCURACY (owner, 2
   assert.ok(back.block?.includes('STR: +10  STA: +5  DEX: +10<br>'), back.block)
   assert.ok(!(back.block ?? '').includes('Accuracy'), back.block)
 })
+
+test('AN SV VOID OF EXACTLY THE TIER IS THE UPGRADE\'S OWN, EVEN ON AN ITEM WITH NO ATTRIBUTES (owner, 2026-10-24: Bloodsoaked Gauntlets +1)', async () => {
+  const { delevel } = await import('../src/shared/itemDelevel')
+  const back = delevel(['Slot: HANDS<br>', 'AC: 18<br>', 'SV VOID: +1<br>', 'Size: SMALL WT: 3.2<br>'].join('\n'), 1)
+  assert.ok(!(back.block ?? back.inexact.join(' ')).includes('SV VOID'), JSON.stringify(back))
+})
