@@ -93,13 +93,14 @@ test('a drop says which page lacks it: the mob page always, the item page when i
 
 test('a server-wide drop - looted from 10+ mobs, tied by the wiki to at most 2 - is left out; one the wiki ties widely stays', () => {
   const mobs = Array.from({ length: 10 }, (_, i) => ({ page: `Mob ${String(i)}`, name: `mob ${String(i)}`, drops: ['Gnoll Fang'] }))
-  const both = [...mobs.map((m) => loot('Mote of Potential', m.name)), ...mobs.map((m) => loot('Fire Opal', m.name))]
+  const both = [...mobs.map((m) => loot('Shiny Pebble', m.name)), ...mobs.map((m) => loot('Fire Opal', m.name))]
+  // A mote never makes a row at all (anyMobDrop); this pins the count rule, on an ordinary item.
   // Fire Opal's item page names 3 mobs: tied to 3, so not server-wide.
-  const itemMobs = new Map([['mote of potential', []], ['fire opal', ['x', 'y', 'z']]])
+  const itemMobs = new Map([['shiny pebble', []], ['fire opal', ['x', 'y', 'z']]])
   const names = (im?: Map<string, string[]>): string[] => [...new Set(dropGaps(both, mobs, groups, { itemMobs: im }).map((r) => r.name.split(' (')[0]))]
   assert.deepEqual(names(itemMobs), ['Fire Opal'])
   // Before main answers, nothing is left out.
-  assert.deepEqual(names().sort(), ['Fire Opal', 'Mote of Potential'])
+  assert.deepEqual(names().sort(), ['Fire Opal', 'Shiny Pebble'])
 })
 
 test('grouped, a mob heading holds its drop rows, so one copy gives every line its page lacks', () => {

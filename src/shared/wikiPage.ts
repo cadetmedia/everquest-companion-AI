@@ -20,6 +20,7 @@ import { killsFor } from './kills'
 import { derivedPrices, factionMob, factionOf, npcOnlySpell, type ClientSpellFacts, type GapDomain, type GapRow, type GapTally, type MobCoin } from './gaps'
 import { merchantValueOf } from './gapOffers'
 import { itemBaseName } from './itemStats'
+import { anyMobDrop } from './gapDrops'
 import { isRewardChest, mobSourceOf } from './rewardChest'
 import { wikiZoneLink } from './gapWikiZone'
 import { forageAddText } from './gapForage'
@@ -549,7 +550,9 @@ export const LOOT_NONE_KILLS = RATE_MIN_KILLS
  * A mob's page. A drop the wiki files under `|common_loot` (shared loot, `commonLootNames`) goes
  * there; everything else is the mob's own `|known_loot` (owner, 2026-10-19).
  */
-export function mobPage(f: MobFacts, commonLoot: ReadonlySet<string> = new Set()): string {
+export function mobPage(facts: MobFacts, commonLoot: ReadonlySet<string> = new Set()): string {
+  // A mote drops from anything: never the mob's loot (anyMobDrop).
+  const f = { ...facts, loot: facts.loot.filter((l) => !anyMobDrop(l.item)) }
   const isCommon = (l: MobFacts['loot'][number]): boolean => commonLoot.has(l.item.toLowerCase())
   const loot = f.loot.length === 0 && f.ownKills >= LOOT_NONE_KILLS ? '* None' : lootList(f.loot.filter((l) => !isCommon(l)), f.kills)
   const own = [loot, f.coin === undefined ? '' : moneyBlock(f.coin)].filter((s) => s !== '').join('\n')

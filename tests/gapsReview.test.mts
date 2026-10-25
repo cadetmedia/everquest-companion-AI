@@ -279,3 +279,17 @@ test("A CAPPED FACTION LINE WRITES ITS SIDE'S SIGN WHEN NO AMOUNT WAS STATED (OW
   assert.equal(factionLine({ faction: 'Ashen Order', adjust: 5, raised: true }), "* [[Ashen Order]] <span class='oppfac'>(5)</span>")
   assert.equal(factionLine({ faction: 'Unknown Side' }), '* [[Unknown Side]]')
 })
+
+test('a mote drops from anything: never in a mob page loot list, never a Drops row (owner, 2026-10-24)', () => {
+  const kills = killIndex({ 'a lobotomized courtier': { display: 'a lobotomized courtier', count: 2, credited: 2 } } as unknown as KillMap)
+  const loot: LootEvent[] = [
+    { ts: 1, item: 'Crystallized Sulfur', source: 'a lobotomized courtier' },
+    { ts: 2, item: 'Mote of Infinitesimal Potential', source: 'a lobotomized courtier' }
+  ]
+  const text = mobPage(mobFacts(row('mob', 'a lobotomized courtier'), loot, kills))
+  assert.match(text, /\{\{:Crystallized Sulfur\}\}/)
+  assert.doesNotMatch(text, /Mote of/)
+  const catalog = [{ name: 'a lobotomized courtier', page: 'A lobotomized courtier', drops: ['Crystallized Sulfur'] }]
+  const drops = dropGaps(loot, catalog, {}, {}).map((r) => r.name)
+  assert.ok(!drops.some((n) => /Mote of/.test(n)), drops.join(', '))
+})
