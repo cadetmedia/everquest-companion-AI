@@ -28,6 +28,7 @@ import { useGapShow, type GapShowState } from './useGapShow'
 import { useGapReady, type GapReadiness } from './useGapReady'
 import type { HeldIndex } from '@shared/gapHeld'
 import { withExtraItemRows } from '@shared/gapExtraItems'
+import { withGapEdits } from '@shared/gapEdits'
 import { useExtraItemRows } from './useExtraItemRows'
 import { useExtraSpellRows } from './useExtraSpellRows'
 
@@ -141,7 +142,8 @@ export function useGapsList(opts: { background?: boolean } = {}): GapsList {
   const extraItems = useExtraItemRows(engineData.snap?.rows, holding, viewer)
   // And spells no log line names, from a pasted spell window (owner, 2026-10-23).
   const extraSpells = useExtraSpellRows(engineData.snap?.rows)
-  const extra = useMemo(() => (extraSpells.length === 0 ? extraItems : [...extraItems, ...extraSpells]), [extraItems, extraSpells])
+  // Added after useGapsData applied the hand edits, so they take them here (a captured item's Edit name, 2026-10-24).
+  const extra = useMemo(() => withGapEdits(extraSpells.length === 0 ? extraItems : [...extraItems, ...extraSpells], engineData.edits), [extraItems, extraSpells, engineData.edits])
   const data = useMemo(() => (engineData.snap && extra.length > 0 ? { ...engineData, snap: withExtraItemRows(engineData.snap, extra) } : engineData), [engineData, extra])
   const shownQuery = useGapsQuery()
   // "Zone I'm in" (owner ask, 2026-10-17): only what was named where you stand, every tier of it.
