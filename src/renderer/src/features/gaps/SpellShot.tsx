@@ -12,6 +12,7 @@ import { fileDescription, isSpellWindow, RANKS, readSpellWindow, spellProblem, t
 import { useSpellFacts } from '../../lib/gapSpellFacts'
 import { keepPartPicture, setSpellShot, useSpellShots } from './itemShotsStore'
 import { KeptPicture, Line, PasteZone, WrongItem } from './PasteZone'
+import { misfitNow, MisfitNote, type HeldMisfit } from './Misfit'
 
 export const keepOf = (r: SpellWindowRead): SpellPageShot => ({ ...(r.description === undefined ? {} : { description: r.description }), fields: r.fields })
 
@@ -52,6 +53,8 @@ export default function SpellShot({ row }: { row: GapRow }): JSX.Element {
   const [failed, setFailed] = useState<string | null>(null)
   const [read, setRead] = useState<SpellWindowRead | null>(null)
   const [pending, setPending] = useState<{ read: SpellWindowRead; note: string; png: Uint8Array } | null>(null)
+  /** Another kind of window pasted here (an item window, a popup, a mob's picture): told and offered its row. */
+  const [misfit, setMisfit] = useState<HeldMisfit | null>(null)
   /** Where the kept window's picture was saved (owner, 2026-10-22: spell pictures under the spell folder). */
   const [picture, setPicture] = useState<string | null>(null)
   // The picture is written after the reading is kept, and never holds it up.
@@ -66,13 +69,17 @@ export default function SpellShot({ row }: { row: GapRow }): JSX.Element {
     (png: Uint8Array) => {
       setBusy(true)
       setPending(null)
+      setMisfit(null)
       window.eq
         .shotReadText(png)
-        .then((reply) => {
+        .then(async (reply) => {
           const isSpell = (n: string): boolean => known[n] !== undefined
           const r = reply.error === undefined ? readSpellWindow(reply.lines, facts?.description, row.name, isSpell) : null
           const ok = r !== null && isSpellWindow(r)
-          setFailed(ok ? null : spellProblem(reply))
+          // Not a spell window: what it is instead, from the same lines (shared/rowPaste.ts).
+          const other = ok ? undefined : await misfitNow(reply.lines, { box: 'spell', row: row.name })
+          setMisfit(other === undefined ? null : { misfit: other, png })
+          setFailed(ok || other !== undefined ? null : spellProblem(reply))
           setRead(ok ? r : null)
           if (!ok) return
           // A window that names another spell, or whose name was not read, waits for the player, as an item's does.
@@ -93,6 +100,7 @@ export default function SpellShot({ row }: { row: GapRow }): JSX.Element {
           ERROR: unable to read image. {failed}
         </Typography>
       )}
+      {misfit !== null && <MisfitNote held={misfit} />}
       {pending !== null && (
         <WrongItem
           note={pending.note}

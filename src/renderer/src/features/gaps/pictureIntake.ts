@@ -4,12 +4,12 @@
 // item window to its Items row; a nameplate only OFFERS a save (owner, 2026-10-23: a save dialog opened
 // "out of nowhere" — nothing is saved without the player's click). Every picture is logged to the dev log.
 
-import { GAPS_MODULE_ID, type GapRow, type GapsSnap } from '@shared/gaps'
+import { GAPS_MODULE_ID, type ClientSpellFacts, type GapRow, type GapsSnap } from '@shared/gaps'
 import type { QuestJournalFacts } from '@shared/gapQuests'
 import { withForcedQuests, type TalkSnap } from '@shared/gapForcedQuests'
 import { pictureFile } from '@shared/mobPicture'
 import { movePicksBut, nameplateRow, pictureKind, pictureRows, questTargets, routePopup, spellRowNames, threadTargets, titledName, type RouteHit, type ThreadLike } from '@shared/pasteRoute'
-import { isSpellWindow, readSpellWindow, spellProblem } from '@shared/spellWindow'
+import { isSpellWindow, RANKS, readSpellWindow, spellProblem, type SpellWindowRead } from '@shared/spellWindow'
 import { journalPlaces } from '@shared/questJournal'
 import { popupRead, readPopup, withPopup, withoutPopup, type QuestPopup } from '@shared/questPopup'
 import { shotKind } from '@shared/itemShotKeep'
@@ -104,13 +104,15 @@ async function nameplate(png: Uint8Array): Promise<Outcome> {
   const row = rows.find((r) => r.name === name)
   if (row === undefined) return { kind: 'unknown', text: 'Could not tell what this picture is.' }
   const file = pictureFile(row)
-  const run = async (): Promise<string> => {
-    const saved = await window.eq.shotSaveImage(png, file, false)
-    if (saved.status === 'saved' || saved.status === 'exists') setMobPicture(file, saved.path)
-    pictureLog(`nameplate save for ${row.name}: ${saved.status}`)
-    return saved.status === 'saved' ? `Saved ${file}.` : saved.status === 'exists' ? `${file} is already saved.` : `${file} not saved.`
-  }
-  return { kind: 'nameplate', text: `Looks like ${row.name}.`, save: { label: `Save as ${file}`, run } }
+  return { kind: 'nameplate', text: `Looks like ${row.name}.`, save: { label: `Save as ${file}`, run: () => saveRowPicture(png, row.name, file) } }
+}
+
+/** A mob's picture saved as its row's file, on the player's click only; what came of it, in words. */
+export async function saveRowPicture(png: Uint8Array, rowName: string, file: string): Promise<string> {
+  const saved = await window.eq.shotSaveImage(png, file, false)
+  if (saved.status === 'saved' || saved.status === 'exists') setMobPicture(file, saved.path)
+  pictureLog(`nameplate save for ${rowName}: ${saved.status}`)
+  return saved.status === 'saved' ? `Saved ${file}.` : saved.status === 'exists' ? `${file} is already saved.` : `${file} not saved.`
 }
 
 /** A Quest Journal: kept on each task it lists (QuestShot.tsx `keepJournal`). */
@@ -137,6 +139,20 @@ async function itemWindow(png: Uint8Array): Promise<Outcome> {
 }
 
 /**
+ * The window read again against the install's own words for `name` (SpellShot.tsx does the same on its
+ * row): the file's description with the window's numbers, so OCR's slips in the words (`bums` for
+ * `burns`) never reach the page; an upgraded rank read against a row's name. `first` when the files
+ * say nothing of it.
+ */
+async function withFileWords(lines: readonly string[], name: string, onRow: boolean, first: SpellWindowRead): Promise<SpellWindowRead> {
+  const names = [name, ...RANKS.map((r) => `${name} ${r}`)]
+  const facts: Record<string, ClientSpellFacts> = await window.eq.gapSpellFacts(names).catch(() => ({}))
+  if (facts[name] === undefined) return first
+  const r = readSpellWindow(lines, facts[name].description, onRow ? name : undefined, (n) => facts[n] !== undefined)
+  return isSpellWindow(r) ? r : first
+}
+
+/**
  * A spell display window: kept on its Spells row the row's own way (SpellShot.tsx), or under the spell's
  * name for a row that comes later (owner, 2026-10-23: the Mummy spell windows went to failed/).
  */
@@ -144,10 +160,11 @@ async function spellWindow(png: Uint8Array): Promise<Outcome> {
   const { snap } = await targetsNow()
   const rows = spellRowNames(snap?.rows ?? [])
   const reply = await window.eq.shotReadText(png)
-  const r = reply.error === undefined ? readSpellWindow(reply.lines, undefined, undefined, (n) => rows.includes(n)) : null
-  if (r === null || !isSpellWindow(r) || r.name === undefined) return { kind: 'error', text: spellProblem(reply) }
-  const name = r.name
+  const first = reply.error === undefined ? readSpellWindow(reply.lines, undefined, undefined, (n) => rows.includes(n)) : null
+  if (first === null || !isSpellWindow(first) || first.name === undefined) return { kind: 'error', text: spellProblem(reply) }
+  const name = first.name
   const row = rows.find((n) => n.toLowerCase() === name.toLowerCase())
+  const r = await withFileWords(reply.lines, row ?? name, row !== undefined, first)
   setSpellShot(row ?? name, keepOf(r))
   void keepPartPicture('spell', row ?? name, png)
   return { kind: 'spell', text: row === undefined ? `Spell window: ${name} (kept for when its row comes).` : `Spell window → ${row}.` }
