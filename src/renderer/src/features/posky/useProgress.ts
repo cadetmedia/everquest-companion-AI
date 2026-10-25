@@ -27,6 +27,7 @@ import { skyDroppersFor, type DropperMob } from './poskyDroppers'
 import { countTurnIns, newlyCompletedTurnIns } from './turnInCelebration'
 import { questDropRecency } from './questSort'
 import { useDerivedCompletions } from './derivedCompletions'
+import { useHeldProgress } from './progressStore'
 // The turn-in ledger (JOS-131) — the ONE place a turn-in count is decided, shared with main's
 // store so the renderer and the persisted file cannot disagree about what a count means.
 // Relative value import, per the repo's node-tested-module rule.
@@ -574,39 +575,19 @@ function useTurnInLedger(
 }
 
 export function useProgress(opts?: UseProgressOptions): UseProgress {
-  const [progress, setProgress] = useState<ProgressState | null>(null)
+  // One held copy per window (progressStore.ts): asked on mount, inventory reload and character
+  // switch, kept current by main's pushes, dropped on a switch.
+  const [progress, setProgress] = useHeldProgress()
   const [character, setCharacter] = useState<string | null>(null)
   const [countSource, setCountSourceState] = useState<CountSource>(loadCountSource)
 
   const lootHistory = useModule<LootSnap>('loot') ?? EMPTY_LOOT
 
   useEffect(() => {
-    // Only the newest read may land, so an answer for the character just left cannot overwrite
-    // the one for the character just switched to.
-    let generation = 0
-    const refetch = (): void => {
-      const mine = ++generation
-      void window.eq.getProgress().then((p) => mine === generation && setProgress(p))
-    }
-    refetch()
     void window.eq.getCharacter().then((c) => setCharacter(c?.name ?? null))
-    // Progress can change in main (auto-complete from a turn-in, inventory
-    // auto-reload) — stay consistent with those pushes instead of a refetch race.
-    const offProgress = window.eq.onProgress(setProgress)
-    const offInv = window.eq.onInventoryReload(refetch)
-    const offChar = window.eq.onCharacter((c) => {
+    return window.eq.onCharacter((c) => {
       setCharacter(c?.name ?? null)
-      // The old character's progress goes with them. Kept until the new read landed, the turn-in
-      // ledger could pair it with the NEW character's turn-ins and write the old one's instants
-      // into the new one's store; with none, the ledger waits (it skips while progress is null).
-      setProgress(null)
-      refetch()
     })
-    return () => {
-      offProgress()
-      offInv()
-      offChar()
-    }
   }, [])
 
   const { turnIns, detected, logCounts, recordTurnIn, undoTurnIn } = useTurnInLedger(
@@ -627,7 +608,7 @@ export function useProgress(opts?: UseProgressOptions): UseProgress {
       return `Loaded ${res.path}`
     }
     return res.error ?? 'Failed to load inventory'
-  }, [])
+  }, [setProgress])
 
   // The statements in force, cleaned on the way out of the store the same way main cleans them on
   // the way in. Memoized on the stored array so the two folds below (and the reconcile memo they
@@ -646,7 +627,7 @@ export function useProgress(opts?: UseProgressOptions): UseProgress {
     async (name: string, count: number | null): Promise<void> => {
       setProgress(await window.eq.setItemOverride(itemCountKey(name), name, count))
     },
-    []
+    [setProgress]
   )
 
   const { net, inventoryRows, lastLootedAt } = useHeldItems({
