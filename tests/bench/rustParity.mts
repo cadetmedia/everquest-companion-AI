@@ -82,7 +82,9 @@
  *   (`, but misses! (Wild Rampage)`) was `unknown` and is now `miss`. 2026-10-25, same branch:
  *   `You were hit by non-melee for N damage.` (lava, a fall) was `unknown` and is now `damage`
  *   with a null attacker, target You and skill `Non-melee`; the combat fold books it under an
- *   `Environment` incoming row.
+ *   `Environment` incoming row. Same day: `You have taken N damage from <Spell> by <caster>.` was
+ *   `unknown` and is now a `dot` `damage` from the caster to You; with no `by <caster>` it is
+ *   You → You (the game's self-cast framing), which the fold drops.
  *
  * ── `--ledger`: WHAT A PARTIAL PORT IS ALLOWED TO CLAIM ────────────────────────────────────────
  *
