@@ -1,5 +1,5 @@
 {
-  "scrapedAt": "2026-10-25T01:12:32.123Z",
+  "scrapedAt": "2026-10-25T09:22:49.525Z",
   "source": "eqlwiki.com — Category:NPCs/Named Mobs/Merchants/Raid Encounters ∪ embeddedin Template:Namedmobpage/MerchantPage, filtered to pages opening a mob template + recentchanges delta (scripts/scrape-delta.mts)",
   "mobs": [
     {
@@ -1090,6 +1090,28 @@
       ],
       "image": "a_blazing_elemental.png",
       "noImage": true
+    },
+    {
+      "page": "A blighted cook",
+      "eraTag": "Classic",
+      "name": "a blighted cook",
+      "level": "47",
+      "zones": [
+        "Nektropos Castle"
+      ],
+      "loc": [
+        {
+          "ns": 504,
+          "ew": 123
+        }
+      ],
+      "factions": [
+        "Host of Nektropos"
+      ],
+      "factionAmounts": [
+        "-2"
+      ],
+      "image": "npc_a_blighted_cook.png"
     },
     {
       "page": "A blizzard dervish",
@@ -3194,6 +3216,34 @@
       "noImage": true
     },
     {
+      "page": "A cellar rat",
+      "eraTag": "Classic",
+      "name": "a cellar rat",
+      "level": "55",
+      "zones": [
+        "Nektropos Castle"
+      ],
+      "drops": [
+        "Black Sapphire",
+        "Jacinth",
+        "Ruby",
+        "Sapphire Necklace"
+      ],
+      "loc": [
+        {
+          "ns": 450,
+          "ew": 47
+        }
+      ],
+      "factions": [
+        "Host of Nektropos"
+      ],
+      "factionAmounts": [
+        "-2"
+      ],
+      "image": "npc_a_cellar_rat.png"
+    },
+    {
       "page": "A cerulean guardian",
       "eraTag": "Velious",
       "name": "a cerulean guardian",
@@ -3454,6 +3504,28 @@
       "commonDrops": [
         "Classic Raid Tier Treasures"
       ]
+    },
+    {
+      "page": "A chapter of misery",
+      "eraTag": "Classic",
+      "name": "a chapter of misery",
+      "level": "52",
+      "zones": [
+        "Nektropos Castle"
+      ],
+      "loc": [
+        {
+          "ns": 30,
+          "ew": -198
+        }
+      ],
+      "factions": [
+        "Host of Nektropos"
+      ],
+      "factionAmounts": [
+        "-2"
+      ],
+      "image": "npc_a_chapter_of_misery.png"
     },
     {
       "page": "A Chardoki Golem",
@@ -9704,6 +9776,35 @@
       "noImage": true
     },
     {
+      "page": "A decomposing servant",
+      "eraTag": "Classic",
+      "name": "a decomposing servant",
+      "level": "49",
+      "zones": [
+        "Nektropos Castle"
+      ],
+      "drops": [
+        "Crystallized Sulfur"
+      ],
+      "loc": [
+        {
+          "ns": 528,
+          "ew": -247
+        },
+        {
+          "ns": 611,
+          "ew": -185
+        }
+      ],
+      "factions": [
+        "Host of Nektropos"
+      ],
+      "factionAmounts": [
+        "-2"
+      ],
+      "image": "npc_a_decomposing_servant.png"
+    },
+    {
       "page": "A decrepit warder",
       "eraTag": "Fear",
       "name": "a decrepit warder",
@@ -9906,6 +10007,32 @@
         "Small Bag"
       ],
       "noImage": true
+    },
+    {
+      "page": "A desecrated clerk",
+      "eraTag": "Classic",
+      "name": "a desecrated clerk",
+      "level": "46",
+      "zones": [
+        "Nektropos Castle"
+      ],
+      "drops": [
+        "Black Sapphire",
+        "Crystallized Sulfur"
+      ],
+      "loc": [
+        {
+          "ns": 441,
+          "ew": -140
+        }
+      ],
+      "factions": [
+        "Host of Nektropos"
+      ],
+      "factionAmounts": [
+        "-2"
+      ],
+      "image": "npc_a_desecrated_clerk.png"
     },
     {
       "page": "A Desert Madman",
@@ -28949,6 +29076,32 @@
       ]
     },
     {
+      "page": "A haunted coffer",
+      "eraTag": "Classic",
+      "name": "a haunted coffer",
+      "level": "50",
+      "zones": [
+        "Nektropos Castle"
+      ],
+      "drops": [
+        "Crystallized Sulfur"
+      ],
+      "loc": [
+        {
+          "ns": -225,
+          "ew": 313.53,
+          "z": -7.7
+        }
+      ],
+      "factions": [
+        "Host of Nektropos"
+      ],
+      "factionAmounts": [
+        "-2"
+      ],
+      "image": "npc_a_haunted_coffer.png"
+    },
+    {
       "page": "A Haunted Seachest",
       "eraTag": "Velious",
       "name": "a haunted seachest",
@@ -36155,6 +36308,31 @@
       ]
     },
     {
+      "page": "A lobotomized courtier",
+      "eraTag": "Classic",
+      "name": "a lobotomized courtier",
+      "level": "50",
+      "zones": [
+        "Nektropos Castle"
+      ],
+      "drops": [
+        "Crystallized Sulfur"
+      ],
+      "loc": [
+        {
+          "ns": -130,
+          "ew": -178
+        }
+      ],
+      "factions": [
+        "Host of Nektropos"
+      ],
+      "factionAmounts": [
+        "-2"
+      ],
+      "image": "npc_a_lobotomized_courtier.png"
+    },
+    {
       "page": "A lost gnome",
       "eraTag": "Velious",
       "name": "a lost gnome",
@@ -38449,6 +38627,31 @@
       "noImage": true
     },
     {
+      "page": "A mutilated attendant",
+      "eraTag": "Classic",
+      "name": "a mutilated attendant",
+      "level": "39-52",
+      "zones": [
+        "Nektropos Castle"
+      ],
+      "drops": [
+        "Crystallized Sulfur"
+      ],
+      "loc": [
+        {
+          "ns": 403,
+          "ew": 160
+        }
+      ],
+      "factions": [
+        "Host of Nektropos"
+      ],
+      "factionAmounts": [
+        "-2"
+      ],
+      "image": "npc_a_mutilated_attendant.png"
+    },
+    {
       "page": "A necro acolyte",
       "eraTag": "Classic",
       "name": "a necro acolyte",
@@ -39503,6 +39706,28 @@
       ],
       "image": "npc_a_parched_zombie.png",
       "noImage": true
+    },
+    {
+      "page": "A passage of flame",
+      "eraTag": "Classic",
+      "name": "a passage of flame",
+      "level": "50",
+      "zones": [
+        "Nektropos Castle"
+      ],
+      "loc": [
+        {
+          "ns": -84,
+          "ew": -188
+        }
+      ],
+      "factions": [
+        "Host of Nektropos"
+      ],
+      "factionAmounts": [
+        "-2"
+      ],
+      "image": "npc_a_passage_of_flame.png"
     },
     {
       "page": "A Patrolling Gnoll",
@@ -42758,6 +42983,45 @@
       "noImage": true
     },
     {
+      "page": "A reanimated castle guard",
+      "eraTag": "Classic",
+      "name": "a reanimated castle guard",
+      "level": "47-50",
+      "zones": [
+        "Nektropos Castle"
+      ],
+      "drops": [
+        "Crystallized Sulfur",
+        "Sapphire Necklace",
+        "Star Ruby Earring"
+      ],
+      "loc": [
+        {
+          "ns": 164,
+          "ew": 142
+        },
+        {
+          "ns": 239,
+          "ew": 139
+        },
+        {
+          "ns": 107,
+          "ew": 139
+        },
+        {
+          "ns": 528,
+          "ew": -247
+        }
+      ],
+      "factions": [
+        "Host of Nektropos"
+      ],
+      "factionAmounts": [
+        "-2"
+      ],
+      "image": "npc_a_reanimated_castle_guard.png"
+    },
+    {
       "page": "A Reanimated Champion",
       "eraTag": "Chardok Revamp",
       "name": "a Reanimated Champion",
@@ -42910,6 +43174,50 @@
       ],
       "image": "npc_a_reanimated_Partisan.png",
       "noImage": true
+    },
+    {
+      "page": "A reanimated servant",
+      "eraTag": "Classic",
+      "name": "a reanimated servant",
+      "level": "25-49",
+      "zones": [
+        "Nektropos Castle"
+      ],
+      "loc": [
+        {
+          "ns": 36,
+          "ew": 349
+        }
+      ],
+      "factions": [
+        "Host of Nektropos"
+      ],
+      "factionAmounts": [
+        "-2"
+      ],
+      "image": "npc_a_reanimated_servant.png"
+    },
+    {
+      "page": "A reconstructed justiciar",
+      "eraTag": "Classic",
+      "name": "a reconstructed justiciar",
+      "level": "52",
+      "zones": [
+        "Nektropos Castle"
+      ],
+      "loc": [
+        {
+          "ns": 359,
+          "ew": -287
+        }
+      ],
+      "factions": [
+        "Host of Nektropos"
+      ],
+      "factionAmounts": [
+        "-2"
+      ],
+      "image": "npc_a_reconstructed_justiciar.png"
     },
     {
       "page": "A reef shark",
@@ -43597,6 +43905,35 @@
       ],
       "image": "npc_a_rotting_sentry.png",
       "noImage": true
+    },
+    {
+      "page": "A rotting servant",
+      "eraTag": "Classic",
+      "name": "a rotting servant",
+      "level": "50",
+      "zones": [
+        "Nektropos Castle"
+      ],
+      "drops": [
+        "Fire Emerald Ring"
+      ],
+      "loc": [
+        {
+          "ns": 611,
+          "ew": -185
+        },
+        {
+          "ns": 588,
+          "ew": -183
+        }
+      ],
+      "factions": [
+        "Host of Nektropos"
+      ],
+      "factionAmounts": [
+        "-2"
+      ],
+      "image": "npc_a_rotting_servant.png"
     },
     {
       "page": "A Royal Fish",
@@ -52728,6 +53065,7 @@
       "page": "A Spectral Handmaiden",
       "eraTag": "Classic",
       "name": "A Spectral Handmaiden",
+      "level": "55",
       "zones": [
         "Nektropos Castle"
       ],
@@ -52735,6 +53073,12 @@
         "Handmaiden's Earring",
         "Handmaiden's Ring",
         "Handmaiden's Handwrap"
+      ],
+      "factions": [
+        "Host of Nektropos"
+      ],
+      "factionAmounts": [
+        "-2"
       ],
       "image": "A_Spectral_Handmaiden.png"
     },
@@ -55001,6 +55345,28 @@
       "commonDrops": [
         "Undead Froglok Tongue"
       ]
+    },
+    {
+      "page": "A tale of woe",
+      "eraTag": "Classic",
+      "name": "a tale of woe",
+      "level": "53",
+      "zones": [
+        "Nektropos Castle"
+      ],
+      "loc": [
+        {
+          "ns": 15,
+          "ew": -185
+        }
+      ],
+      "factions": [
+        "Host of Nektropos"
+      ],
+      "factionAmounts": [
+        "-2"
+      ],
+      "image": "npc_a_tale_of_woe.png"
     },
     {
       "page": "A Tar Goo",
@@ -58772,6 +59138,32 @@
         "Cracked Paineel Shield",
         "Gold lined heretic cloak"
       ]
+    },
+    {
+      "page": "A wandering rodent",
+      "eraTag": "Classic",
+      "name": "a wandering rodent",
+      "level": "55",
+      "zones": [
+        "Nektropos Castle"
+      ],
+      "drops": [
+        "Crystallized Sulfur",
+        "Ruby Crown"
+      ],
+      "loc": [
+        {
+          "ns": 486,
+          "ew": 131
+        }
+      ],
+      "factions": [
+        "Host of Nektropos"
+      ],
+      "factionAmounts": [
+        "-2"
+      ],
+      "image": "npc_a_wandering_rodent.png"
     },
     {
       "page": "A wandering spirit",
@@ -63855,6 +64247,22 @@
       "image": "Alexa Everling.png"
     },
     {
+      "page": "Alexa`s Handmaiden",
+      "eraTag": "Classic",
+      "name": "Alexa`s Handmaiden",
+      "level": "55",
+      "zones": [
+        "Nektropos Castle"
+      ],
+      "loc": [
+        {
+          "ns": 172,
+          "ew": -178
+        }
+      ],
+      "image": "npc_alexa`s_handmaiden.png"
+    },
+    {
       "page": "Alga Bruntbuckler",
       "name": "Alga Bruntbuckler",
       "level": "41",
@@ -64653,6 +65061,31 @@
       "commonDrops": [
         "Classic Raid Tier Treasures"
       ]
+    },
+    {
+      "page": "An aberrant pugilist",
+      "eraTag": "Classic",
+      "name": "an aberrant pugilist",
+      "level": "50-52",
+      "zones": [
+        "Nektropos Castle"
+      ],
+      "drops": [
+        "Crystallized Sulfur"
+      ],
+      "loc": [
+        {
+          "ns": -127,
+          "ew": -244
+        }
+      ],
+      "factions": [
+        "Host of Nektropos"
+      ],
+      "factionAmounts": [
+        "-2"
+      ],
+      "image": "npc_an_aberrant_pugilist.png"
     },
     {
       "page": "An Abhorrent",
@@ -68037,6 +68470,28 @@
       ],
       "image": "npc_an_elven_war_scout.png",
       "noImage": true
+    },
+    {
+      "page": "An embalmed vicar",
+      "eraTag": "Classic",
+      "name": "an embalmed vicar",
+      "level": "51",
+      "zones": [
+        "Nektropos Castle"
+      ],
+      "loc": [
+        {
+          "ns": -129,
+          "ew": -178
+        }
+      ],
+      "factions": [
+        "Host of Nektropos"
+      ],
+      "factionAmounts": [
+        "-2"
+      ],
+      "image": "npc_an_embalmed_vicar.png"
     },
     {
       "page": "An Ember Hornet",
@@ -75156,6 +75611,31 @@
       "outOfEra": true,
       "image": "npc_an_unhappy_slave.png",
       "noImage": true
+    },
+    {
+      "page": "An unstable arcanist",
+      "eraTag": "Classic",
+      "name": "an unstable arcanist",
+      "level": "52",
+      "zones": [
+        "Nektropos Castle"
+      ],
+      "drops": [
+        "Crystallized Sulfur"
+      ],
+      "loc": [
+        {
+          "ns": -141,
+          "ew": -258
+        }
+      ],
+      "factions": [
+        "Host of Nektropos"
+      ],
+      "factionAmounts": [
+        "-2"
+      ],
+      "image": "npc_an_unstable_arcanist.png"
     },
     {
       "page": "An urd ghoul wizard",
@@ -99411,7 +99891,8 @@
       "drops": [
         "Cryptguard"
       ],
-      "image": "npc_name.png"
+      "image": "npc_name.png",
+      "noImage": true
     },
     {
       "page": "Crypt mummy",
@@ -99475,8 +99956,20 @@
         "Crysta's Robe",
         "Pyrosilk Leggings"
       ],
-      "image": "Crysta Everling.png",
-      "noImage": true
+      "loc": [
+        {
+          "ns": 859,
+          "ew": 311,
+          "z": 18
+        }
+      ],
+      "factions": [
+        "Host of Nektropos"
+      ],
+      "factionAmounts": [
+        "-2"
+      ],
+      "image": "npc_crysta_everling.png"
     },
     {
       "page": "Crystal Eyes",
@@ -129465,7 +129958,14 @@
         "Nektropos Castle"
       ],
       "drops": [
-        "Burning Fighters Blade"
+        "Burning Fighters Blade",
+        "Helical Band of the Unyielding"
+      ],
+      "factions": [
+        "Host of Nektropos"
+      ],
+      "factionAmounts": [
+        "-2"
       ],
       "image": "Guard Captain Ga`Vin.png"
     },
@@ -151667,8 +152167,7 @@
           "z": -7
         }
       ],
-      "image": "npc_name2.png",
-      "noImage": true
+      "image": "npc_inquisitor_of_ulkorruuk.png"
     },
     {
       "page": "Inte Akera",
@@ -171079,7 +171578,8 @@
       "drops": [
         "None"
       ],
-      "image": "npc_name.png"
+      "image": "npc_name.png",
+      "noImage": true
     },
     {
       "page": "Lord Pickclaw",
@@ -171224,7 +171724,8 @@
       "drops": [
         "Signet Ring of Lord Everling",
         "Idol of Forsaken Ideals",
-        "Blood's Unity"
+        "Blood's Unity",
+        "Warstaff of Hope's Demise"
       ],
       "loc": [
         {
@@ -190735,9 +191236,6 @@
       "zones": [
         "Nektropos Castle"
       ],
-      "drops": [
-        "None"
-      ],
       "loc": [
         {
           "ns": 102,
@@ -192006,6 +192504,32 @@
       ],
       "image": "npc_priestess_llandra.png",
       "noImage": true
+    },
+    {
+      "page": "Priestess of Ulkorruuk",
+      "eraTag": "Classic",
+      "name": "Priestess of Ulkorruuk",
+      "level": "52",
+      "zones": [
+        "Nektropos Castle"
+      ],
+      "loc": [
+        {
+          "ns": -24,
+          "ew": -159
+        },
+        {
+          "ns": -41,
+          "ew": -157
+        }
+      ],
+      "factions": [
+        "Host of Nektropos"
+      ],
+      "factionAmounts": [
+        "-2"
+      ],
+      "image": "npc_priestess_of_ulkorruuk.png"
     },
     {
       "page": "Priestess Sercema",
@@ -221050,7 +221574,8 @@
         }
       ],
       "outOfEra": true,
-      "image": "npc_name.png"
+      "image": "npc_name.png",
+      "noImage": true
     },
     {
       "page": "Tegea Prendyn",
@@ -223317,8 +223842,13 @@
           "z": 17
         }
       ],
-      "image": "The_Head_Librarian.png",
-      "noImage": true
+      "factions": [
+        "Beta Dubious"
+      ],
+      "factionAmounts": [
+        "-"
+      ],
+      "image": "npc_the_head_librarian.png"
     },
     {
       "page": "The Head Usher",
@@ -233507,12 +234037,13 @@
       ],
       "loc": [
         {
-          "ns": -397.85,
-          "ew": -231.11,
-          "z": 3.19
+          "ns": -390,
+          "ew": -233,
+          "z": 5
         }
       ],
-      "image": "npc_name.png"
+      "image": "npc_name.png",
+      "noImage": true
     },
     {
       "page": "Tycyn Fe`Dhar",
