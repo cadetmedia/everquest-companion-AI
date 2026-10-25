@@ -66,3 +66,12 @@ test('a captured item row takes its edit too: the OCR read 1 Deirdre\'s Robe, th
   assert.equal(shownName(out as GapRow), "Deirdre's Robe")
   assert.equal(applyEditText("{{Itempage\n| itemname = 1 Deirdre's Robe\n}}", out as GapRow), "{{Itempage\n| itemname = Deirdre's Robe\n}}")
 })
+
+test('Not a misspelling drops the near-name guess, so the row is a page of its own, not a redirect (owner, 2026-10-24)', () => {
+  const shoes = row('item', 'Pyrosilk Lined Shoes', { suggest: { name: 'Cryosilk Lined Shoes', page: 'Cryosilk Lined Shoes', distance: 2 } } as Partial<GapRow>)
+  const [out] = withGapEdits([shoes], { 'item:Pyrosilk Lined Shoes': { distinct: true } })
+  assert.equal(out?.suggest, undefined)
+  assert.equal(out?.edit?.distinct, true)
+  assert.deepEqual(tidyEdit({ distinct: true }), { distinct: true }, 'the mark alone is an edit')
+  assert.equal(withGapEdits([shoes], {})[0]?.suggest?.name, 'Cryosilk Lined Shoes', 'unmarked keeps the guess')
+})

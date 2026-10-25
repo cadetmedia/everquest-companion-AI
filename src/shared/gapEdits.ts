@@ -13,6 +13,8 @@ export interface GapEdit {
   fields?: Record<string, string>
   /** `mob`: the player says the name is an NPC, not a player (clears "may be a player"). */
   kind?: 'mob'
+  /** The player says the name is its own, not a misspelling of the near name (owner, 2026-10-24: Pyrosilk Lined Shoes is not Cryosilk Lined Shoes): no "Probably", no redirect. */
+  distinct?: true
 }
 
 /** Every edit of one character, by `doneKey`. */
@@ -58,7 +60,8 @@ export function tidyEdit(e: GapEdit): GapEdit | null {
   const out: GapEdit = {
     ...(clean(e.name) === '' ? {} : { name: clean(e.name) }),
     ...(Object.keys(fields).length === 0 ? {} : { fields }),
-    ...(e.kind === undefined ? {} : { kind: e.kind })
+    ...(e.kind === undefined ? {} : { kind: e.kind }),
+    ...(e.distinct === true ? { distinct: true as const } : {})
   }
   return Object.keys(out).length === 0 ? null : out
 }
@@ -69,7 +72,9 @@ export function withGapEdits(rows: readonly GapRow[], edits: GapEditMap): GapRow
   return rows.map((row) => {
     const edit = edits[doneKey(row)]
     if (edit === undefined) return row
-    return { ...row, edit, ...(edit.kind === 'mob' ? { maybePlayer: false } : {}) }
+    const out: GapRow = { ...row, edit, ...(edit.kind === 'mob' ? { maybePlayer: false } : {}) }
+    if (edit.distinct === true) delete out.suggest
+    return out
   })
 }
 

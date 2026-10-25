@@ -42,6 +42,12 @@ function EditForm({ row, onClose }: { row: GapRow; onClose: () => void }): JSX.E
               label="This is an NPC, not a player"
             />
           )}
+          {(row.suggest !== undefined || draft.distinct === true) && (
+            <FormControlLabel
+              control={<Checkbox size="small" checked={draft.distinct === true} onChange={(e) => setDraft((d) => ({ ...d, distinct: e.target.checked ? true : undefined }))} data-testid="gaps-edit-distinct" />}
+              label={`Not ${row.suggest?.name ?? 'the near name'}: a different ${row.domain}`}
+            />
+          )}
         </Stack>
       </DialogContent>
       <DialogActions>
