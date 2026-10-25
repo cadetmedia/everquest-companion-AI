@@ -28,8 +28,8 @@
 // what it says follows your gear instead of freezing the day you first opened a tab — and no
 // stored document can be corrupted by a dump that changed under it.
 
-import { useCallback, useEffect, useState } from 'react'
 import type { PlannerInventory } from '@shared/planner/inventorySlots'
+import { createDumpStore, useDumpStore } from '../../lib/dumpStore'
 
 export interface PlannerInventoryState {
   /** the parsed dump, or null when this character has never written one */
@@ -39,39 +39,19 @@ export interface PlannerInventoryState {
 }
 
 /**
- * The character's equipped items, re-read whenever the dump is rewritten.
- *
- * Not module-cached, unlike the donor corpus: that is compiled-in bytes that cannot change while
- * the app runs, and this is a file the player rewrites mid-session on purpose.
+ * One held answer for the window (`lib/dumpStore.ts`): a remount paints it at once, and it is
+ * still re-asked on every mount and every dump rewrite, because this is a file the player
+ * rewrites mid-session on purpose. The push carries the path and mtime, and both are ignored:
+ * main is the only thing that knows which dump belongs to the active character, so the answer is
+ * re-asked rather than patched from the event.
  */
+const STORE = createDumpStore<PlannerInventory>(
+  () => window.eq.plannerInventory(),
+  () => window.eq
+)
+
+/** The character's equipped items, re-read whenever the dump is rewritten. */
 export function usePlannerInventory(): PlannerInventoryState {
-  const [state, setState] = useState<PlannerInventoryState>({ inventory: null, ready: false })
-
-  const read = useCallback((alive: () => boolean) => {
-    void window.eq
-      .plannerInventory()
-      .then((inventory) => {
-        if (alive()) setState({ inventory, ready: true })
-      })
-      .catch(() => {
-        /* main never rejects; no dump is a null answer, not a failure */
-        if (alive()) setState({ inventory: null, ready: true })
-      })
-  }, [])
-
-  useEffect(() => {
-    let alive = true
-    const live = (): boolean => alive
-    read(live)
-    // The push carries the path and mtime, and we deliberately ignore both: main is the only
-    // thing that knows which dump belongs to the active character, so the answer is re-asked
-    // rather than patched from the event.
-    const off = window.eq.onInventoryReload(() => read(live))
-    return () => {
-      alive = false
-      off()
-    }
-  }, [read])
-
-  return state
+  const { value, ready } = useDumpStore(STORE)
+  return { inventory: value, ready }
 }
