@@ -1,8 +1,9 @@
 {
-  "generatedAt": "2026-10-25T09:23:27.906Z",
-  "note": "Images shipped with the app so it never fetches art at runtime. Every file states the exact upstream URL it came from. Regenerate with `npm run fetch:images`.",
+  "generatedAt": "2026-10-25T10:50:22.456Z",
+  "note": "Images shipped with the app so it never fetches art at runtime. Every file states the exact upstream URL it came from. Item icons are taken from the GitHub data pack the wiki publishes when it holds them (the same wiki files), else fetched from that URL. Regenerate with `npm run fetch:images`.",
   "sources": [
     "https://eqlwiki.com/",
+    "https://github.com/Maergoth/EQL-EOZ/tree/dataset",
     "https://wiki.project1999.com/"
   ],
   "totals": {
