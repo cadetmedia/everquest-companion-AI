@@ -573,9 +573,17 @@ function classesField(f: SpellFacts): string[] {
   return f.npcOnly ? ['| classes =\n\nThis spell is cast by NPCs only.'] : []
 }
 
-/** The wiki's Spell Page Blueprint layout: `{{Spellpage|`, blank lines between, `| key = value`. */
+/**
+ * Every field of the Spell Page Blueprint, in its order (the cached pages' own order, Supernova's). The
+ * template prints a field left out as its raw name (owner, 2026-10-24: `{{{slots}}}`, `{{{skill}}}` on
+ * a copied page), so each one is written, empty where nothing states it.
+ */
+const SPELL_FIELDS = ['spellicon', 'description', 'classes', 'items_with_effect', 'slots', 'skill', 'mana', 'range', 'casting_time', 'fizzle_time', 'recast_time', 'duration', 'target_type', 'spell_type', 'resist', 'msg_cast_on_you', 'msg_cast_on_other', 'msg_wears_off', 'where_to_obtain'] as const
+
+/** The wiki's Spell Page Blueprint layout: `{{Spellpage|`, blank lines between, `| key = value`, every field. */
 export function spellPage(f: SpellFacts): string {
-  const fields = [`| spellname = ${f.name}`, ...clientFields(f, SPELL_HEAD), ...classesField(f), ...clientFields(f, SPELL_TAIL)]
+  const stated = new Map([...clientFields(f, SPELL_HEAD), ...classesField(f), ...clientFields(f, SPELL_TAIL)].map((l) => [/^\| (\w+) =/.exec(l)?.[1] ?? '', l]))
+  const fields = [`| spellname = ${f.name}`, ...SPELL_FIELDS.map((k) => stated.get(k) ?? `| ${k} =`)]
   const body = `{{Spellpage|\n\n${fields.join('\n\n')}\n\n}}`
   const npcOnly = f.npcOnly && (f.client?.classes.length ?? 0) === 0
   return page(`\n${body}`, npcOnly ? ['NPC Only Spells'] : [])

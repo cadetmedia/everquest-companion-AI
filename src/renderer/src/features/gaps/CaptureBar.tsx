@@ -60,7 +60,7 @@ function file(c: Captured, rows: readonly string[]): Filed {
 /** One capture onto its row: an exact name kept at once, a near match waiting on the row. */
 function fileOn(c: Captured, reply: NonNullable<Captured['reply']>, kind: NonNullable<ReturnType<typeof shotKind>>, match: NonNullable<ReturnType<typeof captureRow>>): string {
   // A near match always asks: no `others` here, captureRow has already weighed them.
-  const note = match.exact ? undefined : (otherItemNote(reply.read.name, match.row, PART_WORDS[kind]) ?? `Is this ${match.row}'s?`)
+  const note = match.exact ? undefined : (otherItemNote(reply.read.name, match.row, PART_WORDS[kind]) ?? `This ${PART_WORDS[kind]} reads "${reply.read.name ?? ''}": is it ${match.row}'s?`)
   if (note === undefined) {
     setItemShot(match.row, keptAfter(itemShotNow(match.row), reply, kind))
     // The window's picture under the item folder (owner, 2026-10-22: "all items pasted get stored").

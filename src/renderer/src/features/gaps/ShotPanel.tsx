@@ -228,6 +228,7 @@ function ItemShot({ row }: { row: GapRow }): JSX.Element {
       {ask !== null && (
         <WrongItem
           note={ask.note}
+          png={ask.png}
           onUse={() => {
             apply(ask)
             if (pending === null) setCapturedRead(row.name, { reply: ask.reply, kind: ask.kind, ...(ask.png === undefined ? {} : { png: ask.png }) })
