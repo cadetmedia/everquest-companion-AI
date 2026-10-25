@@ -10,6 +10,7 @@ import type { SpellPageShot } from '@shared/spellWindow'
 import type { ItemShotReply } from '@shared/itemWindow'
 import type { ShotKind } from '@shared/itemShotKeep'
 import { questTitleKey, type QuestJournalFacts } from '@shared/gapQuests'
+import { refreshFolderPictures } from './folderPicturesStore'
 
 export const SHOTS_KEY = 'eq.gaps.itemShots'
 export const SPELL_SHOTS_KEY = 'eq.gaps.spellShots'
@@ -172,7 +173,13 @@ export function keepPartPicture(kind: 'item' | 'lore' | 'spell' | undefined, nam
   if (kind === undefined || png === undefined) return Promise.resolve(null)
   return window.eq
     .shotKeepPicture(kind, name, png)
-    .then((r) => (r.status === 'saved' ? r.path : null))
+    .then((r) => {
+      if (r.status !== 'saved') return null
+      // The row's picture beside its details shows now, not at the next focus (owner, 2026-10-24:
+      // "the picture doesn't show up on the right until 10+ seconds later").
+      refreshFolderPictures()
+      return r.path
+    })
     .catch(() => null)
 }
 

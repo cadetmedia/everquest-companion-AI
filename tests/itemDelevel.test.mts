@@ -49,3 +49,22 @@ test('A +N RANGE TAKES BACK TEN A TIER: MITHRIL CHAMPION ARROWS +7 READ 220, BAS
   assert.ok(r.baseStatsblock?.includes('Range: 150<br>'), r.baseStatsblock)
   assert.equal(delevel('\nRange: 250<br>', 10).block, '\nRange: 150<br>')
 })
+
+test("A +N WEAPON TAKES BACKSTAB BACK AND DROPS THE UPGRADE'S ACCURACY (owner, 2026-10-24: Torturer's Signature +3)", async () => {
+  const { delevel } = await import('../src/shared/itemDelevel')
+  const plus3 = [
+    'Lore Equipped, No Trade<br>',
+    'Slot: PRIMARY SECONDARY<br>',
+    'Skill: 1H Piercing  Atk Delay: 22<br>',
+    'DMG: 13<br>',
+    'Dmg Bon: 10<br>',
+    'BACKSTAB: 17<br>',
+    'STR: +13  STA: +8  DEX: +13  Accuracy: +7.5%<br>',
+    'SV FIRE: +8  SV COLD: +8  SV VOID: +3<br>',
+    'Class: WAR RNG BRD ROG<br>'
+  ].join('\n')
+  const back = delevel(plus3, 3)
+  assert.ok(back.block?.includes('BACKSTAB: 15<br>'), JSON.stringify(back))
+  assert.ok(back.block?.includes('STR: +10  STA: +5  DEX: +10<br>'), back.block)
+  assert.ok(!(back.block ?? '').includes('Accuracy'), back.block)
+})
