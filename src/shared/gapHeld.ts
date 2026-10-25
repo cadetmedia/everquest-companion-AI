@@ -43,6 +43,8 @@ export interface GapHeld {
    * Gelatinous Cube).
    */
   exported?: { name: string; slots: string[] }
+  /** Not the item's first holder: its details line is a short "Also on <who>" (owner, 2026-10-21: "just the character they are on and a 'also on Kaltinril'"). */
+  also?: true
 }
 
 /** Every holder of each item, keyed by `itemTierKey`. */
@@ -125,18 +127,29 @@ export function heldIndex(
   return out
 }
 
-/** Several characters' indexes as one: every holder of each item, in the order given. */
+/** Several characters' indexes as one: every holder of each item, in the order given; each after the first is `also`. */
 export function joinHeld(indexes: readonly HeldIndex[]): HeldIndex {
   const out = new Map<string, GapHeld[]>()
-  for (const index of indexes) for (const [key, holders] of index) out.set(key, [...(out.get(key) ?? []), ...holders])
+  for (const index of indexes) {
+    for (const [key, holders] of index) {
+      const had = out.get(key) ?? []
+      out.set(key, [...had, ...holders.map((h, i) => (had.length + i === 0 ? h : { ...h, also: true as const }))])
+    }
+  }
   return out
 }
 
 const NOBODY: readonly GapHeld[] = []
 
-/** An Items row's holders, at any tier and any case; none for another domain or none held. */
+/**
+ * An Items row's holders, at any tier and any case; none for another domain or none held. The log's
+ * name first, then a hand-edited one (gapEdits.ts: a misread capture put right), so an edit finds the
+ * export's copies; an edit that is no string is passed over.
+ */
 export function gapHeld(row: GapRow, index: HeldIndex): readonly GapHeld[] {
-  return row.domain === 'item' ? (index.get(itemTierKey(row.name)) ?? NOBODY) : NOBODY
+  if (row.domain !== 'item') return NOBODY
+  const edited: unknown = row.edit?.name
+  return index.get(itemTierKey(row.name)) ?? (typeof edited === 'string' && edited.trim() !== '' ? index.get(itemTierKey(edited)) : undefined) ?? NOBODY
 }
 
 /**
@@ -222,6 +235,7 @@ function placesText(h: GapHeld): string {
 
 /** The details pane's line: `You hold 2 (bags): screenshot it for the wiki now.`, or `Drywrought holds 2 (bags): ...`. */
 export function heldLine(h: GapHeld): string {
+  if (h.also === true && h.who !== undefined) return `Also on ${h.who}: ${String(h.total)} (${placesText(h)}).`
   return `${holder(h)} ${String(h.total)} (${placesText(h)}): screenshot it for the wiki now.`
 }
 

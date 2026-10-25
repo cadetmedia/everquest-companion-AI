@@ -70,7 +70,7 @@ test("only a character's own export counts, and with All characters each holder 
   assert.equal(heldChipLabel(both), 'held by Drywrought, Kaltinril')
   assert.deepEqual(both.map(heldLine), [
     'Drywrought holds 2 (bags): screenshot it for the wiki now.',
-    'Kaltinril holds 1 (bank): screenshot it for the wiki now.'
+    'Also on Kaltinril: 1 (bank).'
   ])
 })
 
