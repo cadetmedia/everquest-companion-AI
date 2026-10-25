@@ -16,7 +16,7 @@ import CloseIcon from '@mui/icons-material/Close'
 import type { ItemKnowledge, LootEvent } from '@shared/types'
 import type { Timeslice } from '@shared/timeslice'
 import { isAcquisition } from '@shared/lootDisposition'
-import { rewardChestNote, tallyDroppedBy } from '@shared/droppedBy'
+import { chestOnlyNote, rewardChestNote, tallyDroppedBy } from '@shared/droppedBy'
 import { formatDate } from '../../lib/formatDate'
 import { EQ_ITEM_COLORS } from '../../lib/ItemWindow'
 import { ObservedItemWindow } from '../../lib/ObservedItemWindow'
@@ -237,11 +237,22 @@ function ObservedHead({ title, hint }: { title: string; hint?: string }): JSX.El
   )
 }
 
-function DroppedByColumn({ sources, max }: { sources: LootTally[]; max: number }): JSX.Element {
+function DroppedByColumn({
+  sources,
+  max,
+  empty
+}: {
+  sources: LootTally[]
+  max: number
+  /** What the column says with no mob to list; absent ⇒ "You have not looted this yet." */
+  empty?: string
+}): JSX.Element {
   return (
     <Box sx={{ flex: 1, minWidth: 0 }}>
       <ObservedHead title="Dropped by" hint="(times seen)" />
-      {sources.length === 0 && <Typography variant="caption">You have not looted this yet.</Typography>}
+      {sources.length === 0 && (
+        <Typography variant="caption">{empty ?? 'You have not looted this yet.'}</Typography>
+      )}
       {sources.map((s) => (
         <Bar key={s.name} label={s.name} value={s.count} max={max} right={`${s.count}× seen`} />
       ))}
@@ -294,7 +305,7 @@ function ObservedColumn({
       {/* WHO drops it beside WHERE — and the where half is a RATE now (JOS-78), because a zone's
           count alone cannot tell eleven-in-an-evening from eleven-over-a-fortnight. */}
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3}>
-        <DroppedByColumn sources={agg.sources} max={agg.sources[0]?.count ?? 1} />
+        <DroppedByColumn sources={agg.sources} max={agg.sources[0]?.count ?? 1} empty={chestOnlyNote(agg.chest)} />
         <ItemZoneTable rows={zoneRates.rows} clipped={zoneRates.clipped} looted={events.length > 0} />
       </Stack>
 
