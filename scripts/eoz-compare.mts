@@ -10,24 +10,15 @@
 //   --offline     use the cached pack, fetch nothing      --root <repo>   data and caches from there
 //   --cache <dir> where the pack and reports live (default scripts/sources/cache/eoz)
 
-import { createHash } from 'crypto'
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
+import { existsSync, readFileSync, writeFileSync } from 'fs'
 import { dirname, join, resolve } from 'path'
 import { fileURLToPath } from 'url'
 import { gunzipSync } from 'zlib'
 import { comparePack, packRevisions, releaseDecision, wikiTitle, type CompareReport, type FamilyReport, type OurFamily, type OurFields, type Pack } from './sources/eozCompare'
 import { readRevIndex, seedRevs, writeRevIndex } from './sources/revIndex'
+import { refreshEozPack, type EozManifest } from '../src/main/eozPack'
 
-const RAW = 'https://raw.githubusercontent.com/Maergoth/EQL-EOZ/dataset'
 const UA = 'everquest-companion eoz-compare (+https://github.com/kaltinril/everquest-companion)'
-const PACK = 'eqlwiki-eye-of-zomm-data.json.gz'
-
-interface Manifest {
-  version?: string
-  generatedAt?: string
-  sha256: string
-  bytes?: number
-}
 
 interface Args {
   release: boolean
@@ -47,38 +38,15 @@ function parseArgs(argv: string[]): Args {
   return { release: argv.includes('--release'), seed: argv.includes('--seed-revs'), offline: argv.includes('--offline'), root, cache }
 }
 
-const sha256 = (b: Buffer): string => createHash('sha256').update(b).digest('hex')
 const readJson = (p: string): unknown => JSON.parse(readFileSync(p, 'utf8'))
 
-async function get(url: string): Promise<Buffer> {
-  const res = await fetch(url, { headers: { 'User-Agent': UA } })
-  if (!res.ok) throw new Error(`${String(res.status)} ${res.statusText} for ${url}`)
-  return Buffer.from(await res.arrayBuffer())
-}
-
-/** The pack, downloaded only when the manifest's sha256 differs from the cached one. GitHub bytes are logged. */
-async function freshPack(a: Args): Promise<{ pack: Pack; manifest: Manifest; downloaded: number }> {
-  mkdirSync(a.cache, { recursive: true })
-  const mPath = join(a.cache, 'manifest.json')
-  const gzPath = join(a.cache, PACK)
-  let downloaded = 0
-  let manifest = (existsSync(mPath) ? readJson(mPath) : { sha256: '' }) as Manifest
-  if (!a.offline) {
-    const body = await get(`${RAW}/manifest.json`)
-    downloaded += body.length
-    const live = JSON.parse(body.toString('utf8')) as Manifest
-    const have = existsSync(gzPath) && sha256(readFileSync(gzPath)) === live.sha256
-    if (!have) {
-      const gz = await get(`${RAW}/${PACK}`)
-      downloaded += gz.length
-      if (sha256(gz) !== live.sha256) throw new Error(`pack sha256 ${sha256(gz)} is not the manifest's ${live.sha256}`)
-      writeFileSync(gzPath, gz)
-    }
-    manifest = live
-    writeFileSync(mPath, JSON.stringify(live, null, 2) + '\n')
-  }
-  if (!existsSync(gzPath)) throw new Error(`no cached pack at ${gzPath}; run without --offline`)
-  return { pack: JSON.parse(gunzipSync(readFileSync(gzPath)).toString('utf8')) as Pack, manifest, downloaded }
+/**
+ * The pack, downloaded only when the manifest's sha256 differs from the cached one and kept only when
+ * it hashes to it (src/main/eozPack.ts, the fetch-and-verify the app and fetch-wiki-images share).
+ */
+async function freshPack(a: Args): Promise<{ pack: Pack; manifest: EozManifest; downloaded: number }> {
+  const f = await refreshEozPack({ dir: a.cache, ua: UA, offline: a.offline })
+  return { pack: JSON.parse(gunzipSync(readFileSync(f.gzPath)).toString('utf8')) as Pack, manifest: f.manifest, downloaded: f.downloaded }
 }
 
 interface ItemFile { scrapedAt: string; items: Record<string, { page: string; stats?: { classes?: string[]; slot?: string; ac?: number } }> }
