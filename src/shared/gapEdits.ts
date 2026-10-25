@@ -68,11 +68,32 @@ export function tidyEdit(e: GapEdit): GapEdit | null {
   return Object.keys(out).length === 0 ? null : out
 }
 
+const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v)
+
+/**
+ * A stored edit as the rows may read it: a name and field values only when they are text, the two
+ * marks only in their one shape; undefined when nothing usable is left. The store itself is never
+ * rewritten (localStorage can hold anything a hand or an older build put there), so Copy, the held
+ * lookup and the map links never meet a value that is no string (owner, 2026-10-25: "make sure that if
+ * a user changes the values it doesn't break anything").
+ */
+export function readEdit(raw: unknown): GapEdit | undefined {
+  if (!isRecord(raw)) return undefined
+  const fields = isRecord(raw.fields) ? Object.entries(raw.fields).filter((e): e is [string, string] => typeof e[1] === 'string') : []
+  const out: GapEdit = {
+    ...(typeof raw.name === 'string' && raw.name.trim() !== '' ? { name: raw.name } : {}),
+    ...(fields.length === 0 ? {} : { fields: Object.fromEntries(fields) }),
+    ...(raw.kind === 'mob' ? { kind: 'mob' as const } : {}),
+    ...(raw.distinct === true ? { distinct: true as const } : {})
+  }
+  return Object.keys(out).length === 0 ? undefined : out
+}
+
 /** The rows with their edits riding on them; "This is a mob" clears "may be a player". */
 export function withGapEdits(rows: readonly GapRow[], edits: GapEditMap): GapRow[] {
   if (Object.keys(edits).length === 0) return rows as GapRow[]
   return rows.map((row) => {
-    const edit = edits[doneKey(row)]
+    const edit = readEdit(edits[doneKey(row)])
     if (edit === undefined) return row
     const out: GapRow = { ...row, edit, ...(edit.kind === 'mob' ? { maybePlayer: false } : {}) }
     if (edit.distinct === true) delete out.suggest

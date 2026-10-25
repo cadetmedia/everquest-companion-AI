@@ -5,7 +5,11 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { gapHeld, heldIndex, heldLine, joinHeld } from '../src/shared/gapHeld'
-import { withGapEdits, type GapEdit } from '../src/shared/gapEdits'
+import { applyEditText, readEdit, tidyEdit, withGapEdits, type GapEdit } from '../src/shared/gapEdits'
+import { wikiPageText } from '../src/shared/wikiPage'
+import { killIndex, type KillMap } from '../src/shared/kills'
+import type { LootEvent } from '../src/shared/types'
+import { gapMapZones, headingMapZone } from '../src/shared/gapMapZones'
 import { doneKey, type GapRow } from '../src/shared/gaps'
 import type { OwnershipRow } from '../src/shared/planner/ownership'
 
@@ -51,8 +55,7 @@ test('C6: with All characters, the first holder carries the screenshot line and 
   assert.equal(gapHeld(row('Rat Ear'), joinHeld([dry]))[0]?.also, undefined)
 })
 
-test('C7: the map links are the zones the row was named in, tiers folded, one per map; a refused spelling has none', async () => {
-  const { gapMapZones, headingMapZone } = await import('../src/shared/gapMapZones')
+test('C7: the map links are the zones the row was named in, tiers folded, one per map; a refused spelling has none', () => {
   const r: GapRow = { ...row('a giant snake', 'mob'), details: { samples: [], zones: { distinct: 3, entries: [{ name: 'Befallen 4 (Refined)', n: 9 }, { name: 'Befallen', n: 2 }, { name: 'Nektulos Forest', n: 1 }] } } }
   const zones = gapMapZones(r)
   assert.deepEqual(zones.map((z) => z.label), ['Befallen 4 (Refined)', 'Nektulos Forest'])
@@ -64,8 +67,7 @@ test('C7: the map links are the zones the row was named in, tiers folded, one pe
   assert.equal(headingMapZone('Lake Nerius'), null, 'a zone with no map file has no link')
 })
 
-test("C7: a hand-edited zone opens first, typed plain or as a link; a refused, blank or malformed one changes nothing", async () => {
-  const { gapMapZones } = await import('../src/shared/gapMapZones')
+test("C7: a hand-edited zone opens first, typed plain or as a link; a refused, blank or malformed one changes nothing", () => {
   const r: GapRow = { ...row('a giant snake', 'mob'), details: { samples: [], zones: { distinct: 1, entries: [{ name: 'Befallen', n: 2 }] } } }
   const base = gapMapZones(r)
   for (const zone of ['Nektulos Forest', '[[Nektulos Forest]]', '[[Nektulos Forest|the forest]]', '  Nektulos Forest  ']) {
@@ -79,4 +81,36 @@ test("C7: a hand-edited zone opens first, typed plain or as a link; a refused, b
   }
   // A row with no zone tally and a malformed edit is still no crash.
   assert.deepEqual(gapMapZones(edited(row('X', 'mob'), { fields: { zone: ['Befallen'] } })), [])
+})
+
+// ---- Copy wiki page with an edit on the row: the built review facts survive it (D1, D2, E3) ----
+
+const MALFORMED: unknown[] = [{}, { name: '' }, { name: 42 }, { name: null }, { fields: { level: 7, zone: null } }, { fields: 'zone' }, { fields: null }, { kind: 'mob' }]
+/** What Copy wiki page copies for a row: its page, then its edit written in (GapRowButtons). */
+const copied = (r: GapRow, loot: readonly LootEvent[] = [], kills: KillMap = {}, seen: Parameters<typeof wikiPageText>[3] = {}): string => applyEditText(wikiPageText(r, loot, kills, seen), r)
+const killsOf = (mob: string, count: number): KillMap => killIndex({ [mob]: { display: mob, count } } as unknown as KillMap)
+
+test("E3: a renamed or re-zoned mob keeps its loot rates and MONEY DROPS, which are the log's name's; a malformed edit breaks nothing", () => {
+  const kobold: GapRow = { ...row('a rabid kobold', 'mob'), kinds: ['killed'], details: { samples: [], zones: { distinct: 1, entries: [{ name: 'Qeynos Hills', n: 1 }] } } }
+  const loot = [1, 2, 3].map((s) => ({ ts: s * 1000, item: 'Rabid Kobold Fang', source: 'a rabid kobold', zone: 'Qeynos Hills' }))
+  const kills = killsOf('a rabid kobold', 12)
+  const seen = { mobCoin: [{ mob: 'a rabid kobold', n: 4, min: [0, 0, 0, 1], max: [0, 2, 4, 9] }] }
+  const fang = "<li> {{:Rabid Kobold Fang}} <span class='drare'>(Uncommon)</span> <span class='ddb'>[Overall: ~25%]</span> </li>"
+  const money = '<li> 0 - 2 <span style="color:gold"><b>Golds</b></span></li>'
+  const page = copied(edited(kobold, { name: 'A Rabid Kobold Pup', fields: { level: '3 - 5', zone: '[[Qeynos Hills]]' } }), loot, kills, seen)
+  assert.match(page, /^\| name\s*= A Rabid Kobold Pup$/m)
+  assert.match(page, /^\| level\s*= 3 - 5$/m)
+  assert.ok(page.includes(fang) && page.includes(money), page)
+  for (const edit of MALFORMED) {
+    const text = copied(edited(kobold, edit), loot, kills, seen)
+    assert.ok(text.includes(fang) && text.includes(money), JSON.stringify(edit))
+  }
+})
+
+test('a stored edit is read with its non-text values dropped; the store is never rewritten', () => {
+  assert.deepEqual(readEdit({ name: 'Grapok', fields: { level: '12', zone: 7, race: null }, kind: 'mob', distinct: true }), { name: 'Grapok', fields: { level: '12' }, kind: 'mob', distinct: true })
+  for (const raw of [null, 'Grapok', 42, [], {}, { name: 5 }, { fields: ['a'] }, { kind: 'pet' }, { distinct: 'yes' }]) assert.equal(readEdit(raw), undefined, JSON.stringify(raw))
+  // What the Edit button saves still reads back exactly.
+  const saved = tidyEdit({ name: ' Grapok ', fields: { level: '12', zone: '' } })
+  assert.deepEqual(readEdit(JSON.parse(JSON.stringify(saved))), saved)
 })
