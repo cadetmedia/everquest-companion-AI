@@ -21,6 +21,7 @@ import { CheckChips, KeptPicture, Line, PasteZone, WrongItem } from './PasteZone
 import SpellShot from './SpellShot'
 import MobPicture from './MobPicture'
 import QuestShot from './QuestShot'
+import { misfitNow, MisfitNote, type HeldMisfit } from './Misfit'
 
 /** One icon choice, drawn from the install's own sheets. */
 function IconChoice({ id, picked, onPick }: { id: number; picked: boolean; onPick: () => void }): JSX.Element {
@@ -99,6 +100,15 @@ function KeptFacts({ kept }: { kept: StoredShot }): JSX.Element {
 }
 
 /**
+ * The +0 button's words: worked back exactly, or how many numbers it leaves `?` for the player (owner,
+ * 2026-10-25: the upgrade rules in reverse, shared/itemDelevel.ts).
+ */
+function baseLabel(block: string): string {
+  const left = (block.match(/:\s*\?/g) ?? []).length
+  return left === 0 ? 'Use the +0 stats (worked back exactly)' : `Use the +0 stats (${String(left)} left as ? for you)`
+}
+
+/**
  * A +N window: the page keeps its skeleton until the player takes the box to +0 (owner, 2026-10-21,
  * D3): the upgrade rule's guess when it inverts exactly, or the box as the player corrected it.
  */
@@ -111,7 +121,7 @@ function TierChoice({ name, kept }: { name: string; kept: StoredShot }): JSX.Ele
       <Line warn>+{tier}: Copy wiki page leaves the stats out until they are the +0 item's.</Line>
       {baseStatsblock !== undefined && (
         <Button size="small" onClick={() => atBase(baseStatsblock)} data-testid="gaps-shot-estimate">
-          Estimate +0 stats (a guess)
+          {baseLabel(baseStatsblock)}
         </Button>
       )}
       <Button size="small" onClick={() => atBase(kept.statsblock)}>
@@ -180,6 +190,8 @@ function ItemShot({ row }: { row: GapRow }): JSX.Element {
   /** Why the last paste kept nothing, in words; null when it kept something. */
   const [failed, setFailed] = useState<string | null>(null)
   const [pending, setPending] = useState<Pending | null>(null)
+  /** Another kind of window pasted here (a spell window, a popup, a mob's picture): told and offered its row. */
+  const [misfit, setMisfit] = useState<HeldMisfit | null>(null)
   /** Where this row's last kept picture was saved (owner, 2026-10-22: item pictures under the item folder). */
   const [picture, setPicture] = useState<string | null>(null)
   // Merged against what is stored NOW, not this render's copy (review, 2026-10-21: a Lore paste that
@@ -196,11 +208,15 @@ function ItemShot({ row }: { row: GapRow }): JSX.Element {
     (png: Uint8Array) => {
       setBusy(true)
       setPending(null)
+      setMisfit(null)
       window.eq
         .shotReadItem(png)
-        .then((r) => {
+        .then(async (r) => {
           const kind = shotKind(r)
-          setFailed(kind === null ? shotProblem(r) : null)
+          // Not an item window: what it is instead, from the same lines (shared/rowPaste.ts).
+          const other = kind === null ? await misfitNow(r.lines, { box: 'item', row: row.name }) : undefined
+          setMisfit(other === undefined ? null : { misfit: other, png })
+          setFailed(kind === null && other === undefined ? shotProblem(r) : null)
           setReply(kind === null ? null : r)
           if (kind === null) return
           // Another item's window or Lore tab, or one with no name read, waits for the player; so does a
@@ -231,6 +247,7 @@ function ItemShot({ row }: { row: GapRow }): JSX.Element {
           ERROR: unable to read image. {failed}
         </Typography>
       )}
+      {misfit !== null && <MisfitNote held={misfit} />}
       {ask !== null && (
         <WrongItem
           note={ask.note}

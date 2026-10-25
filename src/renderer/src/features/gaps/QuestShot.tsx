@@ -20,6 +20,7 @@ import { isQuestJournal, journalFactsByQuest, journalMissText, journalPlaces, re
 import { isJournalPicture, popupKeptLines, popupMissText, popupRead, readPopup, withoutPopup, withPopup } from '@shared/questPopup'
 import { questJournalByKey, setQuestJournal, useQuestJournals } from './itemShotsStore'
 import { Line, PasteZone } from './PasteZone'
+import { misfitNow, MisfitNote, type HeldMisfit } from './Misfit'
 
 /** What the kept journal reading says of this quest, in short lines. */
 function keptLines(f: QuestJournalFacts): string[] {
@@ -79,11 +80,14 @@ export default function QuestShot({ row }: { row: GapRow }): JSX.Element {
   const kept = useQuestJournals()[key]
   const [busy, setBusy] = useState(false)
   const [failed, setFailed] = useState<string | null>(null)
+  /** Another kind of window pasted here (an item or spell window, a mob's picture): told and offered its row. */
+  const [misfit, setMisfit] = useState<HeldMisfit | null>(null)
   const steps = questLogOf(row)?.steps
   const places = useMemo(() => journalPlaces((steps ?? []).map((s) => s.zone)), [steps])
   const onPicture = useCallback(
     (png: Uint8Array) => {
       setBusy(true)
+      setMisfit(null)
       const read = async (): Promise<string | null> => {
         const thumb = await thumbOf(png)
         const look = await window.eq.shotReadText(png, 'popup')
@@ -94,6 +98,12 @@ export default function QuestShot({ row }: { row: GapRow }): JSX.Element {
           return keepJournal(j, places, { key, thumb }) ? null : journalMissText(j.lines)
         }
         const popup = readPopup(popupRead(look))
+        // An item or spell window (or, when no popup was read, a mob's picture) is not this quest's: told and offered its row.
+        const other = await misfitNow(look.lines, { box: 'quest', row: row.name })
+        if (other !== undefined && (other.kind === 'item' || other.kind === 'spell' || popup === null)) {
+          setMisfit({ misfit: other, png })
+          return null
+        }
         if (popup === null) return popupMissText(look.lines)
         const was = questJournalByKey(key)
         setQuestJournal(key, { ...was, popups: withPopup(was?.popups, { ...popup, ...(thumb === undefined ? {} : { thumb }) }) })
@@ -104,7 +114,7 @@ export default function QuestShot({ row }: { row: GapRow }): JSX.Element {
         .catch((e: unknown) => setFailed(`The reader did not answer (${e instanceof Error ? e.message : String(e)}). Try the paste again.`))
         .finally(() => setBusy(false))
     },
-    [places, key]
+    [places, key, row.name]
   )
   const removeJournal = (): void => {
     const popups = questJournalByKey(key)?.popups
@@ -123,6 +133,7 @@ export default function QuestShot({ row }: { row: GapRow }): JSX.Element {
           ERROR: unable to read image. {failed}
         </Typography>
       )}
+      {misfit !== null && <MisfitNote held={misfit} />}
       {hasJournal(kept) && kept !== undefined && (
         <>
           <Kept thumb={kept.thumb} label="Quest Journal ✓" onRemove={removeJournal} testId="gaps-shot-clear-journal" />

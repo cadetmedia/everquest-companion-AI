@@ -31,7 +31,7 @@ const DESCRIPTION_TAB = /\bDescr\w{3,}/i
 const SPELL_LINE = /^\W{0,3}(?:Duration|Cast|Recovery|Reuse|Target|Range|On You|On Other|Wears Off)\b\s*:/i
 const SPELL_TITLE = /^\W{0,3}Spell\s*:/i
 /** The game's closing line under a popup (`Click 'OK' to continue.`, `Press `OK` to continue.`). */
-const CLOSING = /\b(?:click|press)\b.{0,6}\bok\b.{0,6}\bto\b/i
+export const CLOSING = /\b(?:click|press)\b.{0,6}\bok\b.{0,6}\bto\b/i
 
 /**
  * What a pasted picture is, from the popup reader's lines and whether they made a popup. A journal and

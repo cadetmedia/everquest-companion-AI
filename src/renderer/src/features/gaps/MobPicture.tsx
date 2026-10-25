@@ -16,6 +16,7 @@ import { latestOnly } from './latestOnly'
 import { setMobNameplate, setMobPicture, useMobPictures } from './itemShotsStore'
 import { roleOf } from '@shared/gapRoles'
 import { refreshFolderPictures, useFolderPictures } from './folderPicturesStore'
+import { MisfitNote, useTextFirst } from './Misfit'
 
 type NameCheck = 'checking' | 'found' | 'missing' | 'deleted' | null
 
@@ -154,13 +155,31 @@ export default function MobPicture({ row }: { row: GapRow }): JSX.Element {
     },
     [file, row.name, merchant]
   )
+  // An item window, a spell window, a Quest Journal or a popup is not this mob's picture (owner,
+  // 2026-10-25): its text is read first, and such a picture is not saved unless the player says so.
+  const { misfit, take, drop } = useTextFirst(row.name, save, setBusy)
   return (
     <Stack spacing={0.5} data-testid="gaps-shot-picture">
       <PasteZone
         label={held === undefined ? `Click here and paste a picture of ${row.name} (saved as ${file})` : `Click here and paste a new picture of ${row.name} to replace ${file}`}
         busy={busy}
-        onPicture={(b) => save(b)}
+        onPicture={take}
       />
+      {misfit !== null && (
+        <MisfitNote held={misfit}>
+          <Button
+            size="small"
+            onClick={() => {
+              drop()
+              setResult(null)
+              save(misfit.png)
+            }}
+            data-testid="gaps-shot-misfit-anyway"
+          >
+            Save it as {file} anyway
+          </Button>
+        </MisfitNote>
+      )}
       {result === null && held !== undefined && <HeldLine path={held} file={file} />}
       <AutoSave />
       {result !== null && result.status !== 'saved' && (

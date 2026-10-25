@@ -12,7 +12,7 @@
 // way, and OCR drops colons, joins columns and puts junk at line ends. A number is never guessed;
 // the one repair is Weight's decimal, which the game always prints and OCR loses (3 windows of 3).
 
-import { delevel } from './itemDelevel'
+import { delevel, tierBarFraction } from './itemDelevel'
 import { effectText, petIllusionLine, petIllusionOf } from './itemEffects'
 import { bestLoreLine, withSplitCapital } from './itemLore'
 import { isTabRow, tabRowAt } from './itemTabRow'
@@ -527,14 +527,19 @@ function nameAbove(lines: readonly string[], raw: readonly string[], at: number)
 }
 
 /**
- * A `+N` window shows the upgraded numbers; the page is the base item (owner, 2026-10-21, D3). The
- * planner's upgrade rule taken back where it inverts exactly (itemDelevel.ts), offered as a guess.
+ * A `+N` window shows the upgraded numbers; the page is the base item (owner, 2026-10-21, D3; 2026-10-25:
+ * "it will figure out the +0 value for us"). The app's upgrade rules run backwards at the state the name
+ * and the Tier bar give (itemDelevel.ts); a number that does not take back to one value is left `?`.
  */
-function tierParts(tier: number | undefined, statsblock: string): Partial<ItemWindowRead> {
+function tierParts(tier: number | undefined, statsblock: string, raw: readonly string[]): Partial<ItemWindowRead> {
   if (tier === undefined) return {}
-  const back = delevel(statsblock, tier)
-  const why = back.block === undefined ? ` These do not take back to one +0 value: ${back.inexact.join(', ')}.` : ' "Estimate +0 stats" takes them back by the upgrade rule, a guess for you to check.'
-  return { tier, ...(back.block === undefined ? {} : { baseStatsblock: back.block }), checks: [`This window is +${String(tier)}: its numbers are the upgraded item's, not the page's.${why}`] }
+  const bar = tierBarFraction(raw, tier)
+  const back = delevel(statsblock, tier, bar.fraction)
+  const why = back.exact
+    ? ' "Use the +0 stats" takes every number back by the upgrade rules, each checked by scaling it up again.'
+    : ` "Use the +0 stats" takes back all but ${back.inexact.join(', ')}, left as ? for you to fill.`
+  const head = `This window is +${String(tier)}: its numbers are the upgraded item's, not the page's.${why}`
+  return { tier, ...(back.block === undefined ? {} : { baseStatsblock: back.block }), checks: [head, ...(bar.note === undefined ? [] : [bar.note]), ...back.notes] }
 }
 
 /** The flag line (the last line of flag words above Class, never the tab row), Class and Race, with their notes. */
@@ -599,7 +604,7 @@ export function readItemWindow(raw: readonly string[]): ItemWindowRead {
   const ratio = checkRatio(g.weapon)
   const statsblock = `\n${statsLines(head, g).map((l) => `${l}<br>`).join('\n')}${pet.tail}`
   const { name, tier } = nameAbove(lines, kept, head.flagAt < 0 ? clsAt : head.flagAt)
-  const up = tierParts(tier, statsblock)
+  const up = tierParts(tier, statsblock, kept)
   const checks = [...(up.checks ?? []), ...(ratio === undefined ? [] : [ratio]), ...head.notes, ...g.notes]
   return {
     statsblock,
