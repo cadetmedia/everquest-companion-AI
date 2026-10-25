@@ -289,6 +289,7 @@ Every change needs its requirements row first (rule 19); gaps-tab's recipe line 
   `origin`.
 - Owner decision pending: the redirect cache's first real run (`scrape-mob-redirects.ts`, about 19
   requests); default, with the next delta.
+- 2026-10-25: the Temple of Cazic-Thule alias and the "X from Y" loot split are built (catch_all 2026-10-23 and 2026-10-19); the owner approved building the rest of this list ("Yes, add them. Just make sure that if a user changes the values it doesn't break anything").
 - Not built (open): C6 held items in the details, C7 map link, D1 soldby as an ItemWhereTable, D2 the
   rate on a group drop line, E3 corpse coin, E4 turn-ins, a Temple of Cazic-Thule zone alias, the loot
   regex splitting an item named "X from Y" (creator's parser, catch_all).

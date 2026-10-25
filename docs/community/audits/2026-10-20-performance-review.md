@@ -127,12 +127,14 @@ the code is on `main`, so a fix there is an upstream pull request candidate.
 10. **Every overlay window loads all 12 kinds' code** (about 686 KB). `React.lazy` per kind would
     fix it. Effort S, small gain.
 
-## Quick wins not yet done
+## Quick wins
 
-- Broadcast `combat:activity` to the overlays, and add `heal-*` to `CHARACTER_AWARE_OVERLAYS`.
-- Add an in-flight guard to `useOverviewCombat`.
-- Keep the last combat snapshot for Overview, as Combat does with `keptSnapshot`.
-- Move the `killFactions` samples out of the gaps snapshot.
-- Gate ToastOverlay's tick and the 1 s root clocks on there being something to time.
-- Cache `attributeSales` by (progression, loot).
-- Keep `getProgress`, `gearOwnership`, `plannerInventory` and `characterSheet` in module stores.
+Done 2026-10-25 (BRANCHES.md rows of perf-tab-switch, fix-combat-reading-log, coin-and-deaths):
+`combat:activity` to the meter overlays; the in-flight guard on `useOverviewCombat`; Overview keeps
+its last combat answer; ToastOverlay and the Buffs tab's clock tick only with something to time;
+`attributeSales` cached by (progression, loot); `plannerInventory` and `characterSheet` held per
+window (`lib/dumpStore.ts`).
+
+Not done, each needing a ruling or another branch (BRANCH_NOTES.md, "Unassigned open items"): `heal-*`
+in `CHARACTER_AWARE_OVERLAYS`; `killFactions` out of the gaps snapshot; the `useSecondsClock` root
+clocks; `getProgress` and `gearOwnership` in module stores.
