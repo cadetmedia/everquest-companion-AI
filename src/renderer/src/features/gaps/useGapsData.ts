@@ -99,6 +99,8 @@ export interface GapsData {
 const NO_TALKS: readonly TalkVisit[] = []
 /** A snapshot's talks and character (gaps.rs `snapshot`), which `GapsSnap` does not type. */
 const talkSnapOf = (snap: object | null | undefined): TalkSnap | null => snap ?? null
+/** The character a TalkSnap is for: whose hand edits the rows take. */
+const characterOf = (snap: TalkSnap | null): string | null | undefined => snap?.character
 const NO_THREADS: readonly QuestThread[] = []
 
 /** After the derivation (`joinedSnap`): the tab's slot and the overlay's. */
@@ -231,6 +233,6 @@ export function useGapsData(all: AllCharacters | null = null, opts: GapsDataOpti
   const kills = lastKills([killMobs], () => killIndex(killMobs))
   // The rows the player corrected by hand (owner, 2026-10-23: "EDIT values in the gaps tab").
   const edited = useEditedSnap(snap, live)
-  const edits = useGapEdits(live?.character)
+  const edits = useGapEdits(characterOf(live))
   return { snap: edited, edits, engine, loot, ownLoot: liveLoot, kills, seenBy: joined?.seenBy, joining: all !== deferredAll, forced: useForcedScope(forced, talkSnapOf(snap)) }
 }
