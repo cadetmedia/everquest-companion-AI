@@ -31,6 +31,8 @@ import { withExtraItemRows } from '@shared/gapExtraItems'
 import { withGapEdits } from '@shared/gapEdits'
 import { useExtraItemRows } from './useExtraItemRows'
 import { useExtraSpellRows } from './useExtraSpellRows'
+// Once: the `1 <name>` data a misread robe icon left behind moves to the real names (owner, 2026-10-24).
+import './iconTokenRepair'
 
 /** Where the "Zone I'm in" choice is remembered, per viewer, as the Achievements tab remembers its own. */
 const ZONE_HERE_KEY = 'eq.gaps.zoneHere'
