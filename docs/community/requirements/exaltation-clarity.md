@@ -13,3 +13,4 @@ before 2026-10-10 were gathered that day from agent notes and the branch history
 | 2026-09-09 | owner | Gems do not stack: one of each family at the highest tier; a gem must match the slot and the classes. | built |
 | 2026-09-10 | owner | The best layout for the whole board. | built (board optimizer) |
 | 2026-09-12 | owner | Procs are per weapon: the same proc in both hands both fire. | built |
+| 2026-10-25 | owner | The Exaltations browser marks every donor the character cannot use and names why (class, deity, level; every reason that applies), lists them after the usable ones, and gives a remembered choice to hide them instead (default: show, marked): "Give the user the choice, and mark the items they can't wear somehow so they know they can't wear it because of race or class or deity or whatever". | built (race not marked: the app records no character race and the donors state ALL) |

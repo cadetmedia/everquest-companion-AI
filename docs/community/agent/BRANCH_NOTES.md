@@ -555,7 +555,11 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
 
 - The Recommended tab ignores layer-3 era derivations on purpose (`progressionPlan.ts`
   `eraLegal`).
-- The Exaltations browser has no deity gate; the bagged-gem `where` label is unclear.
+- The bagged-gem `where` label is unclear: a gem socketed in an item carried in a bag (dump Location
+  `General 6-Slot1-Slot10`) reads `General 6`, in three sentence shapes. The dump's Slots column does
+  not tell a bag slot from a socket. Options (owner to pick): A, name the parent row ("in Stiletto
+  of the Bloodclaw +4 (General 6)"; a parent lookup in `ownedExaltations`, shared/characterSheet.ts);
+  B, the file's position spelled out ("General 6, slot 1, socket 10").
 - Spell page ladder base carries no magnitudes.
 - Three line shapes parse as `unknown` (measured 2026-10-25 on the owner's logs; each needs an
   owner ruling on where it counts):
