@@ -96,6 +96,7 @@ export default function SpellShot({ row }: { row: GapRow }): JSX.Element {
       {pending !== null && (
         <WrongItem
           note={pending.note}
+          png={pending.png}
           onUse={() => {
             keepWindow(pending.read, pending.png)
             setPending(null)

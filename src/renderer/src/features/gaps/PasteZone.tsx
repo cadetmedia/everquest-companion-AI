@@ -3,7 +3,7 @@
 // dropped on it.
 
 import { type JSX, type ReactNode, useCallback, useEffect, useState } from 'react'
-import { Button, ButtonBase, CircularProgress, Stack, Typography } from '@mui/material'
+import { Box, Button, ButtonBase, CircularProgress, Stack, Typography } from '@mui/material'
 
 /** The picture on the clipboard event or in the dropped files, as PNG/JPEG bytes. */
 async function pictureFrom(items: DataTransferItemList | null, files: FileList | null): Promise<Uint8Array | null> {
@@ -97,20 +97,41 @@ export function KeptPicture({ path }: { path: string | null }): JSX.Element | nu
   )
 }
 
+/** A picture's bytes as an image URL for as long as it is shown; null without one. */
+function usePictureUrl(png: Uint8Array | undefined): string | null {
+  const [url, setUrl] = useState<string | null>(null)
+  useEffect(() => {
+    if (png === undefined) {
+      setUrl(null)
+      return
+    }
+    const u = URL.createObjectURL(new Blob([png.slice()], { type: 'image/png' }))
+    setUrl(u)
+    return () => URL.revokeObjectURL(u)
+  }, [png])
+  return url
+}
+
 /**
  * A window whose name is another row's, or whose name was not read (item or spell): nothing is kept
  * until the player says (owner, 2026-10-21). `note` says which (shared/itemShotKeep.ts otherItemNote).
+ * The picture it was read from is shown beside the question (owner, 2026-10-24: a camera capture asked
+ * "is it the correct picture?" without showing it).
  */
-export function WrongItem({ note, onUse, onDiscard }: { note: string; onUse: () => void; onDiscard: () => void }): JSX.Element {
+export function WrongItem({ note, png, onUse, onDiscard }: { note: string; png?: Uint8Array; onUse: () => void; onDiscard: () => void }): JSX.Element {
+  const url = usePictureUrl(png)
   return (
-    <Stack direction="row" spacing={1} alignItems="center" data-testid="gaps-shot-wrong-item">
-      <Line warn>{note}</Line>
-      <Button size="small" onClick={onUse}>
-        Use it anyway
-      </Button>
-      <Button size="small" onClick={onDiscard}>
-        Discard
-      </Button>
+    <Stack spacing={0.5} data-testid="gaps-shot-wrong-item">
+      <Stack direction="row" spacing={1} alignItems="center">
+        <Line warn>{note}</Line>
+        <Button size="small" onClick={onUse}>
+          Use it anyway
+        </Button>
+        <Button size="small" onClick={onDiscard}>
+          Discard
+        </Button>
+      </Stack>
+      {url !== null && <Box component="img" src={url} alt="The picture that was read" sx={{ maxWidth: 320, maxHeight: 360, alignSelf: 'flex-start', border: 1, borderColor: 'divider' }} data-testid="gaps-shot-wrong-item-picture" />}
     </Stack>
   )
 }
