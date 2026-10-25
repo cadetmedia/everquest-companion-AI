@@ -124,11 +124,15 @@ export function hasWindowPart(s: ItemPageShot | undefined): boolean {
 const defined = <T extends object>(o: T): Partial<T> => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined)) as Partial<T>
 
 /** What is kept after this paste: a window replaces every window field (the lore stays); a Lore tab only the lore; an icon only the icon. */
+/** How many of the icon match's choices are kept with a reading (the picker shows 5, then 5 a click). */
+const ICON_CHOICES = 30
+
 export function keptAfter(kept: ItemPageShot | undefined, r: ItemShotReply, kind: ShotKind): ItemPageShot {
   if (kind === 'lore') return { ...kept, lore: r.read.lore }
-  if (kind === 'icon') return { ...kept, iconId: r.icons[0]?.id }
+  const iconChoices = r.icons.slice(0, ICON_CHOICES).map((h) => h.id)
+  if (kind === 'icon') return { ...kept, iconId: r.icons[0]?.id, ...(iconChoices.length === 0 ? {} : { iconChoices }) }
   const checks = [...(r.read.checks ?? []), ...(r.iconNote === undefined ? [] : [r.iconNote])]
-  return defined({ lore: kept?.lore, ...(checks.length === 0 ? {} : { checks }), statsblock: r.read.statsblock, iconId: r.icons[0]?.id, valueCopper: r.read.valueCopper, focusEffect: r.read.focusEffect, loreTab: r.read.loreTab, tier: r.read.tier, baseStatsblock: r.read.baseStatsblock })
+  return defined({ lore: kept?.lore, ...(checks.length === 0 ? {} : { checks }), ...(iconChoices.length === 0 ? {} : { iconChoices }), statsblock: r.read.statsblock, iconId: r.icons[0]?.id, valueCopper: r.read.valueCopper, focusEffect: r.read.focusEffect, loreTab: r.read.loreTab, tier: r.read.tier, baseStatsblock: r.read.baseStatsblock })
 }
 
 /** One part cleared; null when nothing is left to keep. */

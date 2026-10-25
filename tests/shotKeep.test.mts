@@ -63,7 +63,8 @@ test('A WINDOW PASTE REPLACES EVERY WINDOW FIELD (A FIELD IT LACKS IS CLEARED); 
 test('A LORE PASTE CHANGES ONLY THE LORE; AN ICON PASTE ONLY THE ICON', () => {
   const before = { statsblock: 'kept', iconId: 1126, valueCopper: 38 }
   assert.deepEqual(keptAfter(before, reply(LORE_TAB), 'lore'), { ...before, lore: 'The Cloth Seems To Be Moving' })
-  assert.deepEqual(keptAfter(before, reply([], [{ id: 1225, score: 300 }]), 'icon'), { ...before, iconId: 1225 })
+  // The icon's choices are the icon's too (kept for the picker after a restart, 2026-10-24).
+  assert.deepEqual(keptAfter(before, reply([], [{ id: 1225, score: 300 }]), 'icon'), { ...before, iconId: 1225, iconChoices: [1225] })
 })
 
 test('EACH PART CLEARS ON ITS OWN; CLEARING THE LAST PART FORGETS THE ITEM', () => {

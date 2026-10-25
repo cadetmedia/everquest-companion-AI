@@ -29,6 +29,8 @@ export const STATS_SKELETON = '\nSize:   WT: <br>\nClass: <br>\nRace: <br>'
  * notes, statsblock. The window's Value line is the game's own number, so it wins over the estimate.
  */
 export interface ItemPageShot {
+  /** The icon match's choices, best first, kept so the picker offers them after a restart (owner, 2026-10-24). */
+  iconChoices?: number[]
   /** The window's reading checks (a number not read as one, a flag snapped), kept with it so they stay on the row (owner, 2026-10-24). */
   checks?: string[]
   statsblock?: string
