@@ -37,7 +37,13 @@ const RULES: Partial<Record<ReturnType<typeof upgradeStatClass>, Rule>> = { prim
  * itemUpgrade.ts predates that rule, and a +N Range must never pass as the base one.
  */
 const scaleRangeBack: Rule = (base, s) => (base <= 0 ? base : base + 10 * s.full)
-const ruleOf = (key: string): Rule | undefined => (normalizeStatKey(key) === 'RANGE' ? scaleRangeBack : RULES[upgradeStatClass(key)])
+/**
+ * BACKSTAB: +5% a level, `base + floor(base * effective / 20)` (catch_all's `scaleBackstab`, read off
+ * Torturer's Signature +0..+10, owner 2026-10-24). Stated here by key for the same reason as Range.
+ */
+const scaleBackstabBack: Rule = (base, s) => (base <= 0 ? base : base + Math.floor((base * (s.full + s.fraction / 2 ** s.full)) / 20))
+const BY_KEY: Readonly<Record<string, Rule>> = { RANGE: scaleRangeBack, BACKSTAB: scaleBackstabBack }
+const ruleOf = (key: string): Rule | undefined => BY_KEY[normalizeStatKey(key)] ?? RULES[upgradeStatClass(key)]
 
 /** Every base the rule takes to `read` at some state: whole numbers, or tenths for Weight. */
 function basesOf(rule: Rule, read: number, states: readonly ItemUpgradeState[], tenths: boolean): number[] {
@@ -88,7 +94,10 @@ export function delevel(statsblock: string, tier: number): Delevel {
   // The upgrade's own SV VOID is +full exactly; a native one scales past it (itemUpgrade.ts).
   const voidLine = new RegExp(`(^|\\s)SV VOID: \\+${String(full)}(?=\\s|$)`)
   const synthetic = full > 0 && earnsVoid(lines)
-  const back = lines.map((l) => lineBack(synthetic ? l.replace(voidLine, '').trim() : l, states, inexact))
+  // An upgraded weapon's Accuracy is the upgrade's own (2.5% a tier, none at +0: owner, 2026-10-24).
+  const weapon = full > 0 && lines.some((l) => /(^|\s)DMG: \d/.test(l))
+  const own = (l: string): string => (weapon ? l.replace(/(^|\s+)Accuracy: \+?[\d.]+%/, '').trim() : l)
+  const back = lines.map((l) => lineBack(own(synthetic ? l.replace(voidLine, '').trim() : l), states, inexact))
   if (inexact.length > 0) return { inexact }
   const block = back.map((l, i) => (lines[i] === '' ? '' : l === '' ? null : `${l}<br>`)).filter((l): l is string => l !== null)
   return { block: block.join('\n'), inexact }
