@@ -359,14 +359,17 @@ function scaleRangeText(range: string | undefined, state: ItemUpgradeState): str
 }
 const WHOLE_NUMBER = /^[0-9]+$/
 
-/** A weapon: it states damage and a delay. */
-const isWeapon = (block: ItemStatBlock): boolean => (block.dmg ?? 0) > 0 && block.atkDelay !== undefined
+/**
+ * A melee weapon: damage, a delay, and a PRIMARY or SECONDARY slot, the two measured. Ammo is not one
+ * (the owner's +7 arrows show no Accuracy, tests/itemElementalDamage.test.mts); a bow is not measured.
+ */
+const isMeleeWeapon = (block: ItemStatBlock): boolean => (block.dmg ?? 0) > 0 && block.atkDelay !== undefined && /\b(PRIMARY|SECONDARY)\b/i.test(block.slot ?? '')
 
-/** The stats with an upgraded weapon's `Accuracy: +X%` first, as the window lists it; an item stating its own keeps it. */
+/** The stats with an upgraded melee weapon's `Accuracy: +X%` after them; an item stating its own keeps it. */
 function withWeaponAccuracy(block: ItemStatBlock, stats: ItemStat[], state: ItemUpgradeState): ItemStat[] {
   const pct = weaponAccuracy(state)
-  if (pct === 0 || !isWeapon(block) || stats.some((st) => normalizeStatKey(st.key) === 'ACCURACY')) return stats
-  return [{ key: 'Accuracy', value: `+${String(pct)}%` }, ...stats]
+  if (pct === 0 || !isMeleeWeapon(block) || stats.some((st) => normalizeStatKey(st.key) === 'ACCURACY')) return stats
+  return [...stats, { key: 'Accuracy', value: `+${String(pct)}%` }]
 }
 
 // ---- the API --------------------------------------------------------------------

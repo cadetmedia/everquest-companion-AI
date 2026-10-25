@@ -373,7 +373,9 @@ test("TORTURER'S SIGNATURE IN THE GAME: BACKSTAB +5% A LEVEL, AN ACCURACY LINE +
   assert.equal(at10.backstab, 22)
   assert.equal(at10.dmg, 20)
   assert.equal(at10.weight, '0.3')
-  assert.deepEqual(at10.stats[0], { key: 'Accuracy', value: '+25%' })
+  assert.deepEqual(at10.stats.find((s) => s.key === 'Accuracy'), { key: 'Accuracy', value: '+25%' })
+  const arrows = parseStatsBlock('Slot: AMMO<br>\nSkill: Archery  Atk Delay: 0<br>\nDMG: 9<br>\n')
+  assert.equal(scaleStatBlock(arrows, { full: 7, fraction: 0 }).stats.some((s) => s.key === 'Accuracy'), false, 'ammo gains none')
   assert.equal(scaleStatBlock(TORTURER, { full: 0, fraction: 0 }).stats.some((s) => s.key === 'Accuracy'), false, 'none at +0')
 })
 
