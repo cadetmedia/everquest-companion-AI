@@ -137,11 +137,11 @@ export function excelRoundUp(value: number, digits = 0): number {
 
 /**
  * How a stat key scales. `unchanged` is the DEFAULT and covers everything the reference
- * leaves alone: heroic stats, Attack, Dmg Bon, Backstab, Size, Rec Level, charges,
+ * leaves alone: heroic stats, Attack, Dmg Bon, Size, Rec Level, charges,
  * effect magnitudes — anything not named in the three tables below. RANGE left that list on
- * 2026-09-26: see `scaleRange`.
+ * 2026-09-26: see `scaleRange`; BACKSTAB on 2026-10-24: see `scaleBackstab`.
  */
-export type UpgradeStatClass = 'primary' | 'flat' | 'damage' | 'delay' | 'weight' | 'range' | 'unchanged'
+export type UpgradeStatClass = 'primary' | 'flat' | 'damage' | 'backstab' | 'delay' | 'weight' | 'range' | 'unchanged'
 
 /**
  * Key aliases, mirroring the slider's own table. Sorted LONGEST-FIRST so a compound key can
@@ -185,6 +185,7 @@ export function upgradeStatClass(key: string): UpgradeStatClass {
   if (k === 'DELAY') return 'delay'
   if (k === 'WEIGHT') return 'weight'
   if (k === 'RANGE') return 'range'
+  if (k === 'BACKSTAB') return 'backstab'
   if (FLAT_KEYS.has(k)) return 'flat'
   if (PRIMARY_KEYS.has(k) || k.startsWith('SV_')) return 'primary'
   return 'unchanged'
@@ -242,6 +243,31 @@ export function scaleRange(base: number, state: ItemUpgradeState): number {
   if (base <= 0) return base
   return base + RANGE_PER_TIER * normalizeUpgradeState(state).full
 }
+
+/**
+ * BACKSTAB: `base + floor(base * effective / 20)`, +5% per level, half DMG's rate. READ OFF THE GAME
+ * (owner, 2026-10-24), not the slider, which copies Backstab unchanged: Torturer's Signature, base 15,
+ * reads 15 16 17 18 18 19 20 at +1..+7 and 22 at +10, and 16 at tier 1 + 1/2 (so the fraction counts;
+ * "one per two tiers" would read 15 there). One weapon measured.
+ */
+export function scaleBackstab(base: number, state: ItemUpgradeState): number {
+  if (base <= 0) return base
+  return base + Math.floor((base * effectiveLevel(state)) / 20)
+}
+
+/**
+ * A WEAPON's Accuracy at `state`, in percent: `2.5 * log2(totalProgression)` floored to a tenth, none
+ * at +0. READ OFF THE GAME (owner, 2026-10-24); the slider has no Accuracy at all. Two weapons with
+ * none at +0 (Torturer's Signature, Remnant of the Betrayer) gain it: +2.5% a tier, 25% at +10, and
+ * on the weight curve between tiers (tier 1 + 1/2 reads 3.9%, `2.5 * log2(3)` = 3.96; a straight
+ * line would read 3.75). Non-weapons are not measured and gain nothing here.
+ */
+export function weaponAccuracy(state: ItemUpgradeState): number {
+  const s = normalizeUpgradeState(state)
+  if (s.full === 0) return 0
+  return Math.floor(ACCURACY_PER_TIER * 10 * Math.log2(totalProgression(s)) + 1e-9) / 10
+}
+const ACCURACY_PER_TIER = 2.5
 
 /** FLAT (the three regens, Haste): `base + full`, fraction ignored. */
 export function scaleFlat(base: number, state: ItemUpgradeState): number {
@@ -333,6 +359,19 @@ function scaleRangeText(range: string | undefined, state: ItemUpgradeState): str
 }
 const WHOLE_NUMBER = /^[0-9]+$/
 
+/**
+ * A melee weapon: damage, a delay, and a PRIMARY or SECONDARY slot, the two measured. Ammo is not one
+ * (the owner's +7 arrows show no Accuracy, tests/itemElementalDamage.test.mts); a bow is not measured.
+ */
+const isMeleeWeapon = (block: ItemStatBlock): boolean => (block.dmg ?? 0) > 0 && block.atkDelay !== undefined && /\b(PRIMARY|SECONDARY)\b/i.test(block.slot ?? '')
+
+/** The stats with an upgraded melee weapon's `Accuracy: +X%` after them; an item stating its own keeps it. */
+function withWeaponAccuracy(block: ItemStatBlock, stats: ItemStat[], state: ItemUpgradeState): ItemStat[] {
+  const pct = weaponAccuracy(state)
+  if (pct === 0 || !isMeleeWeapon(block) || stats.some((st) => normalizeStatKey(st.key) === 'ACCURACY')) return stats
+  return [...stats, { key: 'Accuracy', value: `+${String(pct)}%` }]
+}
+
 // ---- the API --------------------------------------------------------------------
 
 /**
@@ -345,7 +384,8 @@ const WHOLE_NUMBER = /^[0-9]+$/
  * representation, which is the same direction as `excelRound`; no separate helper is needed.
  *
  * Everything the reference leaves alone is COPIED, not recomputed: flags, slot, class/race,
- * skill, Dmg Bon, Backstab, Size, effects, exaltation sockets and `extras`.
+ * skill, Dmg Bon, Size, effects, exaltation sockets and `extras`. BACKSTAB scales and an upgraded
+ * WEAPON gains an `Accuracy` line, both read off the game (`scaleBackstab`, `weaponAccuracy`).
  */
 export function scaleStatBlock(block: ItemStatBlock, state: ItemUpgradeState): ItemStatBlock {
   const s = normalizeUpgradeState(state)
@@ -354,10 +394,11 @@ export function scaleStatBlock(block: ItemStatBlock, state: ItemUpgradeState): I
 
   return {
     ...block,
-    stats: block.stats.map((st) => scaleStat(st, s)),
+    stats: withWeaponAccuracy(block, block.stats.map((st) => scaleStat(st, s)), s),
     saves,
     ...(block.ac === undefined ? {} : { ac: scalePrimary(block.ac, s) }),
     ...(block.dmg === undefined ? {} : { dmg: scaleDamage(block.dmg, s) }),
+    ...(block.backstab === undefined ? {} : { backstab: scaleBackstab(block.backstab, s) }),
     weight: scaleWeightText(block.weight, s),
     ...(block.range === undefined ? {} : { range: scaleRangeText(block.range, s) }),
     flags: [...block.flags],
