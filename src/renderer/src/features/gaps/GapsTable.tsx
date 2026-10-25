@@ -213,21 +213,31 @@ interface PaneActions {
   holding: HeldIndex
 }
 
+/**
+ * The hide button's words: a possible player, or any other Mobs row as a pet (owner, 2026-10-24: "mark a mob as
+ * a pet ... maybe i just use that same button"); both hide the name for good the same way.
+ */
+function hideWords(row: GapRow): { label: string; tip: string } | undefined {
+  if (row.maybePlayer === true) return { label: 'Mark as player', tip: 'Hides this name for good; one-word names you only hailed may be players.' }
+  if (row.domain === 'mob') return { label: 'Mark as pet', tip: 'Hides this name for good: a pet, not a mob that needs a page.' }
+  return undefined
+}
+
 /** The open row's details, above the list: capped so the list keeps room on a short screen. */
 function DetailsPane({ row, actions }: { row: GapRow; actions: PaneActions }): JSX.Element {
   const isDone = actions.done.has(doneKey(row))
   const needed = actions.needed(row)
   const held = gapHeld(row, actions.holding)
+  const hide = hideWords(row)
   return (
     <Paper variant="outlined" sx={{ px: 1.5, py: 0.5, flexShrink: 0, maxHeight: '40vh', overflow: 'auto' }} data-testid="gaps-details-pane">
       <Stack direction="row" spacing={1} alignItems="center">
         <Typography variant="subtitle2">{shownName(row)}</Typography>
         <GapRowButtons row={row} pageText={actions.pageText} isDone={isDone} onDone={actions.onDone} />
-        {(row.maybePlayer === true || row.domain === 'mob') && (
-          // A pet hides the same way (owner, 2026-10-24: "mark a mob as a pet ... maybe i just use that same button").
-          <Tooltip title={row.maybePlayer === true ? 'Hides this name for good; one-word names you only hailed may be players.' : 'Hides this name for good: a pet, not a mob that needs a page.'}>
+        {hide !== undefined && (
+          <Tooltip title={hide.tip}>
             <Button size="small" color="warning" onClick={() => actions.onPlayer(row.name)} data-testid="gaps-mark-player">
-              {row.maybePlayer === true ? 'Mark as player' : 'Mark as pet'}
+              {hide.label}
             </Button>
           </Tooltip>
         )}
