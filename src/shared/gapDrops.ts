@@ -45,6 +45,13 @@ const sourceItemKey = memoFold((name: string): string => itemBaseName(name).toLo
  */
 const bareItemKey = memoFold((name: string): string => sourceItemKey(name).replace(/^(a|an|the) /, ''))
 
+/**
+ * An item that drops from any mob (owner, 2026-10-24: "all MOTES should not be counted as loot, they can
+ * drop from anything"): every `Mote of <tier> Potential`. No mob page lists one (1 of ~8,000 cached pages
+ * does), so a mob page never gets its line and no Drops row names it, however few mobs it came from.
+ */
+export const anyMobDrop = (item: string): boolean => /^mote of /i.test(item.trim())
+
 const GLOBAL_MOBS = 10
 const GLOBAL_TIES = 2
 
@@ -192,6 +199,7 @@ export function dropGaps(loot: readonly LootEvent[], catalog: readonly CatalogMo
   const listedMembers: [LootEvent, string, readonly string[]][] = []
   const redirected = aliasKeys(aliases)
   for (const e of loot) {
+    if (anyMobDrop(e.item)) continue
     const filed = filedAs(e, listed, inGroups, redirected)
     const mob = mobSourceOf(e)
     if (filed === null || mob === undefined) continue
