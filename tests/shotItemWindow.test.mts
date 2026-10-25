@@ -362,3 +362,21 @@ test('A KEPT WINDOW KEEPS ITS CHECKS, SO THEY STAY ON THE ROW (owner, 2026-10-24
   const reply = { read: { statsblock: 'x', checks: ['MANA read "a5", not a number: fix it against the window before saving.'] }, icons: [], lines: [], ms: 1, known: [] } as unknown as Parameters<typeof keptAfter>[1]
   assert.deepEqual(keptAfter(undefined, reply, 'window').checks, ['MANA read "a5", not a number: fix it against the window before saving.'])
 })
+
+test('A SLOT WORD SNAPS TO THE SLOT LIST AND A TOKEN WITH A DIGIT IS DROPPED: SLOTS NEVER HOLD NUMBERS (owner, 2026-10-24)', () => {
+  assert.equal(slotOf('Arms 1'), 'ARMS')
+  assert.equal(slotOf('l Primary Secondary 7'), 'PRIMARY SECONDARY')
+  assert.equal(slotOf('Shoulder5'), undefined, 'a word glued to a digit is not snapped into a slot')
+  assert.equal(slotOf('Wrlst'), 'WRIST')
+  assert.equal(slotOf('Lore Equipped'), undefined)
+})
+
+test("AN ICON THE CATALOG GIVES ONLY TO OTHER SLOTS GOES AFTER THE REST: A BELT IS NOT BOOTS (owner, 2026-10-24: Sergeant's Leather Belt got 764)", async () => {
+  const { bySlot } = await import('../src/main/shot/readItemShot.ts')
+  const slots = new Map([[764, new Set(['FEET'])], [564, new Set(['WAIST'])]])
+  const iconSlots = (id: number): ReadonlySet<string> | undefined => slots.get(id)
+  const hits = [{ id: 764, score: 10 }, { id: 999, score: 12 }, { id: 564, score: 14 }]
+  assert.deepEqual(bySlot(hits, 'Slot: WAIST<br>\nSTA: +9<br>', iconSlots).map((h) => h.id), [999, 564, 764])
+  assert.deepEqual(bySlot(hits, 'STA: +9<br>', iconSlots).map((h) => h.id), [764, 999, 564], 'no slot read: the look decides')
+  assert.deepEqual(bySlot(hits, 'Slot: FEET<br>', iconSlots).map((h) => h.id), [764, 999, 564])
+})

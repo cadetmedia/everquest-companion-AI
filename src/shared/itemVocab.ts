@@ -102,3 +102,27 @@ export function deityText(read: string): Snapped {
   const left = value.replace(DEITY_RE, '').replace(/[\s,/&]+|\band\b/gi, '')
   return left === '' ? { value } : { value, note: `Deity "${read}" names a god the wiki does not list: kept as read, check it.` }
 }
+
+/** The window's slot words (eqstr_us.txt 559-576, Charm, Power Source), the plurals it prints included. */
+const SLOT_WORDS = new Set([
+  'charm', 'ear', 'ears', 'head', 'face', 'neck', 'shoulders', 'shoulder', 'arms', 'back', 'wrist', 'wrists', 'range',
+  'hands', 'primary', 'secondary', 'finger', 'fingers', 'chest', 'legs', 'feet', 'waist', 'ammo', 'power', 'source'
+])
+
+/**
+ * The slot line: bare slot words, every slot the item fits (`Chest`; `Primary, Secondary` or
+ * `Primary Secondary`), as the wiki writes them (`PRIMARY SECONDARY`). The window is the only source
+ * of Slot (owner, 2026-10-21: the inventory export names one worn slot of several).
+ */
+export function slotOf(line: string): string | undefined {
+  // Slots never hold a digit, so a token with one, or one of a character or two, is OCR (owner,
+  // 2026-10-24: Layered Guards' `Arms 1`); every other word snaps to the slot list or this is no slot line.
+  const words = line
+    .toLowerCase()
+    .split(/[\s,/]+/)
+    .filter((w) => w !== '' && (SLOT_WORDS.has(w) || (!/\d/.test(w) && w.length > 2)))
+    .map((w) => (SLOT_WORDS.has(w) ? w : (slotWord(w).note !== undefined ? slotWord(w).value.toLowerCase() : w)))
+  if (words.length === 0 || !words.every((w) => SLOT_WORDS.has(w))) return undefined
+  const slots = words.join(' ').replace(/\bpower source\b/g, 'power_source').split(' ')
+  return [...new Set(slots.map((w) => slotWord(w.replace('_', ' ')).value))].join(' ')
+}
