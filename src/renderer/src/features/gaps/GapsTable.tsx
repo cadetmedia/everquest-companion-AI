@@ -62,6 +62,9 @@ import GapRowButtons from './GapRowButtons'
 import MobHeadingButtons from './MobHeadingButtons'
 import { ForcedChip } from './ForcedQuests'
 import { EditedChip } from './GapRowEdit'
+import { ZoneMapButton } from './ZoneMapLinks'
+import { updateWhy } from '@shared/gapUpdateWhy'
+import { heldPlain } from '@shared/gapHeldTier'
 import { shownName } from '@shared/gapEdits'
 
 /** One line of small cells with a small chip: 6px padding above and below a 24px chip, plus the border. */
@@ -115,9 +118,10 @@ function PadRow({ height }: { height: number }): JSX.Element | null {
 
 /** Beside an Items row's name: who holds it right now (review C6), the counts and places in the tooltip. */
 function HeldChip({ held }: { held: readonly GapHeld[] }): JSX.Element {
+  // No +0 copy held: the Update tag's colour, and the tier in the label (owner, 2026-10-25).
   return (
     <Tooltip title={heldTitle(held)}>
-      <Chip label={heldChipLabel(held)} size="small" color="success" variant="outlined" sx={{ ml: 1 }} data-testid="gaps-held" />
+      <Chip label={heldChipLabel(held)} size="small" color={heldPlain(held) ? 'success' : JOB_COLOR.update} variant="outlined" sx={{ ml: 1 }} data-testid="gaps-held" />
     </Tooltip>
   )
 }
@@ -125,10 +129,13 @@ function HeldChip({ held }: { held: readonly GapHeld[] }): JSX.Element {
 /** The theme colour of each job's tag: two that no other chip on a row wears. */
 const JOB_COLOR: Record<GapJob, 'secondary' | 'primary'> = { new: 'secondary', update: 'primary' }
 
-/** Before the name (owner, 2026-10-21): "New page" or "Update page", the row's job (shared/gapJob.ts). */
-function JobChip({ job }: { job: GapJob }): JSX.Element {
+/**
+ * Before the name (owner, 2026-10-21): "New page" or "Update page", the row's job (shared/gapJob.ts);
+ * an update's tooltip says what its page lacks (`why`, shared/gapUpdateWhy.ts; owner, 2026-10-25).
+ */
+function JobChip({ job, why = [] }: { job: GapJob; why?: readonly string[] }): JSX.Element {
   return (
-    <Tooltip title={GAP_JOB_TIP[job]}>
+    <Tooltip title={why.length > 0 ? why.join(' ') : GAP_JOB_TIP[job]}>
       <Chip label={GAP_JOB_LABEL[job]} size="small" color={JOB_COLOR[job]} variant="outlined" sx={{ mr: 1, height: 20 }} data-testid={`gaps-job-${job}`} />
     </Tooltip>
   )
@@ -192,7 +199,7 @@ const GapTableRow = memo(function GapTableRow({
             •
           </Box>
         )}
-        <JobChip job={gapJob(row, chipContext)} />
+        <JobChip job={gapJob(row, chipContext)} why={updateWhy(row, verdict, chipContext)} />
         <ReadyChip need={need} />
         {/* Under its mob's heading a faction or drop row is the faction or item alone. */}
         {depth === 2 && onMobPage(row) ? factionOf(row) : shownName(row)}
@@ -409,6 +416,7 @@ function GroupRow({
         <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 1 }}>
           {entry.n} missing
         </Typography>
+        {zone && <ZoneMapButton zone={entry.zone} />}
         {entry.kind === 'mob' && <MobHeadingButtons mob={entry.mob} rows={entry.rows} pageText={work.pageText} done={work.done} onDoneAll={work.onDoneAll} />}
       </TableCell>
     </TableRow>

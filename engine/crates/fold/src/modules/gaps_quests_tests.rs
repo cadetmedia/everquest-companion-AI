@@ -35,6 +35,7 @@ fn a_quest_item_knows_its_giver_its_keywords_its_turn_in_and_its_quest() {
     assert!(q.given("Encoded Missive", t(11), Some("Neriak - Foreign Quarter")));
     assert!(q.task("Alchemical Solution", t(11)));
     assert!(q.offered("Encoded Missive", "Dorian G`Wyn", t(200)));
+    assert!(q.trade_done("Dorian G`Wyn"), "the completed trade is the turn-in");
     assert!(
         !q.offered("Ancient Signet Ring", "Malkil", t(201)),
         "a player is no turn-in"
@@ -108,7 +109,7 @@ fn a_refused_or_cancelled_offer_is_no_turn_in_and_a_completed_one_is() {
     for i in 0..4 {
         assert!(q.refused("a fallen froglok", t(5 + i)));
     }
-    q.trade_done("a fallen froglok");
+    assert!(!q.trade_done("a fallen froglok"), "every offer was handed back");
     assert_eq!(turned_in(&q, "spore mushroom"), None);
     assert_eq!(turned_in(&q, "huge mushroom head"), None);
     // A trade the player called off.
@@ -118,7 +119,8 @@ fn a_refused_or_cancelled_offer_is_no_turn_in_and_a_completed_one_is() {
     assert_eq!(turned_in(&q, "vial of swamp water"), None);
     // A completed trade stands, and a later cancel does not reach back into it.
     assert!(q.offered("Fresh Fish", "Nikko Canti", t(100)));
-    q.trade_done("Nikko Canti");
+    assert_eq!(turned_in(&q, "fresh fish"), None, "not before its trade completes");
+    assert!(q.trade_done("Nikko Canti"));
     assert!(!q.cancelled(), "nothing open to take back");
     assert_eq!(turned_in(&q, "fresh fish"), Some(json!([{ "npc": "Nikko Canti", "n": 1 }])));
 }
@@ -132,6 +134,31 @@ fn a_refusal_opening_on_a_capitalised_article_takes_the_offer_back() {
     let t = |s: i64| 1_787_000_000_000 + s * 1000;
     assert!(q.offered("Pod of Water", "a fallen froglok", t(0)));
     assert!(q.refused("A fallen froglok", t(1)));
-    q.trade_done("a fallen froglok");
+    assert!(!q.trade_done("a fallen froglok"));
     assert!(q.of("pod of water").and_then(|f| serde_json::to_value(f).ok()?.get("turnedInTo").cloned()).is_none());
+}
+
+/// Review E4 (an offer is not an acceptance), the owner's log 2026-10-12 19:34:43: `You offered 1
+/// Runnyeye Warbeads to Diggins.` then `You must turn in all quest items at once in order to complete
+/// this quest.` and no `You complete the trade with Diggins.`: the item was never turned in.
+#[test]
+fn an_offer_whose_trade_never_completes_is_no_turn_in() {
+    let mut q = QuestFacts::default();
+    let t = |s: i64| 1_787_000_000_000 + s * 1000;
+    // Diggins is shaped like a player name: his [member of 628] line makes him an NPC.
+    q.keyword_speakers.insert("Diggins".into());
+    assert!(q.offered("Runnyeye Warbeads", "Diggins", t(0)));
+    assert!(q.of("runnyeye warbeads").is_none(), "an open offer is no fact yet");
+    // Six minutes later another trade completes with Diggins: the stale offer is gone, not counted.
+    assert!(q.offered("Bone Chips", "Diggins", t(360)));
+    assert!(q.trade_done("Diggins"));
+    assert!(q.of("runnyeye warbeads").is_none());
+    assert_eq!(
+        serde_json::to_value(q.of("bone chips")).unwrap(),
+        json!({ "turnedInTo": [{ "npc": "Diggins", "n": 1 }] })
+    );
+    // A completed trade with another NPC never closes this one's offers.
+    assert!(q.offered("Snake Fang", "Vlad Sterovich", t(400)));
+    assert!(!q.trade_done("Diggins"));
+    assert!(q.of("snake fang").is_none());
 }

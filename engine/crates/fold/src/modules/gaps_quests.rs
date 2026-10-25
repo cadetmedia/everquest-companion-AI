@@ -219,22 +219,18 @@ impl QuestFacts {
         changed
     }
 
-    /// `You offered 1 <item> to <NPC>.`: a turn-in, when the receiver is an NPC.
+    /// `You offered 1 <item> to <NPC>.`: an offer to an NPC, held open until its trade completes.
+    /// True when the receiver is an NPC.
     pub fn offered(&mut self, item: &str, npc: &str, ts: i64) -> bool {
         if is_player_shaped_name(npc) && !self.keyword_speakers.contains(npc) {
             return false;
         }
         self.pending_item(item, ts);
         self.last_offer = Some((npc.to_string(), ts));
+        // An offer whose trade never completed is dropped unseen (review E4: an offer is not an
+        // acceptance; `You must turn in all quest items at once ...` leaves the trade unfinished).
         self.offers.retain(|(_, _, at)| ts - at <= TRADE_MS);
         self.offers.push((item_gap_key(item), npc.to_string(), ts));
-        *self
-            .by_item
-            .entry(item_gap_key(item))
-            .or_default()
-            .turned_in
-            .entry(npc.to_string())
-            .or_default() += 1;
         true
     }
 
@@ -258,27 +254,25 @@ impl QuestFacts {
         any
     }
 
-    /// `You complete the trade with <NPC>.`: the offers to it stand, and its trade is closed.
-    pub fn trade_done(&mut self, npc: &str) {
-        self.offers.retain(|(_, n, _)| n != npc);
+    /// `You complete the trade with <NPC>.`: the offers to it that were not handed back are its
+    /// turn-ins, the only ones the log proves (review E4; owner's log: 404 offers completed, 96 of
+    /// them handed back first, 2 never completed). True when an item's facts changed.
+    pub fn trade_done(&mut self, npc: &str) -> bool {
+        let (done, open): (Vec<_>, Vec<_>) = self.offers.drain(..).partition(|(_, n, _)| n.eq_ignore_ascii_case(npc));
+        self.offers = open;
+        for (key, to, _) in &done {
+            *self.by_item.entry(key.clone()).or_default().turned_in.entry(to.clone()).or_default() += 1;
+        }
+        !done.is_empty()
     }
 
-    /// Offer `i` was no turn-in: off its item's count, its pending task match and the last offer.
+    /// Offer `i` was no turn-in: off the open trade, its pending task match and the last offer (a
+    /// turn-in counts only at its trade's end). True: an offer was taken back.
     fn take_back(&mut self, i: usize) -> bool {
         let (key, npc, at) = self.offers.remove(i);
-        let npc = npc.as_str();
         self.pending.retain(|(k, t)| !(*k == key && *t == at));
-        if self.last_offer.as_ref().is_some_and(|(n, t)| n == npc && *t == at) {
+        if self.last_offer.as_ref().is_some_and(|(n, t)| *n == npc && *t == at) {
             self.last_offer = None;
-        }
-        let Some(facts) = self.by_item.get_mut(&key) else {
-            return false;
-        };
-        if let Some(n) = facts.turned_in.get_mut(npc) {
-            *n -= 1;
-            if *n == 0 {
-                facts.turned_in.remove(npc);
-            }
         }
         true
     }

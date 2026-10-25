@@ -10,6 +10,8 @@ import { rowFactLines } from '@shared/gapQuestPage'
 import { fightLines } from '@shared/gapFight'
 import { descriptionLines } from '@shared/gapMerchantDescription'
 import { useMerchantExtras } from './useMerchantExtras'
+import { RowMapLinks } from './ZoneMapLinks'
+import { updateWhy } from '@shared/gapUpdateWhy'
 import { PAGE_EXTRAS } from './useGapsData'
 
 /** Under the sale-on-loot chips: what the sale implies (shared/gaps.ts `derivedPrices`). */
@@ -72,9 +74,18 @@ function TallyChips({ label, tally }: { label: string; tally: GapTally }): JSX.E
 export default function GapDetailsPanel({ row }: { row: GapRow }): JSX.Element {
   const details = row.details
   const merchant = useMerchantExtras(useMemo(() => [row], [row]))
+  const why = updateWhy(row, 'unchecked', PAGE_EXTRAS)
   const lines = [...questFactLines(questFactsOf(row)), ...rowFactLines(row, PAGE_EXTRAS), ...fightLines(row), ...descriptionLines(row, { ...PAGE_EXTRAS, ...merchant })]
   return (
     <Stack spacing={1} sx={{ py: 1 }} data-testid="gaps-details">
+      {/* What the existing page lacks (owner, 2026-10-25: "it would be nice to know WHY we have an update"). */}
+      {why.length > 0 && (
+        <Typography variant="body2" data-testid="gaps-update-why">
+          Why an update: {why.join(' ')}
+        </Typography>
+      )}
+      {/* Where to go: the zones it was seen in, on the Maps tab (review C7). */}
+      <RowMapLinks row={row} />
       {/* Who gave it, who took it, its quest (owner, 2026-10-22: who it is turned in to). */}
       {lines.map((l) => (
         <Typography key={l} variant="body2" color="info.main" data-testid="gaps-quest-line">
