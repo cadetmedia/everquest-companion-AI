@@ -298,7 +298,11 @@ test('the unindexed stat keys are exactly the nine the corpus states', () => {
   // `REQ_LEVEL` IS ALLOWED, NOT REQUIRED, since 2026-09-27: the wiki spelled its eight pages out,
   // so the corpus the creator ships still states it and a refreshed one does not. It is set aside
   // before the equality, which still stops the suite on any spelling nobody has read.
-  const keys = Object.keys(index.stats.unindexedStatKeys).filter((k) => k !== 'REQ_LEVEL')
+  //
+  // `MAGIC_DMG` arrived with the 2026-10-25 delta (Warstaff of Hope's Demise, `Magic DMG: 30`): the
+  // fourth elemental damage, read by the same `ELEMENTAL_DMG_KEYS` as the other three. Allowed, not
+  // required, because the corpus the creator ships does not state it.
+  const keys = Object.keys(index.stats.unindexedStatKeys).filter((k) => k !== 'REQ_LEVEL' && k !== 'MAGIC_DMG')
   assert.deepEqual(keys.sort(), [
     'BANE_DMG',
     'CAST_TIME',
