@@ -84,3 +84,16 @@ test('a failed poll does not jam the feed', async () => {
   await new Promise((r) => setImmediate(r))
   assert.equal(runs, 2)
 })
+
+test('each surface keeps its own answer: the Overview never paints the Combat tab’s, nor the reverse', () => {
+  forgetKept()
+  const combat = snap(false, 'combat')
+  const overview = snap(false, 'overview')
+  createFeed('w', () => undefined)(combat)
+  createFeed('w', () => undefined, 'overview')(overview)
+  assert.equal(keptSnapshot('w'), combat)
+  assert.equal(keptSnapshot('w', 'overview'), overview)
+  const shown: { snap: CombatSnapshot | null; updating: boolean }[] = []
+  createFeed('w', (v) => shown.push(v), 'overview')(snap(true))
+  assert.equal(shown[0]?.snap, overview, 'a slow Overview answer holds the Overview’s own last answer')
+})
