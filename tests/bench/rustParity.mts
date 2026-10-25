@@ -79,7 +79,10 @@
  *   same branch: `You miss a note, bringing your <X> to a close!` was `unknown` and is now the
  *   song's `castInterrupted`; `You receive <coins> from <NPC>.` (a quest payment, no item clause)
  *   was `unknown` and is now `coin` with source `npc`; a miss with a two-word parenthetical
- *   (`, but misses! (Wild Rampage)`) was `unknown` and is now `miss`.
+ *   (`, but misses! (Wild Rampage)`) was `unknown` and is now `miss`. 2026-10-25, same branch:
+ *   `You were hit by non-melee for N damage.` (lava, a fall) was `unknown` and is now `damage`
+ *   with a null attacker, target You and skill `Non-melee`; the combat fold books it under an
+ *   `Environment` incoming row.
  *
  * ── `--ledger`: WHAT A PARTIAL PORT IS ALLOWED TO CLAIM ────────────────────────────────────────
  *

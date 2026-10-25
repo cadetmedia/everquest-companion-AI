@@ -23,6 +23,7 @@ pub struct CombatRes {
     ds_inc: Regex,
     dot: Regex,
     dot_nocaster: Regex,
+    sourceless: Regex,
     heal: Regex,
     mend: Regex,
     rune_gain: Regex,
@@ -73,6 +74,8 @@ impl CombatRes {
                 r"^(.+?) has taken ([0-9]+) damage by (.+?)\.(?: \((.+?)\))?$",
             )
             .unwrap(),
+            // Engine-only: the app parser this file was ported from never read this line.
+            sourceless: Regex::new(r"^You were hit by non-melee for ([0-9]+) damage\.$").unwrap(),
             heal: Regex::new(
                 r"^(.+?) healed (.+?)( over time)? for ([0-9]+)(?: \(([0-9]+)\))? hit points?(?: by (.+?))?\.(?: \(([A-Za-z][A-Za-z ]*)\))?$",
             )
@@ -470,6 +473,25 @@ fn taken_damage(r: &CombatRes, c: &Ctx, out: &mut Ev) -> bool {
     false
 }
 
+/// A hit on you that names no source: lava, a trap, a fall (the cause is the next line, `YOU are
+/// burning!`, `YOU were injured by falling.`). The attacker is null, as the caster-less DoT's is;
+/// the fold books it under its Environment row.
+fn sourceless_damage(r: &CombatRes, c: &Ctx, out: &mut Ev) -> bool {
+    let Some(m) = r.sourceless.captures(c.text) else {
+        return false;
+    };
+    out.begin(Kind::Damage);
+    out.envelope(c.seq, c.ts, c.raw);
+    out.s_or_null(Key::Attacker, None);
+    out.s(Key::Target, "You");
+    out.i(Key::Amount, m[1].parse().unwrap_or(0));
+    out.s(Key::Dtype, "spell");
+    out.s(Key::Skill, "Non-melee");
+    out.b(Key::Crit, false);
+    out.s(Key::Category, "spell");
+    true
+}
+
 /// Damage: melee / spell / dot / damage-shield, behind the shared substring gates.
 pub fn classify_damage(r: &CombatRes, c: &Ctx, out: &mut Ev) -> bool {
     let has_points = c.text.contains("points of") || c.text.contains("point of");
@@ -480,7 +502,7 @@ pub fn classify_damage(r: &CombatRes, c: &Ctx, out: &mut Ev) -> bool {
     if has_taken && taken_damage(r, c, out) {
         return true;
     }
-    false
+    c.text.starts_with("You were hit by non-melee for ") && sourceless_damage(r, c, out)
 }
 
 /// Heals, plus the one heal family that states no amount.

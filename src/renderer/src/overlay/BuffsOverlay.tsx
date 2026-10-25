@@ -223,11 +223,7 @@ function useWholeSnapshot<S>(moduleId: string, empty: S): { state: S; hydrations
  * the user clearing a bar is not that buff dropping, and announcing "X dropped" at the instant they
  * asked for the row to go away would be the window arguing with them.
  */
-function useDropFlash(
-  rows: BuffTimerRow[],
-  nowMs: number,
-  epoch: number
-): { id: string; name: string; at: number }[] {
+function useDropFlash(rows: BuffTimerRow[], epoch: number): { id: string; name: string; at: number }[] {
   const prevRef = useRef<BuffTimerRow[] | null>(null)
   const epochRef = useRef(epoch)
   const [drops, setDrops] = useState<{ id: string; name: string; at: number }[]>([])
@@ -247,7 +243,23 @@ function useDropFlash(
     setDrops((d) => [...d.filter((x) => !gone.some((g) => g.id === x.id)), ...gone].slice(-3))
   }, [rows, epoch])
 
-  return drops.filter((d) => nowMs - d.at < DROP_FLASH_MS)
+  // A notice leaves the list one tick after its flash ends, so a window with nothing left to time
+  // lets its clock stop. The caller hides it at the first tick past the flash, as it always did.
+  useEffect(() => {
+    if (drops.length === 0) return
+    const first = drops.reduce((a, d) => (d.at < a.at ? d : a))
+    const id = setTimeout(
+      () => {
+        setDrops((d) => d.filter((x) => x !== first))
+      },
+      Math.max(0, first.at + DROP_FLASH_MS + 1_000 - Date.now())
+    )
+    return () => {
+      clearTimeout(id)
+    }
+  }, [drops])
+
+  return drops
 }
 
 const DROP_FLASH_MS = 6_000
@@ -499,7 +511,6 @@ export default function BuffsOverlay({ kind }: { kind: TimerOverlayKind }): JSX.
     'buffTimers',
     EMPTY_TIMERS
   )
-  const nowMs = useSecondsClock()
   const { locked, bgAlpha, textScale, hovering, config, patch, toggleLock, onEnter, onLeave, dragRegion, noDrag } =
     useOverlayChrome()
 
@@ -527,11 +538,13 @@ export default function BuffsOverlay({ kind }: { kind: TimerOverlayKind }): JSX.
   // tab removes its row here, and announcing it as a drop would be this window arguing with a box
   // the user pressed a moment ago in another one.
   const allowChanges = useChangeCount(allow)
-  const drops = useDropFlash(
+  const flashes = useDropFlash(
     rows,
-    nowMs,
     buffsHydrations + timersHydrations + dismissals.size + (showPermanent ? 1 : 0) + allowChanges
   )
+  // The clock runs only while a row or a drop notice is there to time.
+  const nowMs = useSecondsClock(rows.length > 0 || flashes.length > 0)
+  const drops = flashes.filter((d) => nowMs - d.at < DROP_FLASH_MS)
 
   return (
     <div

@@ -437,7 +437,6 @@ export default function TimersView({
     [onOpenMob, onOpenMapZone]
   )
   const snap = useRespawnSnap()
-  const nowMs = useSecondsClock()
   const confirmSighting = useConfirmSighting()
   const unwatch = useUnwatch()
   const unwatchMany = useUnwatchMany()
@@ -453,9 +452,12 @@ export default function TimersView({
   const zoneName = snap.zone.length > 0 ? snap.zone : 'Unknown zone'
   const hereRows = respawnInZone(snap.rows, snap.zone)
   const hereRecent = respawnInZone(snap.recent, snap.zone)
+  const scoped = scope === 'zone' ? hereRows : snap.rows
+  // The clock runs only while a row is there to count down.
+  const nowMs = useSecondsClock(scoped.length > 0)
   // Scoped first, then ordered against THIS renderer's clock — see the header: the ranking moves
   // every second whether or not the log does.
-  const rows = orderRespawnRows(scope === 'zone' ? hereRows : snap.rows, nowMs)
+  const rows = orderRespawnRows(scoped, nowMs)
   const recent = scope === 'zone' ? hereRecent : snap.recent
 
   return (
