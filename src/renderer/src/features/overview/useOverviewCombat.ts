@@ -26,6 +26,7 @@
 
 import { useEffect, useState } from 'react'
 import type { CombatSnapshot } from '@shared/combat'
+import { coalesced } from '../combat/combatFeed'
 
 /** Fallback poll while mounted — covers the "active" state decay and any missed nudge. */
 const FALLBACK_POLL_MS = 1000
@@ -37,16 +38,18 @@ export function useOverviewCombat(): CombatSnapshot | null {
 
   useEffect(() => {
     let alive = true
-    const tick = async (): Promise<void> => {
+    // One request in flight, as the Combat tab's poll (combatFeed.ts): on a slow machine the 1 s
+    // poll and the activity ping no longer stack up behind each other.
+    const tick = coalesced(async (): Promise<void> => {
       const s = await window.eq.getCombatSnapshot({
         timeline: true,
         maxSegments: 1
       })
       if (alive) setSnap(s)
-    }
-    void tick()
-    const off = window.eq.onCombatActivity(() => void tick())
-    const iv = setInterval(() => void tick(), FALLBACK_POLL_MS)
+    })
+    tick()
+    const off = window.eq.onCombatActivity(tick)
+    const iv = setInterval(tick, FALLBACK_POLL_MS)
     return () => {
       alive = false
       off()
