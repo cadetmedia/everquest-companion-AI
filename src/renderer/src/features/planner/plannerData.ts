@@ -31,6 +31,7 @@ import {
 } from '../../../../shared/planner/era'
 import { metVersion, wasMet } from '../../../../shared/metInLog'
 import { useBoolPref } from '../combat/useCombatPrefs'
+import { unusableReasons, type UnusableReason } from '../../../../shared/planner/usability'
 import { classesMismatch } from './plannerClasses'
 import { defaultAxis, isAxisFor, type GroupAxis } from './plannerGroups'
 import { sourcesFor } from './sourceIndex'
@@ -75,6 +76,14 @@ export interface DonorView {
    *  the tri-state then filters NOTHING: hiding "owned" rows on no evidence would hide none and
    *  "only owned" would empty the list, both of them answers about a file that does not exist. */
   ownedKeys?: ReadonlySet<string>
+  /**
+   * WHO the marks are for (owner, 2026-10-25): the character's folded deity and stated level, each
+   * null while nothing has stated it. The classes are the browse's own (`planClasses`). Absent =
+   * nobody is known, and nothing is marked or hidden.
+   */
+  wearer?: { deity: string | null; level: number | null }
+  /** hide every row the wearer cannot use, instead of listing it marked. Default OFF. */
+  hideUnusable?: boolean
 }
 
 /**
@@ -513,6 +522,26 @@ function ownedFilterHides(view: DonorView, key: string): boolean {
 }
 
 /**
+ * WHY THIS CHARACTER CANNOT USE THIS DONOR, or `[]` (`planner/usability.ts` owns the rule). The
+ * browse's class filter stands in for the character's classes, as it does for the class chips:
+ * it follows the detected trio until the player pins another.
+ */
+export function donorUnusable(
+  donor: PlannerDonor,
+  planClasses: readonly ClassAbbr[],
+  view: DonorView
+): UnusableReason[] {
+  const who = view.wearer ?? { deity: null, level: null }
+  return unusableReasons(donor, { classes: planClasses, deity: who.deity, level: who.level })
+}
+
+/** The three filters about YOU - owned, charged, and the usable-by-me choice - as one clause. */
+function personalHides(view: DonorView, d: DonorRow, planClasses: readonly ClassAbbr[]): boolean {
+  if (ownedFilterHides(view, d.key) || chargedHides(view, d.charges)) return true
+  return view.hideUnusable === true && donorUnusable(d, planClasses, view).length > 0
+}
+
+/**
  * The browser's filter: equippability, then socket type, then slot, then trio compatibility, then
  * era, then the owned tri-state, then the text match.
  *
@@ -534,8 +563,7 @@ export function filterDonors(
     if (filters.slot !== null && !d.slots.includes(filters.slot)) return false
     if (filters.trioOnly && classFit(d, planClasses) === 'no') return false
     if (eraHides(d, view.eraOnly)) return false
-    if (ownedFilterHides(view, d.key)) return false
-    if (chargedHides(view, d.charges)) return false
+    if (personalHides(view, d, planClasses)) return false
     return needle === '' || d.searchKey.includes(needle)
   })
 }
@@ -564,6 +592,8 @@ export interface HiddenByView {
   era: number
   /** rows the no-slot filter is holding back (0 when it is already showing them) */
   nonEquip: number
+  /** rows the usable-by-me filter is holding back (0 when it is off) */
+  unusable: number
 }
 
 export function hiddenByView(
@@ -574,11 +604,13 @@ export function hiddenByView(
 ): HiddenByView {
   // Only the two toggles open: the owned chips and the charged filter stay as the user set them,
   // or a row they hide would be counted as one releasing a toggle could bring back.
-  const open: DonorView = { ...view, eraOnly: false, nonEquip: true }
+  const open: DonorView = { ...view, eraOnly: false, nonEquip: true, hideUnusable: false }
   const candidates = filterDonors(rows, filters, planClasses, open)
+  const unusable = (d: DonorRow): boolean => donorUnusable(d, planClasses, view).length > 0
   return {
     era: view.eraOnly ? candidates.filter((d) => eraHides(d, true)).length : 0,
-    nonEquip: view.nonEquip ? 0 : candidates.filter((d) => isNonEquippable(d)).length
+    nonEquip: view.nonEquip ? 0 : candidates.filter((d) => isNonEquippable(d)).length,
+    unusable: view.hideUnusable === true ? candidates.filter(unusable).length : 0
   }
 }
 

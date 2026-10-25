@@ -25,7 +25,7 @@ import type { ClassAbbr } from '../../../../shared/classCombo'
 import type { GearRow } from '../../../../shared/planner/gear'
 import type { OwnedExaltation } from '../../../../shared/characterSheet'
 import { socketTypeOf } from '../../../../shared/planner/normalize'
-import { deityFits } from '../../../../shared/planner/deity'
+import { unusableReasons } from '../../../../shared/planner/usability'
 
 /** One exaltation owned in more copies than are socketed — stated, never commanded. */
 export interface DuplicateFinding {
@@ -106,9 +106,10 @@ export interface Loadout {
  * whose deity nothing has told us. `planner/deity.deityFits` argues the last two.
  */
 export function usable(row: GearRow, loadout: Loadout): boolean {
-  if (!deityFits(row.deities ?? [], loadout.deity)) return false
-  if (row.classes.length === 0 || loadout.classes.length === 0) return true
-  return row.classes.some((c) => loadout.classes.includes(c))
+  // The Exaltations browser's marks read the same rule with its reasons (`planner/usability.ts`).
+  // Level stays unchecked here, as it always was: the board's question is class and deity only.
+  const who = { classes: loadout.classes, deity: loadout.deity, level: null }
+  return unusableReasons({ classes: row.classes, deities: row.deities }, who).length === 0
 }
 
 /** One effect ranked for comparison — an UNRANKED effect keeps tier 0: socketable, never "better". */

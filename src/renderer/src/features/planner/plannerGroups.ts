@@ -317,6 +317,32 @@ export function groupDonors(rows: readonly DonorRow[], axis: GroupAxis, eraOf: E
   return ranked.sort(compareGroups).map((r) => r.group)
 }
 
+/** Stable split: the rows that pass first, the rest after, each half in the order it had. */
+function passFirst<T>(items: readonly T[], passes: (item: T) => boolean): T[] {
+  const yes: T[] = []
+  const no: T[] = []
+  for (const item of items) (passes(item) ? yes : no).push(item)
+  return [...yes, ...no]
+}
+
+/**
+ * WHAT YOU CAN USE COMES FIRST (owner, 2026-10-25): inside each group the donors the character
+ * cannot use sink below the ones it can, and a group with no usable donor at all sinks below every
+ * group that has one. Both splits are STABLE, so each half keeps the order its axis gave it (tier
+ * first in a family, the declared slot and era orders, donor count on the effect axis).
+ *
+ * The family crown and header note were taken before this ran, from every row on screen, so they
+ * still name the family's best tier even when the character cannot use it; the row says so.
+ */
+export function usableFirst(
+  groups: readonly DonorGroup[],
+  unusable: (donor: DonorRow) => boolean
+): DonorGroup[] {
+  const usable = (d: DonorRow): boolean => !unusable(d)
+  const split = groups.map((g) => (g.donors.every(usable) ? g : { ...g, donors: passFirst(g.donors, usable) }))
+  return passFirst(split, (g) => g.donors.some(usable))
+}
+
 /**
  * Groups → the windowed row array: a header, then its donors while it is open. Collapsed groups
  * contribute exactly one row, which is what keeps a 400-effect list a 400-row list.

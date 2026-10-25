@@ -80,16 +80,16 @@ test('an empty list can say which toggle is holding the answers back', () => {
   // reported case, in miniature.
   const filters = { ...FILTERS, text: 'slotless' }
   assert.equal(filterDonors(ROWS, filters, [], DEFAULT_VIEW).length, 0)
-  assert.deepEqual(hiddenByView(ROWS, filters, [], DEFAULT_VIEW), { era: 0, nonEquip: 1 })
+  assert.deepEqual(hiddenByView(ROWS, filters, [], DEFAULT_VIEW), { era: 0, nonEquip: 1, unusable: 0 })
 
   // The other toggle, on its own.
   const later = { ...FILTERS, text: 'later wand' }
-  assert.deepEqual(hiddenByView(ROWS, later, [], DEFAULT_VIEW), { era: 1, nonEquip: 0 })
+  assert.deepEqual(hiddenByView(ROWS, later, [], DEFAULT_VIEW), { era: 1, nonEquip: 0, unusable: 0 })
 
   // Both at once: the row that is out of era AND slotless is counted by each toggle, because
   // releasing either one alone is what each number promises.
   const both = { ...FILTERS, text: 'later potion' }
-  assert.deepEqual(hiddenByView(ROWS, both, [], DEFAULT_VIEW), { era: 1, nonEquip: 1 })
+  assert.deepEqual(hiddenByView(ROWS, both, [], DEFAULT_VIEW), { era: 1, nonEquip: 1, unusable: 0 })
 })
 
 test('a toggle already released never claims to be hiding anything', () => {
@@ -98,13 +98,14 @@ test('a toggle already released never claims to be hiding anything', () => {
   const filters = { ...FILTERS, text: 'later potion' }
   assert.deepEqual(hiddenByView(ROWS, filters, [], { eraOnly: false, nonEquip: true }), {
     era: 0,
-    nonEquip: 0
+    nonEquip: 0,
+    unusable: 0
   })
 })
 
 test('a genuine miss reports nothing hidden — the honest empty state stays honest', () => {
   const filters = { ...FILTERS, text: 'no such thing' }
-  assert.deepEqual(hiddenByView(ROWS, filters, [], DEFAULT_VIEW), { era: 0, nonEquip: 0 })
+  assert.deepEqual(hiddenByView(ROWS, filters, [], DEFAULT_VIEW), { era: 0, nonEquip: 0, unusable: 0 })
 })
 
 // ---- the owned tri-state (fork ask 2026-09-09, reworded to two chips 2026-09-11) -------------
@@ -144,5 +145,5 @@ test('the empty state counts only what the era and slot toggles hide, not what t
   const view: DonorView = { ...DEFAULT_VIEW, ownedKeys: new Set(['later wand']), owned: 'missing' }
   const filters = { ...FILTERS, text: 'later wand' }
   assert.equal(filterDonors(ROWS, filters, [], view).length, 0)
-  assert.deepEqual(hiddenByView(ROWS, filters, [], view), { era: 0, nonEquip: 0 })
+  assert.deepEqual(hiddenByView(ROWS, filters, [], view), { era: 0, nonEquip: 0, unusable: 0 })
 })

@@ -36,7 +36,8 @@ import { GearRowCompare } from '../gear/GearCompareCard'
 import type { GearCompareData } from '../gear/gearData'
 import { classFit, isNonEquippable, type DonorRow } from './plannerData'
 import { SOCKET_LABEL, type DonorGroup } from './plannerGroups'
-import { BestChip, DonorName, EraChip, NoSlotChip, OwnedChip } from './PlannerChips'
+import type { UnusableReason } from '@shared/planner/usability'
+import { BestChip, CantUseChip, DonorName, EraChip, NoSlotChip, OwnedChip } from './PlannerChips'
 import { sourcesFor } from './sourceIndex'
 // JOS-343 — the one control both this row and the gear search row draw. It used to be a local
 // `AddButton` here and a heart over there; the owner ruled them into one on 2026-08-13.
@@ -142,6 +143,11 @@ export interface DonorLineProps {
    * more here than on most rows.
    */
   owned?: boolean
+  /**
+   * Why this character cannot use the donor (owner, 2026-10-25), or absent when it can. The row
+   * wears a `can't use: ...` chip naming every reason, and its name and icon dim.
+   */
+  unusable?: readonly UnusableReason[]
   /**
    * PUT THIS DONOR ON THE WISH LIST, OR TAKE IT OFF (JOS-343). It was `onAdd` until the owner
    * overruled the one-way version on 2026-08-13; the host reads `wished` back out of the argument
@@ -287,6 +293,7 @@ export function DonorLine({
   namesEffect,
   namesSays,
   owned,
+  unusable,
   onToggleWish,
   onOpenLoot,
   compare
@@ -299,6 +306,8 @@ export function DonorLine({
   // JOS-42: silent here when the GROUP HEADER already states it for every row under it (the focus
   // families), which is what stopped "Burning Af…" truncating on every donor of one family.
   const says = namesSays ? effectOneLiner(donor) : ''
+  // A donor this character cannot use dims its icon and name; the chip on the right says why.
+  const dim = unusable === undefined ? 1 : 0.55
   return (
     <Stack
       direction="row"
@@ -308,6 +317,7 @@ export function DonorLine({
       // which. Same key the gear table's rows carry (`itemKey`), which is what makes the compare
       // pair's own `data-item-key` checkable against the row it was opened from.
       data-testid="planner-donor-row" data-item-key={donor.key}
+      data-unusable={unusable === undefined ? undefined : 'yes'}
       sx={{ height: ROW_HEIGHT, pl: 5, pr: 1, flexWrap: 'nowrap', borderBottom: 1, borderColor: 'divider' }}
     >
       {donor.iconId !== undefined && (
@@ -318,10 +328,10 @@ export function DonorLine({
           onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
             e.currentTarget.style.display = 'none'
           }}
-          sx={{ width: 22, height: 22, imageRendering: 'pixelated', flexShrink: 0 }}
+          sx={{ width: 22, height: 22, imageRendering: 'pixelated', flexShrink: 0, opacity: dim }}
         />
       )}
-      <Typography variant="body2" component="div" noWrap sx={{ minWidth: 0, flexShrink: SHRINK.name }}>
+      <Typography variant="body2" component="div" noWrap sx={{ minWidth: 0, flexShrink: SHRINK.name, opacity: dim }}>
         <DonorNameCell donor={donor} compare={compare} onOpenLoot={onOpenLoot} />
       </Typography>
       {namesEffect && (
@@ -364,6 +374,7 @@ export function DonorLine({
       <SourceLine src={src} />
       {/* The two facts about YOU, kept together on the right of the spacer - everything left of it
           is a fact about the item. */}
+      <CantUseChip reasons={unusable} />
       <OwnedChip owned={owned} />
       {wished && (
         <Chip
@@ -386,10 +397,13 @@ export function DonorLine({
 export function GroupLine({
   group,
   expanded,
+  noneUsable = false,
   onToggle
 }: {
   group: DonorGroup
   expanded: boolean
+  /** no donor under this header is one the character can use: the collapsed header says so */
+  noneUsable?: boolean
   onToggle: (id: string) => void
 }): JSX.Element {
   return (
@@ -447,6 +461,17 @@ export function GroupLine({
         sx={{ height: 18, fontSize: 10, flexShrink: 0 }}
       />
       {group.hasteLocked && <Chip size="small" color="warning" label="haste - can't move" sx={{ height: 18, fontSize: 10, flexShrink: 0 }} />}
+      {noneUsable && (
+        <Chip
+          size="small"
+          color="error"
+          variant="outlined"
+          label="can't use any"
+          title="You cannot use any donor under this header - expand it to see why on each row."
+          data-testid="planner-group-cant-use"
+          sx={{ height: 18, fontSize: 10, flexShrink: 0 }}
+        />
+      )}
       <Box sx={{ flexGrow: 1 }} />
       <Typography variant="caption" color="text.secondary" sx={{ flexShrink: 0 }}>
         {group.donors.length} {group.donors.length === 1 ? 'donor' : 'donors'}
