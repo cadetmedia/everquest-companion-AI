@@ -55,7 +55,9 @@ repo is run.
   delta. Nothing is imported or dropped: the stale and missing pages are named and wait for the next
   delta (record them in the release notes' known issues), which resumes from the files' `scrapedAt`.
   Older than 5 hours: run the delta.
-- Never import the pack's fields: its parse lacks otherNames, drop groups and faction amounts.
+- Never import the pack's fields: its parse lacks otherNames, drop groups and faction amounts. Its
+  `icons` (iconId -> PNG) are the exception: item icons come from the pack first, at build time
+  and in the app (item-icons-pack, owner 2026-10-25), PNG-checked.
 - Revision indexes: `scripts/sources/cache/items/index.json` and `mobs/index.json`
   (`{ revs: { pageid: revid } }`), written by every delta for the pages it reads or proves current.
   `--seed-revs` seeds them once from the pack, only when our files are newer than the pack, marking
@@ -143,8 +145,10 @@ New wiki content turns the creator's census tests red. Each failing test names i
   the refreshed one.
 - `bundledImages` ("every item icon in the bundle"):
   `npx tsx scripts/fetch-wiki-images.mts --seed "$APPDATA/everquest-companion-dev/image-cache"`
-  first (its `--dry-run` still copies seeded files), then the real run. Item icons 1918 and 1920
-  are 404 upstream and stay missing.
+  first (its `--dry-run` still copies seeded files), then the real run. Since item-icons-pack
+  (2026-10-25) a missing item icon comes from the GitHub pack first, then the wiki; the pack holds
+  1918 and 1920, which the wiki answers 404, so the next real run bundles them (only 2850 stays
+  missing).
 - A top-up is not finished until those reds are cleared (BRANCHES.md, known reds).
 
 ## Plane of Sky quests (posky.json)
