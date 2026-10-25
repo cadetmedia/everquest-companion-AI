@@ -18,7 +18,7 @@ import type { CharacterRef, CharacterSnap } from '@shared/types'
 import { useModule } from '../../lib/useModule'
 import { useBoolPref, useRawPref } from '../combat/useCombatPrefs'
 import { useGapVerdicts } from '../../lib/gapVerdicts'
-import { GAPS_DATA_DATE, PAGE_EXTRAS, useGapsData, type GapsData } from './useGapsData'
+import { GAPS_DATA_STAMP, PAGE_EXTRAS, useGapsData, type GapsData } from './useGapsData'
 import { useDoneMarks, usePlayerList, type DoneMarks, type PlayerList } from './useDoneMarks'
 import { useAllCharacters, type AllCharactersState } from './useOtherCharacters'
 import { useHideUncertain, type HideUncertain } from './useHideUncertain'
@@ -156,7 +156,7 @@ export function useGapsList(opts: { background?: boolean } = {}): GapsList {
   const playerList = usePlayerList()
   const snap = data.snap
   const rows = useMemo(() => (snap ? withoutPlayers(snap.rows, playerList.players) : undefined), [snap, playerList.players])
-  const marks = useDoneMarks(new Date().toISOString().slice(0, 10), GAPS_DATA_DATE)
+  const marks = useDoneMarks(GAPS_DATA_STAMP)
   const [showDone, setShowDone] = useBoolPref(SHOW_DONE_KEY, false)
   // The list follows the query a beat behind the keystroke, so typing never waits on a filter.
   const deferredQuery = useDeferredValue(shownQuery)

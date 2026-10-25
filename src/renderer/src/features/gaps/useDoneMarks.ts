@@ -3,7 +3,8 @@
 // Per viewer, in localStorage. "Show done" brings them back, for a wrong click.
 //
 // EVERY MARK CLEARS WHEN THE WIKI DATA IS NEWER THAN IT (owner, 2026-10-19: "after a scrape, wipe
-// all DONE entries"): a row the refresh still lacks comes back. A row's absence is never the test:
+// all DONE entries"), by the time, not the date (owner, 2026-10-25): a row the refresh still lacks
+// comes back. A row's absence is never the test:
 // the list fills in stages at launch and swaps with the character, and dropping on absence lost marks.
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -19,36 +20,36 @@ export interface DoneMarks {
   setMany: (rows: readonly GapRow[], on: boolean) => void
 }
 
-/** `dataDate`: the wiki data's date (`2026-10-19`); every mark made before it is cleared (keptDoneMarks). */
-export function useDoneMarks(today: string, dataDate: string): DoneMarks {
+/** `scrapedAt`: when the wiki data was scraped (an ISO time); every mark made before it is cleared (keptDoneMarks). */
+export function useDoneMarks(scrapedAt: string): DoneMarks {
   const [marks, setMarks] = useState<Record<string, string>>(load)
   useEffect(() => {
-    if (dataDate === '') return
+    if (scrapedAt === '') return
     setMarks((cur) => {
-      const kept = keptDoneMarks(cur, dataDate)
+      const kept = keptDoneMarks(cur, scrapedAt)
       if (Object.keys(kept).length === Object.keys(cur).length) return cur
       save(kept)
       return kept
     })
-  }, [dataDate])
+  }, [scrapedAt])
   const toggle = useCallback(
     (row: GapRow) =>
       setMarks((cur) => {
         const key = doneKey(row)
-        const next = key in cur ? Object.fromEntries(Object.entries(cur).filter(([k]) => k !== key)) : { ...cur, [key]: today }
+        const next = key in cur ? Object.fromEntries(Object.entries(cur).filter(([k]) => k !== key)) : { ...cur, [key]: new Date().toISOString() }
         save(next)
         return next
       }),
-    [today]
+    []
   )
   const setMany = useCallback(
     (rows: readonly GapRow[], on: boolean) =>
       setMarks((cur) => {
-        const next = withDoneMarks(cur, rows, on, today)
+        const next = withDoneMarks(cur, rows, on, new Date().toISOString())
         save(next)
         return next
       }),
-    [today]
+    []
   )
   const done = useMemo(() => new Set(Object.keys(marks)), [marks])
   return { done, toggle, setMany }

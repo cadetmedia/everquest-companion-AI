@@ -229,6 +229,14 @@ test('Done marks clear when the wiki data is newer than them, whatever rows are 
   assert.deepEqual(Object.keys(keptDoneMarks(marks, '2026-11-02')), [])
 })
 
+test('a Done mark is kept or cleared by the time of the scrape, not its day (owner, 2026-10-25)', () => {
+  const scrapedAt = '2026-10-25T01:12:32.123Z'
+  const marks = { 'item:Before': '2026-10-25T00:30:00.000Z', 'item:After': '2026-10-25T03:48:00.000Z', 'item:Old day': '2026-10-25', 'item:Older day': '2026-10-24' }
+  // Marked the same day but before the scrape: cleared; after it: kept. A bare day (stored before
+  // the ruling) still compares by day.
+  assert.deepEqual(Object.keys(keptDoneMarks(marks, scrapedAt)).sort(), ['item:After', 'item:Old day'])
+})
+
 test("a mob heading's Done marks every row under it, keeps an older mark's day, and clears them all again (owner ask, 2026-10-21)", () => {
   const rows = [row('drop', 'Ruined Robe (Eleann Morkul)'), row('drop', 'Rusty Dagger (Eleann Morkul)')]
   const marks = { [doneKey(rows[0])]: '2026-10-20', 'item:Bat Wing': '2026-10-20' }
