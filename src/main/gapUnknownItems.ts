@@ -85,9 +85,27 @@ export function unknownItems(names: readonly string[]): string[] {
   return unknownOf(names, index)
 }
 
-/** The spell names the wiki data has no page for, each once (owner, 2026-10-23: a pasted Pet Illusion: Gelatinous Cube window made no row). */
+/**
+ * A spell key with the letter shapes the reader confuses in the game's small window font folded
+ * together, the same on both sides (owner, 2026-10-24: the window's `Supernova` read `Supemova`):
+ * `rn` as `m`, `cl` as `d`, `vv` as `w`, `1` `i` `|` as `l`, `0` as `o`. Only shapes, never a letter
+ * dropped or added, so `Rune II` and `Rune III` stay two spells.
+ */
+export const ocrShape = (key: string): string => key.replace(/rn/g, 'm').replace(/cl/g, 'd').replace(/vv/g, 'w').replace(/[1i|]/g, 'l').replace(/0/g, 'o')
+
+let spellShapes: ReadonlySet<string> | null = null
+
+/**
+ * The spell names the wiki data has no page for, each once (owner, 2026-10-23: a pasted Pet Illusion:
+ * Gelatinous Cube window made no row). A name that is a known spell misread (`ocrShape`) is known: it
+ * has its page, so it makes no row.
+ */
 export function unknownSpells(names: readonly string[]): string[] {
   index ??= knownIndex(Object.keys(itemsByAnyName((itemsJson as unknown as ItemDbFile).items)), spellNames())
   const known = index.spells
-  return [...new Set(names.map((n) => n.trim()).filter((n) => /[A-Za-z]{2}/.test(n)))].filter((n) => !known.has(looseKey(foldQuotes(n.toLowerCase()))))
+  const shapes = (spellShapes ??= new Set([...known].map(ocrShape)))
+  return [...new Set(names.map((n) => n.trim()).filter((n) => /[A-Za-z]{2}/.test(n)))].filter((n) => {
+    const key = looseKey(foldQuotes(n.toLowerCase()))
+    return !known.has(key) && !shapes.has(ocrShape(key))
+  })
 }

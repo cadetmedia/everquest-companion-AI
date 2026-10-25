@@ -176,12 +176,12 @@ test('a mob page names its levels, zones and loot; an NPC-only spell says so', (
   }
   assert.match(mob, /<li> \{\{:Scalp\}\} <\/li>/)
   assert.match(mob, /\[\[Category:The Feerrott\]\]\n$/)
-  // The wiki's Spell Page Blueprint layout.
-  assert.equal(
-    spellPage({ name: 'Flame Jet', npcOnly: true }),
-    '{{Classic Era}}\n\n{{Spellpage|\n\n| spellname = Flame Jet\n\n| classes =\n\nThis spell is cast by NPCs only.\n\n}}\n\n[[Category:NPC Only Spells]]\n'
-  )
-  assert.equal(spellPage({ name: 'Spark', npcOnly: false }), '{{Classic Era}}\n\n{{Spellpage|\n\n| spellname = Spark\n\n}}\n')
+  // The wiki's Spell Page Blueprint layout, every field, empty where nothing states it: the template
+  // prints a missing one as its raw name, `{{{slots}}}` (owner, 2026-10-24).
+  const empty = (name: string, classes: string): string =>
+    `{{Classic Era}}\n\n{{Spellpage|\n\n| spellname = ${name}\n\n| spellicon =\n\n| description =\n\n${classes}\n\n| items_with_effect =\n\n| slots =\n\n| skill =\n\n| mana =\n\n| range =\n\n| casting_time =\n\n| fizzle_time =\n\n| recast_time =\n\n| duration =\n\n| target_type =\n\n| spell_type =\n\n| resist =\n\n| msg_cast_on_you =\n\n| msg_cast_on_other =\n\n| msg_wears_off =\n\n| where_to_obtain =\n\n}}\n`
+  assert.equal(spellPage({ name: 'Flame Jet', npcOnly: true }), `${empty('Flame Jet', '| classes =\n\nThis spell is cast by NPCs only.')}\n[[Category:NPC Only Spells]]\n`)
+  assert.equal(spellPage({ name: 'Spark', npcOnly: false }), empty('Spark', '| classes ='))
 })
 
 test('a Gaps row picks its page by domain and takes the vendor value from a sale on loot', () => {
