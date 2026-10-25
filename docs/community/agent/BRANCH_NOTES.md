@@ -569,8 +569,10 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
 - Unparsed combat lines (owner ruling 2026-10-25: a line counts only if damage passed between us and
   them): the INVULNERABLE misses (8) and outgoing damage-shield absorbs (219 + 314 third-party) stay
   uncounted by that rule. `You were hit by non-melee` is counted (catch_all 71). `You have taken N
-  damage from <Spell> by <mob>.` (a DoT on you; 3,618 lines, 361,188 damage) is being built on
-  catch_all. Later, maybe: the line after an environment hit names its cause (`YOU are burning!`
+  damage from <Spell> by <mob>.` was already counted by fix-self-dot-ticks (catch_all 74 carries its
+  parse and adds the charm fix); open, owner to decide: the 173 damage of ticks with no fight open,
+  and the same charm problem for DoT ticks on group members (69,424 of Kamas's pet damage over 21
+  fights; extending the exception would keep a broken-charm pet credited until its next swing). Later, maybe: the line after an environment hit names its cause (`YOU are burning!`
   26, `YOU were injured by falling.` 11, `YOU were crushed.` 1).
 - Performance quick wins left (2026-10-25), each needing a ruling or another branch: `heal-*` in
   `CHARACTER_AWARE_OVERLAYS` (the list exists only on `community/pr-67-self-meter-name`; one-liner
