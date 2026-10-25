@@ -341,3 +341,11 @@ test("THE ROBE'S ICON READ AS 1 IS DROPPED WHEN THE TITLE BAR NAMES THE ITEM WIT
   assert.equal(readItemWindow(['EERE.', "B Crysta's Robe +4 ZI]", '. Description', "1 Crysta's Robe +4", ...body]).name, "Crysta's Robe")
   assert.equal(readItemWindow(['5 Dose Potion of Cold ZI]', 'Description', '5 Dose Potion of Cold', 'Class: ALL', 'Race: ALL']).name, '5 Dose Potion of Cold', 'a name that starts with a number keeps it')
 })
+
+test('BACKSTAB DMG IS READ, RUN TOGETHER OR NOT, AND A WEIGHT WITH LETTERS IN IT IS FLAGGED, NOT FILLED FROM THE NEXT LABEL (owner, 2026-10-24: Torturer\'s Signature)', () => {
+  const r = readItemWindow(["Torturer's Signature", 'Lore Equipped, No Trade', 'Class: WAR RNG BRD ROG', 'Race: ALL', 'Primary Secondary', 'Size: MEDIUM Base Dmg: 10', 'Weight ah BackstabDmg: 15', 'Skill: 1H Piercing Delay: 22', 'Dmg Bon: 10'])
+  assert.match(r.statsblock, /BACKSTAB: 15/)
+  assert.doesNotMatch(r.statsblock, /WT: 1\.5/)
+  assert.ok((r.checks ?? []).some((c) => c.startsWith('Weight read "ah"')), JSON.stringify(r.checks))
+  assert.match(readItemWindow(['A Dagger', 'No Trade', 'Class: ROG', 'Race: ALL', 'Primary', 'Weight: 2.5 Backstab Dmg: 15']).statsblock, /BACKSTAB: 15[\s\S]*WT: 2\.5|WT: 2\.5[\s\S]*BACKSTAB: 15/)
+})

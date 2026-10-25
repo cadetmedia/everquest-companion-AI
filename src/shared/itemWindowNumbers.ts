@@ -46,3 +46,10 @@ export function weaponValue(key: string, v: string): { value: string; note?: str
   const digits = lookDigits(t.replace(/\s+/g, ''), { '%': '5' })
   return digits === undefined ? notNumber(key, t) : takenAs(key, t, digits)
 }
+
+/** OCR loses Weight's point (`2.0` -> `20`, `0.4` -> `04`); the game always prints one decimal. */
+export function weightValue(v: string): string {
+  const t = v.replace(',', '.').replace(/[^0-9.]/g, '')
+  if (/^\d+\.\d$/.test(t)) return t
+  return /^\d{2,}$/.test(t) ? `${String(Number(t.slice(0, -1)))}.${t.slice(-1)}` : t
+}
