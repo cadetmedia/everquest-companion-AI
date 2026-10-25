@@ -2243,6 +2243,12 @@
    "seconds": 604800
   },
   {
+   "key": "lord rikantus everling",
+   "page": "Lord Rikantus Everling",
+   "text": "~15 minutes",
+   "seconds": 900
+  },
+  {
    "key": "lord vyemm",
    "page": "Lord Vyemm",
    "text": "7 days -/+ 8 hours",
