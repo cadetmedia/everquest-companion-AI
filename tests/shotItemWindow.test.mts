@@ -380,3 +380,17 @@ test("AN ICON THE CATALOG GIVES ONLY TO OTHER SLOTS GOES AFTER THE REST: A BELT 
   assert.deepEqual(bySlot(hits, 'STA: +9<br>', iconSlots).map((h) => h.id), [764, 999, 564], 'no slot read: the look decides')
   assert.deepEqual(bySlot(hits, 'Slot: FEET<br>', iconSlots).map((h) => h.id), [764, 999, 564])
 })
+
+test("CLOAK OF TREASON'S READING: A LABEL A LETTER OFF SNAPS (Altack), AND SMUDGES BEFORE A NUMBER GO (~~ 13) (owner, 2026-10-24)", () => {
+  const r = readItemWindow(['Cloak of Treason', 'Lore Equipped, No Trade', 'Class: ALL', 'Race: ALL', 'Back', 'Size: SMALL AC: 13', 'Weight: 2.0', 'Strength: 13 SV. Poison: 13 Altack 13', 'Dexterity: ~~ 13'])
+  assert.match(r.statsblock, /SV POISON: \+13/)
+  assert.match(r.statsblock, /Attack: \+13|ATTACK: \+13/i)
+  assert.match(r.statsblock, /DEX: \+13/)
+  assert.ok(!(r.checks ?? []).some((c) => c.includes('not a number')), JSON.stringify(r.checks))
+})
+
+test('A WEIGHT THE WINDOW DID NOT PRINT AS N.N IS FLAGGED, EVEN WITH NO LETTERS IN IT (owner, 2026-10-24: Layered Guards read 228".)', () => {
+  const r = readItemWindow(['Layered Guards', 'Lore Equipped, No Trade', 'Class: WAR', 'Race: ALL', 'Arms', 'Size: SMALL AC: 19', 'Weight 228". En: 30'])
+  assert.ok((r.checks ?? []).some((c) => c.startsWith('Weight read')), JSON.stringify(r.checks))
+  assert.ok(!(readItemWindow(['A Thing', 'No Trade', 'Class: ALL', 'Race: ALL', 'Weight: 2.5']).checks ?? []).some((c) => c.startsWith('Weight read')))
+})

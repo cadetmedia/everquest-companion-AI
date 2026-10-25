@@ -36,6 +36,19 @@ export const DEITIES: readonly string[] = [
   'Prexus', 'Quellious', 'Rallos Zek', 'Rodcet Nife', 'Solusek Ro', 'The Tribunal', 'Tunare', 'Veeshan'
 ]
 
+/**
+ * A label word OCR slipped one letter on, snapped to the known one when it is the only one that near and a
+ * number follows it (owner, 2026-10-24: `Altack 13` on Cloak of Treason ran Attack onto SV POISON).
+ */
+export function snapLabelWords(line: string, labels: readonly string[]): string {
+  return line.replace(/(?<![A-Za-z])([A-Za-z]{5,})(?=\s*[:;.]?\s*[-+~0-9])/g, (w) => {
+    const lw = w.toLowerCase()
+    if (labels.some((k) => k.toLowerCase() === lw)) return w
+    const near = labels.filter((k) => editDistance(k.toLowerCase(), lw) <= 1)
+    return near.length === 1 ? near[0] : w
+  })
+}
+
 export function editDistance(a: string, b: string): number {
   let prev = Array.from({ length: b.length + 1 }, (_, j) => j)
   for (let i = 1; i <= a.length; i++) {

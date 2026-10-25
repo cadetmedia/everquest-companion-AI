@@ -16,7 +16,7 @@ import { delevel } from './itemDelevel'
 import { effectText, petIllusionLine, petIllusionOf } from './itemEffects'
 import { bestLoreLine, withSplitCapital } from './itemLore'
 import { isTabRow, tabRowAt } from './itemTabRow'
-import { CLASS_CODES, codeWords, deityText, FLAG_WORDS, isDeityLine, RACE_CODES, SIZES, slotOf, snap, type Snapped } from './itemVocab'
+import { CLASS_CODES, codeWords, deityText, FLAG_WORDS, isDeityLine, RACE_CODES, SIZES, slotOf, snap, snapLabelWords, type Snapped } from './itemVocab'
 export { slotOf } from './itemVocab'
 import { statValue, weaponValue, weightValue } from './itemWindowNumbers'
 export { weightValue } from './itemWindowNumbers'
@@ -203,8 +203,12 @@ interface Pair {
   value: string
 }
 
+/** The one-word labels long enough to snap a slip to (`Altack` -> `Attack`). */
+const LABEL_WORDS = LABELS.map(([l]) => l).filter((l) => /^[A-Za-z]{5,}$/.test(l))
+
 /** Every `label value` on a line, a value running to the next label. */
-export function pairsOf(line: string): Pair[] {
+export function pairsOf(raw: string): Pair[] {
+  const line = snapLabelWords(raw, LABEL_WORDS)
   LABEL_RE.lastIndex = 0
   const hits: { def: readonly [string, string, Kind]; from: number; to: number }[] = []
   for (const m of line.matchAll(LABEL_RE)) {
@@ -296,10 +300,12 @@ const PLACE: Record<Kind, (g: Gathered, p: Pair, lastEffect: Effect | null) => v
   weapon: (g, p) => g.weapon.set(p.key, noted(g, weaponValue(p.key, p.value))),
   // Letters in it are a misread or an unknown label run on (owner, 2026-10-24: `Weight ah BackstabDmg: 15`
   // made WT 1.5): only what comes before them is the weight, and the player is told.
+  // The window always prints a weight as `N.N`; anything else (`228".`, Layered Guards' 2.5) is told too.
   wt: (g, p) => {
     const letters = p.value.search(/[A-Za-z]/)
-    if (letters >= 0) g.notes.push(`Weight read "${p.value}": check WT against the window before saving.`)
     g.wt = weightValue(letters >= 0 ? p.value.slice(0, letters) : p.value)
+    // Digits alone are the lost decimal weightValue puts back (`04` -> 0.4); any other mark is a misread.
+    if (letters >= 0 || !/^\d{1,3}(?:\.\d)?$/.test(p.value.trim())) g.notes.push(`Weight read "${p.value}": check WT against the window before saving.`)
   },
   size: (g, p) => (g.size = noted(g, snap(p.value.split(/\s+/)[0] ?? '', SIZES, 'Size'))),
   value: (g, p) => (g.value = valueCopper(p.value)),

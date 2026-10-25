@@ -31,6 +31,9 @@ const takenAs = (key: string, t: string, value: string): { value: string; note: 
 export function statValue(key: string, v: string): { value: string; note?: string } {
   const t = v.trim()
   if (SIGNED.test(t)) return { value: signed(t) }
+  // Marks before the number are smudges (owner, 2026-10-24: `DEX: ~~ 13`); only + and - mean anything there.
+  const bare = t.replace(/^[~'`"_.,:;*^\s]+/, '')
+  if (bare !== t && SIGNED.test(bare)) return takenAs(key, t, signed(bare))
   const m = /^([+-]?)(.*?)(%?)$/.exec(t)
   const digits = lookDigits(m?.[2] ?? t)
   return digits === undefined ? notNumber(key, t) : takenAs(key, t, signed(`${m?.[1] ?? ''}${digits}${m?.[3] ?? ''}`))
