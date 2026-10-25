@@ -157,6 +157,26 @@ export function findIcon(q: Rgb, index: IconIndex, cellOf: (id: number) => Uint8
   return hits.sort((a, b) => a.score - b.score).slice(0, top)
 }
 
+/**
+ * The picture scored against only these icons, at full size (owner, 2026-10-24: a belt's window found
+ * no belt icon among the look's top 30): the catalog's icons for the item's slot, a few dozen at most.
+ */
+/** The slot icons kept to lead the picker. */
+const AMONG_TOP = 10
+
+export function findIconAmong(q: Rgb, index: IconIndex, cellOf: (id: number) => Uint8Array | null, ids: ReadonlySet<number>): IconHit[] {
+  const box = queryBox(q)
+  const hits: IconHit[] = []
+  index.ids.forEach((id, i) => {
+    if (!ids.has(id)) return
+    const cell = cellOf(id)
+    if (cell === null) return
+    const b = index.boxes.subarray(i * 4, i * 4 + 4)
+    hits.push({ id, score: rerankScore(q, box, cellRgb(cell), { x: b[0], y: b[1], w: b[2], h: b[3] }) })
+  })
+  return hits.sort((a, b) => a.score - b.score).slice(0, AMONG_TOP)
+}
+
 /** How clearly the best hit wins: runner-up over winner (1 is a tie; the prototype's clear wins ran 3 to 15). */
 export function margin(hits: readonly IconHit[]): number {
   return hits.length < 2 ? Infinity : hits[1].score / Math.max(1e-6, hits[0].score)

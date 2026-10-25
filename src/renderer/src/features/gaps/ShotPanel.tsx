@@ -70,7 +70,7 @@ function Parts({ name, kept }: { name: string; kept: StoredShot | undefined }): 
 /** The icon choices, best first: five, and five more a click on "Show more" (owner, 2026-10-21). */
 function IconPicker({ name, kept, matches }: { name: string; kept: StoredShot; matches: readonly number[] }): JSX.Element | null {
   const [shown, setShown] = useState(5)
-  const ids = matches.length > 0 ? matches : kept.iconId === undefined ? [] : [kept.iconId]
+  const ids = matches.length > 0 ? matches : (kept.iconChoices ?? (kept.iconId === undefined ? [] : [kept.iconId]))
   if (ids.length === 0) return null
   return (
     <Stack direction="row" spacing={0.5} alignItems="center" flexWrap="wrap" useFlexGap>

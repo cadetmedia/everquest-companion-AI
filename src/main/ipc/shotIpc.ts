@@ -87,6 +87,18 @@ function iconSlots(id: number): ReadonlySet<string> | undefined {
   return slotsByIcon.get(id)
 }
 
+let iconsBySlot: Map<string, Set<number>> | null = null
+
+/** The icons the catalog's items worn in each slot use (readItemShot.ts `iconsIn`). */
+function slotIcons(slot: string): ReadonlySet<number> | undefined {
+  if (iconsBySlot === null) {
+    iconsBySlot = new Map()
+    slotsByIcon ??= buildIconSlots()
+    for (const [id, slots] of slotsByIcon) for (const s of slots) iconsBySlot.set(s, (iconsBySlot.get(s) ?? new Set<number>()).add(id))
+  }
+  return iconsBySlot.get(slot)
+}
+
 function buildIconSlots(): Map<number, Set<string>> {
   const out = new Map<number, Set<string>>()
   for (const e of Object.values((itemsJson as unknown as ItemDbFile).items) as { iconId?: number; stats?: { slot?: string } }[]) {
@@ -102,7 +114,8 @@ export const READERS: ShotReaders = {
   cell: (id) => cells?.cell(id) ?? null,
   textures: skinTextures,
   known: (name) => nearNames(name, catalogNames()),
-  iconSlots
+  iconSlots,
+  slotIcons
 }
 
 async function readItem(png: unknown): Promise<ItemShotReply> {
