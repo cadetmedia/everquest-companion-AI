@@ -83,7 +83,7 @@ const LABELS: readonly (readonly [string, string, Kind])[] = [
   ['Strength', 'STR', 'attr'], ['Stamina', 'STA', 'attr'], ['Agility', 'AGI', 'attr'], ['Dexterity', 'DEX', 'attr'],
   ['Wisdom', 'WIS', 'attr'], ['Intelligence', 'INT', 'attr'], ['Charisma', 'CHA', 'attr'],
   ['HP Regen', 'HP Regen', 'attr'], ['Mana Regen', 'Mana Regen', 'attr'], ['Endurance Regen', 'End Regen', 'attr'],
-  ['End Regen', 'End Regen', 'attr'], ['End', 'END', 'attr'],
+  ['End Regen', 'End Regen', 'attr'], ['End', 'END', 'attr'], ['En', 'END', 'attr'],
   ['HP', 'HP', 'attr'], ['Mana', 'MANA', 'attr'], ['Endurance', 'END', 'attr'],
   ['Haste', 'Haste', 'attr'], ['Attack', 'Attack', 'attr'], ['Accuracy', 'Accuracy', 'attr'], ['Avoidance', 'Avoidance', 'attr'],
   ['Damage Shield', 'Damage Shield', 'attr'], ['Spell Shield', 'Spell Shield', 'attr'], ['DoT Shielding', 'DoT Shielding', 'attr'],
@@ -205,7 +205,8 @@ function codesOf(line: string, label: 'Class' | 'Race'): { value: string; notes:
  * of Slot (owner, 2026-10-21: the inventory export names one worn slot of several).
  */
 export function slotOf(line: string): string | undefined {
-  const words = line.toLowerCase().split(/[\s,/]+/).filter(Boolean)
+  // A short token of junk at either end is OCR (owner, 2026-10-24: Layered Guards' `Arms 1`).
+  const words = line.toLowerCase().split(/[\s,/]+/).filter((w, i, all) => w !== '' && (SLOT_WORDS.has(w) || w.length > 2 || (i > 0 && i < all.length - 1)))
   if (words.length === 0 || !words.every((w) => SLOT_WORDS.has(w))) return undefined
   const slots = words.join(' ').replace(/\bpower source\b/g, 'power_source').split(' ')
   return [...new Set(slots.map((w) => slotWord(w.replace('_', ' ')).value))].join(' ')

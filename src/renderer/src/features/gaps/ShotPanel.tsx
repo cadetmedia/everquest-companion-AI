@@ -17,7 +17,7 @@ import { cleared, hasWindowPart, isItemShotRow, keptAfter, otherItemNote, PART_W
 import type { ItemPageShot } from '@shared/wikiPage'
 import { partPicture } from '@shared/mobPicture'
 import { itemRowNamesNow, itemShotNow, keepPartPicture, setCapturedRead, setItemShot, useCapturedRead, useItemShots, type StoredShot } from './itemShotsStore'
-import { KeptPicture, Line, PasteZone, WrongItem } from './PasteZone'
+import { CheckChips, KeptPicture, Line, PasteZone, WrongItem } from './PasteZone'
 import SpellShot from './SpellShot'
 import MobPicture from './MobPicture'
 import QuestShot from './QuestShot'
@@ -146,6 +146,12 @@ function KeptShot({ name, kept, reply }: { name: string; kept: StoredShot; reply
   )
 }
 
+/** The live reading's checks, else the kept window's: they stay until a new window replaces them (owner, 2026-10-24). */
+function checksOf(shown: ItemShotReply | null, kept: ItemPageShot | undefined): readonly string[] {
+  if (shown === null) return kept?.checks ?? []
+  return [...(shown.read.checks ?? []), ...(shown.iconNote === undefined ? [] : [shown.iconNote])]
+}
+
 interface Pending {
   reply: ItemShotReply
   kind: ShotKind
@@ -216,7 +222,7 @@ function ItemShot({ row }: { row: GapRow }): JSX.Element {
   })
   const ask = pending ?? captured.ask
   const shown = reply ?? captured.reply
-  const checks = [...(shown?.read.checks ?? []), ...(shown?.iconNote === undefined ? [] : [shown.iconNote])]
+  const checks = checksOf(shown, kept)
   return (
     <Stack spacing={0.75} data-testid="gaps-shot">
       <PasteZone label="Click here and paste an image to read it" busy={busy} onPicture={read} />
@@ -243,11 +249,7 @@ function ItemShot({ row }: { row: GapRow }): JSX.Element {
       )}
       {kept !== undefined && <Parts name={row.name} kept={kept} />}
       <KeptPicture path={picture} />
-      {checks.map((c) => (
-        <Line key={c} warn>
-          {c}
-        </Line>
-      ))}
+      <CheckChips checks={checks} />
       {kept !== undefined && <KeptShot name={row.name} kept={kept} reply={ask === null ? shown : null} />}
     </Stack>
   )

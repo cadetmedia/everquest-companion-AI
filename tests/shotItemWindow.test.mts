@@ -349,3 +349,16 @@ test('BACKSTAB DMG IS READ, RUN TOGETHER OR NOT, AND A WEIGHT WITH LETTERS IN IT
   assert.ok((r.checks ?? []).some((c) => c.startsWith('Weight read "ah"')), JSON.stringify(r.checks))
   assert.match(readItemWindow(['A Dagger', 'No Trade', 'Class: ROG', 'Race: ALL', 'Primary', 'Weight: 2.5 Backstab Dmg: 15']).statsblock, /BACKSTAB: 15[\s\S]*WT: 2\.5|WT: 2\.5[\s\S]*BACKSTAB: 15/)
 })
+
+test("LAYERED GUARDS' READING: A SLOT LINE WITH A STRAY TOKEN IS THE SLOT, AND En: IS END (owner, 2026-10-24)", () => {
+  const r = readItemWindow(['Layered Guards', 'Ww | Lore Equipped, No Trade', 'Class: WAR PAL RNG SHD ROG SHM', 'Race: ALL', 'Arms 1', 'Size: SMALL AC: 19', 'Weight: 2.5 En: 30', 'Strength: 7', 'Stamina: 12'])
+  assert.match(r.statsblock, /Slot: ARMS<br>/)
+  assert.match(r.statsblock, /END: \+30/)
+  assert.match(r.statsblock, /WT: 2\.5/)
+})
+
+test('A KEPT WINDOW KEEPS ITS CHECKS, SO THEY STAY ON THE ROW (owner, 2026-10-24)', async () => {
+  const { keptAfter } = await import('../src/shared/itemShotKeep.ts')
+  const reply = { read: { statsblock: 'x', checks: ['MANA read "a5", not a number: fix it against the window before saving.'] }, icons: [], lines: [], ms: 1, known: [] } as unknown as Parameters<typeof keptAfter>[1]
+  assert.deepEqual(keptAfter(undefined, reply, 'window').checks, ['MANA read "a5", not a number: fix it against the window before saving.'])
+})

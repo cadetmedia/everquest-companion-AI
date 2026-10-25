@@ -3,7 +3,8 @@
 // dropped on it.
 
 import { type JSX, type ReactNode, useCallback, useEffect, useState } from 'react'
-import { Box, Button, ButtonBase, CircularProgress, Stack, Typography } from '@mui/material'
+import { Box, Button, ButtonBase, Chip, CircularProgress, Stack, Typography } from '@mui/material'
+import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 
 /** The picture on the clipboard event or in the dropped files, as PNG/JPEG bytes. */
 async function pictureFrom(items: DataTransferItemList | null, files: FileList | null): Promise<Uint8Array | null> {
@@ -70,6 +71,21 @@ export function PasteZone({ label, busy, onPicture }: { label: string; busy: boo
         </Typography>
       )}
     </ButtonBase>
+  )
+}
+
+/**
+ * A reading's checks as warning chips, one a check, kept on the row until a new window replaces them
+ * (owner, 2026-10-24: "the warning needs to be more important than a yellow text that goes away").
+ */
+export function CheckChips({ checks }: { checks: readonly string[] }): JSX.Element | null {
+  if (checks.length === 0) return null
+  return (
+    <Stack direction="row" spacing={0.75} useFlexGap flexWrap="wrap" data-testid="gaps-shot-checks">
+      {checks.map((c) => (
+        <Chip key={c} size="small" color="warning" variant="outlined" icon={<WarningAmberIcon />} label={c} sx={{ height: 'auto', py: 0.25, '& .MuiChip-label': { whiteSpace: 'normal' } }} />
+      ))}
+    </Stack>
   )
 }
 
