@@ -138,16 +138,17 @@ test('ownedExaltations walks the WHOLE dump: worn sockets, bag sockets, everythi
   const owned = ownedExaltations(dump)
   // Measured on the fixture: 14 `(Exaltation)` rows in the whole file.
   assert.equal(owned.length, 14)
-  // A worn-socket row is `socketed`, and says which cell in the file's own token…
+  // A worn-socket row is `socketed`, and says where in a player's words (owner, 2026-10-25: "general
+  // 6 means nothing to a player")…
   const face = owned.find((o) => o.name === 'Polished Mithril Mask')
   assert.deepEqual(face, {
     name: 'Polished Mithril Mask',
     key: 'polished mithril mask',
-    where: 'socketed in Face',
+    where: 'equipped',
     socketed: true
   })
   // …and a copy inside a bagged item is NOT: it sits in a bag, in force for nobody.
-  const bagged = owned.filter((o) => o.where.startsWith('General'))
+  const bagged = owned.filter((o) => o.where === 'your bags')
   assert.equal(bagged.length, 8)
   assert.ok(bagged.every((o) => !o.socketed))
 })
