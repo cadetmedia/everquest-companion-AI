@@ -455,8 +455,9 @@ impl GapsModule {
             notice: None,
             via_redirect: None,
         });
-        // An offer is a sale's start: it says where the item went, not where it came from.
-        let zone = if kind == "appraised" { None } else { self.zone.as_deref() };
+        // No zone for an offer (where the item went), a fusion or a combine, failed too (where made):
+        // none says where it drops (owner, 2026-10-25: looted in the castle, fused at the lake).
+        let zone = if ["appraised", "fused", "crafted", "failed-combine"].contains(&kind) { None } else { self.zone.as_deref() };
         row.details.record(domain.as_str(), ev, zone);
         row.count += 1;
         row.last = at;

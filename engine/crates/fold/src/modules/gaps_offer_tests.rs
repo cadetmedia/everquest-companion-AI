@@ -1,4 +1,5 @@
-//! Merchant offers on the gap rows (owner, 2026-10-20), on the parent test file's corpus.
+//! Merchant offers on the gap rows (owner, 2026-10-20), and the other mentions that place an item
+//! nowhere, on the parent test file's corpus.
 
 use super::{feed, module, rows};
 use crate::EqModule;
@@ -83,4 +84,18 @@ fn a_merchants_row_carries_the_cons_of_its_name() {
     let row = |domain: &str| served.as_array().and_then(|r| r.iter().find(|r| r["domain"] == domain && r["name"] == "Mindiinya N`Zar")).cloned();
     assert_eq!(row("merchant").map(|r| r["details"]["cons"].clone()), Some(json!({ "entries": [{ "name": "L50 ally", "n": 1 }], "distinct": 1 })));
     assert_eq!(row("mob"), None, "a merchant is not served under Mobs (owner, 2026-10-23)");
+}
+
+#[test]
+fn a_fusion_or_a_combine_places_the_item_nowhere_either() {
+    let mut m = module();
+    feed(&mut m, 1, json!({ "kind": "zone", "zone": "Nektropos Castle" }));
+    feed(&mut m, 2, json!({ "kind": "loot", "item": "Glowing Widget", "source": "a nameless thing" }));
+    feed(&mut m, 3, json!({ "kind": "zone", "zone": "Lake Nerius" }));
+    feed(&mut m, 4, json!({ "kind": "itemMerge", "item": "Glowing Widget +1", "tier": 1 }));
+    feed(&mut m, 5, json!({ "kind": "itemReceived", "item": "Glowing Widget", "via": "fashioned" }));
+    let row = item_row(&m, "Glowing Widget");
+    assert_eq!(row["kinds"], json!(["looted", "fused", "crafted"]));
+    // Owner, 2026-10-25: looted in the castle, fused in the lake, listed under the lake.
+    assert_eq!(row["details"]["zones"]["all"], json!(["Nektropos Castle"]), "where it was made is not where it drops");
 }
