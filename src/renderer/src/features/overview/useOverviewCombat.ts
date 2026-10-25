@@ -26,26 +26,34 @@
 
 import { useEffect, useState } from 'react'
 import type { CombatSnapshot } from '@shared/combat'
-import { coalesced } from '../combat/combatFeed'
+import { coalesced, createFeed, keptSnapshot } from '../combat/combatFeed'
 
 /** Fallback poll while mounted — covers the "active" state decay and any missed nudge. */
 const FALLBACK_POLL_MS = 1000
 
+/** combatFeed's slot for this surface: its request differs from the Combat tab's. */
+const SURFACE = 'overview'
+
 /** The engine's snapshot, or null while the very first pull is in flight (reads as "not ready",
- *  the same as `hydrating`). */
-export function useOverviewCombat(): CombatSnapshot | null {
-  const [snap, setSnap] = useState<CombatSnapshot | null>(null)
+ *  the same as `hydrating`). A revisit of the same world (App's `viewKey`) paints the last real
+ *  answer at once, and a slow `hydrating` answer never replaces one (combatFeed.ts). */
+export function useOverviewCombat(world = ''): CombatSnapshot | null {
+  const [snap, setSnap] = useState<CombatSnapshot | null>(() => keptSnapshot(world, SURFACE))
 
   useEffect(() => {
     let alive = true
+    const accept = createFeed(world, (v) => {
+      if (alive) setSnap(v.snap)
+    }, SURFACE)
     // One request in flight, as the Combat tab's poll (combatFeed.ts): on a slow machine the 1 s
     // poll and the activity ping no longer stack up behind each other.
     const tick = coalesced(async (): Promise<void> => {
-      const s = await window.eq.getCombatSnapshot({
-        timeline: true,
-        maxSegments: 1
-      })
-      if (alive) setSnap(s)
+      accept(
+        await window.eq.getCombatSnapshot({
+          timeline: true,
+          maxSegments: 1
+        })
+      )
     })
     tick()
     const off = window.eq.onCombatActivity(tick)
@@ -55,7 +63,7 @@ export function useOverviewCombat(): CombatSnapshot | null {
       off()
       clearInterval(iv)
     }
-  }, [])
+  }, [world])
 
   return snap
 }

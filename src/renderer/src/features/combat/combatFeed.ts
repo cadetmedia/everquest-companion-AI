@@ -36,17 +36,22 @@ export interface FeedView {
   updating: boolean
 }
 
-/** The last real answer of any mount, for the next mount of the same world. */
-let kept: Kept | null = null
+/**
+ * The last real answer of any mount, for the next mount of the same world — one per SURFACE,
+ * because the Combat tab and the Overview ask with different options and must never paint each
+ * other's answer.
+ */
+const kept = new Map<string, Kept>()
 
 /** What a new mount may draw before its first answer: the last real one of this world, if any. */
-export function keptSnapshot(world: string): CombatSnapshot | null {
-  return kept?.world === world ? kept.snap : null
+export function keptSnapshot(world: string, surface = 'combat'): CombatSnapshot | null {
+  const k = kept.get(surface)
+  return k?.world === world ? k.snap : null
 }
 
-/** Test seam: forget the kept answer. */
+/** Test seam: forget the kept answers. */
 export function forgetKept(): void {
-  kept = null
+  kept.clear()
 }
 
 /**
@@ -54,13 +59,14 @@ export function forgetKept(): void {
  * drawn and kept; a `hydrating` one keeps the last real answer of this world on screen, marked
  * `updating`, and is drawn as itself only when this world has none.
  */
-export function createFeed(world: string, show: (v: FeedView) => void): (s: CombatSnapshot) => void {
+export function createFeed(world: string, show: (v: FeedView) => void, surface = 'combat'): (s: CombatSnapshot) => void {
   return (s) => {
+    const k = kept.get(surface)
     if (!s.hydrating) {
-      kept = { world, snap: s }
+      kept.set(surface, { world, snap: s })
       show({ snap: s, updating: false })
-    } else if (kept?.world === world) {
-      show({ snap: kept.snap, updating: true })
+    } else if (k?.world === world) {
+      show({ snap: k.snap, updating: true })
     } else {
       show({ snap: s, updating: false })
     }

@@ -67,6 +67,8 @@ export interface OverviewViewProps {
   onOpenLoot: (item?: string) => void
   /** Leveling card → the Leveling tab: charts, the drag-selected range, AA. */
   onOpenLeveling: () => void
+  /** which world this mount views (App's `viewKey`): a revisit of it paints the kept combat answer */
+  world?: string
 }
 
 /**
@@ -114,9 +116,10 @@ export default function OverviewView({
   onOpenCombat,
   onOpenMob,
   onOpenLoot,
-  onOpenLeveling
+  onOpenLeveling,
+  world
 }: OverviewViewProps): JSX.Element {
-  const snap = useOverviewCombat()
+  const snap = useOverviewCombat(world)
   const mob = useCurrentMob(snap)
   const rows = useRecentDrops()
   const kills = useRecentKills()

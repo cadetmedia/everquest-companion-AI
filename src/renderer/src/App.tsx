@@ -257,6 +257,7 @@ function ViewContent({
       {view === 'overview' && (
         <OverviewView
           key={viewKey}
+          world={viewKey}
           onOpenCombat={routing.openCombat}
           onOpenMob={routing.openMob}
           onOpenLoot={routing.openLoot}
