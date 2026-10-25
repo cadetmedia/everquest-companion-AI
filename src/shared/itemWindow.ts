@@ -514,7 +514,16 @@ function iconJunkDropped(name: string, above: readonly string[]): string {
   const rest = name.replace(/^\S{1,2}\s+/, '')
   if (rest === name) return name
   const norm = (s: string): string => withoutTier(s).toLowerCase().replace(/[^a-z0-9]/g, '')
-  return above.some((l) => norm(bareTitle(cleanLine(l, true)) ?? '') === norm(rest)) ? rest : name
+  // The title bar's buttons are read onto its end (owner, 2026-10-24: `Jenni's Robe ZI]E<]` over the
+  // robe's icon read `1`), so the title only has to start with the name; one that starts with the
+  // token too names the item with it.
+  const [whole, bare] = [norm(name), norm(rest)]
+  // Its minimize button can be read onto its front too (`B Crysta's Robe +4 ZI]`).
+  const titles = above.flatMap((l) => {
+    const t = bareTitle(cleanLine(l, true)) ?? ''
+    return [norm(t), norm(t.replace(/^\S{1,2}\s+/, ''))]
+  })
+  return titles.some((t) => t.startsWith(bare)) && !titles.some((t) => t.startsWith(whole)) ? rest : name
 }
 
 /** The name: the line above the flags line, else above Class; junk dropped, a `+N` tier apart. `raw`: the lines before cleaning. */

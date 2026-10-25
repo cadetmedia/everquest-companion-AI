@@ -334,3 +334,10 @@ test('A WEAPON NUMBER IS A NUMBER: % READ FOR 5, LOOK-ALIKES, A CHECK; TEXT LINE
   assert.deepEqual(weaponValue('Bane DMG', 'Undead +25'), { value: 'Undead +25' })
   assert.deepEqual(weaponValue('Skill', 'Hand to Hand'), { value: 'Hand to Hand' })
 })
+
+test("THE ROBE'S ICON READ AS 1 IS DROPPED WHEN THE TITLE BAR NAMES THE ITEM WITHOUT IT, ITS BUTTONS READ ONTO EITHER END (owner, 2026-10-24)", () => {
+  const body = ['Lore Equipped, Attunable, Quest', 'Class: ALL', 'Race: ALL', 'Chest']
+  assert.equal(readItemWindow(["Jenni's Robe ZI]E<]", 'Description', "1 Jenni's Robe", ...body]).name, "Jenni's Robe")
+  assert.equal(readItemWindow(['EERE.', "B Crysta's Robe +4 ZI]", '. Description', "1 Crysta's Robe +4", ...body]).name, "Crysta's Robe")
+  assert.equal(readItemWindow(['5 Dose Potion of Cold ZI]', 'Description', '5 Dose Potion of Cold', 'Class: ALL', 'Race: ALL']).name, '5 Dose Potion of Cold', 'a name that starts with a number keeps it')
+})

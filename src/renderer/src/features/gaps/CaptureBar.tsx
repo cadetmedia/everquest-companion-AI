@@ -18,7 +18,7 @@ import CheckIcon from '@mui/icons-material/Check'
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline'
-import { captureRow, keptAfter, otherItemNote, PART_WORDS, shotKind } from '@shared/itemShotKeep'
+import { captureRow, iconFree, keptAfter, otherItemNote, PART_WORDS, shotKind } from '@shared/itemShotKeep'
 import { partPicture } from '@shared/mobPicture'
 import { captureHowTo, readNames, type Captured } from '@shared/shotTrigger'
 import type { CharacterSnap } from '@shared/types'
@@ -77,14 +77,16 @@ function fileOn(c: Captured, reply: NonNullable<Captured['reply']>, kind: NonNul
  */
 async function withNewRows(results: readonly Filed[]): Promise<Exclude<Filed, { unplaced: Captured }>[]> {
   const unplaced = results.flatMap((r) => (typeof r === 'object' && 'unplaced' in r ? [r.unplaced] : []))
-  const names = readNames(unplaced)
+  const names = readNames(unplaced).map(iconFree)
   const unknown = new Set(names.length === 0 ? [] : await window.eq.gapUnknownItems(names).catch(() => [] as string[]))
   return results.map((r) => (typeof r === 'object' && 'unplaced' in r ? fileNew(r.unplaced, unknown) : r))
 }
 
 /** A captured item with no row, onto a row of its own when the wiki has no page for it. */
 function fileNew(c: Captured, unknown: ReadonlySet<string>): string | undefined {
-  const name = c.reply?.read.name
+  const read = c.reply?.read.name
+  // The icon read in front of the name (owner, 2026-10-24: `1 Alexa's Robe` rows) is not the name.
+  const name = read === undefined ? undefined : iconFree(read)
   const kind = c.reply === undefined ? null : shotKind(c.reply)
   if (c.reply === undefined || name === undefined || kind === null || !unknown.has(name)) return undefined
   addCapturedItem(name)
