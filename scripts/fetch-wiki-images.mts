@@ -42,15 +42,25 @@
 // `<userData>/image-cache` (which shares this naming scheme), because the politest request is
 // the one that is never sent for bytes this machine already downloaded once.
 //
+// ITEM ICONS COME FROM THE WIKI'S GITHUB DATA PACK FIRST (owner, 2026-10-25: "Try to get them from
+// the WIKI Github first, and the wiki directly next."). `Maergoth/EQL-EOZ` publishes the wiki's own
+// icons, as PNG data URLs, in its data pack; the pack is fetched and sha256-verified by
+// src/main/eozPack.ts into the cache scripts/eoz-compare.mts shares, and each icon is checked as a
+// PNG before it is written (src/main/eozIcons.ts). Only an icon the pack lacks is asked of the wiki.
+// GitHub requests are not wiki requests. Like --seed, this runs under --dry-run too.
+//
 // Flags:
 //   --seed <dir>   copy anything already present in that eqimg cache dir before fetching
 //   --dry-run      report what WOULD be fetched (and the size of what is present), fetch nothing
 //   --limit <n>    stop after n network fetches (for a smoke run)
+//   --no-pack      skip the GitHub data pack; every missing icon goes to the wiki
+//   --pack-offline use the cached data pack without asking GitHub
 
 import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { takeIconsFromPack } from './sources/packIcons'
 // The cache's OWN pure helpers — names, hashes, the allowlist, the sniff. Reused rather than
 // re-derived so the bundled directory can never drift from the runtime cache it backstops.
 import {
@@ -254,8 +264,9 @@ function buildManifest(wanted: Wanted[]): Manifest {
     generatedAt: new Date().toISOString(),
     note:
       'Images shipped with the app so it never fetches art at runtime. Every file states the ' +
-      'exact upstream URL it came from. Regenerate with `npm run fetch:images`.',
-    sources: ['https://eqlwiki.com/', 'https://wiki.project1999.com/'],
+      'exact upstream URL it came from. Item icons are taken from the GitHub data pack the wiki publishes ' +
+      'when it holds them (the same wiki files), else fetched from that URL. Regenerate with `npm run fetch:images`.',
+    sources: ['https://eqlwiki.com/', 'https://github.com/Maergoth/EQL-EOZ/tree/dataset', 'https://wiki.project1999.com/'],
     totals: { files: images.length, bytes: images.reduce((n, i) => n + i.bytes, 0) },
     images
   }
@@ -287,6 +298,15 @@ async function main(): Promise<void> {
   if (seed !== null) {
     const taken = seedFrom(seed, wanted)
     console.log(`[fetch-wiki-images] seeded ${taken} file(s) from ${seed} (already-downloaded bytes; no network)`)
+  }
+
+  if (!process.argv.includes('--no-pack')) {
+    const ids = wanted.flatMap((w) => (w.req.kind === 'item' && !presentFile(outDir, w.req) ? [w.req.id] : []))
+    const packDir = join(root, 'scripts', 'sources', 'cache', 'eoz')
+    const taken = await takeIconsFromPack(ids, { packDir, offline: process.argv.includes('--pack-offline') }, (id, png) =>
+      writeFileSync(join(outDir, cacheFileName({ kind: 'item', id }, 'image/png')), png)
+    )
+    console.log(`[fetch-wiki-images] from the wiki's GitHub data pack: ${taken} item icon(s); the rest below go to the wiki`)
   }
 
   const missing = wanted.filter((w) => !presentFile(outDir, w.req))
