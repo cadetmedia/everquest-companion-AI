@@ -7,6 +7,7 @@ import assert from 'node:assert/strict'
 import { gapHeld, heldIndex, heldLine, joinHeld } from '../src/shared/gapHeld'
 import { applyEditText, readEdit, tidyEdit, withGapEdits, type GapEdit } from '../src/shared/gapEdits'
 import { wikiPageText } from '../src/shared/wikiPage'
+import { dropGaps } from '../src/shared/gapDrops'
 import { killIndex, type KillMap } from '../src/shared/kills'
 import type { LootEvent } from '../src/shared/types'
 import { gapMapZones, headingMapZone } from '../src/shared/gapMapZones'
@@ -103,6 +104,15 @@ test('D1: an edited item name is written into itemname and the soldby ItemWhereT
   assert.match(renamed, /\|itemname = Fishing Grubs \(Live\)\n/)
   assert.ok(renamed.includes(table), renamed)
   for (const edit of MALFORMED) assert.ok((copied(edited(grubs, edit))).includes(table), JSON.stringify(edit))
+})
+
+test('D2: a group drop line keeps its rate whatever edit rides on the row (a Drops row takes none from the Edit button)', () => {
+  const at = (ts: number, item: string): LootEvent => ({ ts, item, source: 'a gnoll', zone: 'Eastern Karana' })
+  const [drop] = dropGaps([at(5000, 'Bronze Axe'), at(9000, 'Bronze Dagger +1')], [{ page: 'A gnoll', name: 'a gnoll', drops: [] }], { 'Bronze Weapons': ['Bronze Axe', 'Bronze Dagger'] })
+  const kills = killsOf('a gnoll', 10)
+  const line = "<li> [[Bronze Weapons]] <span class='drare'>(Rare)</span> <span class='ddb'>[Overall: ~20%]</span> </li>\n"
+  assert.equal(copied(drop ?? assert.fail(), [], kills), line)
+  for (const edit of [...MALFORMED, { name: 'Iron Weapons' }, { fields: { level: '12' } }]) assert.equal(copied(edited(drop ?? assert.fail(), edit), [], kills), line, JSON.stringify(edit))
 })
 
 test("E3: a renamed or re-zoned mob keeps its loot rates and MONEY DROPS, which are the log's name's; a malformed edit breaks nothing", () => {
