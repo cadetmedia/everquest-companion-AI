@@ -59,6 +59,7 @@ import MobHeadingButtons from './MobHeadingButtons'
 import { ForcedChip } from './ForcedQuests'
 import { EditedChip } from './GapRowEdit'
 import { ZoneMapButton } from './ZoneMapLinks'
+import { updateWhy } from '@shared/gapUpdateWhy'
 import { shownName } from '@shared/gapEdits'
 
 /** One line of small cells with a small chip: 6px padding above and below a 24px chip, plus the border. */
@@ -122,10 +123,13 @@ function HeldChip({ held }: { held: readonly GapHeld[] }): JSX.Element {
 /** The theme colour of each job's tag: two that no other chip on a row wears. */
 const JOB_COLOR: Record<GapJob, 'secondary' | 'primary'> = { new: 'secondary', update: 'primary' }
 
-/** Before the name (owner, 2026-10-21): "New page" or "Update page", the row's job (shared/gapJob.ts). */
-function JobChip({ job }: { job: GapJob }): JSX.Element {
+/**
+ * Before the name (owner, 2026-10-21): "New page" or "Update page", the row's job (shared/gapJob.ts);
+ * an update's tooltip says what its page lacks (`why`, shared/gapUpdateWhy.ts; owner, 2026-10-25).
+ */
+function JobChip({ job, why = [] }: { job: GapJob; why?: readonly string[] }): JSX.Element {
   return (
-    <Tooltip title={GAP_JOB_TIP[job]}>
+    <Tooltip title={why.length > 0 ? why.join(' ') : GAP_JOB_TIP[job]}>
       <Chip label={GAP_JOB_LABEL[job]} size="small" color={JOB_COLOR[job]} variant="outlined" sx={{ mr: 1, height: 20 }} data-testid={`gaps-job-${job}`} />
     </Tooltip>
   )
@@ -164,7 +168,7 @@ const GapTableRow = memo(function GapTableRow({
             •
           </Box>
         )}
-        <JobChip job={gapJob(row, chipContext)} />
+        <JobChip job={gapJob(row, chipContext)} why={updateWhy(row, verdict, chipContext)} />
         {/* Under its mob's heading a faction or drop row is the faction or item alone. */}
         {depth === 2 && onMobPage(row) ? factionOf(row) : shownName(row)}
         <ForcedChip row={row} />
