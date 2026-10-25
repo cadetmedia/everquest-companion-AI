@@ -17,6 +17,8 @@ import { effectText, petIllusionLine, petIllusionOf } from './itemEffects'
 import { bestLoreLine, withSplitCapital } from './itemLore'
 import { isTabRow, tabRowAt } from './itemTabRow'
 import { CLASS_CODES, codeWords, deityText, FLAG_WORDS, isDeityLine, RACE_CODES, SIZES, slotWord, snap, type Snapped } from './itemVocab'
+import { statValue, weaponValue, weightValue } from './itemWindowNumbers'
+export { weightValue } from './itemWindowNumbers'
 
 export interface ItemWindowRead {
   /** The coloured name line, a `+N` tier dropped. OCR may run words together; the caller's name wins. */
@@ -91,7 +93,7 @@ const LABELS: readonly (readonly [string, string, Kind])[] = [
   ['SV Magic', 'SV MAGIC', 'save'], ['SV Fire', 'SV FIRE', 'save'], ['SV Cold', 'SV COLD', 'save'], ['SV Disease', 'SV DISEASE', 'save'],
   ['SV Poison', 'SV POISON', 'save'], ['SV Corruption', 'SV CORRUPTION', 'save'], ['SV Void', 'SV VOID', 'save'],
   ['AC', 'AC', 'ac'],
-  ['Base Dmg', 'DMG', 'weapon'], ['Bane Dmg', 'Bane DMG', 'weapon'], ['Backstab', 'BACKSTAB', 'weapon'], ['Delay', 'Atk Delay', 'weapon'],
+  ['Base Dmg', 'DMG', 'weapon'], ['Bane Dmg', 'Bane DMG', 'weapon'], ['Backstab Dmg', 'BACKSTAB', 'weapon'], ['Backstab', 'BACKSTAB', 'weapon'], ['Delay', 'Atk Delay', 'weapon'],
   ['Skill', 'Skill', 'weapon'], ['Range', 'Range', 'weapon'], ['Ratio', 'Ratio', 'weapon'], ['Dmg Bon', 'Dmg Bon', 'weapon'],
   ['Weight', 'WT', 'wt'], ['Size', 'Size', 'size'], ['Value', 'Value', 'value'], ['Charges', 'Charges', 'line'],
   ['Rec Level', 'Recommended level', 'line'], ['Req Level', 'Required level', 'line'],
@@ -133,19 +135,6 @@ export function cleanLine(raw: string, name = false): string {
     .trim()
 }
 
-const SIGNED = /^[+-]?\d+(?:\.\d+)?%?$/
-
-/** `15` -> `+15`, `-20` stays; anything not a number is kept as read. */
-function signed(v: string): string {
-  return SIGNED.test(v) && !/^[+-]/.test(v) ? `+${v}` : v
-}
-
-/** OCR loses Weight's point (`2.0` -> `20`, `0.4` -> `04`); the game always prints one decimal. */
-export function weightValue(v: string): string {
-  const t = v.replace(',', '.').replace(/[^0-9.]/g, '')
-  if (/^\d+\.\d$/.test(t)) return t
-  return /^\d{2,}$/.test(t) ? `${String(Number(t.slice(0, -1)))}.${t.slice(-1)}` : t
-}
 
 const COIN: Record<string, number> = { platinum: 1000, gold: 100, silver: 10, copper: 1 }
 
@@ -317,11 +306,17 @@ const wikiLine = (p: Pair): string => (p.key.endsWith('level') ? `${p.key} of ${
 
 /** Each kind's place in the gathered lines. */
 const PLACE: Record<Kind, (g: Gathered, p: Pair, lastEffect: Effect | null) => void> = {
-  attr: (g, p) => g.attrs.push(`${p.key}: ${signed(p.value)}`),
-  save: (g, p) => g.saves.push(`${p.key}: ${signed(p.value)}`),
+  attr: (g, p) => g.attrs.push(`${p.key}: ${noted(g, statValue(p.key, p.value))}`),
+  save: (g, p) => g.saves.push(`${p.key}: ${noted(g, statValue(p.key, p.value))}`),
   ac: (g, p) => (g.ac = p.value),
-  weapon: (g, p) => g.weapon.set(p.key, p.value),
-  wt: (g, p) => (g.wt = weightValue(p.value)),
+  weapon: (g, p) => g.weapon.set(p.key, noted(g, weaponValue(p.key, p.value))),
+  // Letters in it are a misread or an unknown label run on (owner, 2026-10-24: `Weight ah BackstabDmg: 15`
+  // made WT 1.5): only what comes before them is the weight, and the player is told.
+  wt: (g, p) => {
+    const letters = p.value.search(/[A-Za-z]/)
+    if (letters >= 0) g.notes.push(`Weight read "${p.value}": check WT against the window before saving.`)
+    g.wt = weightValue(letters >= 0 ? p.value.slice(0, letters) : p.value)
+  },
   size: (g, p) => (g.size = noted(g, snap(p.value.split(/\s+/)[0] ?? '', SIZES, 'Size'))),
   value: (g, p) => (g.value = valueCopper(p.value)),
   line: (g, p) => g.lines.push(wikiLine(p)),
@@ -520,7 +515,16 @@ function iconJunkDropped(name: string, above: readonly string[]): string {
   const rest = name.replace(/^\S{1,2}\s+/, '')
   if (rest === name) return name
   const norm = (s: string): string => withoutTier(s).toLowerCase().replace(/[^a-z0-9]/g, '')
-  return above.some((l) => norm(bareTitle(cleanLine(l, true)) ?? '') === norm(rest)) ? rest : name
+  // The title bar's buttons are read onto its end (owner, 2026-10-24: `Jenni's Robe ZI]E<]` over the
+  // robe's icon read `1`), so the title only has to start with the name; one that starts with the
+  // token too names the item with it.
+  const [whole, bare] = [norm(name), norm(rest)]
+  // Its minimize button can be read onto its front too (`B Crysta's Robe +4 ZI]`).
+  const titles = above.flatMap((l) => {
+    const t = bareTitle(cleanLine(l, true)) ?? ''
+    return [norm(t), norm(t.replace(/^\S{1,2}\s+/, ''))]
+  })
+  return titles.some((t) => t.startsWith(bare)) && !titles.some((t) => t.startsWith(whole)) ? rest : name
 }
 
 /** The name: the line above the flags line, else above Class; junk dropped, a `+N` tier apart. `raw`: the lines before cleaning. */

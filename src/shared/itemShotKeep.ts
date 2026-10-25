@@ -160,6 +160,29 @@ export interface CaptureMatch {
  */
 export function captureRow(name: string | undefined, rowNames: readonly string[], known: readonly string[] = []): CaptureMatch | undefined {
   if (name === undefined) return undefined
+  const whole = nameRow(name, rowNames, known)
+  if (whole !== undefined) return whole
+  // The item's icon read as a token before the name (owner, 2026-10-24: `1 Alexa's Robe` made a row of
+  // its own): a capture has no title bar to check it against, so the name without it is tried too.
+  const rest = iconTokenless(name)
+  return rest === undefined ? undefined : nameRow(rest, rowNames, known)
+}
+
+/**
+ * The name without a first token of one or two characters (the icon OCR read as `1`, `S`, `|`); undefined
+ * when it has none. A name that really starts so (`5 Dose Potion of Cold`) keeps its own row first.
+ */
+export function iconTokenless(name: string): string | undefined {
+  const rest = name.replace(/^\S{1,2}\s+(?=[A-Za-z])/, '')
+  return rest === name ? undefined : rest
+}
+
+/** The icon's usual misreads in front of a name that matched no row: the name after it (`1 Alexa's Robe` -> `Alexa's Robe`). */
+export const iconFree = (name: string): string => name.replace(ICON_TOKEN, '')
+
+const ICON_TOKEN = /^[1lI|]\s+(?=[A-Z])/
+
+function nameRow(name: string, rowNames: readonly string[], known: readonly string[]): CaptureMatch | undefined {
   const exact = rowNames.find((r) => squash(r) === squash(name))
   if (exact !== undefined) return { row: exact, exact: true }
   const others = [...known, ...rowNames]
