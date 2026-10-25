@@ -4,7 +4,8 @@
 // a blank and a malformed value. Fixtures only.
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { gapHeld, heldIndex, heldLine, joinHeld } from '../src/shared/gapHeld'
+import { gapHeld, heldChipLabel, heldIndex, heldLine, heldTitle, joinHeld, onlyHeld } from '../src/shared/gapHeld'
+import { heldPlain } from '../src/shared/gapHeldTier'
 import { applyEditText, readEdit, tidyEdit, withGapEdits, type GapEdit } from '../src/shared/gapEdits'
 import { wikiPageText } from '../src/shared/wikiPage'
 import { dropGaps } from '../src/shared/gapDrops'
@@ -138,4 +139,31 @@ test('a stored edit is read with its non-text values dropped; the store is never
   // What the Edit button saves still reads back exactly.
   const saved = tidyEdit({ name: ' Grapok ', fields: { level: '12', zone: '' } })
   assert.deepEqual(readEdit(JSON.parse(JSON.stringify(saved))), saved)
+})
+
+// ---- the tier of a held copy (owner, 2026-10-25: "held by <playername> is useless if we need the +0 version") ----
+
+test('held: a holder of only +N copies carries its tiers; a +0 copy, or an unknown tier, carries none', () => {
+  const at = (tier: number | undefined, place: OwnershipRow['place'] = 'inventory'): OwnershipRow => ({ ...own('rat ear', place, 1), ...(tier === undefined ? {} : { tier, name: `Rat Ear +${String(tier)}` }) }) as OwnershipRow
+  const dry = heldIndex({ entries: [['rat ear', [at(4)]]], loadedAt: EXPORTED }, {}, {}, 'Drywrought')
+  const kal = heldIndex({ entries: [['rat ear', [at(2, 'bank'), at(3, 'bank')]]], loadedAt: EXPORTED }, {}, {}, 'Kaltinril')
+  const both = gapHeld(row('Rat Ear'), joinHeld([dry, kal]))
+  assert.equal(heldChipLabel(both), '+4 held by Drywrought, +2 held by Kaltinril')
+  assert.equal(heldPlain(both), false, 'no +0 anywhere: the Update colour')
+  assert.deepEqual(both.map(heldLine), ['Drywrought holds 1 (bags) at +4: not the +0 the page needs.', 'Also on Kaltinril: 2 (bank) at +2, +3.'])
+  assert.ok(heldTitle(both).startsWith('Drywrought holds 1 (bags) at +4, per the inventory export'), heldTitle(both))
+  // A +0 copy anywhere: green, as before, naming the holders of one.
+  const val = heldIndex({ entries: [['rat ear', [at(undefined), at(4)]]], loadedAt: EXPORTED }, {}, {}, 'Valtari')
+  const three = gapHeld(row('Rat Ear'), joinHeld([dry, val]))
+  assert.equal(heldChipLabel(three), 'held by Valtari')
+  assert.equal(heldPlain(three), true)
+  assert.equal(heldLine(three[1] ?? assert.fail()), 'Also on Valtari: 2 (bags).')
+  // One character, a +4 looted since the export (the loot line's own name), nothing else.
+  const mine = heldIndex({ entries: [], loadedAt: EXPORTED }, { 'Rat Ear +4': 1 })
+  assert.equal(heldChipLabel(gapHeld(row('Rat Ear'), mine)), '+4 held')
+  assert.equal(heldLine(gapHeld(row('Rat Ear'), mine)[0] ?? assert.fail()), 'You hold 1 (bags) at +4: not the +0 the page needs.')
+  // A +0 loot since the export makes it plain again; "I have it" keeps every tier either way.
+  const plain = heldIndex({ entries: [['rat ear', [at(4)]]], loadedAt: EXPORTED }, { 'Rat Ear': 1 })
+  assert.equal(heldChipLabel(gapHeld(row('Rat Ear'), plain)), 'held')
+  assert.equal(onlyHeld([row('Rat Ear')], mine).length, 1, 'I have it stays any tier')
 })

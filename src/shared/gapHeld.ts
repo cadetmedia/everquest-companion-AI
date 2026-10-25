@@ -18,6 +18,7 @@
 // by Drywrought"), each from that character's own export and loot.
 
 import { itemTierKey } from './itemStats'
+import { atTiers, heldTiers, lowTier } from './gapHeldTier'
 import { visibleGaps, type GapRow } from './gaps'
 import type { OwnershipEntry, OwnershipPlace } from './planner/ownership'
 
@@ -43,6 +44,12 @@ export interface GapHeld {
    * Gelatinous Cube).
    */
   exported?: { name: string; slots: string[] }
+  /**
+   * The ` +N` tiers of the copies, lowest first, only when none is the +0 the page needs (owner,
+   * 2026-10-25: "held by <playername> is useless if we need the +0 version and i have the +4");
+   * absent when a +0 copy is held or a copy's tier is unknown (read as +0, as before).
+   */
+  tiers?: number[]
   /** Not the item's first holder: its details line is a short "Also on <who>" (owner, 2026-10-21: "just the character they are on and a 'also on Kaltinril'"). */
   also?: true
 }
@@ -111,6 +118,7 @@ export function heldIndex(
   if (dump.loadedAt === null) return out
   const byKey = new Map<string, Counts>(dump.entries.map(([key, rows]) => [itemTierKey(key), dumpCounts(rows)]))
   const named = new Map(dump.entries.flatMap(([key, rows]) => exportedOf(rows).map((e) => [itemTierKey(key), e] as const)))
+  const tiersAt = heldTiers(dump.entries, lootSince)
   for (const [raw, n] of Object.entries(lootSince)) {
     const key = itemTierKey(raw)
     const by: Counts = byKey.get(key) ?? new Map<OwnershipPlace, number>()
@@ -122,7 +130,7 @@ export function heldIndex(
     const parts = PLACE_ORDER.flatMap((p) => ((by.get(p) ?? 0) > 0 ? [{ label: PLACE_WORD[p], count: by.get(p) ?? 0, place: p }] : []))
     const total = parts.reduce((s, p) => s + p.count, 0)
     const exported = named.get(key)
-    if (total > 0) out.set(key, [{ total, parts, exportedAt: dump.loadedAt, ...(who === undefined ? {} : { who }), ...(exported === undefined ? {} : { exported }) }])
+    if (total > 0) out.set(key, [{ total, parts, exportedAt: dump.loadedAt, ...(who === undefined ? {} : { who }), ...(exported === undefined ? {} : { exported }), ...tiersAt(key) }])
   }
   return out
 }
@@ -220,9 +228,15 @@ export function heldPickText(pick: HeldPick): string {
   return pick === 'any' ? '1' : pick === 'off' ? '0' : pick
 }
 
-/** The row chip: `held`, or `held by Drywrought, Kaltinril` when the holders are named. */
+/**
+ * The row chip: `held`, or `held by Drywrought, Kaltinril` when the holders are named, naming only
+ * the holders of a +0 copy when there is one; with none, `+4 held by Drywrought, +2 held by
+ * Kaltinril` at each holder's lowest tier (owner, 2026-10-25: the page needs the +0 window).
+ */
 export function heldChipLabel(holders: readonly GapHeld[]): string {
-  const named = holders.flatMap((h) => (h.who === undefined ? [] : [h.who]))
+  const plain = holders.filter((h) => h.tiers === undefined)
+  if (plain.length === 0 && holders.length > 0) return holders.map((h) => `${lowTier(h)} held${h.who === undefined ? '' : ` by ${h.who}`}`).join(', ')
+  const named = plain.flatMap((h) => (h.who === undefined ? [] : [h.who]))
   return named.length === 0 ? 'held' : `held by ${named.join(', ')}`
 }
 
@@ -235,13 +249,14 @@ function placesText(h: GapHeld): string {
 
 /** The details pane's line: `You hold 2 (bags): screenshot it for the wiki now.`, or `Drywrought holds 2 (bags): ...`. */
 export function heldLine(h: GapHeld): string {
-  if (h.also === true && h.who !== undefined) return `Also on ${h.who}: ${String(h.total)} (${placesText(h)}).`
+  if (h.also === true && h.who !== undefined) return `Also on ${h.who}: ${String(h.total)} (${placesText(h)})${atTiers(h)}.`
+  if (h.tiers !== undefined) return `${holder(h)} ${String(h.total)} (${placesText(h)})${atTiers(h)}: not the +0 the page needs.`
   return `${holder(h)} ${String(h.total)} (${placesText(h)}): screenshot it for the wiki now.`
 }
 
 /** The row chip's tooltip, a line per holder: where each count comes from. */
 export function heldTitle(holders: readonly GapHeld[]): string {
   return holders
-    .map((h) => `${holder(h)} ${String(h.total)} (${placesText(h)}), per the inventory export of ${h.exportedAt.slice(0, 10)} plus loot since.`)
+    .map((h) => `${holder(h)} ${String(h.total)} (${placesText(h)})${atTiers(h)}, per the inventory export of ${h.exportedAt.slice(0, 10)} plus loot since.`)
     .join(' ')
 }

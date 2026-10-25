@@ -60,6 +60,7 @@ import { ForcedChip } from './ForcedQuests'
 import { EditedChip } from './GapRowEdit'
 import { ZoneMapButton } from './ZoneMapLinks'
 import { updateWhy } from '@shared/gapUpdateWhy'
+import { heldPlain } from '@shared/gapHeldTier'
 import { shownName } from '@shared/gapEdits'
 
 /** One line of small cells with a small chip: 6px padding above and below a 24px chip, plus the border. */
@@ -113,9 +114,10 @@ function PadRow({ height }: { height: number }): JSX.Element | null {
 
 /** Beside an Items row's name: who holds it right now (review C6), the counts and places in the tooltip. */
 function HeldChip({ held }: { held: readonly GapHeld[] }): JSX.Element {
+  // No +0 copy held: the Update tag's colour, and the tier in the label (owner, 2026-10-25).
   return (
     <Tooltip title={heldTitle(held)}>
-      <Chip label={heldChipLabel(held)} size="small" color="success" variant="outlined" sx={{ ml: 1 }} data-testid="gaps-held" />
+      <Chip label={heldChipLabel(held)} size="small" color={heldPlain(held) ? 'success' : JOB_COLOR.update} variant="outlined" sx={{ ml: 1 }} data-testid="gaps-held" />
     </Tooltip>
   )
 }
