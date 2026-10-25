@@ -6,6 +6,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { checkRatio, cleanLine, readItemWindow, slotOf, valueCopper, weightValue } from '../src/shared/itemWindow.ts'
+import { statValue } from '../src/shared/itemWindowNumbers.ts'
 import { itemPage } from '../src/shared/wikiPage.ts'
 
 const ROBE_OCR = `| Ruined Robe =
@@ -308,4 +309,28 @@ test("A LEGENDS CLICK EFFECT WITH ITS CASTING TIME IN ITS OWN BRACKETS IS ONE CL
     'Cooldown: 10 seconds'
   ])
   assert.ok(read.statsblock.includes("Effect: [[Summon Familiar: Werewolf|<span class='itemeff'>Summon Familiar: Werewolf</span>]] (Clicky, Can Equip, Casting Time: 5.0"), read.statsblock)
+})
+
+test('A STAT IS A NUMBER: A LOOK-ALIKE BECOMES ITS DIGIT WITH A CHECK; ANYTHING ELSE IS FLAGGED, NEVER GUESSED (owner, 2026-10-24: Stamina 7 read PT, Mana 15 read a5)', () => {
+  assert.deepEqual(statValue('STA', '7'), { value: '+7' })
+  assert.deepEqual(statValue('STA', '-3'), { value: '-3' })
+  assert.equal(statValue('HP', '1O').value, '+10')
+  assert.match(statValue('HP', '1O').note ?? '', /HP read "1O", taken as \+10: check it/)
+  for (const bad of ['PT', 'a5', 'Fire']) {
+    assert.equal(statValue('MANA', bad).value, bad)
+    assert.match(statValue('MANA', bad).note ?? '', /not a number: fix it/)
+  }
+  // The Wristwrap's reading: the misread stat is flagged in the window's checks.
+  const r = readItemWindow(["Handmaiden's Wristwrap", 'Lore Equipped, No Trade', 'Class: DRU MNK SHM BST', 'Race: ALL', 'Wrist', 'Size: SMALL HP: 10', 'Weight: 1.0', 'Stamina: PT SV. Fire: 5', 'Wisdom: 7', 'Agility: 7'])
+  assert.ok((r.checks ?? []).some((c) => c.includes('STA read "PT", not a number')), JSON.stringify(r.checks))
+})
+
+test('A WEAPON NUMBER IS A NUMBER: % READ FOR 5, LOOK-ALIKES, A CHECK; TEXT LINES AS READ (owner, 2026-10-24: Handwrap DMG 5 read %)', async () => {
+  const { weaponValue } = await import('../src/shared/itemWindowNumbers.ts')
+  assert.deepEqual(weaponValue('DMG', '5'), { value: '5' })
+  assert.equal(weaponValue('DMG', '%').value, '5')
+  assert.match(weaponValue('DMG', '%').note ?? '', /DMG read "%", taken as 5/)
+  assert.equal(weaponValue('Atk Delay', '3O').value, '30')
+  assert.deepEqual(weaponValue('Bane DMG', 'Undead +25'), { value: 'Undead +25' })
+  assert.deepEqual(weaponValue('Skill', 'Hand to Hand'), { value: 'Hand to Hand' })
 })

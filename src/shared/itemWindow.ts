@@ -17,6 +17,7 @@ import { effectText, petIllusionLine, petIllusionOf } from './itemEffects'
 import { bestLoreLine, withSplitCapital } from './itemLore'
 import { isTabRow, tabRowAt } from './itemTabRow'
 import { CLASS_CODES, codeWords, deityText, FLAG_WORDS, isDeityLine, RACE_CODES, SIZES, slotWord, snap, type Snapped } from './itemVocab'
+import { statValue, weaponValue } from './itemWindowNumbers'
 
 export interface ItemWindowRead {
   /** The coloured name line, a `+N` tier dropped. OCR may run words together; the caller's name wins. */
@@ -131,13 +132,6 @@ export function cleanLine(raw: string, name = false): string {
     // a trailing lone mark, a lone lower-case letter, or any lone character after a number
     .replace(/(?:\s+[^A-Za-z0-9%)]{1,3}|\s+[a-z]|(?<=\d%?)\s+\S)+$/, '')
     .trim()
-}
-
-const SIGNED = /^[+-]?\d+(?:\.\d+)?%?$/
-
-/** `15` -> `+15`, `-20` stays; anything not a number is kept as read. */
-function signed(v: string): string {
-  return SIGNED.test(v) && !/^[+-]/.test(v) ? `+${v}` : v
 }
 
 /** OCR loses Weight's point (`2.0` -> `20`, `0.4` -> `04`); the game always prints one decimal. */
@@ -317,10 +311,10 @@ const wikiLine = (p: Pair): string => (p.key.endsWith('level') ? `${p.key} of ${
 
 /** Each kind's place in the gathered lines. */
 const PLACE: Record<Kind, (g: Gathered, p: Pair, lastEffect: Effect | null) => void> = {
-  attr: (g, p) => g.attrs.push(`${p.key}: ${signed(p.value)}`),
-  save: (g, p) => g.saves.push(`${p.key}: ${signed(p.value)}`),
+  attr: (g, p) => g.attrs.push(`${p.key}: ${noted(g, statValue(p.key, p.value))}`),
+  save: (g, p) => g.saves.push(`${p.key}: ${noted(g, statValue(p.key, p.value))}`),
   ac: (g, p) => (g.ac = p.value),
-  weapon: (g, p) => g.weapon.set(p.key, p.value),
+  weapon: (g, p) => g.weapon.set(p.key, noted(g, weaponValue(p.key, p.value))),
   wt: (g, p) => (g.wt = weightValue(p.value)),
   size: (g, p) => (g.size = noted(g, snap(p.value.split(/\s+/)[0] ?? '', SIZES, 'Size'))),
   value: (g, p) => (g.value = valueCopper(p.value)),
