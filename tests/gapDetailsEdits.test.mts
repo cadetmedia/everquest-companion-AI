@@ -90,6 +90,21 @@ const MALFORMED: unknown[] = [{}, { name: '' }, { name: 42 }, { name: null }, { 
 const copied = (r: GapRow, loot: readonly LootEvent[] = [], kills: KillMap = {}, seen: Parameters<typeof wikiPageText>[3] = {}): string => applyEditText(wikiPageText(r, loot, kills, seen), r)
 const killsOf = (mob: string, count: number): KillMap => killIndex({ [mob]: { display: mob, count } } as unknown as KillMap)
 
+test('D1: an edited item name is written into itemname and the soldby ItemWhereTable stays; a malformed edit breaks nothing', () => {
+  const grubs: GapRow = {
+    ...row('Fishing Grubs'),
+    kinds: ['bought'],
+    details: { samples: [], sources: { distinct: 1, entries: [{ name: 'Dansie McVicker', n: 1 }] }, zones: { distinct: 1, entries: [{ name: 'Everfrost Peaks', n: 1 }] } }
+  }
+  const table = '{{ItemWhereTable|\n{{ItemWhereRow   | [[Everfrost Peaks]]               | [[Dansie McVicker]]           |               |  }}\n}}\n'
+  const plain = copied(grubs)
+  assert.ok(plain.includes(table), plain)
+  const renamed = copied(edited(grubs, { name: 'Fishing Grubs (Live)' }))
+  assert.match(renamed, /\|itemname = Fishing Grubs \(Live\)\n/)
+  assert.ok(renamed.includes(table), renamed)
+  for (const edit of MALFORMED) assert.ok((copied(edited(grubs, edit))).includes(table), JSON.stringify(edit))
+})
+
 test("E3: a renamed or re-zoned mob keeps its loot rates and MONEY DROPS, which are the log's name's; a malformed edit breaks nothing", () => {
   const kobold: GapRow = { ...row('a rabid kobold', 'mob'), kinds: ['killed'], details: { samples: [], zones: { distinct: 1, entries: [{ name: 'Qeynos Hills', n: 1 }] } } }
   const loot = [1, 2, 3].map((s) => ({ ts: s * 1000, item: 'Rabid Kobold Fang', source: 'a rabid kobold', zone: 'Qeynos Hills' }))
