@@ -1,4 +1,4 @@
-{{Era}}
+{{Classic Era}}
 [[File:npc_XXXX.png|thumb|Quest_Giver_Name]]
 {| class="questTopTable"
 ! ''' Starts In: '''
@@ -33,7 +33,7 @@
 
 = Walkthrough =
 
-Hand [[Curt Dismissal]], [[Exorbitant Commission]], and [[Orgination of Might]] to [[Dorian G`Wyn]]:
+Hand [[A Curt Dismissal]], [[Exorbitant Commission]], and [[Ordination of Might]] to [[Dorian G`Wyn]]:
 
 :Dorian G`Wyn says, 'Curses! I should have known the cruel world would refuse aid to another, even of their own creed. We shall retreat back to the Undercroft and look to fortify our home against the undead, against the tumult in the castle, and from the outside world. You, however, Amadarya , you will always be welcome amongst our kind. Seek the Undercroft if you wish to continue your friendship with my people.'
 
