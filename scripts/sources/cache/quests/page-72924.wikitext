@@ -108,6 +108,11 @@ You say, 'end'
 * This quest is given during [[The Tragic Tale of House Everling]]; finish that quest by telling [[Lady Sileniu Everling]] he is 'dead', then 'confess'.
 * Each Everling killed costs -2 [[Host of Nektropos]] faction.
 * [[Blood's Unity]] is a quest reward: even in a +4 instance, it is a +0.
+* This quest is given during [[The Tragic Tale of House Everling]]; finish that quest by telling [[Lady Sileniu Everling]] he is 'dead', then 'confess'.
+* Each Everling killed costs -2 [[Host of Nektropos]] faction.
+* [[Blood's Unity]] is a quest reward: even in a +4 instance, it is a +0.
+* Extra copies: after the task is done, saying 'brought back' to [[Plimptos]] still hands out a sword hilt, and several can be carried at once. Each kill of [[Alexa Everling]] turns the topmost hilt in your inventory into the small blade, and each kill of [[Lord Rikantus Everling]] turns a small blade into [[Blood's Unity]]: one upgrade per kill. Copies merge into higher + versions.
+
 
 = Related Quests =
 
