@@ -192,8 +192,9 @@ SK, others).
 - Unclaimed families: `Your <item> (Exaltation) flickers with a pale light.`, `<mob> tries to
   cast a spell on you, but you are protected.`, outgoing damage-shield absorbs (uncounted by the
   owner's 2026-10-25 rule: no damage passed). Claimed 2026-10-25: `You were hit by non-melee`
-  (catch_all 71, the Environment row). Unclaimed and to count: `You have taken N damage from <Spell>
-  by <mob>.` (3,618 lines, 361,188 damage).
+  (catch_all 71, the Environment row). `You have taken N damage from <Spell> by <mob>.` is
+  counted by fix-self-dot-ticks (an agent measuring catch_all alone, which lacks it, read it as
+  unknown: measure on main_community).
 - Ally pet binds drop on every zone line by design (`ally.rs zone()`).
 - The engine has no checkpoint: it replays the whole log from byte 0 every start (the creator
   built one, JOS-208, and removed it, JOS-230).
