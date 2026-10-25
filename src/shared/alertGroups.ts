@@ -9,9 +9,9 @@
 // log (eqlog_Primitive_freeport.txt, 1,144,036 lines, 2026-08-03) and the exact matched line
 // shape + its occurrence count is quoted beside it. A group whose line does NOT exist in the
 // log ships `verified: false` and is NOT rendered — a guessed regex that never fires is worse
-// than an absent feature, because the user believes they are covered. Two groups the owner
-// asked for are in exactly that state (feign-death failure, pet death); their comments say
-// why, so nobody re-derives the same dead end.
+// than an absent feature, because the user believes they are covered. Groups the owner asked
+// for that are in exactly that state (pet death, a friend coming online) say why in
+// alertGroupsRefused.ts, so nobody re-derives the same dead end.
 //
 // PARSED EVENTS OVER RAW REGEXES. Where the parser already emits a typed event for the line
 // (resist, uncharm, cc, castFizzle, castInterrupted, playerDeath) the trigger uses the EVENT
@@ -86,7 +86,11 @@ const SOUND = {
    */
   tellReceived: 'input-required-input-required-04',
   /** "There. Tied with a neat little bow." — something worth stopping for hit your bags. */
-  moteLooted: 'task-complete-task-complete-10'
+  moteLooted: 'task-complete-task-complete-10',
+  /** "Things have... not gone as intended." — the feign did not fool the mob. */
+  feignFailed: 'task-error-task-error-05',
+  /** "A misstep. Distinctly my own." — the sneak did not take. */
+  sneakFailed: 'task-error-task-error-06'
 } as const
 
 /** Every group sound id, for the defaultPacks.ts cross-check + provisioning verification. */
@@ -766,6 +770,52 @@ export const ALERT_GROUPS: AlertGroup[] = [
         note:
           'Player tells only. NPC and pet tells use the past tense ("told you") and never fire ' +
           'this; neither do channel tells, group chat, or the tells you send.'
+      }
+    ]
+  },
+  {
+    // A FAILED FEIGN (owner, 2026-10-25, fork issue #3). `<Name> has fallen to the ground.` is the
+    // FAILURE line: the wiki's Monk FAQ calls it Feign Death's error message and the owner confirmed
+    // it in game (this register once read it as the success emote). Owner's log
+    // (eqlog_Drywrought_oggok.txt, 2026-10-25): 11 lines, 8 the player's own, 3 a groupmate's. A raw
+    // trigger cannot tell your name from theirs, so a groupmate's failed feign fires it too. The
+    // `\] ` anchor plus one name token keeps chat that quotes the sentence out.
+    // COOLDOWN 4s: one fall per attempt, and the next attempt is seconds away.
+    id: 'feignDeath',
+    title: 'Feign death failed',
+    subtitle: 'Your feign did not work - the mob is still on you.',
+    verified: true,
+    defs: [
+      {
+        id: 'group:feignDeath:failed',
+        name: 'Feign death failed',
+        trigger: { type: 'raw', regex: '\\] \\S+ has fallen to the ground\\.$' },
+        soundId: SOUND.feignFailed,
+        cooldownMs: 4000,
+        line: '<Name> has fallen to the ground.',
+        observed: 11,
+        note: "The game prints this for any player nearby whose feign failed, so a groupmate's fires it too."
+      }
+    ]
+  },
+  {
+    // A FAILED SNEAK (owner, 2026-10-25, fork issue #3). Every /sneak prints its verdict: this line
+    // when it fails, `You are as quiet as a cat stalking its prey.` when it holds. Owner's logs
+    // (2026-10-25): 7 failures, 2 successes. First person, so only your own sneak fires it.
+    // COOLDOWN 4s: the owner's retries came every 10-11 s, so each failure speaks once.
+    id: 'sneak',
+    title: 'Sneak failed',
+    subtitle: 'You are not sneaking - mobs can hear you.',
+    verified: true,
+    defs: [
+      {
+        id: 'group:sneak:failed',
+        name: 'Sneak failed',
+        trigger: rawLine('You are as quiet as a herd of running elephants.'),
+        soundId: SOUND.sneakFailed,
+        cooldownMs: 4000,
+        line: 'You are as quiet as a herd of running elephants.',
+        observed: 7
       }
     ]
   },
