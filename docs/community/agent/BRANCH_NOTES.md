@@ -566,25 +566,20 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
 - The Recommended tab ignores layer-3 era derivations on purpose (`progressionPlan.ts`
   `eraLegal`).
 - Spell page ladder base carries no magnitudes.
-- Three line shapes parse as `unknown` (measured 2026-10-25 on the owner's logs; each needs an
-  owner ruling on where it counts):
-  - INVULNERABLE: 8 lines, all `A turmoil toad tries to <hit|cleave|bash|kick> Kamas, but Kamas is
-    INVULNERABLE!` in one 3 s burst after `Kamas fades away.` (gating). A seventh miss outcome
-    touches `MissType`/`miss: [i64; 6]`, the protocol, TS `MissBreakdown` and the UI.
-  - Outgoing damage-shield absorbs: `<Mob>'s magical skin absorbs the damage of YOUR
-    <thorns|flames>.` 219 (52 mobs); third-party `<A>'s magical skin absorbs the damage of <B>'s
-    flames|thorns.` 314. No amount; counting them as DS-lane misses changes its hit stats. The
-    incoming `YOUR magical skin absorbs…` (204) is parsed.
-  - `You were hit by non-melee for N damage.` 38 lines, 679 damage: lava/hazards (Nagafen's Lair,
-    Plane of Fear, always 10) and falls (Stonebrunt 312, ...). No source named.
-- Performance quick wins skipped 2026-10-25, each needing a ruling or another branch:
-  `heal-*` in `CHARACTER_AWARE_OVERLAYS` (the list exists only on `community/pr-67-self-meter-name`;
-  one-liner `[...MODULE_READING_OVERLAYS, 'fight', 'overall', 'heal-fight', 'heal-overall']`; until
-  then the heal meters do not reset on a character switch); moving `killFactions` out of the gaps
-  snapshot (an engine op, protocol, gaps-tab, log-archive, gaps-all-characters, screenshot-to-wiki
-  and the saved-file format); gating `useSecondsClock` (lives on catch_all); a `getProgress` cache
-  (must clear in step with catch_all's character-switch fix); a `gearOwnership` cache (would change
-  the visible per-window "read at" time).
+- Unparsed combat lines (owner ruling 2026-10-25: a line counts only if damage passed between us and
+  them): the INVULNERABLE misses (8) and outgoing damage-shield absorbs (219 + 314 third-party) stay
+  uncounted by that rule. `You were hit by non-melee` is counted (catch_all 71). `You have taken N
+  damage from <Spell> by <mob>.` (a DoT on you; 3,618 lines, 361,188 damage) is being built on
+  catch_all. Later, maybe: the line after an environment hit names its cause (`YOU are burning!`
+  26, `YOU were injured by falling.` 11, `YOU were crushed.` 1).
+- Performance quick wins left (2026-10-25), each needing a ruling or another branch: `heal-*` in
+  `CHARACTER_AWARE_OVERLAYS` (the list exists only on `community/pr-67-self-meter-name`; one-liner
+  `[...MODULE_READING_OVERLAYS, 'fight', 'overall', 'heal-fight', 'heal-overall']`; until then the
+  heal meters do not reset on a character switch; owner asked whether that copy may be edited);
+  moving `killFactions` out of the gaps snapshot (an engine op, protocol, gaps-tab, log-archive,
+  gaps-all-characters, screenshot-to-wiki and the saved-file format); a `gearOwnership` cache (would
+  change the visible per-window "read at" time; owner asked); the map timer pins' clock gate (one
+  line on map-improvements, map-waypoints, zone-history).
 - Rust ProcBuff duration floor 0 vs measured growth (the creator's deliberate floor).
 - `tests/e2e/sky-inventory-autoload.e2e.mts` was red on `main_community` independent of any
   branch (2026-09-25, geometry "counts top was 280, now 336"); unknown on plain main.

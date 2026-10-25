@@ -133,8 +133,9 @@ Done 2026-10-25 (BRANCHES.md rows of perf-tab-switch, fix-combat-reading-log, co
 `combat:activity` to the meter overlays; the in-flight guard on `useOverviewCombat`; Overview keeps
 its last combat answer; ToastOverlay and the Buffs tab's clock tick only with something to time;
 `attributeSales` cached by (progression, loot); `plannerInventory` and `characterSheet` held per
-window (`lib/dumpStore.ts`).
+window (`lib/dumpStore.ts`); the Timers tab, Respawn and Buffs overlays' 1 s clocks run only with
+something to time, and `getProgress` is held per window (`posky/progressStore.ts`) (catch_all 72, 73).
 
 Not done, each needing a ruling or another branch (BRANCH_NOTES.md, "Unassigned open items"): `heal-*`
-in `CHARACTER_AWARE_OVERLAYS`; `killFactions` out of the gaps snapshot; the `useSecondsClock` root
-clocks; `getProgress` and `gearOwnership` in module stores.
+in `CHARACTER_AWARE_OVERLAYS`; `killFactions` out of the gaps snapshot; `gearOwnership` in a module
+store; the map timer pins' clock.
