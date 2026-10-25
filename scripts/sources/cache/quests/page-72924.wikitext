@@ -86,6 +86,8 @@ Kill [[Alexa Everling]] in the great room:
 
 ''The voice enters your mind once more as you hold the bloodied sword hilt. 'You are almost done with this atrocious task. One last life must be paid. Go find the Lord of this house and soak the blade in his blood.' Drawing upon the blood it is now slaked with, the hilt reshapes itself into a small blade. While it still appears incomplete, its lethality has increased.''
 
+'''You receive [[Fractured Malice]].'''
+
 Kill [[Lord Rikantus Everling]]:
 
 ''Everling falls, and the dead of Nektropos are still.''

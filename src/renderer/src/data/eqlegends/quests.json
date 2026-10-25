@@ -1,5 +1,5 @@
 {
-  "scrapedAt": "2026-10-25T09:22:49.525Z",
+  "scrapedAt": "2026-10-25T10:49:49.985Z",
   "source": "eqlwiki.com — Category:Quests + quest subcategories + recentchanges delta (scripts/scrape-delta.mts)",
   "quests": [
     {
@@ -38407,6 +38407,7 @@
     {
       "name": "Unfortunate News",
       "page": "Unfortunate News",
+      "eraTag": "Classic",
       "startZone": "Finishing the quest Call for Aid",
       "classes": [
         "Berserker",
@@ -38433,7 +38434,9 @@
         "Dorian G`Wyn"
       ],
       "requiredItems": [
-        "Exorbitant Commission"
+        "A Curt Dismissal",
+        "Exorbitant Commission",
+        "Ordination of Might"
       ],
       "expReward": true,
       "factions": [
