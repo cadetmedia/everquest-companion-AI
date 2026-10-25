@@ -21,9 +21,11 @@
 
 import {
   normalizeUpgradeState,
+  scaleBackstab,
   scaleDamage,
   scaleFlat,
   scalePrimary,
+  scaleRange,
   scaleWeight,
   upgradeStatClass,
   type ItemUpgradeState
@@ -47,8 +49,12 @@ export function scaleGearStat(key: GearStatKey, base: number, state: ItemUpgrade
       return scaleFlat(base, state)
     case 'damage':
       return scaleDamage(base, state)
+    case 'backstab':
+      return scaleBackstab(base, state)
     case 'weight':
       return scaleWeight(base, state)
+    case 'range':
+      return scaleRange(base, state)
     case 'delay':
       return base
     default:

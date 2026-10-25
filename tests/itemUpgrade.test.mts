@@ -218,7 +218,7 @@ test('a negative stat SHRINKS toward zero by the tier and stops there', () => {
   assert.equal(scalePrimary(-5, at(2, 3)), -3) // fraction ignored on this branch
   assert.equal(scalePrimary(-5, at(5)), 0)
   assert.equal(scalePrimary(-5, at(9)), 0) // never crosses into a bonus
-  assert.equal(scalePrimary(-100, at(10)), -90) // and a big penalty is still a penalty
+  assert.equal(scalePrimary(-10, at(3)), -7) // the last base the per-tier row takes
 
   const s = scaleStatBlock(AXE, CHECKPOINT)
   assert.equal(s.ac, -3)
@@ -227,6 +227,23 @@ test('a negative stat SHRINKS toward zero by the tier and stops there', () => {
   assert.equal(scaleStatBlock(AXE, at(5)).ac, 0)
   assert.equal(statOf(scaleStatBlock(AXE, at(6)), 'WIS'), '0')
   assert.equal(statOf(scaleStatBlock(GHOUL_HEART, at(3)), 'CHA'), '-7')
+})
+
+// Stonemelder's Band (EAR, AC 18, DEX -35, AGI -35) is the owner's reading, 2026-09-28: both
+// penalties read 0 at +10. The steps between are the slider's own rule, not readings.
+test('a penalty past ten shrinks by a tenth of itself a tier, and reads the fraction', () => {
+  assert.equal(scalePrimary(-35, at(0)), -35)
+  assert.equal(scalePrimary(-11, at(1)), -10)
+  assert.equal(scalePrimary(-35, at(2, 3)), -25) // round(9.625) = 10
+  assert.equal(scalePrimary(-35, at(5)), -17) // round(17.5) = 18, half away from zero
+  assert.equal(scalePrimary(-35, at(10)), 0)
+  assert.equal(scalePrimary(-100, at(3)), -70)
+  assert.equal(scalePrimary(-100, at(10)), 0)
+
+  const band = scaleStatBlock(parseStatsBlock('AC: 18\n\nDEX: -35 AGI: -35'), at(10))
+  assert.equal(band.ac, 36)
+  assert.equal(statOf(band, 'DEX'), '0')
+  assert.equal(statOf(band, 'AGI'), '0')
 })
 
 test('base 0 stays 0, and base 1..10 is a flat +tier that ignores the fraction', () => {
@@ -289,7 +306,11 @@ test('stat keys normalize longest-first, and heroics are not attributes', () => 
   assert.equal(upgradeStatClass('DMG'), 'damage')
   assert.equal(upgradeStatClass('Atk Delay'), 'delay')
   assert.equal(upgradeStatClass('WT'), 'weight')
-  for (const k of ['Attack', 'Dmg Bon', 'Backstab', 'Range', 'Size', 'Rec Level', 'HEROIC STR', 'Charges']) {
+  // Range left the unchanged list on 2026-09-26, on three readings (tests/itemElementalDamage.test.mts).
+  assert.equal(upgradeStatClass('Range'), 'range')
+  // Backstab left it on 2026-10-24, on Torturer's Signature's windows (the tests at the end).
+  assert.equal(upgradeStatClass('Backstab'), 'backstab')
+  for (const k of ['Attack', 'Dmg Bon', 'Size', 'Rec Level', 'HEROIC STR', 'Charges']) {
     assert.equal(upgradeStatClass(k), 'unchanged', k)
   }
 })
@@ -301,7 +322,8 @@ test('a flat stat takes the tier and keeps its own spelling; unmodeled fields ar
   assert.equal(statOf(s, 'REGEN'), '+5')
   assert.equal(statOf(s, 'ATTACK'), '+10')
   assert.equal(statOf(s, 'REC LEVEL'), '45')
-  assert.equal(s.backstab, 25)
+  // Backstab scales since 2026-10-24 (scaleBackstab): 25 + floor(25 * 3.625 / 20).
+  assert.equal(s.backstab, 29)
   assert.equal(s.dmgBonus, 24)
 })
 
@@ -316,4 +338,51 @@ test('scaling is pure: the source block is never mutated and the rest is carried
   assert.deepEqual(s.classes, ['PAL'])
   assert.deepEqual(s.effects, THELVORN.effects)
   assert.deepEqual(s.extras, THELVORN.extras)
+})
+
+// ---- read off the game, not the slider (owner, 2026-10-24) -------------------------------
+
+const TORTURER = parseStatsBlock(
+  [
+    'Lore Equipped, No Trade<br>',
+    'Slot: PRIMARY SECONDARY<br>',
+    'Skill: 1H Piercing  Atk Delay: 22<br>',
+    'DMG: 10<br>',
+    'Dmg Bon: 10<br>',
+    'BACKSTAB: 15<br>',
+    'STR: +10  STA: +5  DEX: +10<br>',
+    'SV FIRE: +5  SV COLD: +5<br>',
+    'Size: MEDIUM WT: 2.5<br>',
+    'Class: WAR RNG BRD ROG<br>',
+    'Race: ALL<br>'
+  ].join('\n')
+)
+
+test("TORTURER'S SIGNATURE IN THE GAME: BACKSTAB +5% A LEVEL, AN ACCURACY LINE +2.5% A TIER, FROM +0 TO +10", async () => {
+  const { scaleStatBlock, scaleBackstab, weaponAccuracy } = await import('../src/shared/itemUpgrade')
+  assert.equal(TORTURER.backstab, 15)
+  // The windows: +0..+7 and +10 (the owner's and others' links, 2026-10-24).
+  const backstab: Record<number, number> = { 0: 15, 1: 15, 2: 16, 3: 17, 4: 18, 5: 18, 6: 19, 7: 20, 10: 22 }
+  for (const [tier, bs] of Object.entries(backstab)) assert.equal(scaleBackstab(15, { full: Number(tier), fraction: 0 }), bs, `+${tier}`)
+  assert.equal(scaleBackstab(15, { full: 1, fraction: 1 }), 16, 'tier 1 + 1/2 reads 16: the fraction counts')
+  const accuracy: Record<number, number> = { 0: 0, 1: 2.5, 2: 5, 3: 7.5, 4: 10, 5: 12.5, 10: 25 }
+  for (const [tier, pct] of Object.entries(accuracy)) assert.equal(weaponAccuracy({ full: Number(tier), fraction: 0 }), pct, `+${tier}`)
+  assert.equal(weaponAccuracy({ full: 1, fraction: 1 }), 3.9, 'tier 1 + 1/2 reads 3.9%: the weight curve, floored')
+  assert.equal(weaponAccuracy({ full: 6, fraction: 2 }), 15.1, "a linked +6 reads 15.1%")
+  const at10 = scaleStatBlock(TORTURER, { full: 10, fraction: 0 })
+  assert.equal(at10.backstab, 22)
+  assert.equal(at10.dmg, 20)
+  assert.equal(at10.weight, '0.3')
+  assert.deepEqual(at10.stats.find((s) => s.key === 'Accuracy'), { key: 'Accuracy', value: '+25%' })
+  const arrows = parseStatsBlock('Slot: AMMO<br>\nSkill: Archery  Atk Delay: 0<br>\nDMG: 9<br>\n')
+  assert.equal(scaleStatBlock(arrows, { full: 7, fraction: 0 }).stats.some((s) => s.key === 'Accuracy'), false, 'ammo gains none')
+  assert.equal(scaleStatBlock(TORTURER, { full: 0, fraction: 0 }).stats.some((s) => s.key === 'Accuracy'), false, 'none at +0')
+})
+
+test('ONLY A WEAPON GAINS ACCURACY; AN ITEM STATING ITS OWN KEEPS IT', async () => {
+  const { scaleStatBlock } = await import('../src/shared/itemUpgrade')
+  const ring = parseStatsBlock('Slot: FINGER<br>\nSTR: +5<br>\nSize: TINY WT: 0.1<br>\nClass: ALL<br>\nRace: ALL<br>')
+  assert.equal(scaleStatBlock(ring, { full: 3, fraction: 0 }).stats.some((s) => s.key === 'Accuracy'), false)
+  const own = { ...TORTURER, stats: [{ key: 'Accuracy', value: '+4%' }, ...TORTURER.stats] }
+  assert.deepEqual(scaleStatBlock(own, { full: 2, fraction: 0 }).stats.filter((s) => s.key === 'Accuracy'), [{ key: 'Accuracy', value: '+4%' }])
 })
