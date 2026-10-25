@@ -89,13 +89,13 @@ disagree, RULES.md wins; fix this file.
   (`git checkout <a> -- <file>`, then `git diff <a> <b> -- <file>` is empty), so whichever merges
   first, the other dedupes. Current pairs: `src/shared/planner/roleWeights.ts` on
   gear-progression-plan (home) and gear-tab-improvements; `src/renderer/src/appRouting.ts` on
-  gear-tab-improvements, map-improvements, gear-progression-plan, timers-clear-all; `src/renderer/src/lib/CellLink.tsx`
+  gear-tab-improvements, map-improvements, gear-progression-plan, timers-clear-all, gaps-tab; `src/shared/itemUpgrade.ts`, `src/shared/planner/gearScale.ts` and `tests/itemUpgrade.test.mts` on catch_all (home) and screenshot-to-wiki; `src/renderer/src/lib/CellLink.tsx`
   on gear-tab-improvements, gear-progression-plan and timers-clear-all; `src/shared/factionLedger.ts` + its test on
   log-archive and faction-tab; `src/main/storeXpKnobs.ts` (with its `store.ts` hunk),
   `src/main/telemetry/liveRiders.ts`, `setupSnapshot.ts` and `tests/zoneScope.test.mts` on
   map-waypoints (home) and sky-quest-overlay, where `src/shared/telemetryOverlays.ts` differs only
   in the kind its list names; `scripts/sources/mobRedirects.ts` on wiki-scraper-fixes (home) and
-  scrape-delta-tool; `scripts/sources/mobCache.ts` on slayer-tab (home) and scrape-delta-tool; `scripts/sources/mobFaction.ts`
+  scrape-delta-tool; `src/main/eozPack.ts` on item-icons-pack (home) and scrape-delta-tool; `scripts/sources/mobCache.ts` on slayer-tab (home) and scrape-delta-tool; `scripts/sources/mobFaction.ts`
   on slayer-tab (home) and wiki-scraper-fixes; `src/shared/rewardChest.ts` + `tests/rewardChestSource.test.mts`
   on catch_all, log-archive and gaps-tab; `src/main/itemOtherNames.ts` + `tests/itemOtherNames.test.mts`
   on catch_all (home), gaps-tab and gaps-item-facts; `src/main/wikiClient.ts`, `src/main/wikiUsage.ts` and `tests/wikiUsage.test.mts` on catch_all (home) and gaps-tab (the quest Copy live read); `src/shared/mobFactionAmounts.ts` on wiki-scraper-fixes (home), gaps-tab and con-card-standing (the con card's kill hits). Verify pairs with `git merge-tree --write-tree <a> <b>`.
