@@ -58,3 +58,11 @@ test('an item edit renames itemname', () => {
   const r = { ...row('item', 'Fragile Pets Skull'), edit: { name: "Fragile Pet's Skull" } }
   assert.equal(applyEditText('| itemname = Fragile Pets Skull', r), "| itemname = Fragile Pet's Skull")
 })
+
+test('a captured item row takes its edit too: the OCR read 1 Deirdre\'s Robe, the player renamed it (2026-10-24)', () => {
+  // useGapsList adds the captured and pasted rows after useGapsData applied the edits, so it applies them again there.
+  const captured = row('item', "1 Deirdre's Robe", { kinds: ['captured'] })
+  const [out] = withGapEdits([captured], { "item:1 Deirdre's Robe": { name: "Deirdre's Robe" } })
+  assert.equal(shownName(out as GapRow), "Deirdre's Robe")
+  assert.equal(applyEditText("{{Itempage\n| itemname = 1 Deirdre's Robe\n}}", out as GapRow), "{{Itempage\n| itemname = Deirdre's Robe\n}}")
+})

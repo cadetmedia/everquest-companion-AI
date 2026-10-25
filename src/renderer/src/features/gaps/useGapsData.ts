@@ -11,6 +11,7 @@
 
 import { useDeferredValue, useMemo } from 'react'
 import type { GapDomain, GapsSnap } from '@shared/gaps'
+import type { GapEditMap } from '@shared/gapEdits'
 import { GAPS_MODULE_ID } from '@shared/gaps'
 import type { ConsiderSnap, LootSnap } from '@shared/types'
 import { killIndex, type KillMap, type KillsSnap } from '@shared/kills'
@@ -42,7 +43,7 @@ import { withZoneRedirects } from '@shared/gapZoneRedirects'
 import { zoneKey } from '@shared/zones'
 import { useForcedQuests, type ForcedQuests } from './useForcedQuests'
 import type { ForcedScope } from './ForcedQuests'
-import { useEditedSnap } from './gapEditsStore'
+import { useEditedSnap, useGapEdits } from './gapEditsStore'
 
 /** Each drop group's members, and the drop-list links that redirect to an item (scrape-drop-groups.ts). */
 const DROPS = dropGroupsJson as { groups: DropGroups; aliases?: DropAliases }
@@ -99,11 +100,15 @@ export interface GapsData {
   joining: boolean
   /** The quests the player named by hand (the attached character's), the visits to pick from and the names offered. */
   forced: ForcedScope
+  /** The attached character's hand edits: the rows added after this hook (captured items, pasted spells) take them too. */
+  edits: GapEditMap
 }
 
 const NO_TALKS: readonly TalkVisit[] = []
 /** A snapshot's talks and character (gaps.rs `snapshot`), which `GapsSnap` does not type. */
 const talkSnapOf = (snap: object | null | undefined): TalkSnap | null => snap ?? null
+/** The character a TalkSnap is for: whose hand edits the rows take. */
+const characterOf = (snap: TalkSnap | null): string | null | undefined => snap?.character
 const NO_THREADS: readonly QuestThread[] = []
 
 /** All characters ticked: the others' inputs, the attached one's label, and the day window. */
@@ -250,5 +255,6 @@ export function useGapsData(all: AllCharacters | null = null, opts: GapsDataOpti
   const shown = inWindow(snap, joined === null ? cut : deferredAll?.cut, only)
   // The rows the player corrected by hand (owner, 2026-10-23: "EDIT values in the gaps tab").
   const edited = useEditedSnap(shown, live)
-  return { snap: edited, engine, loot, ownLoot: liveLoot, kills, seenBy: joined?.seenBy, joining: all !== deferredAll, forced: useForcedScope(forced, snap, livePages) }
+  const edits = useGapEdits(characterOf(live))
+  return { snap: edited, edits, engine, loot, ownLoot: liveLoot, kills, seenBy: joined?.seenBy, joining: all !== deferredAll, forced: useForcedScope(forced, snap, livePages) }
 }
