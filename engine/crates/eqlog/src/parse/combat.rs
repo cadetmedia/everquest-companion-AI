@@ -24,7 +24,6 @@ pub struct CombatRes {
     dot: Regex,
     dot_nocaster: Regex,
     sourceless: Regex,
-    dot_on_you: Regex,
     heal: Regex,
     mend: Regex,
     rune_gain: Regex,
@@ -69,7 +68,7 @@ impl CombatRes {
                 r"^YOU are [0-9A-Za-z_]+ by (.+?)'s (.+?) for ([0-9]+) points? of non-melee damage!$",
             )
             .unwrap(),
-            dot: Regex::new(r"^(.+?) has taken ([0-9]+) damage from (.+?)\.(?: \((.+?)\))?$")
+            dot: Regex::new(r"^(.+?) ha(?:s|ve) taken ([0-9]+) damage from (.+?)\.(?: \((.+?)\))?$")
                 .unwrap(),
             dot_nocaster: Regex::new(
                 r"^(.+?) has taken ([0-9]+) damage by (.+?)\.(?: \((.+?)\))?$",
@@ -77,11 +76,6 @@ impl CombatRes {
             .unwrap(),
             // Engine-only: the app parser this file was ported from never read this line.
             sourceless: Regex::new(r"^You were hit by non-melee for ([0-9]+) damage\.$").unwrap(),
-            // Engine-only, likewise: the first-person DoT tick (`You have taken`, not `has taken`).
-            dot_on_you: Regex::new(
-                r"^You have taken ([0-9]+) damage from (.+?)\.(?: \((.+?)\))?$",
-            )
-            .unwrap(),
             heal: Regex::new(
                 r"^(.+?) healed (.+?)( over time)? for ([0-9]+)(?: \(([0-9]+)\))? hit points?(?: by (.+?))?\.(?: \(([A-Za-z][A-Za-z ]*)\))?$",
             )
@@ -498,47 +492,14 @@ fn sourceless_damage(r: &CombatRes, c: &Ctx, out: &mut Ev) -> bool {
     true
 }
 
-/// A DoT tick on you: `You have taken N damage from <Spell> by <caster>.`, the caster's damage to
-/// you like its direct hits (`<mob> hit you for N points of <x> damage by <Spell>.`), so the attacker
-/// is the caster. With no `by <caster>` the game is treating the cast as your own: your DoT on
-/// yourself, or an effect it frames as self-cast (its landing reads `You hit yourself for N points
-/// of poison damage by Envenomed Bolt.`, which parses You → You). That tick is You → You too, so the
-/// fold drops both halves alike.
-fn taken_damage_you(r: &CombatRes, c: &Ctx, out: &mut Ev) -> bool {
-    let Some(m) = r.dot_on_you.captures(c.text) else {
-        return false;
-    };
-    let rest = &m[2];
-    let modifier = m.get(3).map(|g| g.as_str());
-    let (attacker, skill) = match r.dot_by.captures(rest) {
-        Some(by) => (norm(&by[1]), &rest[..by.get(0).expect("group 0").start()]),
-        None => ("You".to_string(), rest),
-    };
-    out.begin(Kind::Damage);
-    out.envelope(c.seq, c.ts, c.raw);
-    out.s(Key::Attacker, &attacker);
-    out.s(Key::Target, "You");
-    out.i(Key::Amount, m[1].parse().unwrap_or(0));
-    out.s(Key::Dtype, "dot");
-    out.s(Key::Skill, crate::jsstr::js_trim(skill));
-    out.b(Key::Crit, r.critical.is_match(modifier.unwrap_or("")));
-    out.s_opt(Key::Modifier, modifier);
-    out.strs(Key::Modifiers, &parse_modifiers(modifier));
-    out.s(Key::Category, "dot");
-    true
-}
-
 /// Damage: melee / spell / dot / damage-shield, behind the shared substring gates.
 pub fn classify_damage(r: &CombatRes, c: &Ctx, out: &mut Ev) -> bool {
     let has_points = c.text.contains("points of") || c.text.contains("point of");
-    let has_taken = c.text.contains("has taken");
+    let has_taken = c.text.contains("has taken") || c.text.contains("have taken");
     if has_points && points_damage(r, c, out) {
         return true;
     }
     if has_taken && taken_damage(r, c, out) {
-        return true;
-    }
-    if c.text.starts_with("You have taken ") && taken_damage_you(r, c, out) {
         return true;
     }
     c.text.starts_with("You were hit by non-melee for ") && sourceless_damage(r, c, out)

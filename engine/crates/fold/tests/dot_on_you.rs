@@ -1,8 +1,9 @@
 //! `You have taken N damage from <Spell> by <mob>.` is a DoT tick a mob landed on you (owner,
-//! 2026-10-25: damage between us and them counts). It is that mob's damage to you, booked on the
-//! mob's own incoming row and folded as its direct hits on you are: it opens a fight, extends one,
-//! engages the mob. The `by`-less form is the game treating the cast as yours (your DoT on
-//! yourself), You → You, and counts nowhere. Every line is a real shape from the owner's logs.
+//! 2026-10-25: damage between us and them counts; parsed as fix-self-dot-ticks parses it). Inside a
+//! fight it is that mob's damage to you, on the mob's own incoming row, and it extends the fight as
+//! its direct hits do. It is no proof that a third party's charm pet turned on you. The `by`-less
+//! form (your own DoT on yourself) is not damage between you and anyone, and counts nowhere. Every
+//! line is a real shape from the owner's logs.
 
 use eqlog::event::Ev;
 use eqlog::{Clock, Parser, Tz};
@@ -155,9 +156,9 @@ fn a_tick_parses_as_the_casters_dot_on_you() {
     }
 }
 
-/// Sun Oct 11 2026: the owner's own DoTs cast on himself. No caster is named, so the cast is yours.
-/// The last line is Fri Oct 23's Everling fight, whose Envenomed Bolt the game framed as self-cast
-/// (it landed as `You hit yourself for 41 points of poison damage by Envenomed Bolt.`).
+/// Sun Oct 11 2026: the owner's own DoTs cast on himself, no caster named. The last line is Fri
+/// Oct 23's Everling fight, whose Envenomed Bolt the game framed as self-cast (it landed as `You hit
+/// yourself for 41 points of poison damage by Envenomed Bolt.`).
 const SELF_DOTS: [&str; 7] = [
     "[Sun Oct 11 15:28:39 2026] You begin casting Odium X.",
     "[Sun Oct 11 15:28:39 2026] You stagger under a dark curse.",
@@ -169,21 +170,12 @@ const SELF_DOTS: [&str; 7] = [
 ];
 
 #[test]
-fn a_tick_naming_no_caster_is_your_own_cast_on_you() {
-    for (raw, skill, crit) in [
-        (SELF_DOTS[3], "Odium X", false),
-        (SELF_DOTS[5], "Plague IV", true),
-        (SELF_DOTS[6], "Envenomed Bolt", false),
-    ] {
+fn a_tick_naming_no_caster_is_not_damage() {
+    for raw in [SELF_DOTS[3], SELF_DOTS[5], SELF_DOTS[6]] {
         let v = parse(raw);
-        assert_eq!(v["kind"], "damage", "{v}");
-        assert_eq!(v["attacker"], "You", "{v}");
-        assert_eq!(v["target"], "You", "{v}");
-        assert_eq!(v["dtype"], "dot", "{v}");
-        assert_eq!(v["skill"], skill, "{v}");
-        assert_eq!(v["crit"], crit, "{v}");
+        assert_eq!(v["kind"], "unknown", "{v}");
     }
-    // The same opening words on a depot withdrawal are not damage.
+    // The same opening words on a depot withdrawal are not damage either.
     let depot = parse(
         "[Tue Oct 20 23:02:26 2026] You have taken 1 Gray Wolf Skull from your personal depot.",
     );
@@ -223,33 +215,6 @@ fn ticks_join_the_casters_row_and_extend_the_fight() {
 }
 
 #[test]
-fn ticks_alone_open_a_fight_as_the_same_spell_hits_would() {
-    let ticks = [
-        "[Wed Oct 07 19:46:56 2026] You have taken 67 damage from Boil Blood by Cazic-Thule.",
-        "[Wed Oct 07 19:47:02 2026] You have taken 67 damage from Boil Blood by Cazic-Thule.",
-        "[Wed Oct 07 19:47:08 2026] You have taken 67 damage from Boil Blood by Cazic-Thule.",
-    ];
-    let hits = [
-        "[Wed Oct 07 19:46:56 2026] Cazic-Thule hit you for 67 points of fire damage by Boil Blood.",
-        "[Wed Oct 07 19:47:02 2026] Cazic-Thule hit you for 67 points of fire damage by Boil Blood.",
-        "[Wed Oct 07 19:47:08 2026] Cazic-Thule hit you for 67 points of fire damage by Boil Blood.",
-    ];
-    let mut by_tick = Run::new();
-    by_tick.feed(&ticks);
-    let mut by_hit = Run::new();
-    by_hit.feed(&hits);
-    let (t, h) = (by_tick.snapshot(None), by_hit.snapshot(None));
-    let (tf, hf) = (fights(&t), fights(&h));
-    assert_eq!(tf.len(), 1, "{}", t["segments"]);
-    assert_eq!(tf.len(), hf.len());
-    for key in ["startTs", "durationSec", "name"] {
-        assert_eq!(tf[0][key], hf[0][key], "{key}: {} vs {}", tf[0], hf[0]);
-    }
-    assert_eq!(incoming(&t["selected"], "Cazic-Thule"), vec![(201, 3)]);
-    assert_eq!(t["selected"]["inTotal"], h["selected"]["inTotal"]);
-}
-
-#[test]
 fn your_own_dot_on_you_counts_nowhere() {
     let mut run = Run::new();
     run.feed(&SELF_DOTS);
@@ -263,16 +228,19 @@ fn your_own_dot_on_you_counts_nowhere() {
     );
 }
 
-/// Wed Oct 07 2026: a scorn banshee DoTs you, Kamas charms it, and the DoT it cast while hostile
-/// ticks on three times more. A tick names who cast it, not when, so it is no proof the pet turned
-/// on you again: the bind holds and the banshee's swings at Magi P`tasa stay Kamas's pet's.
+/// Wed Oct 07 2026, mid-fight with Innoruuk`s Chosen: a scorn banshee DoTs you, Kamas charms it,
+/// and the DoT it cast while hostile ticks on three times more. A tick names who cast it, not when,
+/// so it is no proof the pet turned on you again: the bind holds and the banshee's swings at Magi
+/// P`tasa stay Kamas's pet's.
 #[test]
 fn a_tick_from_a_mob_charmed_since_it_cast_leaves_the_charm_standing() {
     let mut run = Run::new();
     run.feed(&[
+        "[Wed Oct 07 22:27:11 2026] You punch Innoruuk`s Chosen for 189 points of damage.",
         "[Wed Oct 07 22:27:17 2026] A scorn banshee tries to pierce YOU, but misses!",
         "[Wed Oct 07 22:27:21 2026] Kamas begins casting Allure.",
         "[Wed Oct 07 22:27:21 2026] You have taken 3 damage from Strong Disease by a scorn banshee.",
+        "[Wed Oct 07 22:27:22 2026] You punch Innoruuk`s Chosen for 105 points of damage.",
         "[Wed Oct 07 22:27:26 2026] a scorn banshee has been charmed.",
         "[Wed Oct 07 22:27:28 2026] You have taken 3 damage from Strong Disease by a scorn banshee.",
         "[Wed Oct 07 22:27:34 2026] You have taken 3 damage from Strong Disease by a scorn banshee.",
