@@ -400,12 +400,14 @@ export default function RespawnOverlay(): JSX.Element {
   const snap = useOverlayModule<RespawnSnap>('respawn', EMPTY_RESPAWN_SNAP)
   const { locked, bgAlpha, textScale, hovering, patch, toggleLock, capture, dragRegion, noDrag } =
     useOverlayChrome()
-  const nowMs = useSecondsClock()
   // Scoped to the zone the fold says you are in FIRST, then re-ordered against the LOCAL clock —
   // not the one the fold last published: "soonest due" moves every second whether or not the log
   // does, and a list that only re-sorts on a death line would put a mob that came due a minute ago
   // below one that has ten minutes to run.
-  const rows = orderRespawnRows(respawnInZone(snap.rows, snap.zone), nowMs)
+  const here = respawnInZone(snap.rows, snap.zone)
+  // The clock runs only while a row is there to count down.
+  const nowMs = useSecondsClock(here.length > 0)
+  const rows = orderRespawnRows(here, nowMs)
   /** Clocks the fold is holding for somewhere else. Counted so the empty state can say so. */
   const elsewhere = snap.rows.length - rows.length
   /** Fire-and-forget: the module answers with a delta, and a refusal is already described by it. */
