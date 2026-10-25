@@ -362,3 +362,11 @@ test('A KEPT WINDOW KEEPS ITS CHECKS, SO THEY STAY ON THE ROW (owner, 2026-10-24
   const reply = { read: { statsblock: 'x', checks: ['MANA read "a5", not a number: fix it against the window before saving.'] }, icons: [], lines: [], ms: 1, known: [] } as unknown as Parameters<typeof keptAfter>[1]
   assert.deepEqual(keptAfter(undefined, reply, 'window').checks, ['MANA read "a5", not a number: fix it against the window before saving.'])
 })
+
+test('A SLOT WORD SNAPS TO THE SLOT LIST AND A TOKEN WITH A DIGIT IS DROPPED: SLOTS NEVER HOLD NUMBERS (owner, 2026-10-24)', () => {
+  assert.equal(slotOf('Arms 1'), 'ARMS')
+  assert.equal(slotOf('l Primary Secondary 7'), 'PRIMARY SECONDARY')
+  assert.equal(slotOf('Shoulder5'), undefined, 'a word glued to a digit is not snapped into a slot')
+  assert.equal(slotOf('Wrlst'), 'WRIST')
+  assert.equal(slotOf('Lore Equipped'), undefined)
+})

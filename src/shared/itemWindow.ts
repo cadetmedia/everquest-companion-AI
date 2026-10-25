@@ -16,7 +16,8 @@ import { delevel } from './itemDelevel'
 import { effectText, petIllusionLine, petIllusionOf } from './itemEffects'
 import { bestLoreLine, withSplitCapital } from './itemLore'
 import { isTabRow, tabRowAt } from './itemTabRow'
-import { CLASS_CODES, codeWords, deityText, FLAG_WORDS, isDeityLine, RACE_CODES, SIZES, slotWord, snap, type Snapped } from './itemVocab'
+import { CLASS_CODES, codeWords, deityText, FLAG_WORDS, isDeityLine, RACE_CODES, SIZES, slotOf, snap, type Snapped } from './itemVocab'
+export { slotOf } from './itemVocab'
 import { statValue, weaponValue, weightValue } from './itemWindowNumbers'
 export { weightValue } from './itemWindowNumbers'
 
@@ -68,12 +69,6 @@ export interface ItemShotReply {
  * Written as the window prints them (owner, 2026-10-21, D1: `No Trade, Quest`, never `NO DROP`).
  */
 const FLAG_RE = new RegExp(`\\b(${[...FLAG_WORDS].sort((a, b) => b.length - a.length).map((f) => f.replace(/ /g, '\\s+')).join('|')})\\b`, 'gi')
-
-/** The window's slot words (eqstr_us.txt 559-576, Charm, Power Source), the plurals it prints included. */
-const SLOT_WORDS = new Set([
-  'charm', 'ear', 'ears', 'head', 'face', 'neck', 'shoulders', 'shoulder', 'arms', 'back', 'wrist', 'wrists', 'range',
-  'hands', 'primary', 'secondary', 'finger', 'fingers', 'chest', 'legs', 'feet', 'waist', 'ammo', 'power', 'source'
-])
 
 /** Window label -> the wiki's key. `kind` decides the line it lands on. */
 type Kind = 'attr' | 'save' | 'ac' | 'weapon' | 'wt' | 'size' | 'value' | 'line' | 'bag' | 'effect' | 'effectInfo' | 'skip'
@@ -199,18 +194,6 @@ function codesOf(line: string, label: 'Class' | 'Race'): { value: string; notes:
   return words.length > 0 ? codeWords(words, label === 'Class' ? CLASS_CODES : RACE_CODES, label) : undefined
 }
 
-/**
- * The slot line: bare slot words, every slot the item fits (`Chest`; `Primary, Secondary` or
- * `Primary Secondary`), as the wiki writes them (`PRIMARY SECONDARY`). The window is the only source
- * of Slot (owner, 2026-10-21: the inventory export names one worn slot of several).
- */
-export function slotOf(line: string): string | undefined {
-  // A short token of junk at either end is OCR (owner, 2026-10-24: Layered Guards' `Arms 1`).
-  const words = line.toLowerCase().split(/[\s,/]+/).filter((w, i, all) => w !== '' && (SLOT_WORDS.has(w) || w.length > 2 || (i > 0 && i < all.length - 1)))
-  if (words.length === 0 || !words.every((w) => SLOT_WORDS.has(w))) return undefined
-  const slots = words.join(' ').replace(/\bpower source\b/g, 'power_source').split(' ')
-  return [...new Set(slots.map((w) => slotWord(w.replace('_', ' ')).value))].join(' ')
-}
 
 // ---- label pairs --------------------------------------------------------------------------------
 
