@@ -67,3 +67,10 @@ test('Not a misspelling drops the near-name guess, so the row is a page of its o
   assert.deepEqual(tidyEdit({ distinct: true }), { distinct: true }, 'the mark alone is an edit')
   assert.equal(withGapEdits([shoes], {})[0]?.suggest?.name, 'Cryosilk Lined Shoes', 'unmarked keeps the guess')
 })
+
+test('a spell row takes a name edit: its spellname (owner, 2026-10-24)', async () => {
+  const { editable } = await import('../src/shared/gapEdits')
+  const r = { ...row('spell', 'Supemova'), edit: { name: 'Supernova' } }
+  assert.ok(editable(r))
+  assert.equal(applyEditText('| spellname = Supemova', r), '| spellname = Supernova')
+})

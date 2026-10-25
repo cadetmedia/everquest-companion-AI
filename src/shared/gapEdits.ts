@@ -38,6 +38,8 @@ export const EDIT_FIELDS: Readonly<Partial<Record<GapDomain, readonly EditField[
   mob: NPC_FIELDS,
   merchant: NPC_FIELDS,
   item: [],
+  // A spell: its name only, so a misread window can be put right (owner, 2026-10-24: "why can't i edit it?").
+  spell: [],
   quest: [
     { key: 'Starts In', label: 'Starts In' },
     { key: 'Quest Giver', label: 'Quest Giver' },
@@ -100,6 +102,7 @@ function setTopRow(text: string, label: string, value: string): string {
 /** The edited name into a template page: `name` (and an image named after the old name) or `itemname`. */
 function setName(text: string, row: GapRow, name: string): string {
   if (row.domain === 'item') return setTemplateField(text, 'itemname', name)
+  if (row.domain === 'spell') return setTemplateField(text, 'spellname', name)
   if (row.domain !== 'mob' && row.domain !== 'merchant') return text
   const renamed = setTemplateField(text, 'name', name)
   return renamed.replace(new RegExp(`^(\\|\\s*imagefilename\\s*=[ \\t]*)${escape(npcImageName(row.name))}$`, 'm'), (_m, head: string) => `${head}${npcImageName(name)}`)
