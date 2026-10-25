@@ -1,6 +1,6 @@
 {
  "source": "eqlwiki.com — |respawn_time on every page in the committed mob catalog",
- "scrapedAt": "2026-10-24",
+ "scrapedAt": "2026-10-25",
  "rows": [
   {
    "key": "a alchemist`s acolyte",
@@ -250,6 +250,12 @@
    "key": "a gorgalask",
    "page": "A gorgalask",
    "text": "?"
+  },
+  {
+   "key": "a guard",
+   "page": "A Guard",
+   "text": "7m 30s",
+   "seconds": 450
   },
   {
    "key": "a guardian wurm",

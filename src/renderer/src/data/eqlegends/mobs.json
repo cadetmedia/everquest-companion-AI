@@ -1,5 +1,5 @@
 {
-  "scrapedAt": "2026-10-24T12:42:26.299Z",
+  "scrapedAt": "2026-10-25T01:12:32.123Z",
   "source": "eqlwiki.com — Category:NPCs/Named Mobs/Merchants/Raid Encounters ∪ embeddedin Template:Namedmobpage/MerchantPage, filtered to pages opening a mob template + recentchanges delta (scripts/scrape-delta.mts)",
   "mobs": [
     {
@@ -28090,14 +28090,13 @@
         "Merchants of Highpass"
       ],
       "factionAmounts": [
-        "-30",
-        "-30",
-        "-30",
-        "-30",
-        "-30"
+        "-2",
+        "-1",
+        "-1",
+        "-15",
+        "-2"
       ],
-      "image": "npc_a_guard.png",
-      "noImage": true
+      "image": "npc_a_guard.png"
     },
     {
       "page": "A guard officer",
@@ -63850,7 +63849,8 @@
       "drops": [
         "Alexa's Robe",
         "Ring of the Eldest",
-        "Nektropos Private Chamber Key"
+        "Nektropos Private Chamber Key",
+        "Pyrosilk Robe"
       ],
       "image": "Alexa Everling.png"
     },
@@ -99402,6 +99402,18 @@
       "noImage": true
     },
     {
+      "page": "Crypt Guardian",
+      "eraTag": "Classic",
+      "name": "Crypt Guardian",
+      "zones": [
+        "Nektropos Castle"
+      ],
+      "drops": [
+        "Cryptguard"
+      ],
+      "image": "npc_name.png"
+    },
+    {
       "page": "Crypt mummy",
       "eraTag": "Classic",
       "name": "crypt mummy",
@@ -102486,7 +102498,8 @@
       ],
       "drops": [
         "Deirdre's Robe",
-        "Pyrosilk Sleeves"
+        "Pyrosilk Sleeves",
+        "Pyrosilk Choker"
       ],
       "image": "Deirdre Everling.png"
     },
@@ -151639,12 +151652,13 @@
     {
       "page": "Inquisitor of Ulkorruuk",
       "eraTag": "Classic",
-      "name": "NPC Name",
+      "name": "Inquisitor of Ulkorruuk",
       "zones": [
         "Nektropos Castle"
       ],
       "drops": [
-        "Cloak of Treason"
+        "Cloak of Treason",
+        "Bloodsoaked Gauntlets"
       ],
       "loc": [
         {
@@ -151653,7 +151667,7 @@
           "z": -7
         }
       ],
-      "image": "npc_name.png",
+      "image": "npc_name2.png",
       "noImage": true
     },
     {
@@ -171065,8 +171079,7 @@
       "drops": [
         "None"
       ],
-      "image": "npc_name.png",
-      "noImage": true
+      "image": "npc_name.png"
     },
     {
       "page": "Lord Pickclaw",
@@ -171210,6 +171223,7 @@
       ],
       "drops": [
         "Signet Ring of Lord Everling",
+        "Idol of Forsaken Ideals",
         "Blood's Unity"
       ],
       "loc": [
@@ -176309,7 +176323,8 @@
       ],
       "drops": [
         "Melanie's Robe",
-        "Pyrosilk Sash"
+        "Pyrosilk Sash",
+        "Pyrosilk Cloak"
       ],
       "image": "Melanie Everling.png"
     },
@@ -190442,6 +190457,24 @@
       "noImage": true
     },
     {
+      "page": "Pishtian F`Lok",
+      "name": "Pishtian F'Lok",
+      "zones": [
+        "Neriak - Commons"
+      ],
+      "drops": [
+        "None"
+      ],
+      "loc": [
+        {
+          "ns": 47.2,
+          "ew": -928.5,
+          "z": -52.78
+        }
+      ],
+      "image": "PhistianFLok.jpg"
+    },
+    {
       "page": "Pisna H`Rugla",
       "eraTag": "Classic",
       "name": "Pisna H`Rugla",
@@ -190696,6 +190729,7 @@
     },
     {
       "page": "Plimptos",
+      "eraTag": "Classic",
       "name": "Plimptos",
       "level": "60",
       "zones": [
@@ -197870,8 +197904,7 @@
         "5",
         "5"
       ],
-      "image": "npc_rognarog_the_infuriated.png",
-      "noImage": true
+      "image": "npc_rognarog_the_infuriated.png"
     },
     {
       "page": "Rogue cleaner",
@@ -221017,8 +221050,7 @@
         }
       ],
       "outOfEra": true,
-      "image": "npc_name.png",
-      "noImage": true
+      "image": "npc_name.png"
     },
     {
       "page": "Tegea Prendyn",
@@ -222844,7 +222876,8 @@
         "Nektropos Castle"
       ],
       "drops": [
-        "Schemer's Guise"
+        "Schemer's Guise",
+        "Gamblers gambit"
       ],
       "loc": [
         {
@@ -223274,7 +223307,8 @@
         "Nektropos Castle"
       ],
       "drops": [
-        "Unbroken Golem Core"
+        "Unbroken Golem Core",
+        "Dark Ironbound Tome"
       ],
       "loc": [
         {
@@ -223283,7 +223317,7 @@
           "z": 17
         }
       ],
-      "image": "npc_name.png",
+      "image": "The_Head_Librarian.png",
       "noImage": true
     },
     {
@@ -226923,6 +226957,26 @@
       ],
       "image": "npc_tormented_soul.png",
       "noImage": true
+    },
+    {
+      "page": "Tormentor Utzain",
+      "eraTag": "Classic",
+      "name": "Tormentor Utzain",
+      "level": "54",
+      "zones": [
+        "Nektropos Castle"
+      ],
+      "drops": [
+        "Torturer's Signature"
+      ],
+      "loc": [
+        {
+          "ns": 142,
+          "ew": -146,
+          "z": -7
+        }
+      ],
+      "image": "Tormentor_Utzain.png"
     },
     {
       "page": "Torodrane Frompwaddle",
@@ -233440,6 +233494,25 @@
       "outOfEra": true,
       "image": "npc_two_tails.png",
       "noImage": true
+    },
+    {
+      "page": "Ty`Klerr",
+      "name": "Ty`Klerr",
+      "level": "50",
+      "zones": [
+        "Neriak Foreign Quarter"
+      ],
+      "drops": [
+        "None"
+      ],
+      "loc": [
+        {
+          "ns": -397.85,
+          "ew": -231.11,
+          "z": 3.19
+        }
+      ],
+      "image": "npc_name.png"
     },
     {
       "page": "Tycyn Fe`Dhar",
