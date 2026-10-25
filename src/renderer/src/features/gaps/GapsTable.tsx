@@ -58,6 +58,7 @@ import GapRowButtons from './GapRowButtons'
 import MobHeadingButtons from './MobHeadingButtons'
 import { ForcedChip } from './ForcedQuests'
 import { EditedChip } from './GapRowEdit'
+import { ZoneMapButton } from './ZoneMapLinks'
 import { shownName } from '@shared/gapEdits'
 
 /** One line of small cells with a small chip: 6px padding above and below a 24px chip, plus the border. */
@@ -366,6 +367,7 @@ function GroupRow({
         <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 1 }}>
           {entry.n} missing
         </Typography>
+        {zone && <ZoneMapButton zone={entry.zone} />}
         {entry.kind === 'mob' && <MobHeadingButtons mob={entry.mob} rows={entry.rows} pageText={work.pageText} done={work.done} onDoneAll={work.onDoneAll} />}
       </TableCell>
     </TableRow>

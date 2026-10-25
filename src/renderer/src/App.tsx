@@ -161,7 +161,7 @@ function PlainView({
           to show it. Keyed like the rest — the sheet and its carry-all ledger are one character's,
           and the remount is how this app says that. */}
       {view === 'character' && <CharacterView key={viewKey} />}
-      <UnreleasedGapsView view={view} viewKey={viewKey} />
+      <UnreleasedGapsView view={view} viewKey={viewKey} onOpenMapZone={routing.openMapZone} />
       {/* THE SPELL DRILLDOWN (JOS-508). Its view check and its payload check live in the feature
           file, not here: this switch is one branch per view and a branch needing both would have
           cost `PlainView` two points of the measured complexity ceiling. */}

@@ -9,16 +9,20 @@
 import { type JSX, Suspense, lazy } from 'react'
 import { CircularProgress } from '@mui/material'
 import { UNRELEASED } from './devFlags'
+import { MapZoneContext, type MapZoneOpener } from './lib/mapZoneLink'
 import type { View } from './appViews'
 
 const LazyGapsView = UNRELEASED ? lazy(() => import('./features/gaps/GapsView')) : null
 
 /** The Gaps tab: nothing at all in a build without the flag, or on any other view. */
-export default function UnreleasedGapsView({ view, viewKey }: { view: View; viewKey: string }): JSX.Element | null {
+export default function UnreleasedGapsView({ view, viewKey, onOpenMapZone }: { view: View; viewKey: string; onOpenMapZone?: MapZoneOpener }): JSX.Element | null {
   if (!LazyGapsView || view !== 'gaps') return null
+  // The Maps tab's opener (review C7), for the rows' and zone headings' map links.
   return (
-    <Suspense fallback={<CircularProgress size={20} />}>
-      <LazyGapsView key={viewKey} />
-    </Suspense>
+    <MapZoneContext.Provider value={onOpenMapZone}>
+      <Suspense fallback={<CircularProgress size={20} />}>
+        <LazyGapsView key={viewKey} />
+      </Suspense>
+    </MapZoneContext.Provider>
   )
 }

@@ -10,6 +10,7 @@ import { rowFactLines } from '@shared/gapQuestPage'
 import { fightLines } from '@shared/gapFight'
 import { descriptionLines } from '@shared/gapMerchantDescription'
 import { useMerchantExtras } from './useMerchantExtras'
+import { RowMapLinks } from './ZoneMapLinks'
 import { PAGE_EXTRAS } from './useGapsData'
 
 /** Under the sale-on-loot chips: what the sale implies (shared/gaps.ts `derivedPrices`). */
@@ -75,6 +76,8 @@ export default function GapDetailsPanel({ row }: { row: GapRow }): JSX.Element {
   const lines = [...questFactLines(questFactsOf(row)), ...rowFactLines(row, PAGE_EXTRAS), ...fightLines(row), ...descriptionLines(row, { ...PAGE_EXTRAS, ...merchant })]
   return (
     <Stack spacing={1} sx={{ py: 1 }} data-testid="gaps-details">
+      {/* Where to go: the zones it was seen in, on the Maps tab (review C7). */}
+      <RowMapLinks row={row} />
       {/* Who gave it, who took it, its quest (owner, 2026-10-22: who it is turned in to). */}
       {lines.map((l) => (
         <Typography key={l} variant="body2" color="info.main" data-testid="gaps-quest-line">

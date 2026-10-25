@@ -50,3 +50,33 @@ test('C6: with All characters, the first holder carries the screenshot line and 
   // One character alone is never "also".
   assert.equal(gapHeld(row('Rat Ear'), joinHeld([dry]))[0]?.also, undefined)
 })
+
+test('C7: the map links are the zones the row was named in, tiers folded, one per map; a refused spelling has none', async () => {
+  const { gapMapZones, headingMapZone } = await import('../src/shared/gapMapZones')
+  const r: GapRow = { ...row('a giant snake', 'mob'), details: { samples: [], zones: { distinct: 3, entries: [{ name: 'Befallen 4 (Refined)', n: 9 }, { name: 'Befallen', n: 2 }, { name: 'Nektulos Forest', n: 1 }] } } }
+  const zones = gapMapZones(r)
+  assert.deepEqual(zones.map((z) => z.label), ['Befallen 4 (Refined)', 'Nektulos Forest'])
+  assert.equal(zones[0]?.short, headingMapZone('Befallen'))
+  assert.notEqual(zones[0]?.short, zones[1]?.short)
+  assert.deepEqual(gapMapZones({ ...r, details: { samples: [], zones: { distinct: 1, entries: [{ name: 'Nowhere At All', n: 1 }] } } }), [])
+  assert.deepEqual(gapMapZones(row('Rat Ear')), [], 'no zones, no links')
+  assert.equal(headingMapZone('Nowhere At All'), null)
+  assert.equal(headingMapZone('Lake Nerius'), null, 'a zone with no map file has no link')
+})
+
+test("C7: a hand-edited zone opens first, typed plain or as a link; a refused, blank or malformed one changes nothing", async () => {
+  const { gapMapZones } = await import('../src/shared/gapMapZones')
+  const r: GapRow = { ...row('a giant snake', 'mob'), details: { samples: [], zones: { distinct: 1, entries: [{ name: 'Befallen', n: 2 }] } } }
+  const base = gapMapZones(r)
+  for (const zone of ['Nektulos Forest', '[[Nektulos Forest]]', '[[Nektulos Forest|the forest]]', '  Nektulos Forest  ']) {
+    const z = gapMapZones(edited(r, { fields: { zone } }))
+    assert.deepEqual(z.map((x) => x.label), ['Nektulos Forest', 'Befallen'], zone)
+  }
+  // The edit names the zone the log saw already: one link, not two.
+  assert.equal(gapMapZones(edited(r, { fields: { zone: 'Befallen' } })).length, 1)
+  for (const edit of [{ fields: { zone: 'Not A Zone' } }, { fields: { zone: '' } }, { fields: { zone: 7 } }, { fields: null }, { fields: 'zone' }, { name: 'X' }, {}]) {
+    assert.deepEqual(gapMapZones(edited(r, edit)), base, JSON.stringify(edit))
+  }
+  // A row with no zone tally and a malformed edit is still no crash.
+  assert.deepEqual(gapMapZones(edited(row('X', 'mob'), { fields: { zone: ['Befallen'] } })), [])
+})
