@@ -190,8 +190,10 @@ SK, others).
   nothing; ~36k unknown lines are landings it names (all Legends-only 74xxx spells). Touches the
   creator's parse-purity law; a design conversation. Related to upstream #56.
 - Unclaimed families: `Your <item> (Exaltation) flickers with a pale light.`, `<mob> tries to
-  cast a spell on you, but you are protected.`, outgoing damage-shield absorbs, environmental
-  `You were hit by non-melee` (mostly lava).
+  cast a spell on you, but you are protected.`, outgoing damage-shield absorbs (uncounted by the
+  owner's 2026-10-25 rule: no damage passed). Claimed 2026-10-25: `You were hit by non-melee`
+  (catch_all 71, the Environment row). Unclaimed and to count: `You have taken N damage from <Spell>
+  by <mob>.` (3,618 lines, 361,188 damage).
 - Ally pet binds drop on every zone line by design (`ally.rs zone()`).
 - The engine has no checkpoint: it replays the whole log from byte 0 every start (the creator
   built one, JOS-208, and removed it, JOS-230).
