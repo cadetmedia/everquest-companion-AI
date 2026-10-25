@@ -211,6 +211,10 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
 
 ## gaps-tab
 
+- 2026-10-25: E4 turn-ins count only at `You complete the trade with X.`; an offer left open, handed
+  back or cancelled is none (`gaps_quests.rs`). Map links: `lib/mapZoneLink.ts` (context from the
+  gate), `shared/gapMapZones.ts`. Stored edits are read through `readEdit` (non-strings dropped, the
+  store untouched). Held tiers: `GapHeld.tiers` only when no +0 copy; the chip is `primary` then.
 - The tab is UNRELEASED-gated (`unreleasedGaps.tsx`): dev builds only.
 - Review and decisions: `audits/2026-10-19-gaps-review.md`. Laws from it (owner, 2026-10-19):
   instance tiers are one place and one item (`+N` folds to the base everywhere; zones are written
@@ -388,6 +392,11 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
 
 ## screenshot-to-wiki
 
+- Paste routing (2026-10-25): `rowPaste.ts` `pasteKind` reads the box's own OCR lines; a popup is
+  known only by its closing `Click 'OK' to...` line, because a chat window behind a mob is also prose.
+  The +0 work-back uses the Tier bar only when y is 2^N and x is below it. Weight rounds up to a
+  tenth, so its +0 is mostly `?`. Its `heldWhere` (update rows) does not yet say the tier or `also`
+  as gaps-tab's `heldLine` does.
 - Plan and measurements: `plans/2026-10-20-screenshot-to-wiki.md`. Off `gaps-tab`, recipe after
   `gaps-overlay`. Main: `src/main/shot/` (Electron-free) and `src/main/ipc/shotIpc.ts`; the window
   to wiki mapping `src/shared/itemWindow.ts`; UI `features/gaps/ShotPanel.tsx`, kept readings in
@@ -459,8 +468,9 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
 - Spell rank read against the row's name (`rankAfter`); `Resist: X -N` writes X.
 - A filled exaltation slot keeps its kind of effect off the page (no catalog at read time).
 - Review fixes (2026-10-21): the Class line = line start plus a colon or a code, a window needs
-  Class/Race codes, a Lore's prose may say "class"; Range +10 per tier is inverted in
-  `itemDelevel.ts` by key (catch_all's `scaleRange` is not on this branch); a classic numeral spell
+  Class/Race codes, a Lore's prose may say "class"; `itemDelevel.ts` inverts each
+  stat by `upgradeStatClass` through itemUpgrade.ts's own rules (Range, Backstab, the penalty past
+  ten), never a copy (2026-10-25; itemUpgrade.ts is byte-identical with catch_all); a classic numeral spell
   (Clarity II) is told from an upgraded rank by the install's spells_us (upgraded ranks are not rows
   there); the name check allows two OCR slips but never a digit change and never when another known
   name is as near, and a capture files at once only on an exact name; forage update rows take no

@@ -89,7 +89,7 @@ disagree, RULES.md wins; fix this file.
   (`git checkout <a> -- <file>`, then `git diff <a> <b> -- <file>` is empty), so whichever merges
   first, the other dedupes. Current pairs: `src/shared/planner/roleWeights.ts` on
   gear-progression-plan (home) and gear-tab-improvements; `src/renderer/src/appRouting.ts` on
-  gear-tab-improvements, map-improvements, gear-progression-plan, timers-clear-all; `src/renderer/src/lib/CellLink.tsx`
+  gear-tab-improvements, map-improvements, gear-progression-plan, timers-clear-all, gaps-tab; `src/shared/itemUpgrade.ts`, `src/shared/planner/gearScale.ts` and `tests/itemUpgrade.test.mts` on catch_all (home) and screenshot-to-wiki; `src/renderer/src/lib/CellLink.tsx`
   on gear-tab-improvements, gear-progression-plan and timers-clear-all; `src/shared/factionLedger.ts` + its test on
   log-archive and faction-tab; `src/main/storeXpKnobs.ts` (with its `store.ts` hunk),
   `src/main/telemetry/liveRiders.ts`, `setupSnapshot.ts` and `tests/zoneScope.test.mts` on
