@@ -9,7 +9,10 @@
 //!
 //! Measured on the owner's logs (2026-10-25): the October log (105 MB) publishes 314 mobs, 3,026
 //! gaps, 72 KB of snapshot, and the whole fold is no slower (28 s against 30 s before); the
-//! August-October archive (334 MB), 433 mobs and 125 KB (85 s against 91 s).
+//! August-October archive (334 MB), 433 mobs and 125 KB (85 s against 91 s). Those published
+//! only mobs with three gaps; every mob with one is published since 2026-10-26, so an archive's
+//! one or two can join another log's: a 68 MB copy of the October log went from 204 mobs and 47 KB
+//! to 430 and 84 KB.
 
 use crate::jsmap::JsMap;
 use serde::Serialize;
