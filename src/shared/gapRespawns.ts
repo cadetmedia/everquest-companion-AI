@@ -62,34 +62,40 @@ function pageLacks(e: LearnedEvidence, v: RespawnVerdict): boolean {
 /** The Respawns rows: one per mob page the kills can fill or correct, most evidence first. */
 export function respawnGaps(learned: readonly LearnedEvidence[], catalog: readonly TitledMob[]): GapRow[] {
   const pageOf = mobPageFinder(catalog)
-  const byPage = new Map<string, { row: GapRow; agree: number }>()
+  // One verdict per page, the zone (or tier) with the most agreeing gaps (as `verdictFor`), and only
+  // that one is compared with the page: a few odd gaps elsewhere do not outvote it.
+  const byPage = new Map<string, { e: LearnedEvidence; v: RespawnVerdict }>()
   for (const e of learned) {
     const v = constantRespawn(e.gapsMs, e.display)
     if (v === null) continue
     const page = pageOf(e.display) ?? (e.wikiPage === undefined ? undefined : pageOf(e.wikiPage))
     if (page === undefined) continue
-    if (!pageLacks(e, v)) continue
-    // One row per page: the zone (or tier) with the most agreeing gaps stands.
-    if ((byPage.get(page)?.agree ?? -1) >= v.agree) continue
-    const fact = factOf(v, e.wikiText)
-    const row: GapRow = {
-      domain: 'respawn',
-      name: e.display,
-      page,
-      kinds: ['killed'],
-      count: v.samples,
-      first: '',
-      last: '',
-      respawn: fact,
-      details: {
-        samples: [respawnLine(fact)],
-        sources: { entries: [{ name: page, n: v.samples }], distinct: 1 },
-        zones: { entries: [{ name: e.zone, n: v.samples }], distinct: 1, all: [e.zone] }
-      }
-    }
-    byPage.set(page, { row, agree: v.agree })
+    if ((byPage.get(page)?.v.agree ?? -1) >= v.agree) continue
+    byPage.set(page, { e, v })
   }
-  return [...byPage.values()].map((r) => r.row).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+  return [...byPage]
+    .filter(([, { e, v }]) => pageLacks(e, v))
+    .map(([page, { e, v }]) => respawnRow(page, e, v))
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+}
+
+function respawnRow(page: string, e: LearnedEvidence, v: RespawnVerdict): GapRow {
+  const fact = factOf(v, e.wikiText)
+  return {
+    domain: 'respawn',
+    name: e.display,
+    page,
+    kinds: ['killed'],
+    count: v.samples,
+    first: '',
+    last: '',
+    respawn: fact,
+    details: {
+      samples: [respawnLine(fact)],
+      sources: { entries: [{ name: page, n: v.samples }], distinct: 1 },
+      zones: { entries: [{ name: e.zone, n: v.samples }], distinct: 1, all: [e.zone] }
+    }
+  }
 }
 
 /** A Mobs row (a mob with no page) with the respawn its kills agree on, for its new page. */

@@ -94,6 +94,15 @@ test('A PAGE WHOSE RESPAWN IS NOT A DURATION IS ITS OWN STATEMENT: NO ROW; A PLA
   for (const text of ['?', '??', 'Unknown', '']) assert.deepEqual(said(text), [text], `"${text}"`)
 })
 
+test("ONE VERDICT PER PAGE: THE BEST-EVIDENCED ZONE AGREES WITH THE PAGE, SO A FEW ODD GAPS ELSEWHERE MAKE NO ROW", () => {
+  const elsewhere = { ...evidence('Lasna Cheroon', s([700, 701, 702]), { text: '8:50', ms: 530_000 }), zone: 'Elsewhere', id: 'elsewhere::lasna cheroon' }
+  const camp = evidence('Lasna Cheroon', LASNA, { text: '8:50', ms: 530_000 })
+  assert.deepEqual(respawnGaps([elsewhere, camp], CATALOG), [])
+  assert.deepEqual(respawnGaps([camp, elsewhere], CATALOG), [])
+  // Alone, the odd zone is the best evidence and does disagree.
+  assert.equal(respawnGaps([elsewhere], CATALOG).length, 1)
+})
+
 test("A NEW MOB PAGE TAKES THE RESPAWN ITS KILLS AGREE ON IN ITS BLANK FIELD", () => {
   const row: GapRow = { domain: 'mob', name: 'Princess Cherista', kinds: ['killed'], count: 50, first: '', last: '', details: { samples: [] } }
   const withIt = withLearnedRespawn(row, [evidence('Princess Cherista', LASNA)])
