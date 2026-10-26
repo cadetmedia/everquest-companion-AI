@@ -17,6 +17,7 @@ import { GAP_SHOW_WORDS, jobCaption, type GapShow } from '@shared/gapJob'
 import { wikiPageText } from '@shared/wikiPage'
 import { Tooltip } from '../../lib/Tooltip'
 import { copyText } from '../../lib/clipboard'
+import { withAskedSamples } from './useRowSamples'
 import { useMarkGapsTabMounted } from '../../lib/gapsTabMounted'
 import GapsTable from './GapsTable'
 import { GAPS_DATA_DATE, PAGE_EXTRAS } from './useGapsData'
@@ -246,7 +247,8 @@ export default function GapsView(): JSX.Element {
   if (!snap) return <CircularProgress size={20} />
 
   const copy = async (): Promise<void> => {
-    const ok = await copyText(gapsAsText(sorted, verdicts))
+    // The faction rows' proof lines are not in the list's snapshot: asked for first (useRowSamples).
+    const ok = await copyText(gapsAsText(await withAskedSamples(sorted), verdicts))
     setCopied(ok ? visible.length : null)
   }
   const held = snap.totals[domain] ?? 0

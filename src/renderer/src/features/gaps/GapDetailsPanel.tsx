@@ -13,6 +13,7 @@ import { useMerchantExtras } from './useMerchantExtras'
 import { RowMapLinks } from './ZoneMapLinks'
 import { updateWhy } from '@shared/gapUpdateWhy'
 import { PAGE_EXTRAS } from './useGapsData'
+import { useRowSamples } from './useRowSamples'
 
 /** Under the sale-on-loot chips: what the sale implies (shared/gaps.ts `derivedPrices`). */
 function SalesCaveat({ details }: { details: GapDetails }): JSX.Element | null {
@@ -75,6 +76,8 @@ export default function GapDetailsPanel({ row }: { row: GapRow }): JSX.Element {
   const details = row.details
   const merchant = useMerchantExtras(useMemo(() => [row], [row]))
   const why = updateWhy(row, 'unchecked', PAGE_EXTRAS)
+  // A faction row's proof lines are asked for here, not served with the list (useRowSamples).
+  const samples = useRowSamples(row)
   const lines = [...questFactLines(questFactsOf(row)), ...rowFactLines(row, PAGE_EXTRAS), ...fightLines(row), ...descriptionLines(row, { ...PAGE_EXTRAS, ...merchant })]
   return (
     <Stack spacing={1} sx={{ py: 1 }} data-testid="gaps-details">
@@ -103,9 +106,9 @@ export default function GapDetailsPanel({ row }: { row: GapRow }): JSX.Element {
         )
       })}
       <MerchantOffers details={details} />
-      {details.samples.length > 0 && (
+      {samples.length > 0 && (
         <Box component="pre" sx={{ m: 0, px: 1, py: 0.5, fontSize: 12, bgcolor: 'action.hover', borderRadius: 1, whiteSpace: 'pre-wrap' }}>
-          {details.samples.join('\n')}
+          {samples.join('\n')}
         </Box>
       )}
     </Stack>

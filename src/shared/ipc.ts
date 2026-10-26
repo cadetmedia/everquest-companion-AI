@@ -1216,6 +1216,10 @@ export const IPC = {
   // Item names in, `{ [name]: the tradeskills its recipes name }` out, off the committed corpus
   // (src/main/gapItemTrades.ts), for a new merchant page's description. Payload: (names: string[]).
   gapItemTrades: 'gaps:itemTrades',
+  // Kill-faction pair keys (shared/gapKillFactionSamples.ts `killFactionKey`) in, `{ [key]: the
+  // pair's proof lines }` out: the live engine's and the archive's (src/main/gapKillFactionSamples.ts),
+  // asked when a faction row is opened or copied, never with the Gaps snapshot. Payload: (keys: string[]).
+  gapKillFactionSamples: 'gaps:killFactionSamples',
   // A quest page's title in, `{ title, text }` out (text '' when the wiki has no such page), or null
   // when it could not be read: the one wiki read of the Gaps tab, on a Copy click
   // (src/main/gapQuestLive.ts). Payload: (title: string).

@@ -10,6 +10,7 @@ import { app } from 'electron'
 import { existsSync, readdirSync, statfsSync, statSync } from 'node:fs'
 import { basename, dirname, join } from 'node:path'
 import { engineRequest, engineServeReadiness } from '../dataServer/engineClientHost'
+import { engineGapsWithSamples } from '../gapKillFactionSamples'
 import { characterId } from '../log/config'
 import { getActiveCharacter } from '../session'
 import { getLogArchivePrefs, logArchiveOn, setLogArchivePrefs } from '../storeLogArchive'
@@ -79,7 +80,9 @@ const captureDeps: CaptureDeps = {
   snapshot: async (module) => {
     try {
       const r = await engineRequest('module.snapshot', { module })
-      return r.module === module ? { seq: r.seq, state: r.state } : null
+      if (r.module !== module) return null
+      // A segment keeps `gaps` with its kill-faction proof lines, as before they were served apart.
+      return { seq: r.seq, state: module === 'gaps' ? await engineGapsWithSamples(r.state) : r.state }
     } catch {
       return null
     }

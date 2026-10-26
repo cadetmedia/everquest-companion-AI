@@ -55,6 +55,8 @@ pub mod gaps_locs;
 pub mod gaps_names;
 pub mod gaps_offers;
 pub mod gaps_players;
+/// `killFactionSamples`: the kill-faction pairs' proof lines, served apart from `gaps`.
+pub mod gaps_samples;
 pub mod gaps_specials;
 pub mod gaps_suggest;
 pub mod gaps_trade;

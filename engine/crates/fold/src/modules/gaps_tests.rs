@@ -458,8 +458,8 @@ fn a_trader_the_wiki_lists_as_no_merchant_is_a_row_and_a_kill_keeps_its_faction_
     feed(&mut m, 4, line("Your faction standing with Undead Frogloks of Guk has been adjusted by -20."));
     feed(&mut m, 5, json!({ "kind": "death", "name": "a decaying skeleton", "killer": "You", "raw": "[Tue Oct 06 18:12:26 2026] You have slain a decaying skeleton!" }));
     let pairs = m.snapshot()["state"]["killFactions"].clone();
-    let proof = ["[Tue Oct 06 18:12:26 2026] Your faction standing with Undead Frogloks of Guk has been adjusted by -20.", "[Tue Oct 06 18:12:26 2026] You have slain a decaying skeleton!"];
-    assert_eq!(pairs, json!([{ "mob": "a decaying skeleton", "faction": "Undead Frogloks of Guk", "n": 1, "zone": "", "adjust": -20, "raised": false, "samples": proof }]));
+    // No proof lines here: `killFactionSamples` serves them (gaps_samples.rs, perf review 2026-10-20).
+    assert_eq!(pairs, json!([{ "mob": "a decaying skeleton", "faction": "Undead Frogloks of Guk", "n": 1, "zone": "", "adjust": -20, "raised": false }]));
 }
 
 /// The review's engine rules (2026-10-19): a file of their own for the factoring bar.
