@@ -570,13 +570,11 @@ where one exists.
   and the same charm problem for DoT ticks on group members (69,424 of Kamas's pet damage over 21
   fights; extending the exception would keep a broken-charm pet credited until its next swing). Later, maybe: the line after an environment hit names its cause (`YOU are burning!`
   26, `YOU were injured by falling.` 11, `YOU were crushed.` 1).
-- Performance quick wins left (2026-10-25), each needing a ruling: `heal-*` in
-  `CHARACTER_AWARE_OVERLAYS` (the list came with PR #67; one-liner
-  `[...MODULE_READING_OVERLAYS, 'fight', 'overall', 'heal-fight', 'heal-overall']`; until then the
-  heal meters do not reset on a character switch; owner asked whether that adopted code may be
-  edited); moving `killFactions` out of the gaps snapshot (an engine op, protocol, the Gaps tab,
-  the log archive and the saved-file format); a `gearOwnership` cache (would change the visible
-  per-window "read at" time; owner asked); the map timer pins' clock gate (one line).
+- Performance quick wins: done 2026-10-26 on the trunk: `heal-fight`/`heal-overall` in
+  `CHARACTER_AWARE_OVERLAYS` (edited without the owner's explicit answer, under the trunk model's
+  "move faster"; tell the owner), the kill-faction samples out of the gaps snapshot, the map timer
+  pins' clock gate. Left: a `gearOwnership` cache (would change the visible per-window "read at"
+  time; owner asked).
 - Rust ProcBuff duration floor 0 vs measured growth (the creator's deliberate floor).
 - `tests/e2e/sky-inventory-autoload.e2e.mts` was red on `main_community` independent of any
   branch (2026-09-25, geometry "counts top was 280, now 336"); unknown on plain main.

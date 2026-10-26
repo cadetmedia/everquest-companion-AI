@@ -1,6 +1,6 @@
 // eozCompare.ts — our item and mob data against the wiki's own GitHub data pack (Maergoth/EQL-EOZ,
-// branch `dataset`; owner, 2026-10-23: compare it before a delta in dev pre-release, and within 5 hours
-// of a release let it stand in for the delta, losing nothing). Pure: scripts/eoz-compare.mts does I/O.
+// branch `dataset`; owner, 2026-10-25: the delta and this compare run before every release; no pack age
+// stands in for the delta). Pure: scripts/eoz-compare.mts does I/O.
 //
 // THE PACK IS NEVER IMPORTED. Its rows are the wiki's own parse and lack fields ours carries
 // (otherNames, drop groups, faction amounts); it is read only to say, per page, whether our copy is
@@ -203,7 +203,8 @@ export function comparePack(pack: Pack, items: OurFamily, mobs: OurFamily): Comp
 /**
  * The release check (owner, 2026-10-25: "wiki github pack from eoz and delta scrape should always run
  * before a release"): the delta always runs, and this compare runs again after it. Ready only when no
- * item or mob page is behind the pack or missing from our data. The 2026-10-23 rule that let a pack
+ * item or mob page is behind the pack (`stale` and `unknown`); pages our scrape never listed are
+ * printed for a look by hand, not counted, as our filters drop some on purpose. The 2026-10-23 rule that let a pack
  * under 5 hours old stand in for the delta is withdrawn: no pack age skips the delta.
  */
 export function releaseDecision(packBuilt: string, now: string, behind: number): { ready: boolean; behind: number; ageHours: number } {
