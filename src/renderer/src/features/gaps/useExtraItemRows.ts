@@ -16,6 +16,7 @@ import { askedNames, heldSeenChanged, heldSightings, rememberedExtras, withHeldS
 import type { HeldIndex } from '@shared/gapHeld'
 import { doneKey, type GapRow } from '@shared/gaps'
 import { questsOfRows } from '@shared/gapQuests'
+import { foldedEdits } from '@shared/gapEdits'
 import { itemTierKey } from '@shared/itemStats'
 import { useCapturedItems } from './capturedItemsStore'
 import { useCurrentGapEdits } from './gapEditsStore'
@@ -38,11 +39,12 @@ export function useExtraItemRows(rows: readonly GapRow[] | undefined, holding: H
   const journals = useQuestJournals()
   const edits = useCurrentGapEdits()
   // A captured row's Edit name (a misread capture put right by hand): its key is the captured name.
+  const byKey = useMemo(() => foldedEdits(edits), [edits])
   const renamed = useCallback((name: string): string | undefined => {
-    const edit: unknown = edits[doneKey({ domain: 'item', name } as GapRow)]
+    const edit: unknown = byKey.get(doneKey({ domain: 'item', name } as GapRow))
     const fixed = edit !== null && typeof edit === 'object' ? (edit as { name?: unknown }).name : undefined
     return typeof fixed === 'string' ? fixed : undefined
-  }, [edits])
+  }, [byKey])
   const asked = useMemo(() => {
     const held = askedNames(holding, engineRows, remembered, viewer)
     const names = [...(held === '' ? [] : held.split('\n')), ...capturedNames(captured, renamed)]

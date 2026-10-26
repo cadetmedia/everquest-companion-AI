@@ -82,8 +82,20 @@ export const GAP_CAPTURE: Record<GapDomain, string> = {
   zone: 'Nothing: copy the redirect and save it as a new page.'
 }
 
-/** A row's key in the Done marks (owner ask, 2026-10-19). */
-export const doneKey = (row: GapRow): string => `${row.domain}:${row.name}`
+/**
+ * A row's key in the Done marks (owner ask, 2026-10-19), in lower case: the engine names a mob as the
+ * /con prints it (`A gorgon`), then as a loot line spells it. Keys stored before kept the case, so a
+ * stored key is always read lower-cased (`doneSet`, `foldedEdits`).
+ */
+export const doneKey = (row: GapRow): string => `${row.domain}:${row.name}`.toLowerCase()
+
+/** The stored marks as the set of keys `doneKey` makes. */
+export const doneSet = (marks: Readonly<Record<string, string>>): Set<string> => new Set(Object.keys(marks).map((k) => k.toLowerCase()))
+
+/** The marks with the row's mark taken off (under any stored case), or made at `at`. */
+export function toggledDoneMarks(marks: Readonly<Record<string, string>>, row: GapRow, at: string): Record<string, string> {
+  return withDoneMarks(marks, [row], !doneSet(marks).has(doneKey(row)), at)
+}
 
 /**
  * The Done marks to keep (`key -> when it was marked`, an ISO time): every mark made before the wiki
@@ -104,8 +116,9 @@ export function keptDoneMarks(marks: Readonly<Record<string, string>>, scrapedAt
  */
 export function withDoneMarks(marks: Readonly<Record<string, string>>, rows: readonly GapRow[], on: boolean, at: string): Record<string, string> {
   const keys = new Set(rows.map(doneKey))
-  if (!on) return Object.fromEntries(Object.entries(marks).filter(([k]) => !keys.has(k)))
-  return { ...Object.fromEntries([...keys].map((k) => [k, at])), ...marks }
+  if (!on) return Object.fromEntries(Object.entries(marks).filter(([k]) => !keys.has(k.toLowerCase())))
+  const had = doneSet(marks)
+  return { ...Object.fromEntries([...keys].filter((k) => !had.has(k)).map((k) => [k, at])), ...marks }
 }
 
 /** Every one of `rows` is marked done, and there is at least one. */

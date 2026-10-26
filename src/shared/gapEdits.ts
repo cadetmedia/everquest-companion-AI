@@ -89,11 +89,15 @@ export function readEdit(raw: unknown): GapEdit | undefined {
   return Object.keys(out).length === 0 ? undefined : out
 }
 
+/** The edits by `doneKey`: a key stored before keys were lower-cased is read lower-cased; the later of two wins. */
+export const foldedEdits = (edits: GapEditMap): Map<string, unknown> => new Map(Object.entries(edits).map(([k, v]) => [k.toLowerCase(), v as unknown]))
+
 /** The rows with their edits riding on them; "This is a mob" clears "may be a player". */
 export function withGapEdits(rows: readonly GapRow[], edits: GapEditMap): GapRow[] {
   if (Object.keys(edits).length === 0) return rows as GapRow[]
+  const byKey = foldedEdits(edits)
   return rows.map((row) => {
-    const edit = readEdit(edits[doneKey(row)])
+    const edit = readEdit(byKey.get(doneKey(row)))
     if (edit === undefined) return row
     const out: GapRow = { ...row, edit, ...(edit.kind === 'mob' ? { maybePlayer: false } : {}) }
     if (edit.distinct === true) delete out.suggest
