@@ -43,6 +43,9 @@ test("THE OWNER'S RULES: 3 WITHIN 25 S, 5 WITHIN 20 S, ELSE 10 IN ALL; FEWER SAY
   const ten = constantRespawn(s([600, 660, 720, 780, 840, 900, 960, 1020, 1080, 5000]), 'Mob')
   assert.equal(ten?.rule, 'ten')
   assert.equal(ten?.agree, 9, 'the 5000 s outlier is out')
+  assert.equal(ten?.ms, 840_000, 'the median of the nine left, not the lowest gap')
+  // An even count left: the middle two averaged, to the second.
+  assert.equal(constantRespawn(s([600, 660, 720, 780, 840, 900, 960, 1020, 1080, 1140, 6000]), 'Mob')?.ms, 870_000)
 })
 
 test('A COMMON NAME CLUSTERED AT THE ONE-MINUTE FLOOR IS TWO SPAWNS SHARING IT, NOT A RESPAWN', () => {

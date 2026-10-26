@@ -109,15 +109,17 @@ export function constantRespawn(gapsMs: readonly number[], name: string): Respaw
   // The number is the sharpest peak inside the agreeing gaps: a constant shows up as many gaps a
   // few seconds apart (the first sign of life lags the spawn by a cast or a swing), and a looser band
   // above it in the same 50 s is spawns found late. Enynti's 31 gaps: a peak at 529-533 s (8:51)
-  // under a band to 559 s, whose median would say 8:58.
+  // under a band to 559 s, whose median would say 8:58. `ten` has no cluster: its number is the
+  // median of every gap left once the outliers are out (header).
   const verdict = (members: readonly number[], rule: RespawnRule): RespawnVerdict => ({
-    ms: Math.round(median(densest(members, PEAK_MS)) / 1000) * 1000,
+    ms: Math.round(median(rule === 'ten' ? members : densest(members, PEAK_MS)) / 1000) * 1000,
     samples: sorted.length,
     agree: members.length,
     rule
   })
   const c25 = densest(sorted, 50_000)
   const c20 = densest(sorted, 40_000)
+  // within20 is the owner's stated rule, kept as said; five gaps inside 40 s are also three inside 50 s, so within25 always answers first.
   const found =
     c25.length >= 3 ? verdict(c25, 'within25') : c20.length >= 5 ? verdict(c20, 'within20') : sorted.length >= 10 ? verdict(withoutOutliers(sorted), 'ten') : null
   if (found === null) return null
