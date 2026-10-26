@@ -49,3 +49,14 @@ test('A MALFORMED ENTRY IS DROPPED, AS THE GAPS TAB DROPS IT: NO ID, OR A GAP TH
   const learned = (mergeRespawn(snap(MM, bad), snap(MM, [good])) as WithLearned).learned ?? []
   assert.deepEqual(learned.map((l) => l.id), [good.id])
 })
+
+test('THE JOIN KEEPS THE ENGINE CAP OF 1,000 MOBS, NEWEST LEARNED FIRST, HOWEVER MANY ARCHIVES', () => {
+  const mobs = (zone: string, n: number) => Array.from({ length: n }, (_, i) => ({ ...lasna(zone, [530_000]), key: `mob ${String(i)}`, id: `${zone.toLowerCase()}::mob ${String(i)}` }))
+  const older = snap('Old Zone', mobs('Old Zone', 1_000))
+  const newer = snap(MM, mobs(MM, 600))
+  const learned = (mergeRespawn(older, newer) as WithLearned).learned ?? []
+  assert.equal(learned.length, 1_000)
+  assert.equal(learned[0].zone, MM, "the live log's mobs first")
+  assert.equal(learned.filter((l) => l.zone === MM).length, 600)
+  assert.equal(learned[999].id, 'old zone::mob 399', "the archive's newest 400 fill the rest")
+})

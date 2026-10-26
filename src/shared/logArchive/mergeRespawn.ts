@@ -153,6 +153,8 @@ type Learned = LearnedEvidence
 
 /** The engine's own cap on gaps per mob. */
 const LEARNED_GAPS = 50
+/** The engine's own cap on mobs (`MAX_LEARNED_STORE`), so the join does not grow with every archive. */
+const LEARNED_MOBS = 1_000
 
 /** The field's entries as the Gaps tab reads them (malformed ones dropped); null when it has none. */
 function learnedOf(snap: RespawnSnap): Learned[] | null {
@@ -163,6 +165,8 @@ function learnedOf(snap: RespawnSnap): Learned[] | null {
  * Both sides' evidence joined per mob and zone: the newer side's gaps first (each list is newest
  * first), capped as the engine caps them. What the newer side filed under zone '' (before its first
  * zone line) is the zone the older side ended in, as for the rows. Null when neither side has any.
+ * Newest learned first, as the engine publishes: the newer side's mobs in its order, then the ones
+ * only the older side has in its order; the 1,000 newest are kept.
  */
 function mergeLearned(older: Learned[] | null, newer: Learned[] | null, olderZone: string): Learned[] | null {
   if (older === null && newer === null) return null
@@ -177,7 +181,7 @@ function mergeLearned(older: Learned[] | null, newer: Learned[] | null, olderZon
     const prev = out.get(l.id)
     out.set(l.id, prev === undefined ? l : { ...prev, gapsMs: [...prev.gapsMs, ...l.gapsMs].slice(0, LEARNED_GAPS) })
   }
-  return [...out.values()]
+  return [...out.values()].slice(0, LEARNED_MOBS)
 }
 
 /**
