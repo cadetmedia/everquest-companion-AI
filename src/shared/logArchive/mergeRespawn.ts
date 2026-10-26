@@ -172,6 +172,7 @@ function mergeLearned(older: Learned[] | null, newer: Learned[] | null, olderZon
   if (older === null && newer === null) return null
   const out = new Map<string, Learned>()
   for (const l of newer ?? []) {
+    // Defensive: the engine learns no gap before a zone line (`zone_since > 0`), so it files none under ''.
     const zone = l.zone === '' ? olderZone : l.zone
     const id = `${respawnZoneKey(zone)}::${l.key}`
     const prev = out.get(id)

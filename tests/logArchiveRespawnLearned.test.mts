@@ -27,6 +27,7 @@ test('THE ENGINE CAP OF 50 GAPS HOLDS ACROSS THE JOIN, KEEPING THE NEWEST', () =
   assert.deepEqual(gaps.slice(0, 4), [531_000, 531_000, 531_000, 527_000])
 })
 
+// Defensive: the engine files no learned gap under zone '' (respawn.rs needs a zone line first).
 test('EVIDENCE FILED BEFORE THE FRESH LOG HAD A ZONE LINE JOINS THE ZONE THE ARCHIVE ENDED IN', () => {
   const older = snap(MM, [lasna(MM, [528_000, 528_000, 528_000])])
   const newer = snap('', [lasna('', [529_000, 529_000, 529_000])])
