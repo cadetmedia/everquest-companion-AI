@@ -103,13 +103,15 @@ pub fn ensure_encounter(st: &mut EngineState, ts: i64) {
 /// A tick keeps printing after its caster died and the fight closed (`You have taken 53 damage
 /// from Swarm of Pain by a spiroc revolter.`), and opening a fight for it would resolve the dead
 /// caster to a fresh instance and engage it: a phantom fight against `<mob>#2`. Inside an open
-/// fight a tick is booked like any other hit.
+/// fight a tick from a live caster is booked like any other hit; one from a dead caster is not,
+/// or each tick in the linger would bring it back and hold the fight open for the next pull.
 pub fn encounter_for<'a>(
     st: &'a mut EngineState,
     ev: &DamageEvent<'_>,
     at: &Attribution,
 ) -> Option<&'a mut Encounter> {
-    if st.current.is_none() && *at == Attribution::Incoming && ev.dtype == "dot" {
+    let tick = *at == Attribution::Incoming && ev.dtype == "dot";
+    if tick && (st.current.is_none() || st.world.is_gone(ev.attacker, ev.ts)) {
         return None;
     }
     ensure_encounter(st, ev.ts);

@@ -25,11 +25,13 @@
 use crate::event::Event;
 use crate::jsfn::{starts_with_you_word, zone_id_key, zone_tier, TIER_OPEN_WORLD, TIER_UNKNOWN};
 use crate::jsmap::JsMap;
+use crate::knowledge::Knowledge;
 use crate::EqModule;
-use eqlog::names::id_key;
+use eqlog::names::{id_key, is_player_shaped_name};
 use serde::Serialize;
 use serde_json::{json, Value};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
+use std::sync::Arc;
 
 /// `shared/kills.ts KILLS_SHAPE_VERSION`.
 const KILLS_SHAPE_VERSION: i64 = 5;
@@ -84,6 +86,10 @@ pub struct KillsModule {
     /// The announce cursor — see [`crate::announce`]. Only a recorded kill and a rebirth change the
     /// KillMap, which is the whole of `snapshot()`; the other four arms mutate state nobody reads.
     announce: crate::announce::Announce,
+    /// Player-shaped names a pet line spoke for (claim, pet say, ally leader): a pet, never a mob.
+    pets: HashSet<String>,
+    /// The mob catalog, for a one-word killer that is a mob all the same (`Terror`).
+    knowledge: Option<Arc<dyn Knowledge>>,
 }
 
 impl KillsModule {
@@ -97,6 +103,16 @@ impl KillsModule {
             Some(at) => ts >= at && ts - at <= KILL_EXP_JOIN_MS,
             None => false,
         }
+    }
+
+    /// A player or a pet died: the same rule the gaps module files players by, plus the pets the
+    /// log named. Your own blow (`bySelf`) is always a kill.
+    fn is_friendly_death(&self, ev: &Event) -> bool {
+        let Some(name) = ev.str("name").filter(|_| !ev.bool("bySelf")) else {
+            return false;
+        };
+        let known_mob = |k: &str| self.knowledge.as_ref().is_some_and(|kn| kn.known_mob(k));
+        is_player_death(name, ev.str("killer"), known_mob) || self.pets.contains(&id_key(name))
     }
 
     /// Is there a live creating-instance notice for this zone at `ts`?
@@ -206,6 +222,7 @@ impl EqModule for KillsModule {
         self.pending_exp_ts = None;
         self.instances.clear();
         self.announce.reset();
+        self.pets.clear();
     }
 
     fn on_event(&mut self, ev: &Event, _live: bool) {
@@ -237,6 +254,14 @@ impl EqModule for KillsModule {
                 self.pending_exp_ts = Some(ev.ts());
                 return;
             }
+            "petClaim" | "petSay" | "allyPetLeader" => {
+                let pet = ev.str("name").or_else(|| ev.str("pet"));
+                // An article-led name (a charmed `a gnoll`) is every other `a gnoll` too.
+                if let Some(pet) = pet.filter(|p| is_player_shaped_name(p)) {
+                    self.pets.insert(id_key(pet));
+                }
+                return;
+            }
             "death" => {}
             _ => return,
         }
@@ -244,7 +269,7 @@ impl EqModule for KillsModule {
         // it precedes whoever landed the blow, and leaving it pending would hand your experience to
         // the next mob that dies near you.
         let credited = self.take_exp(ev.ts());
-        if !is_counted_kill(ev) {
+        if !is_counted_kill(ev) || self.is_friendly_death(ev) {
             return;
         }
         let zone = self.zone.as_deref().unwrap_or("");
@@ -278,6 +303,10 @@ impl EqModule for KillsModule {
             "state": { "v": KILLS_SHAPE_VERSION, "mobs": self.kills }
         })
     }
+
+    fn install_knowledge(&mut self, k: &Arc<dyn Knowledge>) {
+        self.knowledge = Some(Arc::clone(k));
+    }
 }
 
 /// `main/log/reducers.ts isCountedKill` — self-slain always counts; slain-by counts only when the
@@ -290,5 +319,42 @@ fn is_counted_kill(ev: &Event) -> bool {
         // An empty killer string is falsy in the TS and does not disqualify.
         Some(killer) if !killer.is_empty() => !starts_with_you_word(killer),
         _ => true,
+    }
+}
+
+/// A player (or a player's pet) dying to a mob: a player-shaped victim, and a killer that is not
+/// player-shaped or that `known_mob` names a mob anyway (`Terror`). Kills and gaps share it.
+pub fn is_player_death(
+    victim: &str,
+    killer: Option<&str>,
+    known_mob: impl Fn(&str) -> bool,
+) -> bool {
+    let killer_is_mob = killer.is_some_and(|k| !is_player_shaped_name(k) || known_mob(k));
+    is_player_shaped_name(victim) && killer_is_mob
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn fold(lines: &[&str]) -> Value {
+        let mut m = KillsModule::new();
+        for line in lines {
+            m.on_event(&Event::from_json(line).expect("a JSON event"), false);
+        }
+        m.snapshot()["state"]["mobs"].clone()
+    }
+
+    #[test]
+    fn a_player_or_your_pet_dying_is_not_a_kill() {
+        let mobs = fold(&[
+            r#"{"kind":"petClaim","seq":1,"ts":1000,"raw":"p","name":"Gobekn","via":"leader"}"#,
+            r#"{"kind":"death","seq":2,"ts":2000,"raw":"d","name":"Gonekn","bySelf":false,"killer":"a gnoll"}"#,
+            r#"{"kind":"death","seq":3,"ts":3000,"raw":"d","name":"Gobekn","bySelf":false,"killer":"Terror"}"#,
+            r#"{"kind":"death","seq":4,"ts":4000,"raw":"d","name":"a gnoll","bySelf":false,"killer":"Gobekn"}"#,
+            r#"{"kind":"death","seq":5,"ts":5000,"raw":"d","name":"Fippy","bySelf":true}"#,
+        ]);
+        let keys: Vec<&String> = mobs.as_object().expect("mobs").keys().collect();
+        assert_eq!(keys, ["a gnoll", "fippy"], "{mobs}");
     }
 }

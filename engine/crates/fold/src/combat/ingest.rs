@@ -283,6 +283,16 @@ fn claim_note(via: &str) -> &'static str {
 /// already-charmed instance's kind alone.
 fn bind_pet_claim(st: &mut EngineState, name: &str, ts: i64, via: &str) {
     let key = id_key(name);
+    // `says` is forgeable: a person saying it is no pet, and binding one retires the real pet.
+    if via == "leader" && st.is_player_side(&key) {
+        st.log(
+            ts,
+            "pet",
+            "info",
+            format!("✕ {name} named you its leader but is a player - not bound"),
+        );
+        return;
+    }
     // Anything that names itself yours stops being anybody else's. All three claim routes are
     // first-person and ownership-definitive; an ally bind rests on a broadcast, which is weaker by
     // construction, so this override needs no tie-break.
@@ -326,10 +336,14 @@ fn bind_pet_claim(st: &mut EngineState, name: &str, ts: i64, via: &str) {
 /// goes on to bind it: a row recorded under its name as another player moves to the ally-pet row the
 /// bind credits (owner, 2026-10-22: Malkil's Jeber), and is dropped as before when there is no bind.
 fn ally_pet_leader(st: &mut EngineState, ev: &Event) {
-    let bound = ingest_ally_pet_leader(st, ev);
     let Some(pet) = ev.str(Key::Pet) else {
         return;
     };
+    // A person saying it is nobody's pet, and their recorded row stays theirs.
+    if st.is_player_side(&id_key(pet)) {
+        return;
+    }
+    let bound = ingest_ally_pet_leader(st, ev);
     let why = format!(
         "named {} its leader",
         ev.str(Key::Owner).unwrap_or_default()

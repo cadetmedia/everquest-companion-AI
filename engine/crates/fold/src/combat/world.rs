@@ -291,6 +291,26 @@ impl WorldModel {
         }
     }
 
+    /// True when `name` was seen before but has no live instance `resolve` would return rather than
+    /// replace (a pet, or a hostile seen inside `INSTANCE_STALE_MS`): it died, zoned or went stale.
+    /// Read-only.
+    pub fn is_gone(&self, name: &str, ts: i64) -> bool {
+        let key = id_key_ref(name);
+        self.gens.contains_key(key.as_ref())
+            && !self.active(&key).iter().any(|&at| {
+                let inst = &self.insts[at];
+                inst.charmed || ts - inst.last_seen_ts < INSTANCE_STALE_MS
+            })
+    }
+
+    /// The newest instance ever spawned for `name`, retired or not, without touching it.
+    pub fn newest(&self, name: &str) -> Option<Resolved> {
+        let key = id_key_ref(name);
+        let gen = self.gens.get(key.as_ref())?;
+        let at = *self.by_id.get(&format!("{key}#{gen}"))?;
+        Some(self.resolved(at))
+    }
+
     /// The charmed pet instance for a name (attribution helper). No staleness sweep — pets are
     /// exempt from it, so there is nothing for one to do here.
     pub fn pet_instance(&self, name: &str) -> Option<Resolved> {
