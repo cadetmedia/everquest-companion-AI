@@ -252,8 +252,8 @@ export function createModuleStore(deps: {
   const entries = new Map<string, Entry>()
   const dirty = new Set<string>()
   let armed = false
-  /** Bumped whenever every held snapshot stops describing the world. Replies from an older
-   *  generation are dropped on arrival. */
+  /** Bumped whenever every held snapshot stops describing the world (a character switch, the
+   *  world-changed frame). Replies from an older generation are dropped on arrival. */
   let generation = 0
   let detach: (() => void) | null = null
 
@@ -298,7 +298,10 @@ export function createModuleStore(deps: {
     // The world that answers reads changed hands (the engine went live, or went away). There is
     // no cursor to compare and nothing held is trustworthy: ask again, for everything watched.
     if (c.moduleId === MODULE_WORLD_CHANGED) {
+      // A reply already out was asked of the old world: drop it, or a baseline seeds from it.
+      generation += 1
       for (const [id, entry] of entries) {
+        entry.fetching = false
         if (entry.subs.size > 0) markDirty(id)
         else entry.stale = true
       }

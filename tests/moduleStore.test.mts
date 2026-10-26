@@ -346,6 +346,38 @@ test('a world change re-asks every watched module without clearing what is held'
   off()
 })
 
+test('a reply already in flight when the world changed is dropped; the re-ask is the answer', async () => {
+  const { spy, store } = harness()
+  let told = 0
+  const off = store.subscribe('kills', () => told++)
+  await spy.reply('kills', { old: 1 }, 1)
+  spy.push('kills', 2)
+  spy.runFrame()
+  // That fetch is still out when archived history is shown: its answer is the old world's.
+  spy.push(MODULE_WORLD_CHANGED, -1)
+  const before = told
+  await spy.reply('kills', { old: 2 }, 2)
+  assert.deepEqual(store.getSnapshot('kills'), { old: 1 }, 'an old-world reply was taken after the frame')
+  assert.equal(told, before, 'readers were told of an old-world reply')
+  spy.runFrame()
+  await spy.reply('kills', { archived: 3 }, 3)
+  assert.deepEqual(store.getSnapshot('kills'), { archived: 3 })
+  off()
+})
+
+test('a module whose only fetch was dropped by a world change is asked again by its next reader', async () => {
+  const { spy, store } = harness()
+  const a = store.subscribe('kills', () => undefined)
+  const b = store.subscribe('loot', () => undefined)
+  a()
+  spy.push(MODULE_WORLD_CHANGED, -1)
+  await spy.reply('kills', { old: 1 }, 1)
+  const again = store.subscribe('kills', () => undefined)
+  assert.equal(spy.fetchesOf('kills'), 2, 'a dropped fetch left the module waiting forever')
+  again()
+  b()
+})
+
 // ---- unsubscribing ------------------------------------------------------------------------------
 
 test('UNSUBSCRIBE CLEANUP: the last reader takes the bridge listeners with it', async () => {

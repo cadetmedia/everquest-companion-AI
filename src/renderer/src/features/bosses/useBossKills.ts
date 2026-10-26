@@ -73,15 +73,22 @@ export function useBossKills(
   // switch re-hydrates to a fresh object). We detect that by identity: a delta
   // mutates via spread into a new object too, so instead we clear the baseline
   // whenever the character changes, and on the world-changed frame (archived history
-  // shown or refreshed would otherwise celebrate every archived kill).
+  // shown or refreshed would otherwise celebrate every archived kill). The snapshot held at that
+  // moment is the old world's, so the baseline waits for the next one: a roster change before the
+  // re-ask lands would otherwise seed the old counts.
+  const killsRef = useRef(kills)
+  killsRef.current = kills
+  const staleRef = useRef<KillMap | undefined>(undefined)
   useEffect(() => {
     return onHistorySwapped(() => {
       prevRef.current = null
+      staleRef.current = killsRef.current
     })
   }, [])
 
   useEffect(() => {
     if (!kills) return
+    if (prevRef.current === null && kills === staleRef.current) return
     const next = statuses
     const prev = prevRef.current
     if (prev != null) {
