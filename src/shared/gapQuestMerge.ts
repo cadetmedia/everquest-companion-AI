@@ -93,7 +93,8 @@ class Doc {
 
 const HEADING = /^(=+)[^=].*?\1\s*$/
 const REWARD_HEADING = /^(=+)\s*Rewards?\s*\1\s*$/i
-const WALK_HEADING = /^(=+)\s*Walkthrough\s*\1\s*$/i
+// Any heading naming it: `Walkthrough with Dialogue`, `Short Walkthrough`, `TLDR; Walkthrough` (86 cached pages).
+const WALK_HEADING = /^(=+)[^=]*walkthrough[^=]*\1\s*$/i
 const CATEGORY = /^\s*\[\[\s*category\s*:/i
 const holds = (hay: string, words: string): boolean => words === '' || hay.includes(` ${words} `)
 
@@ -373,6 +374,12 @@ interface Span {
   end: number
 }
 
+/** From the first walkthrough heading to the end of the last: a page may hold a short one and a full one. */
+function walkSpan(doc: Doc): Span | undefined {
+  const heads = doc.lines.flatMap((l, i) => (WALK_HEADING.test(l) ? [i] : []))
+  return heads.length === 0 ? undefined : { heading: heads[0], end: sectionEnd(doc, heads[heads.length - 1]) }
+}
+
 /** The page line that states a block inside the walkthrough at or after `from`, or -1. */
 function lineOf(doc: Doc, b: WalkBlock, from: number, walk: Span): number {
   if (b.kind === 'give') return handLineOf(doc, b.keys[0], from, walk.end)
@@ -389,7 +396,7 @@ function stated(doc: Doc, b: WalkBlock, walk: Span): boolean {
   if (b.kind === 'give') return handLineOf(doc, b.keys[0], walk.heading + 1, walk.end) >= 0
   const page = doc.words()
   if (b.kind === 'experience') return page.includes('yougainexperience') || page.includes(' you gain experience ')
-  const hay = b.kind === 'receive' || b.kind === 'achievement' ? doc.words(walk.heading, walk.end) : page
+  const hay = b.kind === 'receive' || b.kind === 'achievement' ? doc.words(walk.heading + 1, walk.end) : page
   return blockWords(b).every((w) => holds(hay, w))
 }
 
@@ -424,17 +431,21 @@ function mergeWalkthrough(doc: Doc, name: string, log: QuestLog, c: QuestPageCon
   const blocks = questWalkBlocks(name, log, c)
   if (blocks.length === 0) return
   factionNotes(doc, blocks)
-  const heading = doc.find(WALK_HEADING)
-  if (heading < 0) {
-    const lines = walkLines(blocks.filter((b) => b.kind !== 'task'))
+  const first = walkSpan(doc)
+  if (first === undefined) {
+    // No walkthrough heading: only what the page says nowhere, under a new one.
+    const whole = { heading: -1, end: doc.lines.length }
+    const lines = walkLines(blocks.filter((b) => b.kind !== 'task' && !stated(doc, b, whole)))
+    if (lines.length === 0) return
+    const n = lines.filter((l) => l !== '').length
     doc.insert(firstCategory(doc), [headingLine(doc, 'Walkthrough'), '', ...lines])
-    doc.changes.push(`Walkthrough: ${String(lines.filter((l) => l !== '').length)} lines from your log`)
+    doc.changes.push(`Walkthrough: ${String(n)} line${n === 1 ? '' : 's'} from your log`)
     return
   }
-  let anchor = heading
+  let anchor = first.heading
   let count = 0
   for (const b of blocks) {
-    const walk = { heading, end: sectionEnd(doc, heading) }
+    const walk = walkSpan(doc) ?? first
     if (stated(doc, b, walk)) {
       const at = lineOf(doc, b, anchor + 1, walk)
       if (at >= 0) anchor = at + b.lines.length - 1
