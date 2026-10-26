@@ -63,10 +63,12 @@ test('at the same revision, level, zone, class, slot and AC disagreements are re
   assert.deepEqual(r.unchecked, ['quests', 'spells'])
 })
 
-test('the release rule: a pack built within 5 hours stands in for the delta', () => {
-  assert.equal(releaseDecision(PACK_AT, '2026-10-23T05:00:00Z').deltaNeeded, false)
-  assert.equal(releaseDecision(PACK_AT, '2026-10-23T05:30:00Z').deltaNeeded, true)
-  assert.equal(releaseDecision(PACK_AT, '2026-10-22T23:00:00Z').deltaNeeded, true, 'a pack from the future is not trusted')
+test('the release check: ready only with nothing behind, whatever the pack age (owner, 2026-10-25)', () => {
+  // A fresh pack no longer stands in for the delta: a page behind it is not ready.
+  assert.equal(releaseDecision(PACK_AT, '2026-10-23T05:00:00Z', 3).ready, false)
+  assert.equal(releaseDecision(PACK_AT, '2026-10-23T05:00:00Z', 0).ready, true)
+  assert.equal(releaseDecision(PACK_AT, '2026-10-24T05:00:00Z', 0).ready, true)
+  assert.equal(releaseDecision(PACK_AT, '2026-10-23T05:25:44Z', 0).ageHours, 5)
   assert.equal(wikiTitle('a_nektulos_spiderling'), 'A nektulos spiderling')
   assert.deepEqual(packRevisions([npc('A cracked skeleton', 7), npc('Nowhere', 8)], mobs('x').pageids), [[10, 7]])
 })
