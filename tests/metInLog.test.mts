@@ -51,6 +51,24 @@ test('each kind folds its own way: a mob by mobKey, a zone by zoneKey, an item w
   }
 })
 
+test('a re-feed reuses the keys it made and holds the same evidence as a first feed', () => {
+  try {
+    setMet('zones', ['The Lower Guk (Solo)', 'Plane of Fear'])
+    const v = metVersion()
+    setMet('zones', ['Plane of Fear', 'The Lower Guk (Solo)'])
+    assert.equal(metVersion(), v, 'the same names, re-keyed from the memo, are no change')
+    setMet('zones', ['Plane of Fear', 'Lower Guk', '  '])
+    assert.equal(wasMet('zones', 'lower guk'), true, 'two spellings, one key')
+    setMet('zones', ['Plane of Fear'])
+    assert.equal(wasMet('zones', 'Lower Guk'), false, 'a name no longer fed is gone')
+    setMet('zones', ['The Lower Guk (Solo)'])
+    assert.equal(wasMet('zones', 'Lower Guk'), true, 'and keyed again when it returns')
+    assert.equal(wasMet('zones', 'Plane of Fear'), false)
+  } finally {
+    clearAll()
+  }
+})
+
 test('mobOutOfEra: a flagged mob the log met is in era; by its name or by its page', () => {
   const fiend = { name: 'a revamp fiend', page: 'A revamp fiend (Plane of Fear)', outOfEra: true as const }
   try {

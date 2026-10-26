@@ -15,6 +15,9 @@ import { zoneKey } from './zones'
 export type MetKind = 'mobs' | 'items' | 'zones'
 
 const met: Record<MetKind, Set<string>> = { mobs: new Set(), items: new Set(), zones: new Set() }
+/** Each kind's last fed names, raw to key (`keyOf` is pure): a re-feed keys only the new names, and
+ *  the map holds no more than the last feed's names. */
+const keyed: Record<MetKind, Map<string, string>> = { mobs: new Map(), items: new Map(), zones: new Map() }
 let version = 0
 
 /** Each kind joined its own way: a mob by `mobKey`, a zone by `zoneKey` (every tier is the place),
@@ -28,10 +31,17 @@ function keyOf(kind: MetKind, name: string): string {
 /** Replace one kind's evidence; the version moves only when the set really changed. */
 export function setMet(kind: MetKind, names: Iterable<string>): void {
   const next = new Set<string>()
+  const was = keyed[kind]
+  const now = new Map<string, string>()
   for (const n of names) {
-    const k = keyOf(kind, n)
+    let k = now.get(n)
+    if (k === undefined) {
+      k = was.get(n) ?? keyOf(kind, n)
+      now.set(n, k)
+    }
     if (k) next.add(k)
   }
+  keyed[kind] = now
   const cur = met[kind]
   if (next.size === cur.size && [...next].every((k) => cur.has(k))) return
   met[kind] = next
