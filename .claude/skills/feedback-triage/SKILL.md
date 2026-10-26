@@ -5,6 +5,12 @@ description: The full triage loop for EQ Companion — pull in-app feedback, the
 
 # The feedback triage loop
 
+> **Fork note (kaltinril/everquest-companion):** this is the creator's skill, for his own feedback
+> store and Linear workspace. The fork never writes to either (`docs/community/agent/WORKFLOW.md`,
+> "Never write to the creator's spaces"); the fork's reports are its GitHub issues
+> (`docs/community/ISSUES.md`). Work that comes out of a triage goes on a work branch off
+> `main_community` (`docs/community/RULES.md`, rules 1 to 3).
+
 Feedback lives in Aurora DSQL, read directly over IAM by
 `npx tsx scripts/triage-feedback.mts` (auth: `--profile eqc`, or `AWS_PROFILE`).
 The loop ends with TWO systems updated: Linear carries the work, and the

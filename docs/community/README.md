@@ -1,17 +1,18 @@
-# The fork's branch model
+# How the fork is run
 
-This fork (`kaltinril/everquest-companion`, git remote `origin`) tracks the creator's repo
-(`jmoyers/everquest-companion`, git remote `upstream`). The creator is on hiatus, so pull
-requests wait for his return. This directory holds the rules and the recipe that let the fork keep
-moving without losing the ability to hand everything back when he returns.
+This fork (`kaltinril/everquest-companion`, git remote `origin`) started from the creator's repo
+(`jmoyers/everquest-companion`, git remote `upstream`). The creator is on hiatus and may not come
+back, and other tools now compete for the same players, so since 2026-10-26 the fork runs as its
+own project on one trunk, `main_community`, to move fast and change course easily. This directory
+holds the rules and records that make that safe.
 
-Read [RULES.md](RULES.md) before touching any branch. [BRANCHES.md](BRANCHES.md) is the ordered
-list of branches that make up `main_community`. [ADOPTIONS.md](ADOPTIONS.md) records every
+Read [RULES.md](RULES.md) before touching any branch. [ADOPTIONS.md](ADOPTIONS.md) records every
 third-party pull request that was vetted, adopted or deferred. [ISSUES.md](ISSUES.md) records
 every upstream issue that was looked at and what became of it. [requirements/](requirements/)
-holds each feature branch's list of what was asked for (rule 19). [RELEASING.md](RELEASING.md), on
-the `community_release_rules` branch, is how a test build reaches the fork's Releases page.
-[agent/](agent/INDEX.md) is the working manual for AI agents.
+holds each feature area's list of what was asked for (rule 19). [RELEASING.md](RELEASING.md) is
+how a test build reaches the fork's Releases page. [BRANCHES.md](BRANCHES.md) is the record of
+the retired branches and the list of known test reds. [agent/](agent/INDEX.md) is the working
+manual for AI agents.
 
 ## How to work in this fork
 
@@ -19,98 +20,67 @@ The same steps for people and agents:
 
 1. **Set up:** Node 24 (Node 22 gives hundreds of false test failures), Rust via rustup, then
    `npm ci`.
-2. **Pick the branch.** A change goes on the feature branch that owns the code. A small fix to the
-   original code that no feature owns goes on `catch_all`. A new feature gets a new branch off
-   `main`. Never commit to `main` or `main_community`.
-3. **Work in a worktree:** `git worktree add .claude/worktrees/<branch> <branch>`. Nothing is
-   created beside the repo folder.
-4. **Write down the ask first.** A feature's requests go in `requirements/<branch>.md` before any
-   code. Check every row before changing a feature.
-5. **Keep it small.** Change only what the feature needs and match the code around it.
-6. **Gate it:** `npm run typecheck`, `npm run lint`, `npm test`. Only the known reds listed in
-   BRANCHES.md may fail.
-7. **Merge it:** close the dev app, then merge the branch into `main_community` from the main
-   folder and run the gate again. A new branch also gets its recipe line in BRANCHES.md.
-8. **Push after testing:** once the owner has tried it in the app, push every touched branch to
+2. **Make a work branch and worktree off `main_community`:**
+   `git worktree add -b <name> .claude/worktrees/<name> main_community`. Never commit to `main`,
+   and never work in the main clone, where the dev app rebuilds on every file that changes.
+   Nothing is created beside the repo folder.
+3. **Write down the ask first.** A feature's requests go in `requirements/<feature-area>.md`
+   before any code. Check every row before changing a feature.
+4. **Keep it small.** Change only what the feature needs and match the code around it.
+5. **Gate it:** `npm run typecheck`, `npm run lint`, `npm test` (and `cargo test --workspace` in
+   `engine/` for an engine change). Only the known reds listed in BRANCHES.md may fail.
+6. **Merge it:** close the dev app, merge the work branch into `main_community` from the main
+   folder, and run the gate again. Then remove the worktree and the work branch (rule 18).
+7. **Push after testing:** once the owner has tried it in the app, push `main_community` to
    `origin`. Never to `upstream`.
-9. **Record what you learned.** Rules, procedures and measured facts go in this directory, so
+8. **Record what you learned.** Rules, procedures and measured facts go in this directory, so
    anyone who clones the repo has them.
 
 ## At a glance
 
-![How the community fork is run: upstream/main fast-forwards into main; every branch starts from main; the recipe in BRANCHES.md merges them in order into main_community behind the gate; a community tag on main_community builds a release](fork-workflow.svg)
+![How the community fork is run: upstream/main fast-forwards into main and is merged into main_community after a scan; every change is a short-lived work branch off main_community, gated and merged back; a community tag on main_community builds a release](fork-workflow.svg)
 
-Read it top to bottom, then left to right. The creator's `main` comes down unchanged. Every branch
-of ours starts from it, in four kinds that line up with the five steps of the recipe. Merged in
-that order, behind the gate, they make `main_community`, which the dev app runs and every test
-build comes from. The strip along the bottom is the path one fix takes. The picture is
-[fork-workflow.svg](fork-workflow.svg), plain SVG, so a change to the process is a change to that
-file in the same commit.
+The creator's `main` comes down unchanged and, once read, merges into `main_community`. Every
+change of ours, and every vetted outside pull request, is a short-lived work branch off
+`main_community` that merges back behind the gate and is then removed. A `community-<version>` tag
+on `main_community` builds a release. The picture is [fork-workflow.svg](fork-workflow.svg), plain
+SVG, so a change to the process is a change to that file in the same commit.
 
 ## Why
 
-Three things have to stay true at once:
-
-1. **`main` stays the creator's.** It mirrors `upstream/main` and is never committed to, so his
-   history is our history and a sync is always a fast-forward.
-2. **Every change of ours stays a separate branch off `main`.** Each one is a pull request he can
-   review and merge on its own when he is back. A branch never closes until he closes it from his
-   side, and that close is warranted.
-3. **We still get one build with everything in it.** Our branches, the community's fixes to his
-   repo that we have vetted, and the local test-build neutering, all merged together.
-
-`main_community` is the third thing. It is `main` plus every branch listed in
-[BRANCHES.md](BRANCHES.md), merged in that order. It carries nothing of its own. It can be deleted
-and rebuilt from the recipe at any time, and the rebuild script exists to prove that.
+1. **One trunk is fast.** Until 2026-10-26 every change was its own branch off `main`, kept so it
+   could go back to the creator as a pull request, and `main_community` was rebuilt from an
+   ordered recipe of about seventy of them. That cost a branch, a recipe line and a merge per fix,
+   and conflicts between branches that touched the same files. With the creator gone and handing
+   changes back no longer a goal, all of it is retired.
+2. **`main` stays the creator's.** It mirrors `upstream/main` and is never committed to, so his
+   later changes can still be pulled in with a fast-forward and one merge into `main_community`.
+3. **Outside code stays untrusted.** Whatever comes from upstream, his `main` included, is read in
+   full before it merges (RULES.md, rules 5 to 8).
 
 ## The branches
 
-| Branch | Base | Lifetime | Purpose |
-|---|---|---|---|
-| `main` | `origin/main` = `upstream/main` | forever | The creator's main. Never committed to. Pushed to `origin` only, never to `upstream`. |
-| `main_community_rules` | `main` | never closes, never a PR | This directory, the rebuild script, the fork's front page `.github/README.md`, and the root `CLAUDE.md` hook. The recipe lives here. |
-| feature branches | `main` | until the creator merges them | Our work, one branch per feature, each an open or future upstream PR. Listed in BRANCHES.md. |
-| `community/pr-N-slug` | the upstream PR's own base | until upstream merges the PR | Our copy of an adopted third-party PR. The recipe depends on these, never on `upstream/pr/N` refs, which vanish when a PR closes and move when a contributor force-pushes. |
-| `local-data-refresh` | `main` | never closes, never a PR | The locally re-scraped item and mob corpus. The official refresh is the creator's to run, so this stays off the PRs. |
-| `community_release_rules` | `main` | never closes, never a PR | How a TEST build is published to the fork's Releases page: [RELEASING.md](RELEASING.md) and the script it describes. |
-| `test-neutering` | `main` | never closes, never a PR | The TEST build: its own appId and userData, telemetry and feedback dark, updater guarded, the UNRELEASED gate forced open, and the `0.1.0-test.N` version with each build's tester notes. Always the last merge, so it wins. |
-| `main_community` | rebuilt from the recipe | disposable | What the dev app runs and test builds are cut from. Nothing lands here directly. The fork's default branch on GitHub since 2026-10-09 (owner), so visitors land on it and its `.github/README.md` is the front page. |
-
-## How a change flows
-
-The picture above, in words:
-
-- `main` only ever fast-forwards to `upstream/main`. A feature branch is pushed to `origin`, and
-  becomes a pull request to the creator's repo when he is back.
-- A fix goes on the branch that owns the code, in that branch's worktree, then merges into
-  `main_community` from the main tree. A fix committed on `main_community` is lost on the next
-  rebuild and never reaches a PR.
-- A new branch of ours is not part of the build until it has a line in the recipe. The line
-  says where in the order it merges. See rule 9 in RULES.md.
-- A third-party PR is not part of the build until it has been vetted per RULES.md, copied to a
-  `community/` branch, given a row in ADOPTIONS.md and a line in the recipe.
+| Branch | Lifetime | Purpose |
+|---|---|---|
+| `main_community` | forever | The trunk. Every change lands here; the dev app runs it and every test build and release is cut from it. The fork's default branch on GitHub, so its `.github/README.md` is the front page. |
+| `main` | forever | Mirror of `upstream/main`. Never committed to. Pushed to `origin` only, never to `upstream`. |
+| work branches | one job | A short-lived branch off `main_community` in its own worktree; merged back, then deleted with its worktree. |
+| retired branches | kept | Every other branch, retired on 2026-10-26 with a `RETIRED.md` note: the old feature branches, `catch_all`, `main_community_rules`, `local-data-refresh`, `community_release_rules`, `test-neutering`, the `community/pr-*` copies. Never deleted, never merged again (rule 9). Listed in BRANCHES.md. |
 
 ## Procedures
 
-**Sync main.** `git fetch upstream && git checkout main && git merge --ff-only upstream/main && git push origin main`.
-Then merge `main` into `main_community`. Feature branches do not take `main` unless they conflict
-with it or his change alters the purpose of the feature (stale-branch policy, BRANCHES.md).
+**Sync main.** `git fetch upstream main:main && git push origin main` (the fetch only ever
+fast-forwards `main`, and needs no checkout of it). Read the new commits in full (RULES.md, rules 5
+to 7), then merge `main` into `main_community` on a work branch, gate, and merge. On a conflict in
+`releaseNotes.ts`, take `main`'s wholesale (rule 13).
 
 **See every upstream PR locally.** The `upstream` remote carries a second fetch refspec,
 `+refs/pull/*/head:refs/remotes/upstream/pr/*`, so `git fetch upstream` refreshes a read-only
 `upstream/pr/N` ref per open PR. `gh pr list --repo jmoyers/everquest-companion` lists them.
 
-**Adopt a third-party PR.** Vet it (RULES.md, rules 2 to 5). `git branch community/pr-N-slug upstream/pr/N`.
-Run the gate on that branch alone. Add the ADOPTIONS.md row and the recipe line. Merge into
-`main_community`. Run the gate again. Push the `community/` branch to `origin`.
-
-**Add a branch of ours.** Branch from `main`, in its own worktree. Add its recipe line, in order,
-with a one-line purpose in the BRANCHES.md table. Merge into `main_community`.
-
-**Rebuild main_community.** `scripts/community/rebuild-main-community.sh` reads the recipe and
-merges each branch in order into a fresh branch off `main`. Conflict resolutions are recorded by
-`git rerere` (enabled in this clone), so a resolution made once replays on the next rebuild. The
-script ends by printing a tree diff against the previous `main_community`, which should be empty.
+**Adopt a third-party PR.** Vet it (RULES.md, rules 5 to 8). Make a work branch off
+`main_community` and merge or cherry-pick `upstream/pr/N` onto it. Run the gate there. Add the
+ADOPTIONS.md row. Merge into `main_community`, gate again, remove the work branch.
 
 **Merge while the dev app is up.** `npm run dev` runs `electron-vite dev --watch` in this clone,
 so every file a merge writes restarts Electron, and a merge burst relaunches the app on a
@@ -128,16 +98,12 @@ answered" banner, nothing actually broken). While the owner has the app open, ru
 work at Idle priority (`(Get-Process -Id <pid>).PriorityClass = 'Idle'` on cargo, rustc and the
 test runners) or one job at a time.
 
-**Cut a test build.** Bump the version and write the tester notes as a commit on `test-neutering`,
-merge it into `main_community`, then `npm run dist`. The notes stay on a branch that survives a
-rebuild. Read the previous build's notes first; they list what the testers caught. The installer
-is `release/<version>/everquest-companion-test-Setup-<version>.exe` in this clone, next to the
+**Cut a test build.** Bump the version and write the tester notes as a commit on a work branch
+off `main_community`, merge it, then `npm run dist`. Read the previous build's notes first; they
+list what the testers caught. The installer is
+`release/<version>/everquest-companion-test-Setup-<version>.exe` in this clone, next to the
 earlier builds (RULES.md, rule 17). `npm run dist` runs in this clone, never in a worktree (rule
 16): a junctioned `node_modules` ships an asar missing dependencies. Before handing a build out,
 `npx @electron/asar list release/<version>/win-unpacked/resources/app.asar` must list
-`\node_modules\conf`; a build without it fails at launch.
-
-**When the creator is back.** Each feature branch is already a PR or ready to be one. As he merges
-them, `main` gains them, the merged branch's recipe line is removed, and `main_community` is
-rebuilt. A `community/` branch is dropped the same way when its upstream PR merges. A branch is
-never closed before that (RULES.md, rule 10).
+`\node_modules\conf`; a build without it fails at launch. A GitHub release is RELEASING.md, on the
+owner's word only (rule 10).

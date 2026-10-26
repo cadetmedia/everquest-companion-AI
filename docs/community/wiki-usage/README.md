@@ -15,7 +15,7 @@ hit the EQLWiki, so i want to track it all"). Every request names the fork in it
 - **By hand**, only for calls made before this existed (`backfilled: true`, `approx: true` where the
   time or size is estimated).
 
-A run writes into the checkout it runs in. Commit the new lines to `main_community_rules` with the
+A run writes into the checkout it runs in. Commit the new lines on the run's work branch with the
 run's data (DATA_REFRESH.md, step 5). `WIKI_LEDGER=<path>` writes elsewhere; `WIKI_LEDGER=off`
 writes nothing; tests (a stubbed fetch, nothing sent) never write.
 
@@ -41,6 +41,6 @@ request, and the session's total is logged at quit (`src/main/wikiUsage.ts`).
 ## Before the ledger
 
 Runs before 2026-10-23 are not in it. Their counts are in the commit messages of the data they
-produced (`Delta scrape <date> (... pages)` on local-data-refresh) and in DATA_REFRESH.md (the
+produced (`Delta scrape <date> (... pages)`, made on the retired local-data-refresh) and in DATA_REFRESH.md (the
 2026-10-18 full scrape, the 2026-10-21 redirect list: 19 requests). The 2026-10-10 development
 incident (~46 requests, WORKFLOW.md "TRAP") is backfilled as one approximate line.

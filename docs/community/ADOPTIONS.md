@@ -1,8 +1,10 @@
 # Third-party pull requests: the adoption ledger
 
 Every upstream PR that was looked at gets a row, adopted or not (RULES.md, rule 12). The upstream
-head commit is the one vetted; if the PR moves, it is vetted again before the `community/` branch
-follows it. A deferred PR is re-evaluated from its row.
+head commit is the one vetted; if the PR moves, it is vetted again before any later commit of it
+is taken. A deferred PR is re-evaluated from its row. Until 2026-10-26 an adopted PR was kept on a
+`community/pr-N-slug` branch; those are retired and merged, and a new adoption is a work branch off
+`main_community` (RULES.md, rule 4).
 
 Upstream is `jmoyers/everquest-companion`. `gh pr list --repo jmoyers/everquest-companion` lists
 what is open; `git fetch upstream` refreshes the `upstream/pr/N` refs.

@@ -127,7 +127,7 @@ the ask to build it into a row's details. Rules first:
 5. **Mob portraits.** Crop, name `npc_<name>.png`, open `Special:Upload&wpDestFile=` for it.
 
 Branch: `screenshot-to-wiki` off `main`, recipe line after `gaps-overlay` (it extends the Gaps
-item page), BRANCHES.md row in the same change (rule 9).
+item page), BRANCHES.md row in the same change (the recipe rule then in force, retired 2026-10-26).
 
 ## Owner questions (before phase 1)
 

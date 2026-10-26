@@ -1,7 +1,8 @@
 # Agent notes: refreshing wiki data
 
 How to bring the committed wiki corpus up to date. Running any of this is an owner decision
-(RULES.md rule 15; WORKFLOW.md "Wiki and network"). Output lands on `local-data-refresh`.
+(RULES.md rule 15; WORKFLOW.md "Wiki and network"). Output lands on `main_community` through a
+work branch (step 5 below).
 
 ## When
 
@@ -32,11 +33,11 @@ nowhere, and closes with any wiki-derived file it left stale and the command tha
 | `spell-overlay.json` | spells changed | `gen-engine-spell-overlay.mts` |
 | `resources/wiki-images` | always; a File: page changed | the bundled copy is dropped, then `fetch-wiki-images.mts` fetches what is missing |
 | `dataWeight.generated.json` | always | `gen-data-weight.mts` |
-| `dropGroups.json` (gaps-tab) | a mob page or a cached group page changed | `scrape-drop-groups.ts --fresh <changed titles>`: only a page its cache lacks or the feed names |
+| `dropGroups.json` (Gaps) | a mob page or a cached group page changed | `scrape-drop-groups.ts --fresh <changed titles>`: only a page its cache lacks or the feed names |
 | `bosses.json` | always | `scrape-bosses.ts`: every portrait it has is kept; only a target with none is looked up, through the render cache; a changed boss page is also named |
 | `cache/files/files.json`, `mobs.json` `noImage` | always | `scrape-wiki-files.ts --fresh <changed File: titles>` (50 a request), else `--offline`; re-marks every mob whose page names no image or one the wiki lacks |
 
-A script missing from the checkout it runs in (the generators live on slayer-tab) is named stale.
+A script missing from the checkout it runs in is named stale.
 
 ## The wiki's GitHub data pack, before a delta (since 2026-10-23)
 
@@ -46,7 +47,7 @@ The wiki publishes its own parse of every NPC and item page to `Maergoth/EQL-EOZ
 `revisionId`; no quests, no spells, no wikitext). Third-party data: read as data, nothing from that
 repo is run.
 
-- `npx tsx scripts/eoz-compare.mts` (scrape-delta-tool) in dev pre-release, before the delta. It reads
+- `npx tsx scripts/eoz-compare.mts` in dev pre-release, before the delta. It reads
   GitHub, never the wiki: the manifest every run, the pack only when its sha256 changed (cached in the
   gitignored `scripts/sources/cache/eoz/`, sha256 verified). It never writes our data files.
 - The report, per family: pages behind the wiki (`ours rev X -> wiki rev Y`, from the item and mob
@@ -60,7 +61,7 @@ repo is run.
   `npx tsx scripts/eoz-compare.mts --release`: it exits 1 while any item or mob page is behind.
 - Never import the pack's fields: its parse lacks otherNames, drop groups and faction amounts. Its
   `icons` (iconId -> PNG) are the exception: item icons come from the pack first, at build time
-  and in the app (item-icons-pack, owner 2026-10-25), PNG-checked.
+  and in the app (owner 2026-10-25), PNG-checked.
 - Revision indexes: `scripts/sources/cache/items/index.json` and `mobs/index.json`
   (`{ revs: { pageid: revid } }`), written by every delta for the pages it reads or proves current.
   `--seed-revs` seeds them once from the pack, only when our files are newer than the pack, marking
@@ -75,44 +76,44 @@ repo is run.
 
 ## Delta procedure
 
-The script is `scripts/scrape-delta.mts` on `scrape-delta-tool`. It reads MediaWiki
+The script is `scripts/scrape-delta.mts`. It reads MediaWiki
 `list=recentchanges` (articles, then File:) once from the oldest stamp and fetches only changed
 pages at 1 request per second, through the creator's own parsers (output byte-compatible with the
 full scrapers). A 3-week window was ~1,200 pages in ~25 batched requests.
 
 1. `npx tsx scripts/scrape-delta.mts --dry-run` from the main clone to see volume. It reads the
    wiki, so it is part of the owner's run, never a development check (WORKFLOW.md).
-2. A scratch tree that has every script and the caches:
-   `git worktree add --detach .claude/worktrees/delta-run main_community`, then junctions to the
-   main clone's `node_modules`, `scripts/sources/cache/items`, `scripts/sources/cache/mobs` and
+2. The run's work tree, which has every script and the caches: a work branch off the trunk,
+   `git worktree add -b delta-<date> .claude/worktrees/delta-<date> main_community`, then junctions
+   to the main clone's `node_modules`, `scripts/sources/cache/items`, `scripts/sources/cache/mobs` and
    `scripts/sources/cache/rendered` (gitignored, so the run keeps their text current where they
    live; without `rendered`, posky and bosses render ~209 pages again). The dev app can stay up.
 3. `npx tsx scripts/scrape-delta.mts` there (`--spell-titles` the first time). It folds, writes the
    caches back, runs the follow-ups above and re-measures the byte ledger.
 4. `npx tsx scripts/data-diff.mts` and `npx tsx scripts/validate-data.mts`; cite the diff in the
    commits.
-5. Each changed file to its branch: quests and the quest cache to faction-tab, mobFactions and
-   mobRaces to slayer-tab, the spell overlay to catch_all, everything else (items, mobs, spells and
-   their cache, classes and its cache, pageEra and its cache, respawns, posky, images, the ledger)
-   to local-data-refresh; dropGroups.json and `cache/drop-groups` to gaps-tab. The run's line in
-   `docs/community/wiki-usage/ledger.jsonl` (its requests and bytes, printed at the end too) to
-   main_community_rules; cite its counts in the data commits.
-6. Gate the merged result in a second scratch tree and compare `^✖` lines against
-   `main_community`'s head; clear the census reds (next section).
+5. Commit every changed file on that work branch: the data files and their committed caches
+   (items, mobs, spells, quests, classes, pageEra, respawns, posky, mobFactions, mobRaces,
+   dropGroups, the spell overlay, images) and the run's line in
+   `docs/community/wiki-usage/ledger.jsonl` (its requests and bytes, printed at the end too); cite
+   the ledger counts and the data-diff in the data commit.
+6. Gate the work branch and compare `^✖` lines against `main_community`'s head; clear the census
+   reds there (next section). Then merge into `main_community` from the main clone and gate again
+   (RULES.md rule 11).
 7. Remove the junctions first (`(Get-Item <wt>\node_modules).Delete()`, the same for the three cache
-   junctions), then `git worktree remove --force`.
+   junctions), then `git worktree remove --force`, then `git branch -d delta-<date>`.
 - Known gap (2026-10-20 run): the quest scraper tells items by `cache/quests/item-titles.json`, a
   category listing cached once and never refreshed by the delta, so a quest linking a moved or new
   item page loses that requirement (Armor of Ro Quests lost `A Dark Cauldron`, now `Dark Cauldron`).
-  Proposed: the delta adds the item pages it folds to that list and drops the ones it removes
-  (scrape-delta-tool), or the owner approves a re-list of the item categories. Owner to decide.
+  Proposed: the delta adds the item pages it folds to that list and drops the ones it removes,
+  or the owner approves a re-list of the item categories. Owner to decide.
 - New quest pages (since 2026-10-23, `deltaQuests.ts` `namesQuestCategory`): a read page on no list
   whose own text links a category the full scrape walks (ends in Quest(s), not Quest Items) joins
   `quest-pages.json` and quests.json; unknown pages are read in the quest window too. Before it, the
   delta never added a quest page, so the Lake Nerius quests (written after the 2026-10-18 scrape)
   were missing. 929 of 931 cached quest pages carry such a link; the 2 that do not are a
   `{{Simple Quest` page and a list page.
-- mobs.json `factionAmounts` (wiki-scraper-fixes, 2026-10-20) comes from the parser the delta folds
+- mobs.json `factionAmounts` (2026-10-20) comes from the parser the delta folds
   with; the first delta after it kept it 1:1 with `factions` on every record.
 - The delta follows moves (reads by pageid), removes a page that was deleted, became a redirect or
   is no longer an item or mob, re-reads restores, and re-decides every key a change touches. A page
@@ -122,7 +123,7 @@ full scrapers). A 3-week window was ~1,200 pages in ~25 batched requests.
   463 mobs). Since 2026-10-19 the list is cached at `cache/redirects/redirects.json` and
   `--offline` re-applies it at zero requests; the delta keeps it current. First real run
   2026-10-21 (owner, "yes P3a"): 19 requests, 4,485 redirects, 517 on 464 mob pages, committed on
-  local-data-refresh; the full list matched the delta-kept otherNames byte for byte. mobs.json now
+  the full list matched the delta-kept otherNames byte for byte. mobs.json now
   re-derives fully offline.
 - A new field from an existing parser (2026-10-19, `commonDrops`): re-parse the cached pages with
   the fixed parser and take the field into a record only where the re-parse reproduces the record's
@@ -134,7 +135,7 @@ full scrapers). A 3-week window was ~1,200 pages in ~25 batched requests.
 New wiki content turns the creator's census tests red. Each failing test names its tokens.
 
 - `itemsResearch.json`'s instrument table is pinned both ways against the corpus: a page that stops
-  stating an instrument loses its entry, and the floor drops with it, on local-data-refresh
+  stating an instrument loses its entry, and the floor drops with it, in the data's work branch
   (2026-10-21: Unfinished Lute Neck, 47 to 46).
 
 - gearIndex family ("slots/classes/sockets/tiers tokens are canonical", "class/slot table covers
@@ -143,13 +144,12 @@ New wiki content turns the creator's census tests red. Each failing test names i
 - A case or punctuation variant is folded in the test, not reported (WORKFLOW.md, wiki tokens).
 - A real wiki typo: give the owner the page link, the exact current text and the exact
   replacement; the owner edits the wiki; a second delta run (seconds) reads it back.
-- Fact pins and floors move on `local-data-refresh`. Census tests that compared raw spellings or
-  required a key the wiki dropped move on `catch_all`, written to hold on BOTH main's corpus and
-  the refreshed one.
+- Fact pins and floors move in the data's work branch, and so do census tests that compared raw
+  spellings or required a key the wiki dropped (written to hold on the refreshed corpus; until
+  2026-10-26 they also had to hold on `main`'s).
 - `bundledImages` ("every item icon in the bundle"):
   `npx tsx scripts/fetch-wiki-images.mts --seed "$APPDATA/everquest-companion-dev/image-cache"`
-  first (its `--dry-run` still copies seeded files), then the real run. Since item-icons-pack
-  (2026-10-25) a missing item icon comes from the GitHub pack first, then the wiki; the pack holds
+  first (its `--dry-run` still copies seeded files), then the real run. Since 2026-10-25 a missing item icon comes from the GitHub pack first, then the wiki; the pack holds
   1918 and 1920, which the wiki answers 404, so the next real run bundles them (only 2850 stays
   missing).
 - A top-up is not finished until those reds are cleared (BRANCHES.md, known reds).
@@ -182,29 +182,27 @@ file.
 - The fresh item and mob caches (gitignored) are in the main clone's `scripts/sources/cache/{items,mobs}`;
   a delta run there keeps their text current. The pre-baseline copies are archived at
   `.claude/worktrees/cache-backup-2026-10-18-items-mobs.tar.gz`.
-- Spell, quest, class and era-verdict caches are committed (local-data-refresh; quests on faction-tab).
+- Spell, quest, class and era-verdict caches are committed.
 
 ## Other scrapers
 
 `npm run scrape:quests|bosses|spells|page-era|mobs|classes` run only on the owner's word. A real `scrape:spells` refuses to write when the wiki lists no spell pages or under half the catalog (an error body or an outage); `--allow-shrink` overrides after a look.
 `npm run scrape:classes -- --offline` (since 2026-10-17) re-derives `classes.json` from the committed
-cache with zero requests and keeps `scrapedAt`; run it on `local-data-refresh` with the scraper files
-copied from the `wiki-scraper-fixes` worktree (it needs that branch's `revCache.ts` and `isMain.ts`).
-`scrape:spells`, `scrape:classes` and (since `wiki-scraper-fixes`) `scrape:quests` are
+cache with zero requests and keeps `scrapedAt`.
+`scrape:spells`, `scrape:classes` and (since 2026-10-10) `scrape:quests` are
 revid-checked: one request per 50 titles, then content only for pages whose revision moved, so a
 rerun is cheap; the quest scraper's first run builds its index (~38 requests). `scrape:mobs` was
 run once (2026-09-29, 2,547 pages, ~2 min) by seeding `cache/mobs` from `cache/items` first; that
 seeding served 5,406 pages from the August item cache and stamped them as new, so a run that sets
 a new baseline passes `--refresh`.
 
-The parser fixes of `wiki-scraper-fixes`, `faction-tab` and `slayer-tab` reach the shipped data
-only when it is re-derived. Every wiki-derived file re-derives from the caches with zero requests:
+A parser fix reaches the shipped data only when the data is re-derived. Every wiki-derived file re-derives from the caches with zero requests:
 items, mobs, quests, `mobFactions.json`, `mobRaces.json`, `spellLines.json`, respawns, and since
 2026-10-10 spells (`npm run scrape:spells -- --offline`, which needs the page titles a real run
 records in `cache/spells/index.json`; the spell name is the page title, `Healing Water`, not the
 page's copy-pasted `|spellname = Greater Healing`). After a spell re-derive, the name corrections
 in `spellCorrectionsList.ts` and `engine/crates/eqlog/data/spell-overlay.json`
-(`npm run gen:engine-spell-overlay`) follow in the same change, on `catch_all`.
+(`npm run gen:engine-spell-overlay`) follow in the same change.
 
 ## The ETL, as the owner wants it run (2026-10-10)
 
@@ -225,7 +223,7 @@ in `spellCorrectionsList.ts` and `engine/crates/eqlog/data/spell-overlay.json`
    errors (`validate-data --client-spells <path>`), and nothing in the app or a scraper reads them.
    A wiki title the client has never heard of is fixed on the wiki, or named in
    `spellCorrectionsList.ts` with evidence; the scraper does not guess.
-4. **Load**: the data commit on the file's branch, gated on the merged tree.
+4. **Load**: the data commit on a work branch off `main_community`, gated, then merged.
 
 A spell re-derive leaves its new or renamed names without an era verdict (`spellEra` tests go
 red). `npx tsx scripts/scrape-page-era-spells.mts` asks the era endpoint for only those names, one
@@ -249,7 +247,8 @@ rest alias pages and NPC spells; before the re-derive, 118.
   `api.php?action=query&list=usercontribs&ucuser=Kaltinril&uclimit=100&ucprop=title|timestamp|comment`
   (one request). 2026-10-18 evening: the owner made the Oggok NPC pages, the portraits and Black
   Lizard Talon; the 24 item stat re-reads and the Sky weapons' `DMG Bonus` change were other editors'
-  (the local-data-refresh commit of that run calls them all the owner's; it is not).
+  (that run's data commit, from the retired local-data-refresh, calls them all the owner's; it is
+  not).
 - The Itempage template renders a weapon's `DMG Bonus: N @ lvl 50` itself, after the statsblock's
   last `<br>`; scrape-posky turns every `<br>` into a line break so it keeps its own line.
 
@@ -260,8 +259,8 @@ rest alias pages and NPC spells; before the re-derive, 118.
   (`src/shared/wikiTitle.ts`). On 2026-10-22 six cached pages carried one and two reached shipped
   data (An alligator, Vessel Spirit Companion). The owner removed An alligator's mark on the wiki
   (read back by the 2026-10-22 second delta); Vessel Spirit Companion's file is still missing from
-  the wiki's file list. Not yet using the helper: gaps-tab's `gapImages.ts`
-  and `wikiPage.ts`, `scrape-drop-groups.ts`, faction-tab's `questPage.ts`.
+  the wiki's file list. Not yet using the helper: `gapImages.ts`
+  and `wikiPage.ts` (Gaps), `scrape-drop-groups.ts`, `questPage.ts`.
 
 - `{{Sky Era}}` was retired: ~107 pages became `{{Classic Era}}`, ~45 have no banner. Pre-upgrade
   Sky rewards carry `{{Delete}} Replaced with X in EQL`; the app does not read that marker and the
@@ -301,7 +300,7 @@ test.19 archive still served 140 of them. The archive lives where the app's Pref
 The whole Gaps list for a log, offline: concatenate the archived `.log.gz` and the live log into one
 file named `eqlog_<Name>_<server>.all.txt` (the harness wants a slice-shaped name), then from a
 `main_community` checkout's `engine/`: `GAPS_LOG=<file> GAPS_OUT=<out.json> cargo test --release -p
-knowledge --test gaps_corpus -- --ignored --nocapture`. Fold against `main_community`, not a branch off
-`main`: the data differs and so do the counts.
+knowledge --test gaps_corpus -- --ignored --nocapture`. Fold against `main_community`, not `main`:
+the data differs and so do the counts.
 
 Dated, offline measurements of the data against the owner's log and the caches live in `docs/community/audits/`. The 2026-10-11 one (`2026-10-11-data-gaps.md`) is the reference for what the log names that the data lacks, what the caches hold that the data lacks, and where a re-derive from THIS clone's item and mob caches would regress (they are older than the committed data; refresh them first). Its section 4 is the to-do list.

@@ -64,12 +64,13 @@ else
   echo "note: $dir/win-unpacked is gone, so the asar was not re-checked; it was checked at the build"
 fi
 
-# The tester notes are the body of the version-bump commit on test-neutering.
-# A fresh CI checkout has origin/test-neutering but no local branch of that name.
-notes_ref=test-neutering
-git rev-parse -q --verify "$notes_ref" >/dev/null || notes_ref=origin/test-neutering
+# The tester notes are the body of the version-bump commit on main_community (until 2026-10-26 it
+# was made on test-neutering, whose history main_community carries). A fresh CI checkout has
+# origin/main_community but may have no local branch of that name.
+notes_ref=main_community
+git rev-parse -q --verify "$notes_ref" >/dev/null || notes_ref=origin/main_community
 notes_commit=$(git log --format=%H --grep="^Test build $version:" -1 "$notes_ref")
-[ -n "$notes_commit" ] || fail "no 'Test build $version:' commit on test-neutering"
+[ -n "$notes_commit" ] || fail "no 'Test build $version:' commit on main_community"
 # Each release lists only what changed since the one before. The cumulative list lives once, on
 # test.20 (the first release), and every later release links to it below.
 first_tag=community-0.1.0-test.20

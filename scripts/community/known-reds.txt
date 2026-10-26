@@ -1,7 +1,7 @@
 # Unit tests the community build fails ON PURPOSE, by exact name (scripts/community/known-reds.sh).
 # A release stops on any other failure, and on any of these passing again.
 #
-# The TEST build (test-neutering) drops code signing and the official publisher, which two packaging
-# tests pin for the creator's official build:
+# The TEST build drops code signing and the official publisher, which two packaging tests pin for
+# the creator's official build:
 the sign hook is wired, and it is the one every shipped executable goes through
 nothing in the config narrows the signable set out from under the engine

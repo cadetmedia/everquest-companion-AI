@@ -3,7 +3,7 @@
   Starts EQ Companion from source (the dev app) on this clone's checked-out branch.
 
 .DESCRIPTION
-  Fork tooling (main_community_rules). Does, in order, what a dev launch needs on Windows:
+  Fork tooling (main_community). Does, in order, what a dev launch needs on Windows:
     1. finds Node 24 (the PATH node if it is 24+, else the newest nvm-windows v24.x);
     2. refuses to start if this clone's Electron is already running (single-instance lock);
     3. installs node_modules if they are missing;

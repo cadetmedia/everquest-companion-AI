@@ -54,11 +54,12 @@ the evidence, on the original repo, so the fix can reach everyone.
 
 ![How the community fork is run](../docs/community/fork-workflow.svg)
 
-The original app's `main` comes down unchanged and is never edited here. Every change of ours is
-its own branch, so each one can go back to the original as its own pull request. The branches are
-merged in a fixed order into `main_community`, the branch this page shows and every release is
-built from. The rules, the merge order and the record of every outside pull request we reviewed
-are in [docs/community](../docs/community/README.md).
+The original app's `main` comes down unchanged and is never edited here. Since 2026-10-26 the fork
+runs as its own project on one branch, `main_community`, the branch this page shows and every
+release is built from: each change is made on a short-lived branch, checked, and merged into it.
+Changes from the original app can still be pulled in, and are read in full first. The rules and
+the record of every outside pull request we reviewed are in
+[docs/community](../docs/community/README.md).
 
 ## The original app
 

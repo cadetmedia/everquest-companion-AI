@@ -5,6 +5,12 @@ description: The Linear-driven dispatch loop for EQ Companion — sync the owner
 
 # The Linear board loop
 
+> **Fork note (kaltinril/everquest-companion):** this is the creator's skill, for his own Linear
+> workspace. The fork never writes there (`docs/community/agent/WORKFLOW.md`, "Never write to the
+> creator's spaces"). In this fork, a worker branch is a work branch off `main_community` in a
+> temporary worktree, and "merged main" is `main_community`: merge there, gate there, push to
+> `origin`, then delete the work branch and worktree (`docs/community/RULES.md`, rules 1 to 3).
+
 Canonical project management is the kanban in the owner's PERSONAL Linear
 workspace (**Josh's Maker Space**, team **JOS** — never the Encamp work
 workspace). CLI: `npx tsx scripts/linear.mts` (auth: `.triage/linear.env`,

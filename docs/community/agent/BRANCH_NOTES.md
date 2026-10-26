@@ -1,10 +1,13 @@
-# Agent notes: per-branch design, traps and open items
+# Agent notes: design laws, traps and open items by feature area
 
-What a session needs before touching a feature branch: the design laws it must not break, the
-traps it hit, and what is still open. BRANCHES.md says what each branch is for; each branch's
-`requirements/<branch>.md` lists what was asked (RULES.md rule 19). Read both first.
+What a session needs before changing a feature: the design laws it must not break, the traps it
+hit, and what is still open. Each area's `requirements/<area>.md` lists what was asked (RULES.md
+rule 19); read it first. The sections were written per feature branch; since 2026-10-26 those
+branches are retired and all of this code is on `main_community`. Each heading names the retired
+branch it came from, which is also the name of its BRANCHES.md row and of its requirements file
+where one exists.
 
-## gear-progression-plan (PR #36) and gear-tab-improvements (PR #31)
+## Gear: the progression plan and the Gear tab (was gear-progression-plan, gear-tab-improvements)
 
 - **Survivability dial:** dps focuses read a "Glass cannon <-> Wooden sword" slider
   (`roleWeights.ts`: `RoleContext.survivability`, `DEFENSE_SPANS`, `readsSurvivability`). Weight
@@ -26,8 +29,6 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   Archery buffs and item effects are not scored in any focus.
 - **No stat caps modeled:** no sourced cap data exists.
 - Bars come from EQUIPPED items only.
-- `roleWeights.ts` is byte-identical on both branches (plan branch is home). `gearScale.ts` on
-  gear-tab is a superset; compare-card files live on gear-tab, plan fold/UI on the plan branch.
 - Gear toolbar row one is full at 1280px (~138px slack); a new filter goes on row two. `GearView`
   is at the 100-line function ceiling; `gear.e2e.mts` is near 400 lines.
 - Zone filter: `GearFilters.zones` holds map stems; 174 corpus spellings resolve to 121 zones via
@@ -35,9 +36,8 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
 - Open: arrows are unvalued (DMG with no delay); two suspect rows (Oakwynd, Coldain Crossbow) top
   the RANGE slot; zone options do not respect Current era; clicking a Zone cell does not filter.
 
-## map-improvements (PR #35)
+## Maps (was map-improvements)
 
-- PR #35's title/body still describe only the August pins work; rewrite before anyone reviews it.
 - Owner ruling: nothing that does not relate to EQ Legends. `portsInClient` drops a cast port
   whose spell the client lacks; item ports pass on the item.
 - Zone graph: built at idle from label (`P`) records only, as the union across ALL map packs (plane
@@ -54,7 +54,7 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
 - Open (seen 2026-10-13, present on the morning build too): `maps.e2e` "the map row never moves" fails,
   the pane drops 91 px (371 to 462) when the map arrives, most likely the travel card appearing late.
 
-## map-waypoints (bases on map-improvements)
+## Map waypoints and the Map pins overlay (was map-waypoints)
 
 - `/waypoint` is the game's command (`eqstr_us.txt` 8326: "Usage: /waypoint x, y, z"). Written in
   /loc order (N/S first); which number the game calls x is UNVERIFIED in game. One switch,
@@ -93,7 +93,7 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   so unlocked is the way back. Pinned and hidden, the Overlay menu's reset is. A new localStorage
   key the overlay keeps must start with `eq.maps.overlay` (`tests/mapPinsReset.test.mts` checks).
 
-## bazaar-tab
+## Bazaar tab (was bazaar-tab)
 
 - Owner ruling (2026-10-13): a wrong count is worse than a missing one. An offer the reader has to
   guess at is listed (line, speaker, time, direction) but never counted: `Offer::sure` false, no
@@ -103,7 +103,7 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   test -p fold bazaar_corpus -- --ignored --nocapture` on the old and new trees, then diff the
   DUMP lines; the summary line reports `priced` and `counted`.
 
-## exaltation-clarity (bases on character-slot-sockets)
+## Exaltations and sockets (was exaltation-clarity, character-slot-sockets)
 
 - Socket rules and the per-weapon proc exception: MEASURED.md, Exaltations.
 - Board optimizer (`socketOptimize.ts`): maximum bipartite matching over one claim per family ->
@@ -116,7 +116,7 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   `ExaltationAuditPanel.tsx`.
 - Open: persist the owned tri-state; e2e for red cards; is un-socketing lossy.
 
-## spell-upgrades
+## Spells, upgrades and Loadout (was spell-upgrades)
 
 - All Spells views sit behind `UNRELEASED`. Graduation order: widen `TELEMETRY_VIEWS` and deploy
   the ingest Lambda FIRST (a client reporting an unknown view 400s the whole batch), then the
@@ -130,7 +130,7 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
 - Page preference runs AFTER corrections.
 - Group buff set: a group-mate contributes only spells whose `target_type` reaches another player;
   mates are read at YOUR level. Party colours are stored as slots (8), paint in `partyPaint.ts`.
-- When gear-progression-plan merges: pass `roleWeights` into `buildLoadout` and delete
+- Open: pass `roleWeights` (the Gear plan's, now on the same trunk) into `buildLoadout` and delete
   `DEFAULT_STAT_WEIGHTS`.
 - Rust `spells_us.rs` twin is not parity-gated; deferred.
 - Open: SPA 148 slot reading (MEASURED.md); SPA 475 rows in the same slot contest each other.
@@ -139,40 +139,38 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
 - Archetype AAs are not listed: `classes.json` `aas` has `group: 'archetype'` and no classes. Add them
   only once the data states an archetype or classes.
 
-## faction-tab, slayer-tab (Achievements), unlocks-tab
+## Factions, Achievements and Unlocks tabs (was faction-tab, slayer-tab, unlocks-tab)
 
 - faction-tab: live standings = dump + log receipts since the dump's mtime (32 MB tail read).
   Cap lines PIN the value. Quest faction receipts come from the committed quest cache (zero
   requests). Wiki quest pages quote receipts inconsistently, so home-zone quests with no stated
   receipt are shown separately with a neutral marker.
 - Class filter is inclusive on ambiguity (wiki class tokens are prose).
-- Graduating faction-tab: delete the UNRELEASED gate + `unreleasedFactions.tsx`, add `factions`
+- Graduating the Factions tab: delete the UNRELEASED gate + `unreleasedFactions.tsx`, add `factions`
   to `TELEMETRY_VIEWS` (Lambda first), give `loadFactionsNow` its perf seam.
-- slayer-tab: the tab is Achievements, view id stays `slayer`; NavDrawer.tsx untouched so the
-  sidebar-groups rerere replays. `achievements:book` is read on demand and never stored. Mob race
+- Achievements: the view id stays `slayer`. `achievements:book` is read on demand and never stored. Mob race
   from the wiki `|race` field (`scripts/gen-mob-races.mts`), mob factions likewise
   (`gen-mob-factions.mts`). Open: `Obtain <Item>` lines link nowhere; picks are per machine, not
   per character.
-- unlocks-tab: its first commit merges faction-tab onto slayer-tab (needs both). The App-root
-  provider wraps `<ViewContentMemo>` at App's ROOT; wrapping the view subtree re-indented lines
-  other branches edit. Deity constants are spelled locally (the shared ones live on
-  exaltation-clarity).
+- Unlocks: needs the Factions and Achievements code. The App-root provider wraps
+  `<ViewContentMemo>` at App's ROOT. Deity constants are spelled locally (shared ones exist in the
+  Exaltations code; folding them together is open).
 
-## roster-who-classes
+## Roster classes from /who (was roster-who-classes)
 
 - `roster_who.rs` reads `/who` rows from `unknown` events via `ev.raw()` and joins them to
   published roster members (`classes`, `level`, `classesTs`). A row never admits anybody to the
   roster. Chosen over a new parser `Kind` (~30 files incl. parity). Only works if the player types
   `/who` on the group.
 
-## fix-ds-ever-struck (PR #61), fix-roster-overrides-ever-struck
+## Pet crediting: ever_struck (was fix-ds-ever-struck, fix-roster-overrides-ever-struck)
 
 - `ever_struck` permanently refuses a caster's pet claims. Path 1: damage-shield ticks wrote it
   (fixed, PR #61). Path 2: a riposte against a groupmate wrote it; a LIVE roster member now passes
-  the `ever_struck` refusal only (charm broadcast stays absolute). Path 2 should go to upstream
-  #60 as a second path + PR.
+  the `ever_struck` refusal only (charm broadcast stays absolute). Path 2 was offered upstream on
+  #60 (PR #80) and is left there.
 
-## log-archive (upstream #37)
+## Log archive (was log-archive)
 
 - Plan and measurements: `docs/plans/log-archive/`. Laws: never write to the game log; a fold is
   never seeded with what it re-derives; combat history is lossless.
@@ -188,13 +186,13 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   the game says it again (zone, level) goes in its `CARRY_OVER` table; the live value wins once it
   states one. Display only, never seeded into the engine.
 
-## sidebar-groups
+## Sidebar groups (was sidebar-groups)
 
-- One `GROUPS` table in `NavDrawer.tsx`. A branch that adds a tab places it in a group at its
-  merge into `main_community`. Maps under Research was an agent's choice; the owner never placed
+- One `GROUPS` table in `NavDrawer.tsx`. A change that adds a tab places it in a group in the
+  same change. Maps under Research was an agent's choice; the owner never placed
   it.
 
-## test-neutering (identity)
+## The TEST build identity (was test-neutering)
 
 - The community build is a continuation, not a test of the official app. Nothing points a user at
   the official app by default; the original is credited, clearly labelled "no longer updated".
@@ -203,17 +201,16 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   test.1-12 are under tag `archive/local_all_changes_testing-2026-09-15`, test.6/7 as
   `local test:` commits.
 
-## installer-size, deps-refresh
+## Installer size and dependencies (was installer-size, deps-refresh)
 
-- installer-size sits on top of deps-refresh (lockfile rewrites cannot text-merge). Remake on the
-  new tip if deps-refresh moves: move the packages, `npm install --package-lock-only` on Node 24,
-  diff must be only dev flags.
+- A lockfile is regenerated, never text-merged: move the packages, `npm install
+  --package-lock-only` on Node 24; the installer-size diff was only dev flags.
 - Measured, left out: en-US-only locales changes formatting for other locales; `compression:
   maximum` is byte-identical.
-- typescript-eslint >8.65 and onnxruntime-node 1.29 are pinned back on
-  `community/pr-70-npm-minor-patch` (ADOPTIONS.md).
+- typescript-eslint >8.65 and onnxruntime-node 1.29 are pinned back (PR #70's adoption,
+  ADOPTIONS.md).
 
-## gaps-tab
+## Gaps tab (was gaps-tab, gaps-item-facts, gaps-all-characters, gaps-overlay)
 
 - 2026-10-25: E4 turn-ins count only at `You complete the trade with X.`; an offer left open, handed
   back or cancelled is none (`gaps_quests.rs`). Map links: `lib/mapZoneLink.ts` (context from the
@@ -239,9 +236,7 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   `localhost:5173` and a `-Prod`/installed build `file://` keep separate marks). A mark holds the ISO
   time it was made and clears when the wiki data's `scrapedAt` is later (owner, 2026-10-25: "it
   should go off TIME"; a bare-day mark from before compares by day); never on the row's absence.
-  `useDoneMarks(GAPS_DATA_STAMP)`: on main_community the call is in `useGapsList.ts` (gaps-overlay,
-  screenshot-to-wiki carry that file with the old two-argument call, fixed in the merge; a branch
-  that merges gaps-tab makes the same one-line change). A faction, drop or image chip opens the catalog page title picked by zone (`shared/gapMobPage.ts`).
+  `useDoneMarks(GAPS_DATA_STAMP)`: the call is in `useGapsList.ts`. A faction, drop or image chip opens the catalog page title picked by zone (`shared/gapMobPage.ts`).
 - Held now (C6, `shared/gapHeld.ts`): the last `/outputfile inventory` export through
   `useGearOwnership`, plus kept loot since (`computeHeldCountsAfter`), less destroys since; no
   export, no claim (a loot line cannot tell a copy held from one sold). Items domain only.
@@ -293,15 +288,15 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   'That'll be ...'`, kind `unknown`), purchases and vendor sales, and pairs each death with the
   faction lines printed in the 2.5 s before it (`killFactions`); `shared/gapFactions.ts` checks the
   pairs against mobs.json `factions` (both page lists; spelling folded: case, a trailing period, a
-  leading "the"). mobs.json `merchant` and `factions` come from `mobPage.ts` (wiki-scraper-fixes).
+  leading "the"). mobs.json `merchant` and `factions` come from `mobPage.ts`.
 - Drops missing from a mob (`shared/gapDrops.ts`): mob pages link groups (`[[Rusty Weapons]]`) instead
   of their items; `scrape-drop-groups.ts` reads the 265 non-item drop-list pages and keeps the
   members written as a `{{Gear Set|...}}`, bullets, `<li>` items or table cells (spell, item and mob
   pages are no group): 52 groups on 2026-10-18. An item in a group is filed as the group (owner's
-  rule). Data and page cache live on gaps-tab, the reader.
+  rule).
 - Images domain (`shared/gapImages.ts`): a met mob (kills ledger or a loot source) whose every page
-  is `noImage` in mobs.json. `noImage` is written by `scrape-wiki-files.ts` (wiki-scraper-fixes)
-  against the cached file list (local-data-refresh); a re-parse of a mob page drops it, so the delta
+  is `noImage` in mobs.json. `noImage` is written by `scrape-wiki-files.ts`
+  against the cached file list; a re-parse of a mob page drops it, so the delta
   re-marks after every fold. 6,364 of 7,954 pages name a file nobody uploaded: only met mobs show.
 - Drops reads both sides of the wiki's tie: the mob page (mobs.json) in the renderer and the item
   page's dropsfrom from main (`gaps:itemMobs`, `src/main/gapItemMobs.ts`; items.json is main-only).
@@ -315,26 +310,25 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   text should be crafted by real human contributors". Told the owner about Copy wiki page.
 - No generated merchant item list (owner, decided): vendor stock and player resells cannot be told
   apart, and quoted prices carry the player's faction and Charisma.
-- `event_feed.rs` is 431 code lines: red on this branch alone against the old 400 bar, green on
-  `main_community` (catch_all's 440). The npm gate does not run the size check on the real tree.
+- `event_feed.rs` is 431 code lines, near the 440 bar. The npm gate does not run the size check
+  on the real tree.
 - "I have it" (`eq.gaps.heldOnly`, off by default): Items only; filters through `useHeldOnly` before
-  Hide uncertain; on gaps-overlay that lives in `useGapsList`, so the overlay follows it. No
+  Hide uncertain; that lives in `useGapsList`, so the Gaps overlay follows it. No
   export, no Items row.
-- Days back (gaps-all-characters) chooses rows only: `ownSince` cuts the engine rows, the join cuts
+- Days back (All characters) chooses rows only: `ownSince` cuts the engine rows, the join cuts
   each character's rows, loot and kills stay whole, and `useGapsData` `inWindow` applies `gapsSince`
   to the derived list (drops, factions, images) once built. Counts and drop rates read the whole
   log; an archive that ended before the window is still left out whole. One memo slot per copy
-  (`lastShown`, `lastShownOnly` on gaps-overlay): a fresh array misses `snapOf` and a Gaps visit
+  (`lastShown`, `lastShownOnly`): a fresh array misses `snapOf` and a Gaps visit
   costs 400-500 ms again. Held is never cut.
 - All characters "Seen by": engine forage rows are noted under `item|name`, the Items row they become.
 - Forage update rows (`shared/gapForage.ts`): the engine files a KNOWN item's forage under domain
   `forage` (served after the four, no total); `withForageRows` always removes those rows, and an
   Items row with `forageUpdate` stands in for each page that lacks something. Zones compare by
   place through the zone table, never by spelling (`Northern Karana` = `Northern Plains of Karana`).
-- items.json `foraged`, `foragedNote`, `foragedCategory` exist only on local-data-refresh:
-  `main/gapItemForage.ts` declares them locally so gaps-item-facts builds without them.
-- `itemLookupParse.ts` is 421 code lines: red on wiki-scraper-fixes alone against its old 400 bar,
-  green on `main_community` (catch_all's 440).
+- `main/gapItemForage.ts` declares items.json's `foraged`, `foragedNote`, `foragedCategory`
+  locally (until 2026-10-26 the data came from a separate branch).
+- `itemLookupParse.ts` is 421 code lines, near the 440 bar.
 - Job rule: `shared/gapJob.ts gapJob` is the one classification. Faction, drop and image rows are
   updates; a merchant is an update when `isMob`; a `forageUpdate` row is an update; a faction row
   with `noPage` stays an update (the mob's own row is the new page).
@@ -348,18 +342,17 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   `a cave bat`, though the page A cave bat says `|name = a giant cave bat`); never after the page's
   `|name`. When two spellings reach one page, the one that is its title or `|name` names the row.
   `pageImage` when the page's imagefilename differs; qualified titles keep the page's file. Row
-  names equal the con title, so a Done mark also quiets the Event log tag. `imageAction` sits below `factionAction`, as on
-  gaps-item-facts; merging gaps-tab into main_community replays a rerere resolution in `gaps.ts`.
+  names equal the con title, so a Done mark also quiets the Event log tag. `imageAction` sits below `factionAction`.
 - Common forage: `gapForage.ts COMMON_FORAGE`; 6 -> 2 rows on the owner's logs.
 - Saved Gaps files carry `rows` (SAVED_ROWS). Raise it whenever the engine serves a new kind of row
   an older save cannot hold.
-- gaps-item-facts alone: `gaps.ts` is 404 code lines against its old 400 bar; green merged.
+- `gaps.ts` is 404 code lines, near the 440 bar.
 - The app has only a dark theme: the job tags use palette `secondary` (New page) and `primary`
   (Update page).
-- Merging gaps-item-facts forward conflicts in `gapDerive.ts` (keep `only`, always run
-  `withForageRows`, add `met.itemForage` to `keyOf`), `wikiPage.ts` (`row.forageUpdate ?
-  forageAddText(...) : itemPage(...)`; NEEDED_OF `[]` for a forage row) and `useGapsData.ts` (forage
-  names from the snapshot the derivation receives, the joined one under All characters).
+- Forage rows in the derivation: `gapDerive.ts` keeps `only`, always runs `withForageRows`, and
+  has `met.itemForage` in `keyOf`; `wikiPage.ts` writes `row.forageUpdate ? forageAddText(...) :
+  itemPage(...)` (NEEDED_OF `[]` for a forage row); `useGapsData.ts` takes forage names from the
+  snapshot the derivation receives, the joined one under All characters.
 - A new quest page follows the wiki's Quest Page Blueprint (Help:Contents, read 2026-10-23; the new
   Lake Nerius pages follow it): `{{<Era> Era}}`, picture, `questTopTable` with `Starts In`,
   `= Reward =` (`<ul>`, one `<li>{{:X}}</li>` a line), `= Summary =` (`{{CheckboxList}}`),
@@ -374,7 +367,7 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   ending in `?` that the wiki lacks is asked once more without it. `gapQuestMerge.ts` only adds: rows
   the table lacks or holds `?` in, rewards, walkthrough blocks whose words are not on the page,
   categories; a differing start zone or faction number is a note, never an edit. The read goes
-  through the shared `wikiClient.fetchPage` (catch_all's). A page whose body is only a link to
+  through the shared `wikiClient.fetchPage`. A page whose body is only a link to
   another spelling of its own title is a stub: the read follows it once and says so (the wiki has
   `Unfortunate news` as a stub of `Unfortunate News`). The merge reads sections at `= X =` or
   `== X ==` and adds in the page's own level; `Starts In` is Start Zone; a hand-in counts as present
@@ -394,15 +387,15 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   task line; Unfortunate news offered its letters 57-61 s before. Its talk starts at the player's last
   hail of that NPC. The log prints no task-completed line: an end is the last update with its rewards.
 
-## screenshot-to-wiki
+## Screenshot to wiki (was screenshot-to-wiki)
 
 - Paste routing (2026-10-25): `rowPaste.ts` `pasteKind` reads the box's own OCR lines; a popup is
   known only by its closing `Click 'OK' to...` line, because a chat window behind a mob is also prose.
   The +0 work-back uses the Tier bar only when y is 2^N and x is below it. Weight rounds up to a
   tenth, so its +0 is mostly `?`. Its `heldWhere` (update rows) does not yet say the tier or `also`
-  as gaps-tab's `heldLine` does.
-- Plan and measurements: `plans/2026-10-20-screenshot-to-wiki.md`. Off `gaps-tab`, recipe after
-  `gaps-overlay`. Main: `src/main/shot/` (Electron-free) and `src/main/ipc/shotIpc.ts`; the window
+  as the Gaps tab's `heldLine` does.
+- Plan and measurements: `plans/2026-10-20-screenshot-to-wiki.md`. Built on the Gaps tab and its
+  overlay. Main: `src/main/shot/` (Electron-free) and `src/main/ipc/shotIpc.ts`; the window
   to wiki mapping `src/shared/itemWindow.ts`; UI `features/gaps/ShotPanel.tsx`, kept readings in
   `itemShotsStore.ts` (`eq.gaps.itemShots`); `wikiPage.ts itemPage(f, shot)`.
 - Game art is never committed or shipped: the icon index is built from the player's
@@ -474,7 +467,7 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
 - Review fixes (2026-10-21): the Class line = line start plus a colon or a code, a window needs
   Class/Race codes, a Lore's prose may say "class"; `itemDelevel.ts` inverts each
   stat by `upgradeStatClass` through itemUpgrade.ts's own rules (Range, Backstab, the penalty past
-  ten), never a copy (2026-10-25; itemUpgrade.ts is byte-identical with catch_all); a classic numeral spell
+  ten), never a copy (2026-10-25); a classic numeral spell
   (Clarity II) is told from an upgraded rank by the install's spells_us (upgraded ranks are not rows
   there); the name check allows two OCR slips but never a digit change and never when another known
   name is as near, and a capture files at once only on an exact name; forage update rows take no
@@ -495,7 +488,7 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   `<BR>` to `<br>`.
 - D3: Weight's ceiling is many-to-one, so most +N items over 0.1 weight get the warning, not a guess.
 - Fixtures: every game screenshot the owner or a tester sends (item, Lore tab, spell window, mob
-  picture) is committed to `tests/fixtures/shots/` on this branch with a test (owner, 2026-10-21:
+  picture) is committed to `tests/fixtures/shots/` with a test (owner, 2026-10-21:
   "they should be saved into the repo for test images for unit/regression testing"). Screenshots of
   the app itself are not fixtures. An image sent while the agent is mid-reply is not written to the
   session's `images` folder (Claude Code in VS Code): describe it to the agent and ask the owner to
@@ -518,20 +511,19 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   picture `0 1 420px`, wraps then scales). Main serves it as a data URL through `IPC.shotPictureData` only where
   `pictureIn` passes for `pictureDirs()` (root, npc, item, spell), cached by path and mtime; the renderer reads no path.
 
-## Page notices (cross-branch)
+## Page notices
 
 - `src/shared/pageNotices.ts` reads `{{DNE}}` and `{{delete[|reason]}}` (comments and nowiki skipped) into
-  `notices: ["DNE" | "delete" | "delete: <reason>"]`; byte-identical on wiki-scraper-fixes and
-  scrape-delta-tool. Written by `mobPage.ts`, scrape-items and the delta's `deltaItems` (an edit that
+  `notices: ["DNE" | "delete" | "delete: <reason>"]`. Written by `mobPage.ts`, scrape-items and the delta's `deltaItems` (an edit that
   removes the notice drops the field). Spells need none.
-- Notices domain (gaps-tab), engine-filed: `gaps_notices.rs` (child of `gaps.rs`); `GapIndex.item_notices`
+- Notices domain (Gaps), engine-filed: `gaps_notices.rs` (child of `gaps.rs`); `GapIndex.item_notices`
   / `mob_notices` from `gap_index.rs`, the mobs off the corpus's `MobIndex` (never `MOBS_JSON` directly:
-  catch_all embeds that text once, in the fold crate). Row key `<item|mob>:<page lowercased>`; serves
+  the fold crate embeds that text once). Row key `<item|mob>:<page lowercased>`; serves
   `page`, `notices`, `subject`. Renderer: `gapNotices.ts noticeAction`, `wikiPage.ts noticeProof` (Copy
   proof), `gapJob` treats `notice` as an update; `GapRowButtons.editorOf` opens the page's editor.
-- The forage test (gaps-item-facts) checks its four totals by name, so a new domain does not break it.
+- The forage test checks its four totals by name, so a new domain does not break it.
 
-- Existing page (gaps-tab): the lookups (catch_all, `wikiTemplates.ts`) save `notItemPage` / `notMobPage`;
+- Existing page (Gaps): the lookups (`wikiTemplates.ts`) save `notItemPage` / `notMobPage`;
   `gapExistingPage.lookupVerdict` gives `otherPage:<title>` or `freeText:<title>`, a search hit under another name
   is unchecked; `pageCheckAction(row, verdict)` says Fix page; `GapRowButtons.editorOf` edits that page.
 - Link titles: `mobPageTitle.mobPageFinder` (name, page, redirect names to the page title; none when several answer)
@@ -539,7 +531,7 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
 - Unlogged items: `shared/gapExtraItems.ts` (held from the export, captured from a 📷 of an unknown item, kept in
   `eq.gaps.capturedItems`); main `gapUnknownItems.ts` restates the engine's item check, keep it in step with `gaps_keys.rs`.
 
-## Wiki redirects (cross-branch)
+## Wiki redirects
 
 - A redirect is a fact about the wiki, not about mobs: it applies to every catalog (owner, 2026-10-22,
   after the 2026-10-18 ask was built for mobs only). The cached list
@@ -549,14 +541,14 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   own is never another's.
 - Writers (`scripts/sources/mobRedirects.ts`): scrape-mob-redirects (`--offline` re-applies the cache to
   all four files), scrape-mobs, scrape-items, scrape-spells and scrape-drop-groups apply the cache on
-  write; the delta (scrape-delta-tool) folds the cache first, then applies it to items, spells and the
+  write; the delta folds the cache first, then applies it to items, spells and the
   drop aliases (written only when a name changed).
 - Readers, each filling only FREE keys: engine `knowledge::gap_index` (Gaps item check, near-miss
   candidates, event-feed offers), `knowledge::Corpus::item_db_key` (item answers), `gaps_keys::spell_keys`
   (Gaps spell check, its own light parse of spells.json); app `itemsDb.buildItemDbIndex` (itemLookup,
   character sheet), `itemOtherNames.itemsByAnyName` (gapItemMobs, gapItemForage, mobDropEra,
   wornFocusIndex); `gapDrops.filedAs` reads a looted name through the aliases; `shotIpc` catalog names.
-- Safeguard (gaps-tab): `GapIndex.item_redirects` / `mob_redirects` (spells from spells.json otherNames) kept apart
+- Safeguard (Gaps): `GapIndex.item_redirects` / `mob_redirects` (spells from spells.json otherNames) kept apart
   from own keys; `ItemIndex::with_redirects`, `MobNames::with_redirects`, `spell_via_redirect` name the target only
   when the name has no record of its own and the redirect is more than a respelling (`gaps_keys::same_name`).
   `gaps_redirects.rs` files it with `viaRedirect`; `gapRedirects.ts`; uncertain, an update, nothing needed. `known()`
@@ -565,7 +557,7 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
 - Not read: walks over every item (planner indexes, zone ports, clickies) keep the file's own map, so no
   page is visited twice; Spells search leaves the redirect shorthand (`DT`, `Dmf`) out.
 
-## Unassigned open items (no branch yet)
+## Open items with no feature area yet
 
 - The Recommended tab ignores layer-3 era derivations on purpose (`progressionPlan.ts`
   `eraLegal`).
@@ -578,14 +570,13 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   and the same charm problem for DoT ticks on group members (69,424 of Kamas's pet damage over 21
   fights; extending the exception would keep a broken-charm pet credited until its next swing). Later, maybe: the line after an environment hit names its cause (`YOU are burning!`
   26, `YOU were injured by falling.` 11, `YOU were crushed.` 1).
-- Performance quick wins left (2026-10-25), each needing a ruling or another branch: `heal-*` in
-  `CHARACTER_AWARE_OVERLAYS` (the list exists only on `community/pr-67-self-meter-name`; one-liner
+- Performance quick wins left (2026-10-25), each needing a ruling: `heal-*` in
+  `CHARACTER_AWARE_OVERLAYS` (the list came with PR #67; one-liner
   `[...MODULE_READING_OVERLAYS, 'fight', 'overall', 'heal-fight', 'heal-overall']`; until then the
-  heal meters do not reset on a character switch; owner asked whether that copy may be edited);
-  moving `killFactions` out of the gaps snapshot (an engine op, protocol, gaps-tab, log-archive,
-  gaps-all-characters, screenshot-to-wiki and the saved-file format); a `gearOwnership` cache (would
-  change the visible per-window "read at" time; owner asked); the map timer pins' clock gate (one
-  line on map-improvements, map-waypoints, zone-history).
+  heal meters do not reset on a character switch; owner asked whether that adopted code may be
+  edited); moving `killFactions` out of the gaps snapshot (an engine op, protocol, the Gaps tab,
+  the log archive and the saved-file format); a `gearOwnership` cache (would change the visible
+  per-window "read at" time; owner asked); the map timer pins' clock gate (one line).
 - Rust ProcBuff duration floor 0 vs measured growth (the creator's deliberate floor).
 - `tests/e2e/sky-inventory-autoload.e2e.mts` was red on `main_community` independent of any
   branch (2026-09-25, geometry "counts top was 280, now 336"); unknown on plain main.
@@ -595,15 +586,15 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
 - Group-inviter roster: after "You have joined the group", the inviter is not credited until a
   group-chat line (owner: leave for now).
 
-## zone-history
+## Zone history (was zone-history)
 
-- Built on map-improvements + coin-and-deaths (its first two commits merge them).
+- Needs the Maps and coin-and-deaths code.
 - `zoneHistory.ts` rates are per ACTIVE hour; the Leveling table's new columns follow its rate
   basis like its other rates, and every rate sort orders by the active-hour value.
-- `tests/e2e/maps.e2e.mts` "the map row never moves or resizes" fails on this branch with or
-  without its Maps change (measured 2026-10-13): a red of the base, not of the new tab.
+- `tests/e2e/maps.e2e.mts` "the map row never moves or resizes" fails with or without Zone
+  history's Maps change (measured 2026-10-13): a red of the Maps code, not of the new tab.
 
-## sky-quest-overlay (bases on fix-sky-turnin-undo + item-hover-cards)
+## Sky quest overlay (was sky-quest-overlay)
 
 - Data path: AppCelebrations' always-mounted `useProgress` -> `useSkyOverlayFeed` -> localStorage
   `eq.skyOverlay.rows` (written only on change) -> the overlay's `storage` listener. No IPC. The
@@ -616,12 +607,7 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
   `lookupItem` from the overlay: it falls back to the wiki on a DB miss.
 - "Count items from" is a per-window store (`useCountSource.ts`); a new `useProgress` reader
   follows the tab's pick with nothing extra.
-- Merge with `map-waypoints`: `OverlayKind`/`OVERLAY_KINDS`, `OVERLAY_KIND_LABEL`/
-  `OVERLAY_LABEL_ORDER`, `OVERLAY_TITLE`, `DEFAULT_OVERLAY_CONFIG`, `OVERLAY_MENU_ROWS`,
-  `overlay/main.tsx`, `UNREPORTED_OVERLAY_KINDS` and the hot-zone / appearance test lists each
-  conflict on one line: take both, `mapPins` first. In `TitleBar.tsx` keep main_community's
-  `OverlayResetDialog` import where this branch has none.
-- Branch-alone reds (2026-10-16): `resistBaseline.test.mts` Nagafen and Zol Ghoul Knight, red on the
-  untouched base too (the base carries main's data, not local-data-refresh's).
+- Its overlay kind sits beside `mapPins` in every overlay-kind list (Map waypoints, "A new overlay
+  kind touches").
 - e2e: `tests/e2e/sky-quest-overlay.e2e.mts` (window opens, a searched quest starred by the Quests
   tab checkbox reaches the overlay, the second click unstars). Open: the Ready tab checkbox has no e2e.

@@ -3,7 +3,7 @@
 **PARKED (owner, 2026-10-08):** kept as research; not started. The GitHub installer comes first.
 
 A plan, in phases, for offering the community build through the Microsoft Store as well as the
-fork's GitHub Releases page. Nothing here is built yet. It lives on `community_release_rules` beside
+fork's GitHub Releases page. Nothing here is built yet. It sits beside
 [RELEASING.md](RELEASING.md), because it is about how the build reaches players.
 
 ## Where this came from, and whether it is true
@@ -107,15 +107,15 @@ Every phase ends in a state that can stop: nothing reaches players before Phase 
 
 ### Phase 1b: the version scheme (code, small; can land before any Store work)
 
-- **Touches:** `test-neutering` (version `0.1.N`; the test-build procedure's bump), and
-  `community_release_rules` (`publish-release.sh` accepts `0.1.N`, finds the `Test build 0.1.N:`
+- **Touches:** `package.json` (version `0.1.N`; the test-build procedure's bump), and
+  `scripts/community/publish-release.sh` (it accepts `0.1.N`, finds the `Test build 0.1.N:`
   notes, and refuses a prerelease-shaped version; the tag stays `community-<version>`).
 - **Check:** a build numbered `0.1.21` is offered to an installed `0.1.0-test.20` by the local
   feed test used for test.20 (RELEASING.md), and its `test.yml` and installer name carry `0.1.21`.
 
 ### Phase 2: a Store build that runs locally (code, about half a day)
 
-- **Touches:** a Store build config beside the TEST one on `test-neutering` (an `appx` target with
+- **Touches:** a Store build config beside the TEST one (an `appx` target with
   the Phase 1 identity values and the version mapping of item 3), tile images generated from
   `build/icon.png` into `build/appx/` (Square44x44Logo, Square150x150Logo, StoreLogo,
   Wide310x150Logo; electron-builder does not make them from the .ico), and the updater turned off

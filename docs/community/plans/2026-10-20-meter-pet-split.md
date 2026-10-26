@@ -174,7 +174,7 @@ Malkil's sketch, `+` master colour, `-` pet colour, `/` the shared third colour:
 ## Phases
 
 1. **Branch.** `meter-pet-split` off `main`, worktree, recipe line and BRANCHES.md row in the same
-   change (rule 9). It touches files `community/pr-67-self-meter-name` touches (`meterBars.tsx`,
+   change (the recipe rule then in force, retired 2026-10-26). It touches files `community/pr-67-self-meter-name` touches (`meterBars.tsx`,
    `SegmentPanel.tsx`, `DpsCard.tsx`, `CombatSection.tsx`, `useCombatPrefs.ts`), so place it after
    that line; resolve in the scratch tree, `rerere` replays.
 2. **Preference.** The three-way key, legacy read, Preferences control. Options 1 and 2 behave

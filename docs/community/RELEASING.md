@@ -2,21 +2,22 @@
 
 How a TEST build goes from `release/<version>/` on the owner's machine to a download link anyone
 can use, on the fork's own Releases page:
-<https://github.com/kaltinril/everquest-companion/releases>. This lives on the never-closing
-`community_release_rules` branch, with the script it describes (`scripts/community/publish-release.sh`).
-That branch holds only these release docs, scripts, the workflow and the release skill, and merges into `main_community` like `main_community_rules`;
-the build and the release always come from `main_community`.
+<https://github.com/kaltinril/everquest-companion/releases>. The script it describes is
+`scripts/community/publish-release.sh`. The build, the version bump, the notes and the release all
+come from `main_community`, the trunk (RULES.md, rule 1); changes to this procedure land there
+through a work branch like any other.
 
 ## What a community release is
 
-The `0.1.0-test.N` installer that `test-neutering` produces, attached to a GitHub Release on the
+The `0.1.0-test.N` installer that `main_community` produces (the TEST identity, which the retired
+`test-neutering` branch brought in), attached to a GitHub Release on the
 fork. Nothing about the build changes for the release; the TEST identity is what makes it safe to
 hand to strangers:
 
 - **It installs beside the official app, not over it.** Its own appId, product name, install
-  folder and settings (`test-neutering`).
+  folder and settings.
 - **It updates itself from this fork's Releases page, and only from it** (since test.20). The TEST
-  `electron-builder.yml` on `test-neutering` points the creator's own updater at a generic feed,
+  `electron-builder.yml` points the creator's own updater at a generic feed,
   `https://github.com/kaltinril/everquest-companion/releases/latest/download/`, so an install reads
   `test.yml` (electron-builder names the update file after the version's prerelease word) from the
   newest release here, downloads the newer installer quietly and applies it
@@ -63,20 +64,20 @@ step-by-step checklist is the `community-release` skill (`.claude/skills/communi
 **Pushing branches never releases anything** (owner, 2026-10-08: branches go up between
 releases without starting a version). Only the `community-*` tag starts `community-release.yml`;
 `build.yml` builds on a push to `main` (a CI check that publishes nothing) and releases only on a
-`v*` tag, which the fork never pushes. Feature branches, `main_community` and the rules branches
-start no workflow at all, so they are pushed whenever the work is done and tested, and a release is
-only ever the deliberate tag in step 4.
+`v*` tag, which the fork never pushes. Pushing `main_community` starts no workflow at all, so it is
+pushed whenever the work is done and tested, and a release is only ever the deliberate tag in
+step 4.
 
-1. **Prepare** as for any tester build: read the previous `Test build` commit's notes, check every
-   recipe branch is level with `main_community`, bump `package.json` and write the notes as a
-   commit on `test-neutering` (they become the release notes, so they are written for players,
+1. **Prepare** as for any tester build: read the previous `Test build` commit's notes, check no
+   finished work branch is left unmerged, bump `package.json` and write the notes as a commit on
+   a work branch off `main_community` (they become the release notes, so they are written for players,
    and hold only what changed since the previous version plus the known issues: the full list of
    what the community build adds lives once, on the test.20 release, and every later release links
-   to it), merge it, and run the gate (`bash scripts/community/known-reds.sh` is the unit suite with only
+   to it), merge it into `main_community`, and run the gate (`bash scripts/community/known-reds.sh` is the unit suite with only
    the known reds allowed).
 2. **The owner says to release.** A release is public the moment it exists, reaches every install
    from test.20 on within hours, and may be mirrored or indexed, so this is always the owner's word.
-3. **Push** `main_community`, `test-neutering` and any branch the build touched to `origin`.
+3. **Push** `main_community` to `origin`.
 4. **Tag and push the tag:** `git tag community-<version> main_community` and
    `git push origin community-<version>`.
 5. **The workflow** checks the tag names the `package.json` version; runs typecheck, lint and the
@@ -118,8 +119,8 @@ someone may already have downloaded. Deleting a release is the owner's call.
   installer.
 - **Moving over from older installs (since test.20)**, all checked on the owner's machine:
   - *An older TEST build* (test.19 and before) lived in `%LOCALAPPDATA%\Programs\everquest-companion`,
-    the official app's folder. test.20's installer (`build/installer.nsh`, `eqLeaveSharedFolder`
-    on `test-neutering`) moves it to `everquest-companion-test`; settings are untouched.
+    the official app's folder. test.20's installer (`build/installer.nsh`, `eqLeaveSharedFolder`) moves it to
+    `everquest-companion-test`; settings are untouched.
   - *Both apps installed*: the official app's files in the shared folder are left alone; only the
     TEST exes are removed. The TEST settings are kept and win, since they already exist. An
     official app an earlier TEST install had overwritten needs one reinstall from the creator's
@@ -127,5 +128,5 @@ someone may already have downloaded. Deleting a release is the owner's call.
   - *Only the official app*: on first launch the TEST build copies the official app's settings,
     learned messages, resist history, item cache, sound packs and UI choices (`channel.ts`
     `SEED_ENTRIES`); the official app is never changed.
-- **The fork's front page** shows the creator's README, because the default branch is `main`
-  and `main` is never committed to. Share the Releases link directly.
+- **The fork's front page** is `.github/README.md` on `main_community`, the default branch since
+  2026-10-09; the creator's root `README.md` stays untouched.

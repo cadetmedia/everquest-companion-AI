@@ -1,11 +1,21 @@
-# Branches and the recipe
+# Branches: the retired record, and the known reds
 
-The recipe is the fenced block below. `scripts/community/rebuild-main-community.sh` reads it:
-one branch per line, merged top to bottom into a fresh branch off `main`. Lines starting with
-`#` are comments. Order is deliberate (RULES.md, rule 9): a base before what builds on it, tabs
-before the branch that groups them, `test-neutering` last so the TEST identity wins.
+**Every branch in this file is retired as of 2026-10-26** (owner: "lets keep the old branches, merge
+everything into main_community ... make sure main community is the new primary branch"). Each one
+was merged into `main_community`, then given a `RETIRED.md` note. `main_community` is now the
+trunk: work goes on a short-lived branch in a temporary worktree off it and merges back
+(RULES.md, rules 1 and 3). There is no recipe any more and nothing below is rebuilt, merged or
+committed to again. The branches are kept, locally and on `origin`, for their history (rule 9).
 
-```recipe
+What stays live in this file is the last section, **Known reds on main_community**, which the gate
+reads.
+
+## The last recipe (frozen 2026-10-26)
+
+The merge order `main_community` was built in until 2026-10-26, kept as a record. The rebuild
+script that read it, `scripts/community/rebuild-main-community.sh`, now refuses to run.
+
+```text
 # ours, never closes
 main_community_rules
 local-data-refresh
@@ -77,17 +87,13 @@ meter-pet-split
 test-neutering
 ```
 
-## What each branch is for
+## What each branch was for
 
 The fork is `origin` (`kaltinril/everquest-companion`). Nothing is ever pushed to `upstream`
-(`jmoyers/everquest-companion`); PRs are opened from the fork's branches. Counts are against
-`main` and go stale; `git rev-list --left-right --count main...<branch>` re-reads them.
-
-Worktree paths are relative to this clone. Every branch worktree lives under `.claude/worktrees/`,
-named after its branch (owner, 2026-09-24; RULES.md, rule 16). The folder is gitignored and the
-creator's lint config already skips it. The Worktree column says where a branch is checked out
-WHEN it is being worked on: a worktree is removed once its work is merged into `main_community`,
-junction first (RULES.md, rule 18).
+(`jmoyers/everquest-companion`). The tables are as they stood at retirement; the Worktree column
+is where a branch used to be checked out and no longer applies, and an open PR listed here is
+left as it is upstream. To find where a feature's code came from, `git log --merges
+--grep="Merge branch '<branch>'" main_community`, or read the retired branch itself.
 
 ### Ours, never closing, never a PR
 
@@ -180,28 +186,18 @@ commits. The vetting record is the PR's row in [ADOPTIONS.md](ADOPTIONS.md).
 
 | Branch | Why |
 |---|---|
-| `main` | The base, not a merge. Mirror of `origin/main`. |
-| `main_community` | The product of the recipe. |
-| `fix-media-devices` | The upstream PR copy of `catch_all`'s #58 fix (one commit off `main`), [#79](https://github.com/jmoyers/everquest-companion/pull/79). `catch_all` already carries the same change into the build. |
-| `local_combined_temp` | An earlier combined branch, superseded. Nothing on it that `main_community` lacks. Kept until the owner says to remove it. |
-
-## Stale-branch policy
-
-On a new `main`, feature branches do not take a `main` merge unless they conflict with it or his
-change alters the purpose of the feature. Check without merging:
-`git merge-tree --write-tree main <branch>` (exit 0 means clean, leave it). `main_community`
-always takes the latest `main`. Release notes are his: on a conflict in `releaseNotes.ts`, take
-`main`'s wholesale.
+| `main` | The base, not a merge. Mirror of `origin/main`. Still live (RULES.md, rule 2). |
+| `main_community` | Was the product of the recipe; since 2026-10-26 the trunk (rule 1). |
+| `fix-media-devices` | The upstream PR copy of `catch_all`'s #58 fix (one commit off `main`), [#79](https://github.com/jmoyers/everquest-companion/pull/79). `catch_all` already carried the same change into the build. Retired. |
+| `local_combined_temp` | An earlier combined branch, superseded. Nothing on it that `main_community` lacks. Retired. |
 
 ## Known reds on main_community
 
 Failures that are not regressions, so the gate can tell a new red from an old one:
 
-- 2 `enginePackaging` signing assertions (the TEST neutering turns signing off on purpose).
+- 2 `enginePackaging` signing assertions (the TEST build turns signing off on purpose;
+  `scripts/community/known-reds.txt`).
 
-The delta-data reds that stood here from 2026-09-04 cleared with the 2026-09-27 top-up. A
-top-up is not finished until the creator's data-pinned tests are re-measured against it: wiki
-typos are corrected on the wiki and read back by a second delta run, the fact pins and floors
-move on `local-data-refresh`, and a census that compared case moves on `catch_all`.
-
-Every feature branch is green on its own.
+A data top-up is not finished until the creator's data-pinned tests are re-measured against it:
+wiki typos are corrected on the wiki and read back by a second delta run, and the fact pins,
+floors and census tests move in the same work branch as the data (`agent/DATA_REFRESH.md`).
