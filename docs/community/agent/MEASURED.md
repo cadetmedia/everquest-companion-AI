@@ -206,3 +206,9 @@ SK, others).
   the creator's log. Order is /loc's (y, x, z), the same order the wiki's `|location` uses.
 - The faction line on Legends is `Your faction standing with X has been adjusted by -20.` (or `could not
   possibly get any better/worse.`), printed just before the kill's death line, same second.
+
+## Respawn constants from the owner's kills (2026-10-25)
+
+- Castle of Mistmoore 4 (Refined), same-stay gaps ending at the first sign of life (2026-08-12..10-06 archive): Lasna Cheroon 8:50 (49 of 50 gaps at 526-532 s; the wiki says 8:50), Princess Cherista 8:48, a dark librarian 8:49, a cloaked dhampyre 8:50, Enynti 8:50 (the wiki says 22 minutes), Xicotl 4:55, a fallen noble 5:54. A named casts a buff the moment it spawns (`begins casting Greater Shielding`), so its gaps are second-accurate.
+- Common names cluster at the 60 s floor (a deathly usher, the gargoyles): two spawn points sharing a name, not a respawn.
+- Cost of learning every mob's gaps (respawn-first-sight): no slower (Oct log 105 MB: 28 s vs 30 s; Aug-Oct 334 MB: 85 s vs 91 s); respawn snapshot 5.5 KB to 72 KB and 125 KB.
