@@ -55,6 +55,11 @@ export function useGapEdits(character: string | null | undefined): GapEditMap {
   return useSyncExternalStore(subscribe, () => all[name] ?? NONE)
 }
 
+/** The edits of the character the tab is on (set by useGapEdits), for a reader that does not name it. */
+export function useCurrentGapEdits(): GapEditMap {
+  return useSyncExternalStore(subscribe, () => all[who] ?? NONE)
+}
+
 /** The snap with the character's hand edits on its rows (`of` names the character): the same object while there are none. */
 export function useEditedSnap<S extends { rows: GapRow[] }>(snap: S | null | undefined, of: { character?: string | null } | null | undefined): S | null | undefined {
   const edits = useGapEdits(of?.character)

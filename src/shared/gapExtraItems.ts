@@ -77,10 +77,26 @@ export function heldExtras(index: HeldIndex, unknown: ReadonlySet<string>): Extr
  * the data moves on: a delta that adds the page must take the row away, as it does a held item's
  * (owner, 2026-10-25: Jenni's Robe, captured before the delta that added it, stayed a New page).
  * `asked` is what the last check covered and `unknown` its answer; a name it did not cover stays,
- * since it was unknown when it was captured.
+ * since it was unknown when it was captured. A misread capture the player renamed by hand (`renamed`,
+ * the row's Edit name; owner, 2026-10-25: `Buming Fighters Blade` corrected to Burning Fighters
+ * Blade) is gone too once the data knows the corrected name.
  */
-export function capturedStillUnknown(items: readonly CapturedItem[], asked: ReadonlySet<string>, unknown: ReadonlySet<string>): CapturedItem[] {
-  return items.filter((c) => !asked.has(c.name.trim()) || unknown.has(c.name.trim()))
+export function capturedStillUnknown(
+  items: readonly CapturedItem[],
+  asked: ReadonlySet<string>,
+  unknown: ReadonlySet<string>,
+  renamed: (name: string) => string | undefined = () => undefined
+): CapturedItem[] {
+  const lacks = (name: string): boolean => !asked.has(name) || unknown.has(name)
+  return items.filter((c) => {
+    const fixed = renamed(c.name)?.trim()
+    return lacks(c.name.trim()) && (fixed === undefined || fixed === '' || lacks(fixed))
+  })
+}
+
+/** The names a capture is checked under: its own, and the name the player corrected it to. */
+export function capturedNames(items: readonly CapturedItem[], renamed: (name: string) => string | undefined = () => undefined): string[] {
+  return items.flatMap((c) => [c.name.trim(), renamed(c.name)?.trim() ?? '']).filter((n) => n !== '')
 }
 
 /** The captured items, as witnesses. */
