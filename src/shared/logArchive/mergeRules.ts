@@ -8,6 +8,7 @@
 // resist ledger, and an archived log's bucket is already kept in that ledger under its own key
 // (step 5.2, `main/logArchive/engineBuckets.ts`). Adding the archived counts would count it twice.
 
+import { carryOverRule } from './carryOver'
 import { mergeBazaar } from './mergeBazaar'
 import { mergeBuffStats } from './mergeBuffStats'
 import { mergeCombo } from './mergeCombo'
@@ -41,7 +42,9 @@ export const MERGE_RULES: Readonly<Record<string, MergeRule>> = {
   observedSpellRanks: mergeSpellRanks,
   buffs: mergeBuffStats,
   spellSets: mergeSpellSets,
-  combo: mergeCombo
+  combo: mergeCombo,
+  // No history of its own, only the present: zone and level carry across a rotation (carryOver.ts).
+  character: carryOverRule('character')
 }
 
 export function hasMergeRule(moduleId: string): boolean {

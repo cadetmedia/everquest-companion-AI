@@ -40,6 +40,7 @@ import {
   type RespawnRow,
   type RespawnSnap
 } from '../respawn'
+import { carriedValue } from './carryOver'
 
 function isRespawnSnap(x: unknown): x is RespawnSnap {
   if (x === null || typeof x !== 'object') return false
@@ -131,7 +132,7 @@ function carryZone(newer: RespawnSnap, zone: string): RespawnSnap {
     const joined = prev === undefined ? cand : { ...prev, kills: prev.kills + cand.kills, lastTs: Math.max(prev.lastTs, cand.lastTs) }
     recent.set(candidateId(cand), joined)
   }
-  return { ...newer, zone: newer.zone === '' ? zone : newer.zone, rows: [...rows.values()], recent: [...recent.values()] }
+  return { ...newer, zone: carriedValue(zone, newer.zone), rows: [...rows.values()], recent: [...recent.values()] }
 }
 
 /** `older` then `newer`, or null when either is not a respawn snapshot of the same shape version. */

@@ -155,14 +155,15 @@ test('leveling: all four lists join older first, and the AA unspent total sees e
 
 // ── the lookup ──────────────────────────────────────────────────────────────────────────────────
 
-test('lookup: kills, loot and leveling have rules; nothing else does', () => {
+test('lookup: kills, loot and leveling have rules; a module without one does not', () => {
   assert.ok(hasMergeRule('kills') && hasMergeRule('loot') && hasMergeRule('leveling'))
-  assert.ok(!hasMergeRule('character') && !hasMergeRule('combat') && !hasMergeRule('toString'))
+  // `character` gained one on 2026-10-25: the carry-over of its zone and level (carryOver.ts).
+  assert.ok(!hasMergeRule('roster') && !hasMergeRule('combat') && !hasMergeRule('toString'))
 })
 
 test('lookup: no rule, or no archived state, returns the live state as the same object', () => {
   const live = { anything: true }
-  assert.equal(mergeModule('character', [{ old: 1 }], live).state, live)
+  assert.equal(mergeModule('roster', [{ old: 1 }], live).state, live)
   const loot: LootSnap = []
   assert.equal(mergeModule('loot', [], loot).state, loot)
 })

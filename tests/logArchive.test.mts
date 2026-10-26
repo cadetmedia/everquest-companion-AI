@@ -235,8 +235,8 @@ test('read path: with no segment on disk the served object comes back untouched'
 
 test('read path: a module without a merge rule is never touched, even with history on disk', () => {
   const t = harness({ segments: [sealedLoot] })
-  const served = { character: { name: 'Primitive' } }
-  assert.equal(t.h.mergeHistory('character', 1, served), served)
+  const served = { members: [{ name: 'Primitive' }] }
+  assert.equal(t.h.mergeHistory('roster', 1, served), served)
   assert.equal(t.dirReads(), 0)
 })
 
