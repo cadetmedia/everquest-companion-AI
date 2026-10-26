@@ -443,6 +443,11 @@ impl World {
                 },
             );
         }
+        // Its full window is built at the fold's next wake, so wake it rather than leave the window
+        // to a long idle nap. Sent under the lock: a send never blocks.
+        if let Some(asks) = &state.asks {
+            let _gone = asks.send(ingest::Ask::Wake);
+        }
         epoch
     }
 
@@ -942,6 +947,7 @@ impl World {
             answer,
         });
         if push.send(ask).is_ok() {
+            self.wake_fold();
             let _took = wait.recv_timeout(SNAPSHOT_PATIENCE);
         }
     }
@@ -1124,6 +1130,7 @@ impl World {
         if push.send(ask).is_err() {
             return (false, status);
         }
+        self.wake_fold();
         // The fold's own answer is the answer. A timeout answers `false`, the honest reading of
         // what this process knows: the mark may still be applied at the next boundary, and a client
         // told `true` by a wait that never returned would have been told something nobody observed.
@@ -1157,6 +1164,7 @@ impl World {
         if push.send(ask).is_err() {
             return false;
         }
+        self.wake_fold();
         wait.recv_timeout(SNAPSHOT_PATIENCE).unwrap_or(false)
     }
 
@@ -1478,6 +1486,15 @@ impl World {
         state.asks = None;
         state.write_to = None;
         true
+    }
+
+    /// End the fold's nap now: a write was just posted on its own channel, which the nap cannot wait
+    /// on (`ingest/nap.rs`). Posted after the write, so the wake always finds it. A fold that has
+    /// ended has nothing to wake.
+    fn wake_fold(&self) {
+        if let Some(asks) = &self.lock().asks {
+            let _gone = asks.send(ingest::Ask::Wake);
+        }
     }
 
     /// Take the lock, surviving a poisoned one.

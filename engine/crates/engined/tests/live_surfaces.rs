@@ -226,7 +226,7 @@ impl Conn {
     fn state(&mut self, id: i64, module: &str) -> serde_json::Value {
         self.client.send(&module_snapshot(id, module));
         match self.reply(id) {
-            ReplyResult::ModuleSnapshotResult(result) => result.state,
+            ReplyResult::ModuleSnapshotResult(result) => result.state.as_json().clone(),
             other => panic!("module.snapshot answers a snapshot, got {other:?}"),
         }
     }

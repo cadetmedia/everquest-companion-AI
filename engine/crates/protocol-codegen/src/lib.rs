@@ -258,12 +258,17 @@ pub fn render_types(bundle: &serde_json::Value) -> Result<String> {
     //     array.
     //   * `ModuleState` — a module's published state, whose shape is the module's contract and not
     //     the protocol's. The definition says "any JSON", and `serde_json::Value` is that sentence
-    //     in Rust.
+    //     in Rust; `protocol::module_state::ModuleState` is that `Value` behind an `Arc`, so the
+    //     engine can hand one cached answer to every asker without copying the tree.
     //
     // Every other type is generated, and `tests/protocolSchema.test.mts` knows both names by
     // exception, so a third replacement cannot be added silently.
     settings.with_replacement("Cell", "crate::cell::Cell", std::iter::empty());
-    settings.with_replacement("ModuleState", "::serde_json::Value", std::iter::empty());
+    settings.with_replacement(
+        "ModuleState",
+        "crate::module_state::ModuleState",
+        std::iter::empty(),
+    );
     let mut space = typify::TypeSpace::new(&settings);
     space
         .add_root_schema(root)

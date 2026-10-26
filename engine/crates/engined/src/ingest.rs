@@ -31,8 +31,9 @@ use crate::views::{self, Meter};
 use crate::world::{FoldMark, World};
 use crate::{clock, spawn::DIAGNOSTIC_PREFIX};
 
+mod kept;
 mod nap;
-use nap::nap;
+use nap::{nap, Quiet};
 
 /// How many bytes one scan read asks for.
 ///
@@ -54,9 +55,10 @@ const PROGRESS_EVERY: Duration = Duration::from_millis(250);
 /// The longest prefix of an event's JSON that is searched for its timestamp. See [`ts_of`].
 const TS_SCAN_BYTES: usize = 128;
 
-/// The longest the tail loop sleeps between two looks at the world, so a preempted tail notices
-/// promptly instead of after a whole poll interval. Mirrors `FileTail::follow`'s own nap. An ask
-/// does not wait it out — it wakes the nap the moment it arrives (see `ingest/nap.rs`).
+/// The longest the tail loop sleeps between two looks at the world while the log is growing, so a
+/// preempted tail notices promptly instead of after a whole poll interval. Mirrors
+/// `FileTail::follow`'s own nap. An ask does not wait it out — it wakes the nap the moment it
+/// arrives — and a quiet log naps longer (see `ingest/nap.rs`).
 const TAIL_NAP: Duration = Duration::from_millis(25);
 
 /// The live world's heartbeat interval — `session.ts startHeartbeat`'s `setInterval(…, 1000)`,
@@ -296,8 +298,9 @@ pub struct ModuleSnapshot {
     pub seq: i64,
     /// The module's state. The shape is the module's, not this crate's and not the protocol's:
     /// `kills` publishes an object, `loot` publishes an array, and nothing between the module and
-    /// the wire is allowed an opinion about which.
-    pub state: serde_json::Value,
+    /// the wire is allowed an opinion about which. Shared, because a kept answer is handed to every
+    /// asker until the module's cursor moves (`ingest/kept.rs`).
+    pub state: protocol::ModuleState,
 }
 
 /// What a combat snapshot was asked for — `src/shared/combat.ts SnapshotOpts`, in the ingest's own
@@ -476,6 +479,9 @@ pub enum Ask {
     Loot(LootAsk),
     /// How old some creatures are, as the resist fold knows it — see [`MobLevelAsk`].
     MobLevels(MobLevelAsk),
+    /// No question: the world handed the fold a write or a new subscription and is ending the tail's
+    /// nap so it is taken now rather than when a long idle nap runs out (`ingest/nap.rs`).
+    Wake,
 }
 
 /// One `resist.levels` question.
@@ -958,11 +964,11 @@ fn run(world: &World, generation: u64, attach: &Attach, sinks: &SinkFactory) -> 
         if cadence.due() && !world.report_progress(generation, mark(&core, size, seq, &*sink)) {
             return Ok(Ended::Preempted);
         }
-        answer_asks(&answers, None, &*sink, &serving);
+        answer_asks(&answers, None, &*sink, &mut serving);
         // A define mid-scan is taken mid-scan and the fold does not restart for it. That is the
         // honest reading of a full-set replace: it is a fact about the world from here on, and the
         // events already folded were folded under what the user had said at the time.
-        answer_writes(&writes, &mut *sink);
+        answer_writes(&writes, &mut *sink, &mut serving);
     }
 
     // The final measurement is not optional and does not ask the cadence. It is the one frame that
@@ -1025,6 +1031,7 @@ fn run(world: &World, generation: u64, attach: &Attach, sinks: &SinkFactory) -> 
     // THE SKEW SENTINEL SPEAKS ONCE PER GENERATION. A resolved zone does not change under a fold, so
     // a second line would be the same line, and this one rides the tail's own poll loop.
     let mut skew_said = false;
+    let mut quiet = Quiet::new();
     loop {
         if !world.owns(generation) {
             return Ok(Ended::Preempted);
@@ -1049,6 +1056,7 @@ fn run(world: &World, generation: u64, attach: &Attach, sinks: &SinkFactory) -> 
         if seq != before {
             serving.folded_at.get_or_insert_with(Instant::now);
         }
+        quiet.folded(seq != before);
         // The heartbeat, after the drain and before anything publishes. Order within one turn of
         // this loop is the only ordering claim available, and the useful one is this: whatever the
         // poll folded is aged by the same beat, and both are visible to this turn's progress frame,
@@ -1088,8 +1096,8 @@ fn run(world: &World, generation: u64, attach: &Attach, sinks: &SinkFactory) -> 
                 return Ok(Ended::Preempted);
             }
         }
-        answer_asks(&answers, None, &*sink, &serving);
-        answer_writes(&writes, &mut *sink);
+        answer_asks(&answers, None, &*sink, &mut serving);
+        answer_writes(&writes, &mut *sink, &mut serving);
         // The fires, immediately and not at a cadence. Everything else this loop publishes is
         // state, which coalesces by definition; a fire is not state — two charm breaks are two
         // sounds, and folding them would silence one. Every fire the drain produced goes out now,
@@ -1119,6 +1127,7 @@ fn run(world: &World, generation: u64, attach: &Attach, sinks: &SinkFactory) -> 
         }
         nap(
             DEFAULT_POLL_INTERVAL,
+            quiet.nap(),
             world,
             generation,
             &answers,
@@ -1196,6 +1205,9 @@ struct Serving {
     /// between two beats, so what goes out is one frame per module per beat carrying the newest
     /// cursor.
     announced_seqs: std::collections::BTreeMap<&'static str, i64>,
+    /// The last `module.snapshot` answer per module, until its cursor moves. Here for the cursor
+    /// map's reasons: a property of this generation, touched only on the ingest thread.
+    kept: kept::Kept,
 }
 
 impl Serving {
@@ -1207,6 +1219,7 @@ impl Serving {
             cost: IngestCost::default(),
             timeline: views::Timeline::new(),
             announced_seqs: std::collections::BTreeMap::new(),
+            kept: kept::Kept::default(),
         }
     }
 
@@ -1291,12 +1304,12 @@ fn answer_asks(
     answers: &Receiver<Ask>,
     woke: Option<Ask>,
     sink: &dyn EventSink,
-    serving: &Serving,
+    serving: &mut Serving,
 ) {
     for ask in woke.into_iter().chain(answers.try_iter()) {
         match ask {
             Ask::Module(ask) => {
-                let _dropped = ask.answer.send(sink.snapshot(&ask.module));
+                let _dropped = ask.answer.send(serving.kept.snapshot(sink, &ask.module));
             }
             Ask::Perf(ask) => {
                 let _dropped = ask.answer.send(serving.perf());
@@ -1313,6 +1326,7 @@ fn answer_asks(
             Ask::MobLevels(ask) => {
                 let _dropped = ask.answer.send(sink.mob_levels(&ask.names));
             }
+            Ask::Wake => {}
         }
     }
 }
@@ -1324,8 +1338,10 @@ fn answer_asks(
 /// because the fold is the only place it can take effect and a half-applied world would be worse
 /// than a lost receipt. A mark and a confirm are stored nowhere by design, so a lost receipt costs
 /// the client its answer and nothing else.
-fn answer_writes(writes: &Receiver<Write>, sink: &mut dyn EventSink) {
+fn answer_writes(writes: &Receiver<Write>, sink: &mut dyn EventSink, serving: &mut Serving) {
     while let Ok(write) = writes.try_recv() {
+        // Whatever this write moves, no kept answer is trusted past it (`ingest/kept.rs`).
+        serving.kept.forget();
         match write {
             Write::Define(ask) => {
                 let took = sink.define(&ask.family, &ask.payload);
