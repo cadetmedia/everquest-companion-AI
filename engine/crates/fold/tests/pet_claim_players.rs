@@ -9,6 +9,8 @@ use eqlog::event::Ev;
 use eqlog::{Clock, Parser, Tz};
 use fold::combat::{CombatEngine, RosterSnap, RosterSource, SnapshotOpts};
 use fold::event::Event;
+use fold::modules::roster::RosterModule;
+use fold::EqModule;
 use serde_json::Value;
 
 /// A roster that admitted the names it holds.
@@ -47,6 +49,38 @@ fn fold(lines: &[&str], group: &[&str]) -> Value {
     };
     engine.snapshot(0, &opts, Some(&roster))
 }
+
+/// The same fold through the real roster module, which folds each line before the engine does, as
+/// on the bus.
+fn fold_with_roster(lines: &[&str]) -> Value {
+    let parser = Parser::new(
+        Clock::new(Tz::America__Los_Angeles),
+        None,
+        Some("Drywrought".to_string()),
+    );
+    let mut roster = RosterModule::new(Some("Drywrought"));
+    let mut engine = CombatEngine::new();
+    engine.set_player_name("Drywrought");
+    for (seq, raw) in lines.iter().enumerate() {
+        let mut ev = Ev::new();
+        assert!(parser.parse_event(raw, seq as i64, &mut ev), "{raw}");
+        let ev = Event::from_json(ev.finish()).expect("a JSON object");
+        roster.on_event(&ev, false);
+        engine.on_event(&ev, false, Some(&roster));
+    }
+    let opts = SnapshotOpts {
+        selected_id: Some("zone".to_string()),
+        ..SnapshotOpts::full()
+    };
+    engine.snapshot(0, &opts, Some(&roster))
+}
+
+/// A Quick Buff burst in a group reaches Malkil and his pet Jeber alike.
+const BURST: [&str; 3] = [
+    "[Sat Oct 10 18:13:40 2026] You gain party experience! (3%)",
+    "[Sat Oct 10 18:13:45 2026] You healed Malkil for 120 hit points by Light Healing.",
+    "[Sat Oct 10 18:13:45 2026] You healed Jeber for 120 hit points by Light Healing.",
+];
 
 /// (kind, name, total) of every damage row in the zone session.
 fn rows(snap: &Value) -> Vec<(String, String, i64)> {
@@ -115,4 +149,35 @@ fn a_pet_that_healed_you_before_its_claim_still_binds() {
         &[],
     ));
     assert!(rows.contains(&row("pet", "Vasartik", 162)), "{rows:?}");
+}
+
+/// Owner, 2026-10-22: a group mate's pet that caught your burst is admitted on the weakest rung, and
+/// its `My leader is Malkil.` still moves its damage to the ally-pet row.
+#[test]
+fn a_buffed_pet_naming_its_leader_moves_to_the_ally_pet_row() {
+    let mut lines = BURST.to_vec();
+    lines.extend([
+        "[Sat Oct 10 18:13:50 2026] Jeber bites a gnoll for 50 points of damage.",
+        "[Sat Oct 10 18:13:52 2026] Jeber says, 'My leader is Malkil.'",
+    ]);
+    let rows = rows(&fold_with_roster(&lines));
+    assert!(
+        rows.contains(&row("allyPet", "Pet (Jeber) - Malkil", 50)),
+        "{rows:?}"
+    );
+    assert!(!rows.iter().any(|r| r.1 == "Jeber"), "{rows:?}");
+}
+
+/// A joined member saying it is still refused, burst or not: the join line is the game's word.
+#[test]
+fn a_joined_member_naming_somebody_else_its_leader_stays_a_member() {
+    let mut lines = BURST.to_vec();
+    lines.extend([
+        "[Sat Oct 10 18:13:46 2026] Rykkerr has joined the group.",
+        "[Sat Oct 10 18:13:50 2026] Rykkerr slashes a gnoll for 400 points of damage.",
+        "[Sat Oct 10 18:13:52 2026] Rykkerr says, 'My leader is Malkil.'",
+    ]);
+    let rows = rows(&fold_with_roster(&lines));
+    assert!(rows.contains(&row("member", "Rykkerr", 400)), "{rows:?}");
+    assert!(!rows.iter().any(|r| r.0 == "allyPet"), "{rows:?}");
 }

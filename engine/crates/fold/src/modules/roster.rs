@@ -487,6 +487,8 @@ impl EqModule for RosterModule {
             }
             "charm" | "uncharm" => self.refuse_pet(ev.str("mob").unwrap_or_default()),
             "petClaim" => self.refuse_pet(ev.str("name").unwrap_or_default()),
+            // A group mate's pet naming its leader is a pet too (owner, 2026-10-22: Malkil's Jeber).
+            "allyPetLeader" => self.refuse_pet(ev.str("pet").unwrap_or_default()),
             "heal" => self.fold_heal(ev),
             "group" => self.fold_group(ev),
             _ => self.fold_who(ev),
