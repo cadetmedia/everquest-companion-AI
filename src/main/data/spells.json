@@ -1,8 +1,8 @@
 {
-  "scrapedAt": "2026-10-25T10:49:49.985Z",
+  "scrapedAt": "2026-10-26T00:06:17.591Z",
   "schema": 3,
-  "count": 2018,
-  "withEffects": 2013,
+  "count": 2019,
+  "withEffects": 2014,
   "spells": [
     {
       "name": "Aanya's Animation",
@@ -20418,6 +20418,22 @@
       "effects": [
         "Decrease Spell Mana Cost by 1% to 10%",
         "Limit Max Level: 44 (lose 5% per level after)",
+        "Limit Spell: Exclude Promised Renewal",
+        "Limit Type: Exclude Combat Skills"
+      ]
+    },
+    {
+      "name": "Mana Preservation III",
+      "durationText": "2:18:00 (3:27:00)",
+      "durationMs": 8280000,
+      "castTimeMs": 0,
+      "targetType": "Self",
+      "spellType": "Beneficial",
+      "classes": "No eligible class",
+      "illusion": false,
+      "effects": [
+        "Decrease Spell Mana Cost by 1% to 10%",
+        "Limit Max Level: 60 (lose 5% per level after)",
         "Limit Spell: Exclude Promised Renewal",
         "Limit Type: Exclude Combat Skills"
       ]

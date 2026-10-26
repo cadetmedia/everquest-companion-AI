@@ -1,5 +1,5 @@
 {
-  "scrapedAt": "2026-10-25T10:49:49.985Z",
+  "scrapedAt": "2026-10-26T00:06:17.591Z",
   "source": "eqlwiki.com — Category:NPCs/Named Mobs/Merchants/Raid Encounters ∪ embeddedin Template:Namedmobpage/MerchantPage, filtered to pages opening a mob template + recentchanges delta (scripts/scrape-delta.mts)",
   "mobs": [
     {
@@ -12960,6 +12960,24 @@
       ],
       "outOfEra": true,
       "image": "npc_an_elder_snow_griffin.png",
+      "noImage": true
+    },
+    {
+      "page": "A faceless throatcutter",
+      "eraTag": "Classic",
+      "name": "A faceless throatcutter",
+      "level": "?",
+      "zones": [
+        "Nektropos Castle"
+      ],
+      "loc": [
+        {
+          "ns": 581.91,
+          "ew": -285.05,
+          "z": 17.6
+        }
+      ],
+      "image": "?",
       "noImage": true
     },
     {
@@ -64239,6 +64257,7 @@
         "Nektropos Castle"
       ],
       "drops": [
+        "Doll's Fang",
         "Alexa's Robe",
         "Ring of the Eldest",
         "Nektropos Private Chamber Key",
@@ -77620,6 +77639,24 @@
       "image": "AshenpawNPC.png"
     },
     {
+      "page": "Asher",
+      "eraTag": "Classic",
+      "name": "Asher",
+      "level": "50",
+      "zones": [
+        "Nektropos Undercrofts"
+      ],
+      "loc": [
+        {
+          "ns": -149,
+          "ew": 111,
+          "z": 4
+        }
+      ],
+      "merchant": true,
+      "noImage": true
+    },
+    {
       "page": "Ashley",
       "eraTag": "Velious",
       "name": "Ashley",
@@ -78453,6 +78490,24 @@
         "50"
       ],
       "image": "npc_ayillish.png",
+      "noImage": true
+    },
+    {
+      "page": "Aynmara Stolovich",
+      "eraTag": "Classic",
+      "name": "Aynmara Stolovich",
+      "level": "50",
+      "zones": [
+        "Nektropos Undercrofts"
+      ],
+      "loc": [
+        {
+          "ns": 12,
+          "ew": 115,
+          "z": 4
+        }
+      ],
+      "merchant": true,
       "noImage": true
     },
     {
@@ -89361,7 +89416,8 @@
       ],
       "drops": [
         "Corroded Spiked Club",
-        "Distressed Mithril Shortbow"
+        "Distressed Mithril Shortbow",
+        "Worn Great Blade"
       ],
       "loc": [
         {
@@ -99915,6 +99971,7 @@
         "Nektropos Castle"
       ],
       "drops": [
+        "Ancient Warsword",
         "Cryptguard"
       ],
       "image": "npc_name.png",
@@ -102081,6 +102138,26 @@
         "10"
       ],
       "image": "darts_o`gavin.png",
+      "noImage": true
+    },
+    {
+      "page": "Daruth Pilaka",
+      "eraTag": "Classic",
+      "name": "Daruth Pilaka",
+      "level": "70",
+      "zones": [
+        "Nektropos Undercrofts"
+      ],
+      "drops": [
+        "None"
+      ],
+      "loc": [
+        {
+          "ns": 39,
+          "ew": 119,
+          "z": 4
+        }
+      ],
       "noImage": true
     },
     {
@@ -114406,6 +114483,24 @@
       "noImage": true
     },
     {
+      "page": "Fava Zolhic",
+      "eraTag": "Classic",
+      "name": "Fava Zolhic",
+      "level": "50",
+      "zones": [
+        "Nektropos Undercrofts"
+      ],
+      "loc": [
+        {
+          "ns": -126,
+          "ew": 72,
+          "z": 4
+        }
+      ],
+      "merchant": true,
+      "noImage": true
+    },
+    {
       "page": "Faydedar",
       "eraTag": "Kunark",
       "name": "Faydedar",
@@ -120423,6 +120518,24 @@
         "10"
       ],
       "image": "npc_gallin_woodwind.png",
+      "noImage": true
+    },
+    {
+      "page": "Galoxia Rumbad",
+      "eraTag": "Classic",
+      "name": "Galoxia Rumbad",
+      "level": "50",
+      "zones": [
+        "Nektropos Undercrofts"
+      ],
+      "loc": [
+        {
+          "ns": -112,
+          "ew": 125,
+          "z": 4
+        }
+      ],
+      "merchant": true,
       "noImage": true
     },
     {
@@ -146337,6 +146450,7 @@
     },
     {
       "page": "Head Chef Vy`zen",
+      "eraTag": "Classic",
       "name": "NPC Name",
       "level": "52",
       "zones": [
@@ -152026,17 +152140,17 @@
           "z": 150
         }
       ],
-      "otherNames": [
-        "Innoruuk (God - Hate Revamp)",
-        "Prince of Hate"
-      ],
       "factions": [
         "Inhabitants of Hate"
       ],
       "factionAmounts": [
         "-30"
       ],
-      "image": "npc_innoruuk.png"
+      "image": "npc_innoruuk.png",
+      "otherNames": [
+        "Innoruuk (God - Hate Revamp)",
+        "Prince of Hate"
+      ]
     },
     {
       "page": "Innoruuk Puppet",
@@ -152604,6 +152718,26 @@
         "Withered Leather Belt"
       ],
       "image": "npc_irslak_the_wretched.png"
+    },
+    {
+      "page": "Irum Halazaloski",
+      "eraTag": "Classic",
+      "name": "Irum Halazaloski",
+      "level": "70",
+      "zones": [
+        "Nektropos Undercrofts"
+      ],
+      "drops": [
+        "None"
+      ],
+      "loc": [
+        {
+          "ns": 34,
+          "ew": 152,
+          "z": 4
+        }
+      ],
+      "noImage": true
     },
     {
       "page": "Isabella Cellus",
@@ -154502,8 +154636,7 @@
         "10",
         "10"
       ],
-      "image": "npc_jelquar_the_soulslayer.png",
-      "noImage": true
+      "image": "npc_jelquar_the_soulslayer.png"
     },
     {
       "page": "Jemoz Lerkarson",
@@ -154686,6 +154819,7 @@
     },
     {
       "page": "Jenni Everling",
+      "eraTag": "Classic",
       "name": "Jenni Everling",
       "level": "56",
       "zones": [
@@ -154693,7 +154827,8 @@
       ],
       "drops": [
         "Jenni's Robe",
-        "Pyrosilk Veil"
+        "Pyrosilk Veil",
+        "Pyroweave Band"
       ],
       "loc": [
         {
@@ -157371,6 +157506,24 @@
       "image": "npc_karam_dragonforge.png"
     },
     {
+      "page": "Karanak Poliska",
+      "eraTag": "Classic",
+      "name": "Karanak Poliska",
+      "level": "50",
+      "zones": [
+        "Nektropos Undercrofts"
+      ],
+      "loc": [
+        {
+          "ns": -137,
+          "ew": 56,
+          "z": 4
+        }
+      ],
+      "merchant": true,
+      "noImage": true
+    },
+    {
       "page": "Kardakor",
       "eraTag": "Velious",
       "name": "Kardakor",
@@ -157495,6 +157648,26 @@
         "10"
       ],
       "image": "npc_kargin_the_archer.png",
+      "noImage": true
+    },
+    {
+      "page": "Karis Griffith",
+      "eraTag": "Classic",
+      "name": "Karis Griffith",
+      "level": "70",
+      "zones": [
+        "Nektropos Undercrofts"
+      ],
+      "drops": [
+        "None"
+      ],
+      "loc": [
+        {
+          "ns": -139,
+          "ew": 41,
+          "z": 4
+        }
+      ],
       "noImage": true
     },
     {
@@ -171623,6 +171796,13 @@
       "drops": [
         "None"
       ],
+      "loc": [
+        {
+          "ns": 354,
+          "ew": -20,
+          "z": -5
+        }
+      ],
       "image": "npc_name.png",
       "noImage": true
     },
@@ -174876,6 +175056,26 @@
       "noImage": true
     },
     {
+      "page": "Maradon Faliahka",
+      "eraTag": "Classic",
+      "name": "Maradon Faliahka",
+      "level": "70",
+      "zones": [
+        "Nektropos Undercrofts"
+      ],
+      "drops": [
+        "None"
+      ],
+      "loc": [
+        {
+          "ns": 33,
+          "ew": 202,
+          "z": 4
+        }
+      ],
+      "noImage": true
+    },
+    {
       "page": "Marda",
       "name": "Marda",
       "level": "61",
@@ -176863,6 +177063,7 @@
     },
     {
       "page": "Melanie Everling",
+      "eraTag": "Classic",
       "name": "Melanie Everling",
       "zones": [
         "Nektropos Castle"
@@ -181904,6 +182105,23 @@
       "noImage": true
     },
     {
+      "page": "Myron Ketalin",
+      "name": "Myron Ketalin",
+      "level": "30",
+      "zones": [
+        "Nektropos Undercrofts"
+      ],
+      "loc": [
+        {
+          "ns": -52,
+          "ew": 164,
+          "z": 4
+        }
+      ],
+      "merchant": true,
+      "noImage": true
+    },
+    {
       "page": "Myrva N`Tan",
       "eraTag": "Classic",
       "name": "Myrva N`Tan",
@@ -182585,6 +182803,24 @@
         }
       ],
       "image": "npc_narron_jenork.png",
+      "noImage": true
+    },
+    {
+      "page": "Nashana Pilaka",
+      "eraTag": "Classic",
+      "name": "Nashana Pilaka",
+      "level": "50",
+      "zones": [
+        "Nektropos Undercrofts"
+      ],
+      "loc": [
+        {
+          "ns": 24,
+          "ew": 118,
+          "z": 4
+        }
+      ],
+      "merchant": true,
       "noImage": true
     },
     {
@@ -190817,6 +191053,23 @@
         "10"
       ],
       "image": "npc_pietro_zarn.png"
+    },
+    {
+      "page": "Pilunza Zatovich",
+      "name": "Pilunza Zatovich",
+      "level": "50",
+      "zones": [
+        "Nektropos Undercrofts"
+      ],
+      "loc": [
+        {
+          "ns": 32,
+          "ew": 187,
+          "z": 4
+        }
+      ],
+      "merchant": true,
+      "noImage": true
     },
     {
       "page": "Pincia Brownloe",
@@ -201289,6 +201542,24 @@
       "noImage": true
     },
     {
+      "page": "Saronia Asher",
+      "eraTag": "Classic",
+      "name": "Saronia Asher",
+      "level": "50",
+      "zones": [
+        "Nektropos Undercrofts"
+      ],
+      "loc": [
+        {
+          "ns": -136,
+          "ew": 117,
+          "z": 4
+        }
+      ],
+      "merchant": true,
+      "noImage": true
+    },
+    {
       "page": "Sarot",
       "eraTag": "Velious",
       "name": "Sarot",
@@ -201474,6 +201745,26 @@
         "10"
       ],
       "image": "npc_sazan_k`jartan.png",
+      "noImage": true
+    },
+    {
+      "page": "Scabby",
+      "eraTag": "Classic",
+      "name": "Scabby",
+      "level": "49",
+      "zones": [
+        "Nektropos Undercrofts"
+      ],
+      "drops": [
+        "None"
+      ],
+      "loc": [
+        {
+          "ns": 32,
+          "ew": 119,
+          "z": 4
+        }
+      ],
       "noImage": true
     },
     {
@@ -208558,6 +208849,26 @@
       "noImage": true
     },
     {
+      "page": "Sergai Pilaka",
+      "eraTag": "Classic",
+      "name": "Sergai Pilaka",
+      "level": "70",
+      "zones": [
+        "Nektropos Undercrofts"
+      ],
+      "drops": [
+        "None"
+      ],
+      "loc": [
+        {
+          "ns": 41,
+          "ew": 133,
+          "z": 4
+        }
+      ],
+      "noImage": true
+    },
+    {
       "page": "Sergeant Bladesplitter",
       "eraTag": "Velious",
       "name": "Sergeant Bladesplitter",
@@ -209285,12 +209596,14 @@
     },
     {
       "page": "Sergeant Tvyn",
+      "eraTag": "Classic",
       "name": "Sergeant Tvyn",
       "zones": [
         "Nektropos Castle"
       ],
       "drops": [
-        "Layered Guards"
+        "Layered Guards",
+        "Sergeant's Leather Belt"
       ],
       "loc": [
         {
@@ -210393,6 +210706,27 @@
       "image": "npc_shazda_kaekwon.png"
     },
     {
+      "page": "Sheila Everling",
+      "eraTag": "Classic",
+      "name": "Shelia Everling",
+      "level": "56",
+      "zones": [
+        "Nektropos Castle"
+      ],
+      "drops": [
+        "Sheila's Robe",
+        "Pyrosilk Gloves"
+      ],
+      "loc": [
+        {
+          "ns": 352,
+          "ew": 428,
+          "z": 17
+        }
+      ],
+      "image": "Shelia everling.png"
+    },
+    {
       "page": "Shelae Wolfkin",
       "eraTag": "Kunark",
       "name": "Shelae Wolfkin",
@@ -210453,27 +210787,6 @@
       ],
       "image": "npc_sheldon.png",
       "noImage": true
-    },
-    {
-      "page": "Shelia Everling",
-      "eraTag": "Classic",
-      "name": "Shelia Everling",
-      "level": "56",
-      "zones": [
-        "Nektropos Castle"
-      ],
-      "drops": [
-        "Shelia's Robe",
-        "Pyrosilk Gloves"
-      ],
-      "loc": [
-        {
-          "ns": 352,
-          "ew": 428,
-          "z": 17
-        }
-      ],
-      "image": "Shelia everling.png"
     },
     {
       "page": "Shellara Ebbhunter",
@@ -211104,6 +211417,27 @@
         "-30"
       ],
       "image": "npc_siladdarae_n`riese.png",
+      "noImage": true
+    },
+    {
+      "page": "Silas B`Dynn",
+      "eraTag": "Classic",
+      "name": "Silas B`Dynn",
+      "level": "70",
+      "zones": [
+        "Nektropos Undercrofts"
+      ],
+      "drops": [
+        "None"
+      ],
+      "loc": [
+        {
+          "ns": 37,
+          "ew": 86,
+          "z": 4
+        }
+      ],
+      "image": "Silas_B`Dynn.png",
       "noImage": true
     },
     {
@@ -221891,6 +222225,24 @@
       "noImage": true
     },
     {
+      "page": "Telius Gwyneth",
+      "eraTag": "Classic",
+      "name": "Telius Gwyneth",
+      "level": "50",
+      "zones": [
+        "Nektropos Undercrofts"
+      ],
+      "loc": [
+        {
+          "ns": -122,
+          "ew": -7,
+          "z": 4
+        }
+      ],
+      "merchant": true,
+      "noImage": true
+    },
+    {
       "page": "Telkorenar",
       "eraTag": "Velious",
       "name": "Telkorenar",
@@ -222562,6 +222914,24 @@
         "10"
       ],
       "image": "npc_terman_underbelly.png",
+      "noImage": true
+    },
+    {
+      "page": "Tern Zolhic",
+      "eraTag": "Classic",
+      "name": "Tern Zolhic",
+      "level": "50",
+      "zones": [
+        "Nektropos Undercrofts"
+      ],
+      "loc": [
+        {
+          "ns": -125,
+          "ew": 83,
+          "z": 4
+        }
+      ],
+      "merchant": true,
       "noImage": true
     },
     {
@@ -223446,8 +223816,9 @@
         "Nektropos Castle"
       ],
       "drops": [
-        "Schemer's Guise",
-        "Gamblers gambit"
+        "Checkmate",
+        "Gamblers Gambit",
+        "Schemer's Guise"
       ],
       "loc": [
         {
@@ -223878,7 +224249,8 @@
       ],
       "drops": [
         "Unbroken Golem Core",
-        "Dark Ironbound Tome"
+        "Dark Ironbound Tome",
+        "The Unbreakable Word"
       ],
       "loc": [
         {
@@ -223965,7 +224337,6 @@
         "Nektropos Castle"
       ],
       "drops": [
-        "Nektropos Basement Key",
         "Scars of the Indominable",
         "Unstoppable Girdle"
       ],
@@ -223982,7 +224353,10 @@
       "factionAmounts": [
         "-2"
       ],
-      "image": "The_Juggernaught_Nek.png"
+      "image": "The_Juggernaught_Nek.png",
+      "commonDrops": [
+        "Nektropos Basement Key"
+      ]
     },
     {
       "page": "The Kerran Sha`rr",
@@ -227542,7 +227916,8 @@
         "Nektropos Castle"
       ],
       "drops": [
-        "Torturer's Signature"
+        "Torturer's Signature",
+        "Wellworn Blade"
       ],
       "loc": [
         {
@@ -227701,6 +228076,24 @@
         }
       ],
       "image": "npc_torzan_searfire.png",
+      "noImage": true
+    },
+    {
+      "page": "Tosh Rumbad",
+      "eraTag": "Classic",
+      "name": "Tosh Rumbad",
+      "level": "50",
+      "zones": [
+        "Nektropos Undercrofts"
+      ],
+      "loc": [
+        {
+          "ns": -124,
+          "ew": 122,
+          "z": 4
+        }
+      ],
+      "merchant": true,
       "noImage": true
     },
     {
@@ -233347,6 +233740,26 @@
       "noImage": true
     },
     {
+      "page": "Tsarisa Kolianna",
+      "eraTag": "Classic",
+      "name": "Tsarisa Kolianna",
+      "level": "70",
+      "zones": [
+        "Nektropos Undercrofts"
+      ],
+      "drops": [
+        "None"
+      ],
+      "loc": [
+        {
+          "ns": -112,
+          "ew": -3,
+          "z": 4
+        }
+      ],
+      "noImage": true
+    },
+    {
       "page": "Tserrina Syl'Tor (NPC)",
       "eraTag": "Velious",
       "name": "Tserrina Syl`Tor",
@@ -234579,6 +234992,23 @@
         "+"
       ],
       "image": "npc_uglan.png",
+      "noImage": true
+    },
+    {
+      "page": "Ugoth",
+      "name": "Ugoth",
+      "level": "30",
+      "zones": [
+        "Nektropos Undercrofts"
+      ],
+      "loc": [
+        {
+          "ns": -161,
+          "ew": 1,
+          "z": 4
+        }
+      ],
+      "merchant": true,
       "noImage": true
     },
     {
@@ -236330,6 +236760,44 @@
         "-30"
       ],
       "image": "npc_vansted_rohenga.png",
+      "noImage": true
+    },
+    {
+      "page": "Varen Pilaka",
+      "eraTag": "Classic",
+      "name": "Varen Pilaka",
+      "level": "50",
+      "zones": [
+        "Nektropos Undercrofts"
+      ],
+      "loc": [
+        {
+          "ns": 22,
+          "ew": 134,
+          "z": 4
+        }
+      ],
+      "merchant": true,
+      "noImage": true
+    },
+    {
+      "page": "Varish Balinsky",
+      "eraTag": "Classic",
+      "name": "Varish Balinsky",
+      "level": "30",
+      "zones": [
+        "Nektropos Undercrofts"
+      ],
+      "drops": [
+        "None"
+      ],
+      "loc": [
+        {
+          "ns": -37,
+          "ew": 159,
+          "z": 4
+        }
+      ],
       "noImage": true
     },
     {
@@ -247773,6 +248241,24 @@
         "10"
       ],
       "image": "npc_zalerez.png",
+      "noImage": true
+    },
+    {
+      "page": "Zalincha Carthune",
+      "eraTag": "Classic",
+      "name": "Zalincha Carthune",
+      "level": "50",
+      "zones": [
+        "Nektropos Undercrofts"
+      ],
+      "loc": [
+        {
+          "ns": -148,
+          "ew": 42,
+          "z": 4
+        }
+      ],
+      "merchant": true,
       "noImage": true
     },
     {
