@@ -333,8 +333,28 @@ export function spellPageValues(c: ClientSpellFacts | undefined, shot: SpellPage
  * letter) would end the field and split the template, so it is written `{{!}}`.
  */
 function templateSafe(values: Record<string, string>): Record<string, string> {
-  const safe = (v: string): string => v.replace(/\[\[[^\]]*\]\]|\{\{[^}]*\}\}|\|/g, (m) => (m === '|' ? '{{!}}' : m))
+  const safe = (v: string): string => {
+    const inside = linkOrTemplateMask(v)
+    return v.replace(/\|/g, (m, at: number) => (inside[at] ? m : '{{!}}'))
+  }
   return Object.fromEntries(Object.entries(values).map(([k, v]) => [k, safe(v)]))
+}
+
+/** Which characters sit inside a closed `[[…]]` or `{{…}}`, nesting counted; an unclosed one covers nothing. */
+function linkOrTemplateMask(v: string): boolean[] {
+  const inside = new Array<boolean>(v.length).fill(false)
+  const open: { at: number; close: string }[] = []
+  for (let i = 0; i < v.length - 1; i++) {
+    const two = v.slice(i, i + 2)
+    if (two === '{{' || two === '[[') {
+      open.push({ at: i, close: two === '{{' ? '}}' : ']]' })
+      i++
+    } else if (two === open[open.length - 1]?.close) {
+      inside.fill(true, open.pop()?.at, i + 2)
+      i++
+    }
+  }
+  return inside
 }
 
 /** The Spell Page Blueprint's order around `classes`. */

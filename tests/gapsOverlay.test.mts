@@ -37,6 +37,9 @@ test('the payload is the first ten rows in the order given, with the domain labe
     rows.slice(0, 10).map((r) => r.name)
   )
   assert.deepEqual(p.rows[0], { key: 'image:a mob 0', name: 'a mob 0', detail: 'Befallen' })
+  // Two rows differing only by case are two lines, so two keys.
+  const twins = gapsOverlayPayload({ loaded: true, domain: 'image', rows: [zoned('A Bat', 'Befallen'), zoned('a bat', 'Befallen')] })
+  assert.notEqual(twins.rows[0].key, twins.rows[1].key)
 })
 
 test('fewer than ten rows are all listed; none is "Nothing to do here", not "not loaded"', () => {

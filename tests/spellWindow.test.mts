@@ -213,4 +213,10 @@ test("A `|` OCR LEAVES IN THE TEXT IS WRITTEN {{!}}: IT NEVER ENDS THE FIELD AND
   for (const l of page.split('\n').filter((x) => x.startsWith('| '))) assert.ok(!l.slice(2).includes('|'), l)
   // A link's or a template's own `|` stays.
   assert.equal(spellPageValues(undefined, { description: 'Cast by [[The Game Master|the GM]] {{Tooltip|x}} a|b', fields: {} }).description, 'Cast by [[The Game Master|the GM]] {{Tooltip|x}} a{{!}}b')
+  // A nested template is one span; an unclosed one protects nothing; a second copy changes nothing.
+  const values = (d: string): string | undefined => spellPageValues(undefined, { description: d, fields: {} }).description
+  assert.equal(values('{{a|{{b}}|c}} x|y'), '{{a|{{b}}|c}} x{{!}}y')
+  assert.equal(values('{{a|[[x|y]]|c}}'), '{{a|[[x|y]]|c}}')
+  assert.equal(values('{{a|b'), '{{a{{!}}b')
+  assert.equal(values(values('{{a|{{b}}|c}} x|y') ?? ''), '{{a|{{b}}|c}} x{{!}}y')
 })

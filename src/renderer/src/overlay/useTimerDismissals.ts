@@ -32,9 +32,12 @@ export function useTimerDismissals(): Held & { dismiss: (row: BuffTimerRow) => v
   useEffect(() => {
     return window.eqOverlay.onCharacter((c) => {
       const key = c === null ? '' : `${c.name}|${c.server}`
-      // A rebuild of the same character keeps them.
+      // A rebuild of the same character keeps them. The first notice only says who this is: the
+      // overlay has no character to compare with, and a window opened mid-session mostly hears a rebuild.
       if (key === characterRef.current) return
+      const first = characterRef.current === null
       characterRef.current = key
+      if (first) return
       setHeld((prev) => (prev.dismissals.size === 0 ? prev : { dismissals: new Map(), changes: prev.changes + 1 }))
     })
   }, [])

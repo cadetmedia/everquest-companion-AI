@@ -53,3 +53,14 @@ test('a switch to another character clears the dismissals; a rebuild of the same
   assert.equal(host.value.dismissals.size, 0, "another character's Clarity is not the cleared one")
   host.unmount()
 })
+
+test('a dismissal made before the first character notice survives it: the window opened mid-session', () => {
+  const { host, switchTo } = mount()
+  host.act(() => host.value.dismiss(row('self|self|clarity', 1)))
+  // The first notice is usually a same-character rebuild (an idle rescan); the overlay cannot ask first.
+  switchTo({ name: 'Leric', server: 'legends', logPath: 'a' })
+  assert.equal(host.value.dismissals.size, 1, 'the first notice is not a switch')
+  switchTo({ name: 'Aaron', server: 'legends', logPath: 'b' })
+  assert.equal(host.value.dismissals.size, 0)
+  host.unmount()
+})

@@ -174,13 +174,15 @@ test("a mob heading's Copy lines puts each line under the field it belongs in: l
   })
   const rows = [
     under('faction', 'Antonius Bayle', { adjust: 2 }),
-    under('drop', 'Classic Raid Tier Treasures'),
+    under('drop', 'Classic Raid Tier Treasures', { lootField: 'common_loot' }),
     under('faction', 'Guards of Qeynos', { adjust: 5 }),
     under('drop', 'Gnoll Fang'),
     under('faction', 'Sabertooths of Blackburrow', { adjust: -10 }),
-    under('faction', 'Knights of Truth', { raised: true })
+    under('faction', 'Knights of Truth', { raised: true }),
+    // No line stated its direction: no field takes it, as the NPC page's own faction blocks leave it out.
+    under('faction', 'Freeport Militia')
   ]
-  const text = headingLinesText(rows, (r) => `* ${r.name}\n`, new Set(['classic raid tier treasures']))
+  const text = headingLinesText(rows, (r) => `* ${r.name}\n`)
   assert.equal(
     text,
     [
