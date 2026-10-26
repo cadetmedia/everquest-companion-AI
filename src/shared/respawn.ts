@@ -690,6 +690,29 @@ export interface RespawnSnap {
   rows: RespawnRow[]
   recent: RespawnCandidate[]
   prefs: RespawnPrefs
+  /**
+   * THE LEARNED EVIDENCE (owner, 2026-10-25): every mob with three or more qualifying gaps, watched or
+   * not, most recently killed first, at most 1,000, each gap ending at the mob's first sign of life.
+   * The wiki respawn time is read from it (the value most gaps agree on). Absent from an engine or
+   * an archive older than the field.
+   */
+  learned?: RespawnLearned[]
+}
+
+/** One mob's qualifying gaps (`RespawnSnap.learned`), newest first, at most 50. */
+export interface RespawnLearned {
+  /** `<zone key>::<mob key>`, as a row's `id`. */
+  id: string
+  key: string
+  display: string
+  zone: string
+  gapsMs: number[]
+  /** The wiki page's own `|respawn_time`, verbatim, as the rows carry it; absent when it states none. */
+  wikiText?: string
+  /** That text in ms, when it is a duration. */
+  wikiMs?: number
+  /** The page it came from. */
+  wikiPage?: string
 }
 
 /**

@@ -55,6 +55,31 @@ const RESPAWN_MAX_RECENT: usize = 40;
 const RESPAWN_MAX_GAPS: usize = 6;
 /// Beyond this a sighting has gone stale and a clock has stopped meaning anything.
 const RESPAWN_LINGER_MS: i64 = 30 * 60 * 1000;
+/// THE LEARNED EVIDENCE (owner, 2026-10-25: the wiki's respawn time from the player's own kills).
+/// Every qualifying gap per mob is kept, newest this many, because the respawn is a constant and
+/// the wiki number is the value most of them agree on (gaps-tab reads it). Bounded twice so a long
+/// log costs a fixed amount: gaps per mob, and mobs (`MAX_LEARNED_STORE`, which bounds what is
+/// published too). Measured on the owner's October log (105 MB, 2026-10-25): 314 mobs published,
+/// 3,026 gaps, 72 KB of snapshot, and the whole fold no slower (28 s against 30 s before).
+const RESPAWN_MAX_LEARNED_GAPS: usize = 50;
+/// A mob is published as evidence from this many qualifying gaps: the fewest the owner's rule
+/// offers a respawn time from.
+const RESPAWN_MIN_LEARNED: usize = 3;
+/// Mobs the learned store remembers, apart from the 800-mob history: one with a single gap counts
+/// toward it too, since its third may come. At 50 gaps each, a few hundred KB at the very worst.
+const MAX_LEARNED_STORE: usize = 1_000;
+
+/// One mob's learned gaps, kept apart from its history (see `MAX_LEARNED_STORE`).
+#[derive(Debug, Clone)]
+struct LearnedGaps {
+    key: String,
+    display: String,
+    zone: String,
+    /// The death that ended its last gap, for the published order.
+    last_ts: i64,
+    /// Oldest first, capped at `RESPAWN_MAX_LEARNED_GAPS`.
+    gaps: Vec<i64>,
+}
 
 /// One row of `data/respawns.json`. `seconds` is absent on roughly a fifth of the rows: the grammar
 /// is a whitelist, so anything it cannot fully consume ("Triggered", "6-8 hours", "?") keeps its
@@ -154,6 +179,28 @@ struct RespawnCandidate {
     wiki_text: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     wiki_ms: Option<i64>,
+}
+
+/// One mob's qualifying gaps, published whether or not it is watched: the evidence for the wiki's
+/// respawn time (see `RESPAWN_MAX_LEARNED_GAPS`). Every gap is an upper bound on the respawn; the
+/// reader looks for the value most of them agree on.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RespawnLearned {
+    id: String,
+    key: String,
+    display: String,
+    zone: String,
+    /// Newest first.
+    gaps_ms: Vec<i64>,
+    /// What the wiki's own page states, as the rows carry it: the verbatim text, its seconds when it
+    /// is a duration, and the page. Absent when the committed floor has no row for the mob.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    wiki_text: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    wiki_ms: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    wiki_page: Option<String>,
 }
 
 /// One mob the user has chosen to watch, and the number they chose for it.
@@ -348,6 +395,12 @@ pub struct RespawnModule {
     /// two questions, and a linear scan of up to 200 entries per name would be tens of millions of
     /// string comparisons before the app finished starting.
     watch_index: std::collections::HashMap<String, RespawnWatchPref>,
+    /// Mob keys that died in this stay and have shown no sign of life since: the only names a line
+    /// is checked against for an unwatched mob, so the learned evidence costs one set lookup per
+    /// named line rather than a history walk. Cleared by a zone line, an epoch and a reset.
+    awaiting: std::collections::HashSet<String>,
+    /// The learned evidence, by row id, in order of last learning (see `learn`).
+    learned: JsMap<LearnedGaps>,
 }
 
 impl RespawnModule {
@@ -361,6 +414,8 @@ impl RespawnModule {
             construction_now_ms,
             now_ms: construction_now_ms,
             watch_index: std::collections::HashMap::new(),
+            awaiting: std::collections::HashSet::new(),
+            learned: JsMap::new(),
         };
         m.reindex_watches();
         m
@@ -398,8 +453,15 @@ impl RespawnModule {
         }
         let key = id_key(name);
         if self.watch_of(&key).is_none() {
+            // Not watched: only the learned evidence wants this line, and only for a mob that died in
+            // this stay and has not shown life yet. Nothing is published for it (owner, 2026-10-25:
+            // every mob's gap ends at its first sign of life, watched or not).
+            if self.awaiting.contains(&key) {
+                self.first_sign(&key, ts);
+            }
             return;
         }
+        self.awaiting.remove(&key);
         let id = format!("{}::{}", id_key(&self.zone), key);
         let Some(h) = self.history.get_mut(&id) else {
             return;
@@ -453,8 +515,60 @@ impl RespawnModule {
         true
     }
 
+    /// One qualifying gap into the learned store: the entry re-inserted so the store's order is the
+    /// order of last learning, its gaps capped (oldest dropped), the store capped (least recently
+    /// learned dropped). Its own store and its own cap, so a mob camped last week keeps what it
+    /// taught while the 800-mob history turns over with every trash pull since.
+    fn learn(&mut self, id: &str, h: &MobHistory, gap: i64) {
+        let mut entry = match self.learned.get(id) {
+            Some(prior) => {
+                let e = prior.clone();
+                self.learned.remove(id);
+                e
+            }
+            None => LearnedGaps {
+                key: h.key.clone(),
+                display: h.display.clone(),
+                zone: h.zone.clone(),
+                last_ts: 0,
+                gaps: Vec::new(),
+            },
+        };
+        entry.display = h.display.clone();
+        entry.last_ts = h.last_ts;
+        entry.gaps.push(gap);
+        if entry.gaps.len() > RESPAWN_MAX_LEARNED_GAPS {
+            entry.gaps.remove(0);
+        }
+        self.learned.insert(id.to_string(), entry);
+        while self.learned.len() > MAX_LEARNED_STORE {
+            let Some(oldest) = self.learned.keys().next().map(str::to_string) else {
+                break;
+            };
+            self.learned.remove(&oldest);
+        }
+    }
+
+    /// An unwatched mob's first sign of life after its death, a minute or more on: where its next gap
+    /// ends. Earlier lines are the same pull and leave it awaiting.
+    fn first_sign(&mut self, key: &str, ts: i64) {
+        let id = format!("{}::{}", id_key(&self.zone), key);
+        let Some(h) = self.history.get_mut(&id) else {
+            self.awaiting.remove(key);
+            return;
+        };
+        if ts - h.last_ts < MIN_GAP_MS {
+            return;
+        }
+        if h.first_seen_ts.is_none() {
+            h.first_seen_ts = Some(ts);
+        }
+        self.awaiting.remove(key);
+    }
+
     fn record_death(&mut self, key: &str, display: &str, ts: i64) {
         let id = format!("{}::{}", id_key(&self.zone), key);
+        let mut learned_gap: Option<i64> = None;
         let mut h = match self.history.get(&id) {
             Some(prior) => {
                 let mut h = prior.clone();
@@ -473,6 +587,7 @@ impl RespawnModule {
                     if h.gaps.len() > RESPAWN_MAX_GAPS {
                         h.gaps.remove(0);
                     }
+                    learned_gap = Some(gap);
                 }
                 h.first_seen_ts = None;
                 h
@@ -496,7 +611,14 @@ impl RespawnModule {
         h.last_ts = ts;
         h.kills += 1;
         h.display = display.to_string();
+        if let Some(gap) = learned_gap {
+            self.learn(&id, &h, gap);
+        }
         self.history.insert(id, h);
+        // Its next gap ends at its first sign of life, which only a line in this stay can give.
+        if self.zone_since > 0 {
+            self.awaiting.insert(key.to_string());
+        }
         while self.history.len() > MAX_HISTORY {
             let Some(oldest) = self.history.keys().next().map(str::to_string) else {
                 break;
@@ -626,7 +748,36 @@ impl RespawnModule {
             "rows": rows,
             "recent": recent,
             "prefs": self.prefs,
+            "learned": self.learned(),
         })
+    }
+
+    /// The learned evidence: every mob with enough qualifying gaps, most recently killed first,
+    /// watched or not. Bounded by the store (`MAX_LEARNED_STORE`), so a push costs a fixed amount
+    /// however long the log.
+    fn learned(&self) -> Vec<RespawnLearned> {
+        let mut entries: Vec<(&str, &LearnedGaps)> = self
+            .learned
+            .iter()
+            .filter(|(_, e)| e.gaps.len() >= RESPAWN_MIN_LEARNED)
+            .collect();
+        entries.sort_by_key(|(_, e)| std::cmp::Reverse(e.last_ts));
+        entries
+            .into_iter()
+            .map(|(id, e)| {
+                let wiki_row = wiki().get(&e.key);
+                RespawnLearned {
+                    id: id.to_string(),
+                    key: e.key.clone(),
+                    display: e.display.clone(),
+                    zone: e.zone.clone(),
+                    gaps_ms: e.gaps.iter().rev().copied().collect(),
+                    wiki_text: wiki_row.map(|w| w.text.clone()),
+                    wiki_ms: wiki_row.and_then(|w| w.seconds).map(|s| s * 1000),
+                    wiki_page: wiki_row.map(|w| w.page.clone()),
+                }
+            })
+            .collect()
     }
 
     /// The watch-row pull seam — the rows the Timers surface draws, in the order it draws them,
@@ -696,6 +847,8 @@ impl EqModule for RespawnModule {
 
     fn reset(&mut self) {
         self.history.clear();
+        self.awaiting.clear();
+        self.learned.clear();
         self.zone = String::new();
         self.zone_since = 0;
         // Re-read the "wall clock", which here is the pinned construction instant — see the
@@ -712,11 +865,15 @@ impl EqModule for RespawnModule {
                 // nothing is lost that the log still states. Only knowledge the log CANNOT restate
                 // persists across an epoch.
                 self.history.clear();
+                self.awaiting.clear();
+                self.learned.clear();
                 self.rev += 1;
             }
             "zone" => {
                 self.zone = ev.str("zone").unwrap_or_default().to_string();
                 self.zone_since = ev.ts();
+                // A new stay: no gap spans it, so nothing is awaiting a sign of life any more.
+                self.awaiting.clear();
                 // The revision moves, because the zone is part of what the screen shows: without
                 // this both surfaces keep drawing the old zone's clocks while the log stays quiet.
                 self.rev += 1;

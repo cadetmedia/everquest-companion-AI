@@ -293,3 +293,84 @@ fn a_corpse_never_marks_its_own_row_seen() {
         "the second death ended the gap, as before"
     );
 }
+
+// ── THE LEARNED EVIDENCE (owner, 2026-10-25: the wiki respawn time from the player's own kills) ──
+
+fn learned_of(m: &RespawnModule) -> Vec<serde_json::Value> {
+    m.snapshot()["state"]["learned"]
+        .as_array()
+        .cloned()
+        .unwrap_or_default()
+}
+
+/// Four kills of the knight, each spawn seen by a hit 570 s after the death before it, nobody watching.
+fn camped_unwatched(kills: i64) -> RespawnModule {
+    let mut m = RespawnModule::new(NOW, RespawnPrefs::default());
+    m.on_event(&ev(&zone(T_ZONE)), false);
+    let mut t = T_DEATH;
+    for i in 0..kills {
+        m.on_event(&ev(&death(i * 3 + 1, t)), false);
+        if i + 1 < kills {
+            m.on_event(&ev(&hits_you(i * 3 + 2, t + 570_000)), true);
+            t += 640_000;
+        }
+    }
+    m
+}
+
+#[test]
+fn an_unwatched_mob_learns_its_gaps_from_the_first_sign_of_life_and_publishes_them() {
+    let m = camped_unwatched(4);
+    let learned = learned_of(&m);
+    assert_eq!(learned.len(), 1);
+    assert_eq!(learned[0]["key"], "a vis ghoul knight");
+    assert_eq!(learned[0]["zone"], "The Ruins of Old Guk");
+    // Each gap ends at the hit, not at the kill 70 s later: the spawn, not the spawn plus the fight.
+    assert_eq!(
+        learned[0]["gapsMs"],
+        serde_json::json!([570_000, 570_000, 570_000])
+    );
+    // Nothing watched, so no clock row: the evidence is published on its own.
+    assert!(m.watch_rows(NOW).is_empty());
+}
+
+#[test]
+fn fewer_than_three_gaps_are_not_published() {
+    assert!(learned_of(&camped_unwatched(3)).is_empty(), "two gaps");
+    assert_eq!(learned_of(&camped_unwatched(4)).len(), 1, "three gaps");
+}
+
+#[test]
+fn a_zone_line_ends_the_wait_for_a_sign_of_life() {
+    let mut m = RespawnModule::new(NOW, RespawnPrefs::default());
+    m.on_event(&ev(&zone(T_ZONE)), false);
+    m.on_event(&ev(&death(1, T_DEATH)), false);
+    m.on_event(&ev(&zone(T_DEATH + 10_000)), false);
+    m.on_event(&ev(&hits_you(2, T_DEATH + 570_000)), true);
+    m.on_event(&ev(&death(3, T_DEATH + 640_000)), false);
+    // The stay changed between the two deaths: no gap at all, sighting or not.
+    let s = m.snapshot();
+    assert!(s["state"]["learned"].as_array().is_some_and(Vec::is_empty));
+}
+
+#[test]
+fn a_camped_mob_keeps_what_it_taught_after_the_history_turns_over() {
+    let mut m = camped_unwatched(4);
+    // 900 different trash mobs die after it: more than the 800-mob history holds.
+    let start = T_DEATH + 4 * 640_000;
+    for i in 0..900_i64 {
+        let ts = start + i * 1_000;
+        let line = format!(
+            r#"{{"kind":"death","seq":{},"ts":{ts},"raw":"d","name":"a rat {i}","bySelf":true}}"#,
+            100 + i
+        );
+        m.on_event(&ev(&line), false);
+    }
+    let learned = learned_of(&m);
+    assert_eq!(
+        learned.len(),
+        1,
+        "a rat dies once each, so only the knight has gaps"
+    );
+    assert_eq!(learned[0]["key"], "a vis ghoul knight");
+}
