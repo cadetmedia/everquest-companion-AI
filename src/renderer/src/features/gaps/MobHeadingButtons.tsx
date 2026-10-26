@@ -18,7 +18,6 @@ import { allDone, mobPageOf, onMobPage, wikiEditUrl, wikiSearchUrl, type GapRow 
 import { headingLinesText } from '@shared/gapGroups'
 import { copyText } from '../../lib/clipboard'
 import { Tooltip } from '../../lib/Tooltip'
-import { PAGE_EXTRAS } from './useGapsData'
 
 const stop = (e: MouseEvent): void => e.stopPropagation()
 const BUTTON_SX = { ml: 1, py: 0 } as const
@@ -93,7 +92,7 @@ export default function MobHeadingButtons({
   const page = lines?.[0] !== undefined ? mobPageOf(lines[0]) : mob
   return (
     <Box component="span" sx={{ ml: 1 }}>
-      {lines !== null && <CopyLinesButton text={() => headingLinesText(lines, pageText, PAGE_EXTRAS.commonLoot)} />}
+      {lines !== null && <CopyLinesButton text={() => headingLinesText(lines, pageText)} />}
       <WikiButton href={wikiSearchUrl(page)} tip={`The wiki's search for ${page}.`} label="Search wiki" icon={<SearchIcon />} testId="gaps-mob-search" />
       {lines !== null && <WikiButton href={wikiEditUrl(page)} tip={`The wiki's editor on ${page}.`} label="Edit mob page" icon={<NoteAddIcon />} testId="gaps-edit-mob-page" />}
       <DoneAllButton mob={mob} rows={rows} done={done} onDoneAll={onDoneAll} />
