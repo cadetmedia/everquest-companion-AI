@@ -54,7 +54,6 @@ export function MapTimerPins({ timers, vp }: { timers: readonly TimerPin[]; vp: 
   const [hover, setHover] = useState<string | null>(null)
   const { palette } = useTheme()
   const pinColor = palette.error.main
-  const now = useSecondsClock()
   // Position memo keyed on pins + projection (per view CHANGE); the 1 Hz tick re-renders only
   // the text reads below, which is a walk over at most the watch list's 60 rows.
   const placed = useMemo(() => {
@@ -66,6 +65,9 @@ export function MapTimerPins({ timers, vp }: { timers: readonly TimerPin[]; vp: 
       }
     return out
   }, [timers, toScreen])
+  // The clock runs only while a pin is drawn (performance review 2026-10-20, finding 9: the Timers
+  // tab's and the Respawn and Buffs overlays' rule): a map with no timer on it re-renders nothing.
+  const now = useSecondsClock(placed.length > 0)
   // The clock is read ONCE per pin per tick — the title, the worn clock and the hover all draw
   // from this, where each used to call `respawnReading` for itself.
   const labels = useMemo(
