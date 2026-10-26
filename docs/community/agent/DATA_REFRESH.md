@@ -56,8 +56,8 @@ repo is run.
 - The compare and the delta always run together, before every release and whenever the owner asks
   (owner, 2026-10-25: "wiki github pack from eoz and delta scrape should always run before a
   release"; "should run when i ask"): compare, delta, compare again (nothing behind). No pack age
-  stands in for the delta; the 2026-10-23 five-hour `--release` rule is withdrawn, whatever the
-  script's flag still prints.
+  stands in for the delta; the 2026-10-23 five-hour rule is withdrawn. The second compare is
+  `npx tsx scripts/eoz-compare.mts --release`: it exits 1 while any item or mob page is behind.
 - Never import the pack's fields: its parse lacks otherNames, drop groups and faction amounts. Its
   `icons` (iconId -> PNG) are the exception: item icons come from the pack first, at build time
   and in the app (item-icons-pack, owner 2026-10-25), PNG-checked.
