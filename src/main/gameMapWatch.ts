@@ -8,8 +8,9 @@
 // OFF MAIN'S THREAD (performance review 2026-10-20, finding 9). Every stat, listing and read is
 // `fs/promises`, so the disk work runs on libuv's pool and main only wakes to compare an mtime: a
 // slow or scanned disk can no longer stall the thread that answers IPC. The next look is armed when
-// the last one is done, so two never overlap. Detection latency is what it was: EQ writes the file
-// within about a second of an M press (gameMapIni.ts), and this sees the write within 500 ms of it.
+// the last one is done (or given up after 5 s, never to commit), so two never overlap. Detection
+// latency is what it was: EQ writes the file within about a second of an M press (gameMapIni.ts),
+// and this sees the write within 500 ms of it.
 // `fs.watch` was not used: one stat per half second is already cheap, and a missed notification
 // (a network drive, an editor's rename) would leave the overlay wrong until something else moved.
 
@@ -24,6 +25,8 @@ const POLL_MS = 500
 const REFIND_MS = 15_000
 /** No file yet (no character, or not logged in): look again sooner than a switch is checked. */
 const MISS_MS = 2_000
+/** A look still out after this is given up, so a disk call that never settles cannot stop the watch. */
+const LOOK_TIMEOUT_MS = 5_000
 
 let timer: ReturnType<typeof setTimeout> | null = null
 let running = false
@@ -35,6 +38,8 @@ let shown: boolean | null = null
 let looking: Promise<void> | null = null
 /** Bumped by every stop; a look started before it commits nothing. */
 let generation = 0
+/** Bumped by every look and every look given up on; only the newest look commits. */
+let lookId = 0
 
 async function findIni(): Promise<string | null> {
   const c = resolveActiveCharacter()
@@ -50,10 +55,11 @@ async function findIni(): Promise<string | null> {
 }
 
 /**
- * One look at the disk. Its answers are committed only if no stop came while it was out (`gen`):
- * a look that lands after the window closed must not seed the next watch with the last file.
+ * One look at the disk. Its answers are committed only while it is `live`: no stop came while it was
+ * out, and it was not given up on. A look that lands after the window closed must not seed the next
+ * watch with the last file.
  */
-async function read(gen: number): Promise<void> {
+async function read(live: () => boolean): Promise<void> {
   const now = Date.now()
   let file = path
   let known = mtime
@@ -61,7 +67,7 @@ async function read(gen: number): Promise<void> {
     // Stamped first, so a find that throws is not retried on every tick.
     foundAt = now
     const next = await findIni()
-    if (gen !== generation) return
+    if (!live()) return
     if (next !== file) known = 0
     file = next
     path = next
@@ -75,19 +81,34 @@ async function read(gen: number): Promise<void> {
   const m = (await stat(file)).mtimeMs
   if (m === known) return
   const text = await readFile(file, 'latin1')
-  if (gen !== generation) return
+  if (!live()) return
   mtime = m
   shown = parseMapShown(text)
 }
 
-/** One look, its errors kept: mid-write, locked, or gone keeps the last answer for the next. */
+/** Settles with `p`, or after LOOK_TIMEOUT_MS having called `giveUp`. */
+function timeLimited(p: Promise<void>, giveUp: () => void): Promise<void> {
+  let t: ReturnType<typeof setTimeout> | undefined
+  const late = new Promise<void>((resolve) => {
+    t = setTimeout(() => {
+      giveUp()
+      resolve()
+    }, LOOK_TIMEOUT_MS)
+  })
+  return Promise.race([p, late]).finally(() => clearTimeout(t))
+}
+
+/** One look, its errors kept: mid-write, locked, gone or hung keeps the last answer for the next. */
 function look(): Promise<void> {
   if (looking) return looking
-  const p = read(generation)
-    .catch(() => undefined)
-    .finally(() => {
-      if (looking === p) looking = null
-    })
+  const gen = generation
+  const id = ++lookId
+  const reading = read(() => gen === generation && id === lookId).catch(() => undefined)
+  const p = timeLimited(reading, () => {
+    if (id === lookId) lookId++
+  }).finally(() => {
+    if (looking === p) looking = null
+  })
   looking = p
   return p
 }
