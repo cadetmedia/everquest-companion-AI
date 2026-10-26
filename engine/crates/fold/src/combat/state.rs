@@ -342,6 +342,12 @@ impl EngineState {
         name_key == "you" || self.known_players.contains(name_key)
     }
 
+    /// True when `name_key` is you, a known player or anyone the roster ever admitted: a person, so
+    /// never a pet, whatever a forgeable `My leader is …` says.
+    pub fn is_player_side(&self, name_key: &str) -> bool {
+        self.is_known_player(name_key) || self.roster.admitted.contains(name_key)
+    }
+
     /// True when `name_key` is on the roster right now — the "never a hostile" test. `engage_hostile`
     /// and the presence axis both consult it, because a group member's TARGET is what we are
     /// fighting and the member never is: one friendly in `engaged` can merge several pulls into one
