@@ -72,6 +72,17 @@ export function heldExtras(index: HeldIndex, unknown: ReadonlySet<string>): Extr
   return out
 }
 
+/**
+ * The captured items the wiki data still has no page for. A capture is checked when it is taken, but
+ * the data moves on: a delta that adds the page must take the row away, as it does a held item's
+ * (owner, 2026-10-25: Jenni's Robe, captured before the delta that added it, stayed a New page).
+ * `asked` is what the last check covered and `unknown` its answer; a name it did not cover stays,
+ * since it was unknown when it was captured.
+ */
+export function capturedStillUnknown(items: readonly CapturedItem[], asked: ReadonlySet<string>, unknown: ReadonlySet<string>): CapturedItem[] {
+  return items.filter((c) => !asked.has(c.name.trim()) || unknown.has(c.name.trim()))
+}
+
 /** The captured items, as witnesses. */
 export function capturedExtras(items: readonly CapturedItem[]): ExtraItem[] {
   return items.map((c) => ({ name: c.name, kind: 'captured' as const, at: c.at, count: 1, samples: [`Item window captured ${logStamp(c.at)}`] }))
