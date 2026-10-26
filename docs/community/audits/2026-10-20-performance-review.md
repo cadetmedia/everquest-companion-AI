@@ -136,6 +136,29 @@ its last combat answer; ToastOverlay and the Buffs tab's clock tick only with so
 window (`lib/dumpStore.ts`); the Timers tab, Respawn and Buffs overlays' 1 s clocks run only with
 something to time, and `getProgress` is held per window (`posky/progressStore.ts`) (catch_all 72, 73).
 
-Not done, each needing a ruling or another branch (BRANCH_NOTES.md, "Unassigned open items"): `heal-*`
-in `CHARACTER_AWARE_OVERLAYS`; `killFactions` out of the gaps snapshot; `gearOwnership` in a module
-store; the map timer pins' clock.
+Not done: `gearOwnership` in a module store (it would change the visible per-window "read at" time;
+owner asked).
+
+## Done 2026-10-26 (optimization pass 1, on the trunk)
+
+- #2 (short term): the gaps snapshot no longer carries the kill-faction sample lines; the engine
+  serves them as the `killFactionSamples` module, read only when a faction row's details open or a
+  Copy runs (`gapKillFactionSamples.ts`). Saved files and archives keep the old shape. Owner's
+  October log: gaps 951 KB to 482 KB; the rest is gap rows (199 KB) and quest talks (99 KB).
+- #4: combat polling gated on visibility and activity (`features/combat/combatPoll.ts`): a hidden
+  window reads nothing; a settled one reads every 10 s instead of every 1 s; in a fight, unchanged.
+  Identical reads were already joined main-side (`readShim.serveShared`). Parked overlays fade by
+  opacity, so only the activity gate applies to them.
+- #5: skipped. No overlay window reads a module twice, so a per-window store saves nothing; the
+  buffs/debuffs duplication is across processes (#3's per-cursor cache is the fix).
+- #7: Maps/Mobs (one zone join per catalog and zone), Slayer plans, Plan corpora and pool, Factions
+  `gearMaps`, Overview `buildDpsSeries` and Raid Targets (computed in render) kept across visits
+  (`lib/kept.ts`, `mobZone.ts`). Raid Targets now shows an empty roster while the kills snapshot is
+  null during a character switch.
+- #9: `gameMapWatch` reads with `fs/promises`, one look at a time. `livePerfProbe` stays (a
+  production instrument the feedback timeline needs; 0.075% of a core). The presence worker stays
+  (off main on its own thread; 0.06-0.16% of a core; backing off would slow overlay response).
+- #10: overlay surfaces `React.lazy` per kind: 715 KB of JS per overlay window to 269-376 KB.
+- Quick wins: `heal-fight`/`heal-overall` in `CHARACTER_AWARE_OVERLAYS`; the map timer pins' clock
+  runs only with a pin placed.
+- #3 and the engine's idle nap: see the perf-engine merge note below, when it lands.
