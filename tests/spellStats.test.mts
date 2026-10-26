@@ -256,7 +256,9 @@ test('the corpus is the one the header measured', () => {
   // Re-read 2026-10-25 after the evening delta (2,018 -> 2,019 spells, 1,086 -> 1,087 beneficial,
   // 2,078 -> 2,082 lines: Mana Preservation III, a mana-cost focus and its three Limit lines, outside
   // the stat shape): only the corpus size moved.
-  assert.equal(SPELLS.length, 2019)
+  // Re-read 2026-10-26 after the evening delta (2,019 -> 2,020 spells: Tears of Arlyxir, a
+  // Detrimental Wizard nuke): only the corpus size moved.
+  assert.equal(SPELLS.length, 2020)
   assert.equal(BENEFICIAL.length, 1087)
   assert.equal(BENEFICIAL_LINES.length, 2082)
 })
