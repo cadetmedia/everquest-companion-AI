@@ -351,9 +351,9 @@ impl RespawnModule {
             }
             return;
         }
-        self.awaiting.remove(&key);
         let id = format!("{}::{}", id_key(&self.zone), key);
         let Some(h) = self.history.get_mut(&id) else {
+            self.awaiting.remove(&key);
             return;
         };
         let base = base_of(h);
@@ -365,6 +365,10 @@ impl RespawnModule {
         }
         if h.first_seen_ts.is_none() && ts - h.last_ts >= MIN_GAP_MS {
             h.first_seen_ts = Some(ts);
+        }
+        // Still awaiting inside the first minute: unwatched later, its gap ends at a sighting.
+        if h.first_seen_ts.is_some() {
+            self.awaiting.remove(&key);
         }
         h.seen_ts = Some(ts);
         h.seen_via = Some(via);
@@ -403,6 +407,12 @@ impl RespawnModule {
         // would swallow the very push that carries it.
         self.rev += 1;
         true
+    }
+
+    /// Whether a mob is awaiting its first sign of life: no gap or snapshot shows it, so tests ask.
+    #[cfg(test)]
+    pub fn is_awaiting(&self, key: &str) -> bool {
+        self.awaiting.contains(key)
     }
 
     /// An unwatched mob's first sign of life after its death, a minute or more on: where its next gap

@@ -43,6 +43,9 @@ test("THE OWNER'S RULES: 3 WITHIN 25 S, 5 WITHIN 20 S, ELSE 10 IN ALL; FEWER SAY
   const ten = constantRespawn(s([600, 660, 720, 780, 840, 900, 960, 1020, 1080, 5000]), 'Mob')
   assert.equal(ten?.rule, 'ten')
   assert.equal(ten?.agree, 9, 'the 5000 s outlier is out')
+  assert.equal(ten?.ms, 840_000, 'the median of the nine left, not the lowest gap')
+  // An even count left: the middle two averaged, to the second.
+  assert.equal(constantRespawn(s([600, 660, 720, 780, 840, 900, 960, 1020, 1080, 1140, 6000]), 'Mob')?.ms, 870_000)
 })
 
 test('A COMMON NAME CLUSTERED AT THE ONE-MINUTE FLOOR IS TWO SPAWNS SHARING IT, NOT A RESPAWN', () => {
@@ -80,6 +83,24 @@ test('A RESPAWNS ROW FOR A PAGE THAT STATES NONE OR DISAGREES; NONE FOR ONE THAT
   assert.match(rows[1].details.samples[0] ?? '', /^Your kills: 8:50 \(\d+ of 31 gaps within 25 seconds of each other\); the page says 22 minutes\.$/)
   // Copy gives the field line the page takes.
   assert.equal(wikiPageText(rows[0], [], {}), '| respawn_time      = 4:55\n')
+})
+
+test('A PAGE WHOSE RESPAWN IS NOT A DURATION IS ITS OWN STATEMENT: NO ROW; A PLACEHOLDER STATES NOTHING: A ROW', () => {
+  const said = (text: string): string[] => respawnGaps([evidence('Xicotl', XICOTL, { text })], CATALOG).map((r) => r.respawn?.pageSays ?? '')
+  // respawns.json rows with no seconds, verbatim.
+  for (const text of ['Kaesora: 18:00, Temple of Droga: 20:30', 'Triggered', '[[Triggered]]', '6-8 hours', 'Never respawns, only appears in raid instances']) {
+    assert.deepEqual(said(text), [], text)
+  }
+  for (const text of ['?', '??', 'Unknown', '']) assert.deepEqual(said(text), [text], `"${text}"`)
+})
+
+test("ONE VERDICT PER PAGE: THE BEST-EVIDENCED ZONE AGREES WITH THE PAGE, SO A FEW ODD GAPS ELSEWHERE MAKE NO ROW", () => {
+  const elsewhere = { ...evidence('Lasna Cheroon', s([700, 701, 702]), { text: '8:50', ms: 530_000 }), zone: 'Elsewhere', id: 'elsewhere::lasna cheroon' }
+  const camp = evidence('Lasna Cheroon', LASNA, { text: '8:50', ms: 530_000 })
+  assert.deepEqual(respawnGaps([elsewhere, camp], CATALOG), [])
+  assert.deepEqual(respawnGaps([camp, elsewhere], CATALOG), [])
+  // Alone, the odd zone is the best evidence and does disagree.
+  assert.equal(respawnGaps([elsewhere], CATALOG).length, 1)
 })
 
 test("A NEW MOB PAGE TAKES THE RESPAWN ITS KILLS AGREE ON IN ITS BLANK FIELD", () => {

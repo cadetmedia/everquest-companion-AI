@@ -4,7 +4,9 @@
 // A row is a mob the wiki data has a page for, whose kills agree on a respawn (respawnLearn's rules)
 // and whose page states none, or states one more than 25 s away from it (Enynti's page said 22
 // minutes; 31 kills in the owner's Castle of Mistmoore 4 camps say 8:50). A page that agrees is not a
-// row. A mob with no page is a Mobs row already, and its Copy wiki page carries the respawn too
+// row, nor is one whose text is not a duration ("Triggered", "6-8 hours", a time per zone): the page
+// states something the log cannot overrule, and the app suggests only what the log shows a page lacks
+// (owner, 2026-10-21). A placeholder ("?", "Unknown") states nothing. A mob with no page is a Mobs row already, and its Copy wiki page carries the respawn too
 // (`withRespawnField`).
 
 import type { GapAction, GapRow } from './gaps'
@@ -48,37 +50,52 @@ export function respawnAction(row: GapRow): GapAction {
   return { kind: 'checkWiki', label: f?.pageSays === undefined ? 'Add respawn' : 'Fix respawn', why, href: wikiEditUrl(row.page ?? row.name) }
 }
 
+/** A page's `|respawn_time` that holds no statement. */
+const STATES_NOTHING = /^\s*(\?*|unknown\??)\s*$/i
+
+/** The page lacks what the kills say: no respawn, a placeholder, or a duration more than 25 s off (header). */
+function pageLacks(e: LearnedEvidence, v: RespawnVerdict): boolean {
+  if (e.wikiMs !== undefined) return Math.abs(e.wikiMs - v.ms) > AGREES_MS
+  return e.wikiText === undefined || STATES_NOTHING.test(e.wikiText)
+}
+
 /** The Respawns rows: one per mob page the kills can fill or correct, most evidence first. */
 export function respawnGaps(learned: readonly LearnedEvidence[], catalog: readonly TitledMob[]): GapRow[] {
   const pageOf = mobPageFinder(catalog)
-  const byPage = new Map<string, { row: GapRow; agree: number }>()
+  // One verdict per page, the zone (or tier) with the most agreeing gaps (as `verdictFor`), and only
+  // that one is compared with the page: a few odd gaps elsewhere do not outvote it.
+  const byPage = new Map<string, { e: LearnedEvidence; v: RespawnVerdict }>()
   for (const e of learned) {
     const v = constantRespawn(e.gapsMs, e.display)
     if (v === null) continue
     const page = pageOf(e.display) ?? (e.wikiPage === undefined ? undefined : pageOf(e.wikiPage))
     if (page === undefined) continue
-    if (e.wikiMs !== undefined && Math.abs(e.wikiMs - v.ms) <= AGREES_MS) continue
-    // One row per page: the zone (or tier) with the most agreeing gaps stands.
-    if ((byPage.get(page)?.agree ?? -1) >= v.agree) continue
-    const fact = factOf(v, e.wikiText)
-    const row: GapRow = {
-      domain: 'respawn',
-      name: e.display,
-      page,
-      kinds: ['killed'],
-      count: v.samples,
-      first: '',
-      last: '',
-      respawn: fact,
-      details: {
-        samples: [respawnLine(fact)],
-        sources: { entries: [{ name: page, n: v.samples }], distinct: 1 },
-        zones: { entries: [{ name: e.zone, n: v.samples }], distinct: 1, all: [e.zone] }
-      }
-    }
-    byPage.set(page, { row, agree: v.agree })
+    if ((byPage.get(page)?.v.agree ?? -1) >= v.agree) continue
+    byPage.set(page, { e, v })
   }
-  return [...byPage.values()].map((r) => r.row).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+  return [...byPage]
+    .filter(([, { e, v }]) => pageLacks(e, v))
+    .map(([page, { e, v }]) => respawnRow(page, e, v))
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+}
+
+function respawnRow(page: string, e: LearnedEvidence, v: RespawnVerdict): GapRow {
+  const fact = factOf(v, e.wikiText)
+  return {
+    domain: 'respawn',
+    name: e.display,
+    page,
+    kinds: ['killed'],
+    count: v.samples,
+    first: '',
+    last: '',
+    respawn: fact,
+    details: {
+      samples: [respawnLine(fact)],
+      sources: { entries: [{ name: page, n: v.samples }], distinct: 1 },
+      zones: { entries: [{ name: e.zone, n: v.samples }], distinct: 1, all: [e.zone] }
+    }
+  }
 }
 
 /** A Mobs row (a mob with no page) with the respawn its kills agree on, for its new page. */
