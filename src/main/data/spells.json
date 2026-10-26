@@ -1,8 +1,8 @@
 {
-  "scrapedAt": "2026-10-26T00:06:17.591Z",
+  "scrapedAt": "2026-10-26T21:54:37.871Z",
   "schema": 3,
-  "count": 2019,
-  "withEffects": 2014,
+  "count": 2020,
+  "withEffects": 2015,
   "spells": [
     {
       "name": "Aanya's Animation",
@@ -33461,6 +33461,23 @@
         "Limit Min Duration: 24s",
         "Limit Effect: Exclude Assist Radius",
         "Limit Type: Exclude Combat Skills"
+      ]
+    },
+    {
+      "name": "Tears of Arlyxir",
+      "durationText": "Instant",
+      "durationMs": null,
+      "castTimeMs": 5000,
+      "recastMs": 12000,
+      "targetType": "Targeted AE",
+      "spellType": "Detrimental",
+      "classes": "* Wizard - Level 64",
+      "msgCastOnYou": "Your skin blisters as the tears of Arlyxir rain down on you.",
+      "msgCastOnOther": "Soandso's skin blisters as the tears of Arlyxir rain upon them.",
+      "illusion": false,
+      "mana": 420,
+      "effects": [
+        "Decrease Health by 645"
       ]
     },
     {

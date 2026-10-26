@@ -1,5 +1,5 @@
 {
-  "scrapedAt": "2026-10-26T00:06:17.591Z",
+  "scrapedAt": "2026-10-26T21:54:37.871Z",
   "source": "eqlwiki.com — Category:NPCs/Named Mobs/Merchants/Raid Encounters ∪ embeddedin Template:Namedmobpage/MerchantPage, filtered to pages opening a mob template + recentchanges delta (scripts/scrape-delta.mts)",
   "mobs": [
     {
@@ -3224,10 +3224,8 @@
         "Nektropos Castle"
       ],
       "drops": [
-        "Black Sapphire",
-        "Jacinth",
-        "Ruby",
-        "Sapphire Necklace"
+        "Classic Raid Tier Treasures",
+        "Crystallized Sulfur"
       ],
       "loc": [
         {
@@ -12977,8 +12975,7 @@
           "z": 17.6
         }
       ],
-      "image": "?",
-      "noImage": true
+      "image": "npc_a_faceless_throatcutter.png"
     },
     {
       "page": "A fading erudite apparition",
@@ -36308,10 +36305,8 @@
         "Midnight Clad Wristbands",
         "Umbral Platemail Bracer",
         "Wand of Conflagration",
-        "Woven Shadow Bracer"
-      ],
-      "otherNames": [
-        "A loathing lich"
+        "Woven Shadow Bracer",
+        "Wand of Souls"
       ],
       "factions": [
         "Inhabitants of Hate"
@@ -36322,6 +36317,9 @@
       "image": "npc_a_loathling_lich.png",
       "commonDrops": [
         "Classic Raid Tier Treasures"
+      ],
+      "otherNames": [
+        "A loathing lich"
       ]
     },
     {
@@ -43037,7 +43035,10 @@
       "factionAmounts": [
         "-2"
       ],
-      "image": "npc_a_reanimated_castle_guard.png"
+      "image": "npc_a_reanimated_castle_guard.png",
+      "commonDrops": [
+        "Ruby"
+      ]
     },
     {
       "page": "A Reanimated Champion",
@@ -53089,8 +53090,9 @@
       ],
       "drops": [
         "Handmaiden's Earring",
+        "Handmaiden's Handwrap",
         "Handmaiden's Ring",
-        "Handmaiden's Handwrap"
+        "Handmaiden's Wristwrap"
       ],
       "factions": [
         "Host of Nektropos"
@@ -55467,6 +55469,31 @@
       "outOfEra": true,
       "image": "npc_a_tar_goo.png",
       "noImage": true
+    },
+    {
+      "page": "A tarnished steward",
+      "eraTag": "Classic",
+      "name": "a tarnished steward",
+      "level": "47-48",
+      "zones": [
+        "Nektropos Castle"
+      ],
+      "drops": [
+        "Crystallized Sulfur"
+      ],
+      "loc": [
+        {
+          "ns": 494,
+          "ew": 107
+        }
+      ],
+      "factions": [
+        "Host of Nektropos"
+      ],
+      "factionAmounts": [
+        "-2"
+      ],
+      "image": "npc_a_tarnished_steward.png"
     },
     {
       "page": "A Tatterback Ape",
@@ -59004,6 +59031,32 @@
         "Vitrified Skull Fetish"
       ],
       "image": "A_Vitrified_Skeleton.jpg"
+    },
+    {
+      "page": "A vivisected centurion",
+      "eraTag": "Classic",
+      "name": "a vivisected centurion",
+      "level": "51-52",
+      "zones": [
+        "Nektropos Castle"
+      ],
+      "drops": [
+        "Crystallized Sulfur",
+        "Diamond"
+      ],
+      "loc": [
+        {
+          "ns": -128,
+          "ew": -177
+        }
+      ],
+      "factions": [
+        "Host of Nektropos"
+      ],
+      "factionAmounts": [
+        "-2"
+      ],
+      "image": "npc_a_vivisected_centurion.png"
     },
     {
       "page": "A Voracious Brute",
@@ -64262,6 +64315,13 @@
         "Ring of the Eldest",
         "Nektropos Private Chamber Key",
         "Pyrosilk Robe"
+      ],
+      "loc": [
+        {
+          "ns": 26,
+          "ew": 150,
+          "z": 15
+        }
       ],
       "image": "Alexa Everling.png"
     },
@@ -99974,6 +100034,13 @@
         "Ancient Warsword",
         "Cryptguard"
       ],
+      "loc": [
+        {
+          "ns": 135.66,
+          "ew": -109.42,
+          "z": -111.28
+        }
+      ],
       "image": "npc_name.png",
       "noImage": true
     },
@@ -100037,6 +100104,7 @@
       ],
       "drops": [
         "Crysta's Robe",
+        "Pyrosilk Amice",
         "Pyrosilk Leggings"
       ],
       "loc": [
@@ -103096,6 +103164,13 @@
         "Deirdre's Robe",
         "Pyrosilk Sleeves",
         "Pyrosilk Choker"
+      ],
+      "loc": [
+        {
+          "ns": -188,
+          "ew": -138,
+          "z": 15
+        }
       ],
       "image": "Deirdre Everling.png"
     },
@@ -111255,6 +111330,7 @@
       ],
       "drops": [
         "Elise's Robe",
+        "Pyrosilk Bracelet",
         "Pyrosilk Lined Shoes"
       ],
       "loc": [
@@ -111263,6 +111339,12 @@
           "ew": 321,
           "z": 17
         }
+      ],
+      "factions": [
+        "Host of Nektropos"
+      ],
+      "factionAmounts": [
+        "-2"
       ],
       "image": "Elise_Everling.png"
     },
@@ -120306,8 +120388,7 @@
         "-30",
         "10"
       ],
-      "image": "npc_gaffin_deeppockets.png",
-      "noImage": true
+      "image": "npc_gaffin_deeppockets.jpg"
     },
     {
       "page": "Gage",
@@ -130118,6 +130199,13 @@
       "drops": [
         "Burning Fighters Blade",
         "Helical Band of the Unyielding"
+      ],
+      "loc": [
+        {
+          "ns": 548,
+          "ew": 121,
+          "z": 18
+        }
       ],
       "factions": [
         "Host of Nektropos"
@@ -159687,7 +159775,7 @@
         "Gem Choppers"
       ],
       "factionAmounts": [
-        "-30",
+        "-50",
         "5",
         "5",
         "5"
@@ -171950,7 +172038,8 @@
         "Signet Ring of Lord Everling",
         "Idol of Forsaken Ideals",
         "Blood's Unity",
-        "Warstaff of Hope's Demise"
+        "Warstaff of Hope's Demise",
+        "Robe of the Betrayed"
       ],
       "loc": [
         {
@@ -174069,16 +174158,16 @@
           "pct": 100
         }
       ],
-      "otherNames": [
-        "Maestro"
-      ],
       "factions": [
         "Inhabitants of Hate"
       ],
       "factionAmounts": [
         "-30"
       ],
-      "image": "Maestro of Rancor.png"
+      "image": "Maestro of Rancor.png",
+      "otherNames": [
+        "Maestro"
+      ]
     },
     {
       "page": "Maesyn Trueshot",
@@ -177072,6 +177161,13 @@
         "Melanie's Robe",
         "Pyrosilk Sash",
         "Pyrosilk Cloak"
+      ],
+      "loc": [
+        {
+          "ns": 753,
+          "ew": -313,
+          "z": 15
+        }
       ],
       "image": "Melanie Everling.png"
     },
@@ -180595,8 +180691,8 @@
       ],
       "loc": [
         {
-          "ns": -885,
-          "ew": 1115,
+          "ns": -1100,
+          "ew": 486,
           "pct": 5
         }
       ],
@@ -210715,7 +210811,8 @@
       ],
       "drops": [
         "Sheila's Robe",
-        "Pyrosilk Gloves"
+        "Pyrosilk Gloves",
+        "Pyrosilk Headband"
       ],
       "loc": [
         {
@@ -248456,8 +248553,7 @@
         "10",
         "10"
       ],
-      "image": "npc_zasrin_blueflame.png",
-      "noImage": true
+      "image": "npc_zasrin_blueflame.jpg"
     },
     {
       "page": "Zatok",

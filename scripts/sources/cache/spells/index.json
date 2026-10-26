@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-26T00:06:17.591Z",
+  "updatedAt": "2026-10-26T21:54:37.871Z",
   "revs": {
     "45502": 165835,
     "46874": 192869,
@@ -2054,7 +2054,8 @@
     "72922": 199373,
     "72923": 199374,
     "72927": 199388,
-    "73039": 199761
+    "73039": 199761,
+    "73101": 199952
   },
   "titles": {
     "45502": "Anthem de Arms",
@@ -4110,6 +4111,7 @@
     "72922": "Pet Illusion: Mummy",
     "72923": "Summon Familiar: Mummy",
     "72927": "Familiar: Gelatinous Cube",
-    "73039": "Mana Preservation III"
+    "73039": "Mana Preservation III",
+    "73101": "Tears of Arlyxir"
   }
 }
