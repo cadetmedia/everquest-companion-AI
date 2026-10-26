@@ -192,6 +192,9 @@ export function withDescription<F extends object>(f: F, row: GapRow, extras: Mer
   return d === undefined ? f : { ...f, description: d.text }
 }
 
+/** The add text's opening words, by which an edit finds it (withEditedFields). */
+const ADD_HEAD = 'Add to the existing page'
+
 /** The fields an existing page may lack, in the merchant layout's order; a block field under its key. */
 const ADD_FIELDS: readonly (readonly [string, keyof PageStated | undefined])[] = [['class', undefined], ['level', 'level'], ['location', 'location'], ['items_sold', undefined]]
 
@@ -206,7 +209,23 @@ export function addToPage(name: string, values: Readonly<Record<string, string>>
   const lines = ADD_FIELDS.filter(([key, by]) => (values[key] ?? '') !== '' && (by === undefined || !stated[by])).map(([key]) =>
     key === 'items_sold' ? `| items_sold = \n\n${values[key] ?? ''}` : `| ${key.padEnd(17)} = ${values[key] ?? ''}`
   )
-  return `Add to the existing page (${name}): switch its template to MerchantPage, then fill these fields where it leaves them blank.\n\n${lines.join('\n')}\n`
+  return `${ADD_HEAD} (${name}): switch its template to MerchantPage, then fill these fields where it leaves them blank.\n\n${lines.join('\n')}\n`
+}
+
+/**
+ * Copy's add text with a line for every hand-edited field it lacks, above `items_sold` (requirement
+ * 2026-10-23: a correction is used by Copy, whatever the catalog says the page states). Any other text
+ * is returned as it is: a whole page already has every field's line.
+ */
+export function withEditedFields(text: string, fields: Readonly<Record<string, string>>): string {
+  if (!text.startsWith(ADD_HEAD)) return text
+  const has = (key: string): boolean => new RegExp(`^\\|\\s*${key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*=`, 'm').test(text)
+  const lines = Object.entries(fields).filter(([key]) => !has(key)).map(([key, value]) => `| ${key.padEnd(17)} = ${value}\n`)
+  if (lines.length === 0) return text
+  const at = text.search(/^\| items_sold =/m)
+  if (at >= 0) return `${text.slice(0, at)}${lines.join('')}${text.slice(at)}`
+  const body = text.replace(/\n+$/, '')
+  return `${body}${/^\|/m.test(body) ? '\n' : '\n\n'}${lines.join('')}`
 }
 
 /** A merchant page, or for a page the wiki has (`stated`), only what to add to it. */

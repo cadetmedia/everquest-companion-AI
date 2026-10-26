@@ -204,3 +204,13 @@ test("A FRAME BAR AFTER AN UN-UPGRADED NAME IS NOT RANK I; WITH THE WINDOW'S UPG
   const tiered = readSpellWindow(['Spell: Burst of Flame |', 'Mana: 4', 'Cast: 1.5 sec', 'Upgrade. Place Tier 1 0/2'], undefined, 'Burst of Flame')
   assert.equal((tiered as { rank?: string }).rank, 'I')
 })
+
+test("A `|` OCR LEAVES IN THE TEXT IS WRITTEN {{!}}: IT NEVER ENDS THE FIELD AND SPLITS THE TEMPLATE", () => {
+  const r = readSpellWindow(['Spell: Minor Shielding', 'Mana: 10', 'Cast: 2 sec', 'This spell increases the armor class | of the caster by 5 and hit points.', 'On You: You feel armored.'], undefined, 'Minor Shielding')
+  const page = spellPage({ name: 'Minor Shielding', npcOnly: false, shot: { description: r.description, fields: r.fields } })
+  assert.ok(page.includes('| description = This spell increases the armor class {{!}} of the caster by 5 and hit points.'), page)
+  // Every line inside the template that starts a field names one, and no field carries a bare `|`.
+  for (const l of page.split('\n').filter((x) => x.startsWith('| '))) assert.ok(!l.slice(2).includes('|'), l)
+  // A link's or a template's own `|` stays.
+  assert.equal(spellPageValues(undefined, { description: 'Cast by [[The Game Master|the GM]] {{Tooltip|x}} a|b', fields: {} }).description, 'Cast by [[The Game Master|the GM]] {{Tooltip|x}} a{{!}}b')
+})

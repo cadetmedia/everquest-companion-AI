@@ -8,7 +8,7 @@
 // the list fills in stages at launch and swaps with the character, and dropping on absence lost marks.
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { doneKey, keptDoneMarks, withDoneMarks, type GapRow } from '@shared/gaps'
+import { doneSet, keptDoneMarks, toggledDoneMarks, withDoneMarks, type GapRow } from '@shared/gaps'
 import { playerNames, type PlayerNames } from '@shared/gapPlayers'
 import { loadDoneMarks as load, loadPlayers, PLAYERS_KEY, saveDoneMarks as save } from './doneMarksStore'
 import { useOwnCharacterNames } from './useOwnCharacters'
@@ -35,8 +35,7 @@ export function useDoneMarks(scrapedAt: string): DoneMarks {
   const toggle = useCallback(
     (row: GapRow) =>
       setMarks((cur) => {
-        const key = doneKey(row)
-        const next = key in cur ? Object.fromEntries(Object.entries(cur).filter(([k]) => k !== key)) : { ...cur, [key]: new Date().toISOString() }
+        const next = toggledDoneMarks(cur, row, new Date().toISOString())
         save(next)
         return next
       }),
@@ -51,7 +50,7 @@ export function useDoneMarks(scrapedAt: string): DoneMarks {
       }),
     []
   )
-  const done = useMemo(() => new Set(Object.keys(marks)), [marks])
+  const done = useMemo(() => doneSet(marks), [marks])
   return { done, toggle, setMany }
 }
 

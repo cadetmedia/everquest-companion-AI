@@ -6,6 +6,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { itemTrades } from '../src/main/gapItemTrades'
 import { catalogStates, descriptionLines, itemsTrade, maskedGreeting, merchantDescription, subtitleSentence } from '../src/shared/gapMerchantDescription'
+import { applyEditText, withGapEdits } from '../src/shared/gapEdits'
 import { stillNeeded, wikiPageText } from '../src/shared/wikiPage'
 import type { GapRow } from '../src/shared/gaps'
 
@@ -121,4 +122,22 @@ test('an existing page\'s merchant row copies only what to add to it: no new pag
   // A page the catalog shows without a level takes the con's.
   const bare = wikiPageText(r, [], {}, { ...seen, pageStates: catalogStates([{ name: 'Konro Strongfoot', page: 'Konro Strongfoot' }]) })
   assert.ok(bare.includes(`| ${'level'.padEnd(17)} = 50\n`), bare)
+})
+
+// Requirement 2026-10-23 (gaps-tab, "EDIT values"): a correction is used by Copy. On a merchant row
+// whose page exists, Copy gives only what to add, and the fields the catalog says the page states
+// (or never reads: race, zone) had no line for the edit to fill.
+test("an existing page's add text carries every field the player edited, whatever the catalog says the page has", () => {
+  const base = { domain: 'merchant', name: 'Klok Nylsi', kinds: ['bought'], count: 3, first: '', last: '', details: { samples: [], cons: { entries: [{ name: 'L20 amiable', n: 1 }], distinct: 1 } } } as GapRow
+  const [r] = withGapEdits([base], { 'merchant:Klok Nylsi': { fields: { race: 'Troll', zone: 'Grobb', level: '22', class: '[[Merchant]]' } } })
+  const seen = { isMob: () => true, pageStates: () => ({ level: true, location: false, image: true }) }
+  const text = applyEditText(wikiPageText(r, [], {}, seen), r)
+  assert.ok(text.startsWith('Add to the existing page (Klok Nylsi)'), text)
+  for (const [key, value] of [['race', 'Troll'], ['zone', 'Grobb'], ['level', '22'], ['class', '[[Merchant]]']]) {
+    assert.equal(text.split('\n').filter((l) => l === `| ${key.padEnd(17)} = ${value}`).length, 1, `${key}: ${text}`)
+  }
+  // Fields the page lacks still sit above its item list.
+  const sold = withGapEdits([{ ...base, itemsSold: [{ item: 'Crude Coal' }] } as GapRow], { 'merchant:Klok Nylsi': { fields: { race: 'Troll' } } })[0]
+  const withList = applyEditText(wikiPageText(sold, [], {}, seen), sold)
+  assert.ok(withList.indexOf('| race') < withList.indexOf('| items_sold'), withList)
 })

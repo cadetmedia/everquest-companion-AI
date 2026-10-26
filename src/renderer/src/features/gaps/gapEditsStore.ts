@@ -33,7 +33,8 @@ function subscribe(l: () => void): () => void {
 export function saveGapEdit(row: GapRow, edit: GapEdit | null): void {
   const key = doneKey(row)
   const tidy = edit === null ? null : tidyEdit(edit)
-  const rest = Object.entries(all[who] ?? NONE).filter(([k]) => k !== key)
+  // A key stored before keys were lower-cased goes too.
+  const rest = Object.entries(all[who] ?? NONE).filter(([k]) => k.toLowerCase() !== key)
   const mine: GapEditMap = Object.fromEntries(tidy === null ? rest : [...rest, [key, tidy]])
   all = { ...all, [who]: mine }
   try {

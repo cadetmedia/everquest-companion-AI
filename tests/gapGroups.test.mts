@@ -1,7 +1,7 @@
 // The Gaps list grouped as a hunting plan (owner ask, 2026-10-18): zone, then mob, then what is missing.
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { gapGroupOrderOf, groupGaps, headingKeys, rowEntries, unfoldedEntries, withFolds, ZONE_NOT_SEEN, type GapEntry } from '../src/shared/gapGroups'
+import { gapGroupOrderOf, groupGaps, headingKeys, headingLinesText, rowEntries, unfoldedEntries, withFolds, ZONE_NOT_SEEN, type GapEntry } from '../src/shared/gapGroups'
 import type { GapRow } from '../src/shared/gaps'
 import type { LootEvent } from '../src/shared/types'
 
@@ -164,4 +164,40 @@ test("Zone I'm in keeps the headings to the zone you stand in (owner, 2026-10-20
   assert.deepEqual(shape(groupGaps([row('item', 'Spider Fang', ['Befallen'])], loot, undefined, { here: 'Befallen' })), ['# Befallen (1)', '    Spider Fang'])
   // Off, every zone it was seen in, as before.
   assert.equal(groupGaps(rows, []).filter((e) => e.kind === 'zone').length, 2)
+})
+
+test("a mob heading's Copy lines puts each line under the field it belongs in: lowered and raised factions, own and shared loot apart", () => {
+  const under = (domain: 'faction' | 'drop', what: string, extra: Partial<GapRow> = {}): GapRow => ({
+    ...row(domain, `${what} (a gnoll)`, ['Blackburrow']),
+    details: { samples: [], sources: { entries: [{ name: 'a gnoll', n: 1 }], distinct: 1 } },
+    ...extra
+  })
+  const rows = [
+    under('faction', 'Antonius Bayle', { adjust: 2 }),
+    under('drop', 'Classic Raid Tier Treasures'),
+    under('faction', 'Guards of Qeynos', { adjust: 5 }),
+    under('drop', 'Gnoll Fang'),
+    under('faction', 'Sabertooths of Blackburrow', { adjust: -10 }),
+    under('faction', 'Knights of Truth', { raised: true })
+  ]
+  const text = headingLinesText(rows, (r) => `* ${r.name}\n`, new Set(['classic raid tier treasures']))
+  assert.equal(
+    text,
+    [
+      '| known_loot =',
+      '* Gnoll Fang (a gnoll)',
+      '',
+      '| common_loot =',
+      '* Classic Raid Tier Treasures (a gnoll)',
+      '',
+      '| factions =',
+      '* Sabertooths of Blackburrow (a gnoll)',
+      '',
+      '| opposing_factions =',
+      '* Antonius Bayle (a gnoll)',
+      '* Guards of Qeynos (a gnoll)',
+      '* Knights of Truth (a gnoll)',
+      ''
+    ].join('\n')
+  )
 })

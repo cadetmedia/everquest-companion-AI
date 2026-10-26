@@ -5,6 +5,7 @@
 
 import { doneKey, type GapDomain, type GapRow } from './gaps'
 import { npcImageName } from './mobPageTitle'
+import { withEditedFields } from './gapMerchantDescription'
 
 export interface GapEdit {
   /** The name the page should carry (a template's `name` / `itemname`, a quest's title). */
@@ -89,11 +90,15 @@ export function readEdit(raw: unknown): GapEdit | undefined {
   return Object.keys(out).length === 0 ? undefined : out
 }
 
+/** The edits by `doneKey`: a key stored before keys were lower-cased is read lower-cased; the later of two wins. */
+export const foldedEdits = (edits: GapEditMap): Map<string, unknown> => new Map(Object.entries(edits).map(([k, v]) => [k.toLowerCase(), v as unknown]))
+
 /** The rows with their edits riding on them; "This is a mob" clears "may be a player". */
 export function withGapEdits(rows: readonly GapRow[], edits: GapEditMap): GapRow[] {
   if (Object.keys(edits).length === 0) return rows as GapRow[]
+  const byKey = foldedEdits(edits)
   return rows.map((row) => {
-    const edit = readEdit(edits[doneKey(row)])
+    const edit = readEdit(byKey.get(doneKey(row)))
     if (edit === undefined) return row
     const out: GapRow = { ...row, edit, ...(edit.kind === 'mob' ? { maybePlayer: false } : {}) }
     if (edit.distinct === true) delete out.suggest
@@ -137,5 +142,6 @@ export function applyEditText(text: string, row: GapRow): string {
   for (const [key, value] of Object.entries(edit.fields ?? {})) {
     out = row.domain === 'quest' ? setTopRow(out, key, value) : setTemplateField(out, key, value)
   }
-  return out
+  // A merchant page that exists gets only lines to add: an edited field it had no line for is added.
+  return row.domain === 'quest' ? out : withEditedFields(out, edit.fields ?? {})
 }

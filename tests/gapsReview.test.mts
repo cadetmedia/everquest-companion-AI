@@ -9,7 +9,7 @@ import { factionGaps, factionKey } from '../src/shared/gapFactions'
 import { groupGaps } from '../src/shared/gapGroups'
 import { imageGaps } from '../src/shared/gapImages'
 import { pickPage } from '../src/shared/gapMobPage'
-import { allDone, doneKey, gapActions, gapsCaption, hiddenBy, keptDoneMarks, npcOnlySpell, uncertainGap, withDoneMarks, withoutDone, withoutUncertain, type GapRow } from '../src/shared/gaps'
+import { allDone, doneKey, doneSet, gapActions, gapsCaption, hiddenBy, keptDoneMarks, npcOnlySpell, toggledDoneMarks, uncertainGap, withDoneMarks, withoutDone, withoutUncertain, type GapRow } from '../src/shared/gaps'
 import { killIndex, type KillMap } from '../src/shared/kills'
 import type { LootEvent } from '../src/shared/types'
 
@@ -300,4 +300,24 @@ test('a mote drops from anything: never in a mob page loot list, never a Drops r
   const catalog = [{ name: 'a lobotomized courtier', page: 'A lobotomized courtier', drops: ['Crystallized Sulfur'] }]
   const drops = dropGaps(loot, catalog, {}, {}).map((r) => r.name)
   assert.ok(!drops.some((n) => /Mote of/.test(n)), drops.join(', '))
+})
+
+test('a Done mark holds when the engine renames the row from the /con spelling to the loot spelling, a mark stored under the old case included', () => {
+  // The engine first names a mob as the /con prints it, then as a loot or kill line spells it.
+  const conned = row('mob', 'A gorgon')
+  const looted = row('mob', 'a gorgon')
+  assert.equal(doneKey(conned), doneKey(looted))
+  // Marks stored before keys were folded keep the log's case.
+  const stored = { 'mob:A gorgon': '2026-10-20T21:00:00.000Z' }
+  const done = doneSet(stored)
+  assert.equal(hiddenBy(done, false, false)(looted), true)
+  assert.deepEqual(withoutDone([looted], done), [])
+  assert.equal(allDone([looted], done), true)
+  // Toggled off under the new spelling, the old mark goes; toggled on again it is one mark.
+  const off = toggledDoneMarks(stored, looted, '2026-10-21T00:00:00.000Z')
+  assert.deepEqual(off, {})
+  assert.deepEqual(toggledDoneMarks(off, conned, '2026-10-21T00:00:00.000Z'), { 'mob:a gorgon': '2026-10-21T00:00:00.000Z' })
+  // A heading's Done over a row marked under the old case keeps that mark and adds no twin.
+  assert.deepEqual(withDoneMarks(stored, [looted], true, '2026-10-22'), stored)
+  assert.deepEqual(withDoneMarks(stored, [looted], false, '2026-10-22'), {})
 })
