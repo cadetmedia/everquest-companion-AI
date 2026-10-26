@@ -50,7 +50,8 @@ going forward ... say github release").
 **The GitHub pack compare AND the delta, every release** (owner, 2026-10-25: "wiki github pack
 from eoz and delta scrape should always run before a release"; "should run when i ask"): first
 `npx tsx scripts/eoz-compare.mts`, then the delta (DATA_REFRESH.md), both on every release, then
-the compare once more over the refreshed data, which should show nothing behind. No age of the pack
+the compare once more over the refreshed data with `--release`, which exits 1 while anything is
+behind. No age of the pack
 stands in for the delta (the 2026-10-23 five-hour rule is withdrawn). The same pair runs whenever
 the owner asks for a delta or a data refresh, with no condition attached.
 
