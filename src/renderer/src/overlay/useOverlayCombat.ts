@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { CombatSnapshot } from '@shared/combat'
-import { coalesced, createFeed, keptSnapshot } from '../features/combat/combatFeed'
+import { createFeed, keptSnapshot } from '../features/combat/combatFeed'
+import { pollCombat } from '../features/combat/combatPoll'
 
 /**
  * Views the main-process combat engine for a floating overlay (Task #52; per-kind in Task #54).
@@ -37,16 +38,15 @@ export function useOverlayCombat(selectedId: string | undefined): CombatSnapshot
       if (alive) setSnap(v.snap)
     })
     // maxSegments modest: the overlay's selector lists recent fights, but the payload stays small.
-    const tick = coalesced(async (): Promise<void> => {
-      accept(await window.eqOverlay.getCombatSnapshot({ selectedId, maxSegments: 30 }))
-    })
-    tick()
-    const off = window.eqOverlay.onCombatActivity(tick)
-    const iv = setInterval(tick, 1000)
+    // Hidden or idle, it asks less (combatPoll.ts); in a fight, exactly as often as before.
+    const stop = pollCombat(
+      () => window.eqOverlay.getCombatSnapshot({ selectedId, maxSegments: 30 }),
+      accept,
+      (cb) => window.eqOverlay.onCombatActivity(cb)
+    )
     return () => {
       alive = false
-      off()
-      clearInterval(iv)
+      stop()
     }
   }, [selectedId, world])
 

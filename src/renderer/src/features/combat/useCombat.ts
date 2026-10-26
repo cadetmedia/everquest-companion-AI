@@ -3,7 +3,8 @@ import type { CombatSnapshot } from '@shared/combat'
 import { LIVE_SELECTION, type CombatScope } from './dashboardData'
 import { useGlobalFight } from './useGlobalFight'
 import type { CombatFocus } from './combatFocus'
-import { coalesced, createFeed, keptSnapshot, type FeedView } from './combatFeed'
+import { createFeed, keptSnapshot, type FeedView } from './combatFeed'
+import { pollCombat } from './combatPoll'
 
 /** Re-export: the sentinel lives with the scope helpers (dashboardData) so the overlay entry —
  *  which never imports this hook — can share one definition. */
@@ -68,7 +69,8 @@ export interface UseCombat {
  * FIX 4: refresh is event-driven — a fresh snapshot is fetched immediately on the
  * main-side `onCombatActivity` ping (throttled to ~4x/sec there), giving sub-second
  * meter updates during a fight. A slow 1s fallback poll remains for timer-driven UI
- * (the "active" state decay) and to cover any missed event.
+ * (the "active" state decay) and to cover any missed event; it relaxes when nothing can
+ * change with time, and a hidden window asks nothing (combatPoll.ts).
  */
 export function useCombat(
   /** which world this mount views (App's `viewKey`): the kept answer is only reused for the same one */
@@ -108,28 +110,27 @@ export function useCombat(
     const accept = createFeed(world, (v) => {
       if (alive) setView(v)
     })
-    const tick = coalesced(async (): Promise<void> => {
-      // The engine-side pet fold is GONE (not "off"): pet presentation is the renderer's nesting
-      // pref (eq.combat.petRow) applied by petRows.meterPanel, and the snapshot always carries
-      // the separate, authoritative sources — for this view and for the overlays alike.
-      const s = await window.eq.getCombatSnapshot({
-        selectedId: selection === LIVE ? undefined : selection,
-        showUnparsed,
-        maxSegments,
-        timeline: wantTimeline,
-        // Fights from archived logs follow the live ones (log archive, step 4.7). Inert unless
-        // Summarize and archive log is on and an archive is eligible.
-        archived: true
-      })
-      accept(s)
-    })
-    tick()
-    const off = window.eq.onCombatActivity(tick)
-    const iv = setInterval(tick, 1000)
+    // The ping, the 1 s fallback, and the visibility and idle gates on both (combatPoll.ts).
+    const stop = pollCombat(
+      () =>
+        // The engine-side pet fold is GONE (not "off"): pet presentation is the renderer's nesting
+        // pref (eq.combat.petRow) applied by petRows.meterPanel, and the snapshot always carries
+        // the separate, authoritative sources — for this view and for the overlays alike.
+        window.eq.getCombatSnapshot({
+          selectedId: selection === LIVE ? undefined : selection,
+          showUnparsed,
+          maxSegments,
+          timeline: wantTimeline,
+          // Fights from archived logs follow the live ones (log archive, step 4.7). Inert unless
+          // Summarize and archive log is on and an archive is eligible.
+          archived: true
+        }),
+      accept,
+      (cb) => window.eq.onCombatActivity(cb)
+    )
     return () => {
       alive = false
-      off()
-      clearInterval(iv)
+      stop()
     }
   }, [world, selection, showUnparsed, maxSegments, wantTimeline])
 
