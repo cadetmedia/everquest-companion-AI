@@ -67,6 +67,8 @@ pub struct Instance {
     pub first_seen_ts: i64,
     pub last_seen_ts: i64,
     pub retired: bool,
+    /// Retired by a death line or a zone line, not by staleness or pet succession.
+    pub ended: bool,
     /// gen ordinal (1-based) among all instances ever spawned for this nameKey.
     pub gen: u32,
 }
@@ -111,7 +113,14 @@ pub struct WorldModel {
     /// The retirement announcement queue — see the module header. Drained by `EngineState` at every
     /// call site that can retire.
     pub retired_ids: Vec<String>,
+    /// The last DoT tick on you per caster nameKey, for `is_dead_casters_tick`.
+    last_tick: HashMap<String, i64>,
 }
+
+/// How long after its last tick (or its death) a dead caster's DoT may still be ticking: two 6 s
+/// ticks plus a second of log jitter. The owner's log, 1,561 same-caster tick gaps up to a minute:
+/// 1,488 at 5-7 s, 19 at 12-13 s (a tick missing), the rest at 18 s or more.
+const DOT_CADENCE_MS: i64 = 13_000;
 
 impl WorldModel {
     pub fn new() -> Self {
@@ -125,6 +134,7 @@ impl WorldModel {
         self.gens.clear();
         self.pet_tanked_by.clear();
         self.retired_ids.clear();
+        self.last_tick.clear();
     }
 
     /// Active (non-retired) handles for a nameKey, oldest→newest.
@@ -169,6 +179,7 @@ impl WorldModel {
             first_seen_ts: ts,
             last_seen_ts: ts,
             retired: false,
+            ended: false,
             gen,
         };
         let at = self.insts.len();
@@ -291,24 +302,32 @@ impl WorldModel {
         }
     }
 
-    /// True when `name` was seen before but has no live instance `resolve` would return rather than
-    /// replace (a pet, or a hostile seen inside `INSTANCE_STALE_MS`): it died, zoned or went stale.
-    /// Read-only.
-    pub fn is_gone(&self, name: &str, ts: i64) -> bool {
-        let key = id_key_ref(name);
-        self.gens.contains_key(key.as_ref())
-            && !self.active(&key).iter().any(|&at| {
-                let inst = &self.insts[at];
-                inst.charmed || ts - inst.last_seen_ts < INSTANCE_STALE_MS
-            })
+    /// Is this DoT tick on you from `name` at `ts` its dead caster's DoT still running? True when no
+    /// instance of the name is live, the newest died or was left behind by a zone line, and the tick
+    /// keeps the cadence from the caster's last tick or its death. A merely stale caster (mezzed,
+    /// rooted) is not dead, and a break in the cadence is a fresh cast by a same-name successor:
+    /// both are resolved and fought. Records the tick either way.
+    pub fn is_dead_casters_tick(&mut self, name: &str, ts: i64) -> bool {
+        let key = id_key(name);
+        let prev = self.last_tick.insert(key.clone(), ts).unwrap_or(i64::MIN);
+        if !self.active(&key).is_empty() {
+            return false;
+        }
+        self.newest_at(&key).is_some_and(|at| {
+            let inst = &self.insts[at];
+            inst.ended && ts - prev.max(inst.last_seen_ts) <= DOT_CADENCE_MS
+        })
     }
 
     /// The newest instance ever spawned for `name`, retired or not, without touching it.
     pub fn newest(&self, name: &str) -> Option<Resolved> {
-        let key = id_key_ref(name);
-        let gen = self.gens.get(key.as_ref())?;
-        let at = *self.by_id.get(&format!("{key}#{gen}"))?;
+        let at = self.newest_at(&id_key_ref(name))?;
         Some(self.resolved(at))
+    }
+
+    fn newest_at(&self, key: &str) -> Option<usize> {
+        let gen = self.gens.get(key)?;
+        self.by_id.get(&format!("{key}#{gen}")).copied()
     }
 
     /// The charmed pet instance for a name (attribution helper). No staleness sweep — pets are
@@ -467,7 +486,7 @@ impl WorldModel {
         // Case 1: no charmed instance — plain hostile death.
         let Some(pet) = pet else {
             let victim = hostile.unwrap_or(act[0]);
-            self.retire(victim, ts);
+            self.end(victim, ts);
             return DeathResolution {
                 was_pet: false,
                 ambiguous: false,
@@ -478,7 +497,7 @@ impl WorldModel {
         // Case 2a: the killer is You. The pet cannot be slain by you; a hostile twin died.
         if killer_key == Some("you") {
             if let Some(hostile) = hostile {
-                self.retire(hostile, ts);
+                self.end(hostile, ts);
                 return DeathResolution {
                     was_pet: false,
                     ambiguous: false,
@@ -487,7 +506,7 @@ impl WorldModel {
             }
             // Only the pet is live and the game says you slew it — charm broke this tick and then
             // you killed it. Rare, and deterministic.
-            self.retire(pet, ts);
+            self.end(pet, ts);
             return DeathResolution {
                 was_pet: true,
                 ambiguous: false,
@@ -504,14 +523,14 @@ impl WorldModel {
 
         // Case 2c: the killer is the same name — pet↔twin, genuinely ambiguous.
         if let Some(hostile) = hostile {
-            self.retire(hostile, ts);
+            self.end(hostile, ts);
             return DeathResolution {
                 was_pet: false,
                 ambiguous: true,
                 reason: "ambiguous same-name death; kept pet, retired twin".to_string(),
             };
         }
-        self.retire(pet, ts);
+        self.end(pet, ts);
         DeathResolution {
             was_pet: true,
             ambiguous: true,
@@ -533,7 +552,7 @@ impl WorldModel {
     ) -> DeathResolution {
         let pet_tanked = self.pet_tanked_by.get(&pet).is_some_and(|s| s.contains(kk));
         if pet_tanked && hostile.is_none() {
-            self.retire(pet, ts);
+            self.end(pet, ts);
             return DeathResolution {
                 was_pet: true,
                 ambiguous: false,
@@ -541,7 +560,7 @@ impl WorldModel {
             };
         }
         if let Some(hostile) = hostile {
-            self.retire(hostile, ts);
+            self.end(hostile, ts);
             return DeathResolution {
                 was_pet: false,
                 ambiguous: pet_tanked,
@@ -556,12 +575,18 @@ impl WorldModel {
         // same-named mob we had not separately instanced. Spawn+retire a hostile twin slot; keep
         // the pet, flag ambiguity — never silently kill the pet.
         let ghost = self.spawn(key, name, ts, None);
-        self.retire(ghost, ts);
+        self.end(ghost, ts);
         DeathResolution {
             was_pet: false,
             ambiguous: true,
             reason: format!("ambiguous: {kk} slew a {name}; kept pet"),
         }
+    }
+
+    /// Retirement by a death or a zone line: the instance ended, it did not just go quiet.
+    fn end(&mut self, at: usize, ts: i64) {
+        self.insts[at].ended = true;
+        self.retire(at, ts);
     }
 
     /// The one place retirement is recorded. Everything above funnels through it, which is what
@@ -606,7 +631,7 @@ impl WorldModel {
                     self.insts[at].last_seen_ts = ts;
                     survivors.push(self.resolved(at));
                 } else {
-                    self.retire(at, ts);
+                    self.end(at, ts);
                 }
             }
         }

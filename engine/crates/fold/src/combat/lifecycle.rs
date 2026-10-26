@@ -105,14 +105,17 @@ pub fn ensure_encounter(st: &mut EngineState, ts: i64) {
 /// caster to a fresh instance and engage it: a phantom fight against `<mob>#2`. Inside an open
 /// fight a tick from a live caster is booked like any other hit; one from a dead caster is not,
 /// or each tick in the linger would bring it back and hold the fight open for the next pull.
+/// "Dead" is a death or zone line, not a quiet spell (`WorldModel::is_dead_casters_tick`).
 pub fn encounter_for<'a>(
     st: &'a mut EngineState,
     ev: &DamageEvent<'_>,
     at: &Attribution,
 ) -> Option<&'a mut Encounter> {
-    let tick = *at == Attribution::Incoming && ev.dtype == "dot";
-    if tick && (st.current.is_none() || st.world.is_gone(ev.attacker, ev.ts)) {
-        return None;
+    if *at == Attribution::Incoming && ev.dtype == "dot" {
+        let dead = st.world.is_dead_casters_tick(ev.attacker, ev.ts);
+        if st.current.is_none() || dead {
+            return None;
+        }
     }
     ensure_encounter(st, ev.ts);
     st.current.as_mut()
