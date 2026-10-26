@@ -26,10 +26,8 @@
 
 import { useEffect, useState } from 'react'
 import type { CombatSnapshot } from '@shared/combat'
-import { coalesced, createFeed, keptSnapshot } from '../combat/combatFeed'
-
-/** Fallback poll while mounted — covers the "active" state decay and any missed nudge. */
-const FALLBACK_POLL_MS = 1000
+import { createFeed, keptSnapshot } from '../combat/combatFeed'
+import { pollCombat } from '../combat/combatPoll'
 
 /** combatFeed's slot for this surface: its request differs from the Combat tab's. */
 const SURFACE = 'overview'
@@ -46,22 +44,16 @@ export function useOverviewCombat(world = ''): CombatSnapshot | null {
       if (alive) setSnap(v.snap)
     }, SURFACE)
     // One request in flight, as the Combat tab's poll (combatFeed.ts): on a slow machine the 1 s
-    // poll and the activity ping no longer stack up behind each other.
-    const tick = coalesced(async (): Promise<void> => {
-      accept(
-        await window.eq.getCombatSnapshot({
-          timeline: true,
-          maxSegments: 1
-        })
-      )
-    })
-    tick()
-    const off = window.eq.onCombatActivity(tick)
-    const iv = setInterval(tick, FALLBACK_POLL_MS)
+    // poll and the activity ping no longer stack up behind each other. Hidden or idle, it asks
+    // less (combatPoll.ts).
+    const stop = pollCombat(
+      () => window.eq.getCombatSnapshot({ timeline: true, maxSegments: 1 }),
+      accept,
+      (cb) => window.eq.onCombatActivity(cb)
+    )
     return () => {
       alive = false
-      off()
-      clearInterval(iv)
+      stop()
     }
   }, [world])
 
