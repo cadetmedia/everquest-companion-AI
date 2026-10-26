@@ -468,6 +468,9 @@ test('bazaar: rows join by day, item, tier and direction, and the shared day add
   assert.deepEqual(both.rows[0].quotes.map((q) => q.who), ['Leric', 'Aaron'], 'the cut day keeps the quotes of both sides')
   const again = mergeBazaar({ rows: [quoted('Leric')] }, { rows: [quoted('leric')] }) as { rows: { quotes: { who: string }[] }[] }
   assert.deepEqual(again.rows[0].quotes.map((q) => q.who), ['leric'], 'one quote a person, the newer side winning')
+  const live = [{ seq: 4, item: 'Fleeting Quiver', dir: 'sell', price: 9000 }]
+  const withLive = mergeBazaar(older, { ...newer, live }) as { live?: unknown[] }
+  assert.deepEqual(withLive.live, live, 'the live offers the watchlist alerts on are kept')
   assert.equal(mergeBazaar({ rows: 'x' }, newer), null)
   assert.equal(mergeBazaar(older, []), null)
 })
