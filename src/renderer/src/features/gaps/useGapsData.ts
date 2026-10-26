@@ -17,6 +17,7 @@ import type { ConsiderSnap, LootSnap } from '@shared/types'
 import { killIndex, type KillMap, type KillsSnap } from '@shared/kills'
 import { lootedItemNames, type DropAliases, type DropGroups } from '@shared/gapDrops'
 import { lastGapsSnap, type GapsWiki } from '@shared/gapDerive'
+import { learnedOf, type LearnedEvidence } from '@shared/respawnLearn'
 import { memoLast } from '@shared/gapMemo'
 import { catalogNameTest, commonLootNames, vendorFinder } from '@shared/gapMobPage'
 import { catalogZoneCounts, wikiZoneNamer } from '@shared/gapWikiZone'
@@ -217,6 +218,14 @@ function useForcedScope(forced: ForcedQuests, snap: (GapsSnap & TalkSnap) | null
   }, [forced, talks, threads, rows, livePages])
 }
 
+/** The respawn snapshot's evidence, held by identity while no mob's gap count moved. */
+function useLearnedRespawn(snap: unknown): { learned: readonly LearnedEvidence[] } {
+  const learned = learnedOf(snap)
+  const sig = learned.map((l) => `${l.id}:${String(l.gapsMs.length)}:${String(l.gapsMs[0] ?? 0)}`).join('|')
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed by the signature on purpose: a new snapshot with the same evidence keeps the old object
+  return useMemo(() => ({ learned }), [sig])
+}
+
 export function useGapsData(all: AllCharacters | null = null, opts: GapsDataOptions = {}): GapsData {
   const { only, holdMs = 0, cut = null } = opts
   const { engine: liveEngine, loot: liveLoot, kills: liveKills, cons } = useGapsFeeds(holdMs)
@@ -235,6 +244,9 @@ export function useGapsData(all: AllCharacters | null = null, opts: GapsDataOpti
   // is derived. The same array while the loot is the same, so useItemMobs' effect does not rerun.
   const wantDrops = only === undefined || only === 'drop'
   const looted = lastLooted([loot, wantDrops], () => (wantDrops ? lootedItemNames(loot) : NO_NAMES))
+  // The respawn evidence (gapRespawns.ts), the same object until a mob learns a gap: the respawn
+  // module republishes on every sighting of a watched mob, which must not re-derive the whole tab.
+  const respawn = useLearnedRespawn(useModule<unknown>('respawn'))
   const itemMobs = useItemMobs(looted)
   // The foraged known items' own pages, asked of main the same way (shared/gapForage.ts).
   const foraged = lastForaged([engine], () => (engine ? forageProofNames(engine) : []))
@@ -250,8 +262,8 @@ export function useGapsData(all: AllCharacters | null = null, opts: GapsDataOpti
   // A popup's reward joins its item's page as soon as the popup is pasted (useQuestJournals is live).
   const journals = useQuestJournals()
   const snap = useMemo(
-    () => (engine ? joinedSnap(derive(engine, { loot, kills: killMobs, cons, itemMobs, itemForage }, WIKI, only), { live, forced: forced.forced, livePages, journals, only }) : engine),
-    [derive, engine, loot, killMobs, itemMobs, itemForage, cons, only, livePages, live, forced.forced, journals]
+    () => (engine ? joinedSnap(derive(engine, { loot, kills: killMobs, cons, itemMobs, itemForage, respawn }, WIKI, only), { live, forced: forced.forced, livePages, journals, only }) : engine),
+    [derive, engine, loot, killMobs, itemMobs, itemForage, respawn, cons, only, livePages, live, forced.forced, journals]
   )
   const kills = lastKills([killMobs], () => killIndex(killMobs))
   const shown = inWindow(snap, joined === null ? cut : deferredAll?.cut, only)

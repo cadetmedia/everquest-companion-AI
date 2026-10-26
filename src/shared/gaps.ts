@@ -12,6 +12,8 @@ import { forageWhy, type ForageUpdate } from './gapForage'
 import type { GapEdit } from './gapEdits'
 import { replaceWhy } from './gapDrops'
 import { pageCheckAction } from './gapRedirects'
+import { fieldAction } from './gapFieldActions'
+import type { RespawnFact } from './gapRespawns'
 import { offerCheckText, offerText } from './gapOffers'
 import { decodeFactionAmount } from './mobFactionAmounts'
 import { wikiPageUrl } from './wiki'
@@ -28,9 +30,9 @@ export const GAPS_MODULE_ID = 'gaps'
  *  has no image (shared/gapImages.ts) (owner asks, 2026-10-18); `notice`: a mob or item the log met
  *  whose page says it may not be in Legends, `{{DNE}}` or `{{delete}}` (gaps_notices.rs; owner, 2026-10-22);
  *  `quest`: a task the log named, its page made or filled (gaps_quest_log.rs, shared/gapQuests.ts). */
-export type GapDomain = 'item' | 'mob' | 'spell' | 'merchant' | 'faction' | 'drop' | 'image' | 'notice' | 'quest' | 'zone'
-export const GAP_DOMAINS: readonly GapDomain[] = ['item', 'mob', 'spell', 'merchant', 'faction', 'drop', 'image', 'notice', 'quest', 'zone']
-export const GAP_DOMAIN_LABELS: Record<GapDomain, string> = { item: 'Items', mob: 'Mobs', spell: 'Spells', merchant: 'Merchants', faction: 'Factions', drop: 'Drops', image: 'Images', notice: 'Notices', quest: 'Quests', zone: 'Zones' }
+export type GapDomain = 'item' | 'mob' | 'spell' | 'merchant' | 'faction' | 'drop' | 'image' | 'respawn' | 'notice' | 'quest' | 'zone'
+export const GAP_DOMAINS: readonly GapDomain[] = ['item', 'mob', 'spell', 'merchant', 'faction', 'drop', 'image', 'respawn', 'notice', 'quest', 'zone']
+export const GAP_DOMAIN_LABELS: Record<GapDomain, string> = { item: 'Items', mob: 'Mobs', spell: 'Spells', merchant: 'Merchants', faction: 'Factions', drop: 'Drops', image: 'Images', respawn: 'Respawns', notice: 'Notices', quest: 'Quests', zone: 'Zones' }
 
 /** What the shown-count line calls a domain's rows: "Showing 11 of 395 mobs missing a wiki picture" (owner, 2026-10-19: "unknown images" read oddly). */
 export const GAP_SHOWN_NOUN: Record<GapDomain, string> = {
@@ -41,6 +43,7 @@ export const GAP_SHOWN_NOUN: Record<GapDomain, string> = {
   faction: 'factions to add or fix on mob pages',
   drop: 'drops missing from mob pages',
   image: 'mobs missing a wiki picture',
+  respawn: 'mob pages missing or misstating a respawn',
   notice: 'pages that say they are not in Legends',
   quest: 'quests your log took part in',
   zone: 'zone names that need a redirect'
@@ -55,6 +58,7 @@ export const GAP_DOMAIN_HELP: Record<GapDomain, string> = {
   faction: "Factions a kill changed that the mob's page is missing or states wrongly: fix the mob page.",
   drop: "Items you looted that the mob's page doesn't list (Motes excluded): add them to its loot.",
   image: 'Mobs you met whose wiki page has no picture: screenshot one and upload it.',
+  respawn: "Mobs whose respawn your kills agree on, and whose page states none or another: set the page's respawn_time.",
   notice: 'Mobs and items you met whose page says "not in Legends" or "up for deletion": remove the notice, since your log proves they exist.',
   quest: 'Quests your log took part in: make the page, or fill what its page is missing.',
   zone: 'Zone names your log printed that the wiki titles otherwise: make a redirect page.'
@@ -72,6 +76,7 @@ export const GAP_CAPTURE: Record<GapDomain, string> = {
   faction: 'Paste into factions; kill again if no amount.',
   drop: "Paste it into the mob page's known_loot list.",
   image: 'Screenshot it; upload under the file name shown.',
+  respawn: 'Stay in the zone and kill it again: each spawn you see adds a gap.',
   notice: 'Nothing: remove the notice and cite the lines below.',
   quest: 'Paste the Quest Journal for its level; hail and say each [keyword].',
   zone: 'Nothing: copy the redirect and save it as a new page.'
@@ -317,6 +322,8 @@ export interface GapRow {
   forageUpdate?: ForageUpdate
   /** The player's own corrections to this row, by hand (shared/gapEdits.ts). */
   edit?: GapEdit
+  /** A Respawns row, or a Mobs row whose kills agree on a respawn: the number and what it stands on (gapRespawns.ts). */
+  respawn?: RespawnFact
 }
 
 export interface GapsSnap {
@@ -588,17 +595,13 @@ function factionAction(row: GapRow): GapAction {
   return { kind: 'checkWiki', label: 'Fix on mob page', why, href: wikiEditUrl(page) }
 }
 
-/** An image row's chip: upload the file; the page's imagefilename line added, or fixed when it names another file. */
-function imageAction(row: GapRow, file = row.image ?? ''): GapAction {
-  const fix = row.pageImage === undefined ? 'add an imagefilename line if the page has none' : `the page's imagefilename says ${row.pageImage}: change it to ${file}`
-  return { kind: 'addToWiki', label: 'Upload image', why: `Upload a screenshot as ${file}; ${fix}.`, href: wikiUploadUrl(file) }
-}
-
 export function gapActions(row: GapRow, verdict: GapVerdict, ctx: GapActionContext = {}): GapAction[] {
   // A notice row, a redirect row, or a page that exists under other capitals or as free text (gapExistingPage.ts).
   const check = pageCheckAction(row, verdict)
   if (check !== undefined) return [check]
-  if (row.domain === 'image') return [imageAction(row)]
+  // A picture or a respawn: one field of a mob page (gapFieldActions.ts).
+  const field = fieldAction(row)
+  if (field !== undefined) return [field]
   if (row.domain === 'drop') return dropActions(row)
   if (row.forageUpdate !== undefined) return [{ kind: 'addToWiki', label: 'Add to item page', why: forageWhy(row.name, row.forageUpdate), href: wikiEditUrl(row.forageUpdate.page) }]
   if (onMobPage(row)) return [factionAction(row)]

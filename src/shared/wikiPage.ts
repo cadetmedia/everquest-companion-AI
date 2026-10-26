@@ -37,6 +37,7 @@ import { roleClass, roleField, roleOf, withFishedNote } from './gapRoles'
 import { questRowPage } from './gapQuestPage'
 import type { QuestExtras } from './gapQuests'
 import { withFightFields } from './gapFight'
+import { withRespawnField } from './gapRespawns'
 import { itemsSoldBlock, itemsSoldField, type SoldSeen } from './gapItemsSold'
 import { pageOrAdd, withDescription, withoutStated, type MerchantExtras, type PageStated } from './gapMerchantDescription'
 
@@ -646,11 +647,13 @@ const PAGE_OF: Record<GapDomain, (row: GapRow, c: PageContext) => string> = {
   item: (row, c) => (row.forageUpdate ? forageAddText(row.forageUpdate) : itemPage({ ...withPageTitles(itemFacts(row, c.loot, c.zoneName, c.vendorAt), c.mobPage), ...withFishedNote(questPageParts(questFactsOf(row), { mobPage: c.mobPage, zoneName: c.zoneName, locOf: locFinder(c.seen.mobLocs) }), row, c.zoneName) }, c.itemShots?.[row.name])),
   // A mob its target line calls a merchant takes the merchant layout before any trade (owner, 2026-10-22);
   // a new mob page takes its fight estimates in its blank fields (shared/gapFight.ts).
-  mob: (row, c) => (roleOf(row) === 'Merchant' ? merchantPage(withDescription(mobFacts(row, [], c.kills, { ...c.seen, zoneName: c.zoneName }), row, c)) : withFightFields(mobPage(mobFacts(row, c.loot, c.kills, { ...c.seen, zoneName: c.zoneName }), c.commonLoot), row)),
+  mob: (row, c) => (roleOf(row) === 'Merchant' ? merchantPage(withDescription(mobFacts(row, [], c.kills, { ...c.seen, zoneName: c.zoneName }), row, c)) : withRespawnField(withFightFields(mobPage(mobFacts(row, c.loot, c.kills, { ...c.seen, zoneName: c.zoneName }), c.commonLoot), row), row)),
   merchant: (row, c) => merchantPage(withDescription(mobFacts(row, [], c.kills, { ...c.seen, zoneName: c.zoneName }), row, c)),
   spell: (row, c) => spellPage({ name: row.name, npcOnly: npcOnlySpell(row, c.isMob), client: c.spellFacts?.[row.name], shot: c.spellShots?.[row.name], castBy: castBySentence(row, c.isMob) }),
   faction: (row) => `${factionLine({ faction: factionOf(row), adjust: row.adjust, raised: row.raised })}\n`,
   image: (row) => `| ${'imagefilename'.padEnd(17)} = ${row.image ?? ''}\n`,
+  // The time the player's kills agree on (gapRespawns.ts), as the page's field line.
+  respawn: (row) => `| ${'respawn_time'.padEnd(17)} = ${row.respawn?.text ?? ''}\n`,
   notice: (row) => noticeProof(row),
   // A Zones row is always a redirect (gapZoneRedirects.ts); `wikiPageText` answers it above.
   zone: (row) => `#REDIRECT [[${row.suggest?.page ?? row.name}]]\n`,
@@ -690,6 +693,7 @@ const NEEDED_OF: Partial<Record<GapDomain, (row: GapRow, seen: PageExtras) => st
   faction: (row) => (row.adjust === undefined ? ['the amount (a kill that is not capped)'] : []),
   drop: () => [],
   image: () => [],
+  respawn: () => [],
   notice: () => [],
   quest: () => []
 }
