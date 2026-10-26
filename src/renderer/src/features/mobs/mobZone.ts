@@ -99,37 +99,71 @@ export function sortLevel(entry: MobEntry): number | null {
  * independent of scrape order, the same posture mobSearch's ranking takes.
  * An unknown zone (blank) matches nothing rather than everything.
  */
-/** `keep`, when given, narrows the rows inside the one catalog pass — a caller's own gate rides
- *  the exemption below rather than adding a second one. */
+/** `keep`, when given, narrows the zone's rows (the cached join, never a second catalog pass) — a
+ *  caller's own gate rides the exemption below rather than adding a second one. */
 export function mobsInZone(zoneRaw: string, catalog: MobEntry[], keep?: (m: MobEntry) => boolean): MobEntry[] {
+  const rows = zoneJoin(zoneRaw, catalog)
+  // A fresh array either way: callers own what they are handed, as they did before the cache.
+  // `keep` filtering the sorted join is the same answer as sorting the kept rows (a stable sort of
+  // a subsequence is that subsequence of the sort), so the gate need not be part of the key.
+  // eslint-disable-next-line eqc/no-domain-munging -- JOS-459 cutover ledger item 8: MobEntry comes from a corpus still bundled in the renderer (mobs/posky/bosses JSON). Moves behind knowledge queries when that surface cuts over.
+  return keep === undefined ? rows.slice() : rows.filter(keep)
+}
+
+// THE JOIN IS CACHED PER (catalog, zone) (performance review 2026-10-20, finding 7). One map visit
+// asked it three times for the same zone (the mob pins, the timer pins' index, the caption's band),
+// each a ~3 ms walk of 7,866 rows, and again on every revisit. The answer depends on the catalog
+// and the zone string alone (the era and wish gates are `keep`, applied after), so it is held in a
+// WeakMap on the catalog OBJECT — a test's throwaway catalog is collected with its entries — and the
+// contract is identity, as `shared/gapMemo.ts perObject`'s: nothing edits a catalog in place. The
+// zone strings are a bounded vocabulary (the zone table plus the log's instance spellings); the
+// table empties itself at `ZONE_JOIN_CAP` all the same.
+const ZONE_JOIN_CAP = 512
+const joins = new WeakMap<readonly MobEntry[], Map<string, readonly MobEntry[]>>()
+
+function zoneJoin(zoneRaw: string, catalog: MobEntry[]): readonly MobEntry[] {
+  let perZone = joins.get(catalog)
+  if (perZone === undefined) {
+    perZone = new Map()
+    joins.set(catalog, perZone)
+  }
+  const hit = perZone.get(zoneRaw)
+  if (hit !== undefined) return hit
+  if (perZone.size >= ZONE_JOIN_CAP) perZone.clear()
+  const rows = walkZone(zoneRaw, catalog)
+  perZone.set(zoneRaw, rows)
+  return rows
+}
+
+/** The uncached join: one pass over the catalog, then the deterministic order above. */
+function walkZone(zoneRaw: string, catalog: MobEntry[]): MobEntry[] {
   const key = zoneKey(zoneRaw)
   if (key === '') return []
   // Empty for a zone the table does not know (the fold alone answers it); a Set so the inner
   // test stays O(1) across 7,866 rows.
   const aliases = new Set(zoneSpellingsFor(zoneRaw).map(zoneKey).filter((k) => k !== ''))
+  const inZone = (m: MobEntry): boolean =>
+    m.zones?.some((z) => {
+      const zk = zoneKey(z)
+      return zk === key || aliases.has(zk)
+    }) === true
   // eslint-disable-next-line eqc/no-domain-munging -- JOS-459 cutover ledger item 8: MobEntry comes from a corpus still bundled in the renderer (mobs/posky/bosses JSON). Moves behind knowledge queries when that surface cuts over.
-  const rows = catalog.filter(
-    (m) =>
-      (keep === undefined || keep(m)) &&
-      m.zones?.some((z) => {
-        const zk = zoneKey(z)
-        return zk === key || aliases.has(zk)
-      })
-  )
-  // eslint-disable-next-line eqc/no-domain-munging -- JOS-459 cutover ledger item 8: MobEntry comes from a corpus still bundled in the renderer (mobs/posky/bosses JSON). Moves behind knowledge queries when that surface cuts over.
-  return rows.sort((a, b) => {
-    const la = sortLevel(a)
-    const lb = sortLevel(b)
-    if (la !== lb) {
-      if (la == null) return 1
-      if (lb == null) return -1
-      return la - lb
-    }
-    const na = a.name.toLowerCase()
-    const nb = b.name.toLowerCase()
-    if (na !== nb) return na < nb ? -1 : 1
-    return a.page < b.page ? -1 : a.page > b.page ? 1 : 0
-  })
+  return catalog.filter(inZone).sort(byLevelThenName)
+}
+
+/** Level ascending (unknown level last), then name, then page: the order the header promises. */
+function byLevelThenName(a: MobEntry, b: MobEntry): number {
+  const la = sortLevel(a)
+  const lb = sortLevel(b)
+  if (la !== lb) {
+    if (la == null) return 1
+    if (lb == null) return -1
+    return la - lb
+  }
+  const na = a.name.toLowerCase()
+  const nb = b.name.toLowerCase()
+  if (na !== nb) return na < nb ? -1 : 1
+  return a.page < b.page ? -1 : a.page > b.page ? 1 : 0
 }
 
 /**

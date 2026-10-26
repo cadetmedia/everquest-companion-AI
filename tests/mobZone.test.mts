@@ -263,3 +263,34 @@ test('rosterInZone: a mob flagged outOfEra is hidden; a raw banner alone (the ca
 test('rosterInZone: a catalog with no era tags at all is exactly mobsInZone', () => {
   assert.deepEqual(rosterInZone('Plane of Sky', CATALOG), mobsInZone('Plane of Sky', CATALOG))
 })
+
+// =============================================================================
+// 5. THE CACHE — one walk per (catalog, zone), the same answers as the walk
+// =============================================================================
+
+test('mobsInZone cache: a repeat ask is the same rows in a FRESH array the caller owns', () => {
+  const first = mobsInZone('The Plane of Sky', CATALOG)
+  const again = mobsInZone('The Plane of Sky', CATALOG)
+  assert.notEqual(again, first, 'a caller that sorts or splices its rows must not edit the cache')
+  assert.deepEqual(again, first)
+  first.length = 0
+  assert.equal(mobsInZone('The Plane of Sky', CATALOG).length, 5)
+})
+
+test('mobsInZone cache: `keep` over the cached join is the gate applied inside the walk, in order', () => {
+  const keep = (m: MobEntry): boolean => m.page !== 'p3'
+  assert.deepEqual(
+    mobsInZone('Plane of Sky', CATALOG, keep).map((r) => r.page),
+    mobsInZone('Plane of Sky', CATALOG).filter(keep).map((r) => r.page)
+  )
+  // A gate that keeps nothing is empty, and the join behind it is untouched.
+  assert.deepEqual(mobsInZone('Plane of Sky', CATALOG, () => false), [])
+  assert.equal(mobsInZone('Plane of Sky', CATALOG).length, 5)
+})
+
+test('mobsInZone cache: keyed by the catalog OBJECT — another catalog is its own walk', () => {
+  assert.equal(mobsInZone('Innothule Swamp', CATALOG).length, 1)
+  const other: MobEntry[] = [...CATALOG, entry('p8', 'a second froglok', '31', ['Innothule Swamp'])]
+  assert.deepEqual(mobsInZone('Innothule Swamp', other).map((r) => r.page), ['p6', 'p8'])
+  assert.equal(mobsInZone('Innothule Swamp', CATALOG).length, 1)
+})
