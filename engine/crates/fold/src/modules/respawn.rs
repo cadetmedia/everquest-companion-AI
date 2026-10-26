@@ -351,9 +351,9 @@ impl RespawnModule {
             }
             return;
         }
-        self.awaiting.remove(&key);
         let id = format!("{}::{}", id_key(&self.zone), key);
         let Some(h) = self.history.get_mut(&id) else {
+            self.awaiting.remove(&key);
             return;
         };
         let base = base_of(h);
@@ -365,6 +365,10 @@ impl RespawnModule {
         }
         if h.first_seen_ts.is_none() && ts - h.last_ts >= MIN_GAP_MS {
             h.first_seen_ts = Some(ts);
+        }
+        // Still awaiting inside the first minute: unwatched later, its gap ends at a sighting.
+        if h.first_seen_ts.is_some() {
+            self.awaiting.remove(&key);
         }
         h.seen_ts = Some(ts);
         h.seen_via = Some(via);

@@ -379,3 +379,17 @@ fn a_camped_mob_keeps_what_it_taught_after_the_history_turns_over() {
     );
     assert_eq!(learned[0]["key"], "a vis ghoul knight");
 }
+
+#[test]
+fn a_mob_unwatched_mid_gap_still_ends_its_gap_at_its_first_sign_of_life() {
+    // Watched when it died and when a second knight swung inside the minute; unwatched before the
+    // spawn was seen. The early swing must not have ended the wait.
+    let mut m = RespawnModule::new(NOW, watching_the_knight());
+    m.on_event(&ev(&zone(T_ZONE)), false);
+    m.on_event(&ev(&death(1, T_DEATH)), false);
+    m.on_event(&ev(&hits_you(2, T_DEATH + 30_000)), true);
+    crate::Defines::define(&mut m, &serde_json::json!({ "watches": [] }));
+    m.on_event(&ev(&hits_you(3, T_UP)), true);
+    m.on_event(&ev(&death(4, T_SECOND_DEATH)), true);
+    assert_eq!(learned_of(&m)[0]["gapsMs"], serde_json::json!([570_000]));
+}
