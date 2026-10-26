@@ -10,11 +10,10 @@ import { activeCharId, getActiveCharacter } from '../session'
 import { getComboCorrections } from '../store'
 import { logArchiveOn } from '../storeLogArchive'
 import { createHistoryMerge, readHeadBytes } from './history'
-import type { WikiRespawnData } from '../../shared/respawnWiki'
 import respawnsJson from '../data/respawns.json'
 
 /** The pages' respawn statements by mob key: the same committed file the engine embeds. */
-const RESPAWN_WIKI = new Map((respawnsJson as WikiRespawnData).rows.map((r) => [r.key, r]))
+const RESPAWN_WIKI = new Map(respawnsJson.rows.map((r) => [r.key, r]))
 
 /**
  * Where segments and archives live: a subfolder of the game's Logs folder (ruling 0.2, owner
