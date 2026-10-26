@@ -10,7 +10,9 @@ run, the checks and what was kept). From then on refreshes are the delta only (o
 The wiki keeps about 90 days of changes, so a delta must run within 90 days of the last stamp; past
 that it refuses and only a full scrape is left (next one due before about 2027-01-16).
 
-After a game patch or zone rework, give wiki editors a few days, then run the delta. The Gear
+The owner's word to run it is the trigger, and it is run then (owner, 2026-10-25). Before every
+release it runs too, with the GitHub pack compare (next sections). After a game patch or zone
+rework, suggest one once wiki editors have had a few days. The Gear
 tab's "wiki data from <date>" caption shows the current `scrapedAt`. Before the run, tell the
 owner what it touches: it folds `items.json`, `mobs.json` (with redirects as `otherNames`),
 `spells.json` (with the spell title index) and `quests.json` (with the quest cache), then refreshes
@@ -51,10 +53,11 @@ repo is run.
   caches' `index.json`), pages the pack has that we never listed or listed and did not keep, pages
   only we have, and field disagreements at the same revision (level, zone, classes, slot, AC; zone
   spellings fold through the zone table). Quests and spells are reported unchecked.
-- `--release` (owner rule, 2026-10-23): a pack built within 5 hours of the release stands in for the
-  delta. Nothing is imported or dropped: the stale and missing pages are named and wait for the next
-  delta (record them in the release notes' known issues), which resumes from the files' `scrapedAt`.
-  Older than 5 hours: run the delta.
+- The compare and the delta always run together, before every release and whenever the owner asks
+  (owner, 2026-10-25: "wiki github pack from eoz and delta scrape should always run before a
+  release"; "should run when i ask"): compare, delta, compare again (nothing behind). No pack age
+  stands in for the delta; the 2026-10-23 five-hour `--release` rule is withdrawn, whatever the
+  script's flag still prints.
 - Never import the pack's fields: its parse lacks otherNames, drop groups and faction amounts. Its
   `icons` (iconId -> PNG) are the exception: item icons come from the pack first, at build time
   and in the app (item-icons-pack, owner 2026-10-25), PNG-checked.
