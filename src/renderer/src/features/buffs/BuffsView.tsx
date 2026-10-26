@@ -19,6 +19,7 @@ import {
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh'
 import ScienceOutlinedIcon from '@mui/icons-material/ScienceOutlined'
 import type { ActiveBuff, BuffsSnap, MessageOverlay, OverlayVerdict } from '@shared/types'
+import { MESSAGE_OVERLAY_MODULE } from '@shared/buffsMessageOverlay'
 import { useModule } from '../../lib/useModule'
 import { useBoolPref } from '../combat/useCombatPrefs'
 import { ActiveRow } from './ActiveBuffRow'
@@ -52,13 +53,8 @@ const VERDICT_LABEL: Record<OverlayVerdict, string> = {
  * Diagnostics table (read-only): per-message verdicts. Collapsed behind an
  * unobtrusive icon-button — no explanatory prose, just the data.
  */
-function OverlayDiagnostics({ overlay }: { overlay: MessageOverlay }): JSX.Element {
+function OverlayDiagnostics(): JSX.Element {
   const [open, setOpen] = useState(false)
-  const rows = useMemo(
-    // eslint-disable-next-line eqc/no-domain-munging -- JOS-459 cutover ledger item 3: no served view source answers this yet, so the renderer still derives OverlayMessage. Becomes a view descriptor when the source lands.
-    () => overlay.messages.filter((m) => m.verdict !== 'unknown').slice(0, 200),
-    [overlay.messages]
-  )
   return (
     <Box>
       <Stack direction="row" alignItems="center" spacing={0.5}>
@@ -69,55 +65,69 @@ function OverlayDiagnostics({ overlay }: { overlay: MessageOverlay }): JSX.Eleme
           </IconButton>
         </Tooltip>
       </Stack>
+      {/* Unmounted while closed, so the overlay is read only while the panel is open. */}
       <Collapse in={open} unmountOnExit>
-        <Paper variant="outlined" sx={{ mt: 1, p: 1, maxHeight: 380, overflow: 'auto' }}>
-          <Table size="small" sx={{ '& td, & th': { py: 0.4, fontSize: 12 } }}>
-            <TableHead>
-              <TableRow>
-                <TableCell>Message</TableCell>
-                <TableCell>role</TableCell>
-                <TableCell>verdict</TableCell>
-                <TableCell align="right">n</TableCell>
-                <TableCell>spell(s) · count</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {rows.map((m) => (
-                <TableRow key={`${m.role}:${m.text}`} hover>
-                  <TableCell sx={{ fontFamily: 'monospace', maxWidth: 320 }}>{m.text}</TableCell>
-                  <TableCell sx={{ color: 'text.secondary' }}>{m.role}</TableCell>
-                  <TableCell>
-                    <Chip
-                      size="small"
-                      variant="outlined"
-                      color={VERDICT_COLOR[m.verdict]}
-                      label={VERDICT_LABEL[m.verdict]}
-                      sx={{ height: 16, fontSize: 10, '& .MuiChip-label': { px: 0.5 } }}
-                    />
-                  </TableCell>
-                  <TableCell align="right">{m.total}</TableCell>
-                  <TableCell sx={{ color: 'text.secondary', maxWidth: 340 }}>
-                    {m.verdict === 'contradicts-wiki' && m.wikiConflict ? (
-                      <Tooltip title={`wiki claims: "${m.wikiConflict.wikiText}"`}>
-                        <span>
-                          {m.spells.map((s) => `${s.spell}:${s.count}`).join(', ')}{' '}
-                          <span style={{ opacity: 0.6 }}>(wiki ≠ observed)</span>
-                        </span>
-                      </Tooltip>
-                    ) : (
-                      m.spells
-                        .slice(0, 8)
-                        .map((s) => `${s.spell}:${s.count}`)
-                        .join(', ') + (m.spells.length > 8 ? ' …' : '')
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </Paper>
+        <OverlayTable />
       </Collapse>
     </Box>
+  )
+}
+
+/** The overlay's table: its own module, apart from `buffs` (shared/buffsMessageOverlay.ts). */
+function OverlayTable(): JSX.Element {
+  const overlay = useModule<MessageOverlay>(MESSAGE_OVERLAY_MODULE)
+  const rows = useMemo(
+    // eslint-disable-next-line eqc/no-domain-munging -- JOS-459 cutover ledger item 3: no served view source answers this yet, so the renderer still derives OverlayMessage. Becomes a view descriptor when the source lands.
+    () => (overlay?.messages ?? []).filter((m) => m.verdict !== 'unknown').slice(0, 200),
+    [overlay]
+  )
+  return (
+    <Paper variant="outlined" sx={{ mt: 1, p: 1, maxHeight: 380, overflow: 'auto' }}>
+      <Table size="small" sx={{ '& td, & th': { py: 0.4, fontSize: 12 } }}>
+        <TableHead>
+          <TableRow>
+            <TableCell>Message</TableCell>
+            <TableCell>role</TableCell>
+            <TableCell>verdict</TableCell>
+            <TableCell align="right">n</TableCell>
+            <TableCell>spell(s) · count</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {rows.map((m) => (
+            <TableRow key={`${m.role}:${m.text}`} hover>
+              <TableCell sx={{ fontFamily: 'monospace', maxWidth: 320 }}>{m.text}</TableCell>
+              <TableCell sx={{ color: 'text.secondary' }}>{m.role}</TableCell>
+              <TableCell>
+                <Chip
+                  size="small"
+                  variant="outlined"
+                  color={VERDICT_COLOR[m.verdict]}
+                  label={VERDICT_LABEL[m.verdict]}
+                  sx={{ height: 16, fontSize: 10, '& .MuiChip-label': { px: 0.5 } }}
+                />
+              </TableCell>
+              <TableCell align="right">{m.total}</TableCell>
+              <TableCell sx={{ color: 'text.secondary', maxWidth: 340 }}>
+                {m.verdict === 'contradicts-wiki' && m.wikiConflict ? (
+                  <Tooltip title={`wiki claims: "${m.wikiConflict.wikiText}"`}>
+                    <span>
+                      {m.spells.map((s) => `${s.spell}:${s.count}`).join(', ')}{' '}
+                      <span style={{ opacity: 0.6 }}>(wiki ≠ observed)</span>
+                    </span>
+                  </Tooltip>
+                ) : (
+                  m.spells
+                    .slice(0, 8)
+                    .map((s) => `${s.spell}:${s.count}`)
+                    .join(', ') + (m.spells.length > 8 ? ' …' : '')
+                )}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </Paper>
   )
 }
 
@@ -335,9 +345,7 @@ export default function BuffsView(): JSX.Element {
 
       <BuffStats stats={snap.stats} />
 
-      {snap.overlay && snap.overlay.messages.length > 0 ? (
-        <OverlayDiagnostics overlay={snap.overlay} />
-      ) : null}
+      <OverlayDiagnostics />
     </Stack>
   )
 }

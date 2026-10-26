@@ -10,7 +10,6 @@ import { app } from 'electron'
 import { existsSync, readdirSync, statfsSync, statSync } from 'node:fs'
 import { basename, dirname, join } from 'node:path'
 import { engineRequest, engineServeReadiness } from '../dataServer/engineClientHost'
-import { engineGapsWithSamples } from '../gapKillFactionSamples'
 import { characterId } from '../log/config'
 import { getActiveCharacter } from '../session'
 import { getLogArchivePrefs, logArchiveOn, setLogArchivePrefs } from '../storeLogArchive'
@@ -19,6 +18,7 @@ import { driveOf, rotateBlockers } from '../../shared/logArchive/preflight'
 import { ALL_FIGHTS, capturedFights } from '../../shared/logArchive/mergeFights'
 import type { Segment } from '../../shared/logArchive/segment'
 import { CAPTURED_MODULES } from '../../shared/logArchive/modules'
+import { capturedState } from '../../shared/logArchive/capturedShape'
 import { archiveName, backupLog, sweepTemp } from './backup'
 import { captureSegment, type CaptureDeps } from './capture'
 import { archiveBuckets, placeArchivedBuckets } from './engineBuckets'
@@ -73,6 +73,12 @@ async function liveRespawnHistory(modules: Parameters<NonNullable<CaptureDeps['r
   })
 }
 
+/** Another module's state off the app's engine, for a capture's put-back (capturedShape.ts). */
+async function engineState(module: string): Promise<unknown> {
+  const r = await engineRequest('module.snapshot', { module })
+  return r.module === module ? r.state : null
+}
+
 const captureDeps: CaptureDeps = {
   on: () => logArchiveOn(),
   attached,
@@ -81,8 +87,8 @@ const captureDeps: CaptureDeps = {
     try {
       const r = await engineRequest('module.snapshot', { module })
       if (r.module !== module) return null
-      // A segment keeps `gaps` with its kill-faction proof lines, as before they were served apart.
-      return { seq: r.seq, state: module === 'gaps' ? await engineGapsWithSamples(r.state) : r.state }
+      // A segment keeps what the engine serves apart (gaps' proof lines, buffs' overlay) in place.
+      return { seq: r.seq, state: await capturedState(module, r.state, engineState) }
     } catch {
       return null
     }
