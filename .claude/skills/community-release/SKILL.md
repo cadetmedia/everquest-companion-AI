@@ -21,8 +21,8 @@ reaches players within hours: only publish what the owner has asked for.
    updates)?" and wait.
 2. **The GitHub pack compare and a delta scrape first, always, both** (owner, 2026-10-25):
    `npx tsx scripts/eoz-compare.mts`, then the delta (`docs/community/agent/DATA_REFRESH.md`; data
-   on `local-data-refresh`, gated and merged like any branch), then the compare again (nothing
-   behind). No pack age stands in for the delta. A release ships the wiki as it stands today,
+   on `local-data-refresh`, gated and merged like any branch), then `npx tsx scripts/eoz-compare.mts
+   --release` (exits 1 while anything is behind). No pack age stands in for the delta. A release ships the wiki as it stands today,
    owner's and testers' edits included.
 
 ## 1. Before the tag
