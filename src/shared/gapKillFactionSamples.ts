@@ -80,11 +80,18 @@ export async function gapsWithSamples(gaps: unknown, ask: () => Promise<unknown>
   }
 }
 
+/** Each stripped state by its source: the history merge hands back one object per seq, served many times. */
+const stripped = new WeakMap<object, unknown>()
+
 /** A gaps state without any pair's lines: the same object when none carries any. */
 export function withoutKillFactionSamples(gaps: unknown): unknown {
+  const kept = gaps !== null && typeof gaps === 'object' ? stripped.get(gaps) : undefined
+  if (kept !== undefined) return kept
   const kf = killFactionsOf(gaps)
   if (!kf?.some((p) => p.samples !== undefined)) return gaps
-  return { ...(gaps as object), killFactions: kf.map(({ samples: _samples, ...p }) => p) }
+  const out = { ...(gaps as object), killFactions: kf.map(({ samples: _samples, ...p }) => p) }
+  stripped.set(gaps as object, out)
+  return out
 }
 
 /**
