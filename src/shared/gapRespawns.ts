@@ -80,7 +80,8 @@ export function respawnGaps(learned: readonly LearnedEvidence[], catalog: readon
 }
 
 function respawnRow(page: string, e: LearnedEvidence, v: RespawnVerdict): GapRow {
-  const fact = factOf(v, e.wikiText)
+  // A placeholder states nothing: the row reads and acts as a page with no respawn.
+  const fact = factOf(v, e.wikiText === undefined || STATES_NOTHING.test(e.wikiText) ? undefined : e.wikiText)
   return {
     domain: 'respawn',
     name: e.display,

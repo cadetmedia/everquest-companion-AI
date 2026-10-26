@@ -4,7 +4,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { constantRespawn, learnedOf, wikiRespawnText, type LearnedEvidence } from '../src/shared/respawnLearn'
-import { respawnGaps, withLearnedRespawn, withRespawnField } from '../src/shared/gapRespawns'
+import { respawnAction, respawnGaps, withLearnedRespawn, withRespawnField } from '../src/shared/gapRespawns'
 import { wikiPageText } from '../src/shared/wikiPage'
 import { parseWikiRespawn } from '../src/shared/respawnWiki'
 import type { GapRow } from '../src/shared/gaps'
@@ -91,7 +91,14 @@ test('A PAGE WHOSE RESPAWN IS NOT A DURATION IS ITS OWN STATEMENT: NO ROW; A PLA
   for (const text of ['Kaesora: 18:00, Temple of Droga: 20:30', 'Triggered', '[[Triggered]]', '6-8 hours', 'Never respawns, only appears in raid instances']) {
     assert.deepEqual(said(text), [], text)
   }
-  for (const text of ['?', '??', 'Unknown', '']) assert.deepEqual(said(text), [text], `"${text}"`)
+  // A placeholder reads as no respawn: no "the page says ?", and the chip adds rather than fixes.
+  for (const text of ['?', '??', 'Unknown', '']) {
+    const rows = respawnGaps([evidence('Xicotl', XICOTL, { text })], CATALOG)
+    assert.equal(rows.length, 1, `"${text}"`)
+    assert.equal(rows[0].respawn?.pageSays, undefined, `"${text}"`)
+    assert.match(rows[0].details.samples[0] ?? '', /; the page states no respawn\.$/, `"${text}"`)
+    assert.equal(respawnAction(rows[0]).label, 'Add respawn', `"${text}"`)
+  }
 })
 
 test("ONE VERDICT PER PAGE: THE BEST-EVIDENCED ZONE AGREES WITH THE PAGE, SO A FEW ODD GAPS ELSEWHERE MAKE NO ROW", () => {
