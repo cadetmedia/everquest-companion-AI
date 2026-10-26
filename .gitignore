@@ -1,5 +1,5 @@
 node_modules/
-# Branch worktrees of this clone (docs/community/BRANCHES.md). Each is a full checkout with its
+# Work worktrees of this clone (docs/community/RULES.md rule 18). Each is a full checkout with its
 # own .git file; the main checkout must never see them as untracked content.
 .claude/worktrees/
 out/

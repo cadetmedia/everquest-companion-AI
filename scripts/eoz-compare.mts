@@ -91,11 +91,14 @@ function printRelease(r: CompareReport, now: string): void {
   const behind = r.items.stale.length + r.mobs.stale.length + r.items.unknown.length + r.mobs.unknown.length
   const d = releaseDecision(r.pack.generatedAt, now, behind)
   console.log(`\nRelease check (the pack is ${String(d.ageHours)} h old): the delta runs before every release, then this compare again.`)
+  // Not counted: some pack pages are left out on purpose by our scrape's filters. Shown for a look.
+  const unlisted = [...r.items.missingUnlisted, ...r.mobs.missingUnlisted]
+  if (unlisted.length > 0) console.log(`  Look by hand: ${String(unlisted.length)} pack pages our scrape never listed (${unlisted.slice(0, SHOW).join(' | ')}).`)
   if (d.ready) {
     console.log('  Nothing behind the pack: ready, as far as items and mobs go (quests and spells are not in the pack).')
     return
   }
-  console.log(`  ${String(d.behind)} item and mob pages are behind the pack or missing: run the delta, then this again.`)
+  console.log(`  ${String(d.behind)} item and mob pages are behind the pack: run the delta, then this again.`)
   process.exitCode = 1
 }
 
