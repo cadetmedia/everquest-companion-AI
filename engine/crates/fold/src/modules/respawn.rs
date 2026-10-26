@@ -409,6 +409,12 @@ impl RespawnModule {
         true
     }
 
+    /// Whether a mob is awaiting its first sign of life: no gap or snapshot shows it, so tests ask.
+    #[cfg(test)]
+    pub fn is_awaiting(&self, key: &str) -> bool {
+        self.awaiting.contains(key)
+    }
+
     /// An unwatched mob's first sign of life after its death, a minute or more on: where its next gap
     /// ends. Earlier lines are the same pull and leave it awaiting.
     fn first_sign(&mut self, key: &str, ts: i64) {

@@ -350,7 +350,10 @@ fn a_zone_line_ends_the_wait_for_a_sign_of_life() {
     let mut m = RespawnModule::new(NOW, RespawnPrefs::default());
     m.on_event(&ev(&zone(T_ZONE)), false);
     m.on_event(&ev(&death(1, T_DEATH)), false);
+    assert!(m.is_awaiting("a vis ghoul knight"));
     m.on_event(&ev(&zone(T_DEATH + 10_000)), false);
+    // The zone line itself ends the wait: no line in the new stay can be the old stay's spawn.
+    assert!(!m.is_awaiting("a vis ghoul knight"));
     m.on_event(&ev(&hits_you(2, T_DEATH + 570_000)), true);
     m.on_event(&ev(&death(3, T_DEATH + 640_000)), false);
     // The stay changed between the two deaths: no gap at all, sighting or not.
@@ -378,6 +381,33 @@ fn a_camped_mob_keeps_what_it_taught_after_the_history_turns_over() {
         "a rat dies once each, so only the knight has gaps"
     );
     assert_eq!(learned[0]["key"], "a vis ghoul knight");
+}
+
+#[test]
+fn an_unwatched_mob_named_inside_the_minute_waits_on_for_the_spawn() {
+    // A second knight swings 30 s after the first died: the same pull. The spawn is the hit at 570 s.
+    let mut m = RespawnModule::new(NOW, RespawnPrefs::default());
+    m.on_event(&ev(&zone(T_ZONE)), false);
+    m.on_event(&ev(&death(1, T_DEATH)), false);
+    m.on_event(&ev(&hits_you(2, T_DEATH + 30_000)), true);
+    assert!(m.is_awaiting("a vis ghoul knight"));
+    m.on_event(&ev(&hits_you(3, T_UP)), true);
+    assert!(!m.is_awaiting("a vis ghoul knight"));
+    m.on_event(&ev(&death(4, T_SECOND_DEATH)), true);
+    assert_eq!(learned_of(&m)[0]["gapsMs"], serde_json::json!([570_000]));
+}
+
+#[test]
+fn an_epoch_takes_the_learned_gaps_with_it() {
+    let mut m = camped_unwatched(4);
+    assert_eq!(learned_of(&m).len(), 1);
+    let epoch = format!(
+        r#"{{"kind":"epoch","seq":99,"ts":{},"raw":"x"}}"#,
+        T_DEATH + 3 * 640_000 + 1_000
+    );
+    m.on_event(&ev(&epoch), false);
+    assert!(learned_of(&m).is_empty());
+    assert!(!m.is_awaiting("a vis ghoul knight"));
 }
 
 #[test]
