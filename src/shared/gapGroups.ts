@@ -213,3 +213,34 @@ export function unfoldedEntries(entries: readonly GapEntry[], folded: ReadonlySe
   }
   return out
 }
+
+/** The NPC page's list fields, in its layout's order (wikiPage.ts NPC_LAYOUT). */
+const HEADING_FIELDS = ['known_loot', 'common_loot', 'factions', 'opposing_factions']
+
+/**
+ * The page field a heading's line belongs under: a raised faction `opposing_factions`, any other
+ * `factions` (as factionLine files it); a drop the wiki files as shared loot `common_loot`, any other
+ * `known_loot`; '' for a line that names its own field (an image).
+ */
+function headingField(row: GapRow, commonLoot: ReadonlySet<string>): string {
+  if (row.domain === 'faction') return (row.adjust !== undefined && row.adjust !== 0 ? row.adjust > 0 : row.raised) === true ? 'opposing_factions' : 'factions'
+  if (row.domain === 'drop') return commonLoot.has(factionOf(row).toLowerCase()) ? 'common_loot' : 'known_loot'
+  return ''
+}
+
+/**
+ * A mob heading's Copy lines: each row's line (`lineOf`, the row's Copy text) under its field's
+ * label, the fields in the page's order, so lowered and raised factions, or own and shared loot, are
+ * never one list. `commonLoot`: drop names the wiki files under `|common_loot`, lower-cased.
+ */
+export function headingLinesText(rows: readonly GapRow[], lineOf: (row: GapRow) => string, commonLoot: ReadonlySet<string> = new Set()): string {
+  const groups = new Map<string, string[]>()
+  for (const r of rows) {
+    const field = headingField(r, commonLoot)
+    groups.set(field, [...(groups.get(field) ?? []), lineOf(r)])
+  }
+  return ['', ...HEADING_FIELDS]
+    .filter((f) => groups.has(f))
+    .map((f) => `${f === '' ? '' : `| ${f} =\n`}${(groups.get(f) ?? []).join('')}`)
+    .join('\n')
+}

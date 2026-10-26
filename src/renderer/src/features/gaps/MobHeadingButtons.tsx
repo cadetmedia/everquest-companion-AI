@@ -15,13 +15,15 @@ import NoteAddIcon from '@mui/icons-material/NoteAdd'
 import SearchIcon from '@mui/icons-material/Search'
 import UndoIcon from '@mui/icons-material/Undo'
 import { allDone, mobPageOf, onMobPage, wikiEditUrl, wikiSearchUrl, type GapRow } from '@shared/gaps'
+import { headingLinesText } from '@shared/gapGroups'
 import { copyText } from '../../lib/clipboard'
 import { Tooltip } from '../../lib/Tooltip'
+import { PAGE_EXTRAS } from './useGapsData'
 
 const stop = (e: MouseEvent): void => e.stopPropagation()
 const BUTTON_SX = { ml: 1, py: 0 } as const
 
-/** A mob heading's one copy of every missing line under it, for one edit of that page (owner ask, 2026-10-18). */
+/** A mob heading's one copy of every missing line under it, each under its field, for one edit of that page (owner ask, 2026-10-18). */
 function CopyLinesButton({ text }: { text: () => string }): JSX.Element {
   const [copied, setCopied] = useState(false)
   return (
@@ -91,7 +93,7 @@ export default function MobHeadingButtons({
   const page = lines?.[0] !== undefined ? mobPageOf(lines[0]) : mob
   return (
     <Box component="span" sx={{ ml: 1 }}>
-      {lines !== null && <CopyLinesButton text={() => lines.map(pageText).join('')} />}
+      {lines !== null && <CopyLinesButton text={() => headingLinesText(lines, pageText, PAGE_EXTRAS.commonLoot)} />}
       <WikiButton href={wikiSearchUrl(page)} tip={`The wiki's search for ${page}.`} label="Search wiki" icon={<SearchIcon />} testId="gaps-mob-search" />
       {lines !== null && <WikiButton href={wikiEditUrl(page)} tip={`The wiki's editor on ${page}.`} label="Edit mob page" icon={<NoteAddIcon />} testId="gaps-edit-mob-page" />}
       <DoneAllButton mob={mob} rows={rows} done={done} onDoneAll={onDoneAll} />
