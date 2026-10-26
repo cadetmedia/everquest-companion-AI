@@ -41,3 +41,11 @@ test('AN ARCHIVE OLDER THAN THE FIELD ADDS NOTHING AND BREAKS NOTHING', () => {
   assert.deepEqual((mergeRespawn(snap(MM), newer) as WithLearned).learned?.[0].gapsMs, [530_000, 530_000, 530_000])
   assert.equal(Object.hasOwn(mergeRespawn(snap(MM), snap(MM)) ?? {}, 'learned'), false)
 })
+
+test('A MALFORMED ENTRY IS DROPPED, AS THE GAPS TAB DROPS IT: NO ID, OR A GAP THAT IS NOT A FINITE NUMBER', () => {
+  const good = lasna(MM, [530_000, 530_000, 530_000])
+  const { id: _id, ...noId } = lasna('Elsewhere', [530_000])
+  const bad = [noId, { ...lasna('Zone B', [530_000]), gapsMs: [Number.NaN] }, { ...lasna('Zone C', [530_000]), gapsMs: [Infinity] }, { ...lasna('Zone D', [530_000]), gapsMs: ['530000'] }, null]
+  const learned = (mergeRespawn(snap(MM, bad), snap(MM, [good])) as WithLearned).learned ?? []
+  assert.deepEqual(learned.map((l) => l.id), [good.id])
+})

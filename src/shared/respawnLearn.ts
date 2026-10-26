@@ -70,11 +70,12 @@ export function learnedOf(respawn: unknown): LearnedEvidence[] {
     (l): l is LearnedEvidence =>
       l !== null &&
       typeof l === 'object' &&
+      typeof (l as LearnedEvidence).id === 'string' &&
       typeof (l as LearnedEvidence).key === 'string' &&
       typeof (l as LearnedEvidence).display === 'string' &&
       typeof (l as LearnedEvidence).zone === 'string' &&
       Array.isArray((l as LearnedEvidence).gapsMs) &&
-      (l as LearnedEvidence).gapsMs.every((g) => typeof g === 'number')
+      (l as LearnedEvidence).gapsMs.every((g) => Number.isFinite(g))
   )
 }
 

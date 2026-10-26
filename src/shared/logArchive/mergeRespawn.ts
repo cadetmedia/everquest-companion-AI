@@ -40,6 +40,7 @@ import {
   type RespawnRow,
   type RespawnSnap
 } from '../respawn'
+import { learnedOf as learnedEvidence, type LearnedEvidence } from '../respawnLearn'
 import { carriedValue } from './carryOver'
 
 function isRespawnSnap(x: unknown): x is RespawnSnap {
@@ -148,28 +149,14 @@ export function mergeRespawn(older: unknown, newer: unknown): RespawnSnap | null
  * the wiki respawn time. Read here by shape, so an archive older than the field, or an engine without
  * it, simply has none.
  */
-interface Learned {
-  id: string
-  key: string
-  display: string
-  zone: string
-  gapsMs: number[]
-}
+type Learned = LearnedEvidence
 
 /** The engine's own cap on gaps per mob. */
 const LEARNED_GAPS = 50
 
+/** The field's entries as the Gaps tab reads them (malformed ones dropped); null when it has none. */
 function learnedOf(snap: RespawnSnap): Learned[] | null {
-  const raw = (snap as unknown as { learned?: unknown }).learned
-  if (!Array.isArray(raw)) return null
-  return raw.filter(
-    (l): l is Learned =>
-      l !== null &&
-      typeof l === 'object' &&
-      typeof (l as Learned).key === 'string' &&
-      typeof (l as Learned).zone === 'string' &&
-      Array.isArray((l as Learned).gapsMs)
-  )
+  return Array.isArray((snap as unknown as { learned?: unknown }).learned) ? learnedEvidence(snap) : null
 }
 
 /**
