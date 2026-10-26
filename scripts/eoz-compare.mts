@@ -3,8 +3,9 @@
 // the ~4 MB pack only when the manifest's sha256 changed. Never writes our data files.
 //
 //   npx tsx scripts/eoz-compare.mts               compare and report
-//   npx tsx scripts/eoz-compare.mts --release     also apply the release rule: a pack built within 5 h
-//                                                 stands in for the delta (stale pages named, nothing lost)
+//   npx tsx scripts/eoz-compare.mts --release     the release check, run after the delta (owner,
+//                                                 2026-10-25): exits 1 while any item or mob page is
+//                                                 behind the pack; no pack age skips the delta
 //   npx tsx scripts/eoz-compare.mts --seed-revs   seed the item and mob revision indexes from the pack,
 //                                                 only when our files are newer than it (revIndex.ts)
 //   --offline     use the cached pack, fetch nothing      --root <repo>   data and caches from there
@@ -87,16 +88,15 @@ function printFamily(f: FamilyReport): void {
 }
 
 function printRelease(r: CompareReport, now: string): void {
-  const d = releaseDecision(r.pack.generatedAt, now)
   const behind = r.items.stale.length + r.mobs.stale.length + r.items.unknown.length + r.mobs.unknown.length
-  console.log(`\nRelease rule: the pack is ${String(d.ageHours)} h old.`)
-  if (d.deltaNeeded) {
-    console.log('  Run the delta: the pack is not within 5 hours.')
+  const d = releaseDecision(r.pack.generatedAt, now, behind)
+  console.log(`\nRelease check (the pack is ${String(d.ageHours)} h old): the delta runs before every release, then this compare again.`)
+  if (d.ready) {
+    console.log('  Nothing behind the pack: ready, as far as items and mobs go (quests and spells are not in the pack).')
     return
   }
-  console.log('  Delta not needed for release: the pack is within 5 hours. Nothing is imported or dropped.')
-  console.log(`  ${String(behind)} pages wait for the next delta (record them in the release notes' known issues).`)
-  console.log(`  The next delta resumes from items ${r.items.stamp}, mobs ${r.mobs.stamp}.`)
+  console.log(`  ${String(d.behind)} item and mob pages are behind the pack or missing: run the delta, then this again.`)
+  process.exitCode = 1
 }
 
 function seed(a: Args, pack: Pack, o: { items: OurFamily; mobs: OurFamily }): void {

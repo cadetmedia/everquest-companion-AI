@@ -200,12 +200,15 @@ export function comparePack(pack: Pack, items: OurFamily, mobs: OurFamily): Comp
   }
 }
 
-/** The owner's rule: a pack built within 5 hours of the release stands in for the delta. */
-export const RELEASE_WINDOW_MS = 5 * 3600_000
-
-export function releaseDecision(packBuilt: string, now: string): { deltaNeeded: boolean; ageHours: number } {
+/**
+ * The release check (owner, 2026-10-25: "wiki github pack from eoz and delta scrape should always run
+ * before a release"): the delta always runs, and this compare runs again after it. Ready only when no
+ * item or mob page is behind the pack or missing from our data. The 2026-10-23 rule that let a pack
+ * under 5 hours old stand in for the delta is withdrawn: no pack age skips the delta.
+ */
+export function releaseDecision(packBuilt: string, now: string, behind: number): { ready: boolean; behind: number; ageHours: number } {
   const age = Date.parse(now) - Date.parse(packBuilt)
-  return { deltaNeeded: !(age >= 0 && age <= RELEASE_WINDOW_MS), ageHours: Math.round((age / 3600_000) * 10) / 10 }
+  return { ready: behind === 0, behind, ageHours: Math.round((age / 3600_000) * 10) / 10 }
 }
 
 /** Pack rows whose page we can match to a pageid, for seeding the revision index. */
