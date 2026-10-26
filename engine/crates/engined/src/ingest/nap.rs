@@ -17,8 +17,9 @@
 //! * every turn of the loop still re-asks ownership, takes writes and offers the views a serve — the
 //!   same three acts, once per wake rather than once per 25 ms, each with its own cadence or cost
 //!   rule (`Serving::tick` builds nothing that is not owed);
-//! * nothing blocks the fold: the wait is bounded by [`TAIL_NAP`], which is still the longest a
-//!   preempted tail can take to notice, and the fold is not folding while it naps.
+//! * nothing blocks the fold: the wait is bounded by the nap (see below), the fold is not folding
+//!   while it naps, and a preempted tail still notices within one [`TAIL_NAP`], because the attach
+//!   that disowns it drops its ask door and a dead door ends the wait.
 //!
 //! A write wakes the nap through the same door. `std::sync::mpsc` cannot wait on two channels at
 //! once, and a second door would be the second channel `State::asks` (`world.rs`) argues against, so
