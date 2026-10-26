@@ -21,6 +21,25 @@ Also merged the same night, before the switch: respawn times for the wiki from t
 (the Respawns Gaps domain), the log-archive carry-over spot, the capture re-check fixes, and the
 2026-10-25 delta.
 
+## Stopped mid-step (resume here first)
+
+- **perf-engine** (finding #3 and the engine's idle nap) was stopped by the owner's word mid-work.
+  Branch `perf-engine`, one commit `57846dbda` ("Engine read path: keep the last module.snapshot
+  answer per module until its cursor moves"), NOT merged. Its worktree,
+  `%TEMP%\claude\c--git-everquest-companion\6f89175f-1664-43a9-8e4c-033060b7c1e3\scratchpad\wt-perf-engine`,
+  holds uncommitted edits to `engine/crates/engined/tests/module_snapshot.rs` and
+  `engine/crates/protocol-codegen/tests/staleness.rs`, and was writing `nap.rs` (the quiet-log nap
+  back-off, unfinished). Its `node_modules` junction is unlinked; its `engine/target` (a full Rust
+  build) is still there: delete it once the work is merged. To resume: review the commit and the
+  uncommitted edits, finish or drop the nap back-off, gate (`cargo test --workspace`, clippy, the
+  factoring ratchet, the npm gate), merge into `main_community`, measure and note it in the
+  performance review.
+- **The merged trunk has not been gated** since perf-main, perf-renderer and perf-gaps-slim were
+  merged (each was gated alone; the merges were clean). Run the full gate on `main_community` first.
+- **Nothing is pushed.** `main_community` is 60+ commits ahead of `origin/main_community`, and the 70
+  retired branches' `RETIRED.md` commits are local only. Push with the release, or sooner on the
+  owner's word.
+
 ## Next (owner's list, steps 7-15)
 
 1. Code review of everything merged since `b614e946` (the last build the owner ran before
