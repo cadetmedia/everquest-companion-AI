@@ -193,6 +193,14 @@ struct RespawnLearned {
     zone: String,
     /// Newest first.
     gaps_ms: Vec<i64>,
+    /// What the wiki's own page states, as the rows carry it: the verbatim text, its seconds when it
+    /// is a duration, and the page. Absent when the committed floor has no row for the mob.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    wiki_text: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    wiki_ms: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    wiki_page: Option<String>,
 }
 
 /// One mob the user has chosen to watch, and the number they chose for it.
@@ -756,12 +764,18 @@ impl RespawnModule {
         entries.sort_by_key(|(_, e)| std::cmp::Reverse(e.last_ts));
         entries
             .into_iter()
-            .map(|(id, e)| RespawnLearned {
-                id: id.to_string(),
-                key: e.key.clone(),
-                display: e.display.clone(),
-                zone: e.zone.clone(),
-                gaps_ms: e.gaps.iter().rev().copied().collect(),
+            .map(|(id, e)| {
+                let wiki_row = wiki().get(&e.key);
+                RespawnLearned {
+                    id: id.to_string(),
+                    key: e.key.clone(),
+                    display: e.display.clone(),
+                    zone: e.zone.clone(),
+                    gaps_ms: e.gaps.iter().rev().copied().collect(),
+                    wiki_text: wiki_row.map(|w| w.text.clone()),
+                    wiki_ms: wiki_row.and_then(|w| w.seconds).map(|s| s * 1000),
+                    wiki_page: wiki_row.map(|w| w.page.clone()),
+                }
             })
             .collect()
     }

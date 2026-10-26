@@ -633,6 +633,12 @@ export interface RespawnLearned {
   display: string
   zone: string
   gapsMs: number[]
+  /** The wiki page's own `|respawn_time`, verbatim, as the rows carry it; absent when it states none. */
+  wikiText?: string
+  /** That text in ms, when it is a duration. */
+  wikiMs?: number
+  /** The page it came from. */
+  wikiPage?: string
 }
 
 /**
