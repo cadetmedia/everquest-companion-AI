@@ -6,7 +6,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { knownIndex, knownItem, unknownOf, unknownSpells } from '../src/main/gapUnknownItems'
 import { parseInventoryDump } from '../src/main/outputs/inventoryParse'
-import { capturedExtras, capturedItemsOf, capturedStillUnknown, extraItemRows, extraSpellRows, heldCandidates, heldExtras, withCapturedItem, withExtraItemRows, withoutCapturedItem } from '../src/shared/gapExtraItems'
+import { capturedExtras, capturedItemsOf, capturedNames, capturedStillUnknown, extraItemRows, extraSpellRows, heldCandidates, heldExtras, withCapturedItem, withExtraItemRows, withoutCapturedItem } from '../src/shared/gapExtraItems'
 import { heldIndex } from '../src/shared/gapHeld'
 import { gapInZone, type GapRow } from '../src/shared/gaps'
 import { ownershipPayload } from '../src/shared/planner/ownership'
@@ -79,6 +79,18 @@ test("A CAPTURE THE DATA HAS SINCE LEARNED IS NO LONGER A ROW; ONE THE CHECK HAS
   assert.deepEqual(extraItemRows(capturedExtras(still), []).map((r) => r.name).sort(), ['Just Captured', 'Petamorph Wand: Gelatinous Cube'])
   // Before any answer, every capture stays: each was unknown when it was taken.
   assert.equal(capturedStillUnknown(kept, new Set(), new Set()).length, 3)
+})
+
+test('A MISREAD CAPTURE THE PLAYER RENAMED LEAVES ONCE THE DATA KNOWS THE CORRECTED NAME (owner, 2026-10-25: Buming Fighters Blade)', () => {
+  const kept = [{ name: 'Buming Fighters Blade', at: AT }, { name: 'Odd Misread', at: AT }]
+  const renamed = (n: string): string | undefined => ({ 'Buming Fighters Blade': 'Burning Fighters Blade', 'Odd Misread': 'Still Unknown Thing' })[n]
+  const asked = capturedNames(kept, renamed)
+  assert.deepEqual(asked, ['Buming Fighters Blade', 'Burning Fighters Blade', 'Odd Misread', 'Still Unknown Thing'])
+  const unknown = new Set(unknownOf(asked, knownIndex(['burning fighters blade'], [])))
+  // The corrected name is known: the row goes. A correction the data still lacks keeps its row.
+  assert.deepEqual(capturedStillUnknown(kept, new Set(asked), unknown, renamed).map((c) => c.name), ['Odd Misread'])
+  // Without the rename the misread stays, as before: the data has no page by that spelling.
+  assert.equal(capturedStillUnknown(kept, new Set(asked), unknown).length, 2)
 })
 
 test('THE KEPT CAPTURES READ BACK WHOLE; A SECOND CAPTURE OF A NAME MOVES ITS TIME; THE NEWEST ARE KEPT', () => {

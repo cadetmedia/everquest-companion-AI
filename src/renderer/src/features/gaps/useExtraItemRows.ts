@@ -10,14 +10,15 @@
 // handed it over with no line (gapQuests.ts `silentGiver`) and who a Quest Journal objective sends it
 // to (questJournal.ts `journalTurnIn`), each shown as a guess.
 
-import { useEffect, useMemo, useState } from 'react'
-import { capturedExtras, capturedStillUnknown, extraItemRows, heldExtras, type ExtraGuess } from '@shared/gapExtraItems'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { capturedExtras, capturedNames, capturedStillUnknown, extraItemRows, heldExtras, type ExtraGuess } from '@shared/gapExtraItems'
 import { askedNames, heldSeenChanged, heldSightings, rememberedExtras, withHeldSeen, type ExtraViewer } from '@shared/gapHeldSeen'
 import type { HeldIndex } from '@shared/gapHeld'
-import type { GapRow } from '@shared/gaps'
+import { doneKey, type GapRow } from '@shared/gaps'
 import { questsOfRows } from '@shared/gapQuests'
 import { itemTierKey } from '@shared/itemStats'
 import { useCapturedItems } from './capturedItemsStore'
+import { useCurrentGapEdits } from './gapEditsStore'
 import { saveHeldSeen, useHeldSeen } from './heldSeenStore'
 import { useQuestJournals } from './itemShotsStore'
 
@@ -35,11 +36,18 @@ export function useExtraItemRows(rows: readonly GapRow[] | undefined, holding: H
   const captured = useCapturedItems()
   const remembered = useHeldSeen()
   const journals = useQuestJournals()
+  const edits = useCurrentGapEdits()
+  // A captured row's Edit name (a misread capture put right by hand): its key is the captured name.
+  const renamed = useCallback((name: string): string | undefined => {
+    const edit: unknown = edits[doneKey({ domain: 'item', name } as GapRow)]
+    const fixed = edit !== null && typeof edit === 'object' ? (edit as { name?: unknown }).name : undefined
+    return typeof fixed === 'string' ? fixed : undefined
+  }, [edits])
   const asked = useMemo(() => {
     const held = askedNames(holding, engineRows, remembered, viewer)
-    const names = [...(held === '' ? [] : held.split('\n')), ...captured.map((c) => c.name.trim())]
+    const names = [...(held === '' ? [] : held.split('\n')), ...capturedNames(captured, renamed)]
     return [...new Set(names)].sort((a, b) => a.localeCompare(b)).join('\n')
-  }, [holding, engineRows, remembered, viewer, captured])
+  }, [holding, engineRows, remembered, viewer, captured, renamed])
   const [answer, setAnswer] = useState<Answer>(NO_ANSWER)
   useEffect(() => {
     if (asked === '') {
@@ -72,7 +80,7 @@ export function useExtraItemRows(rows: readonly GapRow[] | undefined, holding: H
     const firstOf = new Map(remembered.map((s) => [itemTierKey(s.name), s.first]))
     const held = heldExtras(holding, unknown).map((e) => ({ ...e, first: firstOf.get(itemTierKey(e.name)) ?? e.at }))
     const gone = rememberedExtras(remembered, holding, unknown, viewer.all ? undefined : (me ?? undefined))
-    const capturedRows = capturedExtras(capturedStillUnknown(captured, answer.asked, unknown))
+    const capturedRows = capturedExtras(capturedStillUnknown(captured, answer.asked, unknown, renamed))
     return extraItemRows([...held, ...gone, ...capturedRows], engineRows, guess)
-  }, [holding, unknown, answer.asked, captured, engineRows, remembered, viewer.all, me, guess])
+  }, [holding, unknown, answer.asked, captured, renamed, engineRows, remembered, viewer.all, me, guess])
 }
