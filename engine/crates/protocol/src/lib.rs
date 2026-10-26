@@ -8,6 +8,8 @@
 //!    `generated`, and nothing above this crate, may learn what a frame is.
 //! 3. [`token`] — the per-launch shared secret's constant-time compare. The engine only verifies a
 //!    token; minting belongs to whoever spawns the process and hands it the secret.
+//! 4. [`cell`] and [`module_state`] — the two schema types `generated` is told to leave alone and
+//!    use these for instead.
 //!
 //! The version is fatal, not negotiable: [`generated::PROTOCOL_VERSION`] is one integer bumped on
 //! any breaking change, and a mismatch at hello closes the connection. There is no compatibility
@@ -18,10 +20,12 @@
 
 pub mod cell;
 pub mod generated;
+pub mod module_state;
 pub mod token;
 pub mod transport;
 
 pub use cell::Cell;
+pub use module_state::ModuleState;
 
 pub use generated::PROTOCOL_VERSION;
 pub use generated::{ClientMessage, EngineMessage, ProtocolMessage};

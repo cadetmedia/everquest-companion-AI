@@ -5734,7 +5734,7 @@ pub struct ModuleSnapshotResult {
     pub module: ::std::string::String,
     ///The module's OWN published seq — for most modules the seq of the last event it folded, and for the four that publish a private revision counter (combo, character, respawn, buffTimers) that counter. It is a hydration cursor, not the fold's event count; `HealthResult.events` is the count.
     pub seq: i64,
-    pub state: ::serde_json::Value,
+    pub state: crate::module_state::ModuleState,
 }
 ///An op that takes nothing still sends `params: {}`. The envelope keeps one shape, so adding a parameter later is a schema edit rather than an envelope change.
 ///

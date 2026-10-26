@@ -185,9 +185,10 @@ test('COVERAGE: every definition became a type in BOTH languages', () => {
     }
     if (name === 'ModuleState') {
       // `ModuleState` says "any JSON, the module owns the shape"; in Rust that sentence IS
-      // `serde_json::Value`, so there is nothing to hand-write and nothing to generate.
+      // `serde_json::Value`, held behind an `Arc` by `protocol::module_state::ModuleState` so the
+      // engine can hand one cached answer to every asker without copying it.
       assert.ok(
-        rust.includes('pub state: ::serde_json::Value'),
+        rust.includes('pub state: crate::module_state::ModuleState'),
         'the ModuleState replacement is not in use'
       )
       continue

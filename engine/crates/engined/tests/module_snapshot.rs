@@ -361,10 +361,23 @@ fn a_snapshot_taken_mid_fold_is_a_real_prefix_state() {
     assert_eq!(mid.seq, published["seq"]);
 
     // …and the fold carries on afterwards, which is the other half of "the read did not disturb it".
+    // Judged by the event count and the whole fold's state rather than by loot's `seq`: the engine
+    // keeps an answer until the module's cursor moves (`src/ingest/kept.rs`), so when no loot row
+    // landed after the mid-scan ask, the answer is that same state under the seq it was built at.
     let mut later = id;
     settle_live(&mut client, &mut later);
     later += 1;
-    assert_eq!(snapshot(&mut client, later, "loot").seq, whole - 1);
+    assert_eq!(ask_health(&mut client, later).events, Some(whole));
+    later += 1;
+    let end = snapshot(&mut client, later, "loot");
+    let full = oracle(&log, &bytes, None);
+    let published = full.registry.snapshot_of("loot").expect("loot");
+    assert_eq!(end.state, published["state"]);
+    assert!(
+        (mid.seq..whole).contains(&end.seq),
+        "{} of {whole}",
+        end.seq
+    );
 }
 
 #[test]

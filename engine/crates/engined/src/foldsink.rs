@@ -319,7 +319,10 @@ impl EventSink for FoldSink {
         let mut published = self.fold.registry.snapshot_of(module)?;
         Some(ModuleSnapshot {
             seq: published.get("seq").and_then(serde_json::Value::as_i64)?,
-            state: published.get_mut("state").map(serde_json::Value::take)?,
+            state: published
+                .get_mut("state")
+                .map(serde_json::Value::take)?
+                .into(),
         })
     }
 

@@ -190,6 +190,15 @@ impl Engine {
         }
     }
 
+    /// The engine's process id, for a measurement that samples it from outside.
+    ///
+    /// # Panics
+    /// If the engine has already been waited on.
+    #[must_use]
+    pub fn pid(&self) -> u32 {
+        self.child.as_ref().expect("the engine is still held").id()
+    }
+
     /// Everything the engine wrote to stdout after the announce line. Consumes the reader, so call
     /// it once, after the process has exited.
     ///

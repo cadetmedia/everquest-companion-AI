@@ -58,7 +58,8 @@ fn every_definition_in_the_schema_became_a_rust_type() {
     //
     // Two deliberate absences, the same defect twice — typify lowers a multi-type schema to an enum
     // whose number arm is `f64`, so a count comes back with a decimal point. `Cell` is replaced by
-    // the hand-written `protocol::cell::Cell` and `ModuleState` by `serde_json::Value`. Both are
+    // the hand-written `protocol::cell::Cell` and `ModuleState` by `protocol::module_state`'s
+    // `serde_json::Value` behind an `Arc` (one kept answer, many askers, no copy). Both are
     // named here and in `tests/protocolSchema.test.mts`, so a third cannot appear silently.
     let files = protocol_codegen::read_schema_files(&schema_dir()).expect("the schema reads");
     let bundle = protocol_codegen::bundle(&files).expect("the schema bundles");
@@ -81,7 +82,7 @@ fn every_definition_in_the_schema_became_a_rust_type() {
         }
         if name == "ModuleState" {
             assert!(
-                on_disk.contains("pub state: ::serde_json::Value"),
+                on_disk.contains("pub state: crate::module_state::ModuleState"),
                 "the ModuleState replacement is not being used"
             );
             continue;
