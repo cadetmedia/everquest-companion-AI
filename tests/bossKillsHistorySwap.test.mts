@@ -27,7 +27,10 @@ const targets: RaidTarget[] = [
 /** Past the store's one-frame floor, so a marked module has been fetched again. */
 const settle = (): Promise<void> => new Promise((r) => setTimeout(r, 40))
 
-type Served = { seq: number; state: { v: number; mobs: Record<string, unknown> } }
+interface Served {
+  seq: number
+  state: { v: number; mobs: Record<string, unknown> }
+}
 // One fake bridge for the file: the app's module store is a singleton built over the first one.
 let serve: () => Promise<Served> = () => Promise.resolve({ seq: 0, state: { v: 5, mobs: {} } })
 const cursorCbs: ((c: ModuleChanged) => void)[] = []
