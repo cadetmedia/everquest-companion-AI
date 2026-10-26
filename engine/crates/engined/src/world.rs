@@ -1881,6 +1881,38 @@ mod tests {
         assert!(!world.close_subscription(mine.id, 7));
     }
 
+    /// The tail's idle nap waits only on the ask door (`ingest/nap.rs`), so a new subscription and
+    /// every write must knock on it, and a write must already be waiting when the knock lands.
+    #[test]
+    fn a_new_subscription_and_a_write_wake_the_fold_with_the_write_already_waiting() {
+        use crate::ingest::{Ask, Write};
+        use std::sync::mpsc::channel;
+        use std::time::Duration;
+
+        let world = world();
+        let listener = world.join();
+        world.attach(A_LOG, None, eqlog::ZoneHint::default());
+        let turn = generation(&world);
+        let (asks, answers) = channel();
+        let (push, writes) = channel();
+        assert!(world.serve_asks(turn, asks));
+        assert!(world.serve_writes(turn, push));
+
+        world.open_subscription(listener.id, 7, a_view());
+        assert!(matches!(answers.try_recv(), Ok(Ask::Wake)));
+
+        let fold = std::thread::spawn(move || {
+            let woke = answers.recv_timeout(Duration::from_secs(10));
+            assert!(matches!(woke, Ok(Ask::Wake)), "the define knocked");
+            let Ok(Write::Define(define)) = writes.try_recv() else {
+                panic!("the define was posted before the knock");
+            };
+            let _sent = define.answer.send(true);
+        });
+        world.define("alerts", serde_json::json!([]));
+        fold.join().expect("the fold's side");
+    }
+
     #[test]
     fn an_ingest_that_ends_leaves_the_world_idle_with_its_generation_intact() {
         let world = world();
