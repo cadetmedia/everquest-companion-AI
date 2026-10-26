@@ -15,6 +15,10 @@
 //!   per-spell `stats`, `gaps`' `seen` counts — is kept only while no event has been folded;
 //! * `resist`, whose counts settle on the heartbeat without moving its cursor, is never kept. It is
 //!   two integers, and no app reader asks for it.
+//! * `respawn` is never kept either: the heartbeat's clock orders its rows (`order_rows`) and its
+//!   revision deliberately ignores the heartbeat. The fixtures cannot show it (no watch list is
+//!   defined there, so no rows), and its build is small: at most 60 rows, 40 candidates and the
+//!   learned gaps.
 //!
 //! A write (a define, a mark, a confirm) forgets everything kept: writes are rare, and that keeps
 //! the key from depending on which defines announce.
@@ -30,7 +34,7 @@ use std::collections::HashMap;
 use super::{EventSink, ModuleSnapshot};
 
 /// Modules never kept — see the module header.
-const NEVER: [&str; 1] = ["resist"];
+const NEVER: [&str; 2] = ["resist", "respawn"];
 
 /// Modules kept only while no event has been folded — see the module header.
 const UNTIL_ANY_EVENT: [&str; 2] = ["buffs", "gaps"];

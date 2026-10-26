@@ -33,7 +33,7 @@ impl EventSink for Probe {
         }
     }
     fn snapshot(&self, module: &str) -> Option<ModuleSnapshot> {
-        if !["loot", "buffs", "resist"].contains(&module) {
+        if !["loot", "buffs", "resist", "respawn"].contains(&module) {
             return None;
         }
         self.builds.set(self.builds.get() + 1);
@@ -44,7 +44,7 @@ impl EventSink for Probe {
     }
     fn module_seqs(&self) -> Vec<(&'static str, i64)> {
         self.cursor
-            .map(|c| vec![("loot", c), ("buffs", c), ("resist", c)])
+            .map(|c| vec![("loot", c), ("buffs", c), ("resist", c), ("respawn", c)])
             .unwrap_or_default()
     }
 }
@@ -78,7 +78,7 @@ fn a_repeat_ask_with_the_cursor_unmoved_is_the_kept_answer_and_builds_nothing() 
 }
 
 #[test]
-fn buffs_is_kept_only_while_nothing_is_folded_and_resist_never() {
+fn buffs_is_kept_only_while_nothing_is_folded_and_resist_and_respawn_never() {
     let mut kept = Kept::default();
     let mut sink = Probe::at(Some(10));
     kept.snapshot(&sink, "buffs");
@@ -95,6 +95,11 @@ fn buffs_is_kept_only_while_nothing_is_folded_and_resist_never() {
     kept.snapshot(&sink, "resist");
     kept.snapshot(&sink, "resist");
     assert_eq!(sink.builds.get(), 4);
+
+    // Its row order follows the heartbeat's clock, which its revision ignores.
+    kept.snapshot(&sink, "respawn");
+    kept.snapshot(&sink, "respawn");
+    assert_eq!(sink.builds.get(), 6);
 }
 
 #[test]
