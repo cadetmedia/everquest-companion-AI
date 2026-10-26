@@ -50,6 +50,28 @@ function readKind(): OverlayKind {
 }
 const KIND: OverlayKind = readKind()
 
+/**
+ * A one-shot push channel that holds what lands before the surface listens. Main sends at
+ * `did-finish-load`, and the surface (a lazy chunk, overlay/main.tsx) subscribes later, in an
+ * effect; without the hold that first card is lost. The newest few are kept; one listener at a time.
+ */
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- `T` is the channel's payload, named by each caller
+function heldPush<T>(channel: string): (cb: (v: T) => void) => () => void {
+  const early: T[] = []
+  let sink: ((v: T) => void) | null = null
+  ipcRenderer.on(channel, (_e: unknown, v: T) => {
+    if (sink) sink(v)
+    else if (early.push(v) > 8) early.shift()
+  })
+  return (cb) => {
+    sink = cb
+    for (const v of early.splice(0)) cb(v)
+    return () => {
+      if (sink === cb) sink = null
+    }
+  }
+}
+
 const overlayApi = {
   /** This overlay window's kind ('fight' | 'overall' | 'events'). */
   kind: KIND,
@@ -321,11 +343,7 @@ const overlayApi = {
    * TOAST (docs/plans/celebration-toasts.md): one finished card to render, pushed by main.
    * Self-contained by law — the overlay times and dismisses it locally and fetches nothing.
    */
-  onToast: (cb: (t: ToastPayload) => void): (() => void) => {
-    const listener = (_e: unknown, t: ToastPayload): void => cb(t)
-    ipcRenderer.on(IPC.onToast, listener)
-    return () => ipcRenderer.removeListener(IPC.onToast, listener)
-  },
+  onToast: heldPush<ToastPayload>(IPC.onToast),
 
   /**
    * ALERT BANNER (JOS-378): one validated line to render, pushed by main. Self-contained by the
@@ -333,11 +351,7 @@ const overlayApi = {
    * The two are separate members rather than one because they are separate WINDOWS: a banner
    * window must never be handed a celebration, and vice versa.
    */
-  onAlertBanner: (cb: (b: AlertBannerPayload) => void): (() => void) => {
-    const listener = (_e: unknown, b: AlertBannerPayload): void => cb(b)
-    ipcRenderer.on(IPC.onAlertBanner, listener)
-    return () => ipcRenderer.removeListener(IPC.onAlertBanner, listener)
-  },
+  onAlertBanner: heldPush<AlertBannerPayload>(IPC.onAlertBanner),
 
   /**
    * "That sighting was the spawn — start this row's clock from it" (JOS-194, round 3).
@@ -376,11 +390,7 @@ const overlayApi = {
    * member for the same reason: three separate WINDOWS, and none of them may be handed another's
    * payload.
    */
-  onConCard: (cb: (c: ConCardPayload) => void): (() => void) => {
-    const listener = (_e: unknown, c: ConCardPayload): void => cb(c)
-    ipcRenderer.on(IPC.onConCard, listener)
-    return () => ipcRenderer.removeListener(IPC.onConCard, listener)
-  },
+  onConCard: heldPush<ConCardPayload>(IPC.onConCard),
 
   /**
    * "I closed the card for this mob" (JOS-383). The only thing this window sends: the DISMISSAL is

@@ -35,6 +35,9 @@ test('the served state drops the lines an archive brought back, and is the same 
   assert.equal(withoutKillFactionSamples(slim), slim)
   const merged = mergeGaps({ ...slim, killFactions: [{ ...pair, samples: kill(1) }] }, slim) as typeof slim
   assert.deepEqual(withoutKillFactionSamples(merged), { ...merged, killFactions: [{ ...pair, n: 2 }] })
+  // The history merge serves one object per seq: it is stripped once, not copied on every serve.
+  assert.equal(withoutKillFactionSamples(merged), withoutKillFactionSamples(merged))
+  assert.equal(withoutKillFactionSamples(null), null)
 })
 
 test('asked lines: the archive oldest first, then the live module, the last three kills, only the pairs asked', () => {

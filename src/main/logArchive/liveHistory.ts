@@ -10,6 +10,10 @@ import { activeCharId, getActiveCharacter } from '../session'
 import { getComboCorrections } from '../store'
 import { logArchiveOn } from '../storeLogArchive'
 import { createHistoryMerge, readHeadBytes } from './history'
+import respawnsJson from '../data/respawns.json'
+
+/** The pages' respawn statements by mob key: the same committed file the engine embeds. */
+const RESPAWN_WIKI = new Map(respawnsJson.rows.map((r) => [r.key, r]))
 
 /**
  * Where segments and archives live: a subfolder of the game's Logs folder (ruling 0.2, owner
@@ -32,6 +36,7 @@ export const liveHistory = createHistoryMerge({
   },
   readHead: (path, n) => readHeadBytes(path, n),
   comboCorrections: () => getComboCorrections(activeCharId()),
+  respawnWiki: (key) => RESPAWN_WIKI.get(key),
   note: (line) => {
     logInfo(`[everquest-companion] ${line}`)
   }

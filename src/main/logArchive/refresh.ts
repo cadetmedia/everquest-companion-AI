@@ -38,6 +38,18 @@ export interface RefreshDeps {
   producedBy: () => { app: string; engine: string }
 }
 
+/**
+ * The segment's respawn state has no learned evidence (respawn-first-sight, owner 2026-10-25: the
+ * wiki respawn time from every kill, archived months included) AND no refresh by `version` has tried
+ * yet. One refresh by an engine that publishes it adds the field, even empty; one that still lacks it
+ * stamps `learnedTriedBy`, so a failing read costs one refold per version, not one per launch.
+ */
+export function lacksLearned(s: Segment, version: string): boolean {
+  if (s.learnedTriedBy === version || !Object.prototype.hasOwnProperty.call(s.modules, 'respawn')) return false
+  const state = s.modules.respawn.state as { learned?: unknown } | null
+  return state === null || typeof state !== 'object' || !Array.isArray(state.learned)
+}
+
 export type RefreshResult =
   | { ok: true; segment: Segment; changed: string[] }
   | { ok: false; reason: string }
@@ -76,6 +88,7 @@ function refreshed(old: Segment, fold: RefoldOk['fold'], producedBy: Segment['pr
     ...old,
     producedBy,
     extrasTriedBy: producedBy.app,
+    learnedTriedBy: producedBy.app,
     modules: keepIdentity(old.modules, fold.modules),
     ...(fights === undefined || fights === null ? {} : { fights }),
     ...(respawnHistory === undefined || respawnHistory === null ? {} : { respawnHistory })

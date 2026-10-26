@@ -40,6 +40,7 @@ import {
   type RespawnRow,
   type RespawnSnap
 } from '../respawn'
+import { learnedOf as learnedEvidence, type LearnedEvidence } from '../respawnLearn'
 import { carriedValue } from './carryOver'
 
 function isRespawnSnap(x: unknown): x is RespawnSnap {
@@ -148,39 +149,30 @@ export function mergeRespawn(older: unknown, newer: unknown): RespawnSnap | null
  * the wiki respawn time. Read here by shape, so an archive older than the field, or an engine without
  * it, simply has none.
  */
-interface Learned {
-  id: string
-  key: string
-  display: string
-  zone: string
-  gapsMs: number[]
-}
+type Learned = LearnedEvidence
 
 /** The engine's own cap on gaps per mob. */
 const LEARNED_GAPS = 50
+/** The engine's own cap on mobs (`MAX_LEARNED_STORE`), so the join does not grow with every archive. */
+const LEARNED_MOBS = 1_000
 
+/** The field's entries as the Gaps tab reads them (malformed ones dropped); null when it has none. */
 function learnedOf(snap: RespawnSnap): Learned[] | null {
-  const raw = (snap as unknown as { learned?: unknown }).learned
-  if (!Array.isArray(raw)) return null
-  return raw.filter(
-    (l): l is Learned =>
-      l !== null &&
-      typeof l === 'object' &&
-      typeof (l as Learned).key === 'string' &&
-      typeof (l as Learned).zone === 'string' &&
-      Array.isArray((l as Learned).gapsMs)
-  )
+  return Array.isArray((snap as unknown as { learned?: unknown }).learned) ? learnedEvidence(snap) : null
 }
 
 /**
  * Both sides' evidence joined per mob and zone: the newer side's gaps first (each list is newest
  * first), capped as the engine caps them. What the newer side filed under zone '' (before its first
  * zone line) is the zone the older side ended in, as for the rows. Null when neither side has any.
+ * Newest learned first, as the engine publishes: the newer side's mobs in its order, then the ones
+ * only the older side has in its order; the 1,000 newest are kept.
  */
 function mergeLearned(older: Learned[] | null, newer: Learned[] | null, olderZone: string): Learned[] | null {
   if (older === null && newer === null) return null
   const out = new Map<string, Learned>()
   for (const l of newer ?? []) {
+    // Defensive: the engine learns no gap before a zone line (`zone_since > 0`), so it files none under ''.
     const zone = l.zone === '' ? olderZone : l.zone
     const id = `${respawnZoneKey(zone)}::${l.key}`
     const prev = out.get(id)
@@ -190,7 +182,30 @@ function mergeLearned(older: Learned[] | null, newer: Learned[] | null, olderZon
     const prev = out.get(l.id)
     out.set(l.id, prev === undefined ? l : { ...prev, gapsMs: [...prev.gapsMs, ...l.gapsMs].slice(0, LEARNED_GAPS) })
   }
-  return [...out.values()]
+  return [...out.values()].slice(0, LEARNED_MOBS)
+}
+
+/** What a mob's page says of its respawn today, by key: `data/respawns.json`, the file the engine embeds. */
+export type RespawnWikiNow = (key: string) => { text: string; seconds?: number; page: string } | undefined
+
+/**
+ * An archived state's learned evidence with what each page says TODAY. The archive's copy is what
+ * the page said the day it was captured, so a page fixed and re-scraped since would still read wrong.
+ * Anything else comes back as is.
+ */
+export function withCurrentWiki(archived: unknown, wikiNow: RespawnWikiNow): unknown {
+  if (!isRespawnSnap(archived)) return archived
+  const learned = learnedOf(archived)
+  if (learned === null) return archived
+  return {
+    ...archived,
+    learned: learned.map((l): Learned => {
+      const bare = { id: l.id, key: l.key, display: l.display, zone: l.zone, gapsMs: l.gapsMs }
+      const says = wikiNow(l.key)
+      if (says === undefined) return bare
+      return { ...bare, wikiText: says.text, ...(says.seconds === undefined ? {} : { wikiMs: says.seconds * 1000 }), wikiPage: says.page }
+    })
+  }
 }
 
 /**

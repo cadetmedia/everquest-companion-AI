@@ -40,7 +40,7 @@ import type { SegmentSummary } from '../../shared/combat'
 import { archivedFightRows } from '../../shared/logArchive/mergeFights'
 import { hasMergeRule, mergeModule } from '../../shared/logArchive/mergeRules'
 import { firstStart, withCorrections } from '../../shared/logArchive/mergeCombo'
-import { withHistoryRows } from '../../shared/logArchive/mergeRespawn'
+import { withCurrentWiki, withHistoryRows, type RespawnWikiNow } from '../../shared/logArchive/mergeRespawn'
 import type { ComboCorrection } from '../../shared/classCombo'
 import { HEAD_BYTES, logStampKey, type Segment } from '../../shared/logArchive/segment'
 import { listSegments, type SkippedFile } from './segmentStore'
@@ -57,6 +57,8 @@ export interface HistoryDeps {
   note: (line: string) => void
   /** The attached character's class-loadout corrections; none when absent. */
   comboCorrections?: () => readonly ComboCorrection[]
+  /** What each mob's page says of its respawn today; absent, archived learned evidence keeps its own. */
+  respawnWiki?: RespawnWikiNow
 }
 
 interface Context {
@@ -104,11 +106,15 @@ export interface HistoryMerge {
 
 /**
  * A module's archived states as the merge takes them: combo's with today's corrections on, and
- * respawn's with the history rows of the mobs watched today (step 4.14).
+ * respawn's with the history rows of the mobs watched today (step 4.14) and what the wiki says today.
  */
 function archivedFor(shown: readonly Segment[], moduleId: string, live: unknown, deps: HistoryDeps): unknown[] {
   const kept = shown.filter((s) => Object.hasOwn(s.modules, moduleId))
-  if (moduleId === 'respawn') return kept.map((s) => withHistoryRows(s.modules.respawn.state, s.respawnHistory ?? [], live))
+  if (moduleId === 'respawn') {
+    const wikiNow = deps.respawnWiki
+    const states = kept.map((s) => withHistoryRows(s.modules.respawn.state, s.respawnHistory ?? [], live))
+    return wikiNow === undefined ? states : states.map((s) => withCurrentWiki(s, wikiNow))
+  }
   const states = kept.map((s) => s.modules[moduleId].state)
   if (moduleId !== 'combo') return states
   const corrections = deps.comboCorrections?.() ?? []
