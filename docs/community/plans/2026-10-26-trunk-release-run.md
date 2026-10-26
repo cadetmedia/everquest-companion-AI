@@ -3,6 +3,31 @@
 The owner's 15-step list (2026-10-26), stopped after step 5 for time ("we don't have time for all
 that. Notate where we are and finish the current step"). Resume from "Next" below.
 
+## The owner's list, verbatim
+
+> 1. lets keep the old branches, merge everything into main_community. 2. make sure main community
+> is the new primary branch. 3. Then once that is all done, update the old feature branches to
+> indicate they retired. 4. Then update all information and rules in all branches and memory files
+> so that this new break from original fork is the way forward 5. continue your optimizations now
+> on the new primary main_community branch that we will use. 6. all work can still be done in
+> temporary work-trees and/or branches 7. do a code review of everything once done 8. do another
+> optimization pass 9. do a bug pass 10. do a review and qa pass 11. do a delta scrape of the wiki
+> and latest github data from the wiki EOZ package cache to get our cache as up-to-date as we can
+> 12. do a full regression test yourself 13. fix issues identified 14. if everythign is good, do a
+> release by tagging and pushing up and all that jazz 15. when done let me know
+>
+> try to do as much with subagents so your context window doesn't get bloated more than it must
+
+Later the same night: "Do a final review yourself also before release after the sub agents do their
+final review"; "maybe we need to rerun the performance review after all changes to compare?"; then,
+for time: "Notate where we are and finish the current step". Rough estimate given for steps 7-15:
+4-6.5 hours (reviews and passes 30-45 min each, delta 15-20, regression 20-30, release 20-30).
+
+How to run it: one subagent per independent area, each in its own scratch worktree on its own
+temporary branch off `main_community` (node_modules junction; unlink it with
+`(Get-Item <wt>\node_modules -Force).Delete()` before removing the folder), told to commit there and
+not merge or push; the lead agent merges, gates the merged trunk and removes the worktree and branch.
+
 ## Done
 
 1. Every branch merged into `main_community` (all recipe branches were level; `fix-media-devices`
@@ -44,7 +69,13 @@ Also merged the same night, before the switch: respawn times for the wiki from t
 
 1. Code review of everything merged since `b614e946` (the last build the owner ran before
    2026-10-25 evening).
-2. A second optimization pass (the review's open items: #1 the always-watched big modules, #3's
+2. Re-run the performance review once perf-engine is in (owner, 2026-10-26: "maybe we need to
+   rerun the performance review after all changes to compare?"): repeat every number in the
+   review's "Measured" section the same way (production build, hidden and isolated, copies of the
+   owner's logs; tab switches incl. the owner's setup of 9 overlays), plus the bench scripts in
+   `../audits/2026-10-26-perf-bench.md`, and write before/after into the review. Use the result to
+   rank the second optimization pass.
+3. A second optimization pass (the review's open items: #1 the always-watched big modules, #3's
    concurrent dispatch if perf-engine left it, #6 derivations into the engine, #8 data weight).
 3. A bug pass, then a review and QA pass.
 4. The EOZ GitHub pack compare and a delta scrape (DATA_REFRESH.md).
@@ -63,5 +94,11 @@ Also merged the same night, before the switch: respawn times for the wiki from t
   34)?
 - Raid Targets now shows an empty roster for a moment during a character switch instead of the
   previous character's statuses (perf-renderer).
+- A wiki fix to offer the owner (it will show as a Respawns "Fix respawn" row once the app runs the
+  new build): Enynti's page says `22 minutes`; 31 same-stay kills in Castle of Mistmoore 4 put its
+  spawn point at 8:50. Edit link: https://eqlwiki.com/index.php?title=Enynti&action=edit, line
+  `| respawn_time      = 8:50`.
+- `heal-fight`/`heal-overall` were added to `CHARACTER_AWARE_OVERLAYS` (perf-renderer) without the
+  owner's explicit answer to the earlier question; tell the owner.
 - The old worktrees under `.claude/worktrees/` (junctions already unlinked) were not removed: the
   bulk removal was refused by the permission check. Remove them one by one, or by the owner.
