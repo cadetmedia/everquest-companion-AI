@@ -1,7 +1,9 @@
-//! `<Name> says, 'My leader is <Player>.'` is a `says` line, and anyone can say it. A player, a
-//! group member or the owner saying it is no pet: the claim is refused, your real pet stays bound,
-//! and the speaker's swings stay theirs. The ally form (naming somebody else) is refused the same
-//! way. The heal and the swings are real shapes; the forged sentence is the leader answer verbatim.
+//! `<Name> says, 'My leader is <Player>.'` is a `says` line, and anyone can say it. The owner or a
+//! group member saying it is no pet: the claim is refused, your real pet stays bound, and the
+//! speaker's swings stay theirs. The ally form (naming somebody else) is refused the same way. A
+//! name the heal stream filed as a player is NOT refused: a summoned pet heals you too, and the
+//! owner's shaman pet did before its first `/pet leader` (Wed Oct 14 2026, the lines below). The
+//! heal and swing shapes are real; the forged sentences are the leader answer verbatim.
 
 use eqlog::event::Ev;
 use eqlog::{Clock, Parser, Tz};
@@ -62,55 +64,55 @@ fn rows(snap: &Value) -> Vec<(String, String, i64)> {
         .collect()
 }
 
+fn row(kind: &str, name: &str, total: i64) -> (String, String, i64) {
+    (kind.to_string(), name.to_string(), total)
+}
+
 const PET_CLAIM: &str = "[Sat Oct 10 18:13:50 2026] Gobekn says, 'My leader is Drywrought.'";
-const HEAL: &str =
-    "[Sat Oct 10 18:13:51 2026] Rykkerr healed you for 120 hit points by Light Healing.";
 const SWINGS: [&str; 2] = [
     "[Sat Oct 10 18:13:53 2026] Rykkerr slashes a gnoll for 400 points of damage.",
     "[Sat Oct 10 18:13:54 2026] Gobekn bites a gnoll for 50 points of damage.",
 ];
 
-fn no_pet_named_rykkerr(snap: &Value) {
-    let rows = rows(snap);
-    assert!(
-        !rows
-            .iter()
-            .any(|(kind, name, _)| kind == "pet" && name == "Rykkerr"),
-        "a player was bound as a pet: {rows:?}"
-    );
-    assert!(
-        rows.contains(&("pet".to_string(), "Gobekn".to_string(), 50)),
-        "the real pet lost its row: {rows:?}"
-    );
-}
-
-#[test]
-fn a_known_player_naming_you_its_leader_is_not_your_pet() {
-    let forged = "[Sat Oct 10 18:13:52 2026] Rykkerr says, 'My leader is Drywrought.'";
-    let snap = fold(&[PET_CLAIM, HEAL, forged, SWINGS[0], SWINGS[1]], &[]);
-    no_pet_named_rykkerr(&snap);
-}
-
 #[test]
 fn a_group_member_naming_you_its_leader_is_not_your_pet() {
     let forged = "[Sat Oct 10 18:13:52 2026] Rykkerr says, 'My leader is Drywrought.'";
-    let snap = fold(&[PET_CLAIM, forged, SWINGS[0], SWINGS[1]], &["rykkerr"]);
-    no_pet_named_rykkerr(&snap);
-    let rows = rows(&snap);
-    assert!(
-        rows.contains(&("member".to_string(), "Rykkerr".to_string(), 400)),
-        "the member's swing is still theirs: {rows:?}"
-    );
+    let rows = rows(&fold(
+        &[PET_CLAIM, forged, SWINGS[0], SWINGS[1]],
+        &["rykkerr"],
+    ));
+    assert!(!rows.contains(&row("pet", "Rykkerr", 400)), "{rows:?}");
+    assert!(rows.contains(&row("member", "Rykkerr", 400)), "{rows:?}");
+    assert!(rows.contains(&row("pet", "Gobekn", 50)), "{rows:?}");
 }
 
 #[test]
-fn a_known_player_naming_somebody_else_its_leader_is_not_their_pet() {
+fn you_naming_yourself_leader_leaves_your_pet_bound() {
+    let forged = "[Sat Oct 10 18:13:52 2026] Drywrought says, 'My leader is Drywrought.'";
+    let rows = rows(&fold(&[PET_CLAIM, forged, SWINGS[1]], &[]));
+    assert!(rows.contains(&row("pet", "Gobekn", 50)), "{rows:?}");
+}
+
+#[test]
+fn a_group_member_naming_somebody_else_its_leader_is_not_their_pet() {
     let forged = "[Sat Oct 10 18:13:52 2026] Rykkerr says, 'My leader is Malkil.'";
-    let snap = fold(&[PET_CLAIM, HEAL, forged, SWINGS[0], SWINGS[1]], &[]);
-    no_pet_named_rykkerr(&snap);
-    let rows = rows(&snap);
-    assert!(
-        rows.contains(&("other".to_string(), "Rykkerr".to_string(), 400)),
-        "the player's swing is still recorded as theirs: {rows:?}"
-    );
+    let rows = rows(&fold(
+        &[PET_CLAIM, forged, SWINGS[0], SWINGS[1]],
+        &["rykkerr"],
+    ));
+    assert!(rows.contains(&row("member", "Rykkerr", 400)), "{rows:?}");
+    assert!(!rows.iter().any(|r| r.0 == "allyPet"), "{rows:?}");
+}
+
+#[test]
+fn a_pet_that_healed_you_before_its_claim_still_binds() {
+    let rows = rows(&fold(
+        &[
+            "[Wed Oct 14 20:16:18 2026] Vasartik healed you for 350 hit points by Greater Healing.",
+            "[Wed Oct 14 20:22:41 2026] Vasartik says, 'My leader is Drywrought.'",
+            "[Wed Oct 14 20:22:45 2026] Vasartik slashes a gnoll for 162 points of damage.",
+        ],
+        &[],
+    ));
+    assert!(rows.contains(&row("pet", "Vasartik", 162)), "{rows:?}");
 }

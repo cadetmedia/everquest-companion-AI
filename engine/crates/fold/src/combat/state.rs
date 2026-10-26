@@ -342,10 +342,13 @@ impl EngineState {
         name_key == "you" || self.known_players.contains(name_key)
     }
 
-    /// True when `name_key` is you, a known player or anyone the roster ever admitted: a person, so
-    /// never a pet, whatever a forgeable `My leader is …` says.
+    /// True when `name_key` is you or anyone the roster ever admitted: a person, so never a pet,
+    /// whatever a forgeable `My leader is …` says. Not the heal stream's known players: a summoned
+    /// pet heals you too, and the owner's Vasartik did before its first `/pet leader` (2026-10-14).
     pub fn is_player_side(&self, name_key: &str) -> bool {
-        self.is_known_player(name_key) || self.roster.admitted.contains(name_key)
+        name_key == "you"
+            || self.player_key.as_deref() == Some(name_key)
+            || self.roster.admitted.contains(name_key)
     }
 
     /// True when `name_key` is on the roster right now — the "never a hostile" test. `engage_hostile`
