@@ -36,7 +36,7 @@
 // precisely the moment the log is silent. A 1 Hz local clock re-reads rows the renderer already
 // holds; it asks main for nothing.
 
-import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { type JSX, useEffect, useMemo, useRef, useState } from 'react'
 import { MODULE_WORLD_CHANGED, type BuffsSnap, type ModuleChanged } from '@shared/types'
 import {
   type BuffTimerRow,
@@ -50,14 +50,14 @@ import {
   filterPermanentRows,
   orderTimerRows,
   rowsForSurface,
-  timerDrops,
-  withTimerDismissal
+  timerDrops
 } from '@shared/buffTimers'
 // THE TRACKING ALLOW-LIST (JOS-168). The controls are on the Buffs TAB — this window only obeys
 // them, which is why the hook is handed the overlay bridge (no setter on it, by construction).
 import type { BuffAllowPrefs } from '@shared/buffAllow'
 import { useBuffAllow } from '../features/buffs/useBuffAllow'
 import { useSecondsClock } from '../lib/useSecondsClock'
+import { useTimerDismissals } from './useTimerDismissals'
 import { OverlayHeader } from './OverlayHeader'
 import { FOOTER_ROW, OverlayContent } from './overlayScale'
 import { TextScaleStepper } from './TextScaleStepper'
@@ -279,24 +279,6 @@ function useChangeCount(value: unknown): number {
   const ref = useRef<{ value: unknown; count: number }>({ value, count: 0 })
   if (ref.current.value !== value) ref.current = { value, count: ref.current.count + 1 }
   return ref.current.count
-}
-
-/**
- * THE BARS THIS WINDOW HAS BEEN TOLD TO STOP DRAWING (JOS-203).
- *
- * It is a `useState` and it stops here: nothing is sent to main, nothing is persisted, and the
- * rule that reads it is a pure function over rows (shared/buffTimers.ts, where the owner's ruling
- * is written). That is the whole of "the learner never notices" — there is no channel for it to
- * notice through. The verdicts survive every delta and every re-hydrate because they are re-applied
- * to whatever row set arrives; they do NOT survive closing the window, which is correct: a
- * dismissal is a judgement about the bars in front of you, not a fact about the world.
- */
-function useDismissals(): { dismissals: TimerDismissals; dismiss: (row: BuffTimerRow) => void } {
-  const [dismissals, setDismissals] = useState<TimerDismissals>(() => new Map())
-  const dismiss = useCallback((row: BuffTimerRow) => {
-    setDismissals((prev) => withTimerDismissal(prev, row))
-  }, [])
-  return { dismissals, dismiss }
 }
 
 /**
@@ -523,7 +505,7 @@ export default function BuffsOverlay({ kind }: { kind: TimerOverlayKind }): JSX.
   // main whenever a box on the Buffs tab moves. Shipped-default until somebody sets it, which is
   // what makes this whole feature invisible to a user who never opens it.
   const { prefs: allow } = useBuffAllow(window.eqOverlay)
-  const { dismissals, dismiss } = useDismissals()
+  const { dismissals, changes: dismissalChanges, dismiss } = useTimerDismissals()
   const rows = useMemo(
     () => drawnRows({ buffs, timers, kind }, { showPermanent, allow, grouping, dismissals }),
     [buffs, timers, kind, grouping, showPermanent, allow, dismissals]
@@ -531,7 +513,7 @@ export default function BuffsOverlay({ kind }: { kind: TimerOverlayKind }): JSX.
   const groups = useMemo(() => groupRows(rows, surface.selfLabel, grouping), [rows, surface.selfLabel, grouping])
   // ONE COUNTER OVER BOTH MODULES: either one re-hydrating is a rebuilt row set, and the two
   // snapshots land as two separate promises — so a sum, which changes on each of them. The
-  // dismissal count joins it for the same reason (JOS-203): a row the user cleared did not drop.
+  // dismissal changes join it for the same reason (JOS-203): a row the user cleared did not drop.
   // …and so does the permanent switch (JOS-215): hiding the roster removes rows, and "Yaulp
   // dropped" is exactly what the window must not say about a preference the user just set.
   // …and so does the ALLOW-LIST (JOS-168), for that reason exactly: unchecking a buff on the Buffs
@@ -540,7 +522,7 @@ export default function BuffsOverlay({ kind }: { kind: TimerOverlayKind }): JSX.
   const allowChanges = useChangeCount(allow)
   const flashes = useDropFlash(
     rows,
-    buffsHydrations + timersHydrations + dismissals.size + (showPermanent ? 1 : 0) + allowChanges
+    buffsHydrations + timersHydrations + dismissalChanges + (showPermanent ? 1 : 0) + allowChanges
   )
   // The clock runs only while a row or a drop notice is there to time.
   const nowMs = useSecondsClock(rows.length > 0 || flashes.length > 0)
