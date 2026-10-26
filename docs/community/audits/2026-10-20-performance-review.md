@@ -161,4 +161,119 @@ owner asked).
 - #10: overlay surfaces `React.lazy` per kind: 715 KB of JS per overlay window to 269-376 KB.
 - Quick wins: `heal-fight`/`heal-overall` in `CHARACTER_AWARE_OVERLAYS`; the map timer pins' clock
   runs only with a pin placed.
-- #3 and the engine's idle nap: see the perf-engine merge note below, when it lands.
+- #3 (part) and the engine's idle nap (perf-engine): the last `module.snapshot` answer is kept per
+  module until its cursor moves (respawn never kept); the tail's nap backs off to the poll interval
+  after 3 s of a quiet log (44.5 to 2.8 idle context switches/s). Asks are still served one at a
+  time per connection.
+
+## Re-measured 2026-10-26 (after pass 1 and perf-engine)
+
+Trunk `c8398d395`. Production build (`npm run build`, release engine built from the same tree), run
+hidden (`EQ_E2E=1`, `EQ_UNRELEASED=1`) on an isolated userData against a staged copy of the owner's
+install: the live log is the October log (2026-10-06 to 10-25, 106 MB, 1.26M lines) plus the
+current one, with the August archive segments, the dumps, `spells_us.txt` and the map packs.
+
+Method, one line each:
+
+- Tab switch: a probe spec clicks each nav row (and the Gear area's tabs); settle is the last DOM
+  mutation of the burst the click starts (a gap of 400 ms ends it), long tasks are the
+  `longtask` entries in the 2.5 s after the click. Round 0 is the first visit, rounds 1-3 repeats.
+  Background throttling off, so the hidden window reads `visible` (as the owner's does).
+- "No overlays" = the fresh-install defaults (toast and con card windows). Owner setup = the 9
+  overlays he runs (toast, fight, overall, respawn, xp, events, conCard, gaps, buffs) with lines
+  appended to the log copy: 2 combat lines every 500 ms, a kill, XP and loot every 8 s, a con.
+- Module reads: `eq.getModuleSnapshot` timed from the renderer (round trip, 1 first + 10 repeats);
+  engine side: `read_path_bench.rs` and `snapshot_build_costs` on the October log copy.
+- Idle CPU: `TotalProcessorTime` per pid over 60 s, quiet log, Overview (resolution 0.026%).
+- Live CPU attribution: a 30 s CDP profile of the main window plus a count of every IPC invoke.
+- Derivations: the bench scripts in [2026-10-26-perf-bench.md](2026-10-26-perf-bench.md).
+- Not the same: the 10-20 tab numbers had no stated harness, its live-setup figure was taken on the
+  dev server (this one is production), its sizes came from the saved Gaps file (these from the
+  served snapshot), and the log has grown (loot rows 9,787 to 11,102).
+
+| Measure | 2026-10-20 | 2026-10-26 |
+| --- | --- | --- |
+| Repeat switch, no overlays (settle / long tasks) | 112 / 62 ms | 83 / 36 ms |
+| Gaps repeat settle | 457 ms | 192 ms (median 154) |
+| Loot repeat settle | 358 ms | 219 ms (median 106; one 466 ms) |
+| Maps repeat settle | 224 ms | 56 ms |
+| Posky repeat settle | 152 ms | 138 ms |
+| Buffs repeat settle | 122 ms | 57 ms |
+| Slowest repeats now | - | Loot 219, Gaps 192, Posky 138, Character 167, Unlocks 166, Plan 135 ms |
+| First visit (cold), mean / worst | not measured | 149 ms; Loot 504, Gear 457, Gaps 390, Character 281 |
+| Owner setup, 9 overlays + live lines | ~480 ms (dev server) | 83 / 46 ms (production; Overview and Combat excluded: live redraws never let them settle, their long tasks 0-33 ms) |
+| Startup, "Interface drawn" | 607 ms (v1.10.0 profile) | 250-349 ms (4 launches; owner's -Prod today 403 ms) |
+| Startup total to replay done | - | 1.3-1.9 s; engine serving after 24-37 s (106 MB fold) |
+| Trivial IPC p50 | 0-1 ms | 0.5 ms (p95 0.6) |
+| `module.snapshot` gaps (renderer round trip) | 16-86 ms | 11 ms (engine: first 87, repeat 9) |
+| `module.snapshot` loot | 35-72 ms | 31-42 ms (engine: first 37, repeat 24) |
+| `module.snapshot` the rest | ≤1 ms | buffs 37-43, kills 12-16, progression 9-14, killFactionSamples 5, others ≤4.5 ms |
+| Same reads under live lines (owner setup) | - | kills ~150, gaps ~146, buffs ~143, loot 33-48 ms a read |
+| Small ask on a 2nd connection while the 1st hammers loot/gaps/kills | - | p50 0.1, max 0.3 ms |
+| Loot snapshot | 1.23 MB (9,787 rows) | 1.40 MB (11,102 rows) |
+| Gaps snapshot | 648 KB (535 KB samples) | 482 KB (rows 195, killFactions 130, talks 97 KB); samples 533 KB on demand |
+| Kills snapshot | 226 KB | 274 KB |
+| Other big snapshots | - | buffs 1.29 MB (1.22 MB of it the message-overlay diagnostics), progression 749 KB |
+| Overlay window JS | 715 KB | 242 KB shared + 27-136 KB per kind (269-378 KB) |
+| Main bundle / renderer chunk | 16.4 / 4.8 MB | 16.8 / 6.2 MB (mobs.json 3.1 to 5.4 MB from the delta scrapes) |
+| Idle CPU, quiet log, % of a core | - | main 0-0.05, renderer 0.4-1.8, overlays 0-0.2 each, engine 0.03 |
+| Live lines, owner setup, Overview, % of a core | - | main 6.6, renderer 18.7 (JS 11), overlays ~6.5 together, engine 5.9, GPU 1.9 |
+| First appended line folded after 1 s / 5 s quiet | - | p50 108 / 227 ms (the nap back-off) |
+| Bench: Maps zone join, cold / repeat | ~3 ms / ~3 ms | 3.1-4.6 / 0.00-0.01 ms |
+| Bench: Slayer `planZones` | 25-45 ms | 16-35 ms (per call; kept across visits) |
+| Bench: Plan `candidatePool` | 15-30 ms | 12-30 ms (per call; kept across visits) |
+| Bench: Factions `gearMaps` | ~5 ms | 2.9-4.4 ms (kept per gear index) |
+| Bench: Overview `buildDpsSeries` 2k / 6k events | - | 0.1-0.7 / 0.2-0.5 ms |
+
+Live-lines attribution (30 s, Overview, owner setup):
+
+- `combat:snapshot` asked ~3.8 times a second by each of main, fight and overall (115 each); the
+  appender wrote 2 batches a second. The Overview re-renders at that rate (MUI styling dominates
+  the profile); the same 30 s on the Combat tab cost 5.4% of a core in JS against 11%.
+- `progression` read every second by main and by the xp overlay (30 each, ~14 ms a read).
+- The met-in-log feed re-folds every zone, mob and item name each time `progression` moves:
+  `zoneKey`, `mobKey`, `setMet` ~330 ms per 30 s on every tab.
+- `kills`, `loot` (main and xp) and `gaps` (the overlay feed) re-read on each kill; the buffs overlay
+  re-reads the 1.29 MB `buffs` snapshot on each buff change.
+
+## Second pass, ranked
+
+Gains are from the numbers above; size S/M/L, risk in one clause.
+
+1. **Combat read rate in a fight** (#4's shared feed, new evidence). ~11 `combat.snapshot` reads a
+   second across 3 windows; Overview at 11% of a core in JS. Throttle the activity-ping read to one
+   per window per second (S), or push one `combat.live` answer per option set (M). Expected:
+   Overview JS from ~11% to ~5% of a core in a fight, main and engine reads down ~3x. Risk: meter
+   lag if the throttle drops the last ping (read on the trailing edge).
+2. **The always-watched modules** (#1). The met-in-log fold costs ~11 ms a second on every tab
+   while lines arrive, and loot (1.40 MB) and kills re-fetch on every kill whatever the tab. Short
+   step (S): skip the zone/mob/item fold when only `progression`'s non-zone fields moved (key on
+   `zoneName` length and last value). Full step (M): an engine "met" module of name sets and held
+   counts, so no window holds loot/kills for this. Expected: ~1% of a core and ~2 MB of reads per
+   kill off non-loot tabs. Risk: the era verdicts must keep the same evidence (test on metInLog).
+3. **Buffs snapshot slice** (new). 1.22 of its 1.29 MB is the message-overlay diagnostics only the
+   Buffs tab's diagnostics panel reads; the buffs overlay and Loadout fetch it on every change
+   (engine 106 ms first, 36 ms repeat; renderer 37-43 ms). Serve the overlay on demand, the
+   `killFactionSamples` pattern. S. Expected: buffs reads ~30x smaller, ~30 ms off each. Risk:
+   low; saved shapes unaffected.
+4. **One connection, served in order** (#3's remainder). A second connection waits nothing (0.1 ms
+   p50 while the first hammers), but main has one, so under live lines kills/gaps/buffs reads take
+   ~145-150 ms against 6-12 ms quiet. Give combat and health their own connection, or dispatch
+   asks concurrently in the engine. M, creator code. Expected: combat reads stop queueing behind
+   big snapshots (up to ~140 ms a collided read). Risk: reply ordering assumptions in main.
+5. **Heavy tab renders** (new). Kept derivations made repeats cheap where data was the cost; what is
+   left is render: repeat long tasks Gaps 145, Character 129, Plan 103, Loot 79, Factions 77 ms;
+   first visits Loot 504, Gear 457, Gaps 390 ms. Profile each and window/memo the row lists. S-M
+   per tab. Expected: 50-100 ms off each of those switches. Risk: low.
+6. **Derivations into the engine** (#6). Per call they cost what they did (bench above) but now run
+   once per session, so the gain is the first visit and first push only (~15-35 ms each). L. Do
+   after 1-5.
+7. **Data weight** (#8). Renderer chunk 6.2 MB and growing with each scrape (mobs.json +2.3 MB since
+   10-20); startup is not the problem (Interface drawn ≤350 ms), memory and parse are. Lazy-load
+   mobs/quests or answer through `knowledge.*`. M. Expected: ~5 MB renderer heap per window that
+   loads them. Risk: every mobs/quests reader turns async.
+8. **Loot snapshot growth** (#2 long term). 1.40 MB and growing with play (+13% rows since 10-20);
+   Loot first visit 504 ms. Move Loot onto a `useView` source. L. Do with 2.
+
+Idle needs nothing more: every process is under 0.5% of a core on a quiet log except the main
+renderer's one 1.8% sample (0.4% in the second).
