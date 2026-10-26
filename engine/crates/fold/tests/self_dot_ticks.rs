@@ -90,7 +90,12 @@ fn ticks_from_a_dead_caster_neither_hold_the_fight_open_nor_merge_the_next_pull(
     assert!(starts.contains(&&json!(27000)), "{all:?}");
     // The tick inside the linger is still the dead caster's damage to you, in its fight.
     let first = fold_selecting(&lines, Some("e1"));
-    assert_eq!(first["selected"]["inTotal"], json!(53 * 2), "{}", first["selected"]);
+    assert_eq!(
+        first["selected"]["inTotal"],
+        json!(53 * 2),
+        "{}",
+        first["selected"]
+    );
 }
 
 /// A tick after the fight closed opens nothing, but it is still damage you took in this zone: the
