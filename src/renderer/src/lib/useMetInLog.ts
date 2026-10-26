@@ -17,15 +17,17 @@
 //           every zone ever entered beyond that.
 //
 // MOUNTED ONCE, at the main window's root (`App.tsx` renders `MetInLogFeed`). It is a component that
-// renders nothing, so the module updates it rides re-render it alone and never the whole app. The
-// name arrays are memoized per source and `setMet` itself returns early on an unchanged set, so a
-// snapshot that moved for another reason (a con's enrichment landing) costs one comparison.
+// renders nothing, so the module updates it rides re-render it alone and never the whole app. Each
+// kind re-folds only when a source it reads moved (`createMetFeed`): `progression` moves about once
+// a second while lines arrive, and only its zone timeline is evidence, so that is compared by content
+// and a timestamp-only push folds nothing (the 2026-10-26 re-measure: ~11 ms a second on every tab).
+// `setMet` still returns early on an unchanged set.
 //
 // RE-RENDERING THE VIEWS. An era verdict now depends on this evidence, and the evidence is module
 // state React cannot see. `useMetVersion()` is the subscription: an era-dependent view reads it and
 // puts it in the memo deps over a verdict, and the era chips read it so they redraw themselves.
 
-import { useEffect, useMemo, useSyncExternalStore } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 import type { ConsiderSnap, KillsSnap, LootSnap, ProgressionSnap } from '@shared/types'
 // RELATIVE value import (the mobSearch house law): the era join reaches this under the node runner.
 import { metVersion, setMet } from '../../../shared/metInLog'
@@ -71,24 +73,58 @@ export function metZoneNames(
   return zones
 }
 
+/** The served snapshots the evidence is built from. */
+export interface MetSources {
+  kills: KillsSnap | null
+  loot: LootSnap | null
+  consider: ConsiderSnap | null
+  progression: ProgressionSnap | null
+}
+
+/** The same names in the same order? Compared from the newest end, so an appended zone answers first. */
+export function sameNames(a: readonly string[], b: readonly string[]): boolean {
+  if (a.length !== b.length) return false
+  for (let i = a.length - 1; i >= 0; i--) if (a[i] !== b[i]) return false
+  return true
+}
+
+/**
+ * A feeder that re-folds a kind only when a source it reads moved: by identity, except the zone
+ * timeline, which is compared by content (a `progression` push is a new object every time). Each
+ * kind is a pure function of its sources, so a skipped kind would have folded to the set it holds.
+ * Returns whether the evidence moved. `set` is `setMet`; a test passes a counting one.
+ */
+export function createMetFeed(set: typeof setMet = setMet): (now: MetSources) => boolean {
+  let was: MetSources | null = null
+  let timeline: readonly string[] = []
+  return (now) => {
+    const first = was === null
+    const moved = (k: keyof MetSources): boolean => first || was?.[k] !== now[k]
+    const nextTimeline = now.progression?.zoneName ?? []
+    const timelineMoved = first || !sameNames(timeline, nextTimeline)
+    const before = metVersion()
+    if (moved('kills') || moved('loot') || moved('consider')) set('mobs', metMobNames(now.kills, now.loot, now.consider))
+    if (moved('loot')) set('items', metItemNames(now.loot))
+    if (timelineMoved || moved('loot') || moved('consider')) {
+      set('zones', metZoneNames(now.progression, now.loot, now.consider))
+    }
+    was = now
+    timeline = nextTimeline
+    return metVersion() !== before
+  }
+}
+
 /** Feed the evidence store from the served modules. Call it from ONE component (`MetInLogFeed`). */
 export function useMetInLog(): void {
   const kills = useModule<KillsSnap>('kills')
   const loot = useModule<LootSnap>('loot')
   const consider = useModule<ConsiderSnap>('consider')
   const progression = useModule<ProgressionSnap>('progression')
-
-  const mobs = useMemo(() => metMobNames(kills, loot, consider), [kills, loot, consider])
-  const items = useMemo(() => metItemNames(loot), [loot])
-  const zones = useMemo(() => metZoneNames(progression, loot, consider), [progression, loot, consider])
+  const [feed] = useState(() => createMetFeed())
 
   useEffect(() => {
-    const before = metVersion()
-    setMet('mobs', mobs)
-    setMet('items', items)
-    setMet('zones', zones)
-    if (metVersion() !== before) for (const l of [...listeners]) l()
-  }, [mobs, items, zones])
+    if (feed({ kills, loot, consider, progression })) for (const l of [...listeners]) l()
+  }, [feed, kills, loot, consider, progression])
 }
 
 /** The root's mount point for the feed: renders nothing, so its updates re-render nothing else. */
