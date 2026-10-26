@@ -4,7 +4,8 @@
 // The Combat tab, Overview and each meter overlay used to ask once a second for as long as they
 // were mounted, plus once per `combat:activity` ping: 60 IPC calls and 60 engine snapshot builds a
 // minute per surface with the game closed, behind EverQuest, or with the window minimized. Two
-// gates now sit on that, and neither touches the cadence while a fight is on:
+// gates now sit on that, and neither touches the 1 s cadence while a fight is on; a third keeps
+// the ping from asking above it:
 //
 //   1. VISIBILITY. A hidden window (minimized or hidden; Electron documents a fully covered window as
 //      `hidden` on macOS only, so on Windows a window behind EverQuest is not counted on to be) asks
@@ -16,8 +17,14 @@
 //      snapshot first observes the deadline, `combat/mod.rs snapshot`), the pet nudge's display
 //      timer, and the hydrating -> live handover. `timeDriven` is that list. While the last answer
 //      has none of it and no ping came for `WARM_MS`, nothing on screen can move except the
-//      minute-grained "3m ago" labels, so the fallback relaxes to `IDLE_POLL_MS`. A ping (any
-//      module cursor moving in main, throttled to 4 Hz there) asks at once, as before.
+//      minute-grained "3m ago" labels, so the fallback relaxes to `IDLE_POLL_MS`.
+//   3. ONE READ A SECOND (second pass, item 1). The ping (any module cursor moving in main,
+//      throttled to 4 Hz there) used to ask on every beat, ~3.8 reads a second per window in a
+//      fight, each re-rendering the meters. A ping now only pulls the next read forward to one
+//      `ACTIVE_POLL_MS` after the last: at once when the last is older than that (waking from
+//      idle reads as quickly as before), otherwise on the trailing edge, so the read after the
+//      fight's last line always starts after its ping and the meters end on the final numbers.
+//      In a fight that is the 1 s cadence alone: one read per window per second.
 //
 // Sharing identical reads is main's job and already done there: `readShim.serveShared` joins an
 // identical `combat.snapshot` in flight, which is the fight + heal-fight overlays answering one
@@ -52,8 +59,8 @@ export interface PollEnv {
   hidden: () => boolean
   /** Calls `cb` each time the window becomes visible; returns the unsubscribe. */
   onVisible: (cb: () => void) => () => void
-  /** Calls `cb` every `ms`; returns the stop. */
-  every: (ms: number, cb: () => void) => () => void
+  /** Calls `cb` once after `ms`; returns the cancel. */
+  after: (ms: number, cb: () => void) => () => void
 }
 
 /** The real window's environment. */
@@ -68,15 +75,15 @@ export function browserEnv(): PollEnv {
       document.addEventListener('visibilitychange', listener)
       return () => document.removeEventListener('visibilitychange', listener)
     },
-    every: (ms, cb) => {
-      const iv = setInterval(cb, ms)
-      return () => clearInterval(iv)
+    after: (ms, cb) => {
+      const t = setTimeout(cb, ms)
+      return () => clearTimeout(t)
     }
   }
 }
 
 /**
- * Poll `fetch` under the two gates and hand each answer to `accept`. One request in flight at a
+ * Poll `fetch` under the three gates and hand each answer to `accept`. One request in flight at a
  * time (`coalesced`). `onActivity` subscribes to the `combat:activity` ping. Returns the stop.
  */
 export function pollCombat(
@@ -86,33 +93,33 @@ export function pollCombat(
   env: PollEnv = browserEnv()
 ): () => void {
   let lastPing = env.now()
-  let lastAsk = 0
+  let lastAsk = Number.NEGATIVE_INFINITY
   // Until the first answer says otherwise, assume time matters: the first second polls as before.
   let warm = true
+  let cancel = (): void => undefined
   const run = coalesced(async (): Promise<void> => {
     lastAsk = env.now()
     const s = await fetch()
     warm = timeDriven(s)
     accept(s)
   })
-  const ask = (): void => {
-    if (!env.hidden()) run()
+  const gap = (): number => (warm || env.now() - lastPing < WARM_MS ? ACTIVE_POLL_MS : IDLE_POLL_MS)
+  // The one timer: read when the gap since the last read is up, else wait out the rest of it.
+  const tick = (): void => {
+    cancel()
+    const wait = lastAsk + gap() - env.now()
+    if (wait <= 0 && !env.hidden()) run()
+    cancel = env.after(wait > 0 ? wait : gap(), tick)
   }
   const offPing = onActivity(() => {
     lastPing = env.now()
-    ask()
-  })
-  const stopTimer = env.every(ACTIVE_POLL_MS, () => {
-    const now = env.now()
-    const idle = !warm && now - lastPing >= WARM_MS
-    if (idle && now - lastAsk < IDLE_POLL_MS) return
-    ask()
+    tick()
   })
   const offVisible = env.onVisible(run)
-  ask()
+  tick()
   return () => {
     offPing()
-    stopTimer()
+    cancel()
     offVisible()
   }
 }

@@ -1,6 +1,7 @@
-// The meter surfaces' combat poll (combatPoll.ts, performance review finding 4): in a fight it asks
-// exactly as often as before; idle it relaxes; hidden it asks nothing and catches up on show.
-// The counts below are the review's "IPC calls per minute" measurement, made on a fake clock.
+// The meter surfaces' combat poll (combatPoll.ts, performance review finding 4 and second pass
+// item 1): in a fight it reads once a second, pings included; idle it relaxes; hidden it asks
+// nothing and catches up on show. The counts below are the review's "IPC calls per minute"
+// measurement, made on a fake clock.
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import type { CombatSnapshot } from '../src/shared/combat'
@@ -16,40 +17,56 @@ import {
 const settled = { hydrating: false, inCombat: false, segments: [{ kind: 'fight' }] } as unknown as CombatSnapshot
 const fighting = { hydrating: false, inCombat: true, segments: [{ kind: 'current' }] } as unknown as CombatSnapshot
 
-/** A window on a fake clock: `advance` fires the 1 s timer as often as the time passed allows. */
-function fakeWindow(answer: () => CombatSnapshot) {
+/** A window on a fake clock: `advance` fires each timer at its time; `fetchMs` is a read's round trip. */
+function fakeWindow(answer: () => CombatSnapshot, fetchMs = 0) {
   let t = 0
   let hidden = false
-  let timer: (() => void) | null = null
+  let timers: { at: number; cb: () => void }[] = []
   let visible: (() => void) | null = null
   let ping: (() => void) | null = null
   let asks = 0
+  const later = (ms: number, cb: () => void): (() => void) => {
+    const timer = { at: t + ms, cb }
+    timers.push(timer)
+    return () => (timers = timers.filter((x) => x !== timer))
+  }
   const env: PollEnv = {
     now: () => t,
     hidden: () => hidden,
     onVisible: (cb) => ((visible = cb), () => (visible = null)),
-    every: (_ms, cb) => ((timer = cb), () => (timer = null))
+    after: later
   }
   const settle = (): Promise<void> => new Promise((r) => setImmediate(r))
   const stop = pollCombat(
     async () => {
       asks++
-      return answer()
+      // What was asked for is what the log said when the read started.
+      const s = answer()
+      if (fetchMs > 0) await new Promise<void>((r) => later(fetchMs, r))
+      return s
     },
-    () => undefined,
+    (s) => answers.push(s),
     (cb) => ((ping = cb), () => (ping = null)),
     env
   )
+  const answers: CombatSnapshot[] = []
+  const advance = async (ms: number): Promise<void> => {
+    const end = t + ms
+    for (;;) {
+      const next = timers.reduce<{ at: number; cb: () => void } | null>((a, x) => (a && a.at <= x.at ? a : x), null)
+      if (!next || next.at > end) break
+      timers = timers.filter((x) => x !== next)
+      t = next.at
+      next.cb()
+      await settle()
+    }
+    t = end
+  }
   return {
     asks: () => asks,
+    answers,
     stop,
-    async advance(ms: number): Promise<void> {
-      for (let i = 0; i < ms / ACTIVE_POLL_MS; i++) {
-        t += ACTIVE_POLL_MS
-        timer?.()
-        await settle()
-      }
-    },
+    advance,
     async ping(): Promise<void> {
       ping?.()
       await settle()
@@ -75,6 +92,46 @@ test('in a fight the cadence is unchanged: once on mount and once a second (60 a
   const before = w.asks()
   await w.advance(60_000)
   assert.equal(w.asks() - before, 60)
+  w.stop()
+})
+
+test('in a fight the 4 Hz activity ping adds no reads: one a second per window (it was five)', async () => {
+  const w = fakeWindow(() => fighting, 30)
+  await w.advance(1000)
+  const before = w.asks()
+  for (let i = 0; i < 240; i++) {
+    await w.advance(250)
+    await w.ping()
+  }
+  assert.equal(w.asks() - before, 60)
+  w.stop()
+})
+
+test('a burst of pings reads at once, then once on the trailing edge with the last numbers', async () => {
+  let line = 0
+  const w = fakeWindow(() => ({ ...settled, line }) as unknown as CombatSnapshot)
+  await w.advance(WARM_MS + 20_000) // idle: the next fallback read is up to 10 s away
+  const before = w.asks()
+  for (let i = 0; i < 4; i++) {
+    line++
+    await w.ping()
+    await w.advance(200)
+  }
+  assert.equal(w.asks(), before + 1, 'the first ping reads at once, the rest wait')
+  await w.advance(200)
+  assert.equal(w.asks(), before + 2, 'one trailing read, a second after the first')
+  assert.equal((w.answers.at(-1) as unknown as { line: number }).line, 4, 'and it carries the last line')
+  w.stop()
+})
+
+test('a ping while a read is in flight is followed by a read that starts after it', async () => {
+  let line = 0
+  const w = fakeWindow(() => ({ ...fighting, line }) as unknown as CombatSnapshot, 400)
+  await w.advance(1200) // the 1 s read is in flight until 1.4 s
+  line++
+  await w.ping()
+  await w.advance(1200)
+  assert.equal((w.answers.at(-1) as unknown as { line: number }).line, 1, 'the meters end on the final numbers')
   w.stop()
 })
 

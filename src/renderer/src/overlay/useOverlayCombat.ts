@@ -38,7 +38,7 @@ export function useOverlayCombat(selectedId: string | undefined): CombatSnapshot
       if (alive) setSnap(v.snap)
     })
     // maxSegments modest: the overlay's selector lists recent fights, but the payload stays small.
-    // Hidden or idle, it asks less (combatPoll.ts); in a fight, exactly as often as before.
+    // Hidden or idle, it asks less (combatPoll.ts); in a fight, once a second, pings included.
     const stop = pollCombat(
       () => window.eqOverlay.getCombatSnapshot({ selectedId, maxSegments: 30 }),
       accept,
