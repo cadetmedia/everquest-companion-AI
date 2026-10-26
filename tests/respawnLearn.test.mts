@@ -85,6 +85,15 @@ test('A RESPAWNS ROW FOR A PAGE THAT STATES NONE OR DISAGREES; NONE FOR ONE THAT
   assert.equal(wikiPageText(rows[0], [], {}), '| respawn_time      = 4:55\n')
 })
 
+test('A PAGE WHOSE RESPAWN IS NOT A DURATION IS ITS OWN STATEMENT: NO ROW; A PLACEHOLDER STATES NOTHING: A ROW', () => {
+  const said = (text: string): string[] => respawnGaps([evidence('Xicotl', XICOTL, { text })], CATALOG).map((r) => r.respawn?.pageSays ?? '')
+  // respawns.json rows with no seconds, verbatim.
+  for (const text of ['Kaesora: 18:00, Temple of Droga: 20:30', 'Triggered', '[[Triggered]]', '6-8 hours', 'Never respawns, only appears in raid instances']) {
+    assert.deepEqual(said(text), [], text)
+  }
+  for (const text of ['?', '??', 'Unknown', '']) assert.deepEqual(said(text), [text], `"${text}"`)
+})
+
 test("A NEW MOB PAGE TAKES THE RESPAWN ITS KILLS AGREE ON IN ITS BLANK FIELD", () => {
   const row: GapRow = { domain: 'mob', name: 'Princess Cherista', kinds: ['killed'], count: 50, first: '', last: '', details: { samples: [] } }
   const withIt = withLearnedRespawn(row, [evidence('Princess Cherista', LASNA)])
