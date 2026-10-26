@@ -139,7 +139,58 @@ function carryZone(newer: RespawnSnap, zone: string): RespawnSnap {
 export function mergeRespawn(older: unknown, newer: unknown): RespawnSnap | null {
   if (!isRespawnSnap(older) || !isRespawnSnap(newer) || older.v !== newer.v) return null
   const live = carryZone(newer, older.zone)
-  return { ...live, rows: mergeRows(older, live), recent: mergeRecent(older, live) }
+  const learned = mergeLearned(learnedOf(older), learnedOf(newer), older.zone)
+  return { ...live, rows: mergeRows(older, live), recent: mergeRecent(older, live), ...(learned === null ? {} : { learned }) }
+}
+
+/**
+ * THE LEARNED EVIDENCE (respawn-first-sight, owner 2026-10-25): each mob's same-stay gaps, read for
+ * the wiki respawn time. Read here by shape, so an archive older than the field, or an engine without
+ * it, simply has none.
+ */
+interface Learned {
+  id: string
+  key: string
+  display: string
+  zone: string
+  gapsMs: number[]
+}
+
+/** The engine's own cap on gaps per mob. */
+const LEARNED_GAPS = 50
+
+function learnedOf(snap: RespawnSnap): Learned[] | null {
+  const raw = (snap as unknown as { learned?: unknown }).learned
+  if (!Array.isArray(raw)) return null
+  return raw.filter(
+    (l): l is Learned =>
+      l !== null &&
+      typeof l === 'object' &&
+      typeof (l as Learned).key === 'string' &&
+      typeof (l as Learned).zone === 'string' &&
+      Array.isArray((l as Learned).gapsMs)
+  )
+}
+
+/**
+ * Both sides' evidence joined per mob and zone: the newer side's gaps first (each list is newest
+ * first), capped as the engine caps them. What the newer side filed under zone '' (before its first
+ * zone line) is the zone the older side ended in, as for the rows. Null when neither side has any.
+ */
+function mergeLearned(older: Learned[] | null, newer: Learned[] | null, olderZone: string): Learned[] | null {
+  if (older === null && newer === null) return null
+  const out = new Map<string, Learned>()
+  for (const l of newer ?? []) {
+    const zone = l.zone === '' ? olderZone : l.zone
+    const id = `${respawnZoneKey(zone)}::${l.key}`
+    const prev = out.get(id)
+    out.set(id, prev === undefined ? { ...l, zone, id } : { ...prev, gapsMs: [...prev.gapsMs, ...l.gapsMs].slice(0, LEARNED_GAPS) })
+  }
+  for (const l of older ?? []) {
+    const prev = out.get(l.id)
+    out.set(l.id, prev === undefined ? l : { ...prev, gapsMs: [...prev.gapsMs, ...l.gapsMs].slice(0, LEARNED_GAPS) })
+  }
+  return [...out.values()]
 }
 
 /**

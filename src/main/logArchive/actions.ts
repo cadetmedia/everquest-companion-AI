@@ -42,6 +42,8 @@ let busy: string | null = null
 let archivedThisRun = false
 /** The captured modules the running engine serves, learned once it has caught up; null before. */
 let engineModules: ReadonlySet<string> | null = null
+/** The engine's respawn snapshot carries `learned` (see `lacksLearned`). */
+let engineLearnsRespawn = false
 
 function attached(): { character: string; logPath: string } | null {
   const c = getActiveCharacter()
@@ -142,6 +144,7 @@ function row(s: Segment): SegmentRow {
 function lacksModules(s: Segment): boolean {
   if (engineModules === null) return false
   if (lacksExtras(s)) return true
+  if (engineLearnsRespawn && lacksLearned(s)) return true
   return [...engineModules].some((m) => !Object.prototype.hasOwnProperty.call(s.modules, m))
 }
 
@@ -157,10 +160,23 @@ function lacksExtras(s: Segment): boolean {
   return s.fights === undefined || s.respawnHistory === undefined || !ledger
 }
 
+/**
+ * The segment's respawn state has no learned evidence (respawn-first-sight, owner 2026-10-25: the
+ * wiki respawn time from every kill, archived months included). One refresh by an engine that
+ * publishes it adds the field, even empty, so this asks once and never loops.
+ */
+function lacksLearned(s: Segment): boolean {
+  if (!Object.prototype.hasOwnProperty.call(s.modules, 'respawn')) return false
+  const state = s.modules.respawn.state as { learned?: unknown } | null
+  return state === null || typeof state !== 'object' || !Array.isArray(state.learned)
+}
+
 /** Ask the engine which captured modules it serves. Once per run, after it has caught up. */
 export async function learnEngineModules(): Promise<void> {
-  const served = await Promise.all(CAPTURED_MODULES.map(async (m) => ((await captureDeps.snapshot(m)) !== null ? m : null)))
-  engineModules = new Set(served.filter((m): m is string => m !== null))
+  const snaps = await Promise.all(CAPTURED_MODULES.map(async (m) => [m, await captureDeps.snapshot(m)] as const))
+  engineModules = new Set(snaps.filter(([, snap]) => snap !== null).map(([m]) => m))
+  const respawn = snaps.find(([m]) => m === 'respawn')?.[1]?.state as { learned?: unknown } | undefined
+  engineLearnsRespawn = Array.isArray(respawn?.learned)
 }
 
 /**
