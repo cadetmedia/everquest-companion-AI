@@ -110,7 +110,7 @@ export function useCombat(
     const accept = createFeed(world, (v) => {
       if (alive) setView(v)
     })
-    // The ping, the 1 s fallback, and the visibility and idle gates on both (combatPoll.ts).
+    // The ping, the 1 s fallback, and the visibility, idle and once-a-second gates (combatPoll.ts).
     const stop = pollCombat(
       () =>
         // The engine-side pet fold is GONE (not "off"): pet presentation is the renderer's nesting
