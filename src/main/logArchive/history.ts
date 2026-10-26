@@ -99,6 +99,12 @@ export interface HistoryMerge {
   archivedFights: () => SegmentSummary[]
   status: () => HistoryStatus | null
   noteSealedThisAttach: (id: string) => void
+  /**
+   * The engine is about to fold a log from byte zero. Returns the call to make once that attach is
+   * accepted: an archive sealed before now had its lines moved out first, so the new fold cannot
+   * hold them and the archive may be shown again.
+   */
+  engineAttaching: () => () => void
   forgetHistoryContext: () => void
 }
 
@@ -223,6 +229,14 @@ export function createHistoryMerge(deps: HistoryDeps): HistoryMerge {
       sealedThisAttach.add(id)
       ctx = null
       cache.clear()
+    },
+    engineAttaching: () => {
+      const before = [...sealedThisAttach]
+      return () => {
+        for (const id of before) sealedThisAttach.delete(id)
+        ctx = null
+        cache.clear()
+      }
     },
     forgetHistoryContext: () => {
       ctx = null
