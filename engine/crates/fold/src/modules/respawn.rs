@@ -34,10 +34,12 @@
 
 use crate::event::Event;
 use crate::jsmap::JsMap;
+use crate::modules::respawn_learned::{LearnedStore, WikiSays};
 use crate::modules::respawn_seen::seen_names_of;
+use crate::modules::respawn_wiki::{resolve_respawn, wiki};
 use crate::EqModule;
 use eqlog::names::id_key;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use serde_json::{json, Value};
 
 /// `shared/respawn.ts RESPAWN_SHAPE_VERSION`.
@@ -55,64 +57,6 @@ const RESPAWN_MAX_RECENT: usize = 40;
 const RESPAWN_MAX_GAPS: usize = 6;
 /// Beyond this a sighting has gone stale and a clock has stopped meaning anything.
 const RESPAWN_LINGER_MS: i64 = 30 * 60 * 1000;
-/// THE LEARNED EVIDENCE (owner, 2026-10-25: the wiki's respawn time from the player's own kills).
-/// Every qualifying gap per mob is kept, newest this many, because the respawn is a constant and
-/// the wiki number is the value most of them agree on (gaps-tab reads it). Bounded twice so a long
-/// log costs a fixed amount: gaps per mob, and mobs (`MAX_LEARNED_STORE`, which bounds what is
-/// published too). Measured on the owner's October log (105 MB, 2026-10-25): 314 mobs published,
-/// 3,026 gaps, 72 KB of snapshot, and the whole fold no slower (28 s against 30 s before).
-const RESPAWN_MAX_LEARNED_GAPS: usize = 50;
-/// A mob is published as evidence from this many qualifying gaps: the fewest the owner's rule
-/// offers a respawn time from.
-const RESPAWN_MIN_LEARNED: usize = 3;
-/// Mobs the learned store remembers, apart from the 800-mob history: one with a single gap counts
-/// toward it too, since its third may come. At 50 gaps each, a few hundred KB at the very worst.
-const MAX_LEARNED_STORE: usize = 1_000;
-
-/// One mob's learned gaps, kept apart from its history (see `MAX_LEARNED_STORE`).
-#[derive(Debug, Clone)]
-struct LearnedGaps {
-    key: String,
-    display: String,
-    zone: String,
-    /// The death that ended its last gap, for the published order.
-    last_ts: i64,
-    /// Oldest first, capped at `RESPAWN_MAX_LEARNED_GAPS`.
-    gaps: Vec<i64>,
-}
-
-/// One row of `data/respawns.json`. `seconds` is absent on roughly a fifth of the rows: the grammar
-/// is a whitelist, so anything it cannot fully consume ("Triggered", "6-8 hours", "?") keeps its
-/// verbatim text and states no number. A half-read duration would put a fabricated number on a
-/// countdown.
-#[derive(Debug, Clone, Deserialize)]
-struct WikiRespawn {
-    key: String,
-    page: String,
-    text: String,
-    #[serde(default)]
-    seconds: Option<i64>,
-}
-
-#[derive(Deserialize)]
-struct WikiRespawnData {
-    rows: Vec<WikiRespawn>,
-}
-
-/// Read straight out of `src/main/data/`: exactly one copy of the committed floor, so a re-scrape
-/// reaches both readers at once.
-const RESPAWNS_JSON: &str = include_str!("../../../../../src/main/data/respawns.json");
-
-fn wiki() -> &'static std::collections::HashMap<String, WikiRespawn> {
-    static WIKI: std::sync::OnceLock<std::collections::HashMap<String, WikiRespawn>> =
-        std::sync::OnceLock::new();
-    WIKI.get_or_init(|| {
-        let data: WikiRespawnData =
-            serde_json::from_str(RESPAWNS_JSON).expect("respawns.json is not readable");
-        data.rows.into_iter().map(|r| (r.key.clone(), r)).collect()
-    })
-}
-
 /// One live respawn clock. Every optional field is absent rather than null when the fold has
 /// nothing to say — the published shape came through `JSON.stringify`.
 #[derive(Debug, Clone, Serialize)]
@@ -179,28 +123,6 @@ struct RespawnCandidate {
     wiki_text: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     wiki_ms: Option<i64>,
-}
-
-/// One mob's qualifying gaps, published whether or not it is watched: the evidence for the wiki's
-/// respawn time (see `RESPAWN_MAX_LEARNED_GAPS`). Every gap is an upper bound on the respawn; the
-/// reader looks for the value most of them agree on.
-#[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct RespawnLearned {
-    id: String,
-    key: String,
-    display: String,
-    zone: String,
-    /// Newest first.
-    gaps_ms: Vec<i64>,
-    /// What the wiki's own page states, as the rows carry it: the verbatim text, its seconds when it
-    /// is a duration, and the page. Absent when the committed floor has no row for the mob.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    wiki_text: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    wiki_ms: Option<i64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    wiki_page: Option<String>,
 }
 
 /// One mob the user has chosen to watch, and the number they chose for it.
@@ -334,38 +256,6 @@ fn base_of(h: &MobHistory) -> i64 {
     }
 }
 
-/// `resolveRespawn` — the estimate ladder. Rung 2 is FLOORED by rung 3 rather than averaged with it
-/// (the smallest gap you measured is an upper bound, so the wiki lifting it is a correction); rung
-/// 1 is never floored, because the user is looking at the spawn and the wiki describes another
-/// server.
-fn resolve_respawn(
-    custom_ms: Option<i64>,
-    observed_ms: Option<i64>,
-    samples: i64,
-    wiki_ms: Option<i64>,
-) -> (Option<i64>, &'static str) {
-    if let Some(c) = custom_ms {
-        if c > 0 {
-            return (Some(c), "custom");
-        }
-    }
-    if let Some(o) = observed_ms {
-        if o > 0 && samples > 0 {
-            let floored = match wiki_ms {
-                Some(w) => o.max(w),
-                None => o,
-            };
-            return (Some(floored), "observed");
-        }
-    }
-    if let Some(w) = wiki_ms {
-        if w > 0 {
-            return (Some(w), "wiki");
-        }
-    }
-    (None, "none")
-}
-
 /// `main/log/reducers.ts isCountedKill` — self-slain always counts; slain-by counts only when the
 /// killer isn't you. `kills.rs` carries the same port privately.
 fn is_counted_kill(ev: &Event) -> bool {
@@ -399,8 +289,8 @@ pub struct RespawnModule {
     /// is checked against for an unwatched mob, so the learned evidence costs one set lookup per
     /// named line rather than a history walk. Cleared by a zone line, an epoch and a reset.
     awaiting: std::collections::HashSet<String>,
-    /// The learned evidence, by row id, in order of last learning (see `learn`).
-    learned: JsMap<LearnedGaps>,
+    /// The learned evidence (`respawn_learned.rs`): every mob's gaps, apart from the history.
+    learned: LearnedStore,
 }
 
 impl RespawnModule {
@@ -415,7 +305,7 @@ impl RespawnModule {
             now_ms: construction_now_ms,
             watch_index: std::collections::HashMap::new(),
             awaiting: std::collections::HashSet::new(),
-            learned: JsMap::new(),
+            learned: LearnedStore::default(),
         };
         m.reindex_watches();
         m
@@ -515,40 +405,6 @@ impl RespawnModule {
         true
     }
 
-    /// One qualifying gap into the learned store: the entry re-inserted so the store's order is the
-    /// order of last learning, its gaps capped (oldest dropped), the store capped (least recently
-    /// learned dropped). Its own store and its own cap, so a mob camped last week keeps what it
-    /// taught while the 800-mob history turns over with every trash pull since.
-    fn learn(&mut self, id: &str, h: &MobHistory, gap: i64) {
-        let mut entry = match self.learned.get(id) {
-            Some(prior) => {
-                let e = prior.clone();
-                self.learned.remove(id);
-                e
-            }
-            None => LearnedGaps {
-                key: h.key.clone(),
-                display: h.display.clone(),
-                zone: h.zone.clone(),
-                last_ts: 0,
-                gaps: Vec::new(),
-            },
-        };
-        entry.display = h.display.clone();
-        entry.last_ts = h.last_ts;
-        entry.gaps.push(gap);
-        if entry.gaps.len() > RESPAWN_MAX_LEARNED_GAPS {
-            entry.gaps.remove(0);
-        }
-        self.learned.insert(id.to_string(), entry);
-        while self.learned.len() > MAX_LEARNED_STORE {
-            let Some(oldest) = self.learned.keys().next().map(str::to_string) else {
-                break;
-            };
-            self.learned.remove(&oldest);
-        }
-    }
-
     /// An unwatched mob's first sign of life after its death, a minute or more on: where its next gap
     /// ends. Earlier lines are the same pull and leave it awaiting.
     fn first_sign(&mut self, key: &str, ts: i64) {
@@ -612,7 +468,8 @@ impl RespawnModule {
         h.kills += 1;
         h.display = display.to_string();
         if let Some(gap) = learned_gap {
-            self.learn(&id, &h, gap);
+            self.learned
+                .record(&id, (&h.key, &h.display, &h.zone), h.last_ts, gap);
         }
         self.history.insert(id, h);
         // Its next gap ends at its first sign of life, which only a line in this stay can give.
@@ -748,36 +605,13 @@ impl RespawnModule {
             "rows": rows,
             "recent": recent,
             "prefs": self.prefs,
-            "learned": self.learned(),
+            // Every mob's gaps, watched or not, with what its wiki page says (respawn_learned.rs).
+            "learned": self.learned.published(|key| wiki().get(key).map(|w| WikiSays {
+                text: w.text.clone(),
+                ms: w.seconds.map(|s| s * 1000),
+                page: w.page.clone(),
+            })),
         })
-    }
-
-    /// The learned evidence: every mob with enough qualifying gaps, most recently killed first,
-    /// watched or not. Bounded by the store (`MAX_LEARNED_STORE`), so a push costs a fixed amount
-    /// however long the log.
-    fn learned(&self) -> Vec<RespawnLearned> {
-        let mut entries: Vec<(&str, &LearnedGaps)> = self
-            .learned
-            .iter()
-            .filter(|(_, e)| e.gaps.len() >= RESPAWN_MIN_LEARNED)
-            .collect();
-        entries.sort_by_key(|(_, e)| std::cmp::Reverse(e.last_ts));
-        entries
-            .into_iter()
-            .map(|(id, e)| {
-                let wiki_row = wiki().get(&e.key);
-                RespawnLearned {
-                    id: id.to_string(),
-                    key: e.key.clone(),
-                    display: e.display.clone(),
-                    zone: e.zone.clone(),
-                    gaps_ms: e.gaps.iter().rev().copied().collect(),
-                    wiki_text: wiki_row.map(|w| w.text.clone()),
-                    wiki_ms: wiki_row.and_then(|w| w.seconds).map(|s| s * 1000),
-                    wiki_page: wiki_row.map(|w| w.page.clone()),
-                }
-            })
-            .collect()
     }
 
     /// The watch-row pull seam — the rows the Timers surface draws, in the order it draws them,

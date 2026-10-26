@@ -49,9 +49,11 @@ pub mod output_files;
 pub mod progression;
 pub mod resist;
 pub mod respawn;
+pub mod respawn_learned;
 pub mod respawn_seen;
 #[cfg(test)]
 mod respawn_tests;
+pub mod respawn_wiki;
 pub mod roster;
 pub mod spell_sets;
 pub mod turnins;
