@@ -312,7 +312,7 @@ export function spellPageValues(c: ClientSpellFacts | undefined, shot: SpellPage
   const out: Record<string, string> = { ...shot?.fields }
   const description = fileDescription(c?.description) ?? shot?.description
   if (description !== undefined) out.description = description
-  if (c === undefined) return out
+  if (c === undefined) return templateSafe(out)
   const files: Record<string, string | number | undefined> = {
     spellicon: c.icon,
     mana: c.mana,
@@ -325,7 +325,16 @@ export function spellPageValues(c: ClientSpellFacts | undefined, shot: SpellPage
     msg_wears_off: c.msgWearsOff
   }
   for (const [k, v] of Object.entries(files)) if (v !== undefined && v !== '') out[k] = String(v)
-  return out
+  return templateSafe(out)
+}
+
+/**
+ * Values as template parameters: a `|` outside a link or a template (OCR's scrollbar, a misread
+ * letter) would end the field and split the template, so it is written `{{!}}`.
+ */
+function templateSafe(values: Record<string, string>): Record<string, string> {
+  const safe = (v: string): string => v.replace(/\[\[[^\]]*\]\]|\{\{[^}]*\}\}|\|/g, (m) => (m === '|' ? '{{!}}' : m))
+  return Object.fromEntries(Object.entries(values).map(([k, v]) => [k, safe(v)]))
 }
 
 /** The Spell Page Blueprint's order around `classes`. */
