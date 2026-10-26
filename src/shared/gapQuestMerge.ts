@@ -274,7 +274,7 @@ function mergeReward(doc: Doc, log: QuestLog): void {
 
 // ---- hand-ins --------------------------------------------------------------------------------
 
-const HAND_LINE = /^\s*:?\s*(?:'''\s*)?(?:hand|give|turn in)\b/i
+const HAND_LINE = /^\s*[:*#]*\s*(?:'''\s*)?(?:hand|give|turn in)\b/i
 const LINKS = /\[\[([^\]|]+)(?:\|[^\]]*)?\]\]/g
 const ARTICLE = /^(?:a|an|the) /
 
@@ -380,15 +380,46 @@ function walkSpan(doc: Doc): Span | undefined {
   return heads.length === 0 ? undefined : { heading: heads[0], end: sectionEnd(doc, heads[heads.length - 1]) }
 }
 
+/** The faction a block's line names: `... standing with [[X]] has been adjusted by 200.` is X. */
+const factionOfKey = (key: string): string => plainWords(/with \[\[(.+?)\]\]/.exec(key)?.[1] ?? key)
+
+const FACBLOCK_OPEN = /<div[^>]*facblock/i
+const FACTION_LINE = /\bfaction (?:standing )?with\b/i
+
+/** Whether a line lists factions: inside a facblock, or saying `faction standing with`. */
+function factionLines(doc: Doc): boolean[] {
+  let inBlock = false
+  return doc.lines.map((l) => {
+    if (FACBLOCK_OPEN.test(l)) inBlock = true
+    const listed = inBlock || FACTION_LINE.test(l)
+    if (/<\/div>/i.test(l)) inBlock = false
+    return listed
+  })
+}
+
 /** The page line that states a block inside the walkthrough at or after `from`, or -1. */
 function lineOf(doc: Doc, b: WalkBlock, from: number, walk: Span): number {
   if (b.kind === 'give') return handLineOf(doc, b.keys[0], from, walk.end)
-  const words = blockWords(b)
+  const words = b.kind === 'faction' ? b.keys.map(factionOfKey) : blockWords(b)
+  const listed = factionLines(doc)
   for (let i = from; i < walk.end; i++) {
     const l = ` ${plainWords(doc.lines[i])} `
+    if (b.kind === 'faction' && !listed[i]) continue
     if (b.kind === 'experience' ? /yougainexperience/i.test(doc.lines[i]) : words.some((w) => w !== '' && holds(l, w))) return i
   }
   return -1
+}
+
+/**
+ * What of a block the page lacks: the block, nothing, or a facblock of only the factions the page
+ * lists nowhere (the game's "got better." or another number names the same hit; a number is a note).
+ */
+function unstated(doc: Doc, b: WalkBlock, walk: Span): WalkBlock | undefined {
+  if (b.kind !== 'faction') return stated(doc, b, walk) ? undefined : b
+  const listed = factionLines(doc)
+  const words = ` ${plainWords(doc.lines.filter((_, i) => listed[i]).join('\n'))} `
+  const keys = b.keys.filter((k) => !holds(words, factionOfKey(k)))
+  return keys.length === 0 ? undefined : { ...b, keys, lines: ['<div class="facblock">', ...keys, '</div>'] }
 }
 
 /** Whether the page already states the block: a hand-in by its item, the rest by their words. */
@@ -435,7 +466,7 @@ function mergeWalkthrough(doc: Doc, name: string, log: QuestLog, c: QuestPageCon
   if (first === undefined) {
     // No walkthrough heading: only what the page says nowhere, under a new one.
     const whole = { heading: -1, end: doc.lines.length }
-    const lines = walkLines(blocks.filter((b) => b.kind !== 'task' && !stated(doc, b, whole)))
+    const lines = walkLines(blocks.flatMap((b) => (b.kind === 'task' ? [] : (unstated(doc, b, whole) ?? []))))
     if (lines.length === 0) return
     const n = lines.filter((l) => l !== '').length
     doc.insert(firstCategory(doc), [headingLine(doc, 'Walkthrough'), '', ...lines])
@@ -446,14 +477,15 @@ function mergeWalkthrough(doc: Doc, name: string, log: QuestLog, c: QuestPageCon
   let count = 0
   for (const b of blocks) {
     const walk = walkSpan(doc) ?? first
-    if (stated(doc, b, walk)) {
+    const missing = unstated(doc, b, walk)
+    if (missing === undefined) {
       const at = lineOf(doc, b, anchor + 1, walk)
       if (at >= 0) anchor = at + b.lines.length - 1
       continue
     }
     // A task line is read as an anchor, never added: almost no page writes one.
     if (b.kind === 'task') continue
-    anchor = insertBlock(doc, anchor, b)
+    anchor = insertBlock(doc, anchor, missing)
     count++
   }
   if (count > 0) doc.changes.push(`Walkthrough: ${String(count)} line${count === 1 ? '' : 's'} from your log`)

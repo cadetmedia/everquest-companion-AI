@@ -295,3 +295,41 @@ test('A PAGE WITH NO WALKTHROUGH HEADING GETS ONLY THE LINES IT DOES NOT ALREADY
   assert.equal(lines.filter((l) => l.includes('Hail, Dorian')).length, 1)
   assert.equal(lines.filter((l) => l.startsWith('Hand [[Exorbitant Commission]]')).length, 1)
 })
+
+// ---- factions the page lists already, and hand-ins written as bullets
+const facLog = (lines: [string, string][]): QuestLog => ({
+  ...hailLog,
+  steps: [{ ...hailLog.steps[0], talk: [], factions: lines.map(([faction, line]) => ({ faction, line })) }]
+})
+const NTA200: [string, string] = ['Nerius Trade Association', 'Your faction standing with Nerius Trade Association has been adjusted by 200.']
+const facPage = (fac: string[]): string => [...TOP, '== Walkthrough ==', '', 'Hand [[Exorbitant Commission]] to [[Dorian G`Wyn]]:', '', '<div class="facblock">', ...fac, '</div>', '', ...END].join('\n')
+
+test('A FACTION THE PAGE LISTS IN A FACBLOCK IS NOT LISTED AGAIN: ANOTHER NUMBER IS A NOTE, THE GAME WORDING IS THE SAME HIT', () => {
+  const hundred = mergeQuestPage(facPage(['* Your faction standing with [[Nerius Trade Association]] has been adjusted by 100.']), 'Unfortunate news', facLog([NTA200]), {})
+  assert.deepEqual(hundred.changes, [])
+  assert.ok(!hundred.text.includes('adjusted by 200'))
+  assert.deepEqual(hundred.notes, ['Nerius Trade Association: the page says 100, your log says 200.'])
+  // 627 cached pages write the game's own "got better." / "got worse." lines.
+  for (const said of ['* Your faction standing with [[Nerius Trade Association]] got better.', '*Your faction standing with Nerius Trade Association got better. (+200)']) {
+    const out = mergeQuestPage(facPage([said]), 'Unfortunate news', facLog([NTA200]), {})
+    assert.deepEqual([out.changes, out.notes], [[], []], said)
+  }
+})
+
+test('A FACTION BLOCK ADDS ONLY THE FACTIONS THE PAGE DOES NOT LIST', () => {
+  const pact: [string, string] = ['Shadowed Men', 'Your faction standing with Shadowed Men has been adjusted by -50.']
+  const out = mergeQuestPage(facPage(['* Your faction standing with [[Nerius Trade Association]] got better.']), 'Unfortunate news', facLog([NTA200, pact]), {})
+  assert.deepEqual(out.changes, ['Walkthrough: 1 line from your log'])
+  const lines = out.text.split('\n')
+  assert.ok(lines.includes('* Your faction standing with [[Shadowed Men]] has been adjusted by -50.'))
+  assert.ok(!out.text.includes('adjusted by 200'))
+  assert.equal(lines.filter((l) => l === '<div class="facblock">').length, 2)
+})
+
+test('A HAND-IN WRITTEN AS A BULLET OR A NUMBERED STEP IS A HAND-IN', () => {
+  const log: QuestLog = { ...hailLog, steps: [{ ...hailLog.steps[0], talk: [] }] }
+  for (const hand of ['* Hand [[Exorbitant Commission]] to [[Dorian G`Wyn]].', '* Turn in the [[Exorbitant Commission]] to [[Dorian G`Wyn]].', '# Give [[Exorbitant Commission]] to [[Dorian G`Wyn]]', "*'''Hand''' [[Exorbitant Commission]] to Dorian."]) {
+    const page = [...TOP, '== Walkthrough ==', '', hand, '', ...END].join('\n')
+    assert.deepEqual(mergeQuestPage(page, 'Unfortunate news', log, {}).changes, [], hand)
+  }
+})
