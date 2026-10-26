@@ -1,7 +1,8 @@
 // useExtraItemRows — the Items rows for items no log line names (shared/gapExtraItems.ts; owner,
-// 2026-10-22: Petamorph Wand: Gelatinous Cube). The held items no row names are asked of main once
-// per change of that list (main/gapUnknownItems.ts, the engine's item check restated); the captured
-// ones were checked when they were captured (CaptureBar).
+// 2026-10-22: Petamorph Wand: Gelatinous Cube). The held items no row names, and the captured ones,
+// are asked of main once per change of that list (main/gapUnknownItems.ts, the engine's item check
+// restated). A capture was checked when it was taken too (CaptureBar), but the data moves on: a
+// delta that adds its page takes the row away (owner, 2026-10-25: Jenni's Robe).
 //
 // A held item the wiki lacks is remembered once an export lists it, and stays a row after it leaves
 // the export (owner, 2026-10-22: Plea to Freeport, turned in; shared/gapHeldSeen.ts) until the data
@@ -10,7 +11,7 @@
 // to (questJournal.ts `journalTurnIn`), each shown as a guess.
 
 import { useEffect, useMemo, useState } from 'react'
-import { capturedExtras, extraItemRows, heldExtras, type ExtraGuess } from '@shared/gapExtraItems'
+import { capturedExtras, capturedStillUnknown, extraItemRows, heldExtras, type ExtraGuess } from '@shared/gapExtraItems'
 import { askedNames, heldSeenChanged, heldSightings, rememberedExtras, withHeldSeen, type ExtraViewer } from '@shared/gapHeldSeen'
 import type { HeldIndex } from '@shared/gapHeld'
 import type { GapRow } from '@shared/gaps'
@@ -22,30 +23,42 @@ import { useQuestJournals } from './itemShotsStore'
 
 const NONE: ReadonlySet<string> = new Set()
 const NO_ROWS: readonly GapRow[] = []
+/** What main last answered: the names it was asked about and the ones it found no page for. */
+interface Answer {
+  asked: ReadonlySet<string>
+  unknown: ReadonlySet<string>
+}
+const NO_ANSWER: Answer = { asked: NONE, unknown: NONE }
 
 export function useExtraItemRows(rows: readonly GapRow[] | undefined, holding: HeldIndex, viewer: ExtraViewer = { me: null, all: false }): readonly GapRow[] {
   const engineRows = rows ?? NO_ROWS
   const captured = useCapturedItems()
   const remembered = useHeldSeen()
   const journals = useQuestJournals()
-  const asked = useMemo(() => askedNames(holding, engineRows, remembered, viewer), [holding, engineRows, remembered, viewer])
-  const [unknown, setUnknown] = useState<ReadonlySet<string>>(NONE)
+  const asked = useMemo(() => {
+    const held = askedNames(holding, engineRows, remembered, viewer)
+    const names = [...(held === '' ? [] : held.split('\n')), ...captured.map((c) => c.name.trim())]
+    return [...new Set(names)].sort((a, b) => a.localeCompare(b)).join('\n')
+  }, [holding, engineRows, remembered, viewer, captured])
+  const [answer, setAnswer] = useState<Answer>(NO_ANSWER)
   useEffect(() => {
     if (asked === '') {
-      setUnknown(NONE)
+      setAnswer(NO_ANSWER)
       return undefined
     }
     let live = true
+    const names = asked.split('\n')
     window.eq
-      .gapUnknownItems(asked.split('\n'))
-      .then((names) => {
-        if (live) setUnknown(new Set(names))
+      .gapUnknownItems(names)
+      .then((found) => {
+        if (live) setAnswer({ asked: new Set(names), unknown: new Set(found) })
       })
       .catch(() => undefined)
     return () => {
       live = false
     }
   }, [asked])
+  const unknown = answer.unknown
   // What the exports show now is remembered, so it outlives the next export.
   const me = viewer.me
   useEffect(() => {
@@ -59,6 +72,7 @@ export function useExtraItemRows(rows: readonly GapRow[] | undefined, holding: H
     const firstOf = new Map(remembered.map((s) => [itemTierKey(s.name), s.first]))
     const held = heldExtras(holding, unknown).map((e) => ({ ...e, first: firstOf.get(itemTierKey(e.name)) ?? e.at }))
     const gone = rememberedExtras(remembered, holding, unknown, viewer.all ? undefined : (me ?? undefined))
-    return extraItemRows([...held, ...gone, ...capturedExtras(captured)], engineRows, guess)
-  }, [holding, unknown, captured, engineRows, remembered, viewer.all, me, guess])
+    const capturedRows = capturedExtras(capturedStillUnknown(captured, answer.asked, unknown))
+    return extraItemRows([...held, ...gone, ...capturedRows], engineRows, guess)
+  }, [holding, unknown, answer.asked, captured, engineRows, remembered, viewer.all, me, guess])
 }

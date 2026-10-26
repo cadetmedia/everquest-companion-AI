@@ -6,7 +6,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { knownIndex, knownItem, unknownOf, unknownSpells } from '../src/main/gapUnknownItems'
 import { parseInventoryDump } from '../src/main/outputs/inventoryParse'
-import { capturedExtras, capturedItemsOf, extraItemRows, extraSpellRows, heldCandidates, heldExtras, withCapturedItem, withExtraItemRows, withoutCapturedItem } from '../src/shared/gapExtraItems'
+import { capturedExtras, capturedItemsOf, capturedStillUnknown, extraItemRows, extraSpellRows, heldCandidates, heldExtras, withCapturedItem, withExtraItemRows, withoutCapturedItem } from '../src/shared/gapExtraItems'
 import { heldIndex } from '../src/shared/gapHeld'
 import { gapInZone, type GapRow } from '../src/shared/gaps'
 import { ownershipPayload } from '../src/shared/planner/ownership'
@@ -66,6 +66,19 @@ test('A CAPTURED ITEM WITH NO ROW IS A ROW; HELD AND CAPTURED JOIN; A ROW ALREAD
   assert.deepEqual(snap.totals, { item: 2, mob: 0 })
   const same = { rows: [], totals: { item: 0 } }
   assert.equal(withExtraItemRows(same, []), same)
+})
+
+test("A CAPTURE THE DATA HAS SINCE LEARNED IS NO LONGER A ROW; ONE THE CHECK HAS NOT REACHED YET STAYS (owner, 2026-10-25: Jenni's Robe)", () => {
+  // Captured before the delta that added its page, then the data learned it: the check now finds it known.
+  const kept = [{ name: "Jenni's Robe", at: AT }, { name: 'Petamorph Wand: Gelatinous Cube', at: AT }, { name: 'Just Captured', at: AT }]
+  const KNOWS_ROBE = knownIndex(["jenni's robe"], [])
+  const asked = ["Jenni's Robe", 'Petamorph Wand: Gelatinous Cube']
+  const unknown = new Set(unknownOf(asked, KNOWS_ROBE))
+  const still = capturedStillUnknown(kept, new Set(asked), unknown)
+  assert.deepEqual(still.map((c) => c.name), ['Petamorph Wand: Gelatinous Cube', 'Just Captured'])
+  assert.deepEqual(extraItemRows(capturedExtras(still), []).map((r) => r.name).sort(), ['Just Captured', 'Petamorph Wand: Gelatinous Cube'])
+  // Before any answer, every capture stays: each was unknown when it was taken.
+  assert.equal(capturedStillUnknown(kept, new Set(), new Set()).length, 3)
 })
 
 test('THE KEPT CAPTURES READ BACK WHOLE; A SECOND CAPTURE OF A NAME MOVES ITS TIME; THE NEWEST ARE KEPT', () => {
