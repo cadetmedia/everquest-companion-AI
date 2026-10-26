@@ -37,7 +37,9 @@ export interface KillFaction {
   raised?: boolean
   /**
    * The proof (owner, 2026-10-20: "how do I know it has Grobb Merchants?"): the last kills' raw log
-   * lines, oldest first, each kill its faction line then its death line, stamps kept. Absent when none.
+   * lines, oldest first, each kill its faction line then its death line, stamps kept. Absent when none,
+   * and always absent from the served snapshot: only a saved or archived state carries them, and the
+   * tab asks for the rest when a row is opened or copied (gapKillFactionSamples.ts, perf review 2026-10-20).
    */
   samples?: string[]
 }

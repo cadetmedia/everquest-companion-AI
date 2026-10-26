@@ -45,6 +45,7 @@ import { HEAD_BYTES, logStampKey, parseSegment, type Segment } from '../shared/l
 import { characterId } from './log/config'
 import { getActiveCharacter } from './session'
 import { engineRequest, engineServeReadiness } from './dataServer/engineClientHost'
+import { engineGapsWithSamples } from './gapKillFactionSamples'
 import { readHeadBytes } from './logArchive/history'
 import { logArchiveDir } from './logArchive/liveHistory'
 import { logArchiveOn } from './storeLogArchive'
@@ -82,7 +83,9 @@ function logIdentity(path: string): SavedLog | null {
 async function rawModule(module: GapSourceModule): Promise<{ seq: number; state: unknown } | null> {
   try {
     const r = await engineRequest('module.snapshot', { module })
-    return r.module === module ? { seq: r.seq, state: r.state } : null
+    if (r.module !== module) return null
+    // A saved file keeps `gaps` with its kill-faction proof lines: another character's rows show them.
+    return { seq: r.seq, state: module === 'gaps' ? await engineGapsWithSamples(r.state) : r.state }
   } catch {
     return null
   }

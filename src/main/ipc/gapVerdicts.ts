@@ -15,6 +15,7 @@ import { itemPageMobs } from '../gapItemMobs'
 import { itemPageForage } from '../gapItemForage'
 import { unknownItems, unknownSpells } from '../gapUnknownItems'
 import { itemTrades } from '../gapItemTrades'
+import { killFactionSamples } from '../gapKillFactionSamples'
 import { spellFactsFrom } from '../gapSpellFacts'
 import type { ClientSpellFacts } from '../../shared/gaps'
 import { effectiveEqRoot } from '../log/config'
@@ -26,6 +27,8 @@ export const ITEM_CACHE_VERSION = 4
 export const MOB_CACHE_VERSION = 1
 
 const MAX_NAMES = 1000
+/** Every faction row a Copy can hold: one per kill-faction pair, a few thousand on a long log. */
+const MAX_PAIRS = 20000
 
 const SOURCES = {
   item: { file: 'item-knowledge-cache.json', version: ITEM_CACHE_VERSION, keyOf: itemTierKey },
@@ -81,5 +84,8 @@ export function registerGapVerdictsIpc(): void {
   )
   ipcMain.handle(IPC.gapItemTrades, (_e, names: unknown) =>
     Array.isArray(names) ? itemTrades(names.filter((n): n is string => typeof n === 'string').slice(0, MAX_NAMES)) : {}
+  )
+  ipcMain.handle(IPC.gapKillFactionSamples, (_e, keys: unknown) =>
+    Array.isArray(keys) ? killFactionSamples(keys.filter((k): k is string => typeof k === 'string').slice(0, MAX_PAIRS)) : {}
   )
 }

@@ -59,6 +59,7 @@ import { createReadShim, type ReadShim } from './readShim'
 import { startSlowReadLog } from './slowReads'
 import { liveHistory } from '../logArchive/liveHistory'
 import { withArchivedDrops } from '../../shared/logArchive/mergeDropsSeen'
+import { withoutKillFactionSamples } from '../../shared/gapKillFactionSamples'
 import { engineSideOpts, withArchivedFights } from '../../shared/logArchive/mergeFights'
 import { withArchivedHits } from '../../shared/logArchive/searchFights'
 import { resolveMobIdentity } from '../mobAliases'
@@ -195,6 +196,8 @@ export const OPTS_ARE_STATED: Record<keyof SnapshotOpts, true> = {
 
 /** The module whose published state carries a fact no fold can produce — see `graftLastPlayed`. */
 const CHARACTER_MODULE = 'character'
+/** shared/gaps.ts `GAPS_MODULE_ID`, restated so main does not load the tab's module for one string. */
+const GAPS_MODULE = 'gaps'
 
 /**
  * THE `lastPlayed` GRAFT (JOS-493, owner ruling 21's served fact).
@@ -251,7 +254,10 @@ function projectModule(moduleId: string, r: ModuleSnapshotResult): ModuleSnap | 
   const grafted = moduleId === CHARACTER_MODULE ? graftLastPlayed(r.state) : r.state
   // ARCHIVED HISTORY (docs/plans/log-archive, step 1.7): the same object back unless Keep log
   // history is on and a sealed segment is eligible for this character (logArchive/history.ts).
-  const state = liveHistory.mergeHistory(moduleId, r.seq, grafted)
+  const merged = liveHistory.mergeHistory(moduleId, r.seq, grafted)
+  // The kill-faction proof lines an archived segment brings back are left out (perf review
+  // 2026-10-20): the tab asks for them when a row is opened or copied (gapKillFactionSamples.ts).
+  const state = moduleId === GAPS_MODULE ? withoutKillFactionSamples(merged) : merged
   return { seq: r.seq, state, served: true }
 }
 
