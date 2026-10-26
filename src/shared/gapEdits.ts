@@ -5,6 +5,7 @@
 
 import { doneKey, type GapDomain, type GapRow } from './gaps'
 import { npcImageName } from './mobPageTitle'
+import { withEditedFields } from './gapMerchantDescription'
 
 export interface GapEdit {
   /** The name the page should carry (a template's `name` / `itemname`, a quest's title). */
@@ -141,5 +142,6 @@ export function applyEditText(text: string, row: GapRow): string {
   for (const [key, value] of Object.entries(edit.fields ?? {})) {
     out = row.domain === 'quest' ? setTopRow(out, key, value) : setTemplateField(out, key, value)
   }
-  return out
+  // A merchant page that exists gets only lines to add: an edited field it had no line for is added.
+  return row.domain === 'quest' ? out : withEditedFields(out, edit.fields ?? {})
 }
