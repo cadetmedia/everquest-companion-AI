@@ -6,8 +6,9 @@
 // minute per surface with the game closed, behind EverQuest, or with the window minimized. Two
 // gates now sit on that, and neither touches the cadence while a fight is on:
 //
-//   1. VISIBILITY. A hidden window (minimized, or fully covered: Chromium reports occlusion as
-//      `hidden` on Windows) asks nothing, pings included. The moment it shows again it asks once,
+//   1. VISIBILITY. A hidden window (minimized or hidden; Electron documents a fully covered window as
+//      `hidden` on macOS only, so on Windows a window behind EverQuest is not counted on to be) asks
+//      nothing, pings included. The moment it shows again it asks once,
 //      so what it paints is current; the frame it shows first is the one it last composited, which
 //      is what it showed before this gate as well.
 //   2. ACTIVITY. The 1 s fallback poll exists for what changes with the WALL CLOCK alone: the open
