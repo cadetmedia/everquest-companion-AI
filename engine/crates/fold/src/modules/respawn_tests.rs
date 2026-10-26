@@ -335,9 +335,14 @@ fn an_unwatched_mob_learns_its_gaps_from_the_first_sign_of_life_and_publishes_th
 }
 
 #[test]
-fn fewer_than_three_gaps_are_not_published() {
-    assert!(learned_of(&camped_unwatched(3)).is_empty(), "two gaps");
-    assert_eq!(learned_of(&camped_unwatched(4)).len(), 1, "three gaps");
+fn one_gap_is_published_so_an_archived_log_can_join_it() {
+    // The reader asks for three gaps; a log holding one or two still publishes them, or the
+    // archive merge would never see them (owner, 2026-10-25: months of kills count).
+    assert!(learned_of(&camped_unwatched(1)).is_empty(), "one kill, no gap");
+    assert_eq!(
+        learned_of(&camped_unwatched(2))[0]["gapsMs"],
+        serde_json::json!([570_000])
+    );
 }
 
 #[test]

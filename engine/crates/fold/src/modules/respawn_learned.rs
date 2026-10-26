@@ -16,10 +16,9 @@ use serde::Serialize;
 
 /// Gaps kept per mob, newest.
 const RESPAWN_MAX_LEARNED_GAPS: usize = 50;
-/// A mob is published from this many gaps: the fewest the owner's rule offers a respawn time from.
-const RESPAWN_MIN_LEARNED: usize = 3;
 /// Mobs remembered. One with a single gap counts too, since its third may come; at 50 gaps each, a
-/// few hundred KB at the very worst. It also bounds what is published.
+/// few hundred KB at the very worst. It also bounds what is published: every mob with a gap is, so
+/// an archived log's one or two gaps can join the live log's (the reader asks for three).
 const MAX_LEARNED_STORE: usize = 1_000;
 
 /// One mob's gaps.
@@ -105,13 +104,9 @@ impl LearnedStore {
         }
     }
 
-    /// Every mob with enough gaps, most recently learned first, each with what its wiki page says.
+    /// Every mob with a gap, most recently learned first, each with what its wiki page says.
     pub fn published(&self, wiki: impl Fn(&str) -> Option<WikiSays>) -> Vec<RespawnLearned> {
-        let mut entries: Vec<(&str, &LearnedGaps)> = self
-            .map
-            .iter()
-            .filter(|(_, e)| e.gaps.len() >= RESPAWN_MIN_LEARNED)
-            .collect();
+        let mut entries: Vec<(&str, &LearnedGaps)> = self.map.iter().collect();
         entries.sort_by_key(|(_, e)| std::cmp::Reverse(e.last_ts));
         entries
             .into_iter()
