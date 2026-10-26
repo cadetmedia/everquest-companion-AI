@@ -286,9 +286,7 @@ pub fn route(st: &mut EngineState, ev: &DamageEvent<'_>) -> Option<Attribution> 
 
     // A DoT tick on you can outlive its caster and its fight: `encounter_for` refuses it then.
     let Some(enc) = encounter_for(st, ev, &at) else {
-        if st.current.is_some() {
-            route_lone_tick(st, ev);
-        }
+        route_lone_tick(st, ev);
         return Some(at);
     };
     // Active-time accrual: the gap since the previous attributed hit, capped at `ACTIVE_MS`, so

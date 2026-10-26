@@ -92,3 +92,12 @@ fn ticks_from_a_dead_caster_neither_hold_the_fight_open_nor_merge_the_next_pull(
     let first = fold_selecting(&lines, Some("e1"));
     assert_eq!(first["selected"]["inTotal"], json!(53 * 2), "{}", first["selected"]);
 }
+
+/// A tick after the fight closed opens nothing, but it is still damage you took in this zone: the
+/// zone session counts it, as it counts environment damage taken with no fight open.
+#[test]
+fn a_tick_after_the_fight_closed_counts_in_the_zone_session() {
+    let zone = fold_selecting(&the_fight_and_its_ticks(Some(14_000)), Some("zone"));
+    let selected = &zone["selected"];
+    assert_eq!(selected["inTotal"], json!(53 * 2), "{selected}");
+}
