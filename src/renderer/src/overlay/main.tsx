@@ -1,17 +1,5 @@
-import React from 'react'
+import React, { Suspense, lazy } from 'react'
 import ReactDOM from 'react-dom/client'
-import OverlayMeter from './OverlayMeter'
-import EventLogOverlay from './EventLogOverlay'
-import HealMeter from './HealMeter'
-import ToastOverlay from './ToastOverlay'
-import AlertBannerOverlay from './AlertBannerOverlay'
-import ConCardOverlay from './ConCardOverlay'
-import BuffsOverlay from './BuffsOverlay'
-import XpOverlay from './XpOverlay'
-import RespawnOverlay from './RespawnOverlay'
-import MapPinsOverlay from './MapPinsOverlay'
-import SkyQuestsOverlay from './SkyQuestsOverlay'
-import GapsOverlay from './GapsOverlay'
 import { isHealOverlayKind } from '@shared/types'
 import { isTimerOverlayKind } from '@shared/buffTimers'
 import { installOverlayPointerExit } from './pointerExit'
@@ -49,7 +37,26 @@ import { installOverlayPointerExit } from './pointerExit'
 //                                       of the Gaps tab's list, written by the main window to the
 //                                       storage both windows share (shared/gapsOverlay.ts)
 //   everything else                   → the damage meter (fight / zone selection lives inside)
+//
+// ONE BUNDLE, BUT EACH WINDOW LOADS ONLY ITS OWN KIND (performance review 2026-10-20, finding 10).
+// Every surface is a `React.lazy` chunk, so a window parses the shared entry (React, the bridge
+// glue) plus the one surface it draws, not all twelve. A `lazy` import starts on its first render,
+// which is the root's first render, so only this window's kind is ever fetched. The Suspense
+// fallback is nothing: a transparent window for the one local chunk read, as before React drew.
 const kind = window.eqOverlay?.kind ?? 'fight'
+
+const EventLogOverlay = lazy(() => import('./EventLogOverlay'))
+const ToastOverlay = lazy(() => import('./ToastOverlay'))
+const AlertBannerOverlay = lazy(() => import('./AlertBannerOverlay'))
+const ConCardOverlay = lazy(() => import('./ConCardOverlay'))
+const XpOverlay = lazy(() => import('./XpOverlay'))
+const RespawnOverlay = lazy(() => import('./RespawnOverlay'))
+const MapPinsOverlay = lazy(() => import('./MapPinsOverlay'))
+const SkyQuestsOverlay = lazy(() => import('./SkyQuestsOverlay'))
+const GapsOverlay = lazy(() => import('./GapsOverlay'))
+const BuffsOverlay = lazy(() => import('./BuffsOverlay'))
+const HealMeter = lazy(() => import('./HealMeter'))
+const OverlayMeter = lazy(() => import('./OverlayMeter'))
 
 function Surface(): React.JSX.Element {
   if (kind === 'events') return <EventLogOverlay />
@@ -79,6 +86,8 @@ if (!container) throw new Error('overlay: #overlay-root container missing from o
 
 ReactDOM.createRoot(container).render(
   <React.StrictMode>
-    <Surface />
+    <Suspense fallback={null}>
+      <Surface />
+    </Suspense>
   </React.StrictMode>
 )
