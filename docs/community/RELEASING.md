@@ -47,10 +47,12 @@ without either. Say "GitHub release" for this and "local build" for anything tha
 owner's PC; ask "Publish GitHub release test.N now?" and wait (owner: "be specific about releases
 going forward ... say github release").
 
-**Before the delta, compare with the wiki's GitHub data pack** (owner, 2026-10-23):
-`npx tsx scripts/eoz-compare.mts --release` (DATA_REFRESH.md, "The wiki's GitHub data pack"). When the
-pack was built within 5 hours, it stands in for the delta: nothing is imported or dropped, and the
-report's stale and missing pages go into the release notes' known issues. Otherwise run the delta.
+**The GitHub pack compare AND the delta, every release** (owner, 2026-10-25: "wiki github pack
+from eoz and delta scrape should always run before a release"; "should run when i ask"): first
+`npx tsx scripts/eoz-compare.mts`, then the delta (DATA_REFRESH.md), both on every release, then
+the compare once more over the refreshed data, which should show nothing behind. No age of the pack
+stands in for the delta (the 2026-10-23 five-hour rule is withdrawn). The same pair runs whenever
+the owner asks for a delta or a data refresh, with no condition attached.
 
 Since 2026-10-08 a release is built and published by GitHub Actions
 (`.github/workflows/community-release.yml`) when a `community-<version>` tag is pushed, as the
