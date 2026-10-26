@@ -185,6 +185,29 @@ function mergeLearned(older: Learned[] | null, newer: Learned[] | null, olderZon
   return [...out.values()].slice(0, LEARNED_MOBS)
 }
 
+/** What a mob's page says of its respawn today, by key: `data/respawns.json`, the file the engine embeds. */
+export type RespawnWikiNow = (key: string) => { text: string; seconds?: number; page: string } | undefined
+
+/**
+ * An archived state's learned evidence with what each page says TODAY. The archive's copy is what
+ * the page said the day it was captured, so a page fixed and re-scraped since would still read wrong.
+ * Anything else comes back as is.
+ */
+export function withCurrentWiki(archived: unknown, wikiNow: RespawnWikiNow): unknown {
+  if (!isRespawnSnap(archived)) return archived
+  const learned = learnedOf(archived)
+  if (learned === null) return archived
+  return {
+    ...archived,
+    learned: learned.map((l): Learned => {
+      const bare = { id: l.id, key: l.key, display: l.display, zone: l.zone, gapsMs: l.gapsMs }
+      const says = wikiNow(l.key)
+      if (says === undefined) return bare
+      return { ...bare, wikiText: says.text, ...(says.seconds === undefined ? {} : { wikiMs: says.seconds * 1000 }), wikiPage: says.page }
+    })
+  }
+}
+
 /**
  * An archived state with its history rows for every mob `live` watches, and `live`'s watch list.
  * A row the archived state already has is left as captured. Anything else comes back as is.

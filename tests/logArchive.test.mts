@@ -212,7 +212,8 @@ function harness(over: Partial<HistoryDeps> & { segments?: Segment[] } = {}) {
     attached: over.attached ?? (() => ({ character: 'primitive_freeport', logPath: 'live.txt' })),
     readHead: over.readHead ?? ((_p, n) => Buffer.from(LOG).subarray(0, n)),
     note: (l) => notes.push(l),
-    comboCorrections: over.comboCorrections
+    comboCorrections: over.comboCorrections,
+    respawnWiki: over.respawnWiki
   })
   return { h, notes, dirReads: () => dirReads }
 }
@@ -361,6 +362,19 @@ test('read path: with two archives, a correction in the newer one does not reach
     [100, false],
     [1000, true],
     [9000, false]
+  ])
+})
+
+test("read path: archived respawn evidence says what the wiki says today, not the day it was archived", () => {
+  const evidence = (key: string, wiki: object) => ({ id: `mm::${key}`, key, display: key, zone: 'MM', gapsMs: [530_000], ...wiki })
+  const respawn = (learned: unknown[]) => ({ v: 4, zone: 'MM', rows: [], recent: [], learned })
+  const archived = respawn([evidence('enynti', { wikiText: '22 minutes', wikiMs: 1_320_000, wikiPage: 'Enynti' }), evidence('xicotl', { wikiText: '4:00', wikiMs: 240_000, wikiPage: 'Xicotl' })])
+  const today: Record<string, { text: string; seconds?: number; page: string }> = { enynti: { text: '8:50', seconds: 530, page: 'Enynti' } }
+  const t = harness({ segments: [segment({ modules: { respawn: { seq: 1, state: archived } } })], respawnWiki: (key) => today[key] })
+  const merged = t.h.mergeHistory('respawn', 7, respawn([])) as { learned: Record<string, unknown>[] }
+  assert.deepEqual(merged.learned.map((l) => [l.key, l.wikiText, l.wikiMs]), [
+    ['enynti', '8:50', 530_000],
+    ['xicotl', undefined, undefined]
   ])
 })
 
