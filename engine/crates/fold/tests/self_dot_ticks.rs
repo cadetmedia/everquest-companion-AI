@@ -106,3 +106,85 @@ fn a_tick_after_the_fight_closed_counts_in_the_zone_session() {
     let selected = &zone["selected"];
     assert_eq!(selected["inTotal"], json!(53 * 2), "{selected}");
 }
+
+fn hit(seq: i64, ts: i64, target: &str) -> String {
+    format!(
+        r#"{{"kind":"damage","seq":{seq},"ts":{ts},"raw":"d","attacker":"You","target":"{target}","amount":300,"dtype":"melee","skill":"Melee","crit":false}}"#
+    )
+}
+
+fn killed(seq: i64, ts: i64, name: &str) -> String {
+    format!(r#"{{"kind":"death","seq":{seq},"ts":{ts},"raw":"d","name":"{name}","bySelf":true}}"#)
+}
+
+/// (name, total) of every incoming row in the selected segment.
+fn incoming(snap: &Value) -> Vec<(String, i64)> {
+    snap["selected"]["incoming"]
+        .as_array()
+        .expect("incoming")
+        .iter()
+        .map(|r| {
+            (
+                r["name"].as_str().unwrap().to_string(),
+                r["total"].as_i64().unwrap(),
+            )
+        })
+        .collect()
+}
+
+/// A caster mezzed for longer than the staleness window is not dead: when it breaks and DoTs you
+/// again it is fought, so the fight stays open past the gnoll's death while it still ticks.
+#[test]
+fn a_caster_that_breaks_mez_after_the_stale_window_is_fought_again() {
+    let mut lines = vec![
+        r#"{"kind":"zone","seq":0,"ts":0,"raw":"z","zone":"Najena"}"#.to_string(),
+        hit(1, 1000, "a gnoll"),
+        tick(2, 1500),
+    ];
+    let mut seq = 3;
+    for ts in (6000..=40_000).step_by(5000) {
+        lines.push(hit(seq, ts, "a gnoll"));
+        seq += 1;
+    }
+    for ts in [30_000, 36_000] {
+        lines.push(tick(seq, ts));
+        seq += 1;
+    }
+    lines.push(killed(seq, 41_000, "a gnoll"));
+    lines.push(tick(seq + 1, 42_000));
+    lines.push(tick(seq + 2, 48_000));
+    let all = fights(&fold(&lines));
+    assert_eq!(all.len(), 1, "{all:?}");
+    assert_eq!(
+        all[0]["active"],
+        json!(true),
+        "the caster still ticking was let go: {all:?}"
+    );
+}
+
+/// A second caster of the same name, after the first died, whose first contact is a DoT: a fresh
+/// instance, fought, not the dead one's lingering tick.
+#[test]
+fn a_same_name_caster_after_the_first_died_is_a_fresh_instance() {
+    let mut lines = the_fight_and_its_ticks(None);
+    lines.extend([
+        hit(4, 30_000, "a gnoll"),
+        hit(5, 35_000, "a gnoll"),
+        tick(6, 36_000),
+        hit(7, 40_000, "a gnoll"),
+        tick(8, 42_000),
+        killed(9, 43_000, "a gnoll"),
+        tick(10, 48_000),
+    ]);
+    let all = fights(&fold(&lines));
+    assert_eq!(all.len(), 2, "{all:?}");
+    let second = fold_selecting(&lines, Some("e2"));
+    assert_eq!(
+        second["selected"]["active"],
+        json!(true),
+        "{}",
+        second["selected"]
+    );
+    let rows = incoming(&second);
+    assert!(rows.contains(&(format!("{MOB} (2)"), 53 * 3)), "{rows:?}");
+}

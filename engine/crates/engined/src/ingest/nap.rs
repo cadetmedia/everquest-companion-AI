@@ -18,8 +18,11 @@
 //!   same three acts, once per wake rather than once per 25 ms, each with its own cadence or cost
 //!   rule (`Serving::tick` builds nothing that is not owed);
 //! * nothing blocks the fold: the wait is bounded by the nap (see below), the fold is not folding
-//!   while it naps, and a preempted tail still notices within one [`TAIL_NAP`], because the attach
-//!   that disowns it drops its ask door and a dead door ends the wait.
+//!   while it naps, and a preempted tail usually notices within one [`TAIL_NAP`], because the attach
+//!   that disowns it drops its ask door and a dead door ends the wait. A connection thread may still
+//!   hold a clone of that door (`state.asks`, held for up to `SNAPSHOT_PATIENCE`), and then the door
+//!   stays open and the tail notices at its next wake instead: at most one [`IDLE_NAP`] (one poll
+//!   interval) on a quiet log, which is bounded and harmless.
 //!
 //! A write wakes the nap through the same door. `std::sync::mpsc` cannot wait on two channels at
 //! once, and a second door would be the second channel `State::asks` (`world.rs`) argues against, so
@@ -31,7 +34,7 @@
 //! interval instead ([`Quiet`]), and the first line that lands puts it back to [`TAIL_NAP`]. That
 //! costs a first line nothing: lines are only ever looked for at the poll, every
 //! `DEFAULT_POLL_INTERVAL`, whatever the nap. What a long nap could have delayed — an ask, a write,
-//! a new subscription — wakes it, and a disowned door is still noticed within one [`TAIL_NAP`]. The
+//! a new subscription — wakes it, and a disowned door is noticed as above. The
 //! one thing left on the long nap is a view frame the serve cadence deferred, and a log quiet for
 //! seconds has none owed.
 

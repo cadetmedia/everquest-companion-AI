@@ -390,10 +390,17 @@ impl AllyCharms {
     }
 
     /// Charm cannot survive a zone, and neither can an arm. The friendly set and the summon sighting
-    /// are kept: they are about people, and a summoned pet walks through the door with its owner.
+    /// are kept: they are about people, and a summoned pet walks through the door with its owner, so
+    /// a `Summon` bind is kept too (as your own summoned pet is, `world.rs`).
     pub fn zone(&mut self) {
         self.arms.clear();
-        self.binds.clear();
+        let charms: Vec<String> = (self.binds.values())
+            .filter(|b| b.kind != AllyKind::Summon)
+            .map(|b| b.name_key.clone())
+            .collect();
+        for key in charms {
+            self.binds.remove(&key);
+        }
     }
 
     /// Binds whose pet has gone silent for a whole window as of `now`; removing them is this call's

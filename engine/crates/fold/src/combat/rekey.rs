@@ -36,11 +36,13 @@ impl EngineState {
         if name_key.is_empty() || self.roster.admitted.contains(name_key) {
             return;
         }
-        if !self.others.note_pet(name_key) || !self.others.is_recorded(name_key) {
+        let id = format!("member:{name_key}");
+        // A pet the roster admitted off your burst, then refused, recorded its row as a member.
+        let recorded = self.others.is_recorded(name_key) || self.zone_agg.out.contains_key(&id);
+        if !self.others.note_pet(name_key) || !recorded {
             return;
         }
         self.others.forget(name_key);
-        let id = format!("member:{name_key}");
         self.zone_agg.move_out(&id, to);
         if let Some(enc) = self.current.as_mut() {
             if enc.agg.move_out(&id, to) {

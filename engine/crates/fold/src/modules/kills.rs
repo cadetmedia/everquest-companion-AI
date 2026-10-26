@@ -88,7 +88,8 @@ pub struct KillsModule {
     announce: crate::announce::Announce,
     /// Player-shaped names a pet line spoke for (claim, pet say, ally leader): a pet, never a mob.
     pets: HashSet<String>,
-    /// The mob catalog, for a one-word killer that is a mob all the same (`Terror`).
+    /// The mob catalog, for a one-word killer that is a mob all the same (`Terror`). Production
+    /// only: replay and parity install none, so there a one-word victim dying to a mob is refused.
     knowledge: Option<Arc<dyn Knowledge>>,
 }
 
@@ -112,7 +113,9 @@ impl KillsModule {
             return false;
         };
         let known_mob = |k: &str| self.knowledge.as_ref().is_some_and(|kn| kn.known_mob(k));
-        is_player_death(name, ev.str("killer"), known_mob) || self.pets.contains(&id_key(name))
+        // A charmed named mob answers `/pet leader` too, and is a mob again once the charm breaks.
+        let pet = self.pets.contains(&id_key(name)) && !known_mob(name);
+        is_player_death(name, ev.str("killer"), known_mob) || pet
     }
 
     /// Is there a live creating-instance notice for this zone at `ts`?
@@ -234,6 +237,7 @@ impl EqModule for KillsModule {
                 self.kills.clear();
                 self.pending_exp_ts = None;
                 self.instances.clear();
+                self.pets.clear();
                 self.announce.changed(self.seq);
                 return;
             }
@@ -322,29 +326,96 @@ fn is_counted_kill(ev: &Event) -> bool {
     }
 }
 
-/// A player (or a player's pet) dying to a mob: a player-shaped victim, and a killer that is not
-/// player-shaped or that `known_mob` names a mob anyway (`Terror`). Kills and gaps share it.
+/// A player (or a player's pet) dying to a mob: a player-shaped victim the catalog does not name a
+/// mob (`concard.rs con_card_is_player`), and a killer that is not player-shaped or that
+/// `known_mob` names a mob anyway (`Terror`). Kills and gaps share it.
 pub fn is_player_death(
     victim: &str,
     killer: Option<&str>,
     known_mob: impl Fn(&str) -> bool,
 ) -> bool {
     let killer_is_mob = killer.is_some_and(|k| !is_player_shaped_name(k) || known_mob(k));
-    is_player_shaped_name(victim) && killer_is_mob
+    is_player_shaped_name(victim) && !known_mob(victim) && killer_is_mob
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::knowledge::{Answer, Miss, OwnLoot};
+
+    /// A catalog that knows two one-word mobs and nothing else.
+    struct Catalog;
+
+    impl Knowledge for Catalog {
+        fn item(&self, _name: &str) -> Answer {
+            unreachable!("kills asks the catalog only")
+        }
+        fn identity_keys(&self, mob: &str) -> Vec<String> {
+            vec![id_key(mob)]
+        }
+        fn mob(&self, _name: &str, _loot: &dyn OwnLoot) -> Answer {
+            unreachable!("kills asks the catalog only")
+        }
+        fn known_mob(&self, name: &str) -> bool {
+            matches!(id_key(name).as_str(), "trakanon" | "terror")
+        }
+        fn take_misses(&self) -> Vec<Miss> {
+            Vec::new()
+        }
+    }
 
     fn fold(lines: &[&str]) -> Value {
-        let mut m = KillsModule::new();
+        fold_with(KillsModule::new(), lines)
+    }
+
+    fn fold_with(mut m: KillsModule, lines: &[&str]) -> Value {
         for line in lines {
             m.on_event(&Event::from_json(line).expect("a JSON event"), false);
         }
         m.snapshot()["state"]["mobs"].clone()
     }
 
+    fn fold_knowing(lines: &[&str]) -> Vec<String> {
+        let mut m = KillsModule::new();
+        m.install_knowledge(&(Arc::new(Catalog) as Arc<dyn Knowledge>));
+        let mobs = fold_with(m, lines);
+        mobs.as_object().expect("mobs").keys().cloned().collect()
+    }
+
+    /// A one-word named mob is a mob whoever kills it, and a pet line it spoke while charmed does
+    /// not make it a pet for good.
+    #[test]
+    fn a_catalog_mob_dying_to_a_mob_or_after_a_pet_line_is_a_kill() {
+        let keys = fold_knowing(&[
+            r#"{"kind":"death","seq":1,"ts":1000,"raw":"d","name":"Trakanon","bySelf":false,"killer":"a goblin sentry"}"#,
+            r#"{"kind":"allyPetLeader","seq":2,"ts":2000,"raw":"l","pet":"Terror","owner":"Malkil"}"#,
+            r#"{"kind":"death","seq":3,"ts":3000,"raw":"d","name":"Terror","bySelf":false,"killer":"Rykkerr"}"#,
+        ]);
+        assert_eq!(keys, ["terror", "trakanon"]);
+    }
+
+    /// The catalog's one-word mob killing a player-shaped name the catalog lacks: a player died.
+    /// Without the catalog `Terror` reads as a player and the death counts.
+    #[test]
+    fn a_player_slain_by_a_catalog_mob_is_not_a_kill() {
+        let line = r#"{"kind":"death","seq":1,"ts":1000,"raw":"d","name":"Rykkerr","bySelf":false,"killer":"Terror"}"#;
+        assert!(fold_knowing(&[line]).is_empty());
+        assert!(fold(&[line]).get("rykkerr").is_some());
+    }
+
+    /// A pet named by the dead character is no pet of the next one.
+    #[test]
+    fn the_epoch_forgets_the_pets() {
+        let mobs = fold(&[
+            r#"{"kind":"petClaim","seq":1,"ts":1000,"raw":"p","name":"Gobekn","via":"leader"}"#,
+            r#"{"kind":"epoch","seq":2,"ts":2000,"raw":"e"}"#,
+            r#"{"kind":"death","seq":3,"ts":3000,"raw":"d","name":"Gobekn","bySelf":false,"killer":"Rykkerr"}"#,
+        ]);
+        let keys: Vec<&String> = mobs.as_object().expect("mobs").keys().collect();
+        assert_eq!(keys, ["gobekn"], "{mobs}");
+    }
+
+    /// No catalog here: `Gobekn` slain by `Terror` is refused by the pet set alone.
     #[test]
     fn a_player_or_your_pet_dying_is_not_a_kill() {
         let mobs = fold(&[
