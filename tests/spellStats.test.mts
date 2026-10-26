@@ -253,9 +253,12 @@ test('the corpus is the one the header measured', () => {
   // Re-read 2026-10-24 after the morning delta (2,014 -> 2,018 spells, 1,084 -> 1,086 beneficial:
   // 2,076 -> 2,078 lines: Summon Familiar: Mummy and Pet Illusion: Mummy, as the Werewolf pair; Familiar: Gelatinous Cube
   // and the unfilled Illusion: Half Dark Elf blueprint state no type): only the corpus size moved.
-  assert.equal(SPELLS.length, 2018)
-  assert.equal(BENEFICIAL.length, 1086)
-  assert.equal(BENEFICIAL_LINES.length, 2078)
+  // Re-read 2026-10-25 after the evening delta (2,018 -> 2,019 spells, 1,086 -> 1,087 beneficial,
+  // 2,078 -> 2,082 lines: Mana Preservation III, a mana-cost focus and its three Limit lines, outside
+  // the stat shape): only the corpus size moved.
+  assert.equal(SPELLS.length, 2019)
+  assert.equal(BENEFICIAL.length, 1087)
+  assert.equal(BENEFICIAL_LINES.length, 2082)
 })
 
 test('coverage over the real bytes matches the header, within a band', () => {
