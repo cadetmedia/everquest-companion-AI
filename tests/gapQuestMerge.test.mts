@@ -282,6 +282,11 @@ test('A WALKTHROUGH UNDER ANOTHER HEADING IS THE WALKTHROUGH: WHAT IT SAYS IS NO
   // Two walkthroughs: what the second holds is held.
   const two = [...TOP, '== TLDR; Walkthrough ==', '', '* Hail Dorian.', '', '== Full Walkthrough ==', '', ...SAID, ...END].join('\n')
   assert.deepEqual(mergeQuestPage(two, 'Unfortunate news', hailLog, {}).changes, [])
+  // A walkthrough sub-heading nested in the main one: the span runs to the main one's end.
+  const nested = [...TOP, '== Walkthrough ==', '', '=== Short walkthrough ===', '', ...SAID.slice(0, 4), '=== Turn in ===', '', ...SAID.slice(4), ...END].join('\n')
+  const out = mergeQuestPage(nested, 'Unfortunate news', hailLog, {})
+  assert.deepEqual(out.changes, [])
+  assert.equal(out.text, nested)
 })
 
 test('A PAGE WITH NO WALKTHROUGH HEADING GETS ONLY THE LINES IT DOES NOT ALREADY SAY', () => {

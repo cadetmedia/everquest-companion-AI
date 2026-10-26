@@ -374,10 +374,10 @@ interface Span {
   end: number
 }
 
-/** From the first walkthrough heading to the end of the last: a page may hold a short one and a full one. */
+/** From the first walkthrough heading to the furthest section end: a page may hold a short one and a full one, or nest one. */
 function walkSpan(doc: Doc): Span | undefined {
   const heads = doc.lines.flatMap((l, i) => (WALK_HEADING.test(l) ? [i] : []))
-  return heads.length === 0 ? undefined : { heading: heads[0], end: sectionEnd(doc, heads[heads.length - 1]) }
+  return heads.length === 0 ? undefined : { heading: heads[0], end: Math.max(...heads.map((h) => sectionEnd(doc, h))) }
 }
 
 /** The faction a block's line names: `... standing with [[X]] has been adjusted by 200.` is X. */
