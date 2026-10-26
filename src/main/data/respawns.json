@@ -1,6 +1,6 @@
 {
  "source": "eqlwiki.com — |respawn_time on every page in the committed mob catalog",
- "scrapedAt": "2026-10-25",
+ "scrapedAt": "2026-10-26",
  "rows": [
   {
    "key": "a alchemist`s acolyte",
@@ -136,6 +136,11 @@
    "page": "A Dusty Werebat",
    "text": "22 min",
    "seconds": 1320
+  },
+  {
+   "key": "a faceless throatcutter",
+   "page": "A faceless throatcutter",
+   "text": "?"
   },
   {
    "key": "a faerie dragon",
@@ -2849,6 +2854,12 @@
    "page": "The Froglok Warden",
    "text": "16min 30sec",
    "seconds": 990
+  },
+  {
+   "key": "the game master",
+   "page": "The Game Master",
+   "text": "16:00",
+   "seconds": 960
   },
   {
    "key": "the ghost of kindle",

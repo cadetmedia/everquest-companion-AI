@@ -1,5 +1,5 @@
 {
- "updatedAt": "2026-10-25T10:49:49.994Z",
+ "updatedAt": "2026-10-26T00:06:17.602Z",
  "redirects": [
   {
    "from": "1 Hand Blunt",
@@ -5206,6 +5206,10 @@
    "to": "Mistmoore Castle"
   },
   {
+   "from": "Castle Nektropos",
+   "to": "Nektropos Castle"
+  },
+  {
    "from": "Cat O' Nine Tails",
    "to": "Cat o' Nine Tails"
   },
@@ -7676,6 +7680,10 @@
   {
    "from": "Gale Wolf",
    "to": "A Gale Wolf"
+  },
+  {
+   "from": "Gamblers gambit",
+   "to": "Gamblers Gambit"
   },
   {
    "from": "Gangrenous scarab",
@@ -13992,6 +14000,10 @@
   {
    "from": "SHD",
    "to": "Shadow Knight"
+  },
+  {
+   "from": "Shelia Everling",
+   "to": "Sheila Everling"
   },
   {
    "from": "Shield Of Falsehood",
