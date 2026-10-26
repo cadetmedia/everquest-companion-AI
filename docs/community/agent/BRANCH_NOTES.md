@@ -183,6 +183,10 @@ traps it hit, and what is still open. BRANCHES.md says what each branch is for; 
 - `tests/e2e/log-archive-trial.mts` (not in the suite) runs the whole flow on a log copy.
 - Open: a missing middle ledger can read "complete"; kills before the fresh log's first zone line
   file under unknown zone.
+- The present across a rotation lives in ONE place, `shared/logArchive/carryOver.ts` (owner,
+  2026-10-25: "some sort of COMMON CARRY OVER type spot"): a field a fresh log does not know until
+  the game says it again (zone, level) goes in its `CARRY_OVER` table; the live value wins once it
+  states one. Display only, never seeded into the engine.
 
 ## sidebar-groups
 
