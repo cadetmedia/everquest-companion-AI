@@ -38,6 +38,7 @@ import { useEffect, useRef } from 'react'
 import type { KillMap, KillsSnap, RaidTarget } from '@shared/types'
 import { kept, type Kept } from '../../lib/kept'
 import { useModule } from '../../lib/useModule'
+import { onHistorySwapped } from '../../lib/historySwapped'
 import { allStatuses, bossKills, type BossKill, type TargetStatus } from './bossStatus'
 
 export interface BossKillCallbacks {
@@ -71,12 +72,12 @@ export function useBossKills(
   // Reset the baseline when the kills state is replaced wholesale (character
   // switch re-hydrates to a fresh object). We detect that by identity: a delta
   // mutates via spread into a new object too, so instead we clear the baseline
-  // whenever the character changes.
+  // whenever the character changes, and on the world-changed frame (archived history
+  // shown or refreshed would otherwise celebrate every archived kill).
   useEffect(() => {
-    const off = window.eq.onCharacter(() => {
+    return onHistorySwapped(() => {
       prevRef.current = null
     })
-    return off
   }, [])
 
   useEffect(() => {

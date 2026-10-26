@@ -307,6 +307,8 @@ async function exclusive(label: string, fn: () => LogArchiveReply | Promise<LogA
 export function setLogArchiveEnabled(enabled: boolean): LogArchiveReply {
   setLogArchivePrefs({ enabled })
   liveHistory.forgetHistoryContext()
+  // Open screens fetch again now, and the celebration watches re-seed instead of firing for history.
+  pushWorldChanged()
   return reply(true, enabled ? 'Summarize and archive log is on.' : 'Summarize and archive log is off. Your archives stay where they are.')
 }
 
