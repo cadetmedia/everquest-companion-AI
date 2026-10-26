@@ -284,8 +284,11 @@ pub fn route(st: &mut EngineState, ev: &DamageEvent<'_>) -> Option<Attribution> 
         st.drain_retirements();
     }
 
-    // A DoT tick on you can outlive its caster's fight: `encounter_for` opens nothing for it.
+    // A DoT tick on you can outlive its caster and its fight: `encounter_for` refuses it then.
     let Some(enc) = encounter_for(st, ev, &at) else {
+        if st.current.is_some() {
+            route_lone_tick(st, ev);
+        }
         return Some(at);
     };
     // Active-time accrual: the gap since the previous attributed hit, capped at `ACTIVE_MS`, so
@@ -1193,6 +1196,29 @@ pub fn route_environment_damage(st: &mut EngineState, ev: &DamageEvent<'_>) {
         ev.dtype,
         "enemy",
         format!("{ENVIRONMENT} → You  {}  {}", ev.amount, ev.skill),
+    );
+}
+
+/// A DoT tick on you that `encounter_for` refused: still damage taken, booked like environment
+/// damage (the fresh fight, if one is open, and the zone session) on the caster's newest row, and
+/// never resolved or engaged, so a dead caster stays dead.
+fn route_lone_tick(st: &mut EngineState, ev: &DamageEvent<'_>) {
+    let att = match st.world.newest(ev.attacker) {
+        Some(r) => r,
+        None => st.resolve(ev.attacker, ev.ts, false),
+    };
+    let (id, name) = (att.instance_id, att.label);
+    both(st, ev.ts, true, |agg| agg.add_inc(&id, &name, ev));
+    let instant = TimelineRaw {
+        target: None,
+        ..damage_instant(ev, "enemy", String::new())
+    };
+    push_fresh_timeline(st, ev.ts, instant);
+    st.log(
+        ev.ts,
+        ev.dtype,
+        "enemy",
+        format!("{name} → You  {}  {}", ev.amount, ev.skill),
     );
 }
 
