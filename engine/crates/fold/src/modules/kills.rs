@@ -88,7 +88,8 @@ pub struct KillsModule {
     announce: crate::announce::Announce,
     /// Player-shaped names a pet line spoke for (claim, pet say, ally leader): a pet, never a mob.
     pets: HashSet<String>,
-    /// The mob catalog, for a one-word killer that is a mob all the same (`Terror`).
+    /// The mob catalog, for a one-word killer that is a mob all the same (`Terror`). Production
+    /// only: replay and parity install none, so there a one-word victim dying to a mob is refused.
     knowledge: Option<Arc<dyn Knowledge>>,
 }
 
@@ -393,6 +394,15 @@ mod tests {
         assert_eq!(keys, ["terror", "trakanon"]);
     }
 
+    /// The catalog's one-word mob killing a player-shaped name the catalog lacks: a player died.
+    /// Without the catalog `Terror` reads as a player and the death counts.
+    #[test]
+    fn a_player_slain_by_a_catalog_mob_is_not_a_kill() {
+        let line = r#"{"kind":"death","seq":1,"ts":1000,"raw":"d","name":"Rykkerr","bySelf":false,"killer":"Terror"}"#;
+        assert!(fold_knowing(&[line]).is_empty());
+        assert!(fold(&[line]).get("rykkerr").is_some());
+    }
+
     /// A pet named by the dead character is no pet of the next one.
     #[test]
     fn the_epoch_forgets_the_pets() {
@@ -405,6 +415,7 @@ mod tests {
         assert_eq!(keys, ["gobekn"], "{mobs}");
     }
 
+    /// No catalog here: `Gobekn` slain by `Terror` is refused by the pet set alone.
     #[test]
     fn a_player_or_your_pet_dying_is_not_a_kill() {
         let mobs = fold(&[
