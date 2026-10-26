@@ -40,6 +40,7 @@ use crate::jsfn::item_base_name;
 use crate::knowledge::Knowledge;
 use crate::message_overlay::message_text_of;
 use crate::modules::consider::mob_key;
+use crate::modules::kills::is_player_death;
 use crate::modules::resist::world::is_player_shaped_name;
 use crate::EqModule;
 use eqlog::names::strip_rank_tail;
@@ -389,8 +390,7 @@ impl GapsModule {
         };
         // A one-word killer the catalog has (`Terror`) is a mob too, so its victim is a pet.
         let known = |k: &str| self.knowledge.as_ref().is_some_and(|kn| kn.known_mob(k));
-        let killer_is_mob = ev.str("killer").is_some_and(|k| !is_player_shaped_name(k) || known(k));
-        if is_player_shaped_name(name) && killer_is_mob {
+        if is_player_death(name, ev.str("killer"), known) {
             let key = mob_key(name);
             self.players.insert(key.clone());
             return self.rows.remove(&(Domain::Mob, key)).is_some();

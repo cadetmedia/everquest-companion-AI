@@ -82,3 +82,8 @@ test('a spell row takes a name edit: its spellname (owner, 2026-10-24)', async (
   assert.ok(editable(r))
   assert.equal(applyEditText('| spellname = Supemova', r), '| spellname = Supernova')
 })
+
+test('an edit holds when the engine renames the row from the /con spelling to the loot spelling, an edit stored under the old case included', () => {
+  const [out] = withGapEdits([row('mob', 'a gorgon')], { 'mob:A gorgon': { fields: { level: '45' } } })
+  assert.deepEqual(out?.edit, { fields: { level: '45' } })
+})

@@ -19,6 +19,7 @@ import {
   computeLastLootedAt
 } from './heldCounts'
 import { useModule } from '../../lib/useModule'
+import { onHistorySwapped } from '../../lib/historySwapped'
 import { reconcile, type InventoryRow } from '../inventory/reconcile'
 import { rebaselineInstant } from '../inventory/countSource'
 import { setCountSource, useCountSource } from './useCountSource'
@@ -486,12 +487,18 @@ function useTurnInLedger(
   const matchedBaselineRef = useRef<Record<string, number> | null>(null)
   const onQuestCompleteRef = useRef(onQuestComplete)
   onQuestCompleteRef.current = onQuestComplete
+  // Also reset on the world-changed frame (archived history shown or refreshed). The snapshot held
+  // at that moment is the old world's, so the baseline waits for the next one rather than seeding
+  // from it: a `progress` push in between would otherwise seed the old counts.
+  const rawRef = useRef(turnInsRaw)
+  rawRef.current = turnInsRaw
+  const staleRawRef = useRef<TurnInSnap | null>(null)
 
   useEffect(() => {
-    const off = window.eq.onCharacter(() => {
+    return onHistorySwapped(() => {
       matchedBaselineRef.current = null
+      staleRawRef.current = rawRef.current
     })
-    return off
   }, [])
 
   // The log's own turn-ins, quest key → instants. Null until the module hydrates; an empty
@@ -521,6 +528,7 @@ function useTurnInLedger(
   // rather than firing.
   useEffect(() => {
     if (!progress || turnInsRaw == null) return
+    if (matchedBaselineRef.current === null && turnInsRaw === staleRawRef.current) return
 
     // Celebrate every quest whose count GREW since the last observation — but seed the
     // baseline SILENTLY on the first hydrated run so the initial log scan's historical

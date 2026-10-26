@@ -246,3 +246,90 @@ test('A CHAINED QUEST STARTS FROM THE QUEST BEFORE, NAMES NO GIVER, AND IS FILED
   // Three updates in one second are one task line.
   assert.equal(page.split("'''Your task 'Unfortunate news' has been updated.'''").length - 1, 1)
 })
+
+// ---- a walkthrough under another heading (86 of 943 cached pages have no heading reading exactly
+// Walkthrough: `Walkthrough with Dialogue`, `Short Walkthrough`, `TLDR; Walkthrough` and `Full Walkthrough`).
+const hailLog: QuestLog = {
+  giver: 'Dorian G`Wyn',
+  zone: 'Lake Nerius',
+  npcs: ['Dorian G`Wyn'],
+  reruns: 0,
+  steps: [
+    {
+      at: '2026-10-22 23:53:50',
+      kind: 'updated',
+      npc: 'Dorian G`Wyn',
+      zone: 'Lake Nerius',
+      offered: ['Exorbitant Commission'],
+      talk: [
+        { who: 'You', text: 'Hail, Dorian' },
+        { who: 'Dorian G`Wyn', text: 'Bring me the commission and be quick about it.' }
+      ]
+    }
+  ]
+}
+const TOP = ['{| class="questTopTable"', "! ''' Start Zone: '''", '| [[Lake Nerius]]', '|-', "! ''' Quest Giver: '''", '| [[Dorian G`Wyn]]', '|-', "! ''' Related Zones: '''", '| [[Lake Nerius]]', '|-', "! ''' Related NPCs: '''", '| [[Dorian G`Wyn]]', '|}', '']
+const SAID = ["You say, 'Hail, Dorian'", '', ": Dorian G`Wyn says, 'Bring me the commission and be quick about it.'", '', 'Hand [[Exorbitant Commission]] to [[Dorian G`Wyn]]:', '']
+const END = ['[[Category:Quests]]', '[[Category:Lake Nerius]]']
+
+test('A WALKTHROUGH UNDER ANOTHER HEADING IS THE WALKTHROUGH: WHAT IT SAYS IS NOT WRITTEN AGAIN', () => {
+  for (const heading of ['== Walkthrough with Dialogue ==', '== Short Walkthrough ==', '=Long Walkthrough=', '=== Complete Walkthrough: ===']) {
+    const page = [...TOP, heading, '', ...SAID, ...END].join('\n')
+    const out = mergeQuestPage(page, 'Unfortunate news', hailLog, {})
+    assert.deepEqual(out.changes, [], heading)
+    assert.equal(out.text, page, heading)
+  }
+  // Two walkthroughs: what the second holds is held.
+  const two = [...TOP, '== TLDR; Walkthrough ==', '', '* Hail Dorian.', '', '== Full Walkthrough ==', '', ...SAID, ...END].join('\n')
+  assert.deepEqual(mergeQuestPage(two, 'Unfortunate news', hailLog, {}).changes, [])
+})
+
+test('A PAGE WITH NO WALKTHROUGH HEADING GETS ONLY THE LINES IT DOES NOT ALREADY SAY', () => {
+  const page = [...TOP, '== Steps ==', '', ...SAID, ...END].join('\n')
+  assert.deepEqual(mergeQuestPage(page, 'Unfortunate news', hailLog, {}).changes, [])
+  // The hand-in is missing: a walkthrough of that one line, not the talk again.
+  const noHand = [...TOP, '== Steps ==', '', ...SAID.slice(0, 4), ...END].join('\n')
+  const out = mergeQuestPage(noHand, 'Unfortunate news', hailLog, {})
+  assert.deepEqual(out.changes, ['Walkthrough: 1 line from your log'])
+  const lines = out.text.split('\n')
+  assert.equal(lines.filter((l) => l.includes('Hail, Dorian')).length, 1)
+  assert.equal(lines.filter((l) => l.startsWith('Hand [[Exorbitant Commission]]')).length, 1)
+})
+
+// ---- factions the page lists already, and hand-ins written as bullets
+const facLog = (lines: [string, string][]): QuestLog => ({
+  ...hailLog,
+  steps: [{ ...hailLog.steps[0], talk: [], factions: lines.map(([faction, line]) => ({ faction, line })) }]
+})
+const NTA200: [string, string] = ['Nerius Trade Association', 'Your faction standing with Nerius Trade Association has been adjusted by 200.']
+const facPage = (fac: string[]): string => [...TOP, '== Walkthrough ==', '', 'Hand [[Exorbitant Commission]] to [[Dorian G`Wyn]]:', '', '<div class="facblock">', ...fac, '</div>', '', ...END].join('\n')
+
+test('A FACTION THE PAGE LISTS IN A FACBLOCK IS NOT LISTED AGAIN: ANOTHER NUMBER IS A NOTE, THE GAME WORDING IS THE SAME HIT', () => {
+  const hundred = mergeQuestPage(facPage(['* Your faction standing with [[Nerius Trade Association]] has been adjusted by 100.']), 'Unfortunate news', facLog([NTA200]), {})
+  assert.deepEqual(hundred.changes, [])
+  assert.ok(!hundred.text.includes('adjusted by 200'))
+  assert.deepEqual(hundred.notes, ['Nerius Trade Association: the page says 100, your log says 200.'])
+  // 627 cached pages write the game's own "got better." / "got worse." lines.
+  for (const said of ['* Your faction standing with [[Nerius Trade Association]] got better.', '*Your faction standing with Nerius Trade Association got better. (+200)']) {
+    const out = mergeQuestPage(facPage([said]), 'Unfortunate news', facLog([NTA200]), {})
+    assert.deepEqual([out.changes, out.notes], [[], []], said)
+  }
+})
+
+test('A FACTION BLOCK ADDS ONLY THE FACTIONS THE PAGE DOES NOT LIST', () => {
+  const pact: [string, string] = ['Shadowed Men', 'Your faction standing with Shadowed Men has been adjusted by -50.']
+  const out = mergeQuestPage(facPage(['* Your faction standing with [[Nerius Trade Association]] got better.']), 'Unfortunate news', facLog([NTA200, pact]), {})
+  assert.deepEqual(out.changes, ['Walkthrough: 1 line from your log'])
+  const lines = out.text.split('\n')
+  assert.ok(lines.includes('* Your faction standing with [[Shadowed Men]] has been adjusted by -50.'))
+  assert.ok(!out.text.includes('adjusted by 200'))
+  assert.equal(lines.filter((l) => l === '<div class="facblock">').length, 2)
+})
+
+test('A HAND-IN WRITTEN AS A BULLET OR A NUMBERED STEP IS A HAND-IN', () => {
+  const log: QuestLog = { ...hailLog, steps: [{ ...hailLog.steps[0], talk: [] }] }
+  for (const hand of ['* Hand [[Exorbitant Commission]] to [[Dorian G`Wyn]].', '* Turn in the [[Exorbitant Commission]] to [[Dorian G`Wyn]].', '# Give [[Exorbitant Commission]] to [[Dorian G`Wyn]]', "*'''Hand''' [[Exorbitant Commission]] to Dorian."]) {
+    const page = [...TOP, '== Walkthrough ==', '', hand, '', ...END].join('\n')
+    assert.deepEqual(mergeQuestPage(page, 'Unfortunate news', log, {}).changes, [], hand)
+  }
+})

@@ -16,13 +16,22 @@ fn tick(seq: i64, ts: i64) -> String {
 }
 
 fn fold(lines: &[String]) -> Value {
+    fold_selecting(lines, None)
+}
+
+/// The snapshot with one segment (a fight id, or `zone`) selected.
+fn fold_selecting(lines: &[String], selected: Option<&str>) -> Value {
     let mut e = CombatEngine::new();
     e.set_player_name("Primitive");
     for line in lines {
         e.on_event(&Event::from_json(line).expect("a JSON object"), false, None);
     }
     let last = lines.len() as i64;
-    e.snapshot(last, &SnapshotOpts::full(), None)
+    let opts = SnapshotOpts {
+        selected_id: selected.map(str::to_string),
+        ..SnapshotOpts::full()
+    };
+    e.snapshot(last, &opts, None)
 }
 
 /// Every segment that is a fight, open or closed: the zone session is not one.
@@ -59,4 +68,41 @@ fn a_tick_inside_the_fight_is_booked_and_one_after_it_closed_opens_nothing() {
     assert_eq!(after.len(), 1, "a phantom fight opened: {after:?}");
     assert_eq!(after[0]["startTs"], json!(1000), "{after:?}");
     assert_eq!(after[0]["total"], base[0]["total"], "{after:?}");
+}
+
+/// Ticks from a caster that died keep landing inside the 5 s linger and after it. None may bring
+/// the dead caster back: a fresh instance engaged by every tick held the fight open, and the next
+/// pull joined it as `a gnoll +1`.
+#[test]
+fn ticks_from_a_dead_caster_neither_hold_the_fight_open_nor_merge_the_next_pull() {
+    let mut lines = the_fight_and_its_ticks(None);
+    for (seq, ts) in [(4, 4000), (5, 10_000), (6, 16_000)] {
+        lines.push(tick(seq, ts));
+    }
+    lines.push(
+        r#"{"kind":"damage","seq":7,"ts":27000,"raw":"d","attacker":"You","target":"a gnoll","amount":300,"dtype":"melee","skill":"Melee","crit":false}"#
+            .to_string(),
+    );
+    let all = fights(&fold(&lines));
+    assert_eq!(all.len(), 2, "the next pull merged: {all:?}");
+    let starts: Vec<&Value> = all.iter().map(|f| &f["startTs"]).collect();
+    assert!(starts.contains(&&json!(1000)), "{all:?}");
+    assert!(starts.contains(&&json!(27000)), "{all:?}");
+    // The tick inside the linger is still the dead caster's damage to you, in its fight.
+    let first = fold_selecting(&lines, Some("e1"));
+    assert_eq!(
+        first["selected"]["inTotal"],
+        json!(53 * 2),
+        "{}",
+        first["selected"]
+    );
+}
+
+/// A tick after the fight closed opens nothing, but it is still damage you took in this zone: the
+/// zone session counts it, as it counts environment damage taken with no fight open.
+#[test]
+fn a_tick_after_the_fight_closed_counts_in_the_zone_session() {
+    let zone = fold_selecting(&the_fight_and_its_ticks(Some(14_000)), Some("zone"));
+    let selected = &zone["selected"];
+    assert_eq!(selected["inTotal"], json!(53 * 2), "{selected}");
 }
