@@ -48,6 +48,22 @@ const INC_COLOR = '#cf6679'
 /** A frozen empty set, so the compact surface's memo dependencies never change identity. */
 const NOTHING_HIDDEN: readonly ChartLineKey[] = []
 
+// THE SERIES IS KEPT PER TIMELINE OBJECT (performance review 2026-10-20, finding 7). `useMemo`
+// forgets on unmount, and both surfaces are tabs, so every visit re-bucketed the whole event ring
+// although the feed hands a remount the SAME kept snapshot (combatFeed.ts `keptSnapshot`). A
+// WeakMap on the timeline's identity answers the remount from the last build, holds nothing once
+// the snapshot is dropped, and keeps one entry per `live` flag (the two grids differ).
+const SERIES = new WeakMap<TimelineView, { live?: DpsSeries; fixed?: DpsSeries }>()
+
+function keptSeries(tl: TimelineView, live: boolean): DpsSeries {
+  let slot = SERIES.get(tl)
+  if (slot === undefined) {
+    slot = {}
+    SERIES.set(tl, slot)
+  }
+  return live ? (slot.live ??= buildDpsSeries(tl, true)) : (slot.fixed ??= buildDpsSeries(tl, false))
+}
+
 /**
  * The card header's right slot: the inexact-ring chip (ONE chip for both event-ring losses —
  * downsample and/or drop-oldest truncation; the note carries the TRUE instant count, so an
@@ -408,7 +424,7 @@ export function DpsOverTime({
   // The glance card has no legend, so it obeys no hidden set — see `compact`. NOTHING is a stable
   // identity, so the memo chain below is unaffected on that surface.
   const hidden = compact ? NOTHING_HIDDEN : stored
-  const series = useMemo(() => (tl ? buildDpsSeries(tl, live) : null), [tl, live])
+  const series = useMemo(() => (tl ? keptSeries(tl, live) : null), [tl, live])
   const chart = useMemo(() => buildDpsChart(series, live, hidden), [series, live, hidden])
   const placed = useMemo(() => placeMarkers(tl, chart), [tl, chart])
   const drawn = useMemo(() => drawnMarkers(placed, hidden), [placed, hidden])

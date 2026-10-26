@@ -199,8 +199,8 @@ test('the world-rebuilt signal reaches the damage-meter overlay, without widenin
   // MODULE_READING_OVERLAYS, never a hand-copied literal (JOS-172's lesson, one list).
   assert.match(
     mod,
-    /CHARACTER_AWARE_OVERLAYS:\s*OverlayKind\[\]\s*=\s*\[\.\.\.MODULE_READING_OVERLAYS,\s*'fight',\s*'overall'\]/,
-    'CHARACTER_AWARE_OVERLAYS must extend MODULE_READING_OVERLAYS with fight + overall'
+    /CHARACTER_AWARE_OVERLAYS:\s*OverlayKind\[\]\s*=\s*\[\s*\.\.\.MODULE_READING_OVERLAYS,\s*'fight',\s*'overall',\s*'heal-fight',\s*'heal-overall'\s*\]/,
+    'CHARACTER_AWARE_OVERLAYS must extend MODULE_READING_OVERLAYS with the four meter kinds'
   )
 
   // sendWorldRebuilt sends onCharacter through the character-aware fan-out, NOT the module set.

@@ -10,6 +10,12 @@
 //
 // A FINISHED COUNTER can be picked too (owner ask, 2026-10-12: see where a completed one's mobs
 // are). It joins the picks and the picked ranking, never the every-open-counter one.
+//
+// EACH PLAN IS KEPT ACROSS VISITS (performance review 2026-10-20, finding 7). A plan is a pass over
+// 7,900 mobs (25-45 ms, measured on the owner's dump), there are two or three per mount, and the tab
+// unmounts on every switch. The record and the book are asked again on every mount, so they arrive
+// as new objects with the same content: each slot (lib/kept.ts) keys the counters by CONTENT (a
+// JSON string of a few dozen rows) and the options by their primitives.
 
 import { useCallback, useMemo, useState } from 'react'
 import type { CharacterSnap } from '@shared/characterTypes'
@@ -27,6 +33,7 @@ import {
   type ZoneOrder
 } from '@shared/slayer/slayerPlan'
 import type { View } from '../../appViews'
+import { kept, type Kept } from '../../lib/kept'
 import { useModule } from '../../lib/useModule'
 // The Maps tab's own pin is the zone deep link: write the selection it persists, then switch
 // tabs. MapsView reads it on mount, exactly as if the zone had been picked in its selector.
@@ -147,24 +154,52 @@ function withSet(picks: ReadonlySet<string>, ids: readonly string[], on: boolean
   return next
 }
 
+const ALL_PLAN: Kept<{ rows: CounterRow[]; zones: PlanZone[] }> = { last: null }
+const FINISHED_PLAN: Kept<CounterRow[]> = { last: null }
+const PICKED_PLAN: Kept<PlanZone[]> = { last: null }
+
+/** The options as a slot key: the memo's object is new per mount, its four values are not. */
+function optsKey(opts: PlanOptions): unknown[] {
+  return [opts.maxLevel, opts.outOfEra, opts.noFactionHits, opts.met]
+}
+
 /** Every open counter with its reach, and the plan over all of them. */
 function useAllCounters(opts: PlanOptions): { rows: CounterRow[]; zones: PlanZone[] } {
   const { record } = useSlayerData()
   return useMemo(() => {
     if (record === null) return { rows: [], zones: [] }
-    const targets = counterRows(record, new Map()).map((r) => r.target)
-    const zones = planZones(slayerCatalog(), targets, opts)
-    return { rows: counterRows(record, targetReach(zones)), zones }
+    return kept(ALL_PLAN, [JSON.stringify(record), ...optsKey(opts)], () => {
+      const targets = counterRows(record, new Map()).map((r) => r.target)
+      const zones = planZones(slayerCatalog(), targets, opts)
+      return { rows: counterRows(record, targetReach(zones)), zones }
+    })
   }, [record, opts])
 }
 
 /** The finished counters with their reach. */
 function useFinished(finished: readonly SlayerCounter[], opts: PlanOptions): CounterRow[] {
-  return useMemo(() => {
-    const record = { counters: [...finished], goals: [] }
-    const targets = counterRows(record, new Map()).map((r) => r.target)
-    return counterRows(record, targetReach(planZones(slayerCatalog(), targets, opts)))
-  }, [finished, opts])
+  return useMemo(
+    () =>
+      kept(FINISHED_PLAN, [JSON.stringify(finished), ...optsKey(opts)], () => {
+        const record = { counters: [...finished], goals: [] }
+        const targets = counterRows(record, new Map()).map((r) => r.target)
+        return counterRows(record, targetReach(planZones(slayerCatalog(), targets, opts)))
+      }),
+    [finished, opts]
+  )
+}
+
+/** The ranking over the picked counters; with nothing picked, the plan over every open one. */
+function pickedPlan(picked: readonly CounterRow[], all: readonly PlanZone[], opts: PlanOptions): readonly PlanZone[] {
+  if (picked.length === 0) return all
+  const counters = JSON.stringify(picked.map((r) => r.counter))
+  return kept(PICKED_PLAN, [counters, ...optsKey(opts)], () =>
+    planZones(
+      slayerCatalog(),
+      picked.map((r) => r.target),
+      opts
+    )
+  )
 }
 
 export function useSlayerController(
@@ -180,11 +215,7 @@ export function useSlayerController(
 
   const picked = useMemo(() => every.filter((r) => picks.has(r.id)), [every, picks])
   const [order, setOrder] = useState(() => loadZoneOrder())
-  const zones = useMemo(() => {
-    const plan =
-      picked.length === 0 ? all.zones : planZones(slayerCatalog(), picked.map((r) => r.target), opts)
-    return sortZones(plan, order)
-  }, [all.zones, picked, opts, order])
+  const zones = useMemo(() => sortZones(pickedPlan(picked, all.zones, opts), order), [all.zones, picked, opts, order])
   const onOrder = useCallback((next: ZoneOrder) => {
     setOrder(next)
     savePref(ZONE_ORDER_KEY, next)

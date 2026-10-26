@@ -46,8 +46,17 @@
 // one that reads the wish set — so a click on a wish control re-cuts the brackets over the pool and
 // never re-scores the corpus. The first cut keyed one memo on everything and paid the full fold per
 // wish.
+//
+// BOTH ARE KEPT ACROSS VISITS (performance review 2026-10-20, finding 7). The tab unmounts on every
+// switch and the ownership join is re-asked on every mount, so each visit scored the pool TWICE
+// (15-30 ms a pass, measured over the committed corpus): once over the bare join the first render
+// has, once more when main's reply lands. The corpora are now held at module scope (lib/kept.ts),
+// keyed by the CONTENT of what is owned rather than the join's per-mount identity, in two slots,
+// the bare and the owned, because every mount asks both in turn; the pool is held per corpora
+// object. A revisit with nothing new scores nothing.
 
 import { useCallback, useMemo } from 'react'
+import { kept, type Kept } from '../../lib/kept'
 import type { ClassAbbr } from '@shared/classCombo'
 import { conBand } from '@shared/conBands'
 import { metVersion } from '@shared/metInLog'
@@ -61,7 +70,9 @@ import {
   type GearRole,
   type GearTarget,
   type PlanBracket,
+  type PlanCandidate,
   type PlanCorpora,
+  type PlanScope,
   type QuestSource
 } from '@shared/planner/progressionPlan'
 import { ownershipKey } from '@shared/planner/ownership'
@@ -74,7 +85,7 @@ import type { PlanReach } from '../gear/areaMemory'
 import type { GearOwnershipMap } from '../gear/gearOwnership'
 import { useWishlist } from '../wishlist/useWishlist'
 import { wishFromGear } from '../wishlist/wishSearch'
-import { ownedKeysOf, ownedSide, ownedUpgrades, type OwnedUpgrade } from './planOwned'
+import { ownedKeysOf, ownedSide, ownedUpgrades, type OwnedKeys, type OwnedUpgrade } from './planOwned'
 
 // ---- the catalog folds ------------------------------------------------------------------------
 
@@ -198,6 +209,28 @@ export interface PlanPicks {
   survivability: number
 }
 
+/** What is owned, as a slot key: the join is a new object per mount, its content is not. */
+function ownedSignature(keys: OwnedKeys): string {
+  return JSON.stringify([[...keys.held], [...keys.worn], [...keys.wornAny], [...(keys.wornCopies ?? [])]])
+}
+
+/** The signature of owning nothing: no dump yet (the first render of every mount), or none at all. */
+const OWNS_NOTHING = ownedSignature({ held: new Set(), worn: new Set(), wornAny: new Set(), wornCopies: new Map() })
+const CORPORA_BARE: Kept<PlanCorpora> = { last: null }
+const CORPORA_OWNED: Kept<PlanCorpora> = { last: null }
+/** The pool, one slot per corpora object (each is held by the slots above for as long as it is used). */
+const POOLS = new WeakMap<PlanCorpora, Kept<PlanCandidate[]>>()
+
+function keptPool(scope: PlanScope, corpora: PlanCorpora): PlanCandidate[] {
+  let slot = POOLS.get(corpora)
+  if (slot === undefined) {
+    slot = { last: null }
+    POOLS.set(corpora, slot)
+  }
+  const { classes, role, eraOnly, survivability } = scope
+  return kept(slot, [classes.join(' '), role, eraOnly, survivability], () => candidatePool(scope, corpora))
+}
+
 /**
  * The fold's world MINUS the wish list, memoized on the things that actually move: the corpus (once
  * per window), the ownership join (a dump re-read or a loot line), the ROLE and the CLASS TRIO (a
@@ -234,18 +267,23 @@ export function usePlanCorpora(
   // the corpora with them, so a flagged mob the player met is evidence again.
   const met = metVersion()
   return useMemo(
-    () => ({
-      gear: rows,
-      profiles: zoneProfiles(eraOnly),
-      mobLevel: (name: string) => mobLevelOf(name, eraOnly),
-      con: conBand,
-      owned: keys.held,
-      questSources: questSourcesOf,
-      ownedBestBySlot: side.bars,
-      ownedHaste: side.haste
-    }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- `met` keys the era verdicts both folds read through mobOutOfEra
-    [rows, keys, side, eraOnly, met]
+    () => {
+      const owned = ownedSignature(keys)
+      // `side` is a function of the owned keys, the corpus and the three scope values, all in the key.
+      const key = [rows, owned, eraOnly, met, role, classes.join(' '), survivability]
+      return kept(owned === OWNS_NOTHING ? CORPORA_BARE : CORPORA_OWNED, key, () => ({
+        gear: rows,
+        profiles: zoneProfiles(eraOnly),
+        mobLevel: (name: string) => mobLevelOf(name, eraOnly),
+        con: conBand,
+        owned: keys.held,
+        questSources: questSourcesOf,
+        ownedBestBySlot: side.bars,
+        ownedHaste: side.haste
+      }))
+    },
+    // `met` is in the key because it keys the era verdicts both folds read through mobOutOfEra.
+    [rows, keys, side, eraOnly, met, role, classes, survivability]
   )
 }
 
@@ -297,7 +335,7 @@ export function usePlanRoute(
     return keys
   }, [entries])
   const pool = useMemo(
-    () => candidatePool({ classes, role, eraOnly, survivability }, corpora),
+    () => keptPool({ classes, role, eraOnly, survivability }, corpora),
     [classes, role, eraOnly, survivability, corpora]
   )
   return useMemo(() => {

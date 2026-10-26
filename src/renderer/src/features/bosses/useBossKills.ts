@@ -24,9 +24,19 @@
 // the past. If we compared that against an empty `prev`, every historical kill
 // would look "new" and fire confetti on launch. So we seed the baseline silently
 // on the first state we see and only emit for changes after that.
+//
+// THE STATUSES ARE DERIVED IN RENDER, NOT IN THE EFFECT (performance review 2026-10-20, finding
+// 7). They used to be `setState` from the effect, so every mount painted an empty roster and then
+// rendered the whole Raid Targets tab a second time. They are a pure fold of (targets, kills), so
+// they are computed while rendering, through one slot at module scope (lib/kept.ts): the roster
+// is one object per window and the kills snapshot is the store's shared object, so the
+// always-mounted App detector and the tab ask the same question and the tab's mount takes the
+// detector's answer. The effect is left with the one job that is a side effect: the diff that
+// fires `onKill`.
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import type { KillMap, KillsSnap, RaidTarget } from '@shared/types'
+import { kept, type Kept } from '../../lib/kept'
 import { useModule } from '../../lib/useModule'
 import { allStatuses, bossKills, type BossKill, type TargetStatus } from './bossStatus'
 
@@ -40,6 +50,9 @@ export interface BossKillCallbacks {
   onKill?: (kill: BossKill) => void
 }
 
+const STATUSES: Kept<TargetStatus[]> = { last: null }
+const NO_STATUSES: TargetStatus[] = []
+
 export function useBossKills(
   targets: RaidTarget[],
   cbs?: BossKillCallbacks
@@ -48,7 +61,8 @@ export function useBossKills(
   // baseline was not written at re-hydrates instead of merging (shared/kills.ts).
   const snap = useModule<KillsSnap>('kills')
   const kills = snap?.mobs
-  const [statuses, setStatuses] = useState<TargetStatus[]>([])
+  // Empty until the module answers, as the effect's first render was.
+  const statuses = kills ? kept(STATUSES, [targets, kills], () => allStatuses(targets, kills)) : NO_STATUSES
   // Previous per-target status; seeded silently on first snapshot.
   const prevRef = useRef<Map<string, TargetStatus> | null>(null)
   const cbsRef = useRef(cbs)
@@ -67,8 +81,7 @@ export function useBossKills(
 
   useEffect(() => {
     if (!kills) return
-    const next = allStatuses(targets, kills)
-    setStatuses(next)
+    const next = statuses
     const prev = prevRef.current
     if (prev != null) {
       // Any CREDITED kill, repeats included → confetti/snackbar/toast/sound. `prev != null` is
@@ -76,7 +89,7 @@ export function useBossKills(
       for (const kill of bossKills(prev, next)) cbsRef.current?.onKill?.(kill)
     }
     prevRef.current = new Map(next.map((s) => [s.target.name, s]))
-  }, [kills, targets])
+  }, [kills, statuses])
 
   return { kills: kills ?? {}, statuses }
 }

@@ -42,8 +42,19 @@ export const MODULE_READING_OVERLAYS: OverlayKind[] = ['events', 'buffs', 'debuf
  * cold-start race where the mount-time snapshot resolves before `character` is populated) and
  * nothing else. Kept a superset of `MODULE_READING_OVERLAYS` so "who is told the world was
  * rebuilt" stays one list.
+ *
+ * The healing meters ('heal-fight' / 'heal-overall') are here for the same reason: they read
+ * combat through the same `useOverlayCombat`, whose kept answer is keyed on a count of
+ * `onCharacter` events. Without the signal a character switch left the last character's healing on
+ * screen (performance review 2026-10-20, finding 4).
  */
-export const CHARACTER_AWARE_OVERLAYS: OverlayKind[] = [...MODULE_READING_OVERLAYS, 'fight', 'overall']
+export const CHARACTER_AWARE_OVERLAYS: OverlayKind[] = [
+  ...MODULE_READING_OVERLAYS,
+  'fight',
+  'overall',
+  'heal-fight',
+  'heal-overall'
+]
 
 /**
  * Push to every overlay window that reads modules.
