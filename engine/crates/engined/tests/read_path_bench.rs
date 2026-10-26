@@ -23,8 +23,17 @@ use std::time::{Duration, Instant};
 use harness::{attach, health, module_snapshot, perf_snapshot, session_mark, Client, Engine};
 use protocol::generated::{EngineMessage, HealthResultStatus, ReplyResult};
 
-/// The modules the performance review measured as big, plus two small ones for contrast.
-const MODULES: [&str; 6] = ["loot", "gaps", "kills", "progression", "consider", "buffs"];
+/// The modules the performance review measured as big, plus two small ones for contrast, and the
+/// overlay served apart from `buffs`.
+const MODULES: [&str; 7] = [
+    "loot",
+    "gaps",
+    "kills",
+    "progression",
+    "consider",
+    "buffs",
+    "messageOverlay",
+];
 
 /// Send one request and wait for the reply carrying its id; everything else on the stream is
 /// traffic. Answers the round trip and the reply.

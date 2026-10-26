@@ -311,11 +311,14 @@ export interface MessageOverlay {
   stats: { verified: number; shared: number; contradictions: number; unknown: number }
 }
 
-/** buffs module snapshot: live active buffs + mined per-spell stats + the message overlay. */
+/** buffs module snapshot: live active buffs + mined per-spell stats. */
 export interface BuffsSnap {
   active: ActiveBuff[]
   stats: Record<string, BuffStat>
-  /** The observed-message overlay (Task #36) — for the diagnostics/audit UI. */
+  /**
+   * The observed-message overlay (Task #36). Served apart as `messageOverlay` (buffsMessageOverlay.ts);
+   * only a captured segment's `buffs` state carries it.
+   */
   overlay?: MessageOverlay
 }
 /** buffs module delta: the module ships a full snapshot each flush (small state). */

@@ -34,7 +34,7 @@ use crate::modules::buff_landing::{admit_landing, candidates_of, wear_off_candid
 use crate::modules::buff_procs::ProcStash;
 use crate::modules::buffs_entities::PetEntities;
 use crate::modules::buffs_instances::{BuffInstances, LandingSpec};
-use crate::modules::buffs_mining::OverlayMining;
+use crate::modules::buffs_mining::{OverlayMining, SharedMining};
 use crate::modules::buffs_session::SessionFrame;
 use crate::modules::buffs_shapes::{
     spell_key, EMOTE_MIN_OBSERVATIONS, EMOTE_WINDOW_MS, PERMANENT_ILLUSION, QUICK_BUFF, SELF_KEY,
@@ -83,8 +83,8 @@ pub struct BuffsModule {
     stash: ProcStash,
     /// Last-seen clock + the log-hole question.
     frame: SessionFrame,
-    /// The observed-message overlay: which lines the miner is fed, and what it builds.
-    mining: OverlayMining,
+    /// The observed-message overlay: which lines the miner is fed. Served by `messageOverlay`.
+    mining: SharedMining,
     /// A read-only copy of the catalog for the landing gate, which asks it about NATURE. Taking a
     /// second copy rather than reaching through the shared borrow is what keeps `admit_landing` a
     /// plain function over immutable facts.
@@ -103,8 +103,8 @@ pub struct BuffsModule {
     cur_seq: i64,
     cur_ts: i64,
     /// The announce cursor — see [`crate::announce`]. It is not a revision counter; it is the same
-    /// question asked one level up, where `on_event` has the whole event in front of it. Three
-    /// things are published (`active`, `stats`, `overlay`); each arm answers whether it could have
+    /// question asked one level up, where `on_event` has the whole event in front of it. Two
+    /// things are published (`active`, `stats`); each arm answers whether it could have
     /// moved one of them, the arms that could not are named individually, and anything nobody can
     /// answer without reopening the buff system answers `true`. So it over-reports on a subset that
     /// excludes the catch-all arm, which is where every line of a melee round lands.
@@ -122,13 +122,13 @@ impl BuffsModule {
             emote_text_count: JsMap::new(),
             stash: ProcStash::default(),
             frame: SessionFrame::new(),
-            mining: OverlayMining::new(
+            mining: Rc::new(RefCell::new(OverlayMining::new(
                 facts.clone(),
                 &[(
                     crate::message_overlay::BASELINE_SOURCE,
                     crate::message_overlay::baseline_counts(),
                 )],
-            ),
+            ))),
             facts,
             derived: Vec::new(),
             cur_seq: 0,
@@ -479,19 +479,25 @@ impl BuffsModule {
     /// same for every character — but the counts THIS log accounts for are about to be re-stated in
     /// full, so its bucket is discarded rather than added to.
     pub fn begin_overlay_source(&mut self, key: &str) {
-        self.mining.begin_source(key);
+        self.mining.borrow_mut().begin_source(key);
     }
 
     /// Seed one persisted bucket. See `OverlayMining::seed` for why it is not part of construction,
     /// and [`BuffsModule::begin_overlay_source`] for the call that must follow it.
     pub fn seed_overlay(&mut self, key: &str, counts: &[crate::message_overlay::SeedMessage]) {
-        self.mining.seed(key, counts);
+        self.mining.borrow_mut().seed(key, counts);
     }
 
     /// The persistence view of the mined overlay — raw counts per source, no verdicts.
     #[must_use]
     pub fn overlay_register(&self) -> crate::message_overlay::OverlayRegister {
-        self.mining.register()
+        self.mining.borrow().register()
+    }
+
+    /// The miner, for the module that serves it (`buffs_overlay.rs`).
+    #[must_use]
+    pub fn shared_mining(&self) -> SharedMining {
+        Rc::clone(&self.mining)
     }
 
     fn build_state(&self, stats: &SpellStats) -> Value {
@@ -499,7 +505,6 @@ impl BuffsModule {
         json!({
             "active": active,
             "stats": stats.build_stats(),
-            "overlay": self.mining.build(),
         })
     }
 }
@@ -583,11 +588,11 @@ impl EqModule for BuffsModule {
                 .sweep_hygiene(ts, self.frame.held_before_ts(), &core.stats, &self.pets);
 
         // Overlay mining: feed the anchor cast and any candidate message line so the miner accretes
-        // (message, spell) associations across replay AND live. The overlay is published, so a line
-        // that reaches the miner counts.
-        published |= self.mining.observe(ev);
+        // (message, spell) associations across replay AND live. The overlay is served by
+        // `messageOverlay`, whose cursor the miner moves itself.
+        self.mining.borrow_mut().observe(ev);
 
-        // Every arm answers one question: can this move `active`, `stats` or `overlay`? The arms
+        // Every arm answers one question: can this move `active` or `stats`? The arms
         // answering `false` move the anchors, the pending cast, the pet bindings or the AA ownership
         // stamp — real state, none of it in the snapshot. Everything else says `true`, the
         // over-approximation the announce law asks for.

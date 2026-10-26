@@ -289,6 +289,8 @@ pub const WIRING_ORDER: &[&str] = &[
     "buffs",
     "buffTimers",
     "buffConflicts",
+    // The Buffs tab's message-overlay diagnostics, apart so a buffs fetch is small (`buffs_overlay.rs`).
+    "messageOverlay",
     "consider",
     "resist",
     "bazaar",
@@ -862,12 +864,15 @@ pub fn registered(deps: ClusterDeps) -> Registry {
     // cannot hold two ideas of whose spell just landed or how long it lasts. One `Rc<RefCell<…>>`,
     // cloned into both, is that sharing.
     let core = modules::buffs::shared_core(facts.clone());
-    r.register(Box::new(modules::buffs::BuffsModule::new(
-        facts,
-        core.clone(),
-    )));
+    let buffs = modules::buffs::BuffsModule::new(facts, core.clone());
+    let mining = buffs.shared_mining();
+    r.register(Box::new(buffs));
     r.register(Box::new(modules::buff_timers::BuffTimersModule::new(core)));
     r.register(Box::new(modules::buff_conflicts::BuffConflictsModule::new()));
+    // The overlay `buffs` mines, served on its own (`buffs_overlay.rs`).
+    r.register(Box::new(modules::buffs_overlay::MessageOverlayModule::new(
+        mining,
+    )));
     r.register(Box::new(modules::consider::ConsiderModule::new()));
     r.register(Box::new(modules::resist::ResistModule::new()));
     r.register(Box::new(modules::bazaar::BazaarModule::new()));

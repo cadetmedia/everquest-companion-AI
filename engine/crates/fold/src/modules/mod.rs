@@ -37,6 +37,8 @@ pub mod buffs_entities;
 pub mod buffs_instance_rules;
 pub mod buffs_instances;
 pub mod buffs_mining;
+/// `messageOverlay`: the mined message overlay, served apart from `buffs`.
+pub mod buffs_overlay;
 pub mod buffs_session;
 pub mod buffs_shapes;
 pub mod buffs_stats;

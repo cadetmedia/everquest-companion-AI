@@ -38,7 +38,7 @@ import type { RespawnRow } from '../../shared/respawn'
 import { historyKeys, readRespawnHistory } from './respawnHistory'
 import type { SegmentSummary } from '../../shared/combat'
 import { ALL_FIGHTS, capturedFights } from '../../shared/logArchive/mergeFights'
-import { KILL_FACTION_SAMPLES_MODULE, gapsWithSamples } from '../../shared/gapKillFactionSamples'
+import { capturedState } from '../../shared/logArchive/capturedShape'
 
 /** What this file needs of a child process; Node's `ChildProcess` is one. */
 export interface EngineProcess {
@@ -146,9 +146,9 @@ async function snapshotAll(client: EngineClient, modules: readonly string[]): Pr
     try {
       const r = await client.request('module.snapshot', { module })
       if (r.module !== module) continue
-      // `gaps` kept with its kill-faction proof lines, as the app's own capture keeps it (actions.ts).
-      const proofs = async (): Promise<unknown> => (await client.request('module.snapshot', { module: KILL_FACTION_SAMPLES_MODULE })).state
-      out[module] = { seq: r.seq, state: module === 'gaps' ? await gapsWithSamples(r.state, proofs) : r.state }
+      // Kept as the app's own capture keeps it (actions.ts): what is served apart put back in place.
+      const read = async (m: string): Promise<unknown> => (await client.request('module.snapshot', { module: m })).state
+      out[module] = { seq: r.seq, state: await capturedState(module, r.state, read) }
     } catch {
       // A module this build does not have; the capture skips it the same way.
     }
