@@ -79,6 +79,8 @@ export interface Segment {
   /** The app version whose refresh last tried to fill the extras (fights, respawn history, the
    *  faction ledger). A refresh at launch is not tried again by the same version. */
   extrasTriedBy?: string
+  /** The same for the respawn state's learned evidence (`lacksLearned`, main/logArchive/refresh.ts). */
+  learnedTriedBy?: string
 }
 
 export type ParsedSegment = { ok: true; segment: Segment } | { ok: false; reason: string }

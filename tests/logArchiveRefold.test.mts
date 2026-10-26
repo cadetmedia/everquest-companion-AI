@@ -14,7 +14,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { gzipSync } from 'node:zlib'
 import { liveLogName, refoldSegment, stageSegmentLog, type RefoldResult } from '../src/main/logArchive/refold'
-import { refreshSegment, sweepRefreshLeftovers } from '../src/main/logArchive/refresh'
+import { lacksLearned, refreshSegment, sweepRefreshLeftovers } from '../src/main/logArchive/refresh'
 import { listSegments, segmentPath, writeSegment } from '../src/main/logArchive/segmentStore'
 import { compareModules, keepIdentity, stateDifference } from '../src/shared/logArchive/refoldCompare'
 import { SEGMENT_VERSION, type Segment } from '../src/shared/logArchive/segment'
@@ -172,13 +172,32 @@ test('refresh: an older segment gains the event kind its build did not read', as
   assert.deepEqual(back.producedBy, NOW)
   assert.equal((back.modules.character.state as { character: { logPath: string } }).character.logPath, STORED_LOG)
   assert.equal(back.extrasTriedBy, NOW.app)
-  assert.deepEqual({ ...back, modules: {}, producedBy: segment.producedBy, extrasTriedBy: undefined }, { ...segment, modules: {}, extrasTriedBy: undefined })
+  assert.equal(back.learnedTriedBy, NOW.app)
+  assert.deepEqual(
+    { ...back, modules: {}, producedBy: segment.producedBy, extrasTriedBy: undefined, learnedTriedBy: undefined },
+    { ...segment, modules: {}, extrasTriedBy: undefined, learnedTriedBy: undefined }
+  )
   // The old file is kept beside it until the next launch, and only the swapped one is listed.
   const old = JSON.parse(readFileSync(`${segmentPath(dir, segment.id)}.old`, 'utf8')) as Segment
   assert.deepEqual(old, segment)
   assert.equal(listSegments(dir).segments.length, 1)
   assert.equal(sweepRefreshLeftovers(dir), 1)
   assert.equal(existsSync(`${segmentPath(dir, segment.id)}.old`), false)
+})
+
+test('refresh: a respawn state without learned evidence asks once per version, even when the refresh could not add it', async () => {
+  const { dir, segment } = olderSegment()
+  const respawn = (state: object) => ({ ...REFOLDED, respawn: { seq: 2, state } })
+  const without = { ...segment, modules: { ...segment.modules, respawn: { seq: 1, state: { v: 4, rows: [] } } } }
+  writeSegment(dir, without)
+  assert.equal(lacksLearned(without, NOW.app), true)
+  assert.equal(lacksLearned({ ...without, modules: respawn({ v: 4, rows: [], learned: [] }) }, NOW.app), false, 'the field, even empty')
+  assert.equal(lacksLearned(segment, NOW.app), false, 'no respawn module, nothing to ask for')
+  // The refold still gives no `learned`: the stamp keeps the next launch from refolding it again.
+  await refreshSegment(dir, segment.id, { refold: refoldGiving(respawn({ v: 4, rows: [] })), producedBy: () => NOW })
+  const back = listSegments(dir).segments[0]
+  assert.equal(lacksLearned(back, NOW.app), false)
+  assert.equal(lacksLearned(back, '1.0.1'), true, 'the next version tries once more')
 })
 
 test('refresh: allowed for a segment this version produced, refused with no archive', async () => {

@@ -34,7 +34,7 @@ import { readDefine } from '../dataServer/appKnowledge'
 import { pushAppKnowledge } from '../dataServer/definePush'
 import { pushWorldChanged } from '../dataServer/serveDeltas'
 import type { RespawnRow } from '../../shared/respawn'
-import { refreshSegment, sweepRefreshLeftovers } from './refresh'
+import { lacksLearned, refreshSegment, sweepRefreshLeftovers } from './refresh'
 import { readJournal, recoverRotation, restoreLog, rotateLog, type RotateDeps } from './rotate'
 import { listSegments, writeSegment } from './segmentStore'
 
@@ -147,7 +147,7 @@ function row(s: Segment): SegmentRow {
 function lacksModules(s: Segment): boolean {
   if (engineModules === null) return false
   if (lacksExtras(s)) return true
-  if (engineLearnsRespawn && lacksLearned(s)) return true
+  if (engineLearnsRespawn && lacksLearned(s, app.getVersion())) return true
   return [...engineModules].some((m) => !Object.prototype.hasOwnProperty.call(s.modules, m))
 }
 
@@ -161,17 +161,6 @@ function lacksExtras(s: Segment): boolean {
   if (s.extrasTriedBy === app.getVersion()) return false
   const ledger = existsSync(join(logArchiveDir(), ledgerFileName(s.id)))
   return s.fights === undefined || s.respawnHistory === undefined || !ledger
-}
-
-/**
- * The segment's respawn state has no learned evidence (respawn-first-sight, owner 2026-10-25: the
- * wiki respawn time from every kill, archived months included). One refresh by an engine that
- * publishes it adds the field, even empty, so this asks once and never loops.
- */
-function lacksLearned(s: Segment): boolean {
-  if (!Object.prototype.hasOwnProperty.call(s.modules, 'respawn')) return false
-  const state = s.modules.respawn.state as { learned?: unknown } | null
-  return state === null || typeof state !== 'object' || !Array.isArray(state.learned)
 }
 
 /** Ask the engine which captured modules it serves. Once per run, after it has caught up. */
