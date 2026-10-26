@@ -33,7 +33,7 @@ import Snackbar from '@mui/material/Snackbar'
 import MuiAlert from '@mui/material/Alert'
 import type { AlertDef } from '@shared/types'
 import type { ShareApplyResult } from '@shared/profiles'
-import { previewAlertNow, refreshAlertStore } from './player'
+import { previewAlertNow } from './player'
 import SoundPacksDialog from './SoundPacksDialog'
 import MySoundsDialog from './MySoundsDialog'
 import SuggestAlertsDialog from './SuggestAlertsDialog'
@@ -417,7 +417,6 @@ export default function AlertsView({
         onClose={() => setImportOpen(false)}
         onApplied={(res) => {
           void store.reload()
-          void refreshAlertStore()
           setToast(importToast(res))
         }}
       />
