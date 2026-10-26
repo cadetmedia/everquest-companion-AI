@@ -9,6 +9,7 @@ import { useCallback, useDeferredValue, useMemo, useState } from 'react'
 import type { ClassAbbr } from '@shared/classCombo'
 import type { ZoneShort } from '@shared/maps'
 import type { View } from '../../appViews'
+import { kept, type Kept } from '../../lib/kept'
 // The Maps tab's own pin is the zone deep link: write the selection it persists, then switch
 // tabs — MapsView reads it on mount, exactly as if the zone had been picked in its selector.
 import { onPick, saveZoneSelection } from '../maps/zoneFollow'
@@ -27,6 +28,7 @@ import {
   narrowDerived,
   visibleRows,
   type DeriveJoins,
+  type GearMaps,
   type RowDerived,
   type RowFilters,
   type RowSort,
@@ -37,6 +39,11 @@ import { raisedFactionKeys } from './factionQuests'
 import { useDontCareFactions } from './useDontCareFactions'
 import { useFactionData, type FactionRowVm } from './useFactionRows'
 import { rulesOf } from '@shared/unlocks/unlockGraph'
+
+/** The gear index's two maps, kept across visits (performance review 2026-10-20, finding 7): a
+ *  ~5 ms walk of 6,963 rows that ran on every visit and every wishlist edit, for an index that is
+ *  one array per window (`useGearIndex`), so its identity is the whole key. */
+const GEAR_MAPS: Kept<GearMaps> = { last: null }
 
 /** The set with one member toggled — a fresh Set, because React compares by identity. */
 function toggledSet(s: ReadonlySet<number>, id: number): ReadonlySet<number> {
@@ -233,7 +240,10 @@ export function useFactionsController(props: FactionsViewProps): FactionsControl
     }),
     [onOpenLoot, onOpenMob, onOpenZone, held, wishKeys, dontCare.keys, dontCare.toggle]
   )
-  const joins = useMemo<DeriveJoins>(() => ({ maps: gearMaps(gearIndex.rows), wishKeys }), [gearIndex.rows, wishKeys])
+  const joins = useMemo<DeriveJoins>(
+    () => ({ maps: kept(GEAR_MAPS, [gearIndex.rows], () => gearMaps(gearIndex.rows)), wishKeys }),
+    [gearIndex.rows, wishKeys]
+  )
   // The work filters WITHOUT the search: the query narrows per keystroke in `useTableRows`, on
   // top of this base, never inside the whole-dump derivation (factionDerive.ts's header).
   const workFilters = useMemo<WorkFilters>(
