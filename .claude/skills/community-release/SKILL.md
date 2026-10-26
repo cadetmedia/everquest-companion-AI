@@ -35,8 +35,8 @@ reaches players within hours: only publish what the owner has asked for.
    A finished, gated work branch that is not in yet is merged first, or the owner is told why not.
 3. **Bump and write the notes on a work branch** off `main_community`, in a temporary worktree
    (`git worktree add -b release-test.N .claude/worktrees/release-test.N main_community`):
-   `package.json` version `0.1.0-test.N` -> `N+1`, and one commit titled
-   `Test build 0.1.0-test.N: <one line>` whose body is the player-facing notes: ONLY what changed
+   `package.json` version `0.1.0-test.N` -> `N+1`, and one commit titled with the NEW version,
+   `Test build 0.1.0-test.<N+1>: <one line>` (the script looks for the `package.json` version), whose body is the player-facing notes: ONLY what changed
    since the previous version, then the known issues; short. Never repeat the cumulative "what
    this build adds" list: test.20, the first release, carries it, and the script links to it from
    every later release (it stops if the heading reappears). The script takes the NEWEST `Test build <version>:` commit, so a correction is
