@@ -298,6 +298,25 @@ test('read path: a segment sealed during this attach is held back', () => {
   assert.deepEqual(t.h.status()?.held, [{ id: 'seg-a', reason: 'sealed-this-attach' }])
 })
 
+test('read path: a segment sealed during an attach is shown once a later attach refolds the log', () => {
+  let who = 'primitive_freeport'
+  const t = harness({ segments: [sealedLoot], attached: () => ({ character: who, logPath: `${who}.txt` }) })
+  const served = [{ ts: 2, item: 'new' }]
+  const accepted = t.h.engineAttaching()
+  t.h.noteSealedThisAttach('seg-a')
+  accepted()
+  assert.equal(t.h.mergeHistory('loot', 1, served), served, 'sealed after that attach was sent: still in its fold')
+  // Away and back with no attach sent (a superseded switch): the engine may still hold the lines.
+  who = 'other_freeport'
+  t.h.mergeHistory('loot', 2, [])
+  who = 'primitive_freeport'
+  assert.equal(t.h.mergeHistory('loot', 3, served), served)
+  const back = t.h.engineAttaching()
+  assert.equal(t.h.mergeHistory('loot', 4, served), served, 'not until the attach is accepted')
+  back()
+  assert.deepEqual(t.h.mergeHistory('loot', 5, served), [{ ts: 1, item: 'old' }, ...served])
+})
+
 test('readHeadBytes: reads at most n bytes, and null for a missing file', () => {
   const dir = mkdtempSync(join(tmpdir(), 'logarchive-'))
   const p = join(dir, 'log.txt')

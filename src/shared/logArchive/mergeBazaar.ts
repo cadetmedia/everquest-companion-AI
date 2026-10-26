@@ -81,5 +81,6 @@ export function mergeBazaar(older: unknown, newer: unknown): Snap | null {
           }
     )
   }
-  return { rows: [...out.values()] }
+  // The live log's other fields (its `live` offers, which the watchlist alerts on) stay as they are.
+  return { ...newer, rows: [...out.values()] }
 }

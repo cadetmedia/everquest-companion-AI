@@ -42,6 +42,7 @@ import { describeTrigger } from '@shared/profiles'
 import { formatDateTime } from '../../lib/formatDate'
 import { readUiPrefs, writeUiPrefs } from '../../lib/uiPrefs'
 import { Tooltip } from '../../lib/Tooltip'
+import { refreshAlertStore } from '../alerts/player'
 
 export interface ShareImportDialogProps {
   open: boolean
@@ -337,7 +338,12 @@ function useShareImport(props: ShareImportDialogProps): {
         scalarIds: [...scalarSel]
       })
       // Main can't touch localStorage; it hands back the merged values for us to write.
-      if (res.ok) writeUiPrefs(res.ui)
+      if (res.ok) {
+        writeUiPrefs(res.ui)
+        // The alert player looks a firing up in its own copy of the alerts and their volume and
+        // mute; without this an imported alert stays silent until the window is focused again.
+        void refreshAlertStore()
+      }
       onApplied(res)
       onClose()
     } finally {

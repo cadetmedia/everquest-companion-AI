@@ -57,6 +57,7 @@ import { app } from 'electron'
 import { logInfo } from '../errorLog'
 import { setWorldRebuiltObserver } from '../worldRebuilt'
 import { getActiveCharacter } from '../session'
+import { liveHistory } from '../logArchive/liveHistory'
 import { createEngineClient, EngineError, type EngineClient } from '../../shared/dataServer/client'
 import { createNdjsonTransport, type ByteChannel } from '../../shared/dataServer/ndjson'
 import type {
@@ -599,6 +600,8 @@ async function sendAttach(mine: number, l: LiveEngine, logPath: string): Promise
   // READ FRESH, HERE (JOS-536). A respawn is a launch and the offset is a function of the date, so
   // a hint computed anywhere but at the attach is wrong across a DST transition.
   const clock = hostClockHint(new Date(), resolvedTimeZone)
+  // An archive sealed before this attach is not in the fold it starts (log archive, eligible.ts rule 4).
+  const refolded = liveHistory.engineAttaching()
   try {
     const result = await l.client.request(
       'session.attach',
@@ -614,7 +617,10 @@ async function sendAttach(mine: number, l: LiveEngine, logPath: string): Promise
     // only place in the product that knows it. Gated on `accepted`, because `false` means this
     // attach LOST to a later one: the engine is folding somebody else's log and the caller has no
     // business claiming the banner for a fold it does not own (the winner's own attach already did).
-    if (result.accepted) noteEngineFolding()
+    if (result.accepted) {
+      noteEngineFolding()
+      refolded()
+    }
     return result.epoch
   } catch (err) {
     debug(`data-server client: session.attach was refused (${describeErr(err)})`)
