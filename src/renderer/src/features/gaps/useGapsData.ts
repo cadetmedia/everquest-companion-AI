@@ -16,6 +16,7 @@ import type { ConsiderSnap, LootSnap } from '@shared/types'
 import { killIndex, type KillMap, type KillsSnap } from '@shared/kills'
 import { lootedItemNames, type DropAliases, type DropGroups } from '@shared/gapDrops'
 import { lastGapsSnap, type GapsWiki } from '@shared/gapDerive'
+import { learnedOf, type LearnedEvidence } from '@shared/respawnLearn'
 import { memoLast } from '@shared/gapMemo'
 import { catalogNameTest, commonLootNames, vendorFinder } from '@shared/gapMobPage'
 import { catalogZoneCounts, wikiZoneNamer } from '@shared/gapWikiZone'
@@ -85,11 +86,22 @@ export interface GapsData {
 const NO_TALKS: readonly TalkVisit[] = []
 const NO_THREADS: readonly QuestThread[] = []
 
+/** The respawn snapshot's evidence, held by identity while no mob's gap count moved. */
+function useLearnedRespawn(snap: unknown): { learned: readonly LearnedEvidence[] } {
+  const learned = learnedOf(snap)
+  const sig = learned.map((l) => `${l.id}:${String(l.gapsMs.length)}:${String(l.gapsMs[0] ?? 0)}`).join('|')
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed by the signature on purpose: a new snapshot with the same evidence keeps the old object
+  return useMemo(() => ({ learned }), [sig])
+}
+
 export function useGapsData(): GapsData {
   const engine = useModule<GapsSnap>(GAPS_MODULE_ID)
   const loot = useModule<LootSnap>('loot') ?? NO_LOOT
   const killMobs = useModule<KillsSnap>('kills')?.mobs ?? NO_KILLS
   const cons = useModule<ConsiderSnap>('consider') ?? NO_CONS
+  // The respawn evidence (gapRespawns.ts), the same object until a mob learns a gap: the respawn
+  // module republishes on every sighting of a watched mob, which must not re-derive the whole tab.
+  const respawn = useLearnedRespawn(useModule<unknown>('respawn'))
   // The item pages' side of each drop, asked of main (the corpus is main-only). The same array while
   // the loot is the same, so useItemMobs' effect does not rerun on a remount.
   const looted = lastLooted([loot], () => lootedItemNames(loot))
@@ -101,10 +113,10 @@ export function useGapsData(): GapsData {
   const forced = useForcedQuests(talkSnap?.character)
   const snap = useMemo(() => {
     if (!engine) return engine
-    const derived = { ...snapOf(engine, { loot, kills: killMobs, cons, itemMobs }, WIKI), talks: talkSnap?.talks ?? [], questThreads: talkSnap?.questThreads ?? [] }
+    const derived = { ...snapOf(engine, { loot, kills: killMobs, cons, itemMobs, respawn }, WIKI), talks: talkSnap?.talks ?? [], questThreads: talkSnap?.questThreads ?? [] }
     // Zones: a zone the log names under another spelling than its wiki page, as a redirect to copy.
     return withZoneRedirects(withQuestPages(withForcedQuests(derived, forced.forced), questPageOf(livePages)), CATALOG_ZONES)
-  }, [engine, talkSnap, loot, killMobs, itemMobs, cons, livePages, forced.forced])
+  }, [engine, talkSnap, loot, killMobs, itemMobs, cons, respawn, livePages, forced.forced])
   const kills = lastKills([killMobs], () => killIndex(killMobs))
   const talks = (snap as TalkSnap | null | undefined)?.talks ?? NO_TALKS
   const threads = (snap as TalkSnap | null | undefined)?.questThreads ?? NO_THREADS

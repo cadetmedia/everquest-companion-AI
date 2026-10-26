@@ -1,5 +1,5 @@
-// shared/gapDerive.ts — the Gaps tab's derived snapshot: the engine's rows with the three domains
-// the renderer checks against the catalog joined in (factions, drops, images). It was inline in
+// shared/gapDerive.ts — the Gaps tab's derived snapshot: the engine's rows with the domains the
+// renderer checks against the catalog joined in (factions, drops, images, respawns). It was inline in
 // useGapsData's `useMemo`, so it reran on every visit: GapsView remounts on each tab switch, and a
 // remount starts with an empty memo (perf audit, 2026-10-20: each Gaps visit 400–500 ms, as one
 // long task). Pulled out here, it is pure and node-testable, and `lastGapsSnap` keeps the last
@@ -12,7 +12,9 @@ import { withFactionRows } from './gapFactions'
 import { withDropRows, type DropAliases, type DropGroups, type ItemMobs } from './gapDrops'
 import { withImageRows, type ConMet } from './gapImages'
 import { memoLast } from './gapMemo'
+import { withRespawnRows } from './gapRespawns'
 import type { MobEntry } from './mobTypes'
+import { learnedOf } from './respawnLearn'
 
 /** What the player did, as the modules serve it: loot lines, the kills ledger, /cons, and the item pages' mobs from main. */
 export interface GapsMet {
@@ -21,6 +23,8 @@ export interface GapsMet {
   cons: readonly ConMet[]
   /** Absent until main has answered (gapItemMobs.ts). */
   itemMobs?: ItemMobs
+  /** The respawn module's snapshot: its learned gaps give the Respawns rows (gapRespawns.ts). */
+  respawn?: unknown
 }
 
 /** The wiki data, fixed for the session: the mob catalog and dropGroups.json. */
@@ -30,15 +34,16 @@ export interface GapsWiki {
   aliases: DropAliases
 }
 
-/** The engine's snapshot with the faction, drop and image rows joined in and counted. */
+/** The engine's snapshot with the faction, drop, image and respawn rows joined in and counted. */
 export function deriveGaps(engine: GapsSnap, met: GapsMet, wiki: GapsWiki): GapsSnap {
   const withFactions = withFactionRows(engine, wiki.catalog, met.kills)
   const withDrops = withDropRows(withFactions, met.loot, { catalog: wiki.catalog, groups: wiki.groups, itemMobs: met.itemMobs, aliases: wiki.aliases })
-  return withImageRows(withDrops, { kills: met.kills, loot: met.loot, cons: met.cons }, wiki.catalog)
+  const withImages = withImageRows(withDrops, { kills: met.kills, loot: met.loot, cons: met.cons }, wiki.catalog)
+  return withRespawnRows(withImages, learnedOf(met.respawn), wiki.catalog)
 }
 
 /** The inputs' identities, in a fixed order: the cache key. */
-const keyOf = (engine: GapsSnap, met: GapsMet, wiki: GapsWiki): readonly unknown[] => [engine, met.loot, met.kills, met.cons, met.itemMobs, wiki.catalog, wiki.groups, wiki.aliases]
+const keyOf = (engine: GapsSnap, met: GapsMet, wiki: GapsWiki): readonly unknown[] => [engine, met.loot, met.kills, met.cons, met.itemMobs, met.respawn, wiki.catalog, wiki.groups, wiki.aliases]
 
 /**
  * `deriveGaps` behind a one-entry cache, keyed by the IDENTITY of each input: the engine snapshot,
