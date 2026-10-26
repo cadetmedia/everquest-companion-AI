@@ -1,5 +1,5 @@
 {
-  "scrapedAt": "2026-10-25T10:49:49.985Z",
+  "scrapedAt": "2026-10-26T00:06:17.591Z",
   "source": "eqlwiki.com — Category:Quests + quest subcategories + recentchanges delta (scripts/scrape-delta.mts)",
   "quests": [
     {
@@ -32898,7 +32898,9 @@
       ],
       "requiredItems": [
         "Blood's Unity",
-        "Nektropos Great Room Key"
+        "Nektropos Great Room Key",
+        "Nektropos Private Chamber Key",
+        "Nektropos Basement Key"
       ],
       "expReward": true,
       "factions": [
@@ -36540,7 +36542,12 @@
         "Lord Rikantus Everling"
       ],
       "requiredItems": [
-        "Blood's Unity"
+        "Blood's Unity",
+        "Nektropos Library Key",
+        "Harpsichord Black Key",
+        "Harpsichord White Key",
+        "Harpsichord String",
+        "Harpsichord Plectrum"
       ],
       "expReward": true,
       "factions": [

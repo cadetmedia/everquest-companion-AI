@@ -29,7 +29,8 @@
 = Summary =
 {{CheckboxList}}
 * Hail [[Lord Ollix Everling]] and ask about his sisters ('dead').
-* Find his mother, [[Lady Sileniu Everling]], in her chambers and ask about 'He'.
+* Obtain the [[Nektropos Library Key]] using the [[#Castle Access and Library Key|four harpsichord components]].
+* Find his mother, [[Lady Sileniu Everling]], in her northeast second-floor chambers at (552, -132, 17), and ask about 'He'.
 * 'swear' to her that you will kill Plimptos (starts [[The Betrayer]]).
 * Complete [[The Betrayer]]: the sisters, Alexa, Lord Rikantus, then 'end' to Plimptos.
 * Tell [[Lady Sileniu Everling]] he is 'dead', then 'confess'. She turns on you: kill her.
@@ -38,6 +39,28 @@
 
 = Walkthrough =
 
+== Castle Access and Library Key ==
+Complete [[Hate, Betrayal, and Trust]] to enter [[Nektropos Castle]]. Inside, hail [[Lord Ollix Everling]] and follow his dialogue. He is near the ruined harpsichord in the main hall; his exact NPC coordinates have not yet been recorded.
+
+For the [[Nektropos Library Key]], collect these '''four glowing ground items'''. The coordinates are the items' ground-spawn positions, not the nearby NPC positions.
+
+{| class="wikitable"
+! Item !! Ground-spawn location !! Area and nearby NPC
+|-
+| [[Harpsichord Black Key]] || (-37, 130) || Southwest, on the chessboard in front of [[The Game Master]]; the NPC is at (-34, 118, -7).
+|-
+| [[Harpsichord White Key]] || (710, 105) || Northwest storage area with lots of boxes.
+|-
+| [[Harpsichord String]] || (120, -151) || Southeast Tormentor room; [[Tormentor Utzain]] is at (142, -146, -7).
+|-
+| [[Harpsichord Plectrum]] || (-23, -100) || Southeast Priestess of Ulkorruuk room.
+|}
+
+Combine the four components in the '''ruined harpsichord at (368, 65)''', in the main lobby near [[Lord Ollix Everling]]. It is directly to the left while facing the staircase.
+
+== Quest Dialogue and Completion ==
+''The room directions, door-key route and lord's combat phases are documented in [[The Betrayer#Castle Route and Door Keys|The Betrayer's castle route]].''
+
 You say, 'Hail, Lord Ollix Everling'
 
 : Lord Ollix Everling says, 'Ah, Soandso! Welcome to our castle, such as it is. As you can plainly see, the situation is much more dire than what I was able to communicate in letters sent outside of these walls. I'll be brief. My sisters are all [dead], murdered in their beds by a treasonous cohort of my house's staff.'
@@ -45,6 +68,8 @@ You say, 'Hail, Lord Ollix Everling'
 You say, 'dead'
 
 : Lord Ollix Everling says, 'The current situation is truly a grave one. My father has gone mad. Locking himself away in the library or disappearing for days at a time into unknown parts of the castle and has devolved into him raising monstrosities and filling the castle with these foul creatures. It truly hurts my heart to say this but for the sake of my house and our family's business and reputation I must ask you to put him out of his misery. It is a horrible choice I must make but recent events require it. Perhaps my mother knows where he is spending his time. Regrettably though I have been unable to speak with or console her since my sister's passing. She locked herself in her chambers in mourning and the occasional sobbing wail is my clue that she is still well.'
+
+Find [[Lady Sileniu Everling]] in the northeast of the second floor, at (552, -132, 17).
 
 You say, 'Hail, Lady Sileniu Everling'
 
@@ -79,11 +104,15 @@ Kill [[Lady Sileniu Everling]].
 </div>
 {{YouGainExperience}}
 
+Return to [[Lord Ollix Everling]] in the main hall.
+
 You say, 'tragic'
 
 : Lord Ollix Everling says, 'I see . . . this is most regrettable. It burdens my heart that I must now lay to rest the last of my family. Know that you are a true friend of the Everling Dynasty. I do hope that we can meet again some day on more joyous terms.'
 
 '''You have completed the achievement: The Tragic Tale of House Everling'''
+
+You should now be able to open all doors and kill all rares in [[Nektropos Castle]].
 
 = Notes =
 
@@ -92,6 +121,7 @@ You say, 'tragic'
 
 = Related Quests =
 
+* [[Hate, Betrayal, and Trust]]
 * [[The Betrayer]]
 
 [[Category:Quests]]
