@@ -8,7 +8,8 @@
 // OFF MAIN'S THREAD (performance review 2026-10-20, finding 9). Every stat, listing and read is
 // `fs/promises`, so the disk work runs on libuv's pool and main only wakes to compare an mtime: a
 // slow or scanned disk can no longer stall the thread that answers IPC. The next look is armed when
-// the last one is done (or given up after 5 s, never to commit), so two never overlap. Detection
+// the last one is done (or given up after 5 s, never to commit), so two never overlap; after a give-up
+// no look starts until the hung call settles, so a stuck disk holds one pool thread, not all four. Detection
 // latency is what it was: EQ writes the file within about a second of an M press (gameMapIni.ts),
 // and this sees the write within 500 ms of it.
 // `fs.watch` was not used: one stat per half second is already cheap, and a missed notification
@@ -40,6 +41,9 @@ let looking: Promise<void> | null = null
 let generation = 0
 /** Bumped by every look and every look given up on; only the newest look commits. */
 let lookId = 0
+/** A given-up look's disk call, until it settles: it still holds a libuv pool thread (of 4), so no
+ *  look starts beside it. A stop leaves it, since the thread stays busy either way. */
+let hung: Promise<void> | null = null
 
 async function findIni(): Promise<string | null> {
   const c = resolveActiveCharacter()
@@ -101,11 +105,17 @@ function timeLimited(p: Promise<void>, giveUp: () => void): Promise<void> {
 /** One look, its errors kept: mid-write, locked, gone or hung keeps the last answer for the next. */
 function look(): Promise<void> {
   if (looking) return looking
+  // A hung disk: the last answer stands, and the cadence resumes once that call settles.
+  if (hung) return Promise.resolve()
   const gen = generation
   const id = ++lookId
   const reading = read(() => gen === generation && id === lookId).catch(() => undefined)
   const p = timeLimited(reading, () => {
     if (id === lookId) lookId++
+    hung = reading
+    void reading.finally(() => {
+      if (hung === reading) hung = null
+    })
   }).finally(() => {
     if (looking === p) looking = null
   })
