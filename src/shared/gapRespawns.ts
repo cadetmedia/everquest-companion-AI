@@ -66,7 +66,7 @@ export function respawnGaps(learned: readonly LearnedEvidence[], catalog: readon
   // that one is compared with the page: a few odd gaps elsewhere do not outvote it.
   const byPage = new Map<string, { e: LearnedEvidence; v: RespawnVerdict }>()
   for (const e of learned) {
-    const v = constantRespawn(e.gapsMs, e.display)
+    const v = constantRespawn(e.gapsMs)
     if (v === null) continue
     const page = pageOf(e.display) ?? (e.wikiPage === undefined ? undefined : pageOf(e.wikiPage))
     if (page === undefined) continue

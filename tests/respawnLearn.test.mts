@@ -26,32 +26,41 @@ const evidence = (display: string, gapsMs: number[], wiki?: { text: string; ms?:
 })
 
 test('THE CONSTANT THE GAPS AGREE ON: LASNA CHEROON IS THE WIKI\'S 8:50, XICOTL 4:55 WHATEVER THE LATE RE-KILLS', () => {
-  const lasna = constantRespawn(LASNA, 'Lasna Cheroon')
+  const lasna = constantRespawn(LASNA)
   assert.equal(lasna?.ms, 530_000)
   assert.equal(lasna?.agree, 49, 'the 1047 s straggler is the one gap out')
   assert.equal(lasna?.rule, 'within25')
-  const xicotl = constantRespawn(XICOTL, 'Xicotl')
+  const xicotl = constantRespawn(XICOTL)
   assert.equal(wikiRespawnText(xicotl?.ms ?? 0), '4:55', 'a plain mean would say 6:18')
   // Enynti's page says 22 minutes; its spawn-point cycle is the same 8:50, the long gaps are cycles it did not take.
-  assert.equal(wikiRespawnText(constantRespawn(ENYNTI, 'Enynti')?.ms ?? 0), '8:50')
+  assert.equal(wikiRespawnText(constantRespawn(ENYNTI)?.ms ?? 0), '8:50')
 })
 
 test("THE OWNER'S RULES: 3 WITHIN 25 S, 5 WITHIN 20 S, ELSE 10 IN ALL; FEWER SAYS NOTHING", () => {
-  assert.equal(constantRespawn(s([600, 610, 640]), 'Mob')?.rule, 'within25')
-  assert.equal(constantRespawn(s([600, 700]), 'Mob'), null, 'two gaps')
-  assert.equal(constantRespawn(s([600, 660, 720, 780, 840]), 'Mob'), null, 'five that do not agree')
-  const ten = constantRespawn(s([600, 660, 720, 780, 840, 900, 960, 1020, 1080, 5000]), 'Mob')
+  assert.equal(constantRespawn(s([600, 610, 640]))?.rule, 'within25')
+  assert.equal(constantRespawn(s([600, 700])), null, 'two gaps')
+  assert.equal(constantRespawn(s([600, 660, 720, 780, 840])), null, 'five that do not agree')
+  const ten = constantRespawn(s([600, 660, 720, 780, 840, 900, 960, 1020, 1080, 5000]))
   assert.equal(ten?.rule, 'ten')
   assert.equal(ten?.agree, 9, 'the 5000 s outlier is out')
   assert.equal(ten?.ms, 840_000, 'the median of the nine left, not the lowest gap')
   // An even count left: the middle two averaged, to the second.
-  assert.equal(constantRespawn(s([600, 660, 720, 780, 840, 900, 960, 1020, 1080, 1140, 6000]), 'Mob')?.ms, 870_000)
+  assert.equal(constantRespawn(s([600, 660, 720, 780, 840, 900, 960, 1020, 1080, 1140, 6000]))?.ms, 870_000)
 })
 
-test('A COMMON NAME CLUSTERED AT THE ONE-MINUTE FLOOR IS TWO SPAWNS SHARING IT, NOT A RESPAWN', () => {
-  assert.equal(constantRespawn(USHER, 'A deathly usher'), null)
-  // The same gaps on a proper name would be read: the guard is for names with an article.
-  assert.notEqual(constantRespawn(USHER, 'Usher Prime'), null)
+test('UNDER TWO MINUTES IS TWO SPAWNS SHARING A NAME, NOT A RESPAWN, WHATEVER THE NAME (OWNER 2026-10-26)', () => {
+  assert.equal(constantRespawn(USHER), null, 'the trash clusters at the one-minute floor')
+  assert.equal(constantRespawn(s([90, 95, 100, 600, 601, 602])), null, 'the lowest cluster is under two minutes: nothing')
+  assert.equal(constantRespawn(s([110, 112, 115, 118, 119, 105, 108, 111, 117, 116])), null, 'ten in all, their median under two minutes')
+  assert.equal(constantRespawn(s([120, 121, 122]))?.ms, 121_000, 'two minutes is not under two minutes')
+})
+
+test('THE LOWEST CLUSTER WINS: A GAP CAN ONLY RUN LONGER THAN THE RESPAWN (OWNER 2026-10-26)', () => {
+  // Three at 10:00 and five at 20:00: the denser one is a cycle missed, the lower one the respawn.
+  const v = constantRespawn(s([600, 601, 602, 1200, 1201, 1202, 1203, 1204]))
+  assert.equal(v?.ms, 601_000)
+  assert.equal(v?.agree, 3)
+  assert.equal(v?.rule, 'within25')
 })
 
 test("THE WIKI'S OWN SHAPES, WHICH THE FLOOR READER READS BACK", () => {

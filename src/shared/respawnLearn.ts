@@ -7,19 +7,21 @@
 // THE RESPAWN IS A CONSTANT (owner: "the respawn time is constant so we are looking for that constant
 // value it does not differ, unless they miss a spawn, arn't there when it respawns, etc"). A gap can
 // only be longer than the respawn, never shorter: a missed spawn, a late arrival or a placeholder
-// cycle adds time. So the answer is the value most gaps agree on, the densest cluster, and its
-// median; the stragglers above it are the outliers. Proved on the owner's Castle of Mistmoore 4 camps:
-// Lasna Cheroon's 50 gaps sit at 526-532 s (the wiki's 8:50), Xicotl's at 293-296 s with a tail of
-// late re-kills that pulls a plain mean to 6.3 minutes.
+// cycle adds time. So the answer is the LOWEST cluster of gaps that agree (owner 2026-10-26: "lowest
+// gap wins"), and the peak inside it; everything above it is spawns found late. Proved on the owner's
+// Castle of Mistmoore 4 camps: Lasna Cheroon's 50 gaps sit at 526-532 s (the wiki's 8:50), Xicotl's at
+// 293-296 s with a tail of late re-kills that pulls a plain mean to 6.3 minutes.
 //
 // WHEN IT IS OFFERED (owner: "3 if they are the same gap +- 25 seconds, 5 if they are the same gap
 // 20, 10 otherwise"; "meant seconds"): three gaps within 25 s of their middle, or five within 20 s,
 // or ten gaps in all (then the median once the outliers beyond 1.5 times the middle spread are out).
 //
-// TWO SPAWNS SHARING A NAME. A common name (`a deathly usher`) can stand at two spawn points, and its
-// gaps then cluster near the engine's one-minute floor: one spawn's death and the other's sighting.
-// Measured on the same camps: the trash of Mistmoore 4 clusters at 60-90 s while its nameds sit at
-// 528 s. A name with an article is therefore not offered under two minutes.
+// UNDER TWO MINUTES IS SUSPECT (owner 2026-10-26: "some mobs have duplicate names like trash mobs, so
+// anything less than 2 mins should be suspect"). Two spawns sharing a name (`a deathly usher`) make
+// gaps near the engine's one-minute floor: one spawn's death and the other's sighting. Measured on the
+// same camps: the trash of Mistmoore 4 clusters at 60-90 s while its nameds sit at 528 s. Every gap of
+// such a name is then two spawns' gaps mixed, so a lowest cluster under two minutes offers nothing,
+// whatever the name.
 
 /** One mob's evidence as the engine publishes it (`RespawnLearned`, respawn-first-sight). */
 export interface LearnedEvidence {
@@ -58,9 +60,8 @@ export const RULE_WORDS: Readonly<Record<RespawnRule, string>> = {
 /** How far apart the gaps of one spawn sit: the log's whole seconds and the lag to the first sign of life. */
 const PEAK_MS = 6_000
 
-const A_COMMON_NAME = /^(a|an) /i
-/** Under this a common name's cluster is two spawns sharing the name (header). */
-const COMMON_FLOOR_MS = 120_000
+/** Under this the gaps are two spawns sharing the name (header). */
+const SUSPECT_UNDER_MS = 120_000
 
 /** The engine's `learned` list out of a respawn snapshot, read by shape; empty when it has none. */
 export function learnedOf(respawn: unknown): LearnedEvidence[] {
@@ -95,6 +96,16 @@ function densest(sorted: readonly number[], width: number): number[] {
   return sorted.slice(best[0], best[1])
 }
 
+/** The lowest window `width` wide that holds at least `least` gaps: ascending, empty when none does. */
+function lowest(sorted: readonly number[], width: number, least: number): number[] {
+  let j = 0
+  for (let i = 0; i < sorted.length; i++) {
+    while (j < sorted.length && sorted[j] - sorted[i] <= width) j++
+    if (j - i >= least) return sorted.slice(i, j)
+  }
+  return []
+}
+
 /** The gaps inside Tukey's fences (1.5 times the interquartile range past each quartile). */
 function withoutOutliers(sorted: readonly number[]): number[] {
   const q = (p: number): number => sorted[Math.min(sorted.length - 1, Math.floor(p * (sorted.length - 1)))]
@@ -105,7 +116,7 @@ function withoutOutliers(sorted: readonly number[]): number[] {
 }
 
 /** The respawn the gaps agree on, under the owner's rules; null when they do not agree enough yet. */
-export function constantRespawn(gapsMs: readonly number[], name: string): RespawnVerdict | null {
+export function constantRespawn(gapsMs: readonly number[]): RespawnVerdict | null {
   const sorted = [...gapsMs].sort((a, b) => a - b)
   // The number is the sharpest peak inside the agreeing gaps: a constant shows up as many gaps a
   // few seconds apart (the first sign of life lags the spawn by a cast or a swing), and a looser band
@@ -118,13 +129,12 @@ export function constantRespawn(gapsMs: readonly number[], name: string): Respaw
     agree: members.length,
     rule
   })
-  const c25 = densest(sorted, 50_000)
-  const c20 = densest(sorted, 40_000)
+  const c25 = lowest(sorted, 50_000, 3)
+  const c20 = lowest(sorted, 40_000, 5)
   // within20 is the owner's stated rule, kept as said; five gaps inside 40 s are also three inside 50 s, so within25 always answers first.
   const found =
-    c25.length >= 3 ? verdict(c25, 'within25') : c20.length >= 5 ? verdict(c20, 'within20') : sorted.length >= 10 ? verdict(withoutOutliers(sorted), 'ten') : null
-  if (found === null) return null
-  if (A_COMMON_NAME.test(name.trim()) && found.ms < COMMON_FLOOR_MS) return null
+    c25.length > 0 ? verdict(c25, 'within25') : c20.length > 0 ? verdict(c20, 'within20') : sorted.length >= 10 ? verdict(withoutOutliers(sorted), 'ten') : null
+  if (found === null || found.ms < SUSPECT_UNDER_MS) return null
   return found
 }
 
@@ -150,7 +160,7 @@ export function verdictFor(learned: readonly LearnedEvidence[], key: string): { 
   let best: { evidence: LearnedEvidence; verdict: RespawnVerdict } | null = null
   for (const e of learned) {
     if (e.key !== key) continue
-    const v = constantRespawn(e.gapsMs, e.display)
+    const v = constantRespawn(e.gapsMs)
     if (v !== null && (best === null || v.agree > best.verdict.agree)) best = { evidence: e, verdict: v }
   }
   return best
