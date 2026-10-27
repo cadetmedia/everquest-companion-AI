@@ -24,7 +24,7 @@
 use crate::combat::aggregate::{Agg, DamageEvent, MissFold, MissType, SourceKind, SourceRef};
 use crate::combat::ally::AllyBind;
 use crate::combat::encounter::{TimelineRaw, ACTIVE_MS};
-use crate::combat::healing::{HealInput, HealSourceKind};
+use crate::combat::healing::{HealInput, HealSourceKind, SELF_ROW_ID};
 use crate::combat::lifecycle::encounter_for;
 use crate::combat::procdetect::base_lane_name;
 use crate::combat::state::EngineState;
@@ -701,8 +701,9 @@ impl HealLine {
 }
 
 /// Consume a heal. A heal on an engaged HOSTILE is enemy healing (it undoes our damage); a heal on
-/// You or one of your pets is incoming healing; both also fold into the healing ledger. Other heals
-/// are ignored for aggregation: the log gives no faction for an arbitrary name.
+/// You or one of your pets is incoming healing; both also fold into the healing ledger. Your own heal
+/// on anyone else (a group mate, their pet) is your output and books on your own row. Heals between
+/// other people are ignored for aggregation: the log gives no faction for an arbitrary name.
 ///
 /// Zero-effective heals (`… for 0 (2) hit points …`) are the overheal evidence and belong to the
 /// ledger; the `enemy_heal` / `inc_heal` maps keep their `amount <= 0` gate.
@@ -735,7 +736,25 @@ pub fn route_heal(st: &mut EngineState, ev: &HealLine) {
         add_friendly_heal(st, ev, healer_key.as_deref());
         return;
     }
-    add_hostile_heal(st, ev, healer_key.as_deref());
+    if add_hostile_heal(st, ev, healer_key.as_deref()) {
+        return;
+    }
+    // Your heal on anyone who is not an engaged hostile. One line per heal in your own log, so no
+    // second angle can count it again (owner ruling 2026-10-26).
+    if healer_key.as_deref() == Some(SELF_ROW_ID) {
+        add_outgoing_heal(st, ev);
+    }
+}
+
+/// Your heal on somebody else: healing output on your own row, per spell, overheal from `(M)` as
+/// for a self-heal. Ledger only: `inc_heal` is healing YOU received, and this was not.
+fn add_outgoing_heal(st: &mut EngineState, ev: &HealLine) {
+    let name = ev.healer.clone().unwrap_or_else(|| "You".to_string());
+    let input = ev.input();
+    both(st, ev.ts, true, |agg| {
+        agg.heal
+            .add_friendly(SELF_ROW_ID, &name, HealSourceKind::You, &input)
+    });
 }
 
 /// Incoming heal to You (or the player by name) / your pet. The `inc_heal` map keeps its
@@ -811,19 +830,19 @@ pub fn route_mitigation(st: &mut EngineState, ev: &MitigationLine) {
     });
 }
 
-/// Heal on a hostile instance we are currently engaged with → enemy healing.
-fn add_hostile_heal(st: &mut EngineState, ev: &HealLine, healer_key: Option<&str>) {
+/// Heal on a hostile instance we are currently engaged with → enemy healing. `true` when it was.
+fn add_hostile_heal(st: &mut EngineState, ev: &HealLine, healer_key: Option<&str>) -> bool {
     let t_key = id_key_ref(&ev.target);
     // A known player is never a hostile, so their heals are never enemy healing. Stated here as well
     // as in `engage_hostile` so the two rules cannot disagree.
     if st.is_known_player(&t_key) {
-        return;
+        return false;
     }
     // …and neither is a group member. Stated here rather than left to `engage_hostile`'s refusal
     // because the next line RESOLVES the target, and resolving mints a world instance — a friendly
     // must not acquire one just because somebody healed them.
     if st.is_member(&t_key) {
-        return;
+        return false;
     }
     let inst = st.resolve(&ev.target, ev.ts, false);
     let engaged = st
@@ -831,7 +850,7 @@ fn add_hostile_heal(st: &mut EngineState, ev: &HealLine, healer_key: Option<&str
         .as_ref()
         .is_some_and(|e| e.engaged.contains(&inst.instance_id));
     if !engaged {
-        return;
+        return false;
     }
     if ev.amount > 0 {
         let (id, name) = (inst.instance_id.clone(), inst.label.clone());
@@ -855,6 +874,7 @@ fn add_hostile_heal(st: &mut EngineState, ev: &HealLine, healer_key: Option<&str
     if let Some(name) = ev.healer.clone() {
         st.note_presence(&name, ev.ts);
     }
+    true
 }
 
 /// May this name be recorded as a combatant of its own? The refusal ladder in evaluation order,

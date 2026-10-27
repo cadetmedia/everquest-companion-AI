@@ -743,7 +743,8 @@ export interface MitigationView {
  * counts under `mitigation`.
  */
 export interface HealingView {
-  /** Healers of You / your pets, ranked by total desc. The self row also carries absorption. */
+  /** Healers of You / your pets, ranked by total desc. The self row also carries absorption and
+   *  your own heals on anyone else who is not an engaged hostile. */
   healers: HealSourceView[]
   /** Σ healers[].total — restored hit points AND granted absorption. */
   total: number
