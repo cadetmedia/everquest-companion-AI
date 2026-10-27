@@ -4,9 +4,10 @@
 // its bytes hash to that sha256. Third-party DATA: nothing in it is run. GitHub, never the wiki, so
 // nothing here is a wiki request.
 //
-// Electron-free and shared: scripts/eoz-compare.mts (the pre-delta compare), scripts/fetch-wiki-
-// images.mts (bundled item icons) and the app's item icons (itemIconPack.ts) all fetch through
-// `refreshEozPack`, so there is one fetch-and-verify, not three.
+// Electron-free and shared: scripts/eoz-compare.mts (the pre-delta compare) and scripts/fetch-wiki-
+// images.mts (bundled item icons) both fetch through `refreshEozPack`, so there is one
+// fetch-and-verify, not two. The app itself never fetches it (owner 2026-10-26: icons are pulled
+// only "during development and deltas scraping").
 
 import { createHash } from 'node:crypto'
 import { mkdir, readFile, rename, stat, unlink, writeFile } from 'node:fs/promises'
