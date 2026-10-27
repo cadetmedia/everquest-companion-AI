@@ -4,6 +4,8 @@
 // cell is red, which is the exact class of drift the controller pattern exists to prevent.
 
 import { useMemo } from 'react'
+import { kept, type Kept } from '../../lib/kept'
+import { characterEpoch } from '../../lib/characterEpoch'
 import type { ClassAbbr } from '@shared/classCombo'
 import { resolvedClasses } from '@shared/classCombo'
 import type { CharacterSheet } from '@shared/characterSheet'
@@ -31,29 +33,32 @@ export interface SocketAdviceState {
   rows: readonly GearRow[]
 }
 
+const LOADOUT: Kept<Loadout> = { last: null }
+const ROW_BY_KEY: Kept<Map<string, GearRow>> = { last: null }
+const RECS: Kept<Recommendations | null> = { last: null }
+const AUDIT: Kept<ExaltationAudit | null> = { last: null }
+const PLAN: Kept<BoardPlan | null> = { last: null }
+
 export function useSocketAdvice(sheet: CharacterSheet | null): SocketAdviceState {
   const gear = useGearIndex()
   const combo = useComboSnap()
   // Read once so the memos key on the VALUE (the gearData precedent).
   const current = combo.current
-  const classes = useMemo(() => (current === null ? [] : resolvedClasses(current)), [current])
   // R2's fourth condition. Null until an achievements dump has been read, and null filters nothing.
   const deity = useDeity()
-  const loadout = useMemo<Loadout>(() => ({ classes, deity }), [classes, deity])
-  const rowByKey = useMemo(() => new Map(gear.rows.map((r) => [r.key, r])), [gear.rows])
+  // Kept across visits (lib/kept.ts), keyed on values, so a re-open paints without re-running the
+  // recommender; the classes by their names, since the snapshot object may be rebuilt. Each key
+  // carries the character epoch, so another character's answers are never reused.
+  const epoch = characterEpoch()
+  const resolved = current === null ? [] : resolvedClasses(current)
+  const loadout = kept(LOADOUT, [resolved.join(' '), deity, epoch], (): Loadout => ({ classes: resolved, deity }))
+  const classes = loadout.classes
+  const rowByKey = kept(ROW_BY_KEY, [gear.rows, epoch], () => new Map(gear.rows.map((r) => [r.key, r])))
   const settled = sheet !== null && gear.ready && !gear.refused
-  const recs = useMemo(
-    () => (settled ? recommendSockets(sheet.exaltations, gear.rows, loadout, socketHosts(sheet.cells)) : null),
-    [settled, sheet, gear.rows, loadout]
-  )
-  const audit = useMemo(
-    () => (settled ? auditExaltations(sheet.exaltations, gear.rows, loadout) : null),
-    [settled, sheet, gear.rows, loadout]
-  )
-  const plan = useMemo(
-    () => (settled ? planBoard(sheet.exaltations, gear.rows, loadout, socketHosts(sheet.cells)) : null),
-    [settled, sheet, gear.rows, loadout]
-  )
+  const key = [settled, sheet, gear.rows, loadout, epoch]
+  const recs = kept(RECS, key, () => (settled ? recommendSockets(sheet.exaltations, gear.rows, loadout, socketHosts(sheet.cells)) : null))
+  const audit = kept(AUDIT, key, () => (settled ? auditExaltations(sheet.exaltations, gear.rows, loadout) : null))
+  const plan = kept(PLAN, key, () => (settled ? planBoard(sheet.exaltations, gear.rows, loadout, socketHosts(sheet.cells)) : null))
   const advice = useMemo<SocketAdvice | undefined>(() => {
     if (recs === null) return undefined
     // The chip hovers carry the panel's OWN sentences (user review 2026-09-09: “put the messages

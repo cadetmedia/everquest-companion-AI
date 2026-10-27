@@ -23,6 +23,8 @@ export function folderPicturesStore(fetch: () => Promise<FolderPictures>, everyM
       .then((got) => {
         // An older answer never replaces a newer one.
         if (mine !== ticket) return
+        // The same listing (every remount re-reads) keeps the held object, so no reader re-renders.
+        if (JSON.stringify(got) === JSON.stringify(now)) return
         now = got
         for (const l of listeners) l()
       })

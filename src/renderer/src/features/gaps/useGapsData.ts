@@ -218,12 +218,15 @@ function useForcedScope(forced: ForcedQuests, snap: (GapsSnap & TalkSnap) | null
   }, [forced, talks, threads, rows, livePages])
 }
 
-/** The respawn snapshot's evidence, held by identity while no mob's gap count moved. */
-function useLearnedRespawn(snap: unknown): { learned: readonly LearnedEvidence[] } {
+const lastRespawn = memoLast<{ learned: readonly LearnedEvidence[] }>()
+/**
+ * The respawn snapshot's evidence, held by identity while no mob's gap count moved, across remounts
+ * too: the derivation is keyed on this object, so a fresh one per visit re-derived the whole tab.
+ */
+function learnedRespawn(snap: unknown): { learned: readonly LearnedEvidence[] } {
   const learned = learnedOf(snap)
   const sig = learned.map((l) => `${l.id}:${String(l.gapsMs.length)}:${String(l.gapsMs[0] ?? 0)}`).join('|')
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed by the signature on purpose: a new snapshot with the same evidence keeps the old object
-  return useMemo(() => ({ learned }), [sig])
+  return lastRespawn([sig], () => ({ learned }))
 }
 
 export function useGapsData(all: AllCharacters | null = null, opts: GapsDataOptions = {}): GapsData {
@@ -246,7 +249,7 @@ export function useGapsData(all: AllCharacters | null = null, opts: GapsDataOpti
   const looted = lastLooted([loot, wantDrops], () => (wantDrops ? lootedItemNames(loot) : NO_NAMES))
   // The respawn evidence (gapRespawns.ts), the same object until a mob learns a gap: the respawn
   // module republishes on every sighting of a watched mob, which must not re-derive the whole tab.
-  const respawn = useLearnedRespawn(useModule<unknown>('respawn'))
+  const respawn = learnedRespawn(useModule<unknown>('respawn'))
   const itemMobs = useItemMobs(looted)
   // The foraged known items' own pages, asked of main the same way (shared/gapForage.ts).
   const foraged = lastForaged([engine], () => (engine ? forageProofNames(engine) : []))

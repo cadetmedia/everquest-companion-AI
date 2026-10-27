@@ -18,7 +18,7 @@
 // `plannerData.toRow` performs for donor rows, computed once here rather than per keystroke per
 // row (the standing search law).
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ClassAbbr } from '@shared/classCombo'
 import { resolvedClasses } from '@shared/classCombo'
 import type { ItemUpgradeState } from '@shared/itemUpgrade'
@@ -28,6 +28,7 @@ import { isKept } from '@shared/lootDisposition'
 import { useLootHistory } from '../loot/useLootHistory'
 import { useComboSnap } from '../profiles/ClassComboData'
 import { type Kept, kept } from '../../lib/kept'
+import { characterEpoch, heldNow, holdFor, type Held } from '../../lib/characterEpoch'
 import { useModule } from '../../lib/useModule'
 import type { CharacterSnap } from '@shared/characterTypes'
 // JOS-338: the caller `features/planner/plannerInventory.ts` has been asking for since JOS-326 —
@@ -208,17 +209,36 @@ export interface GearOwnershipState {
   readAt: number | null
 }
 
+/** The last payload this window read, for its character, so a remount paints with it instead of re-rendering on the read. */
+let heldPayload: Held<OwnershipPayload> | null = null
+const LOOTED_NAMES: Kept<string[]> = { last: null }
+const OWNERSHIP_MAP: Kept<GearOwnershipMap | null> = { last: null }
+
+/** The same dump (path and mtime) as the held one: keep the held object, so nothing downstream moves. */
+const sameDump = (a: OwnershipPayload, b: OwnershipPayload): boolean => a.path === b.path && a.loadedAt === b.loadedAt
+
 export function useGearOwnership(): GearOwnershipState {
-  const [payload, setPayload] = useState<OwnershipPayload>(NO_OWNERSHIP)
-  const [readAt, setReadAt] = useState<number | null>(null)
+  // Another character's payload is never held over (lib/characterEpoch.ts): such a remount starts empty.
+  const seed = heldNow(heldPayload)
+  const [payload, setPayload] = useState<OwnershipPayload>(seed ?? NO_OWNERSHIP)
+  // A remount with a held payload has read it: the re-read below only replaces a dump that moved.
+  const [readAt, setReadAt] = useState<number | null>(() => (seed === undefined ? null : Date.now()))
   const history = useLootHistory()
+  // The payload object this instance shows; null until it has one.
+  const shown = useRef<OwnershipPayload | null>(seed ?? null)
 
   const read = useCallback((alive: () => boolean) => {
+    const asked = characterEpoch()
     void window.eq
       .gearOwnership()
       .then((next) => {
         if (!alive()) return
-        setPayload(next)
+        const held = heldNow(heldPayload)
+        const show = held !== undefined && sameDump(held, next) ? held : next
+        if (show === next) heldPayload = holdFor(asked, next)
+        if (shown.current === show) return
+        shown.current = show
+        setPayload(show)
         setReadAt(Date.now())
       })
       .catch(() => {
@@ -252,16 +272,16 @@ export function useGearOwnership(): GearOwnershipState {
   // earlier, since the item never reached the bags at all. It is not a rounding error: 73% of the
   // owner's 12,045 loot events are `sold`, and 467 distinct base names appear in his log ONLY that
   // way. Each one of them used to print `Looted` in a column that means "you have one".
-  const lootedNames = useMemo(
+  // Both kept across remounts (lib/kept.ts): every tab that reads ownership re-asked them per visit.
+  const lootedNames = kept(LOOTED_NAMES, [history, characterEpoch()], () =>
     // eslint-disable-next-line eqc/no-domain-munging -- JOS-459 cutover ledger item 3: no served view source answers this yet, so the renderer still derives LootEvent. Becomes a view descriptor when the source lands.
-    () => [...new Set(history.filter(isKept).map((e) => e.item))],
-    [history]
+    [...new Set(history.filter(isKept).map((e) => e.item))]
   )
 
-  const map = useMemo(() => {
+  const map = kept(OWNERSHIP_MAP, [payload.entries, lootedNames, characterEpoch()], () => {
     if (payload.entries.length === 0 && lootedNames.length === 0) return null
     return gearOwnershipMap(payload.entries, lootedNames)
-  }, [payload.entries, lootedNames])
+  })
 
   return { map, payload, readAt }
 }

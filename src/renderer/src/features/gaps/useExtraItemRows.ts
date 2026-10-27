@@ -22,6 +22,7 @@ import { useCapturedItems } from './capturedItemsStore'
 import { useCurrentGapEdits } from './gapEditsStore'
 import { saveHeldSeen, useHeldSeen } from './heldSeenStore'
 import { useQuestJournals } from './itemShotsStore'
+import { characterEpoch, heldNow, holdFor, type Held } from '../../lib/characterEpoch'
 
 const NONE: ReadonlySet<string> = new Set()
 const NO_ROWS: readonly GapRow[] = []
@@ -31,6 +32,13 @@ interface Answer {
   unknown: ReadonlySet<string>
 }
 const NO_ANSWER: Answer = { asked: NONE, unknown: NONE }
+/** Main's last answer and the names it answered, kept across remounts: the corpus it reads is static. */
+let lastAnswer: Held<{ names: string; answer: Answer }> | null = null
+/** The held answer when it was for these names and this character (lib/characterEpoch.ts). */
+const heldAnswer = (names: string): Answer | undefined => {
+  const held = heldNow(lastAnswer)
+  return held?.names === names ? held.answer : undefined
+}
 
 export function useExtraItemRows(rows: readonly GapRow[] | undefined, holding: HeldIndex, viewer: ExtraViewer = { me: null, all: false }): readonly GapRow[] {
   const engineRows = rows ?? NO_ROWS
@@ -50,18 +58,26 @@ export function useExtraItemRows(rows: readonly GapRow[] | undefined, holding: H
     const names = [...(held === '' ? [] : held.split('\n')), ...capturedNames(captured, renamed)]
     return [...new Set(names)].sort((a, b) => a.localeCompare(b)).join('\n')
   }, [holding, engineRows, remembered, viewer, captured, renamed])
-  const [answer, setAnswer] = useState<Answer>(NO_ANSWER)
+  const [answer, setAnswer] = useState<Answer>(() => heldAnswer(asked) ?? NO_ANSWER)
   useEffect(() => {
     if (asked === '') {
       setAnswer(NO_ANSWER)
       return undefined
     }
+    const held = heldAnswer(asked)
+    if (held !== undefined) {
+      setAnswer(held)
+      return undefined
+    }
+    const epoch = characterEpoch()
     let live = true
     const names = asked.split('\n')
     window.eq
       .gapUnknownItems(names)
       .then((found) => {
-        if (live) setAnswer({ asked: new Set(names), unknown: new Set(found) })
+        const next = { asked: new Set(names), unknown: new Set(found) }
+        lastAnswer = holdFor(epoch, { names: asked, answer: next })
+        if (live) setAnswer(next)
       })
       .catch(() => undefined)
     return () => {
