@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-26T21:54:37.871Z",
+  "updatedAt": "2026-10-27T06:12:19.230Z",
   "revs": {
     "45502": 165835,
     "46874": 192869,
@@ -2055,7 +2055,9 @@
     "72923": 199374,
     "72927": 199388,
     "73039": 199761,
-    "73101": 199952
+    "73101": 199952,
+    "73110": 200018,
+    "73112": 200026
   },
   "titles": {
     "45502": "Anthem de Arms",
@@ -4112,6 +4114,8 @@
     "72923": "Summon Familiar: Mummy",
     "72927": "Familiar: Gelatinous Cube",
     "73039": "Mana Preservation III",
-    "73101": "Tears of Arlyxir"
+    "73101": "Tears of Arlyxir",
+    "73110": "Soul Orb (Spell)",
+    "73112": "Funeral Pyre of Kelador"
   }
 }

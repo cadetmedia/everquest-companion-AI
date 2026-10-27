@@ -1,8 +1,8 @@
 {
-  "scrapedAt": "2026-10-26T21:54:37.871Z",
+  "scrapedAt": "2026-10-27T06:12:19.230Z",
   "schema": 3,
-  "count": 2020,
-  "withEffects": 2015,
+  "count": 2022,
+  "withEffects": 2017,
   "spells": [
     {
       "name": "Aanya's Animation",
@@ -13668,6 +13668,24 @@
       "mana": 0,
       "effects": [
         "Increase Hitpoints by 100%"
+      ]
+    },
+    {
+      "name": "Funeral Pyre of Kelador",
+      "durationText": "0:48",
+      "durationMs": 48000,
+      "castTimeMs": 3000,
+      "recastMs": 1000,
+      "targetType": "Single",
+      "spellType": "Detrimental",
+      "classes": "* Necromancer - Level 60",
+      "msgCastOnYou": "Your skin burns as you are caught in a funeral pyre.",
+      "msgCastOnOther": "Soandso is enveloped in a funeral pyre.",
+      "msgWearsOff": "The funeral pyre ends.",
+      "illusion": false,
+      "mana": 470,
+      "effects": [
+        "Decreases health by 290 per tick"
       ]
     },
     {
@@ -29438,6 +29456,23 @@
       "mana": 0,
       "effects": [
         "Decrease Hitpoints by 75"
+      ]
+    },
+    {
+      "name": "Soul Orb",
+      "durationText": "Instant",
+      "durationMs": null,
+      "castTimeMs": 4000,
+      "recastMs": 1000,
+      "targetType": "Single",
+      "spellType": "Detrimental",
+      "classes": "* Necromancer - Level 61",
+      "msgCastOnYou": "Your soul shivers in pain.",
+      "msgCastOnOther": "Soandso's soul shivers in pain.",
+      "illusion": false,
+      "mana": 450,
+      "effects": [
+        "Decreases Health by 850."
       ]
     },
     {
