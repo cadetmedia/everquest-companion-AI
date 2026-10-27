@@ -37,7 +37,7 @@ import { roleClass, roleField, roleOf, withFishedNote } from './gapRoles'
 import { questRowPage } from './gapQuestPage'
 import type { QuestExtras } from './gapQuests'
 import { withFightFields } from './gapFight'
-import { withRespawnField } from './gapRespawns'
+import { respawnFieldLine, withRespawnField } from './gapRespawns'
 import { itemsSoldBlock, itemsSoldField, type SoldSeen } from './gapItemsSold'
 import { pageOrAdd, withDescription, withoutStated, type MerchantExtras, type PageStated } from './gapMerchantDescription'
 
@@ -652,8 +652,8 @@ const PAGE_OF: Record<GapDomain, (row: GapRow, c: PageContext) => string> = {
   spell: (row, c) => spellPage({ name: row.name, npcOnly: npcOnlySpell(row, c.isMob), client: c.spellFacts?.[row.name], shot: c.spellShots?.[row.name], castBy: castBySentence(row, c.isMob) }),
   faction: (row) => `${factionLine({ faction: factionOf(row), adjust: row.adjust, raised: row.raised })}\n`,
   image: (row) => `| ${'imagefilename'.padEnd(17)} = ${row.image ?? ''}\n`,
-  // The time the player's kills agree on (gapRespawns.ts), as the page's field line.
-  respawn: (row) => `| ${'respawn_time'.padEnd(17)} = ${row.respawn?.text ?? ''}\n`,
+  // The time the player's kills agree on (gapRespawns.ts), as the page's field line; a page's words kept in a comment.
+  respawn: (row) => respawnFieldLine(row),
   notice: (row) => noticeProof(row),
   // A Zones row is always a redirect (gapZoneRedirects.ts); `wikiPageText` answers it above.
   zone: (row) => `#REDIRECT [[${row.suggest?.page ?? row.name}]]\n`,

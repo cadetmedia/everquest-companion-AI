@@ -94,12 +94,26 @@ test('A RESPAWNS ROW FOR A PAGE THAT STATES NONE OR DISAGREES; NONE FOR ONE THAT
   assert.equal(wikiPageText(rows[0], [], {}), '| respawn_time      = 4:55\n')
 })
 
-test('A PAGE WHOSE RESPAWN IS NOT A DURATION IS ITS OWN STATEMENT: NO ROW; A PLACEHOLDER STATES NOTHING: A ROW', () => {
-  const said = (text: string): string[] => respawnGaps([evidence('Xicotl', XICOTL, { text })], CATALOG).map((r) => r.respawn?.pageSays ?? '')
+test('A PAGE WHOSE RESPAWN IS WORDS GETS A ROW WHOSE CHIP WARNS (OWNER 2026-10-26); A PLACEHOLDER STATES NOTHING: A ROW', () => {
   // respawns.json rows with no seconds, verbatim.
-  for (const text of ['Kaesora: 18:00, Temple of Droga: 20:30', 'Triggered', '[[Triggered]]', '6-8 hours', 'Never respawns, only appears in raid instances']) {
-    assert.deepEqual(said(text), [], text)
+  for (const text of ['Kaesora: 18:00, Temple of Droga: 20:30', 'Triggered', '[[Triggered]]', '6-8 hours', 'Never respawns, only appears in raid instances', '6 min?', '2:45h']) {
+    const rows = respawnGaps([evidence('Xicotl', XICOTL, { text })], CATALOG)
+    assert.equal(rows.length, 1, text)
+    assert.equal(rows[0].respawn?.pageSays, text, text)
+    assert.equal(rows[0].respawn?.words, true, text)
+    const chip = respawnAction(rows[0])
+    assert.equal(chip.label, 'Check respawn', text)
+    assert.equal(chip.warn, true, text)
+    assert.equal(chip.why, rows[0].details.samples[0], 'the tooltip and the details say the same')
   }
+  const triggered = respawnGaps([evidence('Xicotl', XICOTL, { text: 'Triggered' })], CATALOG)[0]
+  assert.match(triggered.details.samples[0] ?? '', /^The page says "Triggered"; your kills say 4:55 \(\d+ of 50 gaps within 25 seconds of each other\)\. Check before changing it: Copy keeps the page's words in a comment\.$/)
+  // Copy sets the number and keeps the page's words beside it, so a paste loses nothing.
+  assert.equal(wikiPageText(triggered, [], {}), '| respawn_time      = 4:55 <!-- the page said: Triggered -->\n')
+  // A duration that disagrees still fixes, plainly, without a warning.
+  const fix = respawnAction(respawnGaps([evidence('Xicotl', XICOTL, { text: '22 minutes', ms: 1_320_000 })], CATALOG)[0])
+  assert.equal(fix.label, 'Fix respawn')
+  assert.equal(fix.warn, undefined)
   // A placeholder reads as no respawn: no "the page says ?", and the chip adds rather than fixes.
   for (const text of ['?', '??', 'Unknown', '']) {
     const rows = respawnGaps([evidence('Xicotl', XICOTL, { text })], CATALOG)

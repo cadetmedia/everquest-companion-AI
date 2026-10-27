@@ -58,7 +58,7 @@ export const GAP_DOMAIN_HELP: Record<GapDomain, string> = {
   faction: "Factions a kill changed that the mob's page is missing or states wrongly: fix the mob page.",
   drop: "Items you looted that the mob's page doesn't list (Motes excluded): add them to its loot.",
   image: 'Mobs you met whose wiki page has no picture: screenshot one and upload it.',
-  respawn: "Mobs whose respawn your kills agree on, and whose page states none or another: set the page's respawn_time.",
+  respawn: "Mobs whose respawn your kills agree on, and whose page states none, another, or words to check: set the page's respawn_time.",
   notice: 'Mobs and items you met whose page says "not in Legends" or "up for deletion": remove the notice, since your log proves they exist.',
   quest: 'Quests your log took part in: make the page, or fill what its page is missing.',
   zone: 'Zone names your log printed that the wiki titles otherwise: make a redirect page.'
@@ -517,6 +517,8 @@ export interface GapAction {
   label: string
   why: string
   href?: string
+  /** A chip that warns: check the page before acting (a respawn page that states words). */
+  warn?: true
 }
 
 /** What a page's faction statement says, in words: `(-10) to (-30) (unconfirmed)`, `a lowering of no stated amount`. */
