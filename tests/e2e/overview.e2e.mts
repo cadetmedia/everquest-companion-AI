@@ -205,8 +205,10 @@ async function stepHeadLabel(page: Page, snap: OverviewSnap): Promise<void> {
     note('the engine resolved no fight at all — the head-row label is correctly absent')
     return
   }
-  const label = (await textOf(page, '[data-testid="overview-dps-label"]')).trim()
   const openFight = snap.segments.some((s) => s.kind === 'current')
+  // A wait: in a fight the card reads combat once a second (combatPoll.ts), so it can trail the engine.
+  const says = (text: string): boolean => (openFight ? /live/i.test(text) : /Last fight/.test(text))
+  const label = (await settle(() => textOf(page, '[data-testid="overview-dps-label"]'), says, { timeoutMs: 5000 })).trim()
   check(
     openFight
       ? 'a fight is open ⇒ the head label says live'
