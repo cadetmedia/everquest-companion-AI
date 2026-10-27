@@ -66,6 +66,7 @@ import CarryAll from './CarryAll'
 import CharacterIdentity from './CharacterIdentity'
 import ExaltationAuditPanel from './ExaltationAuditPanel'
 import { useSocketAdvice } from './useSocketAdvice'
+import { useExaltLocks, useExaltView } from './exaltPrefs'
 import GearStats from './GearStats'
 import SlotGrid from './SlotGrid'
 // The per-slot exaltation join (owner ask 2026-08-23): the wish list against the two corpus
@@ -131,7 +132,15 @@ export default function CharacterView(): JSX.Element {
   // state the grid was already in, and a build that cannot read its corpus should not half-answer.
   const settled = wishes.ready && gear.ready && donors.ready && !gear.refused
   // The socket recommender, computed once for the grid's red cards and the panel's lists.
-  const socket = useSocketAdvice(sheet)
+  const socket = useSocketAdvice(sheet, useExaltLocks())
+  // Current or Recommended on the grid (owner ask 2026-10-26), remembered per viewer. Recommended
+  // draws only while the plan changes something; otherwise the grid is today's board either way.
+  const [view, setView] = useExaltView()
+  const recommended = view === 'recommended' && (socket.diff?.bySeat.size ?? 0) > 0
+  const advice = useMemo(
+    () => (recommended && socket.advice !== undefined ? { ...socket.advice, recommended: true } : socket.advice),
+    [recommended, socket.advice]
+  )
   const slotWishes = useMemo(
     () => (settled ? wishesBySlot(wishes.list.entries, index) : undefined),
     [settled, wishes.list.entries, index]
@@ -172,7 +181,7 @@ export default function CharacterView(): JSX.Element {
           data-testid="character-sheet"
         >
           <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-            <SlotGrid cells={sheet.cells} slotWishes={slotWishes} advice={socket.advice} />
+            <SlotGrid cells={sheet.cells} slotWishes={slotWishes} advice={advice} />
           </Box>
           <Stack spacing={1} sx={{ width: { xs: '100%', lg: 340 }, flexShrink: 0 }}>
             <GearStats totals={sheet.totals} />
@@ -182,7 +191,11 @@ export default function CharacterView(): JSX.Element {
               recs={socket.recs}
               audit={socket.audit}
               plan={socket.plan}
+              diff={socket.diff}
               deity={socket.deity}
+              view={view}
+              onView={setView}
+              lockedCount={socket.lockedCount}
             />
             <Unplaced cells={sheet.unplaced} />
           </Stack>

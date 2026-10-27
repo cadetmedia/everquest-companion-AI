@@ -23,14 +23,18 @@
 // diff from where things sit today. Whether prying a socketed gem out is free, lossy, or
 // impossible is a game rule this corpus does not state — the panel says so once.
 //
-// Pure and node-tested (tests/socketOptimize.test.mts).
+// SINCE 2026-10-26 (Malkil via the owner): a gem that helps no class of the loadout claims nothing
+// (`exaltationAudit.helps`), and a LOCKED seat is fixed before the matching (socketFixed.ts).
+//
+// Pure and node-tested (tests/socketOptimize.test.mts, tests/exaltRecommend.test.mts).
 
 import type { GearRow } from '../../../../shared/planner/gear'
 import type { OwnedExaltation } from '../../../../shared/characterSheet'
-import { bestEffectFor, usable, type KindEffect, type Loadout } from './exaltationAudit'
+import { bestEffectFor, helps, usable, type KindEffect, type Loadout } from './exaltationAudit'
 // R2 lives THERE, not here (owner catch 2026-09-11). This file's header has always said "the rules
 // are the recommender's"; until now it said so while carrying its own copy of them.
 import { inForcePerSeat, narrowedHost, seatFits, seatIsLive, type SocketHostCell } from './socketRecommend'
+import { idleOf, lockedPlacements, lockedSeated, lockedSeats, type PlanIdle } from './socketFixed'
 
 /** A donor gem and the socket type it serves. */
 interface Donor {
@@ -90,6 +94,8 @@ export interface ContestedFamily {
  *  duplicate in force (user catch 2026-09-10 — the plan seated a family at a new spot and said
  *  nothing about the old copy still sitting where it was). */
 export interface PlanClear {
+  cellId: string
+  type: string
   cellLabel: string
   item: string
   gemName: string
@@ -97,17 +103,22 @@ export interface PlanClear {
   movedTo: string
 }
 
+export type { PlanIdle }
+
 export interface BoardPlan {
   placements: Placement[]
   moves: PlanMove[]
   clears: PlanClear[]
   contested: ContestedFamily[]
+  idle: PlanIdle[]
 }
 
-/** Copies per donor key, socketed and loose alike — the plan reseats everything owned. */
-function copyCounts(owned: readonly OwnedExaltation[]): Map<string, number> {
+/** Copies per donor key, socketed and loose alike — the plan reseats everything owned — less the
+ *  copies LOCKED where they sit: those are spent before the plan starts. */
+function copyCounts(owned: readonly OwnedExaltation[], sockets: readonly SocketHostCell[]): Map<string, number> {
   const out = new Map<string, number>()
   for (const o of owned) out.set(o.key, (out.get(o.key) ?? 0) + 1)
+  for (const s of lockedSeats(sockets)) out.set(s.currentKey, Math.max(0, (out.get(s.currentKey) ?? 0) - 1))
   return out
 }
 
@@ -143,12 +154,13 @@ function familyClaims(
   types: readonly string[]
 ): FamilyClaim[] {
   const best = new Map<string, FamilyClaim>()
-  for (const key of counts.keys()) {
+  for (const [key, n] of counts) {
     const row = rowByKey.get(key)
-    if (row === undefined || !usable(row, loadout)) continue
+    if (n === 0 || row === undefined || !usable(row, loadout)) continue
     for (const type of types) {
       const eff = bestEffectFor(row, type)
-      if (eff === null) continue
+      // A gem that helps no class you play claims nothing (owner, 2026-10-26).
+      if (eff === null || !helps(eff, loadout)) continue
       const held = best.get(eff.family)
       const donor = { key, row, type }
       if (held === undefined || eff.tier > held.eff.tier) {
@@ -188,7 +200,9 @@ function currentSeatExists(
 function edges(
   claims: readonly FamilyClaim[],
   sockets: readonly SocketHostCell[],
-  ctx: PlanContext
+  ctx: PlanContext,
+  /** true lists ONLY the locked seats a claim fits - for the contest report, never the matching */
+  lockedOnly = false
 ): number[][] {
   return claims.map((c) => {
     const current: number[] = []
@@ -196,8 +210,8 @@ function edges(
     const occupied: number[] = []
     sockets.forEach((s, i) => {
       // A proc seat nothing swings is not a seat (`seatIsLive`), so it never becomes an edge and
-      // the matching cannot spend a family on it.
-      if (!seatIsLive(s)) return
+      // the matching cannot spend a family on it. A locked seat is taken before the matching runs.
+      if (!seatIsLive(s) || (s.locked === true) !== lockedOnly) return
       const hostRow = ctx.rowByKey.get(s.itemKey)
       if (!c.donors.some((d) => d.type === s.type && seatFits(d.row, s, hostRow, ctx.loadout))) return
       const occupant = s.currentKey === null ? null : bestEffectFor(ctx.rowByKey.get(s.currentKey), s.type)
@@ -286,7 +300,7 @@ function secondHand(
     if (!isProcClaim(c) || !seatOf.includes(u)) return
     const tiers = [c, ...lowerTiers(c)]
     sockets.forEach((s, v) => {
-      if (seatOf[v] !== -1 || !inForcePerSeat(s.type) || !seatIsLive(s)) return
+      if (seatOf[v] !== -1 || s.locked === true || !inForcePerSeat(s.type) || !seatIsLive(s)) return
       const p = tiers.reduce<Placement | null>((got, k) => got ?? place(k, v), null)
       if (p === null) return
       seatOf[v] = u
@@ -398,8 +412,11 @@ function clearsOf(
     const seats = seatsOfFamily.get(occ.family)
     if (seats === undefined || seats.some((p) => p.cellId === s.cellId && p.type === s.type)) continue
     if (inForcePerSeat(s.type) || placements.some((p) => p.cellId === s.cellId && p.type === s.type)) continue
-    const seat = seats[0]
+    // The seat that holds the family's best tier: a lock can leave a lower tier beside it.
+    const seat = seats.reduce((a, b) => (b.tier > a.tier ? b : a))
     out.push({
+      cellId: s.cellId,
+      type: s.type,
       cellLabel: s.cellLabel,
       item: s.item,
       gemName: s.currentName,
@@ -420,6 +437,8 @@ interface MatchOutcome {
   sockets: readonly SocketHostCell[]
   /** the plan's ledger after naming - a free option whose copies are all spent says so */
   left: ReadonlyMap<string, number>
+  /** per claim, the LOCKED seats it would fit: a contest the player's own lock decided */
+  lockedAdj: readonly number[][]
 }
 
 /** Who holds seat `v` in the plan, as the contest line reads it. A legal seat a maximum
@@ -428,7 +447,7 @@ interface MatchOutcome {
 function heldByOf(m: MatchOutcome, u: number, v: number, byCell: ReadonlyMap<string, Placement>): string {
   const s = m.sockets[v]
   const held = byCell.get(`${s.cellId}|${s.type}`)
-  if (held !== undefined) return held.effect
+  if (held !== undefined) return s.locked === true ? `${held.effect} (locked)` : held.effect
   const loose = m.claims[u].donors.some((d) => d.type === s.type && (m.left.get(d.key) ?? 0) > 0)
   return loose
     ? 'nothing (beside the gems planned for its other sockets, the item would fit no class you play)'
@@ -440,7 +459,7 @@ function contestedOf(m: MatchOutcome, placements: readonly Placement[]): Contest
   const out: ContestedFamily[] = []
   for (let u = 0; u < m.claims.length; u++) {
     if (m.placed[u] !== -1) continue
-    const options = m.adj[u].map((v) => ({
+    const options = [...m.adj[u], ...m.lockedAdj[u]].map((v) => ({
       cellLabel: m.sockets[v].cellLabel,
       type: m.sockets[v].type,
       heldBy: heldByOf(m, u, v, byCell)
@@ -483,7 +502,11 @@ const SEARCH_BUDGET = 32
  * then the earlier edges that spent the copy it needed or narrowed the same item.
  */
 function seatOnce(input: SeatingInput, adj: readonly number[][]): { seating: Seating; refused: Edge[] | null } {
-  const ctx: PlanContext = { ...input.base, left: copyCounts(input.owned), seated: new Map() }
+  const ctx: PlanContext = {
+    ...input.base,
+    left: copyCounts(input.owned, input.sockets),
+    seated: lockedSeated(input.sockets, input.base.rowByKey)
+  }
   const seatOf = match(input.order.length, adj, input.sockets.length)
   const placed = placedOf(seatOf, input.order.length)
   const seating: Seating = { seatOf, placed, placements: [], ctx }
@@ -556,14 +579,15 @@ export function planBoard(
   sockets: readonly SocketHostCell[]
 ): BoardPlan {
   const rowByKey = new Map(rows.map((r) => [r.key, r]))
-  const ctx: PlanContext = { rowByKey, loadout, left: copyCounts(owned), seated: new Map() }
+  const ctx: PlanContext = { rowByKey, loadout, left: copyCounts(owned, sockets), seated: lockedSeated(sockets, rowByKey) }
+  const locked = lockedPlacements(sockets, rowByKey, loadout)
   // THE INCUMBENT TIEBREAK, third and final form (user reports 2026-09-10, the belt three
   // times). A claim is incumbent only when ITS OWN best-tier donors can KEEP a seat the family
   // already holds — "the family is socketed somewhere" was too coarse: Summoning Haste counted
   // as incumbent through the tier-I gem in a ring that its belt-only tier-III donor cannot use,
   // and outmuscled the belt's true incumbent on a tie. Incumbents-that-can-stay are seated
   // first at equal tier, so a claim can only take a contested seat by OUTRANKING its holder.
-  const claims = familyClaims(ctx.left, rowByKey, loadout, TYPES)
+  const claims = familyClaims(ctx.left, rowByKey, loadout, TYPES).filter((c) => c.eff.tier > (locked.families.get(c.family) ?? -1))
   const keeps = claims.map((c) => currentSeatExists(c, sockets, ctx))
   const order = claims
     .map((c, i) => ({ c, i }))
@@ -572,12 +596,14 @@ export function planBoard(
   const adj = edges(order, sockets, ctx)
   // The contests are the MATCHING's: a spare proc copy going unseated is not one.
   const run = bestSeating({ order, sockets, base: ctx, owned }, adj, { runs: SEARCH_BUDGET })
-  const placements = [...run.placements]
+  const placements = [...locked.placements, ...run.placements]
   placements.push(...secondHand(order, sockets, run.seatOf, (c, v) => placementOf(c, sockets[v], run.ctx)))
+  const lockedAdj = edges(order, sockets, ctx, true)
   return {
     placements,
     moves: movesOf(placements, sockets, rowByKey),
     clears: clearsOf(placements, sockets, rowByKey),
-    contested: contestedOf({ claims: order, placed: run.placed, adj, sockets, left: run.ctx.left }, placements)
+    contested: contestedOf({ claims: order, placed: run.placed, adj, sockets, left: run.ctx.left, lockedAdj }, placements),
+    idle: idleOf(placements, sockets, rowByKey, loadout)
   }
 }

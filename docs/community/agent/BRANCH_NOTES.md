@@ -115,6 +115,17 @@ where one exists.
 - Windows case trap: `ExaltationAudit.tsx` vs `exaltationAudit.ts` -> TS1261; the panel is
   `ExaltationAuditPanel.tsx`.
 - Open: persist the owned tri-state; e2e for red cards; is un-socketing lossy.
+- Benefit filter (2026-10-26): `GearEffect.benefit` is built in main from the spell list's focus
+  rows (`focusBenefit.ts`); every engine asks `exaltationAudit.helps` before offering a gem. Law 1:
+  no row or no limit = helps anyone; an empty loadout filters nothing. The pet rule reads the pet's
+  NAME ("Skeletal Pet"): the list writes most necro summons as `Summon Pet:`. Not checked (would
+  hide gems that help): the spell kind a limit names, and level.
+- Locks (`SocketHostCell.locked`, per character in localStorage `eq.character.exaltLocks`, keyed
+  `cellId|type|gemKey` so a gem swapped in game leaves the lock inert): fixed before the matching
+  (`socketFixed.ts`). A lock pins its body-wide family only AT ITS TIER OR BELOW. Trap: pinning
+  the whole family pulled the Affliction Efficiency II beside a locked I.
+- Recommended view = `socketDiff.boardDiff(plan)`; the panel's moves/clears lines are now the grid's
+  red/green chips and their hovers. View choice per viewer: `eq.character.exaltView`.
 
 ## Spells, upgrades and Loadout (was spell-upgrades)
 
