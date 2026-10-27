@@ -5,6 +5,7 @@
 
 import { useMemo } from 'react'
 import { kept, type Kept } from '../../lib/kept'
+import { characterEpoch } from '../../lib/characterEpoch'
 import type { ClassAbbr } from '@shared/classCombo'
 import { resolvedClasses } from '@shared/classCombo'
 import type { CharacterSheet } from '@shared/characterSheet'
@@ -46,13 +47,15 @@ export function useSocketAdvice(sheet: CharacterSheet | null): SocketAdviceState
   // R2's fourth condition. Null until an achievements dump has been read, and null filters nothing.
   const deity = useDeity()
   // Kept across visits (lib/kept.ts), keyed on values, so a re-open paints without re-running the
-  // recommender; the classes by their names, since the snapshot object may be rebuilt.
+  // recommender; the classes by their names, since the snapshot object may be rebuilt. Each key
+  // carries the character epoch, so another character's answers are never reused.
+  const epoch = characterEpoch()
   const resolved = current === null ? [] : resolvedClasses(current)
-  const loadout = kept(LOADOUT, [resolved.join(' '), deity], (): Loadout => ({ classes: resolved, deity }))
+  const loadout = kept(LOADOUT, [resolved.join(' '), deity, epoch], (): Loadout => ({ classes: resolved, deity }))
   const classes = loadout.classes
-  const rowByKey = kept(ROW_BY_KEY, [gear.rows], () => new Map(gear.rows.map((r) => [r.key, r])))
+  const rowByKey = kept(ROW_BY_KEY, [gear.rows, epoch], () => new Map(gear.rows.map((r) => [r.key, r])))
   const settled = sheet !== null && gear.ready && !gear.refused
-  const key = [settled, sheet, gear.rows, loadout]
+  const key = [settled, sheet, gear.rows, loadout, epoch]
   const recs = kept(RECS, key, () => (settled ? recommendSockets(sheet.exaltations, gear.rows, loadout, socketHosts(sheet.cells)) : null))
   const audit = kept(AUDIT, key, () => (settled ? auditExaltations(sheet.exaltations, gear.rows, loadout) : null))
   const plan = kept(PLAN, key, () => (settled ? planBoard(sheet.exaltations, gear.rows, loadout, socketHosts(sheet.cells)) : null))

@@ -19,6 +19,7 @@ import {
   computeLastLootedAt
 } from './heldCounts'
 import { useModule } from '../../lib/useModule'
+import { characterEpoch, heldNow, holdFor, type Held } from '../../lib/characterEpoch'
 import { onHistorySwapped } from '../../lib/historySwapped'
 import { reconcile, type InventoryRow } from '../inventory/reconcile'
 import { rebaselineInstant } from '../inventory/countSource'
@@ -560,16 +561,16 @@ function useTurnInLedger(
   return { turnIns, detected, logCounts, turnInsReady, ...actions }
 }
 
-/** The character name this window last heard, so a remount starts from it instead of re-rendering on the ask. */
-let heldCharacter: string | null = null
+/** The character name this window last heard (lib/characterEpoch.ts), so a remount starts from it instead of re-rendering on the ask. */
+let heldCharacter: Held<string | null> | null = null
 
 export function useProgress(opts?: UseProgressOptions): UseProgress {
   // One held copy per window (progressStore.ts): asked on mount, inventory reload and character
   // switch, kept current by main's pushes, dropped on a switch.
   const [progress, setProgress] = useHeldProgress()
-  const [character, setHeard] = useState<string | null>(heldCharacter)
-  const setCharacter = useCallback((name: string | null) => {
-    heldCharacter = name
+  const [character, setHeard] = useState<string | null>(() => heldNow(heldCharacter) ?? null)
+  const setCharacter = useCallback((name: string | null, asked = characterEpoch()) => {
+    heldCharacter = holdFor(asked, name)
     setHeard(name)
   }, [])
   // One pick per window (useCountSource.ts), so every instance of this hook follows the tab's.
@@ -578,7 +579,8 @@ export function useProgress(opts?: UseProgressOptions): UseProgress {
   const lootHistory = useModule<LootSnap>('loot') ?? EMPTY_LOOT
 
   useEffect(() => {
-    void window.eq.getCharacter().then((c) => setCharacter(c?.name ?? null))
+    const asked = characterEpoch()
+    void window.eq.getCharacter().then((c) => setCharacter(c?.name ?? null, asked))
     return window.eq.onCharacter((c) => {
       setCharacter(c?.name ?? null)
     })

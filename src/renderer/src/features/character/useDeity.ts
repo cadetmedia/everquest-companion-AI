@@ -22,9 +22,10 @@
 
 import { useEffect, useState } from 'react'
 import { deityKey } from '@shared/planner/deity'
+import { characterEpoch, heldNow, holdFor, type Held } from '../../lib/characterEpoch'
 
-/** The last answer this window read, so a remount starts from it rather than re-rendering on the read. */
-let heldDeity: string | null = null
+/** The last answer this window read, for its character, so a remount starts from it rather than re-rendering on the read. */
+let heldDeity: Held<string | null> | null = null
 
 /**
  * The FOLDED deity key, or null when nothing has stated one.
@@ -34,19 +35,21 @@ let heldDeity: string | null = null
  * know nothing about gets the advice he always got.
  */
 export function useDeity(): string | null {
-  const [deity, setDeity] = useState<string | null>(heldDeity)
+  const [deity, setDeity] = useState<string | null>(() => heldNow(heldDeity) ?? null)
   useEffect(() => {
-    const read = (p: { deity?: string } | null): void => {
-      heldDeity = p?.deity === undefined ? null : deityKey(p.deity)
-      setDeity(heldDeity)
+    const read = (p: { deity?: string } | null, asked = characterEpoch()): void => {
+      const value = p?.deity === undefined ? null : deityKey(p.deity)
+      heldDeity = holdFor(asked, value)
+      setDeity(value)
     }
+    const asked = characterEpoch()
     // A push is newer than the initial read, so a reply that lands after one is stale; a failed
     // read leaves the deity unknown, which every consumer already handles.
     let pushed = false
     void window.eq
       .getProgress()
       .then((p) => {
-        if (!pushed) read(p)
+        if (!pushed) read(p, asked)
       })
       .catch(() => undefined)
     const off = window.eq.onProgress((p) => {

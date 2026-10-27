@@ -65,3 +65,31 @@ test('a remount paints the records found before and does not ask for them again'
   assert.deepEqual(asked, [['Remount Lore Orb']])
   second.unmount()
 })
+
+test('after a character switch a remount starts empty and asks again', async () => {
+  const switched: (() => void)[] = []
+  const eq = {
+    itemMarks: (names: readonly string[]) => Promise.resolve(Object.fromEntries(names.map((n) => [n, LORE]))),
+    lookupItem: (name: string): Promise<ItemKnowledge> =>
+      Promise.resolve({ name, lore: true, quest: false, questUses: [], cached: true }),
+    onCharacter: (cb: () => void) => {
+      switched.push(cb)
+      return () => undefined
+    }
+  }
+  ;(globalThis as unknown as { window: unknown }).window = { eq }
+  const history: LootEvent[] = [{ ts: 1, item: 'Switch Lore Shard' }]
+
+  const first = mountHook(() => useNotablePickups(history, new Set()))
+  await new Promise((r) => setTimeout(r, 0))
+  assert.deepEqual(first.render().notable.map((n) => n.item), ['Switch Lore Shard'])
+  first.unmount()
+
+  for (const cb of switched) cb()
+  const second = mountHook(() => useNotablePickups(history, new Set()))
+  // Nothing held over from the other character: empty, then the probe runs again and finds it.
+  assert.deepEqual(second.render().notable, [])
+  await new Promise((r) => setTimeout(r, 0))
+  assert.deepEqual(second.render().notable.map((n) => n.item), ['Switch Lore Shard'])
+  second.unmount()
+})

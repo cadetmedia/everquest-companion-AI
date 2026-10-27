@@ -16,6 +16,7 @@ import { isNotableKnowledge, isNotableMarks } from '../../../../shared/itemKnowl
 import { isDestroyed } from '../../../../shared/lootDisposition'
 import { itemCountKey } from '../../lib/itemName'
 import { fetchItemMarks } from '../../lib/itemMarks'
+import { characterEpoch, heldNow, holdFor, type Held } from '../../lib/characterEpoch'
 
 const PROBE_LIMIT = 40
 
@@ -71,13 +72,13 @@ async function probe(toFetch: Recent[]): Promise<Map<string, ItemKnowledge>> {
   return out
 }
 
-/** The notable records this window found, kept across remounts so a re-open paints with them. */
-let heldByKey = new Map<string, ItemKnowledge>()
+/** The notable records this window found for its character (lib/characterEpoch.ts), so a re-open paints with them. */
+let heldByKey: Held<Map<string, ItemKnowledge>> | null = null
 
 export function useNotablePickups(history: LootEvent[], dismissed: Set<string>): NotableState {
-  const [byKey, setByKey] = useState<Map<string, ItemKnowledge>>(heldByKey)
+  const [byKey, setByKey] = useState<Map<string, ItemKnowledge>>(() => heldNow(heldByKey) ?? new Map())
   // A key already found is not asked again; the rest are re-asked once per mount, as before.
-  const requested = useRef<Set<string>>(new Set(heldByKey.keys()))
+  const requested = useRef<Set<string>>(new Set(byKey.keys()))
   const recent = useRef<Recent[]>([])
   recent.current = recentDistinct(history)
   const recentKeys = recent.current.map((r) => r.key).join('|')
@@ -89,9 +90,10 @@ export function useNotablePickups(history: LootEvent[], dismissed: Set<string>):
     for (const r of toFetch) asked.add(r.key)
     // No stale-run guard: a newer loot must not discard this probe, since its keys stay asked and
     // nothing would probe them again. The merge is a functional update, so a late result is safe.
+    const epoch = characterEpoch()
     void probe(toFetch).then((got) => {
       if (got.size === 0) return
-      heldByKey = new Map([...heldByKey, ...got])
+      heldByKey = holdFor(epoch, new Map([...(heldNow(heldByKey) ?? []), ...got]))
       setByKey((prev) => new Map([...prev, ...got]))
     })
   }, [recentKeys])
