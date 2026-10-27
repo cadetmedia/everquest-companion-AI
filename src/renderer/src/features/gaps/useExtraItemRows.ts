@@ -31,6 +31,8 @@ interface Answer {
   unknown: ReadonlySet<string>
 }
 const NO_ANSWER: Answer = { asked: NONE, unknown: NONE }
+/** Main's last answer and the names it answered, kept across remounts: the corpus it reads is static. */
+let lastAnswer: { names: string; answer: Answer } | null = null
 
 export function useExtraItemRows(rows: readonly GapRow[] | undefined, holding: HeldIndex, viewer: ExtraViewer = { me: null, all: false }): readonly GapRow[] {
   const engineRows = rows ?? NO_ROWS
@@ -50,10 +52,14 @@ export function useExtraItemRows(rows: readonly GapRow[] | undefined, holding: H
     const names = [...(held === '' ? [] : held.split('\n')), ...capturedNames(captured, renamed)]
     return [...new Set(names)].sort((a, b) => a.localeCompare(b)).join('\n')
   }, [holding, engineRows, remembered, viewer, captured, renamed])
-  const [answer, setAnswer] = useState<Answer>(NO_ANSWER)
+  const [answer, setAnswer] = useState<Answer>(() => (lastAnswer?.names === asked ? lastAnswer.answer : NO_ANSWER))
   useEffect(() => {
     if (asked === '') {
       setAnswer(NO_ANSWER)
+      return undefined
+    }
+    if (lastAnswer?.names === asked) {
+      setAnswer(lastAnswer.answer)
       return undefined
     }
     let live = true
@@ -61,7 +67,9 @@ export function useExtraItemRows(rows: readonly GapRow[] | undefined, holding: H
     window.eq
       .gapUnknownItems(names)
       .then((found) => {
-        if (live) setAnswer({ asked: new Set(names), unknown: new Set(found) })
+        const next = { asked: new Set(names), unknown: new Set(found) }
+        lastAnswer = { names: asked, answer: next }
+        if (live) setAnswer(next)
       })
       .catch(() => undefined)
     return () => {
