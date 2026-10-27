@@ -71,9 +71,13 @@ async function probe(toFetch: Recent[]): Promise<Map<string, ItemKnowledge>> {
   return out
 }
 
+/** The notable records this window found, kept across remounts so a re-open paints with them. */
+let heldByKey = new Map<string, ItemKnowledge>()
+
 export function useNotablePickups(history: LootEvent[], dismissed: Set<string>): NotableState {
-  const [byKey, setByKey] = useState<Map<string, ItemKnowledge>>(new Map())
-  const requested = useRef<Set<string>>(new Set())
+  const [byKey, setByKey] = useState<Map<string, ItemKnowledge>>(heldByKey)
+  // A key already found is not asked again; the rest are re-asked once per mount, as before.
+  const requested = useRef<Set<string>>(new Set(heldByKey.keys()))
   const recent = useRef<Recent[]>([])
   recent.current = recentDistinct(history)
   const recentKeys = recent.current.map((r) => r.key).join('|')
@@ -87,6 +91,7 @@ export function useNotablePickups(history: LootEvent[], dismissed: Set<string>):
     // nothing would probe them again. The merge is a functional update, so a late result is safe.
     void probe(toFetch).then((got) => {
       if (got.size === 0) return
+      heldByKey = new Map([...heldByKey, ...got])
       setByKey((prev) => new Map([...prev, ...got]))
     })
   }, [recentKeys])

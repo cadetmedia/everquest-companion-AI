@@ -41,3 +41,27 @@ test('a probe in flight when a newer item drops still lands', async () => {
   )
   host.unmount()
 })
+
+test('a remount paints the records found before and does not ask for them again', async () => {
+  const asked: string[][] = []
+  const eq = {
+    itemMarks: (names: readonly string[]) => {
+      asked.push([...names])
+      return Promise.resolve(Object.fromEntries(names.map((n) => [n, LORE])))
+    },
+    lookupItem: (name: string): Promise<ItemKnowledge> =>
+      Promise.resolve({ name, lore: true, quest: false, questUses: [], cached: true })
+  }
+  ;(globalThis as unknown as { window: unknown }).window = { eq }
+  const history: LootEvent[] = [{ ts: 1, item: 'Remount Lore Orb' }]
+
+  const first = mountHook(() => useNotablePickups(history, new Set()))
+  await new Promise((r) => setTimeout(r, 0))
+  assert.deepEqual(first.render().notable.map((n) => n.item), ['Remount Lore Orb'])
+  first.unmount()
+
+  const second = mountHook(() => useNotablePickups(history, new Set()))
+  assert.deepEqual(second.render().notable.map((n) => n.item), ['Remount Lore Orb'])
+  assert.deepEqual(asked, [['Remount Lore Orb']])
+  second.unmount()
+})

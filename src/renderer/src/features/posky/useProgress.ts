@@ -560,11 +560,18 @@ function useTurnInLedger(
   return { turnIns, detected, logCounts, turnInsReady, ...actions }
 }
 
+/** The character name this window last heard, so a remount starts from it instead of re-rendering on the ask. */
+let heldCharacter: string | null = null
+
 export function useProgress(opts?: UseProgressOptions): UseProgress {
   // One held copy per window (progressStore.ts): asked on mount, inventory reload and character
   // switch, kept current by main's pushes, dropped on a switch.
   const [progress, setProgress] = useHeldProgress()
-  const [character, setCharacter] = useState<string | null>(null)
+  const [character, setHeard] = useState<string | null>(heldCharacter)
+  const setCharacter = useCallback((name: string | null) => {
+    heldCharacter = name
+    setHeard(name)
+  }, [])
   // One pick per window (useCountSource.ts), so every instance of this hook follows the tab's.
   const countSource = useCountSource()
 
@@ -575,7 +582,7 @@ export function useProgress(opts?: UseProgressOptions): UseProgress {
     return window.eq.onCharacter((c) => {
       setCharacter(c?.name ?? null)
     })
-  }, [])
+  }, [setCharacter])
 
   const ledger = useTurnInLedger(progress, setProgress, opts?.onQuestComplete)
   const { turnIns, detected, logCounts, recordTurnIn, undoTurnIn, resetTurnIns, turnInsReady } = ledger
