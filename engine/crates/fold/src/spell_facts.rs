@@ -105,12 +105,14 @@ const CALM_LANDING_MESSAGES: &[&str] = &[
 const DOT_HOT_TYPES: &[&str] = &["Damage Over Time", "Heal Over Time", "Regen"];
 
 /// A hit-point change per tick — the one effect line separating a DoT or HoT from a debuff or buff.
-/// Mana and endurance regen are deliberately not it: a mana regen line is a buff.
+/// Mana and endurance regen are deliberately not it: a mana regen line is a buff. The wiki writes
+/// the hit points four ways (`Hitpoints`, `Hit Points`, `HP`, `health`) and the verb with or without
+/// an `s` (`Decreases health by 290 per tick`, Funeral Pyre of Kelador, 2026-10-26).
 fn hp_per_tick() -> &'static regex::Regex {
     static RE: OnceLock<regex::Regex> = OnceLock::new();
     RE.get_or_init(|| {
         regex::Regex::new(
-            r"(?i)^(increase|decrease) (current )?(hit ?points|hitpoints)\b.*\bper tick\b",
+            r"(?i)^(increase|decrease)s? (current )?(hit ?points|hitpoints|hp|health)\b.*\bper tick\b",
         )
         .unwrap()
     })
@@ -383,6 +385,20 @@ mod tests {
             dot(&["Decrease Hitpoints by 17 per tick"]),
             DurationCategory::DotHot
         );
+        // The wiki's other spellings of the same line.
+        for line in [
+            "Decreases health by 290 per tick",
+            "Increase HP by 10 per tick",
+            "Increases Hitpoints by 20 per tick",
+            "Decrease Hit Points by 8 per tick",
+        ] {
+            assert_eq!(dot(&[line]), DurationCategory::DotHot, "{line}");
+        }
+        // Mana per tick stays a debuff line.
+        assert_eq!(
+            dot(&["Decrease Mana by 8 per tick"]),
+            DurationCategory::Debuff
+        );
         assert_eq!(
             dot(&["Decrease Attack Speed by 30%"]),
             DurationCategory::Debuff
@@ -449,10 +465,14 @@ mod tests {
                 // 496 -> 498 and Unstated 3 -> 4 after the 2026-10-24 delta: Summon Familiar: Mummy and
                 // Pet Illusion: Mummy (the Werewolf pair's twins), and Familiar: Gelatinous Cube, whose
                 // new page states a duration and no type.
-                ("Buff", 498),
+                // Buff 498 -> 494 and DotHot 196 -> 201 (2026-10-26): the per-tick rule reads the
+                // wiki's `HP` / `health` / `Increases` spellings, so the Elixir of Healing,
+                // Replenishment and Spiritualism lines and Extended Regeneration are heal over time,
+                // and the new Funeral Pyre of Kelador (`Decreases health by 290 per tick`) a DoT.
+                ("Buff", 494),
                 ("CrowdControl", 90),
                 ("Debuff", 124),
-                ("DotHot", 196),
+                ("DotHot", 201),
                 ("ProcBuff", 1),
                 ("Unstated", 4),
             ]
