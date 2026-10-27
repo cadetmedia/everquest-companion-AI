@@ -133,7 +133,8 @@ struct MitAccum {
 
 /// The healing half of an aggregate. Two independent ledgers mirroring the damage model's
 /// out/incoming split: `friendly` is heals that landed on you, your pets or the player by name, plus
-/// your own heals on anyone else who is not an engaged hostile (all on your row);
+/// your own heals on anyone else who is not an engaged hostile (all on your row) and a bound pet's
+/// heals on a group member (on the pet's row);
 /// `hostile` is heals that landed on an engaged hostile, ranked by healer. Heals between third
 /// parties are not collected — the log gives no faction for an arbitrary name.
 #[derive(Debug, Clone, Default)]
