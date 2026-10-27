@@ -17,6 +17,10 @@
 //   A PROC IS PER WEAPON (owner correction 2026-09-12): "in force" is judged per BODY for Focus,
 //   Click and Worn and per SEAT for Proc — one Lifebite in each hand is two procs. `forceKey`.
 //
+//   BENEFIT AND LOCKS (Malkil via the owner, 2026-10-26): a gem that helps no class of the loadout
+//   is never offered and, socketed, is a dead socket (`noBenefit`); a LOCKED seat is never swapped,
+//   replaced or flagged.
+//
 // Pure and node-tested (tests/exaltationAudit.test.mts drives both modules).
 
 import type { GearRow } from '../../../../shared/planner/gear'
@@ -28,7 +32,7 @@ import type { EquipSlot } from '../../../../shared/planner/types'
 // R2's slot half, corrected 2026-09-10: `donor ∩ hostItem` first, the cell second. Its header
 // carries the report and the measurement behind it.
 import { narrowedClasses, slotFits } from '../../../../shared/planner/rules'
-import { bestEffectFor, usable, type KindEffect, type Loadout } from './exaltationAudit'
+import { bestEffectFor, helps, usable, type KindEffect, type Loadout } from './exaltationAudit'
 
 // ---- the recommender (the "best with what we have" ask) ----------------------------------------
 //
@@ -69,6 +73,10 @@ export interface SocketHostCell {
   itemKey: string
   currentKey: string | null
   currentName: string | null
+  /** the player LOCKED today's gem here (Malkil via the owner, 2026-10-26: "this exaltation is
+   *  staying, so, figure out the best for the remainder and stop asking me to change it"): no
+   *  engine moves, replaces or flags it, and the plan solves around it */
+  locked?: boolean
 }
 
 export interface SwapRec {
@@ -110,6 +118,8 @@ export interface RedundantRec {
   keptEffect: string
   /** the best loose gem of a family NOT already in force — anything beats a dead socket */
   replaceWith?: { name: string; effect: string; where: string }
+  /** set when the gem helps no class of the loadout: what it needs (`FocusBenefit.needs`) */
+  noBenefit?: string
 }
 
 export interface Recommendations {
@@ -339,7 +349,8 @@ function bestLoose(
     // The loadout gate is this engine's own; the seat gate is the one both engines share.
     if (row === undefined || !usable(row, ctx.loadout) || !seatFits(row, host, hostRow, ctx.loadout)) continue
     const eff = bestEffectFor(row, host.type)
-    if (eff === null || !accept(eff)) continue
+    // A gem that helps no class you play is never offered (owner, 2026-10-26).
+    if (eff === null || !helps(eff, ctx.loadout) || !accept(eff)) continue
     if (best === null || eff.tier > best.eff.tier) best = { key, row, eff }
   }
   return best
@@ -379,9 +390,11 @@ function filledHosts(ctx: RecContext, hosts: readonly SocketHostCell[]): Effecti
   return out
 }
 
-function keepersByFamily(effective: readonly EffectiveHost[]): Map<string, EffectiveHost> {
+function keepersByFamily(effective: readonly EffectiveHost[], loadout: Loadout): Map<string, EffectiveHost> {
   const kept = new Map<string, EffectiveHost>()
   for (const e of effective) {
+    // A gem that helps nobody you play keeps nothing in force: it is a dead socket of its own kind.
+    if (!helps(e.eff, loadout)) continue
     const key = forceKey(e.eff.family, e.host)
     const held = kept.get(key)
     if (held === undefined || e.eff.tier > held.eff.tier) kept.set(key, e)
@@ -396,6 +409,7 @@ function swapPass(
   out: { swaps: SwapRec[]; flagged: Map<string, Set<string>> }
 ): void {
   for (const e of keepers.values()) {
+    if (e.host.locked === true) continue
     const better = bestLoose(ctx, e.host, (x) => x.family === e.eff.family && x.tier > e.eff.tier)
     const where = better === null ? undefined : ctx.pool.take(better.key)
     if (better === null || where === undefined) continue
@@ -424,7 +438,8 @@ function redundancyPass(
 ): void {
   for (const e of effective) {
     const keeper = keepers.get(forceKey(e.eff.family, e.host))
-    if (keeper === e) continue
+    // A locked gem is the player's call, useful or not: never flagged, never replaced.
+    if (keeper === e || e.host.locked === true) continue
     out.redundant.push(redundantRec(ctx, e, keeper, out.inForce))
     if (e.host.currentKey !== null) flag(out.flagged, e.host.cellId, e.host.currentKey)
   }
@@ -451,6 +466,7 @@ function redundantRec(
     effect: e.eff.effect,
     keptIn: keptHost === undefined ? '' : keptHost.host.cellLabel,
     keptEffect: keptHost === undefined ? e.eff.effect : keptHost.eff.effect,
+    ...(helps(e.eff, ctx.loadout) || e.eff.benefit === undefined ? {} : { noBenefit: e.eff.benefit.needs }),
     ...(repl === null || where === undefined
       ? {}
       : { replaceWith: { name: repl.row.name, effect: repl.eff.effect, where } })
@@ -520,7 +536,7 @@ export function recommendSockets(
   const redundant: RedundantRec[] = []
   const flagged = new Map<string, Set<string>>()
   const effective = filledHosts(ctx, hosts)
-  const keepers = keepersByFamily(effective)
+  const keepers = keepersByFamily(effective, loadout)
   // ONE in-force ledger for the whole run, keyed by `forceKey`: the families the board already
   // grants, plus every family this run places. Shared so the three passes cannot contradict each other about what is live -
   // a swap keeps its family in force, a dead socket's replacement claims a new one, and a fill may

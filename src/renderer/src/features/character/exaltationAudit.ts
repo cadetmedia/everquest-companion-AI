@@ -22,7 +22,7 @@
 //   the exact spelling the wiki uses for every ranked line.
 
 import type { ClassAbbr } from '../../../../shared/classCombo'
-import type { GearRow } from '../../../../shared/planner/gear'
+import type { FocusBenefit, GearRow } from '../../../../shared/planner/gear'
 import type { OwnedExaltation } from '../../../../shared/characterSheet'
 import { socketTypeOf } from '../../../../shared/planner/normalize'
 import { unusableReasons } from '../../../../shared/planner/usability'
@@ -118,6 +118,19 @@ export interface KindEffect {
   tier: number
   effect: string
   detail?: string
+  /** who it can help, when the spell list proves a limit (`GearEffect.benefit`) */
+  benefit?: FocusBenefit
+}
+
+/**
+ * CAN THIS EFFECT HELP THIS LOADOUT (Malkil via the owner, 2026-10-26: a bard exaltation "provides
+ * absolutely no benefit unless I have Bard in my loadout"). Only a limit the spell list proves
+ * narrows it (`main/planner/focusBenefit.ts`); an effect with none, or a loadout with no class
+ * known, helps (law 1). Every engine asks this one function before it offers a gem.
+ */
+export function helps(eff: Pick<KindEffect, 'benefit'> | null, loadout: Loadout): boolean {
+  if (eff?.benefit === undefined || loadout.classes.length === 0) return true
+  return eff.benefit.classes.some((c) => loadout.classes.includes(c))
 }
 
 /**
@@ -147,7 +160,8 @@ function kindEffectOf(e: GearRow['effects'][number]): KindEffect {
     family: ranked?.family ?? e.name.trim().toLowerCase(),
     tier: ranked?.tier ?? 0,
     effect: e.name,
-    ...(e.detail === undefined ? {} : { detail: e.detail })
+    ...(e.detail === undefined ? {} : { detail: e.detail }),
+    ...(e.benefit === undefined ? {} : { benefit: e.benefit })
   }
 }
 

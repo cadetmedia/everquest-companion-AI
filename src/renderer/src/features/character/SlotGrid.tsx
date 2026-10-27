@@ -60,6 +60,8 @@ import { ownershipKey } from '@shared/planner/ownership'
 import type { KindEffect } from './exaltationAudit'
 import { EQ_ITEM_COLORS, itemIconUrl } from '../../lib/ItemWindow'
 import { KnownItemTooltip } from '../../lib/KnownItemTooltip'
+import { ChangedSeat, lockProps, lockWords } from './PlannedSockets'
+import type { SeatChange } from './socketDiff'
 
 const ICON = 28
 
@@ -106,6 +108,22 @@ function SlotIcon({ cell }: { cell: SheetCellView }): JSX.Element {
   )
 }
 
+/** A filled chip's words: the effect on the chip; the gem, its detail, the red reason and the lock
+ *  on the hover. The Recommended view shows the plan, so the Current view's red advice stays off it. */
+function dressFilled(c: SocketChip, cellId: string, advice?: SocketAdvice): { label: string; hover: string; bad: boolean } {
+  const name = c.label.slice(c.type.length + 2)
+  const reason = advice?.recommended === true ? undefined : advice?.reasonOf(cellId, ownershipKey(name))
+  const eff = advice?.effectOf(ownershipKey(name), c.type) ?? null
+  const label = eff === null ? c.label : `${c.type}: ${eff.effect}`
+  const detail = eff?.detail === undefined ? '' : ` ${eff.detail}`
+  const locked = lockWords(advice, { cellId, type: c.type }, name)
+  return {
+    label,
+    hover: `${c.type} socket - ${name}${eff === null ? '' : `: ${eff.effect}${detail}`}.${reason === undefined ? '' : ` ${reason}`}${locked}`,
+    bad: reason !== undefined
+  }
+}
+
 /**
  * THE MERGED SOCKET ROW (fork asks, kaltinril 2026-09-09, revised same night: "too wordy"). One
  * chip per socket, and a FILLED chip now leads with the EFFECT the gem grants — `Improved Healing
@@ -136,21 +154,18 @@ function SocketRow({
       const hint = advice?.fillHintOf(cellId, c.type)
       return { label: c.label, hover: hint === undefined ? c.hover : `${c.hover} ${hint}`, bad: false }
     }
-    const name = c.label.slice(c.type.length + 2)
-    const reason = advice?.reasonOf(cellId, ownershipKey(name))
-    const eff = advice?.effectOf(ownershipKey(name), c.type) ?? null
-    const label = eff === null ? c.label : `${c.type}: ${eff.effect}`
-    const detail = eff?.detail === undefined ? '' : ` ${eff.detail}`
-    return {
-      label,
-      hover: `${c.type} socket - ${name}${eff === null ? '' : `: ${eff.effect}${detail}`}.${reason === undefined ? '' : ` ${reason}`}`,
-      bad: reason !== undefined
-    }
+    return dressFilled(c, cellId, advice)
   }
+  // The Recommended view (owner ask 2026-10-26): a seat the plan changes draws its change instead.
+  const changeOf = (type: string): SeatChange | undefined =>
+    advice?.recommended === true ? advice.changeOf(cellId, type) : undefined
   return (
     <Box data-testid="character-sockets" sx={CHIP_ROW}>
       {chips.map((c) => {
+        const change = changeOf(c.type)
+        if (change !== undefined && advice !== undefined) return <ChangedSeat key={c.type} change={change} advice={advice} />
         const d = dress(c)
+        const lock = c.state === 'filled' ? lockProps(advice, { cellId, type: c.type }, c.label.slice(c.type.length + 2)) : {}
         const chip = (
           <Chip
             label={d.label}
@@ -159,10 +174,13 @@ function SocketRow({
             variant={c.state === 'filled' ? 'filled' : 'outlined'}
             data-state={c.state}
             data-testid={`character-socket-${c.type.toLowerCase()}`}
+            onDelete={lock.onDelete}
+            deleteIcon={lock.deleteIcon}
             sx={{
               ...SMALL_CHIP,
               opacity: c.state === 'filled' ? 1 : 0.5,
-              ...(c.state === 'filled' && !d.bad ? { borderColor: EQ_ITEM_COLORS.border } : {})
+              ...(c.state === 'filled' && !d.bad ? { borderColor: EQ_ITEM_COLORS.border } : {}),
+              ...lock.sx
             }}
           />
         )
@@ -275,7 +293,8 @@ function SlotCell({
   advice?: SocketAdvice
 }): JSX.Element {
   const item = cell.item
-  const flagged = advice?.flaggedByCell.get(cell.id)
+  // The red card is the Current view's advice; the Recommended view colours the chips instead.
+  const flagged = advice?.recommended === true ? undefined : advice?.flaggedByCell.get(cell.id)
   return (
     <Paper
       variant="outlined"
@@ -376,12 +395,21 @@ function Column({
  * for it to explain. It is also where "where to get them" is answered, once: the chips are dead
  * ends by construction (this tab takes no router), so the legend names the tab that has the route.
  */
-function Legend({ sockets, wishes }: { sockets: boolean; wishes: boolean }): JSX.Element | null {
+function Legend({
+  sockets,
+  wishes,
+  recommended
+}: {
+  sockets: boolean
+  wishes: boolean
+  recommended: boolean
+}): JSX.Element | null {
   if (!sockets && !wishes) return null
   const parts: string[] = []
-  if (sockets)
+  if (sockets && recommended) parts.push('Recommended layout: green goes in, red comes out. The padlock keeps a gem where it is.')
+  else if (sockets)
     parts.push(
-      'Sockets: a filled chip names the effect socketed there (hover for the gem), a dimmed bare type is open and empty, "@+N" opens at that merge, red wants a swap.'
+      'Sockets: a filled chip names the effect socketed there (hover for the gem), a dimmed bare type is open and empty, "@+N" opens at that merge, red wants a swap, the padlock keeps a gem where it is.'
     )
   if (wishes) parts.push('Wish chips are your wish list - the Wish list tab has the route.')
   return (
@@ -402,6 +430,16 @@ export interface SocketAdvice {
   flaggedByCell: ReadonlyMap<string, ReadonlySet<string>>
   reasonOf: (cellId: string, key: string) => string | undefined
   fillHintOf: (cellId: string, type: string) => string | undefined
+  /** true while the player has locked today's gem in this seat */
+  lockedAt: (cellId: string, type: string) => boolean
+  /** lock or unlock the gem in a seat; absent until the character is known */
+  toggleLock?: (cellId: string, type: string, gemKey: string) => void
+  /** the Recommended layout's change for a seat, if it has one */
+  changeOf: (cellId: string, type: string) => SeatChange | undefined
+  /** what a gem needs to help you, when it helps no class you play */
+  uselessNeeds: (key: string, type: string) => string | undefined
+  /** draw the Recommended layout instead of today's board (owner ask 2026-10-26) */
+  recommended?: boolean
 }
 
 export default function SlotGrid({
@@ -434,6 +472,7 @@ export default function SlotGrid({
       <Legend
         sockets={cells.some((c) => c.item?.tier !== undefined)}
         wishes={cells.some((c) => wishesOf(c).length > 0)}
+        recommended={advice?.recommended === true}
       />
     </Stack>
   )

@@ -140,6 +140,19 @@ export interface GearEffect extends EffectFacts {
   /** V5 — the focus family and its rank; focus rows only, same as the donor index */
   family?: string
   familyTier?: number
+  /** who the focus can help, when the spell list proves a limit (`main/planner/focusBenefit.ts`);
+   *  absent = no limit proven, so it helps anyone (law 1) */
+  benefit?: FocusBenefit
+}
+
+/**
+ * A focus that only helps some classes (Malkil via the owner, 2026-10-26: a bard exaltation "provides
+ * absolutely no benefit unless I have Bard in my loadout"). `classes` are the classes it can help;
+ * `needs` says why in a few words, for the chip and the panel ("BRD", "a class with a pet spell").
+ */
+export interface FocusBenefit {
+  classes: ClassAbbr[]
+  needs: string
 }
 
 // ---- the row -------------------------------------------------------------------------------

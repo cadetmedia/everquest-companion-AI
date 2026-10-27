@@ -39,6 +39,7 @@ import {
   type ResearchedKnowledge
 } from '../itemsResearch'
 import { COMMITTED_SPELL_FACTS, slotsOf, type SpellFactsIndex } from './effectIndex'
+import { COMMITTED_FOCUS_BENEFIT } from './focusBenefit'
 import { eraDerivationSteps } from './eraDerive'
 import { runSteps, type Steps } from '../yieldingSteps'
 import {
@@ -267,6 +268,7 @@ function foldReading(acc: Acc, read: GearStatReading): void {
 function gearEffect(effect: ItemEffect, spells: SpellFactsIndex, acc: Acc): GearEffect {
   const socket = socketTypeOf(effect.kind)
   const rank = socket === 'focus' ? parseFocusEffect(effect.name) : null
+  const benefit = socket === 'focus' ? COMMITTED_FOCUS_BENEFIT(effect.name) : null
   const facts = spells.get(effect.name.trim().toLowerCase()) ?? {}
   if (Object.keys(facts).length > 0) acc.stats.spellJoined++
   // Absent fields are OMITTED rather than set to `undefined`, here and on the row: the payload
@@ -280,7 +282,8 @@ function gearEffect(effect: ItemEffect, spells: SpellFactsIndex, acc: Acc): Gear
     kind: effect.kind,
     ...(socket === null ? {} : { socket, tierRequired: extractionTier(socket) }),
     ...(isHasteEffect(effect.name, effect.detail) ? { hasteLocked: true as const } : {}),
-    ...(rank === null ? {} : { family: rank.family, familyTier: rank.tier })
+    ...(rank === null ? {} : { family: rank.family, familyTier: rank.tier }),
+    ...(benefit === null ? {} : { benefit })
   }
 }
 
