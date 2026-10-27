@@ -1,7 +1,7 @@
-# The trunk switch and the release run (2026-10-26) — where it stopped
+# The trunk switch and the release run (2026-10-26)
 
-The owner's 15-step list (2026-10-26), stopped after step 5 for time ("we don't have time for all
-that. Notate where we are and finish the current step"). Resume from "Next" below.
+The owner's 15-step list (2026-10-26). Steps 1-13 done the same day; step 14, the release, is held
+by the owner ("no release today though FYI, just get all the work done"). Resume from "Next".
 
 ## The owner's list, verbatim
 
@@ -18,87 +18,82 @@ that. Notate where we are and finish the current step"). Resume from "Next" belo
 >
 > try to do as much with subagents so your context window doesn't get bloated more than it must
 
-Later the same night: "Do a final review yourself also before release after the sub agents do their
-final review"; "maybe we need to rerun the performance review after all changes to compare?"; then,
-for time: "Notate where we are and finish the current step". Rough estimate given for steps 7-15:
-4-6.5 hours (reviews and passes 30-45 min each, delta 15-20, regression 20-30, release 20-30).
+Later: "Do a final review yourself also before release after the sub agents do their final review";
+"maybe we need to rerun the performance review after all changes to compare?".
 
-How to run it: one subagent per independent area, each in its own scratch worktree on its own
-temporary branch off `main_community` (node_modules junction; unlink it with
-`(Get-Item <wt>\node_modules -Force).Delete()` before removing the folder), told to commit there and
-not merge or push; the lead agent merges, gates the merged trunk and removes the worktree and branch.
+How it was run: one subagent per independent area, each in its own worktree on a temporary branch
+off `main_community`, told to commit there and not merge or push; the lead merged, gated the merged
+trunk and removed the worktree and branch. Read-only reviewers and hunters reported findings with a
+failure scenario; a separate agent fixed each area.
 
 ## Done
 
-1. Every branch merged into `main_community` (all recipe branches were level; `fix-media-devices`
-   is the upstream-PR copy of a fix `main_community` already has; the `log-archive-*` branches had
-   nothing outside it).
-2. `main_community` is the GitHub default branch (it already was).
-3. All 70 other local branches carry a `RETIRED.md` commit (not merged, not yet pushed).
-4. Rules, notes, skills and the owner's agent memory rewritten for the trunk model
-   (`RULES.md`, `CLAUDE.md`, `BRANCHES.md`, `WORKFLOW.md`, `BRANCH_NOTES.md`, `DATA_REFRESH.md`,
-   `RELEASING.md`, the community-release skill, `publish-release.sh`).
-5. Optimization pass 1 (performance review, `../audits/2026-10-20-performance-review.md`, "Done
-   2026-10-26"): main-process polling and the map watch, renderer tab caches and lazy overlays,
-   the gaps snapshot halved, the engine read path.
+1-4. Branches merged and retired, trunk model written down (see git history of this file).
+5. Optimization pass 1, then perf-engine (kept snapshot answers, the idle nap back-off): see
+   `../audits/2026-10-20-performance-review.md`.
+7. Code review of everything since `b614e946`: respawn learning (2 bugs, 5 risks), the perf pass
+   (lazy overlays could drop the first toast / banner / con card), the rest (EOZ release check text,
+   release skill wording). All fixed.
+8. Performance re-measured (review, "Re-measured 2026-10-26") and pass 2 done (items 1, 2 short
+   step, 3, 5; review, "Done 2026-10-26 (optimization pass 2)").
+9. Bug pass, three read-only hunters: engine fold (DoT ticks from a dead caster merging fights,
+   "My leader is" from a group member, player/pet deaths as kills), Gaps wiki text (6), log archive
+   / alerts / buff timers (5). All fixed.
+10. Independent review of the day's fixes: 8 TS and 5 engine findings, all fixed (one was a
+    regression from step 9: catalog one-word mobs counted as player deaths).
+11. EOZ compare and delta scrape: branch `delta-2026-10-26` (worktree `.claude/worktrees/delta-2026-10-26`,
+    cache junctions in place), 235 wiki requests, items +4, spells +1, mobs +2; compare `--release`
+    clean. NOT merged: two `plannerEraCorpus` reds from one wiki page (below).
+12-13. Regression: see "Regression" below.
 
-Also merged the same night, before the switch: respawn times for the wiki from the player's kills
-(the Respawns Gaps domain), the log-archive carry-over spot, the capture re-check fixes, and the
-2026-10-25 delta.
+## Regression
 
-## Stopped mid-step (resume here first)
+On `main_community` after every merge of the day:
 
-- **perf-engine** (finding #3 and the engine's idle nap) was stopped by the owner's word mid-work.
-  Branch `perf-engine`, one commit `57846dbda` ("Engine read path: keep the last module.snapshot
-  answer per module until its cursor moves"), then `38269abd9`, a WIP commit of the test edits the
-  agent left uncommitted (`engine/crates/engined/tests/module_snapshot.rs`,
-  `engine/crates/protocol-codegen/tests/staleness.rs`; unreviewed). NOT merged. The quiet-log nap
-  back-off (`nap.rs`) was not started. Everything is on the branch; its old scratch worktree
-  (`%TEMP%\claude\...\scratchpad\wt-perf-engine`, `engine/target` inside) is disposable. To resume:
-  `git worktree add` a fresh tree for `perf-engine` (or reuse the old one if it still exists),
-  review both commits, do or drop the nap back-off, gate (`cargo test --workspace`, clippy, the
-  factoring ratchet, the npm gate), merge into `main_community`, measure and note it in the
-  performance review.
-- **The merged trunk has not been gated** since perf-main, perf-renderer and perf-gaps-slim were
-  merged (each was gated alone; the merges were clean). Run the full gate on `main_community` first.
-- **Nothing is pushed.** `main_community` is 60+ commits ahead of `origin/main_community`, and the 70
-  retired branches' `RETIRED.md` commits are local only. Push with the release, or sooner on the
-  owner's word.
+- Unit gate: typecheck, lint, 6,209 pass, only the 2 known reds; `cargo test --workspace` 1,110
+  pass, 0 fail. Release engine rebuilt in the main clone.
+- e2e (4 in parallel, then reds alone, then against `community-0.1.0-test.34`): 57/65 green, the 3
+  TEST-build specs skipped. Flakes that pass alone: `engine-boots`, `engine-absent`,
+  `alert-dialog-focus`. Red on test.34 too: `voice-alerts`, `maps` (known), `bosses-week` (reads the
+  owner's real install, whose live log has no kills since archiving). Fixed specs: `con-card`
+  (expects the 8 s default of 2026-10-23), `overview` (waits for the live label: combat is read
+  once a second in a fight since pass 2).
+- App check, production build, hidden, isolated userData, copies of the owner's log, archive and
+  dumps with history on: every tab and all 15 overlay kinds render, no page or main errors; live
+  meters exact (a 10-hit fight summed to 1442); Loot spans Aug 12 to Oct 26 through the archive.
 
-## Next (owner's list, steps 7-15)
+## Next
 
-1. Code review of everything merged since `b614e946` (the last build the owner ran before
-   2026-10-25 evening).
-2. Re-run the performance review once perf-engine is in (owner, 2026-10-26: "maybe we need to
-   rerun the performance review after all changes to compare?"): repeat every number in the
-   review's "Measured" section the same way (production build, hidden and isolated, copies of the
-   owner's logs; tab switches incl. the owner's setup of 9 overlays), plus the bench scripts in
-   `../audits/2026-10-26-perf-bench.md`, and write before/after into the review. Use the result to
-   rank the second optimization pass.
-3. A second optimization pass (the review's open items: #1 the always-watched big modules, #3's
-   concurrent dispatch if perf-engine left it, #6 derivations into the engine, #8 data weight).
-3. A bug pass, then a review and QA pass.
-4. The EOZ GitHub pack compare and a delta scrape (DATA_REFRESH.md).
-5. A full regression test (npm gate, `cargo test --workspace`, a production build, the app run on
-   the owner's log), then fix what it finds.
-6. A final review by the lead agent (owner, 2026-10-26: "Do a final review yourself also before
-   release after the sub agents do their final review").
-7. The release: RELEASING.md and the community-release skill, on the owner's word (given in the
-   list). Push `main_community` and the retired branches with it.
+1. **The delta merge.** Robe of the Betrayed carries `{{Legends Era}}`, a template the wiki does not
+   have; `plannerEraCorpus` goes red until the page says `{{Classic Era}}` (edit link:
+   https://eqlwiki.com/index.php?title=Robe_of_the_Betrayed&action=edit). After the owner's edit, re-run
+   `npx tsx scripts/scrape-delta.mts` in the delta worktree (a few requests), gate, merge, remove the
+   worktree (unlink its `node_modules` and three cache junctions first, DATA_REFRESH.md step 7).
+2. **The release, on the owner's word.** Before it: the community-release skill; the delta merged;
+   a fresh compare + delta per RULES.md rule 10; `fix-media-devices`'s `RETIRED.md` commit pushed
+   with the retired branches. Nothing is pushed yet: `main_community` and the retired branches'
+   `RETIRED.md` commits are local only.
+3. Performance, later passes: review items 4 (one engine connection), 6, 7, 8, item 2's M step,
+   Factions renders, MUI Tooltip cost.
 
 ## Open questions for the owner
 
-- The `gearOwnership` cache would change the visible per-window "read at" time (owner asked; the
-  Plan tab's first visit still runs its pool twice without it).
-- Respawns: should a time also need a share of the gaps to agree (a glyphed guard: 3:33 from 5 of
-  34)?
-- Raid Targets now shows an empty roster for a moment during a character switch instead of the
-  previous character's statuses (perf-renderer).
-- A wiki fix to offer the owner (it will show as a Respawns "Fix respawn" row once the app runs the
-  new build): Enynti's page says `22 minutes`; 31 same-stay kills in Castle of Mistmoore 4 put its
-  spawn point at 8:50. Edit link: https://eqlwiki.com/index.php?title=Enynti&action=edit, line
-  `| respawn_time      = 8:50`.
-- `heal-fight`/`heal-overall` were added to `CHARACTER_AWARE_OVERLAYS` (perf-renderer) without the
-  owner's explicit answer to the earlier question; tell the owner.
-- The old worktrees under `.claude/worktrees/` (junctions already unlinked) were not removed: the
-  bulk removal was refused by the permission check. Remove them one by one, or by the owner.
+- **Heals on others:** your heals on anyone but yourself or your pet count nowhere in the healing
+  meter (~340 `You healed <other>` lines, ~175k HP on the 10-17 log). Count them on your healer row?
+- **Respawn cluster choice:** when two clusters qualify, the densest wins (owner's "which one
+  matches the most"), though a gap can only be longer than the respawn (600/601/602 s plus
+  1200-1204 s gives 20:02). Prefer the lowest qualifying cluster?
+- **Respawn placeholder rule:** a Fix/Add row is offered when the wiki time is a duration more than
+  25 s off, missing, or a placeholder (`''`, `?`, `??`, `Unknown`); other text ("Triggered", "6-8
+  hours", "Kaesora: 18:00, ...") gets no row. Hedged ("6 min?") and marked-up ("2:45h") durations
+  also get none.
+- **Ally pets across zones:** a group mate's summoned pet now keeps its bind through a zone line
+  (Gonekab +319k, Ganer +286k recovered on the 10-17 log); a charm bind still ends there.
+- **Meter cadence:** combat meters now update once a second in a fight (was up to 4/s).
+- **The app's own wiki lookups:** a headless run on a real log made 7 eqlwiki mob-lookup searches by
+  itself (existing behaviour, no switch to turn it off); e2e runs may do the same. A test-only
+  switch, or leave it?
+- From before: Raid Targets' empty roster during a character switch; `heal-fight`/`heal-overall`
+  added to `CHARACTER_AWARE_OVERLAYS`; the Enynti wiki fix (`| respawn_time = 8:50`,
+  https://eqlwiki.com/index.php?title=Enynti&action=edit); a glyphed guard's respawn from 5 of 34
+  gaps.

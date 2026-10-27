@@ -195,7 +195,9 @@ SK, others).
   (catch_all 71, the Environment row). `You have taken N damage from <Spell> by <mob>.` is
   counted by fix-self-dot-ticks (an agent measuring catch_all alone, which lacks it, read it as
   unknown: measure on main_community).
-- Ally pet binds drop on every zone line by design (`ally.rs zone()`).
+- Ally pet binds: a charm bind drops on every zone line; a summoned (`Summon`) bind is kept, as a
+  summoned pet zones with its owner (2026-10-26, `ally.rs zone()`: Malkil's Gonekab lost 319k of
+  damage over three zones when every bind dropped).
 - The engine has no checkpoint: it replays the whole log from byte 0 every start (the creator
   built one, JOS-208, and removed it, JOS-230).
 

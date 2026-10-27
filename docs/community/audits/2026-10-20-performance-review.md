@@ -277,3 +277,28 @@ Gains are from the numbers above; size S/M/L, risk in one clause.
 
 Idle needs nothing more: every process is under 0.5% of a core on a quiet log except the main
 renderer's one 1.8% sample (0.4% in the second).
+
+## Done 2026-10-26 (optimization pass 2)
+
+Items 1, 2 (short step), 3 and 5 of the ranking above. Headless production probes unless noted.
+
+- 1, combat reads (`combatPoll.ts`): one read per window per second in a fight, on the trailing edge
+  after the last ping; a ping re-checks the timer instead of reading. 3.9 to 1.0 reads/s per window
+  (fixture log, Overview + fight + overall); main renderer JS 4.8-5.4% to 2.3-2.6% of a core. The
+  meters update once a second, not up to four times.
+- 2, met-in-log feed (`metInLog.ts` `createMetFeed`, `useMetInLog.ts`): a kind re-folds only when a
+  snapshot it reads changed; the zone timeline is compared in full (length + last misses the ring
+  cap). Overview 363 to 28 ms per 30 s of live lines, Spells 462 to 23. Evidence parity pinned by a
+  seeded 2,000-step walk against a full fold. Loot/kills still re-fetch per kill: `useProgress` and
+  `useBossKills` keep them watched (the M step, an engine `met` module, would need both moved).
+- 3, buffs slice: the message-overlay diagnostics are their own engine module, `messageOverlay`
+  (`buffs_overlay.rs`), read only while the Buffs diagnostics panel is open; captures put them back
+  (`logArchive/capturedShape.ts`). Buffs snapshot 995 KB to 27 KB; repeat engine read 34 to 0.4 ms
+  (owner's 2026-10-17 log copy). The diagnostics icon always shows now.
+- 5, tab renders: each tab re-rendered its whole tree 2-4 times per visit from state that loaded
+  empty after mount. Gear ownership, Gaps inputs, Character deity and sockets, Loot names and notable
+  pickups are kept across same-character visits (`lib/characterEpoch.ts`: a character switch starts
+  empty). Repeat long tasks: Plan 68 to 18 ms, Gaps 137 to 80, Character 109 to 77; Loot first-visit
+  settle 507 to 129, Plan first visit 222 to 91. Left: MUI Tooltip (~700 per Character render) and
+  Factions (4 renders per visit, same pattern).
+- Left for a later pass: 4 (one engine connection), 6, 7, 8, and 2's M step.
