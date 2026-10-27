@@ -64,11 +64,7 @@ On `main_community` after every merge of the day:
 
 ## Next
 
-1. **The delta merge.** Robe of the Betrayed carries `{{Legends Era}}`, a template the wiki does not
-   have; `plannerEraCorpus` goes red until the page says `{{Classic Era}}` (edit link:
-   https://eqlwiki.com/index.php?title=Robe_of_the_Betrayed&action=edit). After the owner's edit, re-run
-   `npx tsx scripts/scrape-delta.mts` in the delta worktree (a few requests), gate, merge, remove the
-   worktree (unlink its `node_modules` and three cache junctions first, DATA_REFRESH.md step 7).
+1. **The delta merge:** done 2026-10-26 (after the owner's Robe of the Betrayed edit).
 2. **The release, on the owner's word.** Before it: the community-release skill; the delta merged;
    a fresh compare + delta per RULES.md rule 10; `fix-media-devices`'s `RETIRED.md` commit pushed
    with the retired branches. Nothing is pushed yet: `main_community` and the retired branches'
@@ -83,20 +79,24 @@ On `main_community` after every merge of the day:
 - Respawn cluster: the lowest agreeing cluster wins; a verdict under two minutes offers nothing for
   any name (trash shares names). requirements/gaps-tab.md.
 - `{{Legends Era}}`: Robe of the Betrayed is the only page of ~22,000 cached that carries it.
+- Pet heals on others: your bound pet's heal on a roster member (or a mate's creditably bound pet)
+  books on the pet's row; anything less certain books nothing. 10-17 log: no line qualifies.
+- Respawn words: a page whose respawn is words gets a "Check respawn" warning chip (79 of 552
+  pages); Copy writes the kills' number and keeps the page's words in a wiki comment.
+- Wiki traffic: the app reads the wiki only on a Gaps Copy click (requirements/wiki-traffic.md,
+  wiki-usage/README.md lists the touch points). The GitHub icon pack still fetches (not the wiki).
+- Delta merged after the owner's Robe of the Betrayed edit (+2 Necromancer spells in the re-read;
+  the engine's per-tick rule now reads `HP` / `health` / `Increases`).
+- Exaltations (Malkil via the owner): benefit filter, Current/Recommended view, locks
+  (requirements/exaltation-clarity.md).
 
 ## Open questions for the owner
 
-- **Respawn placeholder rule** (explained to the owner 2026-10-26; no ruling yet): a Fix/Add row is offered when the wiki time is a duration more than
-  25 s off, missing, or a placeholder (`''`, `?`, `??`, `Unknown`); other text ("Triggered", "6-8
-  hours", "Kaesora: 18:00, ...") gets no row. Hedged ("6 min?") and marked-up ("2:45h") durations
-  also get none.
+- **GitHub icon pack:** still fetches a missing item icon from the wiki's GitHub data pack (not
+  eqlwiki.com; owner asked for it 2026-10-25). Keep or turn off?
 - **Ally pets across zones:** a group mate's summoned pet now keeps its bind through a zone line
   (Gonekab +319k, Ganer +286k recovered on the 10-17 log); a charm bind still ends there.
 - **Meter cadence:** combat meters now update once a second in a fight (was up to 4/s).
-- **The app's own wiki lookups:** a name the bundled data lacks (from the log) is looked up on
-  eqlwiki once and cached in userData (`knowledgeMissFetch.ts`, the creator's design); a fresh test
-  profile has an empty cache, so a headless run on a real log made 7 searches. Offered a test-only
-  switch for zero requests; no answer yet.
 - From before: Raid Targets' empty roster during a character switch; `heal-fight`/`heal-overall`
   added to `CHARACTER_AWARE_OVERLAYS`; the Enynti wiki fix (`| respawn_time = 8:50`,
   https://eqlwiki.com/index.php?title=Enynti&action=edit); a glyphed guard's respawn from 5 of 34
