@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-26T00:07:43.880Z",
+  "generatedAt": "2026-10-27T06:17:02.753Z",
   "note": "Images shipped with the app so it never fetches art at runtime. Every file states the exact upstream URL it came from. Item icons are taken from the GitHub data pack the wiki publishes when it holds them (the same wiki files), else fetched from that URL. Regenerate with `npm run fetch:images`.",
   "sources": [
     "https://eqlwiki.com/",

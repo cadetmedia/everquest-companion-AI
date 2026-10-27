@@ -1,5 +1,5 @@
 {{Classic Era}}
-[[File:npc_lady_sileniu_everling.png|thumb|Lady Sileniu Everling]]
+[[File:Lady Sileniu Everling.png|thumb|Lady Sileniu Everling]]
 {| class="questTopTable"
 ! ''' Starts In: '''
 | [[Nektropos Castle]]
@@ -45,11 +45,11 @@ This quest takes place during [[The Tragic Tale of House Everling]]. See that qu
 
 # Find [[Lady Sileniu Everling]] in the northeast of the second floor, at (552, -132, 17). Hail her, ask about '''"He"''', then '''"swear"'''.
 # Return downstairs to [[Plimptos]] at (102, -151, 7). Hail him, say '''"crimes"''', then '''"brought back"''' to receive the sword hilt.
-# Speak to [[Alexa`s Handmaiden|Alexa's Handmaiden]] in the southeast area of the second floor, at (172, -178).
+# Speak to [[Alexa`s Handmaiden|Alexa's Handmaiden]] in the southeast area of the second floor, at (172, -178, 17).
 # Kill all the sisters around the edges of the second-floor map. Their linked pages and recorded locations are listed below.
 # Return to [[Alexa`s Handmaiden|Alexa's Handmaiden]] to receive the [[Nektropos Great Room Key]].
-# Kill [[Alexa Everling]] in the southwest great room, just off the main hall on the second floor, to obtain the [[Nektropos Private Chamber Key]]. Her exact coordinates have not yet been recorded.
-# Go to the northwest area of the second floor. In [[Guard Captain Ga`Vin|the Guard Captain's room]] on the west side, use the secret entrance behind the bookshelf to descend into the basement. The captain's exact coordinates have not yet been recorded.
+# Kill [[Alexa Everling]] in the southwest great room, just off the main hall on the second floor, to obtain the [[Nektropos Private Chamber Key]]. (26, 150, 15)
+# Go to the northwest area of the second floor. In [[Guard Captain Ga`Vin|the Guard Captain's room]] on the west side, use the secret entrance behind the bookshelf to descend into the basement. (600, 201, 15)
 # Follow the basement corridor southwest and kill [[The Juggernaught|the Juggernaut]] at (-331, 310, -112) to obtain the [[Nektropos Basement Key]].
 # Enter the room beside the Juggernaut and defeat [[Lord Rikantus Everling]] at (-382, 181, -112), using the combat guidance below.
 # Return to [[Plimptos]] and say '''"end"'''. He disappears. Then return to [[The Tragic Tale of House Everling#Quest Dialogue and Completion|the House Everling quest]]: tell Lady Everling '''"dead"''' and '''"Confess"''', kill her, then return to Lord Ollix and say '''"tragic"'''.
@@ -59,7 +59,7 @@ This quest takes place during [[The Tragic Tale of House Everling]]. See that qu
 |-
 | [[Jenni Everling]] || (342, -423, 17)
 |-
-| [[Melanie Everling]] || Second floor; exact coordinates not yet recorded.
+| [[Melanie Everling]] || (821, -311, 17)
 |-
 | [[Crysta Everling]] || (859, 311, 18)
 |-
@@ -67,7 +67,7 @@ This quest takes place during [[The Tragic Tale of House Everling]]. See that qu
 |-
 | [[Elise Everling]] || (-157, 321, 17)
 |-
-| [[Deirdre Everling]] || Second floor; exact coordinates not yet recorded.
+| [[Deirdre Everling]] || (-185, -313, 17)
 |}
 
 == Lord Rikantus Everling: Combat ==
@@ -146,11 +146,7 @@ You say, 'end'
 * This quest is given during [[The Tragic Tale of House Everling]]; finish that quest by telling [[Lady Sileniu Everling]] he is 'dead', then 'confess'.
 * Each Everling killed costs -2 [[Host of Nektropos]] faction.
 * [[Blood's Unity]] is a quest reward: even in a +4 instance, it is a +0.
-* This quest is given during [[The Tragic Tale of House Everling]]; finish that quest by telling [[Lady Sileniu Everling]] he is 'dead', then 'confess'.
-* Each Everling killed costs -2 [[Host of Nektropos]] faction.
-* [[Blood's Unity]] is a quest reward: even in a +4 instance, it is a +0.
 * Extra copies: after the task is done, saying 'brought back' to [[Plimptos]] still hands out a sword hilt, and several can be carried at once. Each kill of [[Alexa Everling]] turns the topmost hilt in your inventory into the small blade, and each kill of [[Lord Rikantus Everling]] turns a small blade into [[Blood's Unity]]: one upgrade per kill. Copies merge into higher + versions.
-
 
 = Related Quests =
 

@@ -132,10 +132,6 @@
   "content": "Bronze weapons typically drop off of humanoids at ~20+. They generally have better ratios than [[Rusty Weapons]] and inferior ratios to [[Fine Steel Weapons]], although there are exceptions to this.\n\nA great spot early on to get this, is at sister camp in Lesser Faydark.\n\n\n{| class=\"wikitable sortable\"\n|-\n! Name\n! Damage\n! Delay\n! Ratio\n! Type\n! Notes\n|-\n|{{:Bronze Axe}}\n|5\n|33\n|0.1515\n|1H Slashing\n|\n|-\n|{{:Bronze Bastard Sword}}\n|7\n|42\n|0.1667\n|2H Slashing\n|\n|-\n|{{:Bronze Battle Axe}}\n|6\n|37\n|0.1622\n|1H Slashing\n|\n|-\n|{{:Bronze Broad Sword}}\n|5\n|32\n|0.1563\n|1H Slashing\n|\n|-\n|{{:Bronze Dagger}}\n|3\n|22\n|0.1364\n|Piercing\n|\n|-\n|{{:Bronze Flail}}\n|6\n|37\n|0.1622\n|Piercing\n|\n|-\n|{{:Bronze Halberd}}\n|10\n|52\n|0.1923\n|2H Slashing\n|\n|-\n|{{:Bronze Knuckles}}\n|3\n|22\n|0.1364\n|Hand to Hand\n|\n|-\n|{{:Bronze Long Sword}}\n|5\n|32\n|0.1563\n|1H Slashing\n|\n|-\n|{{:Bronze Mace}}\n|6\n|38\n|0.1579\n|1H Blunt\n|\n|-\n|{{:Bronze Main Gauche}}\n|3\n|23\n|0.1304\n|Piercing\n|\n|-\n|{{:Bronze Morning Star}}\n|7\n|43\n|0.1628\n|1H Blunt\n|\n|-\n|{{:Bronze Rapier}}\n|4\n|28\n|0.1429\n|Piercing\n|\n|-\n|{{:Bronze Scimitar}}\n|5\n|32\n|0.15625\n|1H Slashing\n|\n|-\n|{{:Bronze Shortened Spear}}\n|5\n|34\n|0.1471\n|Piercing\n|\n|-\n|{{:Bronze Short Sword}}\n|4\n|27\n|0.1481\n|1H Slashing\n|\n|-\n|{{:Bronze Spear}}\n|5\n|32\n|0.1563\n|Piercing\n|\n|-\n|{{:Bronze Two Handed Battle Axe}}\n|9\n|46\n|0.1957\n|2H Slashing\n|\n|-\n|{{:Bronze Two Handed Hammer}}\n|8\n|45\n|0.1778\n|2H Blunt\n|\n|-\n|{{:Bronze Two Handed Sword}}\n|9\n|47\n|0.1915\n|2H Slashing\n|\n|-\n|{{:Bronze Wakizashi}}\n|4\n|27\n|0.1481\n|1H Slashing\n|\n|-\n|{{:Bronze Warclub}}\n|5\n|35\n|0.1429\n|1H Blunt\n|\n|-\n|{{:Bronze Warhammer}}\n|5\n|33\n|0.1515\n|1H Blunt\n|\n|-\n|}\n\n\n[[Category: Armor Sets]]"
  },
  {
-  "title": "Burning Fighters Blade",
-  "content": ""
- },
- {
   "title": "Burnout IV",
   "content": "<noinclude>{{Velious Era}}</noinclude>{{Spellpagesmart|\n\n| spellname = Burnout IV\n| spellicon = O\n| description = Infuses your elemental companion with energy, increasing their attack speed, armor class, and strength.\n\n| Table = {{{Table|0}}}\n| TableLevel = {{{TableLevel|}}}\n| classes = \n\n* [[Magician]] - Level 55\n\n| slots = \n\n{{SpellSlotRowSmart | 3 | Increase STR by 60 | simple = {{#ifeq:{{{Table|0}}}|0|0|1}} }}\n{{SpellSlotRowSmart | 4 | Increase Attack Speed by 65% | simple = {{#ifeq:{{{Table|0}}}|0|0|1}} }}\n\n| skill = [[Skill Alteration | Alteration]]\n\n| mana = 150\n| range = 100\n| casting_time = 6.00\n| fizzle_time = 2.50\n| recast_time = 12.00\n| duration = 15 minutes\n| target_type = Pet\n| spell_type = Beneficial\n| resist = Unresistable\n\n| msg_cast_on_you =  \n| msg_cast_on_other = Someone  goes berserk.\n| msg_wears_off =  \n\n| where_to_obtain = \n\n* Velious Level 50+ Mob Drop\n| TableLocations = Level 50+ Mobs\n| TableEra = {{{TableEra|Velious}}}\n\n}}"
  },
@@ -173,7 +169,7 @@
  },
  {
   "title": "Classic Raid Tier Treasures",
-  "content": "These are treasure loot that drop from most challenging monsters in Classic Everquest. Typically they can be found on monsters in the level 45+ range in places like [[Kedge Keep]], [[The Hole]], [[Plane of Fear]] and [[Plane of Hate]].  The gems can be used for [[Jewelcrafting]] but they are typically just sold to vendors.\n\n<ul><li>  {{:Emerald Ring}}\n</li><li> {{:Fire Emerald Ring}}\n</li><li> {{:Sapphire Necklace}}\n</li><li> {{:Star Ruby Earring}}\n</li><li> {{:Ruby}}\n</li><li> {{:Ruby Crown}}\n</li><li> {{:Black Sapphire}}\n</li><li> {{:Diamond}}\n</li><li> {{:Jacinth}}\n</li><li> {{:Blue Diamond}}\n</li></ul>"
+  "content": "These are treasure loot that drop from most challenging monsters in Classic Everquest. Typically they can be found on monsters in the level 45+ range in places like [[Kedge Keep]], [[The Hole]], [[Plane of Fear]], [[Plane of Hate]], and [[Nektropos Castle]].  The gems can be used for [[Jewelcrafting]] but they are typically just sold to vendors.\n\n<ul><li>  {{:Black Sapphire}}\n</li><li> {{:Blue Diamond}}\n</li><li> {{:Diamond}}\n</li><li> {{:Emerald Ring}}\n</li><li> {{:Fire Emerald Ring}}\n</li><li> {{:Jacinth}}\n</li><li> {{:Ruby}}\n</li><li> {{:Ruby Crown}}\n</li><li> {{:Sapphire Necklace}}\n</li><li> {{:Star Ruby Earring}}\n</li></ul>"
  },
  {
   "title": "Cloth Armor",
@@ -194,10 +190,6 @@
  {
   "title": "Composition of Ervaj",
   "content": "<noinclude>{{Velious Era}}</noinclude>\n{{Spellpagesmart|\n\n| spellname = Song: Composition of Ervaj\n| spellicon = A\n| description = An ancient song that increases the attack speed of your group.  This increase is cumulative with most other effects that increase attack speed. It does stack with other haste buffs, it does not bypass the [[Haste_Guide#Haste_Caps|Haste_Cap]].\n| Table = {{{Table|0}}}\n| TableLevel = {{{TableLevel|}}}\n\n| classes = \n\n* [[Bard]] - Level 60\n\n| slots = \n\n{{SpellSlotRowSmart | 1 | Increase Haste v2 by 10% | simple = {{#ifeq:{{{Table|0}}}|0|0|1}} }}\n{{SpellSlotRowSmart | 4 | Increase AC by 9 (L60) to 9 (L65) | simple = {{#ifeq:{{{Table|0}}}|0|0|1}} }}\n{{SpellSlotRowSmart | Enhanced by instrument? | '''Yes (except attack speed)''' | simple = {{#ifeq:{{{Table|0}}}|0|0|1}} }}\n\n| skill = [[Skill Brass | Brass]] †\n\n| mana = 0\n| range = 0\n| casting_time = 3.00\n| fizzle_time = 0.00\n| recast_time = 0.00\n| duration = 3 ticks\n| target_type = Party\n| spell_type = Beneficial\n| resist = Unresistable\n\n| other = \n\n* '''Focus:''' [[Horn]]\n\n| msg_cast_on_you = A song of inspiration fills your weapon arm with strength.\n| msg_cast_on_other =  \n| msg_wears_off =  \n\n| where_to_obtain = \n\n* Drop from level 50+ Velious mobs\n\n[[Cobalt Scar]]\n* [[Kelorek'Dar]]\n\n| TableLocations = Unknown\n| TableEra = Velious\n}}"
- },
- {
-  "title": "Corroded Spiked Club",
-  "content": ""
  },
  {
   "title": "Cracked Darkwood Shield",
@@ -224,14 +216,6 @@
   "content": "{{Classic Era}}\nCryosilk Armor is special planar armor usable only by INT casters. In Everquest Legends, it is confirmed to drop from [[a haunted chest]] in [[Plane of Hate]] - but only from the two chests that spawn during the Innoruuk raid instance.\n\n\n{{Gear Set\n|Cryosilk Amice\n|Cryosilk Bracelet\n|Cryosilk Cap\n|Cryosilk Choker\n|Cryosilk Cloak\n|Cryosilk Gloves\n|Cryosilk Lined Shoes\n|Cryosilk Pantaloons\n|Cryosilk Robe\n|Cryosilk Sash\n|Cryosilk Sleeves\n|Cryosilk Veil\n|Cryosilk Webshield\n}}\n\n[[Category:Armor Sets]]"
  },
  {
-  "title": "Cryptguard",
-  "content": ""
- },
- {
-  "title": "Crysta's Robe",
-  "content": ""
- },
- {
   "title": "Crystallized Shadow Weapons",
   "content": "{{Velious Era}}\n\nA set of FS-like weapons with stats, that drops in the [[Tower of Frozen Shadow]].\n\nAlso see [[Purified Crystal Weapons]].\n\n{{Gear Set\n|Crystallized Shadow Claymore\n|Crystallized Shadow Dagger\n|Crystallized Shadow Long Sword\n|Crystallized Shadow Rapier\n|Crystallized Shadow Scimitar\n|Crystallized Shadow Short Sword\n|Crystallized Shadow Spear\n|Crystallized Shadow Star\n|Crystallized Shadow Warhammer\n}}\n\n[[Category:Armor Sets]]"
  },
@@ -240,16 +224,8 @@
   "content": "Damask Armor drops in [[Najena]] and [[Befallen]].\n\nIt generally provides 1 more AC than Cloth, for pure casters.\n\nIn Befallen, the whole set can randomly drop from the necro casters.\nIn Najena, the set appears to drop randomly from all NPCs.\n\n{{Gear Set\n|Damask Amice\n|Damask Cap\n|Damask Cape\n|Damask Collar\n|Damask Gloves\n|Damask Leggings\n|Damask Robe\n|Damask Sash\n|Damask Sleeves\n|Damask Veil\n|Damask Wristbands\n}}\n</div>\n\n{| class='wikitable\"\n|+ List of items considered part of this set\n|-\n! Slot !! Item Name !! Stats\n|-\n| Shoulders\n| {{:Damask Amice}}\n| AC: 2\n|-\n| Head\n| {{:Damask Cap}}\n| AC: 3\n|-\n| Back\n| {{:Damask Cape}}\n| AC: 3\n|-\n| Neck\n| {{:Damask Collar}}\n| AC: 2\n|-\n| Hands\n| {{:Damask Gloves}}\n| AC: 3\n|-\n| Legs\n| {{:Damask Leggings}}\n| AC: 4\n|-\n| Chest\n| {{:Damask Robe}}\n| AC: 6\n|-\n| Waist\n| {{:Damask Sash}}\n| AC: 2\n|-\n| Arms\n| {{:Damask Sleeves}}\n| AC: 3\n|-\n| Face\n| {{:Damask Veil}}\n| AC: 2\n|-\n| Wrists\n| {{:Damask Wristbands}}\n| AC: 2\n|}\n\n[[Category:Armor Sets]]"
  },
  {
-  "title": "Dark Ironbound Tome",
-  "content": "{{Classic Era}}\n\n[[File:Dark_Ironbound_Tome.png|400px|thumb|Dark Ironbound Tome]]\n\n<onlyinclude>{{Itempage\n|itemname = Dark Ironbound Tome\n|lucy_img_ID = \n|statsblock  = \nAttunable, Lore Equipped, Lore Item, No Trade, Placeable, Quest, Heirloom, Free Storage, No Destroy<br>\nSlot: PRIMARY / SECONDARY / RANGE / AMMO / ANY / ARMS / BACK / CHEST/ EAR / FACE / FEET / FINGER / HANDS / HEAD / LEGS / NECK / SHOULDERS / WAIST/ WRIST<br>\nSkill: 1H Blunt / 2H Blunt / 1H Slashing / 2H Slashing / 1H Piercing / 2H Piercing / Archery / Atk Delay: ? / Bard Instrument / Hand to Hand / Throwing<br>\nDMG: ?  AC: ?  BACKSTAB: ?  Fire DMG: ?  Disease DMG: ?  Cold DMG: ?  Magic DMG: ?  Poison DMG: ?<br>\nRange: ?<br>\nSkill Mod: ?<br>\nSTR: +?  STA: +?  INT: +?  WIS: +?  AGI: +?  DEX: +?  CHA: +?  HP: +?  MANA: +?  END: +?<br>\nSV Fire: +?  SV Disease: +?  SV Cold: +?  SV Magic: +?  SV Poison: +?  SV Void: +?<br>\nAttack: ?  HP Regen: ?  Mana Regen: ?  Haste: ?  Clairvoyance: ?  Spell Dmg: ?  Heal Amount: ?  END Regen: ?<br>\nEffect: [[Effect_Name|<span class='itemeff'>Effect_Name</span>]] (Combat / Clicky / Can Equip / Must Equip, Casting Time: ?, Cooldown: ??? seconds) at Level ?<br>\nCharges: XX<br>\nSize: TINY / SMALL / MEDIUM / LARGE / GIANT  WT: 0.0<br>\nWeight Reduction: 0%  Capacity: 2  Size Capacity: TINY / SMALL / MEDIUM / LARGE / GIANT<br>\nClass: ALL / BER, BRD, BST, CLR, DRU, ENC, MAG, MNK, NEC, PAL, RNG, ROG, SHM, SHD, WAR, WIZ<br>\nRace: ALL<br>\n|focus_effect =\n\n|notes = \n\n|merchant_value = ?p ?g ?s ?c\n\n|bookcontents =\n\n|dropsfrom = \n\n[[Nektropos Castle]]\n* [[The Head Librarian]]\n\n|relatedquests = \n\n* [[Quest_Name]]\n\n|playercrafted = \n\n|recipes =\n\n|soldby = \n\n[[Vendor_Name]]\n\n|foraged =\n\n[[Zone_Name]]\n\n\n}}</onlyinclude>\n\n[[Category:Bard Equipment]]\n[[Category:Beastlord Equipment]]\n[[Category:Berserker Equipment]]\n[[Category:Cleric Equipment]]\n[[Category:Druid Equipment]]\n[[Category:Enchanter Equipment]]\n[[Category:Magician Equipment]]\n[[Category:Monk Equipment]]\n[[Category:Necromancer Equipment]]\n[[Category:Paladin Equipment]]\n[[Category:Ranger Equipment]]\n[[Category:Rogue Equipment]]\n[[Category:Shadow Knight Equipment]]\n[[Category:Shaman Equipment]]\n[[Category:Warrior Equipment]]\n[[Category:Wizard Equipment]]\n\n[[Category:Primary]]\n[[Category:Secondary]]\n[[Category:Range]]\n[[Category:Ammo]]\n[[Category:Arms]]\n[[Category:Back]]\n[[Category:Chest]]\n[[Category:Ear]]\n[[Category:Face]]\n[[Category:Feet]]\n[[Category:Fingers]]\n[[Category:Hands]]\n[[Category:Head]]\n[[Category:Legs]]\n[[Category:Neck]]\n[[Category:Shoulders]]\n[[Category:Waist]]\n[[Category:Wrist]]\n\n[[Category:1H Blunt]]\n[[Category:2H Blunt]]\n[[Category:1H Slashing]]\n[[Category:2H Slashing]]\n[[Category:Piercing]]\n[[Category:2H Piercing]]\n[[Category:Archery]]\n[[Category:Hand to Hand]]\n[[Category:Bard Instrument]]\n\n[[Category:Book]]\n[[Category:Containers]]\n[[Category:Drink]]\n[[Category:Drink With Stats]]\n[[Category:Fashion: ?]]\n[[Category:Focus Items]]\n[[Category:Food]]\n[[Category:Food With Stats]]\n[[Category:Foraged]]\n[[Category:Increased Proc Rate]]\n[[Category:Light source]]\n[[Category:Pet Illusion Items]]\n[[Category:Player Crafted]]\n[[Category:Potion]]\n[[Category:Quest Items]]\n[[Category:Tradeskill Ingredient]]\n[[Category:Vendor Sold]]\n[[Category:Weapon Procs]]\n[[Category:Weight Reduction]]\n[[Category:Worn Effects]]\n\n[[Category:Zone Name]]"
- },
- {
   "title": "Decayed Armor",
   "content": "These quest pieces drop off [[a lizard crusader|lizard crusaders]] and [[A lizard ritualist]] in [[Cazic Thule]] and are used for the [[Darkforge Armor Quests]] for Shadow Knights. The decayed armor itself has no stats.\n\n* [[Decayed Left Boot]]\n* [[Decayed Right Boot]]\n* [[Decayed Left Bracer]]\n* [[Decayed Right Bracer]]\n* [[Decayed Chainmail]]\n* [[Decayed Breastplate]]\n* [[Decayed Left Gauntlet]]\n* [[Decayed Right Gauntlet]]\n* [[Decayed Left Legplate]]\n* [[Decayed Right Legplate]]\n* [[Decayed Left Vambrace]]\n* [[Decayed Right Vambrace]]\n* [[Decayed Visor]]\n* [[Decayed Helm]]\n\n[[Category: Armor Sets]]"
- },
- {
-  "title": "Distressed Mithril Shortbow",
-  "content": ""
  },
  {
   "title": "Divine Strength",
@@ -350,14 +326,6 @@
  {
   "title": "Gypsy Medallion",
   "content": "{{Classic Era}}\n<onlyinclude>{{Itempage\n|notes       = \n|itemname    = A Gypsy Medallion\n|lucy_img_ID = 566\n|statsblock  = \nMAGIC ITEM<br>\nSlot: NECK<br>\nAC: 2<br>\nCHA: +9<br>\nSV DISEASE: +10<br>\nWT: 0.1  Size: SMALL<br>\nClass: ALL<br>\nRace: ALL<br>\n|dropsfrom = \n\n[[Northern Karana]]\n\n* [[Korvik the Cursed]]\n\n}}</onlyinclude>\n\n[[Category:Bard Equipment]]\n[[Category:Cleric Equipment]]\n[[Category:Druid Equipment]]\n[[Category:Enchanter Equipment]]\n[[Category:Magician Equipment]]\n[[Category:Monk Equipment]]\n[[Category:Necromancer Equipment]]\n[[Category:Paladin Equipment]]\n[[Category:Ranger Equipment]]\n[[Category:Rogue Equipment]]\n[[Category:Shaman Equipment]]\n[[Category:Shadow Knight Equipment]]\n[[Category:Warrior Equipment]]\n[[Category:Wizard Equipment]]\n[[Category:Neck]]\n[[Category:Northern Karana]]"
- },
- {
-  "title": "Handmaiden's Ring",
-  "content": "{{Classic Era}}\n\n[[File:item_name.png|200px|thumb|Item_Name]]\n\n<onlyinclude>{{Itempage\n|itemname = Handmaiden's Ring\n|lucy_img_ID = \n|statsblock  = \nAttunable, Lore Equipped, Lore Item, No Trade, Placeable, Quest, Heirloom, Free Storage, No Destroy<br>\nSlot: PRIMARY / SECONDARY / RANGE / AMMO / ANY / ARMS / BACK / CHEST/ EAR / FACE / FEET / FINGER / HANDS / HEAD / LEGS / NECK / SHOULDERS / WAIST/ WRIST<br>\nSkill: 1H Blunt / 2H Blunt / 1H Slashing / 2H Slashing / 1H Piercing / 2H Piercing / Archery / Atk Delay: ? / Bard Instrument / Hand to Hand / Throwing<br>\nDMG: ?  AC: ?  BACKSTAB: ?  Fire DMG: ?  Disease DMG: ?  Cold DMG: ?  Magic DMG: ?  Poison DMG: ?<br>\nRange: ?<br>\nSkill Mod: ?<br>\nSTR: +?  STA: +?  INT: +?  WIS: +?  AGI: +?  DEX: +?  CHA: +?  HP: +?  MANA: +?  END: +?<br>\nSV Fire: +?  SV Disease: +?  SV Cold: +?  SV Magic: +?  SV Poison: +?  SV Void: +?<br>\nAttack: ?  HP Regen: ?  Mana Regen: ?  Haste: ?  Clairvoyance: ?  Spell Dmg: ?  Heal Amount: ?  END Regen: ?<br>\nEffect: [[Effect_Name|<span class='itemeff'>Effect_Name</span>]] (Combat / Clicky / Can Equip / Must Equip, Casting Time: ?, Cooldown: ??? seconds) at Level ?<br>\nCharges: XX<br>\nSize: TINY / SMALL / MEDIUM / LARGE / GIANT  WT: 0.0<br>\nWeight Reduction: 0%  Capacity: 2  Size Capacity: TINY / SMALL / MEDIUM / LARGE / GIANT<br>\nClass: ALL / BER, BRD, BST, CLR, DRU, ENC, MAG, MNK, NEC, PAL, RNG, ROG, SHM, SHD, WAR, WIZ<br>\nRace: ALL<br>\n|focus_effect =\n\n|notes = \n\n|merchant_value = ?p ?g ?s ?c\n\n|bookcontents =\n\n|dropsfrom = \n\n[[Nektropos Castle]]\n* [[A Spectral Handmaiden]]\n\n|relatedquests = \n\n* [[Quest_Name]]\n\n|playercrafted = \n\n|recipes =\n\n|soldby = \n\n[[Vendor_Name]]\n\n|foraged =\n\n[[Zone_Name]]\n\n\n}}</onlyinclude>\n\n[[Category:Bard Equipment]]\n[[Category:Beastlord Equipment]]\n[[Category:Berserker Equipment]]\n[[Category:Cleric Equipment]]\n[[Category:Druid Equipment]]\n[[Category:Enchanter Equipment]]\n[[Category:Magician Equipment]]\n[[Category:Monk Equipment]]\n[[Category:Necromancer Equipment]]\n[[Category:Paladin Equipment]]\n[[Category:Ranger Equipment]]\n[[Category:Rogue Equipment]]\n[[Category:Shadow Knight Equipment]]\n[[Category:Shaman Equipment]]\n[[Category:Warrior Equipment]]\n[[Category:Wizard Equipment]]\n\n[[Category:Primary]]\n[[Category:Secondary]]\n[[Category:Range]]\n[[Category:Ammo]]\n[[Category:Arms]]\n[[Category:Back]]\n[[Category:Chest]]\n[[Category:Ear]]\n[[Category:Face]]\n[[Category:Feet]]\n[[Category:Fingers]]\n[[Category:Hands]]\n[[Category:Head]]\n[[Category:Legs]]\n[[Category:Neck]]\n[[Category:Shoulders]]\n[[Category:Waist]]\n[[Category:Wrist]]\n\n[[Category:1H Blunt]]\n[[Category:2H Blunt]]\n[[Category:1H Slashing]]\n[[Category:2H Slashing]]\n[[Category:Piercing]]\n[[Category:2H Piercing]]\n[[Category:Archery]]\n[[Category:Hand to Hand]]\n[[Category:Bard Instrument]]\n\n[[Category:Book]]\n[[Category:Containers]]\n[[Category:Drink]]\n[[Category:Drink With Stats]]\n[[Category:Fashion: ?]]\n[[Category:Focus Items]]\n[[Category:Food]]\n[[Category:Food With Stats]]\n[[Category:Foraged]]\n[[Category:Increased Proc Rate]]\n[[Category:Light source]]\n[[Category:Pet Illusion Items]]\n[[Category:Player Crafted]]\n[[Category:Potion]]\n[[Category:Quest Items]]\n[[Category:Tradeskill Ingredient]]\n[[Category:Vendor Sold]]\n[[Category:Weapon Procs]]\n[[Category:Weight Reduction]]\n[[Category:Worn Effects]]\n\n[[Category:Zone Name]]"
- },
- {
-  "title": "Helical Band of the Unyielding",
-  "content": ""
  },
  {
   "title": "High Quality Bear Pelt",
@@ -524,10 +492,6 @@
   "content": "{{Classic Era}}\n\n<onlyinclude>{{Itempage\n|notes       = \n|itemname    = Medium Quality Bear Skin\n|lucy_img_ID = 554\n|statsblock  = \nQUEST ITEM<br>\nWT: 4.0  Size: LARGE<br>\nClass: ALL<br>\nRace: ALL<br>\n|dropsfrom = \n\n[[Commonlands]]\n\n* [[a black bear]]\n* [[a kodiak]]\n* [[a young kodiak]]\n\n[[Everfrost Peaks]]\n\n* [[a glacier bear]]\n* [[a polar bear]]\n* [[a polar bear cub]]\n\n[[Misty Thicket]]\n\n* [[a young kodiak]]\n\n[[Rathe Mountains]]\n\n* [[a black bear]]\n* [[a brown bear]]\n* [[a grizzly bear]]\n\n[[Nektulos Forest]]\n\n* [[a black bear]]\n* [[a young kodiak]]\n\n[[Permafrost]]\n\n* [[a giant polar bear]]\n\n[[Qeynos Hills]]\n\n* [[a brown bear]]\n\n[[Surefall Glade]]\n\n* [[a bear cub]]\n\n[[The Feerrott]]\n\n* [[A Marsh Bear]]\n* [[a marsh bear cub]]\n\n|relatedquests = \n\n* [[Bear Hide Armor]]\n* [[Upgraded Pelts]]\n\n|playercrafted = \n\n* [[Tailoring]] (Trivial: 15)\n** '''Yield: Medium Quality Bear Skin''' x1\n** In [[Sewing Kit]]:\n:: {{SmIcon|554}} 1 x [[High Quality Bear Skin]] - Quested, Dropped\n:: {{SmIcon|592}} 1 x [[Skinning Knife]] - Crafted, Returned on Failure, Returned on Success\n\n\n|recipes = \n\n* [[Tailoring]]\n** [[Low Quality Bear Skin]] (Trivial: 15)\n\n\n* [[Pottery]]\n** Recipe name(s)? (Trivial: ?)\n\n}}</onlyinclude>\n\n\n[[Category:Player Crafted]]\n[[Category:Tradeskill Ingredient]]\n\n[[Category:Quest Items]]"
  },
  {
-  "title": "Melanie's Robe",
-  "content": ""
- },
- {
   "title": "Melody of Ervaj",
   "content": "<noinclude>{{Classic Era}}</noinclude>\n{{Spellpagesmart|\n\n| spellname = Song: Melody of Ervaj\n| spellicon = 43\n| description = An archaic song that increases the attack speed of your group. This increase is cumulative with most other effects that increase attack speed.\n| Table = {{{Table|0}}}\n| TableLevel = {{{TableLevel|}}}\n\n| classes = \n\n* [[Bard]] - Level 50\n\n| slots = \n\n{{SpellSlotRowSmart | 1 | Increase Melee Haste by 5% | simple = {{#ifeq:{{{Table|0}}}|0|0|1}} }}\n{{SpellSlotRowSmart | 4 | Increase AC by 5 (L50) to 6 (L65) | simple = {{#ifeq:{{{Table|0}}}|0|0|1}} }}\n{{SpellSlotRowSmart | Enhanced by instrument? | '''Required''' | simple = {{#ifeq:{{{Table|0}}}|0|0|1}} }}\n\n| skill = [[Skill Brass | Brass]] †\n\n| mana = 0\n| range = 0\n| casting_time = 3.00\n| fizzle_time = 0.00\n| recast_time = 0.00\n| duration = 3 ticks\n| target_type = Group\n| spell_type = Beneficial\n| resist = Unresistable\n\n| other = \n\n* '''Focus:''' [[Horn]]\n\n| msg_cast_on_you = A song of inspiration fills your weapon arm with strength.\n| msg_cast_on_other =  \n| msg_wears_off = The inspiration fades.\n\n| where_to_obtain = \n\n<ul>\n<li>[[Bard#Song_Vendors|Bard Song Vendors]]</li>\n</ul>\n}}"
  },
@@ -620,34 +584,6 @@
   "content": ""
  },
  {
-  "title": "Pyrosilk Cloak",
-  "content": ""
- },
- {
-  "title": "Pyrosilk Gloves",
-  "content": ""
- },
- {
-  "title": "Pyrosilk Leggings",
-  "content": ""
- },
- {
-  "title": "Pyrosilk Robe",
-  "content": ""
- },
- {
-  "title": "Pyrosilk Sash",
-  "content": ""
- },
- {
-  "title": "Pyrosilk Sleeves",
-  "content": "{{Classic Era / Kunark Era / Velious Era, etc}}\n\n[[File:item_name.png|200px|thumb|Item_Name]]\n\n<onlyinclude>{{Itempage\n|itemname = \n|lucy_img_ID = \n|statsblock  = \nAttunable, Lore Equipped, Lore Item, No Trade, Placeable, Quest, Heirloom, Free Storage, No Destroy<br>\nSlot: PRIMARY / SECONDARY / RANGE / AMMO / ANY / ARMS / BACK / CHEST/ EAR / FACE / FEET / FINGER / HANDS / HEAD / LEGS / NECK / SHOULDERS / WAIST/ WRIST<br>\nSkill: 1H Blunt / 2H Blunt / 1H Slashing / 2H Slashing / 1H Piercing / 2H Piercing / Archery / Atk Delay: ? / Bard Instrument / Hand to Hand / Throwing<br>\nDMG: ?  AC: ?  BACKSTAB: ?  Fire DMG: ?  Disease DMG: ?  Cold DMG: ?  Magic DMG: ?  Poison DMG: ?<br>\nRange: ?<br>\nSkill Mod: ?<br>\nSTR: +?  STA: +?  INT: +?  WIS: +?  AGI: +?  DEX: +?  CHA: +?  HP: +?  MANA: +?  END: +?<br>\nSV Fire: +?  SV Disease: +?  SV Cold: +?  SV Magic: +?  SV Poison: +?  SV Void: +?<br>\nAttack: ?  HP Regen: ?  Mana Regen: ?  Haste: ?  Clairvoyance: ?  Spell Dmg: ?  Heal Amount: ?  END Regen: ?<br>\nEffect: [[Effect_Name|<span class='itemeff'>Effect_Name</span>]] (Combat / Clicky / Can Equip / Must Equip, Casting Time: ?, Cooldown: ??? seconds) at Level ?<br>\nCharges: XX<br>\nSize: TINY / SMALL / MEDIUM / LARGE / GIANT  WT: 0.0<br>\nWeight Reduction: 0%  Capacity: 2  Size Capacity: TINY / SMALL / MEDIUM / LARGE / GIANT<br>\nClass: ALL / BER, BRD, BST, CLR, DRU, ENC, MAG, MNK, NEC, PAL, RNG, ROG, SHM, SHD, WAR, WIZ<br>\nRace: ALL<br>\n|focus_effect =\n\n|notes = \n\n|merchant_value = ?p ?g ?s ?c\n\n|bookcontents =\n\n|dropsfrom = \n\n[[Zone_Name]]\n* [[Mob_Name]]\n\n|relatedquests = \n\n* [[Quest_Name]]\n\n|playercrafted = \n\n|recipes =\n\n|soldby = \n\n[[Vendor_Name]]\n\n|foraged =\n\n[[Zone_Name]]\n\n\n}}</onlyinclude>\n\n[[Category:Bard Equipment]]\n[[Category:Beastlord Equipment]]\n[[Category:Berserker Equipment]]\n[[Category:Cleric Equipment]]\n[[Category:Druid Equipment]]\n[[Category:Enchanter Equipment]]\n[[Category:Magician Equipment]]\n[[Category:Monk Equipment]]\n[[Category:Necromancer Equipment]]\n[[Category:Paladin Equipment]]\n[[Category:Ranger Equipment]]\n[[Category:Rogue Equipment]]\n[[Category:Shadow Knight Equipment]]\n[[Category:Shaman Equipment]]\n[[Category:Warrior Equipment]]\n[[Category:Wizard Equipment]]\n\n[[Category:Primary]]\n[[Category:Secondary]]\n[[Category:Range]]\n[[Category:Ammo]]\n[[Category:Arms]]\n[[Category:Back]]\n[[Category:Chest]]\n[[Category:Ear]]\n[[Category:Face]]\n[[Category:Feet]]\n[[Category:Fingers]]\n[[Category:Hands]]\n[[Category:Head]]\n[[Category:Legs]]\n[[Category:Neck]]\n[[Category:Shoulders]]\n[[Category:Waist]]\n[[Category:Wrist]]\n\n[[Category:1H Blunt]]\n[[Category:2H Blunt]]\n[[Category:1H Slashing]]\n[[Category:2H Slashing]]\n[[Category:Piercing]]\n[[Category:2H Piercing]]\n[[Category:Archery]]\n[[Category:Hand to Hand]]\n[[Category:Bard Instrument]]\n\n[[Category:Book]]\n[[Category:Containers]]\n[[Category:Drink]]\n[[Category:Drink With Stats]]\n[[Category:Fashion: ?]]\n[[Category:Focus Items]]\n[[Category:Food]]\n[[Category:Food With Stats]]\n[[Category:Foraged]]\n[[Category:Increased Proc Rate]]\n[[Category:Light source]]\n[[Category:Pet Illusion Items]]\n[[Category:Player Crafted]]\n[[Category:Potion]]\n[[Category:Quest Items]]\n[[Category:Tradeskill Ingredient]]\n[[Category:Vendor Sold]]\n[[Category:Weapon Procs]]\n[[Category:Weight Reduction]]\n[[Category:Worn Effects]]\n\n[[Category:Zone Name]]"
- },
- {
-  "title": "Pyrosilk Veil",
-  "content": ""
- },
- {
   "title": "Rare Leaf",
   "content": "{{Kunark Era}}\n\n<onlyinclude>{{Itempage\n|notes       = Ironically not that rare. \n\nNo known use.\n|itemname    = A Rare Leaf\n|lucy_img_ID = 795\n|statsblock  = \nWT: 0.1  Size: TINY<br>\nClass: NONE<br>\nRace: NONE<br>\n|dropsfrom = \n\n[[The Overthere]]\n\n* [[a barbed succulent]]\n* [[a bristly succulent]]\n* [[a thorny succulent]]\n\n|foraged = \n\n* [[The Overthere]]\n\n}}</onlyinclude>\n\n\n[[Category:Foraged]]\n[[Category:The Overthere]]"
  },
@@ -690,10 +626,6 @@
  {
   "title": "Research",
   "content": "{{delete}}\n#REDIRECT [[Skill Research]]"
- },
- {
-  "title": "Ring of the Eldest",
-  "content": ""
  },
  {
   "title": "Ringmail Armor",
@@ -744,10 +676,6 @@
   "content": "<onlyinclude>{{Itempage\n|notes       = \n|itemname    = A Scarlet Stone\n|lucy_img_ID = 964\n|statsblock  = \nLORE ITEM<br>\nWT: 0.1  Size: TINY<br>\nClass: ALL<br>\nRace: ALL<br>\n|dropsfrom = \n\n[[Firiona Vie]]\n* [[a drolvarg scavenger]]\n** Dropped twice 2015/07/04: Called \"A Scarlet Stone\" which identifies as \"Sulfur Stone\"\n|relatedquests = \n\n* [[Monk Shackle Quests|Shackle of Bronze]]\n\n}}</onlyinclude>\n\n\n[[Category:Firiona Vie]]\n\n[[Category:Quest Items]]"
  },
  {
-  "title": "Scars of the Indominable",
-  "content": ""
- },
- {
   "title": "Scribbled Prisoner's Note",
   "content": ""
  },
@@ -766,10 +694,6 @@
  {
   "title": "Shadowed Knife",
   "content": "{{Temple Era}}\n<onlyinclude>{{Itempage\n|notes       = {{Item Lore Missing}}\n|itemname    = A shadowed knife\n|lucy_img_ID = 592\n|statsblock  = \nMAGIC ITEM  LORE ITEM  NO DROP  <br>\nSlot: PRIMARY<br>\nSkill: Piercing  Atk Delay: 20<br>\nDMG: 3 <br>\nINT: +2<br>\nSV COLD: +2<br>\nWT: 2.5  Size: SMALL<br>\nClass: SHD NEC<br>\nRace: ALL<br>\n|dropsfrom = \n\n\n[[Ocean of Tears]]\n\n* [[a goblin headmaster]]\n\n|relatedquests = \n\n* [[The Harvester]]\n\n}}</onlyinclude>\n\n[[Category:Necromancer Equipment]]\n[[Category:Shadow Knight Equipment]]\n[[Category:Primary]]\n[[Category:Piercing]]\n[[Category:Lesser Faydark]]\n[[Category:Ocean of Tears]]\n\n[[Category:Quest Items]]"
- },
- {
-  "title": "Shelia's Robe",
-  "content": ""
  },
  {
   "title": "Shield of Thorns",
@@ -1078,10 +1002,6 @@
  {
   "title": "Uliorn`s Fishing Pole",
   "content": "{{Classic Era}}\n\n<onlyinclude>{{Itempage\n|notes       = Note: This pole can be used for [[fishing]], but be warned: it can break, just like any other pole!\n|itemname    = Uliorn's Fishing Pole\n|lucy_img_ID = 749\n|statsblock  = \nMAGIC ITEM  NO DROP  <br>\nSlot: PRIMARY SECONDARY<br>\nSkill Mod: Fishing +2%  (4 Max)<br>\nDEX: +3  STA: +2  INT: +3<br>\nWT: 1.3  Size: MEDIUM<br>\nClass: MAG<br>\nRace: ALL<br>\n|dropsfrom = \n\n[[The Warrens]]\n\n* [[The Muglwump]]\n\n}}</onlyinclude>\n\n[[Category:Magician Equipment]]\n[[Category:Primary]]\n[[Category:Secondary]]\n[[Category:The Warrens]]"
- },
- {
-  "title": "Unstoppable Girdle",
-  "content": ""
  },
  {
   "title": "Upheaval",

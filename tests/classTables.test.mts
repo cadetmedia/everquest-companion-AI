@@ -235,10 +235,12 @@ test('the per-class counts reproduce the design measurement, per spell entry', (
   //     is the second of the two former `Imbue Emerald` rows under its own title, so it moves
   //     nothing.)
   // The run's renames (names now come from page titles) re-label rows this table already counted.
+  // 2026-10-26 delta: `Tears of Arlyxir` is a new row, `* Wizard - Level 64`, so WIZ 234 -> 235
+  // and its exclusive count 193 -> 194.
   const expected: Record<string, [number, number]> = {
     BRD: [89, 89], BST: [77, 27], CLR: [207, 82], DRU: [268, 152],
     ENC: [238, 184], MAG: [200, 160], NEC: [192, 86], PAL: [91, 17],
-    RNG: [92, 20], SHD: [91, 23], SHM: [210, 102], WIZ: [234, 193]
+    RNG: [92, 20], SHD: [91, 23], SHM: [210, 102], WIZ: [235, 194]
   }
   for (const [abbr, [total, excl]] of Object.entries(expected)) {
     assert.deepEqual([RAW.get(abbr)?.total, RAW.get(abbr)?.excl], [total, excl], `${abbr} drifted`)
@@ -293,7 +295,8 @@ test('the SHIPPED index is keyed by canon key, so rank variants collapse', () =>
   // each of the six names keeps its Legends page.
   // 1410 -> 1419 (2026-10-10): the delta run's catalog, named by page title (2,006 -> 2,013 rows).
   // 1419 -> 1418 (2026-10-18): the full re-scrape; Magical Monologue (a BRD song page) is marked {{Delete}}.
-  assert.equal(spellClassIndex().size, 1418)
+  // 1418 -> 1419 (2026-10-26 delta): Tears of Arlyxir, a new Wizard spell.
+  assert.equal(spellClassIndex().size, 1419)
   assert.equal(CANON.get('ENC')?.excl, 178)
   assert.equal(RAW.get('ENC')?.excl, 184)
   assert.deepEqual(classesForSpell('Clarity II'), classesForSpell('Clarity'))

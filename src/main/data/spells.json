@@ -1,8 +1,8 @@
 {
-  "scrapedAt": "2026-10-26T00:06:17.591Z",
+  "scrapedAt": "2026-10-27T06:12:19.230Z",
   "schema": 3,
-  "count": 2019,
-  "withEffects": 2014,
+  "count": 2022,
+  "withEffects": 2017,
   "spells": [
     {
       "name": "Aanya's Animation",
@@ -13668,6 +13668,24 @@
       "mana": 0,
       "effects": [
         "Increase Hitpoints by 100%"
+      ]
+    },
+    {
+      "name": "Funeral Pyre of Kelador",
+      "durationText": "0:48",
+      "durationMs": 48000,
+      "castTimeMs": 3000,
+      "recastMs": 1000,
+      "targetType": "Single",
+      "spellType": "Detrimental",
+      "classes": "* Necromancer - Level 60",
+      "msgCastOnYou": "Your skin burns as you are caught in a funeral pyre.",
+      "msgCastOnOther": "Soandso is enveloped in a funeral pyre.",
+      "msgWearsOff": "The funeral pyre ends.",
+      "illusion": false,
+      "mana": 470,
+      "effects": [
+        "Decreases health by 290 per tick"
       ]
     },
     {
@@ -29441,6 +29459,23 @@
       ]
     },
     {
+      "name": "Soul Orb",
+      "durationText": "Instant",
+      "durationMs": null,
+      "castTimeMs": 4000,
+      "recastMs": 1000,
+      "targetType": "Single",
+      "spellType": "Detrimental",
+      "classes": "* Necromancer - Level 61",
+      "msgCastOnYou": "Your soul shivers in pain.",
+      "msgCastOnOther": "Soandso's soul shivers in pain.",
+      "illusion": false,
+      "mana": 450,
+      "effects": [
+        "Decreases Health by 850."
+      ]
+    },
+    {
       "name": "soul well",
       "eraTag": "Kunark",
       "durationText": "1 ticks @L1 to 1 minute @L17",
@@ -33461,6 +33496,23 @@
         "Limit Min Duration: 24s",
         "Limit Effect: Exclude Assist Radius",
         "Limit Type: Exclude Combat Skills"
+      ]
+    },
+    {
+      "name": "Tears of Arlyxir",
+      "durationText": "Instant",
+      "durationMs": null,
+      "castTimeMs": 5000,
+      "recastMs": 12000,
+      "targetType": "Targeted AE",
+      "spellType": "Detrimental",
+      "classes": "* Wizard - Level 64",
+      "msgCastOnYou": "Your skin blisters as the tears of Arlyxir rain down on you.",
+      "msgCastOnOther": "Soandso's skin blisters as the tears of Arlyxir rain upon them.",
+      "illusion": false,
+      "mana": 420,
+      "effects": [
+        "Decrease Health by 645"
       ]
     },
     {
