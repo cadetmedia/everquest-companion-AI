@@ -157,7 +157,8 @@ disagree, RULES.md wins; fix this file.
   `devFlags.ts`, `electron-vite build --outDir=<worktree>/out-e2e`, `git checkout` the flag file,
   then a throwaway spec with `launchOnFixture(..., { env: { EQ_UNRELEASED: '1' } })`.
   `--mode development` does not flip `import.meta.env.DEV`. `page.screenshot` can hang on the
-  hidden E2E window; `page.context().newCDPSession(page)` + `Page.captureScreenshot` works.
+  hidden E2E window; `page.context().newCDPSession(page)` + `Page.captureScreenshot` worked once
+  but hung on every try on 2026-10-26: read text instead, or bound the call with a timeout.
 
 ## Pushing
 
@@ -295,7 +296,9 @@ disagree, RULES.md wins; fix this file.
   fires (an `evaluate` awaiting it hangs forever), `page.screenshot` times out, and scroll events
   land late (wait ~1.5 s, not 300 ms, before reading a re-windowed list). An UNRELEASED tab
   (Gaps, Factions) needs `env: { EQ_UNRELEASED: '1' }` (the TEST build forces the renderer half
-  open).
+  open). TRAP (2026-10-26): on a real log the app runs its own eqlwiki mob-lookup searches (7 in one
+  probe; no switch turns them off). Block them for a probe with `NODE_USE_ENV_PROXY=1` and
+  `HTTPS_PROXY=http://127.0.0.1:9` in the launch env, so development still sends the wiki nothing.
 
 - **`start_companion.ps1 -NoWatch` still hot-reloads the renderer.** It runs `npm start`, which is
   `electron-vite dev`: only main stops relaunching. A merge or checkout in the main clone while the

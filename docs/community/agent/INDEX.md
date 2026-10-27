@@ -18,7 +18,7 @@ measured fact, an owner ruling), add it to the right file below on a work branch
 | [WIKI.md](WIKI.md) | Before parsing wiki pages or writing pages for the wiki: links, page templates, conventions, caches, what the log can give a page. |
 | [../RELEASING.md](../RELEASING.md) | Before a release. |
 | [../BRANCHES.md](../BRANCHES.md) | The known reds before a gate; the retired branches when tracing where code came from. |
-| [../plans/2026-10-26-trunk-release-run.md](../plans/2026-10-26-trunk-release-run.md) | Open, read first: the owner's 15-step run of 2026-10-26, where it stopped, what is next, the open questions. |
+| [../plans/2026-10-26-trunk-release-run.md](../plans/2026-10-26-trunk-release-run.md) | Open, read first: the owner's 15-step run of 2026-10-26: steps 1-13 done, the release held, the delta waiting on one wiki edit, the open questions. |
 | [../plans/2026-10-18-scrape-rebaseline.md](../plans/2026-10-18-scrape-rebaseline.md) | Open: the era rules, the stale-scrape defect, the August catch-up (phases and status). |
 | [../plans/2026-10-19-gaps-all-characters.md](../plans/2026-10-19-gaps-all-characters.md) | The Gaps tab across every character: the owner's answers. |
 | [../plans/2026-10-20-meter-pet-split.md](../plans/2026-10-20-meter-pet-split.md) | Before changing the damage meters' pet layouts: the third one, "With its owner" (the stacked pair); the mock and Malkil's answers. |
