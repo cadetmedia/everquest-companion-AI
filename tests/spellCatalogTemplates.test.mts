@@ -182,7 +182,9 @@ test('the dead-lands gate actually removed something, and the count is measured 
   // join the table in one move, measured on the owner's log before the rule was widened.
   // 18 since the 2026-10-26 delta: `Tears of Arlyxir` (Wizard 64) is written `Soandso's skin
   // blisters as the tears of Arlyxir rain upon them.`, the placeholder subject this gate leaves out.
-  assert.equal(dead, 18, 'the measured population the `lands` gate now excludes')
+  // 20 since its re-read: `Soul Orb` (`Soandso's soul shivers in pain.`) and `Funeral Pyre of Kelador`
+  // (`Soandso is enveloped in a funeral pyre.`), both Necromancer, the same placeholder subject.
+  assert.equal(dead, 20, 'the measured population the `lands` gate now excludes')
 })
 
 test('`landsOnOther` always travels with the pattern it needs', () => {
