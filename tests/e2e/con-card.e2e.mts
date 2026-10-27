@@ -26,8 +26,8 @@
  *   6. A PLAYER GETS NO CARD, from a con line that is the same shape on the same faction rung.
  *   7. THE × CLOSES IT, AND A RE-CON DOES NOT PUT IT BACK. The close is local and the suppression
  *      is main's; only a real round trip can show them agreeing.
- *   8. THE DEFAULT AUTO-HIDE LEAVES BY ITSELF, in about the three seconds the owner ruled
- *      (JOS-388 measured five here; JOS-390 is the ruling that made it three).
+ *   8. THE DEFAULT AUTO-HIDE LEAVES BY ITSELF, in about the eight seconds the owner ruled
+ *      (JOS-388 measured five here; JOS-390 made it three; owner 2026-10-23 made it eight).
  *   9. THE PREFERENCE TURNS IT OFF, and the window goes with it.
  *
  * WHAT LEFT THIS SPEC IN JOS-390: every drop assertion. The card no longer carries a drop table —
@@ -36,7 +36,7 @@
  * spec's WAIT for main's second pass (the client spell table arriving), and that wait now lives in
  * the chip steps next door, on the creature that actually grows chips.
  *
- * THE HOLD IS PINNED FOR CLAIMS 2-7 AND ONLY FOR THEM. The shipped auto-hide is 3 s and this
+ * THE HOLD IS PINNED FOR CLAIMS 2-7 AND ONLY FOR THEM. The shipped auto-hide is 8 s and this
  * gauntlet takes minutes, so the spec sets the card's own knob to "until I close it" before the
  * first `/con` (stepPinTheHold) — a real user's setting, written through Preferences' own door,
  * never an inflated default. Claim 8 puts the knob back and measures what an untouched install
@@ -165,11 +165,11 @@ function setTextScale(card: Page, textScale: number): Promise<unknown> {
  * the default that forgets this line fails loudly in the last step below.
  */
 const NEVER_HIDES = 0
-const DEFAULT_HIDE_MS = 3_000
+const DEFAULT_HIDE_MS = 8_000
 /**
  * How long the last step gives a DEFAULT card to leave, from the moment it is drawn.
  *
- * THE EXPECTED READING IS ~3.3 s: a 3 s hold plus a 300 ms exit counted by a 100 ms interval, which
+ * THE EXPECTED READING IS ~8.3 s (the 8 s default since 2026-10-23): an 8 s hold plus a 300 ms exit counted by a 100 ms interval, which
  * is the same arithmetic that measured 5233 ms when the hold was five (JOS-388). The ceiling is
  * more than twice that on purpose — this is a FAILURE deadline, not a schedule, and the suite runs
  * four Electron apps at once.
@@ -186,7 +186,7 @@ const DEFAULT_HIDE_MS = 3_000
  * timers throttled to a crawl (settle.mts's `nextFrames` exists because rAF is). `useCardTick` is a
  * `setInterval`, and the measurement above says it keeps real time here.
  */
-const DEFAULT_HIDE_CEILING_MS = 8_000
+const DEFAULT_HIDE_CEILING_MS = 18_000
 
 /**
  * Write the con card's auto-hide, through Preferences' own door, and report what main stored.
@@ -567,11 +567,11 @@ async function stepOpaqueModeFitsToo(app: ElectronApplication, page: Page, log: 
 }
 
 /**
- * THE DEFAULT LEAVES BY ITSELF (JOS-388, re-ruled to three seconds by JOS-390) — the one step that
+ * THE DEFAULT LEAVES BY ITSELF (JOS-388, re-ruled to three seconds by JOS-390, eight by the owner 2026-10-23) — the one step that
  * runs with the knob UNPINNED.
  *
  * The owner's ruling is a number, and a number in a source file is a unit test's business
- * (tests/conCard.test.mts pins 3_000). What only this file can say is that the number is WIRED: it
+ * (tests/conCard.test.mts pins the default). What only this file can say is that the number is WIRED: it
  * survives the store, reaches the overlay window through the config echo, becomes the queue's hold
  * at arrival, and is counted down by a 100 ms interval in a window that is never shown. Four places
  * where a 3 could quietly become an infinity.
@@ -605,10 +605,10 @@ async function stepDefaultHideLeaves(app: ElectronApplication, page: Page, log: 
   note(`the default card stood ${String(elapsed)} ms after it was drawn`)
   check('AN UNTOUCHED CARD LEAVES ON ITS OWN — nobody closed it and nothing replaced it',
     gone.length === 0, `${String(gone.length)} card(s) still up after ${String(elapsed)} ms`)
-  check('…inside the deadline a three-second hold has to beat (the ceiling, not a schedule)',
+  check('…inside the deadline an eight-second hold has to beat (the ceiling, not a schedule)',
     gone.length === 0 && elapsed <= DEFAULT_HIDE_CEILING_MS,
     `${String(elapsed)} ms (ceiling ${String(DEFAULT_HIDE_CEILING_MS)})`)
-  // …and it was a HOLD, not a card that never really arrived: the tick counts down 3 s of it, and
+  // …and it was a HOLD, not a card that never really arrived: the tick counts down 8 s of it, and
   // the floor is deliberately under that — this separates a hold from a flicker, nothing finer.
   check('…and it stood long enough to be read rather than flickering',
     elapsed >= 2_000, `${String(elapsed)} ms`)
@@ -631,7 +631,7 @@ async function stepPreferenceTurnsItOff(app: ElectronApplication, page: Page): P
   // put the knob back to the default, so what this reads is exactly what a fresh install would show.
   const hide = await textOf(page, '[data-testid="pref-con-card-hide"]')
   check('…and the "a card stays for" control shows the shipped default rather than nothing',
-    /3 seconds/.test(hide), hide || '(empty)')
+    /8 seconds/.test(hide), hide || '(empty)')
   await page.click('[data-testid="pref-con-card-enabled"] input')
   const closed = await settle(() => findCardWindow(app), (w) => w === null, { timeoutMs: 20_000 })
   check('turning it off closes the window — off means off', closed === null)
