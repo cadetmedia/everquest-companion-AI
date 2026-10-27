@@ -76,7 +76,7 @@ const MAX_HOVER_DEPTH = 0
 // AND HERE IT IS PERMANENT RATHER THAN TIMED, which is the opposite call from the spell card's
 // (SpellCard.tsx `RECORD_TTL_MS` says why that one is bounded). The difference is what the record
 // is made of: `lookupItem` in main answers from the COMMITTED item DB, then a persisted userData
-// cache, then a politely-queued wiki fallback, and merges the local posky/quest associations —
+// cache (never the wiki, owner 2026-10-26), and merges the local posky/quest associations —
 // every one of which is a compile-time or on-disk fact, none of which the log moves while the app
 // runs. There is nothing in an `ItemKnowledge` for a stale entry to be stale ABOUT. What the cache
 // removes is the IPC round trip per open, which is the whole cost on a name the reader crosses

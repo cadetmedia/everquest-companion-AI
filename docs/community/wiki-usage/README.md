@@ -19,9 +19,29 @@ A run writes into the checkout it runs in. Commit the new lines on the run's wor
 run's data (DATA_REFRESH.md, step 5). `WIKI_LEDGER=<path>` writes elsewhere; `WIKI_LEDGER=off`
 writes nothing; tests (a stubbed fetch, nothing sent) never write.
 
-The app's own requests (item and mob lookups, images, the Gaps quest Copy) cannot reach this file
-on a player's machine: they go to `wiki-requests.jsonl` in that install's userData, one line a
-request, and the session's total is logged at quit (`src/main/wikiUsage.ts`).
+The app's own requests cannot reach this file on a player's machine: they go to
+`wiki-requests.jsonl` in that install's userData, one line a request, and the session's total is
+logged at quit (`src/main/wikiUsage.ts`).
+
+## The app's wiki touch points
+
+Since 2026-10-26 the app reads the wiki only when the player clicks Copy (owner: "the app should not
+be hitting the WIKI ever except (delta refresh before build, user clicks COPY on an item and it does
+the lookup)"; `../requirements/wiki-traffic.md`). Pinned by `tests/wikiTraffic.test.mts`.
+
+| Touch point | Trigger | Ledger feature |
+| --- | --- | --- |
+| `lookupItemOnCopy` (`src/main/itemLookup.ts`): search, then the page | Copy on a Gaps item row whose name no cache answers (`src/main/gapCopyLookup.ts`) | `item copy` |
+| `lookupMobOnCopy` (`src/main/mobLookup.ts`): search, then the page | Copy on a Gaps mob row, the same way | `mob copy` |
+| `readQuestPage` (`src/main/gapQuestLive.ts`): the quest page, at most one more read | Copy on a Gaps quest row | `quest copy` |
+
+Nothing else asks the wiki. Hover cards, the item dialog, the mob page, the con card and the loot
+toast answer from the committed data and what a Copy cached. The engine's miss announcements are
+answered from that local data or left unanswered. Images come from the bundle, the image cache or
+the wiki's GitHub pack (GitHub, not the wiki); a missing one shows the placeholder. Links the player
+clicks (Search wiki, Create page, a page link) open the system browser and are the player's visit,
+not an app request. Ledgers from before 2026-10-26 also hold `item lookup`, `mob lookup` and
+`images`, the automatic reads this replaced.
 
 ## A line
 

@@ -1,5 +1,7 @@
-// wikiClient.ts — the eqlwiki.com MediaWiki client behind the two live knowledge services
-// (itemLookup.ts, mobLookup.ts). Electron-free: `fetch` and timers, nothing else.
+// wikiClient.ts — the eqlwiki.com MediaWiki client behind the app's only wiki reads, each caused by
+// a Copy click in the Gaps tab (owner, 2026-10-26): `lookupItemOnCopy` (itemLookup.ts),
+// `lookupMobOnCopy` (mobLookup.ts) and the quest Copy (gapQuestLive.ts). Nothing automatic may
+// create or use one; tests/wikiTraffic.test.mts pins who does. Electron-free: `fetch` and timers.
 //
 // ONE SPELLING, SEPARATE STATE. Both services used to carry this client as a hand copy — the same
 // request, the same Retry-After cooldown, the same serialized queue with the same spacing. The

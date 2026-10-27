@@ -227,7 +227,8 @@ function MobCardFooter({
     <>
       {loading && !data && <div style={{ ...LABEL_STYLE, marginTop: 4 }}>Looking up…</div>}
       {data?.notFound === true && <div style={{ ...LABEL_STYLE, marginTop: 4 }}>no wiki page</div>}
-      {data && data.notFound !== true && data.offline !== true && wikiCount === 0 && (
+      {/* `cached` false and no page: the app holds no answer and did not ask the wiki (mobLookup.ts). */}
+      {data && data.notFound !== true && data.offline !== true && (data.cached || data.page !== undefined) && wikiCount === 0 && (
         <div style={{ ...LABEL_STYLE, marginTop: 4 }}>its wiki page lists no loot</div>
       )}
       {data?.offline === true && (

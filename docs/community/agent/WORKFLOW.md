@@ -180,6 +180,11 @@ disagree, RULES.md wins; fix this file.
   separability; RULES.md rules 1 to 4 and 9.
 - **Wiki and network:** no new runtime fetches. Data comes from committed files and bundled
   assets. Any new scrape is an owner decision, in bulk, at 1 request per second.
+  The app reads the wiki only on a Copy click (owner, 2026-10-26: "the app should not be hitting
+  the WIKI ever except (delta refresh before build, user clicks COPY on an item and it does the
+  lookup)"): `lookupItem`/`lookupMob` are local-only, `lookupItemOnCopy`/`lookupMobOnCopy` and the
+  quest Copy are the only doors, `tests/wikiTraffic.test.mts` pins it (wiki-usage/README.md lists
+  the touch points).
   Development, testing and validation send the wiki zero requests (owner, 2026-10-10): work from
   fixtures and the committed caches, and a scraper's `--dry-run` that reads the wiki counts as
   a request. Scraper changes keep real runs light: revid checks so only changed pages are
@@ -296,9 +301,10 @@ disagree, RULES.md wins; fix this file.
   fires (an `evaluate` awaiting it hangs forever), `page.screenshot` times out, and scroll events
   land late (wait ~1.5 s, not 300 ms, before reading a re-windowed list). An UNRELEASED tab
   (Gaps, Factions) needs `env: { EQ_UNRELEASED: '1' }` (the TEST build forces the renderer half
-  open). TRAP (2026-10-26): on a real log the app runs its own eqlwiki mob-lookup searches (7 in one
-  probe; no switch turns them off). Block them for a probe with `NODE_USE_ENV_PROXY=1` and
-  `HTTPS_PROXY=http://127.0.0.1:9` in the launch env, so development still sends the wiki nothing.
+  open). TRAP (2026-10-26, gone the same day): on a real log the app ran its own eqlwiki mob-lookup
+  searches (7 in one probe). Since the owner's ruling below, the app reads the wiki only on a Copy
+  click; still launch a probe with `NODE_USE_ENV_PROXY=1` and `HTTPS_PROXY=http://127.0.0.1:9`, so
+  a Copy clicked in a probe sends the wiki nothing either.
 
 - **`start_companion.ps1 -NoWatch` still hot-reloads the renderer.** It runs `npm start`, which is
   `electron-vite dev`: only main stops relaunching. A merge or checkout in the main clone while the

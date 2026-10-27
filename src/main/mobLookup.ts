@@ -18,14 +18,18 @@
 //      c) The scraped wiki QUEST CATALOG's `relatedNpcs` (quests.json), which ties 1,121
 //         distinct NPC names to the quests that mention them — so a quest-relevant mob says so
 //         with no network at all.
-//   2. WIKI lookup — now the FALLBACK, for a mob the catalog doesn't have (a page created since
-//      the last `npm run scrape:mobs`, or a name the catalog spells differently). Same MediaWiki
+//   2. WIKI lookup — ONLY ON A COPY CLICK (owner, 2026-10-26: "the app should not be hitting the
+//      WIKI ever except (delta refresh before build, user clicks COPY on an item and it does the
+//      lookup)"). `lookupMob`, which every automatic caller uses (the con card, hover cards, the
+//      mob page, the engine's miss announcements), never reaches the network; `lookupMobOnCopy`
+//      is the one door to the wiki and only the Gaps tab's Copy click opens it
+//      (gapCopyLookup.ts), for a mob the catalog doesn't have. Same MediaWiki
 //      API: search → resolve the mob page → parse `|known_loot` / `|level` / `|zone` /
 //      `|related_quests` (parseMobWikitext). Polite: a single serialized in-flight queue with a
 //      150ms spacing and the SAME Retry-After cooldown contract — a 429/5xx silences the whole
 //      queue until the server's cooldown expires (AGENTS.md "Scraper etiquette" is a LAW).
-//   3. PERSISTENT CACHE in userData (versioned JSON), negative + offline TTLs, for that fallback
-//      only. A catalog hit never touches the cache OR the network.
+//   3. PERSISTENT CACHE in userData (versioned JSON), negative + offline TTLs, written by that
+//      Copy lookup only and read by both. A catalog hit never touches the cache OR the network.
 //
 // UI ORDERING (stated here because it is a claim about AUTHORITY, not a layout preference):
 // every surface leads with the wiki drop table and annotates it with your counts; items only
@@ -80,8 +84,9 @@ export { localMobEntry, localMobQuests, MOB_CATALOG_SIZE } from './mobLookupLoca
 // ---- wiki client (search → wikitext) ------------------------------------------
 
 /** This service's OWN client — its own Retry-After cooldown and its own serialized, politely
- *  spaced queue (wikiClient.ts; the header above says why it is not itemLookup's). */
-const wiki = createWikiClient('mob lookup')
+ *  spaced queue (wikiClient.ts; the header above says why it is not itemLookup's). Read only
+ *  inside `lookupMobOnCopy` (tests/wikiTraffic.test.mts pins that). */
+const wiki = createWikiClient('mob copy')
 
 /**
  * Resolve a mob name to candidate wiki page titles. Distinguishes a NETWORK failure ('offline')
@@ -132,9 +137,9 @@ const knowledge = createKnowledgeCache<MobKnowledge>({
  * The LOCAL merge, bound to this process's shared own-loot index. The logic itself lives in
  * mobLookupLocal.ts so the node test runner can drive it (see `mergeLocalKnowledge`).
  *
- * AND THE ERA ANNOTATION (JOS-377), which is here because this is the CONFLUENCE: all four exits
- * from `lookupMob` — the catalog hit, the cache hit, the freshly-parsed wiki page, and the thrown-
- * error degrade — return through this one function, so both knowledge paths the ticket names are
+ * AND THE ERA ANNOTATION (JOS-377), which is here because this is the CONFLUENCE: every exit
+ * from the lookups — the catalog hit, the cache hit, the local miss, the freshly-parsed wiki page
+ * and the thrown-error degrade — returns through this one function, so both knowledge paths the ticket names are
  * annotated by one call site instead of two that can drift. It runs on EVERY read and is never
  * persisted, exactly like the local merge below it: mob-cache positives never expire, so an era
  * baked into a cached record would be frozen at whatever the corpus said that day.
@@ -162,29 +167,60 @@ function repairAliasCache(id: MobIdentity): void {
 }
 
 /**
- * Look up a mob's drop knowledge. Local-first, then cache, then a serialized, politely-spaced
- * wiki lookup. NEVER throws — failures degrade to a cached-negative / offline record that still
- * carries whatever the local sources knew.
- *
  * THE ALIAS BOUNDARY IS HERE AND NOWHERE ELSE (JOS-142). Every surface that shows mob knowledge
  * — the boss card, the mob page, the Overview current-mob card, the overlay hover card, the
- * consider ring's enrichment — arrives through this one function, so resolving the identity on
- * the way in fixes both halves of the divergence at once: the ROSTER spelling now finds loot
- * filed under the LOG spelling, and the LOG spelling now finds the catalog page filed under the
- * ROSTER spelling. `display` is untouched throughout and is what the record reports as its
- * `name`, so the page still reads back exactly what the log said (world-model law 2).
+ * consider ring's enrichment — arrives through `lookupMob`/`knownMob`/`lookupMobOnCopy`, and each
+ * resolves the identity here on the way in, which fixes both halves of the divergence at once: the
+ * ROSTER spelling now finds loot filed under the LOG spelling, and the LOG spelling now finds the
+ * catalog page filed under the ROSTER spelling. `display` is untouched throughout and is what the
+ * record reports as its `name`, so the page still reads back exactly what the log said
+ * (world-model law 2).
  */
-export async function lookupMob(name: string): Promise<MobKnowledge> {
+function identityOf(name: string): { display: string; id: MobIdentity; ask: string; key: string } {
   const display = name.trim()
   const id = resolveMobIdentity(display)
   if (id.aliased) repairAliasCache(id)
   // What the CATALOG, the CACHE and the WIKI are asked. Identical to `display` for every mob the
   // roster does not spell two ways, which is all of them but two.
-  const ask = id.canonical
-  const key = mobKey(ask)
+  return { display, id, ask: id.canonical, key: mobKey(id.canonical) }
+}
+
+/**
+ * What the app already holds for a mob, with no request: the committed catalog (the definitive
+ * drop table), else an answer a Copy lookup cached (a positive, a fresh offline miss, or a real
+ * negative of any age, since nothing automatic will ask the wiki again). Null when neither has it.
+ */
+export function knownMob(name: string): MobKnowledge | null {
+  const { display, id, ask, key } = identityOf(name)
+  const entry = localMobEntry(ask)
+  if (entry) return mergeLocal(knowledgeFromCatalog(display, entry), id)
+  const cached = knowledge.load().get(key)
+  if (cached && (knowledge.hit(cached) || cached.data.notFound === true)) return mergeLocal({ ...cached.data, cached: true }, id)
+  return null
+}
+
+/**
+ * Look up a mob's drop knowledge for every AUTOMATIC caller: `knownMob`, else a record of what the
+ * local sources (your loot, the quest catalog) know. NEVER touches the network (owner,
+ * 2026-10-26); the mob's wiki page is read only by `lookupMobOnCopy`. A miss carries neither
+ * `offline` nor `notFound`: the wiki was not asked.
+ */
+export function lookupMob(name: string): Promise<MobKnowledge> {
+  const display = name.trim()
+  return Promise.resolve(knownMob(display) ?? mergeLocal({ name: display, cached: false }, resolveMobIdentity(display)))
+}
+
+/**
+ * THE ONE DOOR TO THE WIKI for a mob: the Gaps tab's Copy click (gapCopyLookup.ts) and nothing
+ * else. Local-first, then cache, then a serialized, politely-spaced wiki lookup, whose answer is
+ * cached for every later `lookupMob`. NEVER throws — failures degrade to a cached-negative /
+ * offline record that still carries whatever the local sources knew.
+ */
+export async function lookupMobOnCopy(name: string): Promise<MobKnowledge> {
+  const { display, id, ask, key } = identityOf(name)
 
   // LOCAL 1 FIRST: the committed catalog is the definitive drop table and needs no network, no
-  // cache and no queue. This is the normal path — the fallback below exists for the tail.
+  // cache and no queue.
   const entry = localMobEntry(ask)
   if (entry) return mergeLocal(knowledgeFromCatalog(display, entry), id)
 

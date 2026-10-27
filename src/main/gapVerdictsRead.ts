@@ -2,9 +2,9 @@
 // never fetched (the Gaps tab's action chips, owner ask 2026-10-12).
 //
 // `itemLookup.ts` and `mobLookup.ts` write `<userData>/item-knowledge-cache.json` and
-// `mob-knowledge-cache.json` after each wiki lookup: an entry whose `data.notFound` is true is the
-// wiki saying "no such page", any other entry is a page it had. Those modules' only readers fetch
-// on a miss, which a diagnostics tab must never cause, so this reads the JSON itself. Pure over the
+// `mob-knowledge-cache.json` after each wiki lookup, which since 2026-10-26 only a Copy click makes
+// (gapCopyLookup.ts): an entry whose `data.notFound` is true is the wiki saying "no such page", any
+// other entry is a page it had. This reads the JSON itself, a list's worth at once. Pure over the
 // parsed file, so a test can hand it a fixture; the file read and the key folds live beside the
 // handler in ipc/gapVerdicts.ts.
 //

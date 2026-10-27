@@ -21,7 +21,7 @@ import { Tooltip } from '../../lib/Tooltip'
 import { existingEditor } from '@shared/gapExistingPage'
 import { wikiPageUrl } from '@shared/gapUrls'
 import { questPageTitle } from '@shared/gapQuests'
-import { readGapVerdict } from '../../lib/gapVerdicts'
+import { lookupOnCopy, readGapVerdict } from '../../lib/gapVerdicts'
 import { QuestCopyDialog, readQuestPage, type QuestRead } from './QuestCopyDialog'
 import { ForcedRowButtons } from './ForcedQuests'
 import { EditRowButton } from './GapRowEdit'
@@ -119,7 +119,14 @@ function CopyPageButton({ text, row, compact }: { text: () => string; row: GapRo
     ticket.current++
     setRead(null)
   }
-  const onClick = row.domain === 'quest' ? openRead : () => void copyText(text()).then(setCopied)
+  // An item or mob page: the copy at once, and the wiki lookup on the same click, so the row learns
+  // whether the page already exists before one is made (owner, 2026-10-26: "user clicks COPY on an
+  // item and it does the lookup"). A redirect or forage row copies only.
+  const copy = (): void => {
+    void copyText(text()).then(setCopied)
+    if (row.suggest === undefined && row.forageUpdate === undefined) void lookupOnCopy(row.domain, row.name)
+  }
+  const onClick = row.domain === 'quest' ? openRead : copy
   return (
     <>
       <ActionButton compact={compact} label={copied ? 'Copied' : words.label} tip={words.tip} icon={icon} onClick={onClick} testId="gaps-copy-page" />

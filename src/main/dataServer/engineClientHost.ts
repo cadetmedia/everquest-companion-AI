@@ -64,6 +64,7 @@ import type {
   ClientMessage,
   EngineMessage,
   FireMessage,
+  KnowledgeRecord,
   PerfBudgetsResult,
   PerfSnapshotResult,
   PerfTimelineResult
@@ -100,9 +101,9 @@ import {
   installKnowledgeMissFetch,
   onKnowledgeMiss
 } from './knowledgeMissFetch'
-import { lookupItem } from '../itemLookup'
+import { knownItem } from '../itemLookup'
 import { noteEngineEdge } from '../telemetry/breadcrumbs'
-import { lookupMob } from '../mobLookup'
+import { knownMob } from '../mobLookup'
 import { attachStateDir, takeArtifactsBack } from './artifactOwner'
 import { hostClockHint, resolvedTimeZone } from './hostClock'
 // THE LAUNCH BANNER'S THREE EDGES (JOS-503). This file is the only place that knows when a
@@ -947,19 +948,25 @@ export function installEngineClient(): void {
     },
     note: debug
   })
-  // THE WIKI-MISS FETCHER'S CAPABILITIES (JOS-499 item 1), by the same one-slot rule. The two
+  // THE WIKI-MISS ANSWERER'S CAPABILITIES (JOS-499 item 1), by the same one-slot rule. The two
   // lookups are handed over rather than imported by the leaf because both of them load `electron`
   // at module scope and the decision the leaf holds is worth pinning under plain node; the record
   // widening happens HERE, where the concrete `ItemKnowledge`/`MobKnowledge` types are in scope and
-  // the protocol's open-map declaration is being honoured deliberately.
+  // the protocol's open-map declaration is being honoured deliberately. Local answers only: no wiki
+  // request (owner, 2026-10-26), and a cached offline miss is no answer.
   installKnowledgeMissFetch({
-    lookupItem: async (name) => asKnowledgeRecord(await lookupItem(name)),
-    lookupMob: async (name) => asKnowledgeRecord(await lookupMob(name)),
+    lookupItem: (name) => Promise.resolve(heldRecord(knownItem(name))),
+    lookupMob: (name) => Promise.resolve(heldRecord(knownMob(name))),
     define: async (params) => {
       await engineRequest('knowledge.define', params)
     },
     note: debug
   })
+}
+
+/** A held knowledge record for the engine, or null when there is none worth defining. */
+function heldRecord(k: { offline?: boolean } | null): KnowledgeRecord | null {
+  return k === null || k.offline === true ? null : asKnowledgeRecord(k)
 }
 
 /** Let go: no observer, no connection, no pusher. Idempotent, and safe on a process that never

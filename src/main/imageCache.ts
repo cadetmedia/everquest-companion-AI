@@ -18,7 +18,7 @@
 //     <img src="eqimg://url/https%3A%2F%2Fwiki…png">   any allowlisted absolute image URL
 //        └► protocol.handle('eqimg')     main process, ONE handler for every window
 //             ├► <userData>/image-cache/<name> exists ⇒ serve the bytes, no network
-//             └► else fetch upstream once (polite UA), write ATOMICALLY, then serve
+//             └► else (item) the GitHub pack, else 404; an upstream fetch only with `fetchImpl`
 //
 // WHY A PROTOCOL and not an IPC "give me a data URL" call: `<img src>` is the natural idiom,
 // it needs no async plumbing in the renderer, and the SAME handler serves the main window
@@ -52,8 +52,16 @@
 // ran it. Bundled BEFORE the userData cache on purpose — the shipped bytes are the ones the
 // manifest can account for, so a fresh install and an upgraded one serve the same pixels.
 // Since 2026-10-25 an ITEM icon missing from both is taken from the wiki's own GitHub data pack
-// first (`itemIconPack.ts`, owner: "from the WIKI Github first, and the wiki directly next. Either
-// way should cache it."); only an icon the pack lacks reaches the wiki. Both land in the cache.
+// (`itemIconPack.ts`, owner: "from the WIKI Github first, and the wiki directly next. Either
+// way should cache it."), and lands in the cache.
+//
+// SINCE 2026-10-26 THE APP NEVER FETCHES FROM A WIKI (owner: "the app should not be hitting the
+// WIKI ever except (delta refresh before build, user clicks COPY on an item and it does the
+// lookup)"). The upstream fetch below runs ONLY when a caller injects `fetchImpl`, and the app's
+// composition root (index.ts) injects none, so an image neither shipped, cached nor in the pack
+// answers 404 and the renderer draws its placeholder. The fetch leg is kept behind that one gate
+// for the tests that pin its etiquette; tests/wikiTraffic.test.mts pins that the app's install
+// sends nothing.
 //
 // SECURITY. `parseEqImgUrl` is the ONLY thing that turns a renderer string into a filesystem
 // path, and for the `url` route it is also the only thing that decides what the app is
@@ -442,7 +450,11 @@ export interface ImageCacheOptions {
    * machine with no EverQuest gives.
    */
   readonly eqRoot?: () => string
-  /** Override for tests; defaults to global fetch. */
+  /**
+   * THE ONLY WAY THIS HANDLER REACHES A WIKI. Absent (the app, owner 2026-10-26), a miss after the
+   * bundle, the cache and the pack is a 404 and nothing is fetched. Tests inject one to pin the
+   * fetch leg's etiquette.
+   */
   readonly fetchImpl?: typeof fetch
   /** Override for tests; defaults to console.log. */
   readonly log?: (msg: string) => void
@@ -761,7 +773,7 @@ function serveSpellGem(eqRoot: (() => string) | undefined, id: string): Response
 export function installImageCacheProtocol(protocol: ProtocolLike, opts: ImageCacheOptions): void {
   const dir = imageCacheDir(opts.userData)
   const bundledDir = opts.bundledDir ?? null
-  const doFetch = opts.fetchImpl ?? fetch
+  const doFetch = opts.fetchImpl ?? null
   const log = opts.log ?? ((m: string) => logInfo(m))
   const onError = opts.onError ?? ((m: string, e: unknown) => logConsoleError(m, e))
   const warn = opts.warn ?? ((m: string) => logWarn(m))
@@ -781,6 +793,7 @@ export function installImageCacheProtocol(protocol: ProtocolLike, opts: ImageCac
   /** Fetch the upstream image once and write it atomically. Returns null on any failure —
    *  and writes NOTHING, so the next request retries (negatives are never cached). */
   async function fetchAndStore(req: EqImgRequest): Promise<Uint8Array | null> {
+    if (doFetch === null) return null // the app injects no fetcher: never a wiki request (see the header)
     // NOTE: for the `url` route this is the ALREADY-ALLOWLISTED, normalized URL. `parseEqImgUrl`
     // is the only producer of an EqImgRequest, so nothing unvalidated can reach this fetch.
     const url = upstreamUrlFor(req)
@@ -839,7 +852,8 @@ export function installImageCacheProtocol(protocol: ProtocolLike, opts: ImageCac
     return bytes // served either way; a failed store only means it was not kept
   }
 
-  /** An item icon from the GitHub data pack, cached like a fetch; anything else (or a pack miss) goes to the wiki. */
+  /** An item icon from the GitHub data pack, cached like a fetch; anything else (or a pack miss) goes to
+   *  `fetchAndStore`, which is a 404 unless a fetcher was injected. */
   async function packOrFetch(req: EqImgRequest): Promise<Uint8Array | null> {
     const packed = req.kind === 'item' && opts.itemIconPack ? await opts.itemIconPack(req.id).catch(() => null) : null
     if (!packed || sniffImageMime(packed) !== 'image/png') return fetchAndStore(req)

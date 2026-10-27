@@ -15,7 +15,8 @@ export const WIKI_UA = 'everquest-companion/0.1 (+https://github.com/kaltinril/e
 const MAX_BYTES = 2 * 1024 * 1024
 
 export interface AppWikiCall {
-  /** Which part of the app asked: `item lookup`, `mob lookup`, `quest copy`, `images`. */
+  /** Which part of the app asked: `item copy`, `mob copy`, `quest copy` (all Copy clicks since
+   *  2026-10-26); older ledgers also hold `item lookup`, `mob lookup` and `images`. */
   feature: string
   /** `parse/wikitext`, `query/search`, `file`. */
   kind: string

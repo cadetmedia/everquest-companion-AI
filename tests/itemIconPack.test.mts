@@ -89,7 +89,7 @@ test('GitHub down with a cached pack: the cache serves; with none: null, one lin
     assert.equal(await none.iconBytes('501'), null)
     rmSync(empty, { recursive: true, force: true })
     assert.equal(asked, 2, 'one failed check per session, not one per icon')
-    assert.match(lines.at(-1) ?? '', /unavailable .*come from the wiki this session/)
+    assert.match(lines.at(-1) ?? '', /unavailable .*stay blank this session/)
   } finally {
     rmSync(root, { recursive: true, force: true })
   }

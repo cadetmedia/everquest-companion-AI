@@ -3,9 +3,9 @@
 // RATE LIMIT IS THE WHOLE DESIGN (docs/plans/overview-tab.md §3.2). `Encounter.lastOutTarget` is
 // re-stamped on EVERY outgoing hit (combat/routing.ts), so in a multi-mob pull the current target
 // flips between mobs several times a second. A naive `useEffect(…, [target.name])` would issue a
-// `lookupMob` per swing — and while main answers most calls from the committed 7,866-entry
-// catalog offline, an uncatalogued mob falls through to the live wiki. Scraper etiquette is a
-// LAW here (AGENTS.md → Data sources), so all THREE mitigations are present and none is optional:
+// `lookupMob` per swing. Main answers from the committed catalog and its cache and never asks the
+// wiki (owner, 2026-10-26), but an IPC per swing is still a storm, so all THREE mitigations are
+// present and none is optional:
 //
 //   1. CANONICAL KEY — `mobKey` (src/shared/mobKey.ts), the SAME fold main applies before it
 //      answers, so 'A Sphinx' and 'a sphinx ' are one subject and so are 'an elemental capturer'
