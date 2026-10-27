@@ -739,21 +739,41 @@ pub fn route_heal(st: &mut EngineState, ev: &HealLine) {
     if add_hostile_heal(st, ev, healer_key.as_deref()) {
         return;
     }
-    // Your heal on anyone who is not an engaged hostile. One line per heal in your own log, so no
-    // second angle can count it again (owner ruling 2026-10-26).
-    if healer_key.as_deref() == Some(SELF_ROW_ID) {
-        add_outgoing_heal(st, ev);
+    // One line per heal in your own log, so no second angle can count it again.
+    if let Some((id, kind)) = outgoing_heal_row(st, healer_key.as_deref(), &t_key) {
+        add_outgoing_heal(st, ev, &id, kind);
     }
 }
 
-/// Your heal on somebody else: healing output on your own row, per spell, overheal from `(M)` as
-/// for a self-heal. Ledger only: `inc_heal` is healing YOU received, and this was not.
-fn add_outgoing_heal(st: &mut EngineState, ev: &HealLine) {
+/// The row a heal on somebody else books on, if any (owner rulings 2026-10-26). Yours: any target
+/// that is not an engaged hostile. Your pet's: only a pet bound by evidence (a charm still awaiting
+/// corroboration is not) healing a roster member or a pet the ally model has bound to one ("if my
+/// pet can be truly tracked to me and healed a group mate"). Anything less certain books nothing.
+fn outgoing_heal_row(
+    st: &EngineState,
+    healer_key: Option<&str>,
+    t_key: &str,
+) -> Option<(String, HealSourceKind)> {
+    let hk = healer_key?;
+    if hk == SELF_ROW_ID {
+        return Some((SELF_ROW_ID.to_string(), HealSourceKind::You));
+    }
+    let bound_pet = st.pet_names.contains(hk) && !st.charm.is_provisional(hk);
+    let mates_pet = st
+        .ally
+        .creditable(t_key)
+        .is_some_and(|b| st.is_member(&b.charmer_key));
+    (bound_pet && (st.is_member(t_key) || mates_pet))
+        .then(|| (format!("heal:{hk}"), HealSourceKind::Pet))
+}
+
+/// A heal on somebody else, as the healer's output: per spell, overheal from `(M)` as for a
+/// self-heal. Ledger only: `inc_heal` is healing YOU received, and this was not.
+fn add_outgoing_heal(st: &mut EngineState, ev: &HealLine, id: &str, kind: HealSourceKind) {
     let name = ev.healer.clone().unwrap_or_else(|| "You".to_string());
     let input = ev.input();
     both(st, ev.ts, true, |agg| {
-        agg.heal
-            .add_friendly(SELF_ROW_ID, &name, HealSourceKind::You, &input)
+        agg.heal.add_friendly(id, &name, kind, &input)
     });
 }
 

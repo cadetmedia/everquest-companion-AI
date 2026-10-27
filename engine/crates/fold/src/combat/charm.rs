@@ -206,6 +206,11 @@ impl CharmModel {
         true
     }
 
+    /// True while `name_key` is bound but still awaiting corroboration.
+    pub fn is_provisional(&self, name_key: &str) -> bool {
+        self.provisional.iter().any(|(k, _)| k == name_key)
+    }
+
     /// Forget a name entirely (death, un-charm, left behind on a zone).
     pub fn release(&mut self, name_key: &str) {
         self.take_provisional(name_key);
