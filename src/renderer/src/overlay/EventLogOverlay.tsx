@@ -117,7 +117,7 @@ function useTradeskillFilter(feed: FeedEvent[]): FeedEvent[] {
   useEffect(() => {
     const todo: string[] = []
     for (const e of feed) {
-      // An unknown item is never looked up: the lookup would ask the wiki, and it is always shown.
+      // An unknown item is never looked up (the lookup has nothing for it), and it is always shown.
       if (e.kind !== 'loot' || e.unknown) continue
       const key = e.title.toLowerCase()
       if (asked.current.has(key)) continue

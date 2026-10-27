@@ -602,7 +602,8 @@ where one exists.
   shows quests that merely need a starred ITEM; the overlay does not list those (2026-10-16
   reading of the ask, not an owner ruling yet).
 - Item icons: the feed asks `items:marks` (committed DB only) and puts `iconId` in the payload. Never
-  `lookupItem` from the overlay: it falls back to the wiki on a DB miss.
+  `lookupItem` from the overlay for icons: a full record per item is a round trip the marks batch
+  saves (it no longer reaches the wiki since 2026-10-26, wiki-traffic.md).
 - "Count items from" is a per-window store (`useCountSource.ts`); a new `useProgress` reader
   follows the tab's pick with nothing extra.
 - Its overlay kind sits beside `mapPins` in every overlay-kind list (Map waypoints, "A new overlay

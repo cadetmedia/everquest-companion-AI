@@ -6,26 +6,15 @@
 // can state but not answer. JOS-486 built the engine's whole side of that conversation: the
 // `knowledgeMiss` stream frame (connection-wide, no id, no epoch, each name announced at most once
 // per process) and the `knowledge.define` command that takes the answer back. THIS IS THE MIDDLE —
-// the app hearing the frame, running the wiki lookup it already owns, and pushing the record in.
+// the app hearing the frame, answering it from what it already holds, and pushing the record in.
 //
-// ── WHY IT IS THIS RELEASE'S WORK AND NOT JOS-486'S ────────────────────────────────────────────
+// ── NO WIKI REQUEST, EVER (owner, 2026-10-26) ──────────────────────────────────────────────────
 //
-// JOS-486 left it deliberately, on the grounds that the surface cutover is where the app stops
-// asking its own lookups anything and the scrape queue goes from two callers to one. That release
-// is THIS one. Without this file the deletion would stop the corpus growing on the day the TS
-// fold's `lookupItem`/`lookupMob` callers die: the engine would announce every unknown name into a
-// silence, answer `found: false` forever, and no amount of playing would ever teach it a page the
-// wiki has had all along. The knowledge surface would be frozen at the committed bytes.
-//
-// ── WHAT IT DOES NOT TOUCH, EMPHATICALLY ───────────────────────────────────────────────────────
-//
-// The scrape etiquette is a LAW here (memory: respectful scraping; `itemLookup.ts`/`mobLookup.ts`
-// headers) and this file adds nothing to it and weakens nothing in it. `lookupItem`/`lookupMob`
-// already carry the serialized queue, the 150 ms spacing, the `Retry-After` cooldown honoured
-// across the whole queue, and the negative cache. This file CALLS them and does not re-implement
-// one line of any of it — which is the entire reason the fetch stayed app-side in verdict 5 rather
-// than being ported into Rust with the corpora. A miss is one more caller of a queue that has
-// always paced itself.
+// "the app should not be hitting the WIKI ever except (delta refresh before build, user clicks
+// COPY on an item and it does the lookup)". A miss used to run the wiki lookup; it is now answered
+// by `knownItem`/`knownMob` alone: the committed corpora plus whatever a Copy click's lookup cached
+// in userData. A name nothing local holds is left UNANSWERED: no define, and the engine keeps
+// answering `found: false` for it. The corpus grows from the delta scrape before each build, not from play.
 //
 // ── THE ONE-SLOT INJECTION, AND WHY THE LOOKUPS COME THROUGH IT TOO ────────────────────────────
 //
@@ -63,11 +52,12 @@ import type {
  * nothing else — one slot, on `installMirrors`'s rule.
  */
 export interface KnowledgeMissDeps {
-  /** `main/itemLookup.ts lookupItem`, widened. Never throws by contract — it degrades to a
-   *  cached-negative/offline record — but this file does not rely on that. */
-  readonly lookupItem: (name: string) => Promise<KnowledgeRecord>
-  /** `main/mobLookup.ts lookupMob`, widened. Same contract. */
-  readonly lookupMob: (name: string) => Promise<KnowledgeRecord>
+  /** `main/itemLookup.ts knownItem`, widened: what the app already holds, or null when it holds
+   *  nothing (or only an offline miss). Never reaches the network; this file does not rely on it
+   *  never throwing. */
+  readonly lookupItem: (name: string) => Promise<KnowledgeRecord | null>
+  /** `main/mobLookup.ts knownMob`, widened. Same contract. */
+  readonly lookupMob: (name: string) => Promise<KnowledgeRecord | null>
   /** `knowledge.define`, sent back over the same connection the miss arrived on. */
   readonly define: (params: KnowledgeDefineParams) => Promise<void>
   /** The dev-log line. */
@@ -77,8 +67,9 @@ export interface KnowledgeMissDeps {
 let deps: KnowledgeMissDeps | null = null
 
 /**
- * NAMES THIS PROCESS IS CURRENTLY FETCHING, so a second frame for one of them does not open a
- * second wiki request.
+ * NAMES THIS PROCESS IS CURRENTLY ANSWERING, so a second frame for one of them does not start a
+ * second answer. (From when an answer was a wiki request; the answer is local now, so the window
+ * is short, and the set costs nothing.)
  *
  * IT IS BELT AND BRACES AND IS SAID TO BE. The engine already announces each name at most once per
  * process — the schema states it as a law and the Rust side's miss ledger enforces it — so on the
@@ -114,7 +105,7 @@ export function asKnowledgeRecord(value: object): KnowledgeRecord {
 }
 
 /** What one miss turned into. Returned for the tests and for the dev line; nothing branches on it. */
-export type MissOutcome = 'defined' | 'refused' | 'duplicate' | 'unarmed'
+export type MissOutcome = 'defined' | 'unknown' | 'refused' | 'duplicate' | 'unarmed'
 
 /** The key the in-flight set uses. Domain-qualified because an item and a mob may share a name and
  *  are two different pages. */
@@ -123,19 +114,18 @@ function flightKey(domain: KnowledgePushDomain, name: string): string {
 }
 
 /**
- * ONE MISS, FETCHED AND PUSHED BACK.
+ * ONE MISS, ANSWERED FROM WHAT THE APP HOLDS AND PUSHED BACK; LEFT UNANSWERED WHEN IT HOLDS NOTHING.
  *
  * IT NEVER THROWS, and that is a contract rather than a courtesy: the caller runs inside the
  * client's frame dispatch, where a throw surfaces as a TRANSPORT FAULT — a missing wiki page would
  * take the connection down and with it every subscription in the app. Every failure below becomes
  * a line and a `'refused'`.
  *
- * A FAILED FETCH DEFINES NOTHING, deliberately. The schema allows a real negative — a record
- * carrying `notFound: true` is the app saying "I looked and the wiki has no page", and it stops the
- * engine ever announcing that name again — but a network error is not that statement. Pushing one
- * in would burn the name permanently on the strength of a timeout. `lookupItem` already draws the
- * distinction itself (an offline record is `offline: true`, a genuine absence is not), so what
- * reaches `define` on the success path is whatever the lookup concluded, unedited.
+ * NOTHING HELD DEFINES NOTHING, deliberately. The schema allows a real negative — a record
+ * carrying `notFound: true` is the app saying "I looked and the wiki has no page" (a Copy lookup
+ * cached it), and it stops the engine ever announcing that name again — but "the app holds
+ * nothing" is not that statement, and neither is a cached offline miss; the wiring answers null for
+ * both. What reaches `define` is the held record, unedited.
  */
 export async function fetchAndDefine(miss: KnowledgeMissMessage): Promise<MissOutcome> {
   const d = deps
@@ -147,8 +137,12 @@ export async function fetchAndDefine(miss: KnowledgeMissMessage): Promise<MissOu
     // EXHAUSTIVE OVER THE TWO PUSHABLE DOMAINS — see the header. A third would not compile.
     const entry =
       miss.domain === 'item' ? await d.lookupItem(miss.name) : await d.lookupMob(miss.name)
+    if (entry === null) {
+      d.note(`data-server knowledge: ${miss.domain} ${miss.name} is in no local data; left unanswered (no wiki request)`)
+      return 'unknown'
+    }
     await d.define({ domain: miss.domain, name: miss.name, entry })
-    d.note(`data-server knowledge: fetched and defined ${miss.domain} ${miss.name}`)
+    d.note(`data-server knowledge: defined ${miss.domain} ${miss.name} from local data`)
     return 'defined'
   } catch (err) {
     const why = err instanceof Error ? err.message : String(err)

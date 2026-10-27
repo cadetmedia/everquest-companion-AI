@@ -5,4 +5,4 @@ nothing listed here is removed or narrowed without the owner's word (RULES.md, r
 
 | Date | Asked by | The ask | Status |
 | --- | --- | --- | --- |
-| 2026-10-25 | owner | Item icons are not read from the player's EQ install: "no, we should not read from the data of the install, try to get them from the WIKI Github first, and the wiki directly next. either way should cache it." Build and app both; the pack checked against its sha256; GitHub not counted as wiki requests. | built |
+| 2026-10-25 | owner | Item icons are not read from the player's EQ install: "no, we should not read from the data of the install, try to get them from the WIKI Github first, and the wiki directly next. either way should cache it." Build and app both; the pack checked against its sha256; GitHub not counted as wiki requests. | built; the wiki leg withdrawn 2026-10-26 (owner: the app never reads the wiki on its own, wiki-traffic.md): an icon neither bundled, cached nor in the pack shows the placeholder |

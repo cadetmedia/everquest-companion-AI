@@ -115,6 +115,27 @@ test('A REFUSED PUSH NEVER THROWS — the listener runs inside the frame dispatc
   installKnowledgeMissFetch(null)
 })
 
+test('A NAME NO LOCAL DATA HOLDS IS LEFT UNANSWERED — no define, no wiki request (owner, 2026-10-26)', async () => {
+  const rig: Rig = { defined: [], notes: [], itemAsks: [], mobAsks: [] }
+  installKnowledgeMissFetch({
+    lookupItem: (name) => {
+      rig.itemAsks.push(name)
+      return Promise.resolve(null)
+    },
+    lookupMob: () => Promise.resolve(null),
+    define: (params) => {
+      rig.defined.push(params)
+      return Promise.resolve()
+    },
+    note: (line) => rig.notes.push(line)
+  })
+  assert.equal(await fetchAndDefine(itemMiss), 'unknown')
+  assert.equal(await fetchAndDefine(mobMiss), 'unknown')
+  assert.deepEqual(rig.itemAsks, ['Shard of Nothing'])
+  assert.deepEqual(rig.defined, [], '"the app holds nothing" is not the statement that the wiki has no page')
+  assert.match(rig.notes[0], /left unanswered \(no wiki request\)/)
+})
+
 test('AN UNARMED PROCESS IS SILENT — a launch with no engine pays one null check', async () => {
   installKnowledgeMissFetch(null)
   assert.equal(await fetchAndDefine(itemMiss), 'unarmed')

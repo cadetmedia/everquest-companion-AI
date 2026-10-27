@@ -183,7 +183,7 @@ function WhatItsFor({ k }: { k: ItemKnowledge }): JSX.Element | null {
  * and a loot row's item alike). It answers the two questions a name can't: what it IS (the same
  * game item window the loot dialog and posky tooltip draw) and what it's FOR (WhatItsFor).
  *
- * It prefers a live `lookupItem` result (structured stats + icon, cache-first in main) and falls
+ * It prefers a `lookupItem` result (structured stats + icon, local data in main) and falls
  * back to the stat blob the scraped quest data already carries, so a reward renders instantly
  * and offline. Neither available ⇒ ItemWindow shows just the NAME, which is the honest answer.
  */

@@ -20,14 +20,19 @@
 //      a known Sky rune/claw/etc. answers INSTANTLY and offline. Its associations are
 //      merged with any the wiki adds (deduped) — including into a DB hit, because posky
 //      carries per-item island/giver detail the item page never states.
-//   2. WIKI lookup — now the FALLBACK (MediaWiki at eqlwiki.com, same API the scrapers use):
+//   2. WIKI lookup — ONLY ON A COPY CLICK (owner, 2026-10-26: "the app should not be hitting the
+//      WIKI ever except (delta refresh before build, user clicks COPY on an item and it does the
+//      lookup)"). `lookupItem`, which every automatic caller uses (hover cards, the loot toast,
+//      the engine's miss announcements), never reaches the network; `lookupItemOnCopy` is the one
+//      door to the wiki and only the Gaps tab's Copy click opens it (gapCopyLookup.ts). It runs
 //      search → resolve the item page → parse its {{Itempage}} wikitext for the
 //      LORE/QUEST flags (statsblock) + the |relatedquests bulleted link list +
 //      |notes summary. Polite: a single serialized in-flight queue with a small
 //      inter-request delay (mirrors scripts/sources/eqlegends.ts sleep(110)).
-//   3. PERSISTENT CACHE in userData (versioned JSON). Negative results (no page) and
-//      offline misses are cached too (offline with a short TTL so we retry soon;
-//      real negatives for ~7 days). A cache hit never touches the network.
+//   3. PERSISTENT CACHE in userData (versioned JSON), written only by that Copy lookup.
+//      Negative results (no page) and offline misses are cached too (offline with a short TTL
+//      so a Copy retries soon; real negatives for ~7 days). A cache hit never touches the
+//      network, and the automatic path keeps reading a real negative past its 7 days.
 //
 // The PURE classification (wikitext → ItemKnowledge fields) is `parseItemWikitext`,
 // unit-tested in tests/itemLookup.test.mts against verbatim real wikitext.
@@ -115,15 +120,10 @@ const cacheKey = itemKey
 // and 0.47 + 0.07 + 1.49 MB — modest, but every millisecond of it was being charged to
 // `DATA_READY_MS` for a service that nothing asks anything of until the app is live.
 //
-// WHO ASKS DURING A FOLD: NOBODY, and that is checked rather than assumed. `lookupItem` reaches
-// main through exactly two paths — `ipc/knowledge.ts`'s handler (a renderer click) and the
-// eventFeed module's `probeLoot`, which is unreachable from a historical event because
-// `EventFeedModule.onEvent` returns at `if (!live) return` before it. pipeline.ts injects
-// `lookupItem` into the modules and says the same thing at the injection site, and it is DRIVEN
-// rather than argued: `tests/eventFeedWindows.test.mts` case (A) replays two committed fixtures at
-// `live:false` through the real module with a recording lookup double and asserts the double was
-// never called. So a lazy index here is first built by a LIVE loot line or a user's click, never by
-// the replay — nothing about the fold becomes async, and nothing it used to see goes missing.
+// WHO ASKS DURING A FOLD: NOBODY. The fold moved to the engine; `lookupItem` is asked by
+// `ipc/knowledge.ts`'s handler (a renderer hover or open), the loot toast and the engine's miss
+// announcements (knowledgeMissFetch.ts), all live. So a lazy index here is first built by a live
+// line or a user's action, never by a replay.
 
 let itemDbIndex: Map<string, ItemDbEntry> | null = null
 
@@ -273,8 +273,9 @@ export function localKnowledge(name: string): ItemQuestUse[] | null {
 // ---- wiki client (search → wikitext) ------------------------------------------
 
 /** This service's OWN client — its own Retry-After cooldown and its own serialized, politely
- *  spaced queue (wikiClient.ts; mobLookup.ts's header says why each service keeps its own). */
-const wiki = createWikiClient('item lookup')
+ *  spaced queue (wikiClient.ts; mobLookup.ts's header says why each service keeps its own).
+ *  Read only inside `lookupItemOnCopy` (tests/wikiTraffic.test.mts pins that). */
+const wiki = createWikiClient('item copy')
 
 /**
  * Resolve an item name to its wiki page title via search. Distinguishes a NETWORK failure
@@ -321,31 +322,58 @@ function mergeLocal(base: Omit<ItemKnowledge, 'cached'>, local: ItemQuestUse[] |
 }
 
 /**
- * Look up an item's knowledge. Resolution order: the COMMITTED item DB (items.json) →
- * the userData cache → a serialized, politely-spaced wiki lookup as the FALLBACK. The local
- * quest sources (posky + the quest catalog) are merged into whichever of those answers,
- * because they say something about the item's USES that no item page states.
+ * What the app already holds for an item, with no request: the COMMITTED item DB (items.json),
+ * else an answer a Copy lookup cached (a positive, a fresh offline miss, or a real negative of
+ * any age, since nothing automatic will ask the wiki again). Null when neither has it. The local
+ * quest sources are merged into either answer.
+ */
+export function knownItem(name: string): ItemKnowledge | null {
+  const key = cacheKey(name)
+  const local = localKnowledge(name)
+  // PRIMARY: the committed database. Answered here, an item costs no cache read and no
+  // negative-cache entry. `cached: true` because this is knowledge we already had.
+  const fromDb = dbKnowledge(key, normalizeItemName(name))
+  if (fromDb) return { ...mergeLocal(fromDb, local), cached: true }
+  const cached = knowledge.load().get(key)
+  if (cached && (knowledge.hit(cached) || cached.data.notFound === true)) {
+    // Re-merge local in case the dataset changed since the cache was written.
+    return { ...mergeLocal(cached.data, local), cached: true }
+  }
+  return null
+}
+
+/**
+ * Look up an item's knowledge for every AUTOMATIC caller (hover cards, the item dialog, the loot
+ * toast, the engine's misses): `knownItem`, else a record of what the local quest sources know.
+ * NEVER touches the network (owner, 2026-10-26); the item's wiki page is read only by
+ * `lookupItemOnCopy`. A miss carries neither `offline` nor `notFound`: the wiki was not asked.
+ */
+export function lookupItem(name: string): Promise<ItemKnowledge> {
+  const known = knownItem(name)
+  if (known) return Promise.resolve(known)
+  const local = localKnowledge(name)
+  return Promise.resolve({ ...mergeLocal({ name: normalizeItemName(name), lore: false, quest: (local?.length ?? 0) > 0, questUses: [] }, local), cached: false })
+}
+
+/**
+ * THE ONE DOOR TO THE WIKI for an item: the Gaps tab's Copy click (gapCopyLookup.ts) and nothing
+ * else. Resolution order: the COMMITTED item DB → the userData cache → a serialized,
+ * politely-spaced wiki lookup, whose answer is cached for every later `lookupItem`.
  *
  * Never throws — failures degrade to a cached-negative / offline record (which still carries
  * any posky-local answer).
  */
-export async function lookupItem(name: string): Promise<ItemKnowledge> {
+export async function lookupItemOnCopy(name: string): Promise<ItemKnowledge> {
   const key = cacheKey(name)
   const display = normalizeItemName(name)
   const local = localKnowledge(name)
 
-  // PRIMARY: the committed database. Answered here, an item costs no cache read, no request
-  // and no negative-cache entry — negative caching now describes ONLY keys the DB lacks.
-  // `cached: true` because this is knowledge we already had, not a fresh network lookup.
   const fromDb = dbKnowledge(key, display)
   if (fromDb) return { ...mergeLocal(fromDb, local), cached: true }
 
   const cache = knowledge.load()
   const cached = cache.get(key)
-  if (cached && knowledge.hit(cached)) {
-    // Re-merge local in case the dataset changed since the cache was written.
-    return { ...mergeLocal(cached.data, local), cached: true }
-  }
+  if (cached && knowledge.hit(cached)) return { ...mergeLocal(cached.data, local), cached: true }
 
   // Build a knowledge record + persist it to the cache. `extra` carries the
   // notFound/offline flag (or the parsed fields on success). Local posky is always merged.
@@ -380,19 +408,4 @@ export async function lookupItem(name: string): Promise<ItemKnowledge> {
     // negative; a thrown error is transient, so the next call should retry the network.
     return { ...mergeLocal({ name: display, lore: false, quest: (local?.length ?? 0) > 0, questUses: [], offline: true }, local), cached: false }
   }
-}
-
-/**
- * Fire-and-forget prefetch: warm the cache for a freshly-looted item in the background
- * so the answer is ready by the time the user clicks. No-op if already cached. Throttled
- * naturally by this service's serialized queue.
- */
-export function prefetchItem(name: string): void {
-  const key = cacheKey(name)
-  if (itemDb().has(key)) return // the committed DB already answers this — nothing to warm
-  const cached = knowledge.load().get(key)
-  if (cached && knowledge.hit(cached)) return
-  void lookupItem(name).catch(() => {
-    /* prefetch errors are silent — the interactive lookup will retry + surface state */
-  })
 }

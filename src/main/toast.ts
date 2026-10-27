@@ -2,7 +2,7 @@
 //
 // ONE HOP IN, ONE HOP OUT. The main window's always-mounted celebration detectors say what
 // happened (`toast:show`, a ToastRequest); this module answers the one question only main can:
-// WHAT DOES THE REWARD LOOK LIKE — `lookupItem` (cache-first, local posky before wiki) plus the
+// WHAT DOES THE REWARD LOOK LIKE — `lookupItem` (local data only, never the wiki) plus the
 // pure `toastItemCard` formatter, so the overlay receives a finished card. The overlay bundle is
 // MUI-free and fetches NOTHING (T5): if the item's knowledge is not in the payload, it is not on
 // screen.

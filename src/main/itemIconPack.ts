@@ -8,11 +8,12 @@
 // manifest's mtime in `<userData>/eoz-pack/` says when it was last checked. The ~6.4 MB pack is
 // downloaded only when the manifest's sha256 differs from the cached pack's, and is kept only once
 // it hashes to it (eozPack.ts). A failed check falls back to the cached pack, verified; no pack at
-// all means every icon goes to the wiki, as before. One attempt per session, one log line.
+// all means an icon the bundle lacks shows the placeholder: the app never asks the wiki for one
+// (owner, 2026-10-26; imageCache.ts). One attempt per session, one log line.
 //
 // A REQUEST THAT ARRIVES WHILE THE PACK DOWNLOADS WAITS, up to PACK_WAIT_MS. The misses come in a
-// burst (a window of icons), so going to the wiki meanwhile would send it the very requests the
-// pack exists to save; an icon a few seconds late costs nothing. Past the wait it goes to the wiki.
+// burst (a window of icons); an icon a few seconds late costs nothing. Past the wait it shows the
+// placeholder for this request.
 // Nothing blocks: the download and the streamed read are async and the main process keeps running.
 //
 // GitHub requests are not wiki requests: they are logged here (requests, bytes, pack version), not
@@ -25,7 +26,7 @@ import { refreshEozPack, type EozPackFile } from './eozPack'
 
 /** The pack's manifest is checked at most once a day (the wiki rebuilds it about daily). */
 export const PACK_CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000
-/** How long an icon request waits for a pack that is still loading before it goes to the wiki. */
+/** How long an icon request waits for a pack that is still loading before it gives up. */
 export const PACK_WAIT_MS = 15_000
 export const EOZ_PACK_DIR_NAME = 'eoz-pack'
 const UA = 'everquest-companion/0.1 (+https://github.com/kaltinril/everquest-companion)'
@@ -74,7 +75,7 @@ export function createItemIconPack(o: ItemIconPackOptions): ItemIconPack {
       log(describe(f, icons.size))
       return icons
     } catch (err) {
-      log(`[everquest-companion] Item icon pack unavailable (${reason(err)}); item icons come from the wiki this session`)
+      log(`[everquest-companion] Item icon pack unavailable (${reason(err)}); icons the bundle lacks stay blank this session`)
       return null
     }
   }

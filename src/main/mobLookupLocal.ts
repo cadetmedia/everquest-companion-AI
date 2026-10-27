@@ -53,7 +53,7 @@ for (const m of mobData.mobs ?? []) {
   }
 }
 
-/** The catalog's entry for a mob, or null when it has none (⇒ try the live wiki fallback). */
+/** The catalog's entry for a mob, or null when it has none (⇒ the cache; the wiki only on a Copy click). */
 export function localMobEntry(name: string): MobEntry | null {
   return mobByName.get(mobKey(name)) ?? null
 }

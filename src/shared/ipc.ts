@@ -1221,9 +1221,12 @@ export const IPC = {
   // asked when a faction row is opened or copied, never with the Gaps snapshot. Payload: (keys: string[]).
   gapKillFactionSamples: 'gaps:killFactionSamples',
   // A quest page's title in, `{ title, text }` out (text '' when the wiki has no such page), or null
-  // when it could not be read: the one wiki read of the Gaps tab, on a Copy click
+  // when it could not be read: a wiki read of the Gaps tab, on a Copy click
   // (src/main/gapQuestLive.ts). Payload: (title: string).
   gapQuestPage: 'gaps:questPage',
+  // An item or mob row's Copy click: its wiki lookup, cached, and the row's fresh verdict back
+  // (src/main/gapCopyLookup.ts; owner, 2026-10-26). Payload: (domain: 'item' | 'mob', name: string).
+  gapCopyLookup: 'gaps:copyLookup',
 
   // ---- error harness (renderer -> main, fire-and-forget) ----
   // window.onerror / onunhandledrejection / React ErrorBoundary report here so

@@ -57,6 +57,21 @@ export function requestGapVerdicts(domain: GapDomain, names: readonly string[]):
   }
 }
 
+/**
+ * An item or mob row's Copy click: its wiki lookup in main (the one thing in the app that may ask
+ * the wiki for one, owner 2026-10-26), and the verdict it gives replaces the row's. Only a row the
+ * caches have no answer for asks; a failed call leaves the verdict as it was.
+ */
+export async function lookupOnCopy(domain: GapDomain, name: string): Promise<void> {
+  if ((domain !== 'item' && domain !== 'mob') || readGapVerdict(domain, name) !== 'unchecked') return
+  try {
+    verdicts.set(keyOf(domain, name), await window.eq.gapCopyLookup(domain, name))
+    notify()
+  } catch {
+    // Main could not answer: the row keeps its verdict.
+  }
+}
+
 export function readGapVerdict(domain: GapDomain, name: string): GapVerdict {
   return domain !== 'item' && domain !== 'mob' ? 'unchecked' : (verdicts.get(keyOf(domain, name)) ?? 'unchecked')
 }

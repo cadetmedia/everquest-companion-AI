@@ -200,19 +200,19 @@ export function registerKnowledgeIpc(): void {
   })
 
   // ---- item knowledge ("what's this lore/quest item for", Task #53) ----
-  // Local posky-first, then a cached, politely-throttled wiki lookup. lookupItem never
-  // rejects (degrades to a cached negative/offline record that still carries local posky
-  // associations), so a failure here never leaves the renderer hanging.
+  // The committed DB, the local quest sources and what a Copy lookup cached; never the wiki
+  // (owner, 2026-10-26: hover cards and the item dialog send the wiki nothing). lookupItem never
+  // rejects, so a failure here never leaves the renderer hanging.
   ipcMain.handle(IPC.itemsLookup, (_e, name: string) => lookupItem(name))
   // The list-row marks for a whole list of names at once (the Loot rows): DB and local sources only, synchronous.
   ipcMain.handle(IPC.itemsMarks, (_e, names: string[]) => itemMarks(names))
-  // Mob knowledge (Task #63) — "what does this thing drop". Cache-first + local-first in main,
-  // so the hover card is usually answered without touching the network. Never rejects.
+  // Mob knowledge (Task #63) — "what does this thing drop". The catalog, local sources and what a
+  // Copy lookup cached; never the wiki (owner, 2026-10-26). Never rejects.
   /**
    * ONE MOB CARD, with the "you have seen it drop" section taken from the ENGINE (JOS-499, owner
    * ruling 6a).
    *
-   * `lookupMob` still answers everything else — the committed catalog, the wiki fallback, the alias
+   * `lookupMob` still answers everything else — the committed catalog, the Copy lookups' cache, the alias
    * resolution, the era join — because those are all app-side and unchanged. What it can no longer
    * answer is `dropsSeen`: that came from `mobLookup.ownLoot`, an index the FOLD filled, and the
    * fold is deleted, so the app's copy is permanently empty and the section vanished from every

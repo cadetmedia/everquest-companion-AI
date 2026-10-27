@@ -112,6 +112,8 @@ export const knowledgeBridge = {
   gapKillFactionSamples: (keys: readonly string[]): Promise<Record<string, string[]>> => ipcRenderer.invoke(IPC.gapKillFactionSamples, [...keys]),
   /** A quest page as it stands on the wiki, read once per Copy click (src/main/gapQuestLive.ts); null offline. */
   gapQuestPage: (title: string): Promise<import('../shared/gapQuestMerge').LiveQuestPage | null> => ipcRenderer.invoke(IPC.gapQuestPage, title),
+  /** An item or mob row's Copy click: its wiki lookup, cached, and the row's verdict after it (src/main/gapCopyLookup.ts). */
+  gapCopyLookup: (domain: 'item' | 'mob', name: string): Promise<import('../shared/gaps').GapVerdict> => ipcRenderer.invoke(IPC.gapCopyLookup, domain, name),
   /** A copied spell page's fill: what the install's spell files state (src/main/gapSpellFacts.ts). */
   // The type is named inline so the import line spell-upgrades also edits stays untouched.
   gapSpellFacts: (names: readonly string[]): Promise<Record<string, import('../shared/gaps').ClientSpellFacts>> =>
