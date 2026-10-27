@@ -86,17 +86,12 @@ test('THE IMAGE HANDLER AS THE APP INSTALLS IT FETCHES NOTHING: a missing icon o
   const bundledDir = join(userData, 'wiki-images')
   mkdirSync(bundledDir, { recursive: true })
   let handler: ((r: GlobalRequest) => GlobalResponse | Promise<GlobalResponse>) | null = null
-  const packAsks: string[] = []
   // The composition root's options (src/main/index.ts): no `fetchImpl`.
   installImageCacheProtocol(
     { registerSchemesAsPrivileged: () => undefined, handle: (_s, h) => (handler = h) },
     {
       userData,
       bundledDir,
-      itemIconPack: (id) => {
-        packAsks.push(id)
-        return Promise.resolve(null)
-      },
       log: () => undefined,
       onError: () => undefined,
       warn: () => undefined
@@ -106,8 +101,7 @@ test('THE IMAGE HANDLER AS THE APP INSTALLS IT FETCHES NOTHING: a missing icon o
   assert.equal((await ask(new Request('eqimg://item/987654'))).status, 404)
   const portrait = encodeURIComponent('https://wiki.project1999.com/images/Npc_nobody.png')
   assert.equal((await ask(new Request(`eqimg://url/${portrait}`))).status, 404)
-  assert.deepEqual(packAsks, ['987654'], 'the GitHub pack is still asked for an item icon')
-  assert.deepEqual(asked, [], 'and no wiki is')
+  assert.deepEqual(asked, [], 'no wiki and no GitHub pack is asked: icons come from the bundle (owner 2026-10-26)')
 })
 
 // ---- the source pins ----------------------------------------------------------------------------

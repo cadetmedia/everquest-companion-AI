@@ -37,8 +37,9 @@ the lookup)"; `../requirements/wiki-traffic.md`). Pinned by `tests/wikiTraffic.t
 
 Nothing else asks the wiki. Hover cards, the item dialog, the mob page, the con card and the loot
 toast answer from the committed data and what a Copy cached. The engine's miss announcements are
-answered from that local data or left unanswered. Images come from the bundle, the image cache or
-the wiki's GitHub pack (GitHub, not the wiki); a missing one shows the placeholder. Links the player
+answered from that local data or left unanswered. Images come from the bundle or the image cache;
+a missing one shows the placeholder. The app asks no GitHub pack either: new item icons are pulled
+at build time by the delta scrape (`scripts/fetch-wiki-images.mts`) and bundled. Links the player
 clicks (Search wiki, Create page, a page link) open the system browser and are the player's visit,
 not an app request. Ledgers from before 2026-10-26 also hold `item lookup`, `mob lookup` and
 `images`, the automatic reads this replaced.

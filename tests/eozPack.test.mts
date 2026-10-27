@@ -177,6 +177,10 @@ test('the build takes what the pack holds and leaves the rest for the wiki; no p
     assert.deepEqual([...written.keys()], ['500'])
     assert.ok(gh.urls.every((u) => u.startsWith(EOZ_RAW)), 'only GitHub is asked')
     assert.match(lines[0], /2 GitHub request\(s\).*not wiki requests/)
+    // No icon missing: GitHub is not asked at all (owner 2026-10-26).
+    const before = gh.urls.length
+    assert.equal(await takeIconsFromPack([], { packDir: dir, offline: false, fetchImpl: gh.fetch, log: (m) => lines.push(m) }, () => assert.fail('nothing to write')), 0)
+    assert.equal(gh.urls.length, before, 'no GitHub request when nothing is missing')
     const empty = tempDir()
     const none = await takeIconsFromPack(['500'], { packDir: empty, offline: true, log: (m) => lines.push(m) }, () => assert.fail('nothing to write'))
     rmSync(empty, { recursive: true, force: true })

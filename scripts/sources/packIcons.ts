@@ -30,6 +30,9 @@ export async function takeIconsFromPack(
   write: (id: string, png: Uint8Array) => void
 ): Promise<number> {
   const log = o.log ?? ((m: string) => console.log(m))
+  // Only for icons the bundle is missing (owner, 2026-10-26: "We only need the pack for updates we
+  // are missing"): with none missing, GitHub is not asked at all.
+  if (ids.length === 0) return 0
   let icons: Map<string, Uint8Array>
   try {
     const f = await refreshEozPack({ dir: o.packDir, ua: UA, offline: o.offline, fetchImpl: o.fetchImpl })

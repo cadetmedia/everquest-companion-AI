@@ -84,7 +84,8 @@ On `main_community` after every merge of the day:
 - Respawn words: a page whose respawn is words gets a "Check respawn" warning chip (79 of 552
   pages); Copy writes the kills' number and keeps the page's words in a wiki comment.
 - Wiki traffic: the app reads the wiki only on a Gaps Copy click (requirements/wiki-traffic.md,
-  wiki-usage/README.md lists the touch points). The GitHub icon pack still fetches (not the wiki).
+  wiki-usage/README.md lists the touch points). The app's GitHub icon pack download is removed too:
+  icons are pulled only at build time by the delta scrape (requirements/item-icons-pack.md).
 - Delta merged after the owner's Robe of the Betrayed edit (+2 Necromancer spells in the re-read;
   the engine's per-tick rule now reads `HP` / `health` / `Increases`).
 - Exaltations (Malkil via the owner): benefit filter, Current/Recommended view, locks
@@ -92,8 +93,6 @@ On `main_community` after every merge of the day:
 
 ## Open questions for the owner
 
-- **GitHub icon pack:** still fetches a missing item icon from the wiki's GitHub data pack (not
-  eqlwiki.com; owner asked for it 2026-10-25). Keep or turn off?
 - **Ally pets across zones:** a group mate's summoned pet now keeps its bind through a zone line
   (Gonekab +319k, Ganer +286k recovered on the 10-17 log); a charm bind still ends there.
 - **Meter cadence:** combat meters now update once a second in a fight (was up to 4/s).

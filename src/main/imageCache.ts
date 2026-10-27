@@ -51,14 +51,15 @@
 // id landed in items.json after the last `npm run fetch:images`, or a source build that never
 // ran it. Bundled BEFORE the userData cache on purpose — the shipped bytes are the ones the
 // manifest can account for, so a fresh install and an upgraded one serve the same pixels.
-// Since 2026-10-25 an ITEM icon missing from both is taken from the wiki's own GitHub data pack
-// (`itemIconPack.ts`, owner: "from the WIKI Github first, and the wiki directly next. Either
-// way should cache it."), and lands in the cache.
+// The bundle is refreshed at build time only: the delta scrape takes new item icons from the wiki's
+// GitHub data pack, then the wiki (scripts/fetch-wiki-images.mts). The app fetched missing item
+// icons from that pack itself from 2026-10-25 to 2026-10-26; withdrawn (owner: "We should only
+// pull in the icons we need during development and deltas scraping").
 //
 // SINCE 2026-10-26 THE APP NEVER FETCHES FROM A WIKI (owner: "the app should not be hitting the
 // WIKI ever except (delta refresh before build, user clicks COPY on an item and it does the
 // lookup)"). The upstream fetch below runs ONLY when a caller injects `fetchImpl`, and the app's
-// composition root (index.ts) injects none, so an image neither shipped, cached nor in the pack
+// composition root (index.ts) injects none, so an image neither shipped nor cached
 // answers 404 and the renderer draws its placeholder. The fetch leg is kept behind that one gate
 // for the tests that pin its etiquette; tests/wikiTraffic.test.mts pins that the app's install
 // sends nothing.
@@ -466,11 +467,6 @@ export interface ImageCacheOptions {
    * reaches dev stdout and NEVER `<userData>/errors.log`, so it cannot become an error count.
    */
   readonly warn?: (msg: string) => void
-  /**
-   * An item icon from the wiki's GitHub data pack (`itemIconPack.ts`), asked before the wiki for an
-   * icon neither bundled nor cached. Null, a throw or bytes that are not a PNG fall through to the wiki.
-   */
-  readonly itemIconPack?: (id: string) => Promise<Uint8Array | null>
 }
 
 const NOT_FOUND = (): GlobalResponse => new Response(null, { status: 404, statusText: 'Not Found' })
@@ -852,18 +848,6 @@ export function installImageCacheProtocol(protocol: ProtocolLike, opts: ImageCac
     return bytes // served either way; a failed store only means it was not kept
   }
 
-  /** An item icon from the GitHub data pack, cached like a fetch; anything else (or a pack miss) goes to
-   *  `fetchAndStore`, which is a 404 unless a fetcher was injected. */
-  async function packOrFetch(req: EqImgRequest): Promise<Uint8Array | null> {
-    const packed = req.kind === 'item' && opts.itemIconPack ? await opts.itemIconPack(req.id).catch(() => null) : null
-    if (!packed || sniffImageMime(packed) !== 'image/png') return fetchAndStore(req)
-    const name = cacheFileName(req, 'image/png')
-    if (await storeEntry(join(dir, name), packed, onError)) {
-      log(`[everquest-companion] Image cache: ${name} (${packed.length} bytes) <- the wiki's GitHub data pack`)
-    }
-    return packed
-  }
-
   /**
    * Serve the first of `paths` that holds real image bytes, or null if none does.
    *
@@ -928,7 +912,7 @@ export function installImageCacheProtocol(protocol: ProtocolLike, opts: ImageCac
 
     let pending = inFlight.get(key)
     if (!pending) {
-      pending = packOrFetch(req).finally(() => inFlight.delete(key))
+      pending = fetchAndStore(req).finally(() => inFlight.delete(key))
       inFlight.set(key, pending)
     }
     const bytes = await pending
