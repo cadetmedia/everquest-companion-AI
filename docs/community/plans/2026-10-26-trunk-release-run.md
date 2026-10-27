@@ -76,23 +76,27 @@ On `main_community` after every merge of the day:
 3. Performance, later passes: review items 4 (one engine connection), 6, 7, 8, item 2's M step,
    Factions renders, MUI Tooltip cost.
 
+## Answered 2026-10-26 (after the run)
+
+- Heals on others: counted on your own healing row (`route_heal` → `add_outgoing_heal`;
+  requirements/healing-meter.md). 10-17 log: +183k HP over every stay, +170k in fights.
+- Respawn cluster: the lowest agreeing cluster wins; a verdict under two minutes offers nothing for
+  any name (trash shares names). requirements/gaps-tab.md.
+- `{{Legends Era}}`: Robe of the Betrayed is the only page of ~22,000 cached that carries it.
+
 ## Open questions for the owner
 
-- **Heals on others:** your heals on anyone but yourself or your pet count nowhere in the healing
-  meter (~340 `You healed <other>` lines, ~175k HP on the 10-17 log). Count them on your healer row?
-- **Respawn cluster choice:** when two clusters qualify, the densest wins (owner's "which one
-  matches the most"), though a gap can only be longer than the respawn (600/601/602 s plus
-  1200-1204 s gives 20:02). Prefer the lowest qualifying cluster?
-- **Respawn placeholder rule:** a Fix/Add row is offered when the wiki time is a duration more than
+- **Respawn placeholder rule** (explained to the owner 2026-10-26; no ruling yet): a Fix/Add row is offered when the wiki time is a duration more than
   25 s off, missing, or a placeholder (`''`, `?`, `??`, `Unknown`); other text ("Triggered", "6-8
   hours", "Kaesora: 18:00, ...") gets no row. Hedged ("6 min?") and marked-up ("2:45h") durations
   also get none.
 - **Ally pets across zones:** a group mate's summoned pet now keeps its bind through a zone line
   (Gonekab +319k, Ganer +286k recovered on the 10-17 log); a charm bind still ends there.
 - **Meter cadence:** combat meters now update once a second in a fight (was up to 4/s).
-- **The app's own wiki lookups:** a headless run on a real log made 7 eqlwiki mob-lookup searches by
-  itself (existing behaviour, no switch to turn it off); e2e runs may do the same. A test-only
-  switch, or leave it?
+- **The app's own wiki lookups:** a name the bundled data lacks (from the log) is looked up on
+  eqlwiki once and cached in userData (`knowledgeMissFetch.ts`, the creator's design); a fresh test
+  profile has an empty cache, so a headless run on a real log made 7 searches. Offered a test-only
+  switch for zero requests; no answer yet.
 - From before: Raid Targets' empty roster during a character switch; `heal-fight`/`heal-overall`
   added to `CHARACTER_AWARE_OVERLAYS`; the Enynti wiki fix (`| respawn_time = 8:50`,
   https://eqlwiki.com/index.php?title=Enynti&action=edit); a glyphed guard's respawn from 5 of 34
