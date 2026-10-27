@@ -7,13 +7,16 @@ import { Tooltip } from '../../lib/Tooltip'
 import { gapActions, type GapAction, type GapActionContext, type GapRow, type GapVerdict } from '@shared/gaps'
 
 function ActionChip({ a }: { a: GapAction }): JSX.Element {
+  // A warning chip takes the "may be a player" chip's outlined warning colour.
+  const color = a.warn === true ? 'warning' : 'default'
   const chip =
     a.href === undefined ? (
-      <Chip size="small" variant="outlined" label={a.label} data-testid="gaps-action" />
+      <Chip size="small" variant="outlined" color={color} label={a.label} data-testid="gaps-action" />
     ) : (
       <Chip
         size="small"
         variant="outlined"
+        color={color}
         clickable
         component="a"
         href={a.href}
