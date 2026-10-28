@@ -286,6 +286,34 @@ function MapSurface({
   )
 }
 
+/**
+ * The travel card, floated over the map's top-left corner (JOS-205). In the column above the row
+ * it arrived after the map (its band, ports and zone graph each answer on their own clock) and
+ * pushed the map and sidebar down 71 px; it varies by zone, so no reservation could fit it.
+ * Floating, it costs the row no layout, and it folds to two lines.
+ */
+function TravelFloat({ children }: { children: ReactNode }): JSX.Element {
+  return (
+    <Box
+      sx={{
+        position: 'absolute',
+        top: 8,
+        left: 8,
+        zIndex: 2,
+        maxWidth: '60%',
+        maxHeight: 'calc(100% - 16px)',
+        overflow: 'auto',
+        borderRadius: 1,
+        boxShadow: 3,
+        // the card draws nothing when nothing is known; no empty shadowed box either
+        '&:empty': { display: 'none' }
+      }}
+    >
+      {children}
+    </Box>
+  )
+}
+
 /** The way back to a sidebar you closed. Floats over the row so it costs the map no layout. */
 function PaneReopen({ onOpen }: { onOpen: () => void }): JSX.Element {
   return (
@@ -334,11 +362,13 @@ export interface MapBodyProps {
   onOpenMob?: (target: MobTarget) => void
   /** Open a wished drop's Loot drill-down from the pane's captions. */
   onOpenLoot?: (name: string) => void
+  /** The zone's travel card, floated over a drawn map (see `TravelFloat`). */
+  travel?: ReactNode
 }
 
 export default function MapBody(props: MapBodyProps): JSX.Element {
   const { data, empty, vp, hostRef, layers, bands, floor, pane, zoneName, marker, onJump } = props
-  const { locMarker, zones, onOpenMob, onOpenLoot } = props
+  const { locMarker, zones, onOpenMob, onOpenLoot, travel } = props
   // The respawn-timer join for the map ON SCREEN (`data.zone`, like every overlay) — and ONLY
   // that stem: `zoneName` is the zone being opened, and useMapData keeps the previous `data`
   // while the next loads, so pairing the two here drew the old map's rows against the new
@@ -351,7 +381,8 @@ export default function MapBody(props: MapBodyProps): JSX.Element {
     setOpen(false)
   }, [setOpen])
   return (
-    <Stack direction="row" spacing={1.5} sx={{ position: 'relative', flexGrow: 1, minHeight: 0 }}>
+    // `useFlexGap`: a gap, not sibling margins, so the floated travel card sits exactly where placed.
+    <Stack direction="row" spacing={1.5} useFlexGap sx={{ position: 'relative', flexGrow: 1, minHeight: 0 }}>
       {data != null ? (
         <MapSurface
           data={data}
@@ -401,6 +432,7 @@ export default function MapBody(props: MapBodyProps): JSX.Element {
           }}
         />
       )}
+      {data != null && <TravelFloat>{travel}</TravelFloat>}
       <WaypointNotice notice={waypoint.notice} onClose={waypoint.dismiss} />
     </Stack>
   )

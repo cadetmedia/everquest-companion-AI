@@ -54,7 +54,7 @@ On `main_community` after every merge of the day:
   pass, 0 fail. Release engine rebuilt in the main clone.
 - e2e (4 in parallel, then reds alone, then against `community-0.1.0-test.34`): 57/65 green, the 3
   TEST-build specs skipped. Flakes that pass alone: `engine-boots`, `engine-absent`,
-  `alert-dialog-focus`. Red on test.34 too: `voice-alerts`, `maps` (known), `bosses-week` (reads the
+  `alert-dialog-focus`. Red on test.34 too: `voice-alerts`, `maps` (known; fixed 2026-10-27, travel card floated), `bosses-week` (reads the
   owner's real install, whose live log has no kills since archiving). Fixed specs: `con-card`
   (expects the 8 s default of 2026-10-23), `overview` (waits for the live label: combat is read
   once a second in a fight since pass 2).

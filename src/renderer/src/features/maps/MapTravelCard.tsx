@@ -390,7 +390,7 @@ export default function MapTravelCard({
   const [open, setOpen] = useState(loadTravelOpen)
   if (band === null && exits.length === 0 && landings.length === 0) return null
   return (
-    <Paper variant="outlined" data-testid="map-travel-card" sx={{ p: 1, mb: 1 }}>
+    <Paper variant="outlined" data-testid="map-travel-card" sx={{ p: 1 }}>
       <Stack spacing={0.5}>
         <LevelLine band={band} />
         <TravelHead
