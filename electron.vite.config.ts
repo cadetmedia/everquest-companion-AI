@@ -69,12 +69,15 @@ export default defineConfig({
         //     main does not. Two threads late in the same half second means the MACHINE stalled;
         //     only main late means we did. A rollup into index.js would leave the verdict
         //     unmeasurable, which is the strongest form of "this needs its own entry".
+        //   * fontReaderWorker — the screenshot reader's exact font match (shot/fontReader.ts):
+        //     0.05-2.5 s of pure CPU a window, which main cannot spend. Same rule as the others.
         input: {
           index: resolve(__dirname, 'src/main/index.ts'),
           speechWorker: resolve(__dirname, 'src/main/speech/worker.ts'),
           presenceWorker: resolve(__dirname, 'src/main/presenceWorker.ts'),
           perfProbeWorker: resolve(__dirname, 'src/main/perfProbeWorker.ts'),
-          resistTableWorker: resolve(__dirname, 'src/main/resistTableWorker.ts')
+          resistTableWorker: resolve(__dirname, 'src/main/resistTableWorker.ts'),
+          fontReaderWorker: resolve(__dirname, 'src/main/fontReaderWorker.ts')
         }
       }
     }

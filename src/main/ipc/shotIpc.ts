@@ -1,6 +1,7 @@
 // IPC: screenshot to wiki (owner ask, 2026-10-21; plans/2026-10-20-screenshot-to-wiki.md). The Gaps
-// tab pastes a picture; main reads it on this machine (OCR in a worker thread, the icon against the
-// install's own icon sheets) and answers the page's fields. No network, no tokens, nothing shipped:
+// tab pastes a picture; main reads it on this machine (OCR and the game's own font, each in a worker
+// thread, fontMerge.ts; the icon against the install's own icon sheets) and answers the page's
+// fields. No network, no tokens, nothing shipped:
 // the icon index is built from the player's install on the first paste and cached in userData.
 
 import { app, clipboard, ipcMain, nativeImage } from 'electron'
@@ -15,6 +16,8 @@ import { logInfo } from '../errorLog'
 import type { ItemDbFile } from '../itemsDb'
 import { effectiveEqRoot } from '../log/config'
 import { decodeTga } from '../shot/gameTextures'
+import { readFontOnWorker } from '../shot/fontWorker'
+import { catalogTexts, wordCounts } from '../shot/fontWords'
 import { buildIconIndex, iconSheets, readIconIndex, sheetsFingerprint, SheetCells, writeIconIndex, type IconIndex } from '../shot/iconIndex'
 import { readJournalLines } from '../shot/journalLines'
 import { readPopupLines } from '../shot/popupLines'
@@ -109,13 +112,23 @@ function buildIconSlots(): Map<number, Set<string>> {
   return out
 }
 
+let words: Map<string, number> | null = null
+
+/** The catalog's words, counted once (~35 ms), for the font reader's `I` or `l` (fontWords.ts). */
+function catalogWords(): ReadonlyMap<string, number> {
+  words ??= wordCounts(catalogTexts(Object.values((itemsJson as unknown as ItemDbFile).items)))
+  return words
+}
+
 export const READERS: ShotReaders = {
   index: iconIndex,
   cell: (id) => cells?.cell(id) ?? null,
   textures: skinTextures,
   known: (name) => nearNames(name, catalogNames()),
   iconSlots,
-  slotIcons
+  slotIcons,
+  font: readFontOnWorker,
+  words: catalogWords
 }
 
 async function readItem(png: unknown): Promise<ItemShotReply> {

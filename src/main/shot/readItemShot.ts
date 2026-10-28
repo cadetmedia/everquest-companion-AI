@@ -1,7 +1,9 @@
 // readItemShot.ts — one pasted screenshot of an item window -> the page's fields and the icon's id
 // (owner ask, 2026-10-21: "paste an image directly into the details section ... as easy as possible").
 //
-// The text is read first (ocr.ts, itemWindow.ts). The icon is found where the window draws it: left of
+// The text is read first (ocr.ts, itemWindow.ts), with the game's own font where it matches exactly
+// (fontReader.ts, fontMerge.ts; both readers at once, so the slower of the two sets the time). The
+// icon is found where the window draws it: left of
 // the text column, beside the name, at a size that follows the text's line pitch (the owner's 1:1 UI
 // and Malkil's larger one both). A picture small enough to be the icon alone skips the text.
 // Each way of removing the background is tried (background.ts) and the clearest winner kept.
@@ -10,6 +12,8 @@
 
 import { readItemWindow, type ItemWindowRead } from '../../shared/itemWindow'
 import { asIs, fitTexture, flatRemoved, textureRemoved } from './background'
+import { mergeFont } from './fontMerge'
+import type { FontRead } from './fontReader'
 import { findIcon, findIconAmong, margin, type IconHit } from './iconMatch'
 import type { IconIndex } from './iconIndex'
 import { readLines, type OcrLine } from './ocr'
@@ -28,6 +32,10 @@ export interface ShotReaders {
   iconSlots?: (id: number) => ReadonlySet<string> | undefined
   /** The icons the catalog's items worn in this slot use. */
   slotIcons?: (slot: string) => ReadonlySet<number> | undefined
+  /** The exact-match font reader (fontReader.ts); null when it cannot run here. Absent: OCR alone. */
+  font?: (img: Rgba) => Promise<FontRead | null>
+  /** The catalog's words, for the font reader's `I` or `l` (fontWords.ts). */
+  words?: () => ReadonlyMap<string, number>
 }
 
 /**
@@ -123,10 +131,18 @@ async function iconsIn(img: Rgba, b: Box | null, r: ShotReaders, slots: readonly
   return [...lead, ...best.filter((h) => !led.has(h.id))].slice(0, 30)
 }
 
+/** The window's lines: OCR's, with what the game's font matched exactly in place (fontMerge.ts). */
+async function windowLines(img: Rgba, r: ShotReaders): Promise<OcrLine[]> {
+  // A font reader that fails leaves OCR's reading as it was.
+  const font = r.font === undefined ? Promise.resolve(null) : r.font(img).catch(() => null)
+  const [lines, read] = await Promise.all([readLines(img), font])
+  return read === null ? lines : mergeFont(lines, read, r.words?.() ?? new Map<string, number>())
+}
+
 export async function readItemShot(img: Rgba, r: ShotReaders): Promise<ItemShot> {
   const t0 = performance.now()
   const iconOnly = img.w <= ICON_ONLY_MAX && img.h <= ICON_ONLY_MAX
-  const lines = iconOnly ? [] : await readLines(img)
+  const lines = iconOnly ? [] : await windowLines(img, r)
   const region = iconOnly ? { x: 0, y: 0, w: img.w, h: img.h } : iconRegion(lines, img.w, img.h)
   const read: ItemWindowRead = iconOnly ? { statsblock: '', unread: [] } : readItemWindow(lines.map((l) => l.text))
   const icons = bySlot(await iconsIn(img, region, r, slotsIn(read.statsblock)), read.statsblock, r.iconSlots)

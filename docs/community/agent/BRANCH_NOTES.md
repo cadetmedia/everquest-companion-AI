@@ -504,7 +504,20 @@ where one exists.
   the app itself are not fixtures. An image sent while the agent is mid-reply is not written to the
   session's `images` folder (Claude Code in VS Code): describe it to the agent and ask the owner to
   re-send it after the reply, or to save the snip as a file and give its path.
-- Not built: the glyph-exact reader (D2); tesseract reads every fixture.
+- Font reader (D2, built 2026-10-27): `shot/fontReader.ts` matches the player's own GDI 12 px Arial
+  (ClearType, blue channel; `fontAtlas.ts`, koffi, ~25 ms once, never PowerShell) on its own worker
+  (`fontReaderWorker.js`, a rollup input), alongside OCR. `fontMerge.ts`: a cell with fit <= 0.02
+  replaces the OCR words under it; OCR keeps its lines, boxes and order (the icon is placed from
+  them) and everything else (title bar, art, other scales). Item windows only (`readItemShot.ts`);
+  spell, popup, journal and nameplate reads are OCR alone. `I` and `l` are one bitmap: the catalog's
+  words pick (`fontWords.ts`). Windows only: elsewhere `arialAtlas()` is null and OCR reads alone.
+- Font reader traps: art slivers fit `i`/`j`/`f` exactly at 1.5x, so a cell over no OCR word needs 3+
+  letters or digits and never makes a line of its own (`Place`, a button, became an unread line).
+  Attach a cell by the OCR WORDS it covers, not the line box (`8 Quest` took the Class cell).
+  Under tsx an arrow made inside a hot function costs an esbuild `__name` call each time (3x slower).
+- The existing screenshot tests keep the OCR-only path (it is the fallback and the non-Windows path);
+  `tests/shotFontReader.test.mts` pins the font path: 0 wrong of 1,903 transcribed characters for the
+  reader, font+OCR 4, OCR alone 42; every item fixture's page OCR's or better.
 - Picture root = live autoDir, else live lastDir, through `pictureRoot` (a kind's folder stands for
   its parent; `lastDir` is saved as the root). Mob -> `<root>/npc`; item/lore ->
   `<root>/item/item_<n>[_lore].png`; spell -> `<root>/spell/spell_<n>.png` (`keptPictureFile`). Item

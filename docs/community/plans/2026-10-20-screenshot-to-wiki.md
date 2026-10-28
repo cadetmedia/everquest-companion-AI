@@ -323,8 +323,8 @@ screenshots are being gathered)
   with 597 on both of Malkil's shots. 0.5-2 s a paste; the index 4 s once.
 - Changed from the design above: the background view with the lowest best score wins (not the
   widest margin); OCR reads TSV at about 3 MP; DMG is checked against the window's Ratio.
-- Not built: local icons app-wide (question 4); the glyph-exact reader (D2); the hotkey for spell
-  windows (no tab label to anchor on).
+- Not built: local icons app-wide (question 4); the glyph-exact reader (D2, built 2026-10-27: see
+  "Built, font reader"); the hotkey for spell windows (no tab label to anchor on).
 
 ## Built, second round (2026-10-21, `screenshot-to-wiki`)
 
@@ -359,3 +359,28 @@ screenshots are being gathered)
   recolour 6911; Malkil's container lost Capacity, Size Cap and its deity.
 - Fixtures now 9 (`tests/fixtures/shots`): the owner's Shrubbery Lore tab, Lizardman Mystic Scale,
   Vial of Swamp Water, and Malkil's Surefall Fletching Kit added.
+
+## Built, font reader (2026-10-27; owner 2026-10-21: "sure do it")
+
+- The proof of concept's reader A, ported cell for cell (same text and fit on every fixture):
+  `shot/fontLayout.ts` (ink, lines, cells), `fontDecode.ts` (the glyphs magnified by the UI scale,
+  matched by dynamic programming over the pen), `fontScale.ts` (1x first, else a sweep and a
+  refinement to ~0.1%), `fontReader.ts`. The atlas is the player's own GDI Arial 12 px, ClearType,
+  blue channel (`fontAtlas.ts`: koffi, one sheet, one GetDIBits, ~25 ms; byte-identical to the proof
+  of concept's PowerShell render). Nothing font-derived is committed or shipped.
+- Integration (`fontMerge.ts`, `readItemShot.ts`): the font reader (its own worker,
+  `fontReaderWorker.js`) and OCR read an item window at once. A cell whose fit is <= 0.02 (correct
+  cells measured 0.0016-0.0173, art and other fonts 0.023+) replaces the OCR words it covers; OCR's
+  lines, boxes and order stay, so the icon box and every parser rule see the same shape. A cell over
+  no OCR word joins the line beside it only with 3+ letters or digits; no line is added.
+- Not the font: the title bar (its own font; the Lore tab's only name), a dim `Windstriker +10`,
+  the Tier label. Those stay OCR's. A UI scale the font does not magnify cleanly (Wu's Fist 0.91,
+  the Petamorph Wand: Mummy windows 1.24-1.30): the coarse fit scores 0.27+ against 0.085 or less
+  where it reads, so the reader stops after ~0.2 s and OCR reads alone.
+- Measured on the 8 transcribed fixtures (1,903 characters): the reader 0 wrong, the app's reading
+  4, OCR alone 42. Across the 25 item fixtures the page is OCR's except three repairs no longer
+  needed (Black Lizard Scale's name, Windstriker's `DMG 920`, the earring's `Altunable`).
+- Time (owner's PC, one window): UI scale 1 the font takes 40-200 ms, under OCR's 180-550 ms, so no
+  slower; at 1.5x (Malkil) 0.75-1.3 s against OCR's ~0.75 s, so up to ~0.5-1 s slower.
+- Not done: spell windows, popups, the Quest Journal and nameplates stay OCR alone (other fonts or
+  preprocessed pictures, never measured); the capture's yellow-label read stays OCR.
