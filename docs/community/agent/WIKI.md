@@ -10,6 +10,13 @@ long gap. How to refresh the app's copy of the wiki: `DATA_REFRESH.md`.
   `src/shared/wiki.ts`).
 - API: `https://eqlwiki.com/api.php` (MediaWiki). Every scraper calls it through
   `scripts/sources/wikiApi.ts`.
+- The wiki's own API documentation: https://eqlwiki.com/API_Documentation (owner, 2026-10-28:
+  keep it at hand). Opening it by hand is a wiki read: ledger line (`../wiki-usage/README.md`).
+- The wiki's GitHub repo: https://github.com/Maergoth/EQL-EOZ (third-party: read as data,
+  nothing from it is run).
+  - Its `dataset` branch, the data pack: https://github.com/Maergoth/EQL-EOZ/tree/dataset
+    (`manifest.json` + `eqlwiki-eye-of-zomm-data.json.gz`). Used by `scripts/eoz-compare.mts`
+    before a delta and by the item icon fallback; details in `DATA_REFRESH.md`.
 - Editing help and the page blueprints: https://eqlwiki.com/Help:Contents (sections NPC, Merchant,
   Item, Spell Page Blueprint; drop-frequency table; categories; images; editing standards).
 - Template docs: `Template:Namedmobpage`, `Template:MerchantPage`, `Template:Itempage`,
