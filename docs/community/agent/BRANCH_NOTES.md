@@ -354,6 +354,12 @@ where one exists.
   place through the zone table, never by spelling (`Northern Karana` = `Northern Plains of Karana`).
 - `main/gapItemForage.ts` declares items.json's `foraged`, `foragedNote`, `foragedCategory`
   locally (until 2026-10-26 the data came from a separate branch).
+- Depot update rows (2026-10-27) ride the forage rows: the engine files a KNOWN item a loot line
+  stored in the tradeskill depot under domain `depot` (`gaps_craft.rs stored`; not a redirect-only
+  name); main answers items.json `ingredientCategory` on the same `gaps:itemForage` answer
+  (`ingredient`); a page lacking `[[Category:Tradeskill Ingredient]]` sets `forageUpdate.ingredient`,
+  on the item's forage row when it has one, else a row of its own. 35 rows on the owner's logs.
+  SAVED_ROWS 3.
 - `itemLookupParse.ts` is 421 code lines, near the 440 bar.
 - Job rule: `shared/gapJob.ts gapJob` is the one classification. Faction, drop and image rows are
   updates; a merchant is an update when `isMob`; a `forageUpdate` row is an update; a faction row

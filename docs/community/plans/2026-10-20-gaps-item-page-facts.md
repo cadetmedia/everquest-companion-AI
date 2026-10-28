@@ -110,7 +110,9 @@ Cross-check, log against the cached pages:
      category. The 2026-10-20 "8 + 6" counted the testers' logs too and compared spellings raw.
 3. **Tradeskill Ingredient.** The copy adds `[[Category:Tradeskill Ingredient]]` when the row's
    dispositions hold `depot`, or the inventory export has the item under `Personal-Depot`
-   (Gray Wolf Skull is there). An existing page missing it is an update row like phase 2 (34).
+   (Gray Wolf Skull is there). An existing page missing it is an update row like phase 2 (34), built
+   2026-10-27: items.json `ingredientCategory` (865 pages, re-parsed offline), engine `depot` proof
+   rows (log only, not the export), the forage row's `forageUpdate.ingredient`; 35 rows on Drywrought.
 4. **Player crafted with its tradeskill.** Engine: pair the tradeskill skill-up line with the
    success line of the same second (the skill-up comes first) and keep the skill on the row; read
    `You lacked the skills to fashion X.` as crafted too; strip `alternate product: `. Page:

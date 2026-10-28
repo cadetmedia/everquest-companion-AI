@@ -10,7 +10,7 @@ import itemsJson from './data/items.json'
 import { itemsByAnyName } from './itemOtherNames'
 
 /** A record's forage fields (wiki-scraper-fixes' parser); absent on a corpus parsed before them. */
-type ForageEntry = ItemDbEntry & { foraged?: string[]; foragedNote?: string; foragedCategory?: boolean }
+type ForageEntry = ItemDbEntry & { foraged?: string[]; foragedNote?: string; foragedCategory?: boolean; ingredientCategory?: boolean }
 
 // By any name the wiki gives the page: a redirect to it finds it (itemOtherNames.ts).
 const items = itemsByAnyName((itemsJson as unknown as ItemDbFile).items as Record<string, ForageEntry>)
@@ -18,7 +18,9 @@ const items = itemsByAnyName((itemsJson as unknown as ItemDbFile).items as Recor
 /** One record → what its page states; the page title is the edit link's. */
 export function pageForage(entry: ForageEntry): ItemPageForage {
   const note = entry.foragedNote === undefined ? {} : { note: entry.foragedNote }
-  return { page: entry.page, zones: entry.foraged ?? [], ...note, category: entry.foragedCategory === true }
+  // The depot rows read the Tradeskill Ingredient category off the same answer.
+  const ingredient = entry.ingredientCategory === true ? { ingredient: true as const } : {}
+  return { page: entry.page, zones: entry.foraged ?? [], ...note, category: entry.foragedCategory === true, ...ingredient }
 }
 
 /** Each name's page forage statement; null when the corpus has no page for it. */

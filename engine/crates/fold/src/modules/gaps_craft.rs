@@ -52,6 +52,20 @@ impl GapsModule {
         filed
     }
 
+    /// A loot line that stored a KNOWN item in the tradeskill depot: filed under `Domain::Depot`, so
+    /// its page's `[[Category:Tradeskill Ingredient]]` can be checked (owner, 2026-10-21: "sure";
+    /// the game files only tradeskill items there). An unknown item is an Items row already, and a
+    /// name known only through a redirect is a redirect row; neither is filed here.
+    pub(super) fn stored(&mut self, ev: &Event) -> bool {
+        let Some(item) = ev.str("item").filter(|_| ev.str("disposition") == Some("depot")) else {
+            return false;
+        };
+        if !self.items.known(item) || self.items.via_redirect(item).is_some() {
+            return false;
+        }
+        self.note(Domain::Depot, item_gap_key(item), &item_base_name(item), false, "looted", ev)
+    }
+
     /// A combine of `name`, made or failed, filed under `kind`; a tradeskill tick of the same
     /// second goes on its row. A known item's combine is paired too, so its tick is not taken for
     /// the next one's.

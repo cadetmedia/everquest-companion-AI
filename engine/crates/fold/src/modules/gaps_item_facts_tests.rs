@@ -109,3 +109,29 @@ fn a_known_item_foraged_is_served_as_proof_and_never_as_an_unknown_item() {
         assert_eq!(state["totals"][domain], json!(n), "{domain}");
     }
 }
+
+/// A known item a loot line stored in the tradeskill depot (owner, 2026-10-21): no Items row, but a
+/// `depot` row, so the tab can check its page's `[[Category:Tradeskill Ingredient]]`. Kept loot of
+/// the same item is no proof; an unknown item stays an Items row; the four totals stay as they were.
+#[test]
+fn a_known_item_stored_in_the_depot_is_served_as_proof_and_never_as_an_unknown_item() {
+    let mut m = module();
+    feed(&mut m, 1, json!({ "kind": "zone", "zone": "Befallen" }));
+    feed(&mut m, 2, json!({ "kind": "loot", "item": "Bone Chips", "source": "a decaying skeleton", "disposition": "depot" }));
+    feed(&mut m, 3, json!({ "kind": "loot", "item": "Bone Chips", "source": "a decaying skeleton" }));
+    feed(&mut m, 4, json!({ "kind": "loot", "item": "Rat Meat", "source": "a large rat", "disposition": "sold" }));
+    feed(&mut m, 5, json!({ "kind": "loot", "item": "Glowing Widget", "source": "a decaying skeleton", "disposition": "depot" }));
+    let state = m.snapshot()["state"].clone();
+    let rows = state["rows"].as_array().cloned().unwrap_or_default();
+    let depot: Vec<&Value> = rows.iter().filter(|r| r["domain"] == "depot").collect();
+    assert_eq!(depot.len(), 1, "{depot:?}");
+    assert_eq!(depot[0]["name"], json!("Bone Chips"));
+    assert_eq!(depot[0]["kinds"], json!(["looted"]));
+    assert_eq!(depot[0]["count"], json!(1), "kept loot is not a depot store");
+    assert!(item_row(&m, "Bone Chips").is_null());
+    assert!(!item_row(&m, "Glowing Widget").is_null(), "an unknown item is an Items row, whose new page carries the category");
+    for (domain, n) in [("item", 1), ("mob", 1), ("spell", 0), ("merchant", 0)] {
+        assert_eq!(state["totals"][domain], json!(n), "{domain}");
+    }
+    assert!(state["totals"].get("depot").is_none(), "the proof has no total of its own");
+}

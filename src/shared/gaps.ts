@@ -331,7 +331,7 @@ export interface GapRow {
   /** A faction row for a faction the page LISTS: what to fix, and what the page says (`-30..-10?`). */
   fix?: FactionFix
   pageSays?: string
-  /** An Items row for a page that exists: the forage zones or category it lacks (shared/gapForage.ts). */
+  /** An Items row for a page that exists: the forage zones or category, or the Tradeskill Ingredient category, it lacks (shared/gapForage.ts). */
   forageUpdate?: ForageUpdate
   /** The player's own corrections to this row, by hand (shared/gapEdits.ts). */
   edit?: GapEdit

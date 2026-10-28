@@ -63,6 +63,10 @@ pub enum Domain {
     /// its page's `|foraged` is checked against (shared/gapForage.ts). Served after the four, with
     /// no total of its own.
     Forage,
+    /// A KNOWN item a loot line stored in the tradeskill depot (`gaps_craft.rs`): the proof its page's
+    /// `[[Category:Tradeskill Ingredient]]` is checked against (shared/gapForage.ts). Served like
+    /// `Forage`, with no total of its own.
+    Depot,
     /// A known item or mob met whose page says it may not be in Legends (`gaps_notices.rs`).
     Notice,
     /// A task the log named: one row per quest, with its steps (`gaps_quest_log.rs`).
@@ -79,6 +83,7 @@ impl Domain {
             Domain::Spell => "spell",
             Domain::Merchant => "merchant",
             Domain::Forage => "forage",
+            Domain::Depot => "depot",
             Domain::Notice => "notice",
             Domain::Quest => "quest",
         }
@@ -226,7 +231,7 @@ impl GapsModule {
             // A destroy line is the parser's one loot shape that is a later disposal rather than
             // the loot itself: it says what became of the item, not where it came from.
             "loot" if ev.str("disposition") == Some("destroyed") => self.disposal(ev),
-            "loot" => self.item(ev, "looted") | self.mob(ev.str("source"), "dropped-by", ev),
+            "loot" => self.item(ev, "looted") | self.stored(ev) | self.mob(ev.str("source"), "dropped-by", ev),
             "itemReceived" => self.quest_give(ev) | self.received(ev),
             "purchase" => self.item(ev, "bought"),
             _ => self.merge(ev),
@@ -505,7 +510,7 @@ impl GapsModule {
         let candidates: &[Candidate] = match domain {
             Domain::Item => &self.item_candidates,
             Domain::Spell => spell_candidates(),
-            Domain::Mob | Domain::Merchant | Domain::Forage | Domain::Notice | Domain::Quest => return None,
+            Domain::Mob | Domain::Merchant | Domain::Forage | Domain::Depot | Domain::Notice | Domain::Quest => return None,
         };
         let mut cache = self.suggests.lock().ok()?;
         cache
@@ -554,7 +559,9 @@ impl EqModule for GapsModule {
             let checked = self.seen.get(&d).map_or(0, HashSet::len);
             seen.insert(d.as_str().to_string(), json!(checked));
         }
-        rows.extend(self.served(Domain::Forage).into_iter().map(|(k, r)| self.serve_row(Domain::Forage, k, r)));
+        for proof in [Domain::Forage, Domain::Depot] {
+            rows.extend(self.served(proof).into_iter().map(|(k, r)| self.serve_row(proof, k, r)));
+        }
         let kill_factions = self.kill_factions.serve();
         let mob_locs = self.mob_locs.serve();
         let mob_specials = self.specials.serve();

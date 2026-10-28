@@ -6,6 +6,10 @@
 // whose page lacks a zone the log foraged it in, or the category, becomes an Items row whose copy
 // is exactly the lines to add. Zones are spelled as the new-page copy spells them
 // (gapWikiZone.ts), so the two never disagree.
+//
+// The tradeskill depot rides the same rows (owner, 2026-10-21: "sure"; plan phase 3): a KNOWN item a
+// loot line stored in the depot is a `depot` proof row (gaps_craft.rs `stored`), and a page that
+// lacks `[[Category:Tradeskill Ingredient]]` asks for it; an item owing both is one row.
 
 import type { GapRow, GapsSnap } from './gaps'
 import { catalogZoneCounts, wikiZoneLink, wikiZoneNamer } from './gapWikiZone'
@@ -15,6 +19,8 @@ import { zoneEntryFor, zoneKey } from './zones'
 
 /** The engine's domain for a known item's forage proof; never shown as a domain of its own. */
 export const FORAGE_PROOF = 'forage'
+/** The engine's domain for a known item stored in the tradeskill depot; never shown either. */
+export const DEPOT_PROOF = 'depot'
 
 /** What an item's page states of foraging; null when the corpus has no page for it. */
 export interface ItemPageForage {
@@ -25,6 +31,8 @@ export interface ItemPageForage {
   note?: string
   /** the page files itself under `[[Category:Foraged]]` */
   category: boolean
+  /** the page files itself under `[[Category:Tradeskill Ingredient]]`; absent when it does not */
+  ingredient?: true
 }
 
 /** Item key → its page's forage statement; absent until main has answered. */
@@ -40,6 +48,8 @@ export interface ForageUpdate {
   noField: boolean
   /** the page is not in `[[Category:Foraged]]` */
   category: boolean
+  /** the log stored it in the tradeskill depot and the page is not in `[[Category:Tradeskill Ingredient]]` */
+  ingredient?: true
 }
 
 export const forageKey = (name: string): string => itemBaseName(name).toLowerCase()
@@ -71,11 +81,12 @@ export function isCommonForage(seenZones: readonly string[], page: ItemPageForag
 /** No zone line is owed: the page says it forages anywhere, or the item is common forage. */
 const noZoneOwed = (page: ItemPageForage, seenZones: readonly string[]): boolean => (page.note !== undefined && ANY_ZONE.test(page.note)) || isCommonForage(seenZones, page)
 
-const isProof = (r: GapRow): boolean => (r.domain as string) === FORAGE_PROOF
+const PROOFS: readonly string[] = [FORAGE_PROOF, DEPOT_PROOF]
+const isProof = (r: GapRow): boolean => PROOFS.includes(r.domain)
 
-/** The names main should be asked about: every forage proof row's item. */
+/** The names main should be asked about: every forage or depot proof row's item, each once. */
 export function forageProofNames(snap: GapsSnap): string[] {
-  return snap.rows.filter(isProof).map((r) => r.name)
+  return [...new Set(snap.rows.filter(isProof).map((r) => r.name))]
 }
 
 /** The log's zone → the wiki's spelling, one resolver per catalog (the one PAGE_EXTRAS builds). */
@@ -100,11 +111,13 @@ export function forageUpdateOf(row: GapRow, page: ItemPageForage | null | undefi
 export function withForageRows<S extends GapsSnap>(snap: S, itemForage: ItemForage | undefined, catalog: readonly { zones?: readonly string[] }[]): S {
   if (!snap.rows.some(isProof)) return snap
   const zoneName = namerFor(catalog)
-  const updates: GapRow[] = []
-  for (const r of snap.rows.filter(isProof)) {
+  const byItem = new Map<string, GapRow>()
+  for (const r of snap.rows.filter((p) => (p.domain as string) === FORAGE_PROOF)) {
     const forageUpdate = forageUpdateOf(r, itemForage?.get(forageKey(r.name)), zoneName)
-    if (forageUpdate !== null) updates.push({ ...r, domain: 'item', forageUpdate })
+    if (forageUpdate !== null) byItem.set(forageKey(r.name), { ...r, domain: 'item', forageUpdate })
   }
+  for (const r of snap.rows.filter((p) => (p.domain as string) === DEPOT_PROOF)) withIngredient(byItem, r, itemForage?.get(forageKey(r.name)))
+  const updates = [...byItem.values()]
   // An archive merge counts the proof rows as a domain of their own; that count is no gap.
   const totals = withoutProof(snap.totals)
   return {
@@ -115,30 +128,43 @@ export function withForageRows<S extends GapsSnap>(snap: S, itemForage: ItemFora
   }
 }
 
-function withoutProof<T extends Record<string, number>>(counts: T): T {
-  return Object.fromEntries(Object.entries(counts).filter(([k]) => k !== FORAGE_PROOF)) as T
+/** A depot store whose page lacks Tradeskill Ingredient: the item's forage row gains it, else a row of its own. */
+function withIngredient(byItem: Map<string, GapRow>, r: GapRow, page: ItemPageForage | null | undefined): void {
+  if (page === undefined || page === null || page.ingredient === true) return
+  const had = byItem.get(forageKey(r.name))
+  const forageUpdate: ForageUpdate = { ...(had?.forageUpdate ?? { page: page.page, zones: [], noField: false, category: false }), ingredient: true }
+  byItem.set(forageKey(r.name), { ...(had ?? r), domain: 'item', forageUpdate })
 }
+
+function withoutProof<T extends Record<string, number>>(counts: T): T {
+  return Object.fromEntries(Object.entries(counts).filter(([k]) => !PROOFS.includes(k))) as T
+}
+
+/** Whether the row asks for any forage line (a zone or the Foraged category), apart from the depot's. */
+const asksForage = (u: ForageUpdate): boolean => u.zones.length > 0 || u.category
 
 /** A forage update row's work buttons (GapRowButtons): its page exists, so the editor opens on it, and the copy is the lines to add. */
 export function forageButtons(u: ForageUpdate): { edit: string; page: string; copyTip: string } {
-  return { edit: 'Edit item page', page: u.page, copyTip: `The lines to add to the page ${u.page}, from your log's forages.` }
+  const from = [...(asksForage(u) ? ['forages'] : []), ...(u.ingredient ? ['tradeskill depot'] : [])].join(' and ')
+  return { edit: 'Edit item page', page: u.page, copyTip: `The lines to add to the page ${u.page}, from your log's ${from}.` }
 }
 
 /** The chip's words: what the page lacks. */
 export function forageWhy(item: string, u: ForageUpdate): string {
   const zones = u.zones.length > 0 ? `${u.zones.join(', ')} under foraged` : ''
   const cat = u.category ? 'Category:Foraged' : ''
-  return `The page for ${item} lacks ${[zones, cat].filter((s) => s !== '').join(' and ')}, which your log shows.`
+  const ingredient = u.ingredient ? 'Category:Tradeskill Ingredient' : ''
+  return `The page for ${item} lacks ${[zones, cat, ingredient].filter((s) => s !== '').join(' and ')}, which your log shows.`
 }
 
 /**
  * Exactly the lines to add: each missing zone's bullet (under `|foraged =`, written out when the
- * page lists nothing there), then the categories after `</onlyinclude>`: Foraged when missing, and
- * each new zone's (a category line the page already has can be left out).
+ * page lists nothing there), then the categories after `</onlyinclude>`: Foraged when missing,
+ * Tradeskill Ingredient when the depot owes it, and each new zone's (a category line the page already has can be left out).
  */
 export function forageAddText(u: ForageUpdate): string {
   const bullets = u.zones.map((z) => `* ${wikiZoneLink(z)}`)
   const field = bullets.length === 0 ? '' : `${u.noField ? '|foraged = \n\n' : ''}${bullets.join('\n')}\n`
-  const cats = [...(u.category ? ['Foraged'] : []), ...u.zones].map((c) => `[[Category:${c}]]`)
+  const cats = [...(u.category ? ['Foraged'] : []), ...(u.ingredient ? ['Tradeskill Ingredient'] : []), ...u.zones].map((c) => `[[Category:${c}]]`)
   return [field, `${cats.join('\n')}\n`].filter((s) => s.trim() !== '').join('\n')
 }
