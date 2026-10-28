@@ -19,6 +19,13 @@ export interface OcrLine {
    * icon beside the text as junk (`8 Quest`, `| Class`, and `By Class: ALL` on Lizardman Mystic Scale).
    */
   lead: Box
+  /** Each word with its box, for the font reader to replace what it read exactly (fontMerge.ts). */
+  words?: OcrWord[]
+}
+
+export interface OcrWord {
+  text: string
+  box: Box
 }
 
 /** A word of two or more letters or digits: not the junk OCR makes of the icon's edge. */
@@ -72,26 +79,26 @@ export async function stopOcr(): Promise<void> {
  * "Too many properties to enumerate").
  */
 export function linesFromTsv(tsv: string, k: number): OcrLine[] {
-  const lines = new Map<string, { words: string[]; x0: number; y0: number; x1: number; y1: number; lead?: Box; label?: Box }>()
+  const lines = new Map<string, { words: OcrWord[]; x0: number; y0: number; x1: number; y1: number; lead?: Box; label?: Box }>()
   for (const row of tsv.split('\n')) {
     const f = row.split('\t')
     if (f[0] !== '5' || f.length < 12 || f[11].trim() === '') continue
     const [left, top, width, height] = f.slice(6, 10).map(Number)
     const key = f.slice(1, 5).join(':')
     const l = lines.get(key) ?? { words: [], x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity }
-    l.words.push(f[11])
+    const at = { x: left / k, y: top / k, w: width / k, h: height / k }
+    l.words.push({ text: f[11], box: at })
     l.x0 = Math.min(l.x0, left)
     l.y0 = Math.min(l.y0, top)
     l.x1 = Math.max(l.x1, left + width)
     l.y1 = Math.max(l.y1, top + height)
-    const at = { x: left / k, y: top / k, w: width / k, h: height / k }
     if (l.lead === undefined && REAL_WORD.test(f[11])) l.lead = at
     if (l.label === undefined && LABEL_WORD.test(f[11])) l.label = at
     lines.set(key, l)
   }
   return [...lines.values()].map((l) => {
     const box = { x: l.x0 / k, y: l.y0 / k, w: (l.x1 - l.x0) / k, h: (l.y1 - l.y0) / k }
-    return { text: l.words.join(' '), box, lead: l.label ?? l.lead ?? box }
+    return { text: l.words.map((w) => w.text).join(' '), box, lead: l.label ?? l.lead ?? box, words: l.words }
   })
 }
 
