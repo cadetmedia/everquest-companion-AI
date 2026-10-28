@@ -135,4 +135,6 @@ export const OWNER_TOOLS: boolean = DEV_TOOLS && ownerToolsGranted(ownerToolsBri
 // draws the UNRELEASED Factions tab — the whole point of test.8. The strip argument above stands
 // for real releases; a TEST install is the review audience, and `src/main/unreleased.ts` takes
 // the same forcing through `TEST_BUILD` so both halves of the gate agree.
+// ALWAYS OPEN (owner, 2026-10-28: "no reason to hide them ever just always show the tabs"): not a
+// test-build forcing any more; every build draws every surface, `src/main/unreleased.ts` agrees.
 export const UNRELEASED = true as boolean

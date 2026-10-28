@@ -26,9 +26,9 @@ Tradeskill Ingredient rows, font reader, Map pins Achievements chip, docs housek
 - Wiki edits for the owner: Enynti `| respawn_time = 8:50`, restore Sulgar, Clockwork Merchant `|name`.
 - Unconfirmed changes: meters update 1/s in a fight; `heal-*` overlays character-aware; a charm
   bind still ends at the zone line.
-- The `UNRELEASED` gate: TRUE in every test build (`src/main/unreleased.ts`, `devFlags.ts`), so
-  players already see Factions, Slayer, Unlocks, Gaps, Bazaar, Spells. Graduating = removing the
-  gate as cleanup; no player-visible change.
+- The `UNRELEASED` gate: ruled 2026-10-28, always open ("no reason to hide them ever just always
+  show the tabs"). Both halves are pinned true. Left: remove the gate's ~128 call sites (48 files)
+  as cleanup; no player-visible change.
 
 ## Candidate work (owner to pick)
 
