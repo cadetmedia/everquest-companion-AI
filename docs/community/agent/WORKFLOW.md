@@ -143,9 +143,8 @@ disagree, RULES.md wins; fix this file.
   `telemetry` (no analytics compiled in), `spells-gate` (UNRELEASED forced open). Fixed that night
   (stale specs): `default-sound-pack`, `sky-recent-sort`, `plan`. Since 2026-10-18 the
   TEST-build three are skipped by the TEST build's e2e runner with the reason, and `overview`,
-  `whats-new` (TEST build) and `voice-alerts` pass. `maps` stays red as a stale spec (canvas
-  vs pane height, and the pane-close width read before the map settles; the owner found the
-  map fine, so it was not chased). Baseline a red against the last release tag before calling it a regression.
+  `whats-new` (TEST build) and `voice-alerts` pass. `maps` was red until 2026-10-27: a real
+  layout shift (the travel card above the row arriving late), fixed in the app, not the spec. Baseline a red against the last release tag before calling it a regression.
   Measured 2026-10-21 (main_community 4f9062d8 vs test.29, 4 in parallel): 61/65 green on both, no
   new reds. `voice-alerts` is red again on both (the telemetry notice covers the "custom" menu item
   in `customPhraseSteps.mts` `rewordFromTheRow`; the spec never dismisses it, as alert-dialog-focus

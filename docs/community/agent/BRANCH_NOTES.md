@@ -51,8 +51,10 @@ where one exists.
 - Drag ends on `buttons===0`, pointercancel and lostpointercapture.
 - MUI Tooltip must wrap a DOM element (Box/Link), not a plain function component.
 - Open: no e2e for Closest port / era chip / advice table; Hate and Sky lock levels unruled.
-- Open (seen 2026-10-13, present on the morning build too): `maps.e2e` "the map row never moves" fails,
-  the pane drops 91 px (371 to 462) when the map arrives, most likely the travel card appearing late.
+- Fixed 2026-10-27: `maps.e2e` "the map row never moves" (the row dropped 71 px when the map
+  arrived). Cause: the travel card sat in the column above the row and grows as its band, ports
+  and zone graph answer. It now floats over the map's top-left (`MapBody` `TravelFloat`), and sits
+  inside the no-map panel's own scroll box. Nothing whose height arrives late goes above the row.
 
 ## Map waypoints and the Map pins overlay (was map-waypoints)
 

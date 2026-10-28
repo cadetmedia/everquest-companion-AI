@@ -41,7 +41,7 @@
 // All levels. Out-of-band geometry DIMS rather than disappearing — a floor with its surroundings
 // deleted is a diagram you cannot place.
 
-import { memo, useCallback, useEffect, useMemo, useState, useRef, type JSX } from 'react'
+import { memo, useCallback, useEffect, useMemo, useState, useRef, type JSX, type ReactNode } from 'react'
 import { Box, Chip, Paper, Stack, Typography } from '@mui/material'
 import MapIcon from '@mui/icons-material/Map'
 import type { CharacterSnap } from '@shared/types'
@@ -264,13 +264,16 @@ function MapsEmpty({
   auto,
   zones,
   zone,
-  error
+  error,
+  travel
 }: {
   raw: string | undefined
   auto: ZoneShort | null
   zones: ZoneShort[]
   zone: ZoneShort | null
   error: string | null
+  /** the travel card, inside this panel's own scroll box so it never moves the row (JOS-205) */
+  travel: ReactNode
 }): JSX.Element {
   const unmapped = raw != null && raw !== '' && auto == null
   return (
@@ -280,6 +283,7 @@ function MapsEmpty({
       sx={{ flexGrow: 1, minHeight: 0, overflow: 'auto', p: 2 }}
     >
       <Stack spacing={1.5} alignItems="flex-start">
+        {travel}
         <Typography variant="body2" color="text.secondary">
           {zones.length === 0
             ? 'No map files were found in your EverQuest folder. The game ships them under maps\\ - set your install folder in Preferences if this looks wrong.'
@@ -426,6 +430,11 @@ function MapTab({
   // The zone's own level band and the ports that reach it — joined on the LONG name, the same key
   // the pins use, because the bestiary spells zones that way.
   const travel = useZoneTravel(zone, zoneName, data)
+  // HOW YOU GET HERE, AND WHAT FOR (owner ask 2026-09-11): about the zone itself, not about finding
+  // something in it. Never in the column above the row: it answers late and its height varies by
+  // zone, so there it pushed the map down after it drew (JOS-205). MapBody floats it over the map;
+  // the no-map panel carries it in its own scroll box. Draws nothing when nothing is known.
+  const travelCard = <TravelMemo travel={travel} onPick={pick} onOpenItem={onOpenLoot} />
 
   return (
     <>
@@ -458,16 +467,15 @@ function MapTab({
           onZoom={vp.zoomBy}
           onFit={vp.fit}
         />
-        {/* HOW YOU GET HERE, AND WHAT FOR (owner ask 2026-09-11). Under the toolbar rather than in
-            the sidebar: it is about the zone itself, not about finding something in it, and the
-            sidebar is the finder. Draws nothing at all when neither witness has anything to say. */}
-        <TravelMemo travel={travel} onPick={pick} onOpenItem={onOpenLoot} />
         <MapBody
           data={data}
           // Nothing is claimed before the pack listing and the first fetch have answered — a
           // panel that flashes up and vanishes reads as a bug, not as a load.
           empty={
-            ready && !loading && <MapsEmpty raw={raw} auto={auto} zones={zones} zone={zone} error={error} />
+            ready &&
+            !loading && (
+              <MapsEmpty raw={raw} auto={auto} zones={zones} zone={zone} error={error} travel={travelCard} />
+            )
           }
           vp={vp}
           hostRef={hostRef}
@@ -482,6 +490,7 @@ function MapTab({
           zones={zones}
           onOpenMob={onOpenMob}
           onOpenLoot={onOpenLoot}
+          travel={travelCard}
         />
         {/* Reserved for the same reason and on the same condition as the toolbar's row (JOS-205). */}
         <CreditsMemo data={data} reserve={reserve} />
