@@ -13,6 +13,7 @@ import {
   remainingFraction,
   isOverdue,
   classAccent,
+  estimateChipLabel,
   estimatePrefix,
   estimatorSourceTitle
 } from './format'
@@ -47,7 +48,8 @@ function estimateState(buff: ActiveBuff, elapsed: number): EstimateState {
   // number no cast of yours was ever seen ENDING at, so being past it is a statement about the
   // model waiting for a line rather than about a distribution. It is a FLOOR, so "past estimate" is
   // the literal truth — the spell has outlasted everything the log can prove.
-  const stated = buff.durationSource === 'db' || buff.durationSource === 'deathBound'
+  // A duration the player typed (fork issue #4) is stated the same way: no distribution behind it.
+  const stated = buff.durationSource === 'db' || buff.durationSource === 'deathBound' || buff.durationSource === 'manual'
   const overdue =
     isOverdue(elapsed, buff.p75, buff.n) || (stated && buff.estimatedMs != null && elapsed > buff.estimatedMs)
   return { est, spread, overdue }
@@ -138,7 +140,7 @@ function EstimateBar({
             <Tooltip title={estimatorSourceTitle(source)}>
               <Chip
                 size="small"
-                label={source === 'db' ? 'db' : 'log'}
+                label={estimateChipLabel(source)}
                 variant="outlined"
                 sx={{ height: 16, fontSize: 10, '& .MuiChip-label': { px: 0.5 } }}
               />

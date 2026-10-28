@@ -18,10 +18,11 @@
 // The input echoes instantly and the FILTER rides `useDeferredValue` (AGENTS.md's search rule).
 
 import type { JSX } from 'react'
-import { memo, useDeferredValue, useMemo, useState } from 'react'
+import { memo, useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react'
 import {
   Box,
   Chip,
+  IconButton,
   InputAdornment,
   Paper,
   Stack,
@@ -34,8 +35,12 @@ import {
   Typography
 } from '@mui/material'
 import SearchIcon from '@mui/icons-material/Search'
+import EditIcon from '@mui/icons-material/EditOutlined'
 import type { BuffClass, BuffStat } from '@shared/types'
-import { fmtDuration, classAccent, estimatePrefix, estimatorSourceTitle } from './format'
+import type { BuffDurationOverride } from '@shared/buffTrust'
+import { buffStatRows, type KeyedBuffStat } from '@shared/buffStatRows'
+import { fmtDuration, classAccent, estimateChipLabel, estimatePrefix, estimatorSourceTitle } from './format'
+import { BuffDurationDialog } from './BuffDurationDialog'
 import { Tooltip } from '../../lib/Tooltip'
 import { BuffAllowCheck } from './BuffAllowCheck'
 import { useBuffAllow } from './useBuffAllow'
@@ -74,7 +79,7 @@ function EstimateCell({ ms, src }: { ms?: number | null; src?: string }): JSX.El
         {src ? (
           <Chip
             size="small"
-            label={src === 'db' ? 'db' : 'log'}
+            label={estimateChipLabel(src)}
             variant="outlined"
             sx={{ ml: 0.5, height: 15, fontSize: 9, '& .MuiChip-label': { px: 0.4 } }}
           />
@@ -84,8 +89,11 @@ function EstimateCell({ ms, src }: { ms?: number | null; src?: string }): JSX.El
   )
 }
 
+/** Opens the duration dialog for one line (fork issue #4). */
+type OnEdit = (key: string) => void
+
 /** One stats row. Everything not stated by a source renders as '—', never as a zero. */
-function StatsRow({ s, withBoxes }: { s: BuffStat; withBoxes: boolean }): JSX.Element {
+function StatsRow({ k, s, withBoxes, onEdit }: { k: string; s: BuffStat; withBoxes: boolean; onEdit: OnEdit }): JSX.Element {
   const est = rowEstimate(s)
   return (
     <TableRow hover data-testid="buff-stats-row" data-spell={s.spell}>
@@ -99,8 +107,19 @@ function StatsRow({ s, withBoxes }: { s: BuffStat; withBoxes: boolean }): JSX.El
         </TableCell>
       ) : null}
       <TableCell>{s.spell}</TableCell>
-      <TableCell align="right">
+      <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
         <EstimateCell ms={est.ms} src={est.src} />
+        <IconButton
+          size="small"
+          aria-label={`Change ${s.spell} duration`}
+          data-testid="buff-duration-edit"
+          onClick={() => {
+            onEdit(k)
+          }}
+          sx={{ ml: 0.25, p: 0.25 }}
+        >
+          <EditIcon sx={{ fontSize: 14 }} />
+        </IconButton>
       </TableCell>
       <TableCell align="right">
         {s.n === 0 ? (
@@ -123,7 +142,7 @@ function StatsRow({ s, withBoxes }: { s: BuffStat; withBoxes: boolean }): JSX.El
 }
 
 /** The dense per-spell stats table for ONE class, sorted by sample count. */
-function StatsTable({ rows, withBoxes }: { rows: BuffStat[]; withBoxes: boolean }): JSX.Element {
+function StatsTable({ rows, withBoxes, onEdit }: { rows: KeyedBuffStat[]; withBoxes: boolean; onEdit: OnEdit }): JSX.Element {
   return (
     <Table size="small" sx={{ '& td, & th': { py: 0.5 } }}>
       <TableHead>
@@ -138,8 +157,8 @@ function StatsTable({ rows, withBoxes }: { rows: BuffStat[]; withBoxes: boolean 
         </TableRow>
       </TableHead>
       <TableBody>
-        {rows.map((s) => (
-          <StatsRow key={s.spell} s={s} withBoxes={withBoxes} />
+        {rows.map(({ key, s }) => (
+          <StatsRow key={key} k={key} s={s} withBoxes={withBoxes} onEdit={onEdit} />
         ))}
       </TableBody>
     </Table>
@@ -147,7 +166,17 @@ function StatsTable({ rows, withBoxes }: { rows: BuffStat[]; withBoxes: boolean 
 }
 
 /** One class's durations table, under its accent swatch. */
-function StatsSection({ cls, rows, withBoxes }: { cls: BuffClass; rows: BuffStat[]; withBoxes: boolean }): JSX.Element {
+function StatsSection({
+  cls,
+  rows,
+  withBoxes,
+  onEdit
+}: {
+  cls: BuffClass
+  rows: KeyedBuffStat[]
+  withBoxes: boolean
+  onEdit: OnEdit
+}): JSX.Element {
   return (
     <Box>
       <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 0.5 }}>
@@ -157,19 +186,32 @@ function StatsSection({ cls, rows, withBoxes }: { cls: BuffClass; rows: BuffStat
         </Typography>
       </Stack>
       <Paper variant="outlined" sx={{ p: 1, borderLeft: '3px solid', borderLeftColor: classAccent(cls) }}>
-        <StatsTable rows={rows} withBoxes={withBoxes} />
+        <StatsTable rows={rows} withBoxes={withBoxes} onEdit={onEdit} />
       </Paper>
     </Box>
   )
 }
 
-/** The rows of one class that match the query, sorted by sample count then name. */
-function matching(stats: Record<string, BuffStat>, cls: BuffClass, needle: string): BuffStat[] {
-  return Object.values(stats)
-    // eslint-disable-next-line eqc/no-domain-munging -- JOS-459 cutover ledger item 3: no served view source answers this yet, so the renderer still derives BuffStat. Becomes a view descriptor when the source lands.
-    .filter((s) => s.cls === cls && (needle === '' || s.spell.toLowerCase().includes(needle)))
-    // eslint-disable-next-line eqc/no-domain-munging -- JOS-459 cutover ledger item 3: no served view source answers this yet, so the renderer still derives BuffStat. Becomes a view descriptor when the source lands.
-    .sort((a, b) => b.n - a.n || a.spell.localeCompare(b.spell))
+/**
+ * The player's per-spell duration choices (fork issue #4): read once, and replaced by what main
+ * stored after every save. Saves go through `setBuffDuration`, which merges on main.
+ */
+function useBuffDurations(): {
+  durations: Record<string, BuffDurationOverride>
+  setDuration: (key: string, choice: BuffDurationOverride | undefined) => void
+} {
+  const [durations, setDurations] = useState<Record<string, BuffDurationOverride>>({})
+  useEffect(() => {
+    void window.eq.getBuffTrust().then((p) => {
+      setDurations(p.durations)
+    })
+  }, [])
+  const setDuration = useCallback((key: string, choice: BuffDurationOverride | undefined) => {
+    void window.eq.setBuffDuration(key, choice).then((p) => {
+      setDurations(p.durations)
+    })
+  }, [])
+  return { durations, setDuration }
 }
 
 /**
@@ -191,13 +233,16 @@ export const BuffStats = memo(function BuffStats({ stats }: { stats: Record<stri
   // The input echoes instantly; the FILTER is deferred (AGENTS.md's search rule).
   const needle = useDeferredValue(query).trim().toLowerCase()
   const sections = useMemo(
-    () => CLASS_ORDER.map((cls) => ({ cls, rows: matching(stats, cls, needle) })).filter((s) => s.rows.length > 0),
+    () => CLASS_ORDER.map((cls) => ({ cls, rows: buffStatRows(stats, cls, needle) })).filter((s) => s.rows.length > 0),
     [stats, needle]
   )
   const mined = useMemo(() => Object.keys(stats).length > 0, [stats])
   // The boxes and their column exist only in opt-in mode; the search stays in both, because the
   // tables are worth searching whether or not you are ticking them.
   const withBoxes = useBuffAllow(window.eq).prefs.optIn
+  const { durations, setDuration } = useBuffDurations()
+  const [editing, setEditing] = useState<string | null>(null)
+  const editStat = editing === null ? undefined : stats[editing]
 
   return (
     <Box>
@@ -234,9 +279,22 @@ export const BuffStats = memo(function BuffStats({ stats }: { stats: Record<stri
       ) : (
         <Stack spacing={1.5}>
           {sections.map((s) => (
-            <StatsSection key={s.cls} cls={s.cls} rows={s.rows} withBoxes={withBoxes} />
+            <StatsSection key={s.cls} cls={s.cls} rows={s.rows} withBoxes={withBoxes} onEdit={setEditing} />
           ))}
         </Stack>
+      )}
+      {editing !== null && editStat !== undefined && (
+        <BuffDurationDialog
+          stat={editStat}
+          choice={durations[editing]}
+          open
+          onClose={() => {
+            setEditing(null)
+          }}
+          onSave={(choice) => {
+            setDuration(editing, choice)
+          }}
+        />
       )}
     </Box>
   )

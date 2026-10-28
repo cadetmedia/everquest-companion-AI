@@ -60,8 +60,12 @@ export type BuffClass = 'buff' | 'debuff'
  * Every consumer that is not asking specifically about the DB floor should treat 'cluster' the
  * way it treats 'observed' — both are this caster's own measured cycles. 'deathBound' is the one
  * that needs its own sentence, because the claim it makes is weaker than either.
+ *
+ *   'logMedian' — the player chose "from my log" for this spell (fork issue #4): the median of
+ *                their recent clean cycles, with no database floor.
+ *   'manual'   — the player typed this duration (fork issue #4).
  */
-export type EstimatorSource = 'db' | 'observed' | 'cluster' | 'deathBound'
+export type EstimatorSource = 'db' | 'observed' | 'cluster' | 'deathBound' | 'logMedian' | 'manual'
 
 /** Per-spell mined duration statistics (milliseconds). */
 export interface BuffStat {
@@ -96,6 +100,10 @@ export interface BuffStat {
   estimateMs?: number | null
   /** Where `estimateMs` came from — see {@link EstimatorSource}. */
   estimatorSource?: EstimatorSource
+  /** What "from my log" would give: the median of the recent clean cycles. Absent with none. */
+  logEstimateMs?: number
+  /** What the automatic estimate would give — sent only while a player's choice overrides it. */
+  autoEstimateMs?: number
   /**
    * The newest event ts (ms epoch) this spell was seen — the last castBegin / apply / fade
    * involving it (Task #45). The RECENCY signal the suggested-alerts wizard sorts by (recent

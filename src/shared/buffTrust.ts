@@ -45,8 +45,17 @@
 // Off by default, because a group-mate swinging the same weapon at the same mob prints the identical
 // sentence; the reporter's use is solo and instanced play, where that residual is nobody.
 //
+// THE DURATION CHOICES (fork issue #4), the one part of this preference that is about a SPELL rather
+// than a caster. The automatic estimate is the wiki duration raised to the longest recent cycle, and
+// one odd cycle can leave it far too long (a reporter's Whirl Till You Hurl showed 24 s against a
+// 7.5 s spin). Per spell line the player may pick `log` (the median of their own recent clean cycles,
+// no wiki floor) or `fixed` (a number they type). It rides the same define because the engine's
+// buffs core is the one reader of both halves.
+//
 // Lives in shared/ because both ends need it: main folds it into the model, the renderer's
 // Preferences card edits it, and the normalizer must be the same code in both places.
+
+import { parseDurationMs } from './spellDuration'
 
 /** The sentinel caster key for the player themselves. Never a name — names are foldable. */
 export const SELF_CASTER = 'self'
@@ -68,10 +77,63 @@ export interface BuffTrustPrefs {
   externals: string[]
   /** Count a debuff your held weapon or item procs on a mob you are hitting as yours. Off by default. */
   procDebuffs: boolean
+  /** Per spell line key (the Buffs tab's Durations key): how its timer length is chosen. Absent = automatic. */
+  durations: Record<string, BuffDurationOverride>
 }
 
-/** Nobody but you, and no procs. The shipped default, and the one this app is designed around. */
-export const DEFAULT_BUFF_TRUST_PREFS: BuffTrustPrefs = { externals: [], procDebuffs: false }
+/**
+ * One spell's timer-length choice. `log`: the median of your recent clean cycles, ignoring the wiki.
+ * `fixed`: exactly `ms`. A spell with no entry uses the automatic estimate.
+ */
+export type BuffDurationOverride = { mode: 'log' } | { mode: 'fixed'; ms: number }
+
+/** The bounds a typed duration is held to: one second to three hours (the engine's sample ceiling). */
+export const MIN_FIXED_DURATION_MS = 1_000
+export const MAX_FIXED_DURATION_MS = 3 * 60 * 60_000
+
+/**
+ * A duration the player typed, in ms, or null when it is not one within the bounds above. A bare
+ * number is seconds (`7.5`); anything else is read by the spell data's own parser (`1m 30s`, `1:30`).
+ */
+export function parseTypedDuration(text: string): number | null {
+  const t = text.trim()
+  if (t === '') return null
+  const ms = /^\d+(\.\d+)?$/.test(t) ? Math.round(parseFloat(t) * 1000) : parseDurationMs(t)
+  if (ms == null || ms < MIN_FIXED_DURATION_MS || ms > MAX_FIXED_DURATION_MS) return null
+  return ms
+}
+
+/** How many spells may carry a choice. A bound on a hand-edited settings file, not a design limit. */
+export const MAX_DURATION_OVERRIDES = 500
+
+/** Nobody but you, no procs, every spell automatic. The shipped default. */
+export const DEFAULT_BUFF_TRUST_PREFS: BuffTrustPrefs = { externals: [], procDebuffs: false, durations: {} }
+
+/** One stored choice read back, or null when it is not one this app could have written. */
+function storableOverride(raw: unknown): BuffDurationOverride | null {
+  if (typeof raw !== 'object' || raw === null) return null
+  const { mode, ms } = raw as { mode?: unknown; ms?: unknown }
+  if (mode === 'log') return { mode: 'log' }
+  if (mode !== 'fixed' || typeof ms !== 'number' || !Number.isFinite(ms)) return null
+  const whole = Math.round(ms)
+  if (whole < MIN_FIXED_DURATION_MS || whole > MAX_FIXED_DURATION_MS) return null
+  return { mode: 'fixed', ms: whole }
+}
+
+/** The durations map, normalized: string keys only, readable choices only, bounded in count. */
+function normalizeDurations(raw: unknown): Record<string, BuffDurationOverride> {
+  const out: Record<string, BuffDurationOverride> = {}
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return out
+  let count = 0
+  for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
+    if (key.trim().length === 0 || key.length > 128) continue
+    const choice = storableOverride(value)
+    if (choice === null) continue
+    out[key] = choice
+    if (++count >= MAX_DURATION_OVERRIDES) break
+  }
+  return out
+}
 
 /** A caster name folded to its comparison key (world-model law 2). */
 export function casterKey(name: string): string {
@@ -98,12 +160,17 @@ function storableName(raw: unknown): string | null {
  * a hand-edited settings file must not be able to stop the app folding buffs.
  */
 export function normalizeBuffTrustPrefs(raw: unknown): BuffTrustPrefs {
-  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return { ...DEFAULT_BUFF_TRUST_PREFS }
-  const { externals: list, procDebuffs: flag } = raw as { externals?: unknown; procDebuffs?: unknown }
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return { ...DEFAULT_BUFF_TRUST_PREFS, durations: {} }
+  const {
+    externals: list,
+    procDebuffs: flag,
+    durations: rawDurations
+  } = raw as { externals?: unknown; procDebuffs?: unknown; durations?: unknown }
   // Only a literal `true` switches the gate on: an absent key is an older store, anything else is
   // a hand edit, and both read as the shipped default.
   const procDebuffs = flag === true
-  if (!Array.isArray(list)) return { externals: [], procDebuffs }
+  const durations = normalizeDurations(rawDurations)
+  if (!Array.isArray(list)) return { externals: [], procDebuffs, durations }
   const seen = new Set<string>()
   const externals: string[] = []
   for (const entry of list) {
@@ -115,7 +182,18 @@ export function normalizeBuffTrustPrefs(raw: unknown): BuffTrustPrefs {
     externals.push(name)
     if (externals.length >= MAX_EXTERNAL_CASTERS) break
   }
-  return { externals, procDebuffs }
+  return { externals, procDebuffs, durations }
+}
+
+/** Set one spell's choice, or clear it back to automatic with `undefined`. */
+export function setDurationOverride(
+  prefs: BuffTrustPrefs,
+  key: string,
+  choice: BuffDurationOverride | undefined
+): BuffTrustPrefs {
+  const kept = Object.entries(prefs.durations).filter(([k]) => k !== key)
+  const durations = Object.fromEntries(choice === undefined ? kept : [...kept, [key, choice]])
+  return normalizeBuffTrustPrefs({ ...prefs, durations })
 }
 
 /** Add a name, preserving order and refusing duplicates. Returns the same object when nothing changed. */

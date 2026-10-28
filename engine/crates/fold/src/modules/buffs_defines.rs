@@ -10,6 +10,7 @@
 //! needs no define of its own.
 
 use crate::modules::buffs::BuffsModule;
+use crate::modules::buffs_overrides::parse_overrides;
 use serde_json::Value;
 
 /// The strings of a JSON array, skipping anything that is not one. A missing array is empty.
@@ -47,5 +48,11 @@ impl crate::Defines for BuffsModule {
         core.anchors.set_trust(strings_of(payload, "externals"));
         core.anchors
             .set_proc_trust(enabled, strings_of(payload, "procSpells"));
+        // The player's duration choices (fork issue #4). A change moves the Durations table and
+        // every live buff bar with no log line behind it, so it is announced here.
+        if core.stats.set_overrides(parse_overrides(payload)) {
+            drop(core);
+            self.announce.changed(self.seq);
+        }
     }
 }

@@ -15,11 +15,11 @@ import { heldClickySpells, heldProcSpells, type ItemDb } from '../src/main/itemC
 
 test('the gate is off unless the store says exactly true, and an older store reads as off', () => {
   assert.deepEqual(normalizeBuffTrustPrefs(undefined), DEFAULT_BUFF_TRUST_PREFS)
-  assert.deepEqual(normalizeBuffTrustPrefs({ externals: ['Faelin'] }), { externals: ['Faelin'], procDebuffs: false })
-  assert.deepEqual(normalizeBuffTrustPrefs({ externals: [], procDebuffs: 'yes' }), { externals: [], procDebuffs: false })
-  assert.deepEqual(normalizeBuffTrustPrefs({ externals: [], procDebuffs: true }), { externals: [], procDebuffs: true })
+  assert.deepEqual(normalizeBuffTrustPrefs({ externals: ['Faelin'] }), { externals: ['Faelin'], procDebuffs: false, durations: {} })
+  assert.deepEqual(normalizeBuffTrustPrefs({ externals: [], procDebuffs: 'yes' }), { externals: [], procDebuffs: false, durations: {} })
+  assert.deepEqual(normalizeBuffTrustPrefs({ externals: [], procDebuffs: true }), { externals: [], procDebuffs: true, durations: {} })
   // A broken list keeps the flag: the two halves are independent answers.
-  assert.deepEqual(normalizeBuffTrustPrefs({ externals: 'Faelin', procDebuffs: true }), { externals: [], procDebuffs: true })
+  assert.deepEqual(normalizeBuffTrustPrefs({ externals: 'Faelin', procDebuffs: true }), { externals: [], procDebuffs: true, durations: {} })
 })
 
 test('editing the allowlist never flips the gate, and the setter is identity when nothing changes', () => {

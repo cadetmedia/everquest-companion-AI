@@ -568,6 +568,21 @@ where one exists.
 - Not read: walks over every item (planner indexes, zone ports, clickies) keep the file's own map, so no
   page is visited twice; Spells search leaves the redirect shorthand (`DT`, `Dmf`) out.
 
+## Buff durations (fork issue #4)
+
+- Every bar's length goes through one engine function, `SpellStats::estimate_for`
+  (`buffs_stats.rs`). The automatic rule is the DB floor raised to the max of the last five
+  cycles, so one long outlier sets the bar. A player's choice answers first (`buffs_overrides.rs`).
+- Choices: `log` = median of the last five clean cycles, no DB floor (falls back to automatic with
+  none); `fixed` = typed ms, 1 s to 3 h. Keyed by spell line, every caster. Sources `logMedian`
+  and `manual`; the chip reads `log` and `set`.
+- Stored in `buffTrust.durations` and sent inside `buffTrust.define`; the protocol schema
+  types it (`BuffDurationOverride`), so a field added there needs `npm run gen:protocol`.
+- Saves go through `buffTrust:setDuration`, merged on main. `buffTrust:set` (the Preferences card)
+  keeps the stored durations, because each surface holds its own copy and would wipe the other's.
+- A change re-announces the buffs module, so the table and buff bars move at once. A crowd-control
+  hold already running keeps its length until the next cast or sample.
+
 ## Open items with no feature area yet
 
 - The Recommended tab ignores layer-3 era derivations on purpose (`progressionPlan.ts`

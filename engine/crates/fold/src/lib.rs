@@ -1427,6 +1427,54 @@ mod tests {
         assert_eq!(row["estimatorSource"], "observed");
     }
 
+    /// Three clean Swift Like the Wind cycles, the last one a long outlier (fork issue #4's shape).
+    const THREE_CYCLES: [&str; 9] = [
+        r#"{"kind":"castBegin","seq":0,"ts":1000,"raw":"c","spell":"Swift Like the Wind"}"#,
+        r#"{"kind":"buffApply","seq":1,"ts":2000,"raw":"a","target":"self","spell":"Swift Like the Wind","illusion":false,"durationMs":60000,"candidates":[{"name":"Swift Like the Wind","durationMs":60000,"illusion":false}]}"#,
+        r#"{"kind":"buffWearOff","seq":2,"ts":52000,"raw":"w","spell":"Swift Like the Wind","candidates":["Swift Like the Wind"],"target":"self"}"#,
+        r#"{"kind":"castBegin","seq":3,"ts":60000,"raw":"c","spell":"Swift Like the Wind"}"#,
+        r#"{"kind":"buffApply","seq":4,"ts":61000,"raw":"a","target":"self","spell":"Swift Like the Wind","illusion":false,"durationMs":60000,"candidates":[{"name":"Swift Like the Wind","durationMs":60000,"illusion":false}]}"#,
+        r#"{"kind":"buffWearOff","seq":5,"ts":113000,"raw":"w","spell":"Swift Like the Wind","candidates":["Swift Like the Wind"],"target":"self"}"#,
+        r#"{"kind":"castBegin","seq":6,"ts":120000,"raw":"c","spell":"Swift Like the Wind"}"#,
+        r#"{"kind":"buffApply","seq":7,"ts":121000,"raw":"a","target":"self","spell":"Swift Like the Wind","illusion":false,"durationMs":60000,"candidates":[{"name":"Swift Like the Wind","durationMs":60000,"illusion":false}]}"#,
+        r#"{"kind":"buffWearOff","seq":8,"ts":221000,"raw":"w","spell":"Swift Like the Wind","candidates":["Swift Like the Wind"],"target":"self"}"#,
+    ];
+
+    /// Fork issue #4: a typed duration replaces the estimate outright, and the row still states
+    /// what the automatic and from-log figures would be, so the dialog can offer the way back.
+    #[test]
+    fn a_fixed_duration_choice_replaces_the_estimate_and_keeps_the_alternatives() {
+        let trust = json!({ "externals": [], "durations": {
+            "swift like the wind": { "mode": "fixed", "ms": 30000 }
+        }});
+        let snaps = folded_with("buffTrust", trust, &THREE_CYCLES);
+        let row = &state_of(&snaps, "buffs")["stats"]["swift like the wind"];
+        assert_eq!(row["n"], 3, "{row}");
+        assert_eq!(row["estimateMs"], 30_000, "{row}");
+        assert_eq!(row["estimatorSource"], "manual", "{row}");
+        assert_eq!(row["autoEstimateMs"], 100_000, "{row}");
+        assert_eq!(row["logEstimateMs"], 52_000, "{row}");
+    }
+
+    /// Fork issue #4: "from my log" is the median of the clean cycles, so one long outlier no longer
+    /// decides the bar; with no choice the automatic max still does, and says nothing extra.
+    #[test]
+    fn a_log_choice_takes_the_median_so_one_outlier_no_longer_decides() {
+        let trust = json!({ "externals": [], "durations": {
+            "swift like the wind": { "mode": "log" }
+        }});
+        let snaps = folded_with("buffTrust", trust, &THREE_CYCLES);
+        let row = &state_of(&snaps, "buffs")["stats"]["swift like the wind"];
+        assert_eq!(row["estimateMs"], 52_000, "{row}");
+        assert_eq!(row["estimatorSource"], "logMedian", "{row}");
+
+        let plain = folded_with("buffTrust", json!({ "externals": [] }), &THREE_CYCLES);
+        let row = &state_of(&plain, "buffs")["stats"]["swift like the wind"];
+        assert_eq!(row["estimateMs"], 100_000, "{row}");
+        assert_eq!(row["estimatorSource"], "observed", "{row}");
+        assert!(row.get("autoEstimateMs").is_none(), "{row}");
+    }
+
     /// The wear-off is synthesized back onto the bus as a resolved `buffExpired` and drained after
     /// the primary event, so every module registered before `buffs` sees it in bus order.
     #[test]

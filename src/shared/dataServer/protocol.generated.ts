@@ -8,7 +8,7 @@
 // schema edit that lands without regenerating turns tests/protocolSchema.test.mts red on the
 // TypeScript side and the protocol-codegen staleness test red on the Rust side.
 //
-// schema-digest: sha256:662adfde13f2397ab0a3188fcf587da0a4e4fd51caada8c5af1947a0eb41f102
+// schema-digest: sha256:eadca3087163acadf8eb08225cebbc677e554ef870d57f216bda1889568f0378
 
 /**
  * Anything that can travel the wire, in either direction. The transport adapters are generic over exactly this: a transport moves ProtocolMessages and knows nothing else about the protocol.
@@ -380,7 +380,20 @@ export interface BuffTrustPrefs {
   externals: string[]
   procDebuffs: boolean
   procSpells: string[]
+  /**
+   * The player's per-spell duration choices (fork issue #4), keyed by the Buffs tab's spell line key. Absent or empty means every spell uses the automatic estimate.
+   */
+  durations?: {
+    [k: string]: BuffDurationOverride
+  }
   [k: string]: unknown
+}
+/**
+ * How one spell's timer length is chosen: `log` uses the median of the player's recent clean cycles in place of the automatic estimate; `fixed` uses `ms` exactly.
+ */
+export interface BuffDurationOverride {
+  mode: 'log' | 'fixed'
+  ms?: number
 }
 /**
  * WHICH MOBS GET A CLOCK (JOS-194) — tracking is opt-in per mob, so this list is the whole of what the respawn fold knows that the log did not tell it.
