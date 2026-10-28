@@ -677,6 +677,8 @@ export interface ItemKnowledge {
   foragedNote?: string
   /** the page files itself under `[[Category:Foraged]]` */
   foragedCategory?: boolean
+  /** the page files itself under `[[Category:Tradeskill Ingredient]]` */
+  ingredientCategory?: boolean
   /** whether this result was served from cache (vs a fresh network lookup) */
   cached: boolean
   /** true when the wiki lookup was attempted but found no page (negative result) */

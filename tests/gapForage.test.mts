@@ -131,3 +131,59 @@ test("a forage update row's buttons open the item's own page in the editor and s
   assert.match(ui, /forageButtons\(row\.forageUpdate\)/)
   assert.match(ui, /existing \? wikiEditUrl\(target\) : wikiCreateUrl\(target\)/)
 })
+
+// Item page facts, phase 3 on pages that exist (owner, 2026-10-21: "sure"): a known item a loot line
+// stored in the tradeskill depot, whose page lacks [[Category:Tradeskill Ingredient]], is the same
+// Add to item page row; an item owing forage lines too is one row.
+function depotProof(name: string): GapRow {
+  return { ...proof(name, []), domain: 'depot' as GapRow['domain'], kinds: ['looted'], count: 1, details: { samples: [], zones: { entries: [{ name: 'Befallen', n: 1 }], distinct: 1, all: ['Befallen'] } } }
+}
+
+test('a depot store whose page lacks Tradeskill Ingredient is an Items row asking for that category alone; a page in it asks nothing', () => {
+  const snap: GapsSnap = {
+    rows: [depotProof('Bone Chips'), depotProof('Diamond'), depotProof('No Page Yet')],
+    totals: { item: 1, mob: 0, spell: 0, merchant: 0, depot: 3 } as GapsSnap['totals'],
+    seen: { item: 1, mob: 0, spell: 0, merchant: 0, depot: 3 } as GapsSnap['seen']
+  }
+  const pages = new Map<string, ItemPageForage | null>([
+    ['bone chips', page({ page: 'Bone Chips' })],
+    ['diamond', page({ page: 'Diamond', ingredient: true })],
+    ['no page yet', null]
+  ])
+  const out = withForageRows(snap, pages, CATALOG)
+  assert.deepEqual(out.rows.map((r) => `${r.domain} ${r.name}`), ['item Bone Chips'])
+  assert.deepEqual(out.rows[0].forageUpdate, { page: 'Bone Chips', zones: [], noField: false, category: false, ingredient: true })
+  assert.equal(out.totals.item, 2)
+  assert.equal('depot' in out.totals || 'depot' in out.seen, false)
+  assert.deepEqual(withForageRows(snap, undefined, CATALOG).rows, [], 'before main answers, nothing stands in')
+  const row = out.rows[0]
+  assert.equal(wikiPageText(row, [], {}), '[[Category:Tradeskill Ingredient]]\n')
+  const [chip] = gapActions(row, 'hasPage')
+  assert.equal(chip.label, 'Add to item page')
+  assert.equal(chip.why, 'The page for Bone Chips lacks Category:Tradeskill Ingredient, which your log shows.')
+  assert.equal(chip.href, 'https://eqlwiki.com/index.php?title=Bone_Chips&action=edit')
+  assert.ok(row.forageUpdate !== undefined)
+  assert.match(forageButtons(row.forageUpdate).copyTip, /from your log's tradeskill depot\.$/)
+})
+
+test('an item foraged and stored in the depot whose page lacks both is one row, its copy every line to add', () => {
+  const snap: GapsSnap = { rows: [proof('Fresh Fish', ['Kedge Keep']), depotProof('Fresh Fish')], totals: { item: 0, mob: 0, spell: 0, merchant: 0 }, seen: { item: 0, mob: 0, spell: 0, merchant: 0 } }
+  const out = withForageRows(snap, new Map([['fresh fish', page({ page: 'Fresh Fish' })]]), CATALOG)
+  assert.equal(out.rows.length, 1)
+  assert.equal(out.totals.item, 1)
+  const [row] = out.rows
+  assert.deepEqual(row.kinds, ['foraged'], 'the forage row carries it')
+  assert.equal(wikiPageText(row, [], {}), '|foraged = \n\n* [[Kedge Keep]]\n\n[[Category:Foraged]]\n[[Category:Tradeskill Ingredient]]\n[[Category:Kedge Keep]]\n')
+  assert.match(gapActions(row, 'hasPage')[0].why, /lacks Kedge Keep under foraged and Category:Foraged and Category:Tradeskill Ingredient/)
+  // A page complete for the forage still owes the category: the depot row stands alone.
+  const done = withForageRows(snap, new Map([['fresh fish', page({ page: 'Fresh Fish', zones: ['Kedge Keep'], category: true })]]), CATALOG)
+  assert.deepEqual(done.rows.map((r) => [r.kinds, r.forageUpdate]), [[['looted'], { page: 'Fresh Fish', zones: [], noField: false, category: false, ingredient: true }]])
+})
+
+test('main answers the Tradeskill Ingredient category with the forage fields, only when the page states it', () => {
+  const corpus = { 'bone chips': { page: 'Bone Chips', ingredientCategory: true }, diamond: { page: 'Diamond' } }
+  assert.deepEqual(itemPageForage(['Bone Chips', 'Diamond'], corpus), {
+    'Bone Chips': { page: 'Bone Chips', zones: [], category: false, ingredient: true },
+    Diamond: { page: 'Diamond', zones: [], category: false }
+  })
+})

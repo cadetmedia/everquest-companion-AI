@@ -177,6 +177,7 @@ import { itemBaseName, parseStatsBlock, type ItemStatBlock } from '../shared/ite
 import { namesEra } from '../shared/planner/era'
 import { stripFormatChars } from '../shared/wikiTitle'
 import { isUnfilledItemBlueprint } from './itemBlueprint'
+import { itemPageCategories } from './itemPageCategories'
 
 /** Strip a trailing ` +N` upgrade suffix. Applied before lookup + as the cache key. ONE
  *  definition of the rule for every main-side caller — see shared/itemStats.itemBaseName. */
@@ -547,10 +548,10 @@ function dropSourcesField(raw: string | null): ItemDropSource[] | undefined {
 // link on the bullet (`[[Dagnor's Cauldron]], possibly [[Kedge Keep]]`) are both read as zones the
 // page names. Lines naming no zone (`* Various`, `* ?`, `''This item can be foraged in most
 // zones.''`, one prose line) are kept as prose. `[[Category:Foraged]]` sits after the template
-// (137 pages); 6 fill the field without it and 4 carry it with the field empty or absent.
+// (137 pages; read in itemPageCategories.ts); 6 fill the field without it and 4 carry it with the
+// field empty or absent.
 // Only a bullet that opens with a link names zones (`* with the [[Forage]] skill` is prose), and an
 // HTML comment is never read. Whatever names no zone (`{{Zone|X}}` included) stays in the note.
-const FORAGED_CATEGORY_RE = /\[\[\s*Category\s*:\s*Foraged\s*(\|[^\]]*)?\]\]/i
 /** `<!-- … -->`, an unclosed one running to the end, as MediaWiki reads it. */
 const HTML_COMMENT_RE = /<!--[\s\S]*?(?:-->|$)/g
 const ZONE_BULLET_RE = /^\*+\s*\[\[/
@@ -580,15 +581,14 @@ export function parseForaged(block: string): { zones: string[]; note?: string } 
   return note ? { zones, note } : { zones }
 }
 
-/** The forage half of the result; every field `undefined` unless the page stated it. */
-function foragedFields(wikitext: string): Pick<ItemKnowledge, 'foraged' | 'foragedNote' | 'foragedCategory'> {
+/** The forage half of the result; every field `undefined` unless the page stated it. Its category: itemPageCategories.ts. */
+function foragedFields(wikitext: string): Pick<ItemKnowledge, 'foraged' | 'foragedNote'> {
   const page = wikitext.replace(HTML_COMMENT_RE, '')
   const raw = templateField(page, 'foraged')
   const parsed = raw ? parseForaged(raw) : null
   return {
     foraged: parsed && parsed.zones.length > 0 ? parsed.zones : undefined,
-    foragedNote: parsed?.note,
-    foragedCategory: FORAGED_CATEGORY_RE.test(page) ? true : undefined
+    foragedNote: parsed?.note
   }
 }
 
@@ -946,7 +946,7 @@ export function parseItemWikitext(
   | 'eraTag'
   | 'foraged'
   | 'foragedNote'
-  | 'foragedCategory'
+  | 'foragedCategory' | 'ingredientCategory'
 > {
   if (isUnfilledItemBlueprint(wikitext)) return { lore: false, quest: false, questUses: [], dropsFrom: [] }
   const statsBlock = templateField(wikitext, 'statsblock') ?? undefined
@@ -981,6 +981,7 @@ export function parseItemWikitext(
     eraTag: pageEraTag(wikitext),
     ...tradeskillFields(recipeParse, craftParse),
     ...foragedFields(wikitext),
+    ...itemPageCategories(wikitext),
     statsBlock: statsBlock
       ? statsBlock.replace(/<br\s*\/?>/gi, '\n').replace(/[ \t]{2,}/g, ' ').trim()
       : undefined

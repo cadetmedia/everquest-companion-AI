@@ -2,7 +2,7 @@
   "rows": [
     {
       "file": "src/main/data/items.json",
-      "bytes": 8977274,
+      "bytes": 8999764,
       "parseMs": 55.6,
       "heapMb": 20.9
     },

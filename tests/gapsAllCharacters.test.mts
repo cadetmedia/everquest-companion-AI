@@ -226,6 +226,18 @@ test('a save from before forage rows says so; the join keeps a forage row from a
   assert.deepEqual(joined.seenBy.get(seenByKey({ domain: 'item', name: 'Pod of Water' })), ['Drywrought'])
 })
 
+test('a save from before depot rows (rows 2) says so; a saved depot row is seen under its Items row (2026-10-27)', () => {
+  const two: SavedGaps = { ...saved('drywrought_oggok', 'HEAD-D', { gaps: gaps([row('item', 'Gray Wolf Skull', 1)]), loot: [], kills: null }), rows: 2 }
+  assert.equal(characterGaps('drywrought_oggok', two, [], null)?.olderRows, true)
+  const depot = { ...row('item', 'Bone Chips', 2), domain: 'depot' as GapRow['domain'] }
+  const after: SavedGaps = { ...saved('drywrought_oggok', 'HEAD-D', { gaps: { ...gaps([]), rows: [depot] }, loot: [], kills: null }), rows: SAVED_ROWS }
+  const other = characterGaps('drywrought_oggok', after, [], null)
+  const live = { label: 'Kaltinril', gaps: gaps([]), loot: [], kills: null }
+  const joined = joinCharacters([live, ...otherInputs(other === null ? [] : [other], () => false)], null)
+  assert.equal(joined.gaps?.rows.find((r) => r.name === 'Bone Chips')?.domain, 'depot')
+  assert.deepEqual(joined.seenBy.get(seenByKey({ domain: 'item', name: 'Bone Chips' })), ['Drywrought'])
+})
+
 // Days back chooses rows only; the derived rows read whole loot and kills, then the window cuts them (useGapsData).
 const DAY = 86_400_000
 const NOW = new Date(2026, 9, 21, 12, 0, 0)

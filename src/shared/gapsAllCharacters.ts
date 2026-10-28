@@ -56,9 +56,10 @@ export const SAVED_GAPS_VERSION = 1
  * older build's save never had. 2: a known item's forages, the proof its page's forage zones are
  * checked against (gaps-item-facts, 2026-10-21). A file without it was saved by an older build:
  * the rows cannot be rebuilt from the file (forage lines are not in the loot), so the tab says to
- * log that character in once, which saves it again.
+ * log that character in once, which saves it again. 3: a known item stored in the tradeskill depot,
+ * the proof its page's Tradeskill Ingredient category is checked against (2026-10-27).
  */
-export const SAVED_ROWS = 2
+export const SAVED_ROWS = 3
 
 /** One character's saved Gaps inputs, one file per character. */
 export interface SavedGaps {
@@ -233,8 +234,8 @@ export const seenByKey = (r: Pick<GapRow, 'domain' | 'name'>): string => `${r.do
 /** Each row of one character's cut snapshot noted as seen by it. */
 function noteSeen(seenBy: Map<string, string[]>, rows: readonly GapRow[], label: string): void {
   for (const r of rows) {
-    // A known item's forage proof (domain `forage`, gaps-item-facts) is shown as its Items row.
-    const k = seenByKey((r.domain as string) === 'forage' ? { ...r, domain: 'item' } : r)
+    // A known item's forage or depot proof (domain `forage` / `depot`, gapForage.ts) is shown as its Items row.
+    const k = seenByKey(['forage', 'depot'].includes(r.domain) ? { ...r, domain: 'item' } : r)
     const had = seenBy.get(k)
     if (had === undefined) seenBy.set(k, [label])
     else if (!had.includes(label)) had.push(label)
