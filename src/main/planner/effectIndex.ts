@@ -89,6 +89,7 @@ import {
   socketTypeOf
 } from '../../shared/planner/normalize'
 import { extractionTier } from '../../shared/planner/rules'
+import { COMMITTED_FOCUS_BENEFIT } from './focusBenefit'
 import { deitiesOf } from '../../shared/planner/deity'
 import type { EffectFacts } from '../../shared/planner/effectText'
 import type { ClassAbbr } from '../../shared/classCombo'
@@ -343,6 +344,9 @@ function donorRow(
   // V6 — spread wholesale: a miss contributes NOTHING (the three keys stay absent), which is what
   // makes "the row simply says less" the shape of the failure rather than a placeholder.
   const facts = spells.get(effect.name.trim().toLowerCase()) ?? {}
+  // Who the focus can HELP - the same answer the gear index carries, so the browser's class filter
+  // and the Character tab's advice read one rule (`usability.benefitsClasses`).
+  const benefit = socket === 'focus' ? COMMITTED_FOCUS_BENEFIT(effect.name) : null
   return {
     ...facts,
     key: ctx.key,
@@ -365,7 +369,8 @@ function donorRow(
     wikiSources: ctx.wikiSources ? ctx.wikiSources.map((s) => ({ ...s })) : undefined,
     eraTag: ctx.eraTag,
     charges: ctx.charges,
-    ...(ctx.deities === undefined ? {} : { deities: [...ctx.deities] })
+    ...(ctx.deities === undefined ? {} : { deities: [...ctx.deities] }),
+    ...(benefit === null ? {} : { benefit })
   }
 }
 

@@ -31,7 +31,7 @@ import {
 } from '../../../../shared/planner/era'
 import { metVersion, wasMet } from '../../../../shared/metInLog'
 import { useBoolPref } from '../combat/useCombatPrefs'
-import { unusableReasons, type UnusableReason } from '../../../../shared/planner/usability'
+import { benefitsClasses, unusableReasons, type UnusableReason } from '../../../../shared/planner/usability'
 import { classesMismatch } from './plannerClasses'
 import { defaultAxis, isAxisFor, type GroupAxis } from './plannerGroups'
 import { sourcesFor } from './sourceIndex'
@@ -542,6 +542,16 @@ function personalHides(view: DonorView, d: DonorRow, planClasses: readonly Class
 }
 
 /**
+ * WORN IS NOT BENEFIT (owner, 2026-10-27): the class filter keeps a donor only when one of the
+ * classes can wear it AND its effect can help one of them. Every bard instrument states ALL, so the
+ * wear half alone kept Resonance rows for a Warrior/Monk/Shaman. Both halves pass unknowns (law 1),
+ * and the benefit half is the one rule the Character tab's advice reads (`usability`).
+ */
+export function servesClasses(d: PlannerDonor, planClasses: readonly ClassAbbr[]): boolean {
+  return classFit(d, planClasses) !== 'no' && benefitsClasses(d.benefit, planClasses)
+}
+
+/**
  * The browser's filter: equippability, then socket type, then slot, then trio compatibility, then
  * era, then the owned tri-state, then the text match.
  *
@@ -561,7 +571,7 @@ export function filterDonors(
     if (!view.nonEquip && isNonEquippable(d)) return false
     if (d.socket !== filters.socket) return false
     if (filters.slot !== null && !d.slots.includes(filters.slot)) return false
-    if (filters.trioOnly && classFit(d, planClasses) === 'no') return false
+    if (filters.trioOnly && !servesClasses(d, planClasses)) return false
     if (eraHides(d, view.eraOnly)) return false
     if (personalHides(view, d, planClasses)) return false
     return needle === '' || d.searchKey.includes(needle)

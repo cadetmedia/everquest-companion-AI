@@ -55,6 +55,7 @@ import {
 } from '../../../../shared/planner/gearScale'
 import { WEAPON_PICKS, weaponPicksMatch, type WeaponPick } from '../../../../shared/planner/weaponType'
 import { isShieldLike } from '../../../../shared/planner/shield'
+import { benefitsClasses } from '../../../../shared/planner/usability'
 import type { EquipSlot, SocketType } from '../../../../shared/planner/types'
 import type { ZoneShort } from '../../../../shared/maps'
 import { gearZoneOf } from './gearZones'
@@ -371,6 +372,21 @@ export function classMismatch(rowClasses: readonly ClassAbbr[], filter: readonly
 }
 
 /**
+ * WEARABLE BUT USELESS TO THESE CLASSES (owner, 2026-10-27: "if they didn't select ALL for the
+ * classes, an ALL item that doesn't BENEFIT them is useless for them"). Every instrument states
+ * ALL, so the class half above keeps an Unfinished Brass Trumpet for a Warrior; its one line is a
+ * bard focus. A row goes only when ALL of it is beyond doubt: classes are chosen, it states at
+ * least one effect, every effect is proven to help none of them (`usability.benefitsClasses`, the
+ * Character tab's own rule), and it states no number but its weight and no weapon skill. Any stat,
+ * save or weapon block is a benefit, and keeps it.
+ */
+export function benefitMismatch(row: GearRow, filter: readonly ClassAbbr[]): boolean {
+  if (filter.length === 0 || row.effects.length === 0 || row.skill !== undefined) return false
+  if (row.effects.some((e) => benefitsClasses(e.benefit, filter))) return false
+  return Object.entries(row.stats).every(([k, v]) => k === 'WEIGHT' || v === undefined)
+}
+
+/**
  * Does this row sit in ANY of the slots asked for? Empty asks for no slot filter (JOS-302).
  *
  * Two lists meet here — the slots the item can occupy and the slots the player asked about — so the
@@ -397,11 +413,13 @@ export function zoneMatches(row: Pick<GearRow, 'dropZones'>, zones: readonly Zon
   })
 }
 
-/** Does this row state an effect of the kind asked for? */
-export function effectMatches(row: GearRow, effect: EffectFilter): boolean {
+/**
+ * Does this row state an effect of the kind asked for - one that can help the chosen classes? A
+ * bard focus is not a focus to a Warrior (`benefitMismatch`); with no class chosen, any counts.
+ */
+export function effectMatches(row: GearRow, effect: EffectFilter, classes: readonly ClassAbbr[] = []): boolean {
   if (effect === 'any') return true
-  if (effect === 'has') return row.effects.length > 0
-  return row.effects.some((e) => e.socket === effect)
+  return row.effects.some((e) => (effect === 'has' || e.socket === effect) && benefitsClasses(e.benefit, classes))
 }
 
 /**
@@ -425,8 +443,8 @@ function matchesIdentity(row: GearRow, filters: GearFilters, deps: GearFilterDep
   if (!slotMatches(row, filters.slots)) return false
   if (!matchesHeldKind(row, filters.weaponTypes)) return false
   if (!zoneMatches(row, filters.zones)) return false
-  if (!effectMatches(row, filters.effect)) return false
-  return !classMismatch(row.classes, filters.classes)
+  if (!effectMatches(row, filters.effect, filters.classes)) return false
+  return !classMismatch(row.classes, filters.classes) && !benefitMismatch(row, filters.classes)
 }
 
 /**
