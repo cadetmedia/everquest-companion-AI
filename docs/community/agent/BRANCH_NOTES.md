@@ -390,9 +390,12 @@ where one exists.
   stay on the other quest. Repeated hand-ins are a count (`Give 3 [[Fresh Fish]]`); a task line
   repeated in its second, or right after itself, is one line; an item handed in at a step is never its
   reward (Nikko hands Defiled Fish Scales back, and the log says `You have been given:` for it).
-- Open from the 2026-10-23 review: a cancelled trade still counts as turned in for the item quest
-  facts (`gaps_quests.rs`; only the quest log drops it); an emote is taken as the hailed NPC's when
-  its speaker's name starts with that NPC's name (`a gnoll pup` after `a gnoll`; none in the log).
+- Fixed from the 2026-10-23 review: a cancelled trade is no turn-in for the item quest facts either
+  (`gaps_quests.rs` `cancelled`, one `trade_cancelled` for both; pinned end to end in
+  `gaps_batch_tests.rs`). An emote is the hailed NPC's unless a longer NPC name the fold knows (a Mobs
+  key seen in the log, or the mob catalog) also opens the line (`A gnoll pup growls` after a hail of
+  `a gnoll`); the name match is case-blind, as a say line is. An emote line has no name boundary of
+  its own, so an unknown longer name still passes.
 - Quest steps from the log (`gaps_quest_log.rs`): a step's hand-ins are the open trade's offers to its
   NPC (`You offered ...` until `You complete the trade with X.`, 5 min cap), not a window before the
   task line; Unfortunate news offered its letters 57-61 s before. Its talk starts at the player's last
