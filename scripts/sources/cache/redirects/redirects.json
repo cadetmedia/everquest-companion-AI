@@ -1,5 +1,5 @@
 {
- "updatedAt": "2026-10-27T08:05:04.719Z",
+ "updatedAt": "2026-10-28T08:37:53.744Z",
  "redirects": [
   {
    "from": "1 Hand Blunt",
@@ -16946,12 +16946,12 @@
    "to": "Virtuous Bash"
   },
   {
-   "from": "Vision of Sebilite",
-   "to": "Visions of Sebilite"
-  },
-  {
    "from": "Visions of grandeur",
    "to": "Visions of Grandeur"
+  },
+  {
+   "from": "Visions of Sebilite",
+   "to": "Vision of Sebilite"
   },
   {
    "from": "Visiting Priestess",
