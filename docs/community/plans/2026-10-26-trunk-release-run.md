@@ -1,7 +1,8 @@
 # The trunk switch and the release run (2026-10-26)
 
-The owner's 15-step list (2026-10-26). Steps 1-13 done the same day; step 14, the release, is held
-by the owner ("no release today though FYI, just get all the work done"). Resume from "Next".
+The owner's 15-step list (2026-10-26). Steps 1-13 done the same day; step 14, the release, was held
+that day ("no release today though FYI, just get all the work done") and shipped 2026-10-27 as
+`community-0.1.0-test.35`. What is left is under "Next" and "Open questions".
 
 ## The owner's list, verbatim
 
@@ -43,7 +44,7 @@ failure scenario; a separate agent fixed each area.
     regression from step 9: catalog one-word mobs counted as player deaths).
 11. EOZ compare and delta scrape: branch `delta-2026-10-26` (worktree `.claude/worktrees/delta-2026-10-26`,
     cache junctions in place), 235 wiki requests, items +4, spells +1, mobs +2; compare `--release`
-    clean. NOT merged: two `plannerEraCorpus` reds from one wiki page (below).
+    clean. Held on two `plannerEraCorpus` reds from one wiki page, then merged the same day (below).
 12-13. Regression: see "Regression" below.
 
 ## Regression
@@ -65,10 +66,9 @@ On `main_community` after every merge of the day:
 ## Next
 
 1. **The delta merge:** done 2026-10-26 (after the owner's Robe of the Betrayed edit).
-2. **The release, on the owner's word.** Before it: the community-release skill; the delta merged;
-   a fresh compare + delta per RULES.md rule 10; `fix-media-devices`'s `RETIRED.md` commit pushed
-   with the retired branches. Nothing is pushed yet: `main_community` and the retired branches'
-   `RETIRED.md` commits are local only.
+2. **The release:** done 2026-10-27, `community-0.1.0-test.35` tagged and published, after a fresh
+   compare + delta (`delta-2026-10-27`, 11 wiki requests). `main_community` and the retired
+   branches' `RETIRED.md` commits (`fix-media-devices` included) are on `origin`.
 3. Performance, later passes: review items 4 (one engine connection), 6, 7, 8, item 2's M step,
    Factions renders, MUI Tooltip cost.
 

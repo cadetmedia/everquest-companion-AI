@@ -317,8 +317,14 @@ where one exists.
   2026-10-18 on the live log, 1,038 rows: 209 Motes and Treasures, 193 with the item page naming
   the mob, 98 on mob pages listing no drops, 538 the wiki has nowhere. Tier instances add loot the
   wiki's mob pages do not cover (Befallen 4 Refined), so many rows come from them.
-- Found by that fetch: 142 of those pages are full `{{Itempage}}` pages that items.json lacks (e.g.
-  A Shining Stone, A Piece of Rat Fur): the item scrape misses them; not yet looked into.
+- That fetch follows redirects, so `drop-groups/pages.json` holds 142 full `{{Itempage}}` texts
+  under titles items.json has no key for. Recounted offline 2026-10-27: 141 are drop-list links
+  that redirect to an item page items.json has (A Shining Stone -> Shining Stone, A Piece of Rat
+  Fur -> Piece of Rat Fur, Small Bronze Helm -> Bronze Helm), reachable through that record's
+  `otherNames`. One is genuinely missing: Cracked Darkwood Shield (`{{Classic Era}}`, Highpass
+  Hold), absent from the item cache's `embeddedin` list and every cached batch; why the item scrape
+  and the deltas missed it is not known offline. No out-of-era or renamed ones (`ITEM_RENAMES` is
+  empty).
 - The wiki's Help page (Editing Standards > AI Generated Content): "All graphics and readable page
   text should be crafted by real human contributors". Told the owner about Copy wiki page.
 - No generated merchant item list (owner, decided): vendor stock and player resells cannot be told
