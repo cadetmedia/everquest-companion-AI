@@ -1229,6 +1229,27 @@
       ],
       "additionalProperties": false
     },
+    "BuffDurationOverride": {
+      "title": "BuffDurationOverride",
+      "description": "How one spell's timer length is chosen: `log` uses the median of the player's recent clean cycles in place of the automatic estimate; `fixed` uses `ms` exactly.",
+      "type": "object",
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "log",
+            "fixed"
+          ]
+        },
+        "ms": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "mode"
+      ],
+      "additionalProperties": false
+    },
     "BuffTrustPrefs": {
       "title": "BuffTrustPrefs",
       "description": "`src/shared/buffTrust.ts BuffTrustPrefs` plus what the app derives for the engine at push time. Typed because it is cheap to type: one list of display spellings, in the order the user added them; the proc gate's switch; and the display names of every combat effect on an item the latest inventory dump says the player holds, which is the evidence the gate reads and is never persisted (upstream issue #69).",
@@ -1247,6 +1268,13 @@
           "type": "array",
           "items": {
             "type": "string"
+          }
+        },
+        "durations": {
+          "description": "The player's per-spell duration choices (fork issue #4), keyed by the Buffs tab's spell line key. Absent or empty means every spell uses the automatic estimate.",
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/BuffDurationOverride"
           }
         }
       },

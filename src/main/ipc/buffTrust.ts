@@ -27,6 +27,7 @@
 import { ipcMain } from 'electron'
 import { IPC } from '../../shared/ipc'
 import { getBuffTrustPrefs, setBuffTrustPrefs } from '../store'
+import { normalizeBuffTrustPrefs, setDurationOverride, type BuffDurationOverride } from '../../shared/buffTrust'
 // The engine's copy of the same allowlist (JOS-482, boundary verdict 3) — additive, and a no-op
 // unless this launch asked for an engine. Its `CastAnchors` obeys the same "a name added mid-session
 // anchors the very next cast, and retro-admits nothing" rule this setter's header states.
@@ -35,7 +36,18 @@ import { pushAppKnowledge } from '../dataServer/definePush'
 export function registerBuffTrustIpc(): void {
   ipcMain.handle(IPC.buffTrustGet, () => getBuffTrustPrefs())
   ipcMain.handle(IPC.buffTrustSet, (_e, value: unknown) => {
-    const next = setBuffTrustPrefs(value)
+    // The duration choices are edited only through `buffDurationSet`. The Preferences card sends
+    // whatever copy it was opened with, so the STORED choices always win here.
+    const next = setBuffTrustPrefs({ ...normalizeBuffTrustPrefs(value), durations: getBuffTrustPrefs().durations })
+    pushAppKnowledge('buffTrust.define')
+    return next
+  })
+  // One spell's duration choice (fork issue #4), set or cleared, merged into what is stored.
+  ipcMain.handle(IPC.buffDurationSet, (_e, key: unknown, choice: unknown) => {
+    if (typeof key !== 'string' || key.trim().length === 0) return getBuffTrustPrefs()
+    const next = setBuffTrustPrefs(
+      setDurationOverride(getBuffTrustPrefs(), key, choice == null ? undefined : (choice as BuffDurationOverride))
+    )
     pushAppKnowledge('buffTrust.define')
     return next
   })

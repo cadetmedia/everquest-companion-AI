@@ -48,6 +48,8 @@ export function isOverdue(elapsedMs: number, p75: number | null, n: number): boo
  */
 export function estimatorSourceTitle(src: string | undefined): string {
   if (src === 'db') return 'The spell-database baseline'
+  if (src === 'manual') return 'The duration you set for this spell'
+  if (src === 'logMedian') return 'From your logged casts - the middle of your recent casts, as you chose for this spell'
   if (src === 'cluster') return 'From your logged casts - three clean casts agree it runs shorter than the baseline'
   if (src === 'deathBound') {
     return 'At least this long - the target died still carrying it and no wear-off was ever printed'
@@ -66,6 +68,13 @@ export function estimatorSourceTitle(src: string | undefined): string {
  */
 export function estimatePrefix(src: string | undefined): string {
   return src === 'deathBound' ? '≥ ' : ''
+}
+
+/** The provenance chip's word: the database, a number you set, or the log. */
+export function estimateChipLabel(src: string | undefined): string {
+  if (src === 'db') return 'db'
+  if (src === 'manual') return 'set'
+  return 'log'
 }
 
 import type { ActiveBuff, BuffClass } from '@shared/types'

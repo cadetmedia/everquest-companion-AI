@@ -884,6 +884,10 @@ export const IPC = {
   // through so a name added mid-session anchors the next cast rather than the next launch.
   // Returns what was stored.
   buffTrustSet: 'buffTrust:set',
+  // renderer -> main: set or clear ONE spell's duration choice (fork issue #4). Merged into the
+  // stored prefs on main, so the Preferences card and the Buffs tab can never overwrite each
+  // other's half. Returns what was stored.
+  buffDurationSet: 'buffTrust:setDuration',
 
   // ---- the buff/debuff TRACKING ALLOW-LIST (JOS-168 — shared/buffAllow.ts) ---------------
   //

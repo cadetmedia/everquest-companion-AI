@@ -277,6 +277,10 @@ pub enum EstimatorSource {
     Db,
     /// A death LOWER BOUND won — the surfaces say "at least".
     DeathBound,
+    /// The player chose "from my log" for this spell: the median of their recent clean cycles.
+    LogMedian,
+    /// The player typed this duration.
+    Manual,
 }
 
 /// A SPELL property, never a fact about who the spell landed on.

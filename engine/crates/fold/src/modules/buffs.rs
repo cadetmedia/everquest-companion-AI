@@ -69,7 +69,7 @@ pub fn shared_core(facts: SpellFacts) -> SharedCore {
 }
 
 pub struct BuffsModule {
-    seq: i64,
+    pub(crate) seq: i64,
     pub(crate) core: SharedCore,
     /// The pet/charm/target identity slots (the who/what).
     pets: PetEntities,
@@ -108,7 +108,7 @@ pub struct BuffsModule {
     /// moved one of them, the arms that could not are named individually, and anything nobody can
     /// answer without reopening the buff system answers `true`. So it over-reports on a subset that
     /// excludes the catch-all arm, which is where every line of a melee round lands.
-    announce: crate::announce::Announce,
+    pub(crate) announce: crate::announce::Announce,
 }
 
 impl BuffsModule {

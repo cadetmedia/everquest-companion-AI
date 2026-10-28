@@ -7,7 +7,7 @@
 
 import { ipcRenderer } from 'electron'
 import { IPC } from '../shared/ipc'
-import type { BuffTrustPrefs } from '../shared/buffTrust'
+import type { BuffDurationOverride, BuffTrustPrefs } from '../shared/buffTrust'
 
 export const buffTrustBridge = {
   /** The persisted allowlist. `{externals: []}` — you and nobody else — by default. */
@@ -21,5 +21,11 @@ export const buffTrustBridge = {
    * re-deciding it later would be a second opinion about settled evidence.
    */
   setBuffTrust: (prefs: BuffTrustPrefs): Promise<BuffTrustPrefs> =>
-    ipcRenderer.invoke(IPC.buffTrustSet, prefs)
+    ipcRenderer.invoke(IPC.buffTrustSet, prefs),
+  /**
+   * Set one spell's duration choice, or clear it back to automatic with `undefined` (fork issue
+   * #4). Merged on main, so it never touches the caster list. Resolves to what was stored.
+   */
+  setBuffDuration: (key: string, choice: BuffDurationOverride | undefined): Promise<BuffTrustPrefs> =>
+    ipcRenderer.invoke(IPC.buffDurationSet, key, choice ?? null)
 }

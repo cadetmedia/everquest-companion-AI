@@ -47,6 +47,7 @@
 
 use crate::jsfn::parse_spell_rank;
 use crate::jsmap::JsMap;
+use crate::modules::buffs_overrides::{window_median_ms, DurationOverride};
 use crate::modules::buffs_shapes::{
     corroborated_max, learn_key, percentile, scaled_floor_ms, tier_of, BuffClass, DurationSample,
     EstimatorSource, RECENT_SAMPLE_WINDOW, SELF_CASTER,
@@ -54,7 +55,7 @@ use crate::modules::buffs_shapes::{
 use crate::spell_facts::{DurationCategory, Nature, SpellFacts, SpellRow};
 use eqlog::jsstr::js_trim;
 use serde::Serialize;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 /// The winning candidate of the estimator's window: the longest span, and whether it is a bound.
 #[derive(Debug, Clone, Copy)]
@@ -159,6 +160,12 @@ pub struct BuffStat {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub estimator_source: Option<EstimatorSource>,
     pub last_seen_ms: Option<i64>,
+    /// What "from my log" would give: the median of the recent clean cycles. Absent with none.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub log_estimate_ms: Option<i64>,
+    /// What the automatic estimate would give, sent only while a player's choice overrides it.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub auto_estimate_ms: Option<i64>,
 }
 
 /// What the estimator answered.
@@ -192,6 +199,9 @@ pub struct SpellStats {
     /// nothing else. Highest wins for the same reason the display name's rank does: a spell once
     /// upgraded never downgrades, and this store pools ranks under one line key.
     cast_tiers: JsMap<i64>,
+    /// The player's per-line duration choices (`buffs_overrides`). App knowledge rather than log
+    /// knowledge, so `reset` leaves it alone; only a define replaces it.
+    overrides: HashMap<String, DurationOverride>,
 }
 
 impl SpellStats {
@@ -204,7 +214,33 @@ impl SpellStats {
             wear_off_witnessed: HashSet::new(),
             last_seen: JsMap::new(),
             cast_tiers: JsMap::new(),
+            overrides: HashMap::new(),
         }
+    }
+
+    /// Replace the player's duration choices whole. Returns whether anything changed.
+    pub fn set_overrides(&mut self, next: HashMap<String, DurationOverride>) -> bool {
+        if self.overrides == next {
+            return false;
+        }
+        self.overrides = next;
+        true
+    }
+
+    /// The player's choice for a line, answered — `None` when there is none, or when "from my log"
+    /// has no clean cycle to take a median of yet (the automatic estimate then stands).
+    fn chosen_estimate(&self, key: &str, caster: &str) -> Option<Estimate> {
+        let (ms, source) = match self.overrides.get(key)? {
+            DurationOverride::Fixed(ms) => (*ms, EstimatorSource::Manual),
+            DurationOverride::Log => (
+                window_median_ms(&self.clean_window_for(key, caster))?,
+                EstimatorSource::LogMedian,
+            ),
+        };
+        Some(Estimate {
+            ms: Some(ms),
+            source: Some(source),
+        })
     }
 
     pub fn reset(&mut self) {
@@ -411,7 +447,19 @@ impl SpellStats {
             estimate_ms: est.ms,
             estimator_source: est.source,
             last_seen_ms: self.last_seen.get(key).copied(),
+            log_estimate_ms: window_median_ms(&self.clean_window_for(key, caster)),
+            auto_estimate_ms: self.auto_while_chosen(key, caster),
         })
+    }
+
+    /// The automatic figure, but only while a choice overrides it: the edit dialog states it as the
+    /// way back, and with no choice the estimate already IS it.
+    fn auto_while_chosen(&self, key: &str, caster: &str) -> Option<i64> {
+        if self.overrides.contains_key(key) {
+            self.automatic_estimate(key, caster).ms
+        } else {
+            None
+        }
     }
 
     /// The observed candidate that competes with the DB floor: the MAX over the most recent window
@@ -485,7 +533,15 @@ impl SpellStats {
     /// not the clean cluster's: if a censored sample in the window is longer, the log proved the
     /// spell was still running then, and the estimate may never be drawn below a proven lower bound.
     /// And the comparison is STRICT, so an observation merely equalling the floor changes nothing.
+    ///
+    /// A player's choice for the line (`buffs_overrides`) answers first, when it can.
     pub fn estimate_for(&self, key: &str, caster: &str) -> Estimate {
+        self.chosen_estimate(key, caster)
+            .unwrap_or_else(|| self.automatic_estimate(key, caster))
+    }
+
+    /// The estimate with no player choice applied — the rules in this file's header.
+    pub fn automatic_estimate(&self, key: &str, caster: &str) -> Estimate {
         let db_ms = self.floor_for(key, caster);
         let observed = self.observed_window_max_for(key, caster);
         let learned = match observed {
@@ -553,8 +609,8 @@ impl SpellStats {
                 Some(st) => st,
                 None => {
                     let db_ms = self.db_duration_for(key);
-                    // No samples, so the estimate is the floor and the floor alone.
-                    let floor_ms = self.floor_for(key, SELF_CASTER);
+                    // No samples, so the estimate is the floor alone, unless the player typed one.
+                    let est = self.estimate_for(key, SELF_CASTER);
                     BuffStat {
                         spell: self
                             .sample_spell_name(key, SELF_CASTER)
@@ -569,9 +625,11 @@ impl SpellStats {
                         min_ms: None,
                         max_ms: None,
                         db_duration_ms: db_ms,
-                        estimate_ms: floor_ms,
-                        estimator_source: floor_ms.map(|_| EstimatorSource::Db),
+                        estimate_ms: est.ms,
+                        estimator_source: est.source,
                         last_seen_ms: self.last_seen.get(key).copied(),
+                        log_estimate_ms: None,
+                        auto_estimate_ms: self.auto_while_chosen(key, SELF_CASTER),
                     }
                 }
             };

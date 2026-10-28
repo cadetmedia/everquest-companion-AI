@@ -8,7 +8,7 @@
 //! and a schema edit that lands without regenerating turns the protocol-codegen staleness
 //! test red on this side and tests/protocolSchema.test.mts red on the other.
 //!
-//! schema-digest: sha256:662adfde13f2397ab0a3188fcf587da0a4e4fd51caada8c5af1947a0eb41f102
+//! schema-digest: sha256:eadca3087163acadf8eb08225cebbc677e554ef870d57f216bda1889568f0378
 #![allow(missing_docs, clippy::all, clippy::pedantic)]
 
 /// Error types.
@@ -241,6 +241,113 @@ pub struct AttachResult {
     pub accepted: bool,
     pub epoch: Epoch,
 }
+///How one spell's timer length is chosen: `log` uses the median of the player's recent clean cycles in place of the automatic estimate; `fixed` uses `ms` exactly.
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "title": "BuffDurationOverride",
+///  "description": "How one spell's timer length is chosen: `log` uses the median of the player's recent clean cycles in place of the automatic estimate; `fixed` uses `ms` exactly.",
+///  "type": "object",
+///  "required": [
+///    "mode"
+///  ],
+///  "properties": {
+///    "mode": {
+///      "type": "string",
+///      "enum": [
+///        "log",
+///        "fixed"
+///      ]
+///    },
+///    "ms": {
+///      "type": "integer"
+///    }
+///  },
+///  "additionalProperties": false
+///}
+/// ```
+/// </details>
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct BuffDurationOverride {
+    pub mode: BuffDurationOverrideMode,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub ms: ::std::option::Option<i64>,
+}
+///`BuffDurationOverrideMode`
+///
+/// <details><summary>JSON schema</summary>
+///
+/// ```json
+///{
+///  "type": "string",
+///  "enum": [
+///    "log",
+///    "fixed"
+///  ]
+///}
+/// ```
+/// </details>
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum BuffDurationOverrideMode {
+    #[serde(rename = "log")]
+    Log,
+    #[serde(rename = "fixed")]
+    Fixed,
+}
+impl ::std::fmt::Display for BuffDurationOverrideMode {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Log => f.write_str("log"),
+            Self::Fixed => f.write_str("fixed"),
+        }
+    }
+}
+impl ::std::str::FromStr for BuffDurationOverrideMode {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "log" => Ok(Self::Log),
+            "fixed" => Ok(Self::Fixed),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for BuffDurationOverrideMode {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for BuffDurationOverrideMode {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for BuffDurationOverrideMode {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
 ///`BuffTrustDefineParams`
 ///
 /// <details><summary>JSON schema</summary>
@@ -387,6 +494,13 @@ impl ::std::convert::TryFrom<::std::string::String> for BuffTrustDefineRequestOp
 ///    "procSpells"
 ///  ],
 ///  "properties": {
+///    "durations": {
+///      "description": "The player's per-spell duration choices (fork issue #4), keyed by the Buffs tab's spell line key. Absent or empty means every spell uses the automatic estimate.",
+///      "type": "object",
+///      "additionalProperties": {
+///        "$ref": "#/$defs/BuffDurationOverride"
+///      }
+///    },
 ///    "externals": {
 ///      "type": "array",
 ///      "items": {
@@ -409,6 +523,12 @@ impl ::std::convert::TryFrom<::std::string::String> for BuffTrustDefineRequestOp
 /// </details>
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
 pub struct BuffTrustPrefs {
+    ///The player's per-spell duration choices (fork issue #4), keyed by the Buffs tab's spell line key. Absent or empty means every spell uses the automatic estimate.
+    #[serde(
+        default,
+        skip_serializing_if = ":: std :: collections :: BTreeMap::is_empty"
+    )]
+    pub durations: ::std::collections::BTreeMap<::std::string::String, BuffDurationOverride>,
     pub externals: ::std::vec::Vec<::std::string::String>,
     #[serde(rename = "procDebuffs")]
     pub proc_debuffs: bool,
