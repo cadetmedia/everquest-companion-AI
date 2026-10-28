@@ -18,6 +18,7 @@ measured fact, an owner ruling), add it to the right file below on a work branch
 | [WIKI.md](WIKI.md) | Before parsing wiki pages or writing pages for the wiki: links, page templates, conventions, caches, what the log can give a page. |
 | [../RELEASING.md](../RELEASING.md) | Before a release. |
 | [../BRANCHES.md](../BRANCHES.md) | The known reds before a gate; the retired branches when tracing where code came from. |
+| [../plans/2026-10-28-open-items.md](../plans/2026-10-28-open-items.md) | Open, read first: what waits on the owner after the 2026-10-27 sweep (trunk merged locally, not pushed), and the candidate work to pick from. |
 | [../plans/2026-10-26-trunk-release-run.md](../plans/2026-10-26-trunk-release-run.md) | The owner's 15-step run of 2026-10-26: done, released as test.35 on 2026-10-27; the later performance passes and the open questions. |
 | [../plans/2026-10-18-scrape-rebaseline.md](../plans/2026-10-18-scrape-rebaseline.md) | Open: the era rules, the stale-scrape defect, the August catch-up (phases and status). |
 | [../plans/2026-10-19-gaps-all-characters.md](../plans/2026-10-19-gaps-all-characters.md) | The Gaps tab across every character: the owner's answers. |
