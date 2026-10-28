@@ -150,6 +150,13 @@ test('|foraged: only a bullet opening with a link names zones, comments are neve
   assert.equal(k.foragedCategory, undefined)
 })
 
+test('[[Category:Tradeskill Ingredient]] is read wherever the page puts it, any case; a comment or another category is not', () => {
+  assert.equal(parseItemWikitext('Bone Chips', '{{Itempage\n|itemname = Bone Chips\n}}\n[[Category:Tradeskill Ingredient]]').ingredientCategory, true)
+  assert.equal(parseItemWikitext('Diamond', '{{Itempage\n|itemname = Diamond\n}}\n[[category: tradeskill_ingredient|D]]').ingredientCategory, true)
+  assert.equal(parseItemWikitext('Lizard Meat', '{{Itempage\n|itemname = Lizard Meat\n}}\n<!-- [[Category:Tradeskill Ingredient]] -->').ingredientCategory, undefined)
+  assert.equal(parseItemWikitext('Kiln', '{{Itempage\n|itemname = Kiln\n}}\n[[Category:Tradeskill Containers]]').ingredientCategory, undefined)
+})
+
 // Cloak of Treason as the wiki held it on 2026-10-24: the Item Page Blueprint, saved unfilled.
 const BLUEPRINT = `{{Classic Era}}
 <onlyinclude>{{Itempage
