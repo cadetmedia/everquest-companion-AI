@@ -238,10 +238,12 @@ test('the per-class counts reproduce the design measurement, per spell entry', (
   // 2026-10-26 delta: `Tears of Arlyxir` is a new row, `* Wizard - Level 64`, so WIZ 234 -> 235
   // and its exclusive count 193 -> 194. Its re-read: `Soul Orb` (Necromancer 61) and `Funeral Pyre
   // of Kelador` (Necromancer 60), new rows, so NEC 192 -> 194 and its exclusive count 86 -> 88.
+  // 2026-10-28 delta: Greater Immobilize (PAL/CLR/SHM/NEC, +1 each) and Night Fire (NEC only, +1
+  // exclusive): CLR 208, NEC 196/89, PAL 92, SHM 211.
   const expected: Record<string, [number, number]> = {
-    BRD: [89, 89], BST: [77, 27], CLR: [207, 82], DRU: [268, 152],
-    ENC: [238, 184], MAG: [200, 160], NEC: [194, 88], PAL: [91, 17],
-    RNG: [92, 20], SHD: [91, 23], SHM: [210, 102], WIZ: [235, 194]
+    BRD: [89, 89], BST: [77, 27], CLR: [208, 82], DRU: [268, 152],
+    ENC: [238, 184], MAG: [200, 160], NEC: [196, 89], PAL: [92, 17],
+    RNG: [92, 20], SHD: [91, 23], SHM: [211, 102], WIZ: [235, 194]
   }
   for (const [abbr, [total, excl]] of Object.entries(expected)) {
     assert.deepEqual([RAW.get(abbr)?.total, RAW.get(abbr)?.excl], [total, excl], `${abbr} drifted`)
@@ -298,7 +300,8 @@ test('the SHIPPED index is keyed by canon key, so rank variants collapse', () =>
   // 1419 -> 1418 (2026-10-18): the full re-scrape; Magical Monologue (a BRD song page) is marked {{Delete}}.
   // 1418 -> 1419 (2026-10-26 delta): Tears of Arlyxir, a new Wizard spell.
   // 1419 -> 1421 (its re-read): Soul Orb and Funeral Pyre of Kelador, two new Necromancer spells.
-  assert.equal(spellClassIndex().size, 1421)
+  // 1421 -> 1423 (2026-10-28 delta): Greater Immobilize (PAL/CLR/SHM/NEC) and Night Fire (NEC).
+  assert.equal(spellClassIndex().size, 1423)
   assert.equal(CANON.get('ENC')?.excl, 178)
   assert.equal(RAW.get('ENC')?.excl, 184)
   assert.deepEqual(classesForSpell('Clarity II'), classesForSpell('Clarity'))

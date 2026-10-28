@@ -469,10 +469,12 @@ mod tests {
                 // wiki's `HP` / `health` / `Increases` spellings, so the Elixir of Healing,
                 // Replenishment and Spiritualism lines and Extended Regeneration are heal over time,
                 // and the new Funeral Pyre of Kelador (`Decreases health by 290 per tick`) a DoT.
+                // CrowdControl 90 -> 91 and DotHot 201 -> 202 after the 2026-10-28 delta: the new
+                // Greater Immobilize and Night Fire.
                 ("Buff", 494),
-                ("CrowdControl", 90),
+                ("CrowdControl", 91),
                 ("Debuff", 124),
-                ("DotHot", 201),
+                ("DotHot", 202),
                 ("ProcBuff", 1),
                 ("Unstated", 4),
             ]

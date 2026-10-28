@@ -1,8 +1,8 @@
 {
-  "scrapedAt": "2026-10-27T08:05:04.712Z",
+  "scrapedAt": "2026-10-28T08:37:53.737Z",
   "schema": 3,
-  "count": 2022,
-  "withEffects": 2017,
+  "count": 2024,
+  "withEffects": 2019,
   "spells": [
     {
       "name": "Aanya's Animation",
@@ -14567,6 +14567,24 @@
       ]
     },
     {
+      "name": "Greater Immobilize",
+      "durationText": "1:00",
+      "durationMs": 60000,
+      "castTimeMs": 1750,
+      "recastMs": 1000,
+      "targetType": "Single",
+      "spellType": "Detrimental",
+      "classes": "* Paladin - Level 61 * Cleric - Level 62 * Shaman - Level 62 * Necromancer - Level 63",
+      "msgCastOnYou": "Your feet adhere to the ground.",
+      "msgCastOnOther": "Soandso adheres to the ground.",
+      "msgWearsOff": "Your feet come free.",
+      "illusion": false,
+      "mana": 150,
+      "effects": [
+        "Root"
+      ]
+    },
+    {
       "name": "Greater Mass Imbue Fire Opal",
       "eraTag": "Classic",
       "durationText": "Instant",
@@ -22420,6 +22438,24 @@
       "effects": [
         "Cancel Magic(4)",
         "Cancel Magic(4)"
+      ]
+    },
+    {
+      "name": "Night Fire",
+      "durationText": "0:54",
+      "durationMs": 54000,
+      "castTimeMs": 3000,
+      "recastMs": 1000,
+      "targetType": "Single",
+      "spellType": "Detrimental",
+      "classes": "* Necromancer - Level 65",
+      "msgCastOnYou": "Your blood burns with the pain of darkness.",
+      "msgCastOnOther": "Soandso's blood boils through their skin.",
+      "msgWearsOff": "Your blood grows cold.",
+      "illusion": false,
+      "mana": 572,
+      "effects": [
+        "Decreases health by 335 per tick"
       ]
     },
     {
