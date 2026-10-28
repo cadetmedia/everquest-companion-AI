@@ -168,6 +168,10 @@ disagree, RULES.md wins; fix this file.
 
 ## Owner rulings that shape work
 
+- **No unreleased tabs** (owner, 2026-10-28: "no reason to hide them ever just always show the
+  tabs"). `UNRELEASED` is pinned true in both halves (`src/main/unreleased.ts`,
+  `src/renderer/src/devFlags.ts`); a new surface ships visible, not behind the gate.
+
 - **The fork has taken over the project** (owner, 2026-09-28). A decision that used to wait on the
   creator (a new tab, a new data file, a departure from AGENTS.md design) is the owner's alone; do
   not park work on the creator's sign-off. The fork's own rules still bind, his code conventions

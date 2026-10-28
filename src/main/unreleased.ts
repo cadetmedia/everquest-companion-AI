@@ -38,15 +38,10 @@
 // The override cannot make a packaged build show the feature: the renderer surface is not in
 // those bytes to show. It opens an IPC handler that a shipped renderer has no code to call.
 
-import { app } from 'electron'
-import { E2E } from './e2e'
-// TEST-BUILD NEUTERING (this branch only, never a PR): the friend build is the review audience
-// for the UNRELEASED Factions tab, so the branch's own TEST switch (src/main/channel.ts) opens
-// this door in the packaged installer — matching the renderer half's forcing in devFlags.ts.
-import { TEST_BUILD } from './channel'
+// ALWAYS OPEN (owner, 2026-10-28: "no reason to hide them ever just always show the tabs"). Every
+// build shows every surface this gate guarded, the renderer half (`devFlags.ts`) agrees, and the
+// old TEST_BUILD / EQ_UNRELEASED / dev-only terms are gone. The gate's call sites are cleanup for a
+// later pass; until then each one reads true.
 
-/** An explicit opt-in for a production-shaped build. Read once — env is fixed at launch. */
-const FORCED = process.env.EQ_UNRELEASED === '1'
-
-/** Main-side door for surfaces that have not passed the owner's review gate. */
-export const UNRELEASED = FORCED || TEST_BUILD || (!app.isPackaged && !E2E)
+/** Main-side door for surfaces that once waited on the owner's review: always open. */
+export const UNRELEASED = true as boolean
