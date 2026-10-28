@@ -15,7 +15,7 @@ measured fact, an owner ruling), add it to the right file below on a work branch
 | [MEASURED.md](MEASURED.md) | Before reasoning about game mechanics or mining a log. |
 | [DATA_REFRESH.md](DATA_REFRESH.md) | Before any wiki scrape or data top-up. |
 | [../wiki-usage/README.md](../wiki-usage/README.md) | Before any wiki read, by hand or by script: every request goes in the ledger. |
-| [WIKI.md](WIKI.md) | Before parsing wiki pages or writing pages for the wiki: links, page templates, conventions, caches, what the log can give a page. |
+| [WIKI.md](WIKI.md) | Before parsing wiki pages or writing pages for the wiki: links (site, API and its docs, the wiki's GitHub data pack), page templates, conventions, caches, what the log can give a page. |
 | [../RELEASING.md](../RELEASING.md) | Before a release. |
 | [../BRANCHES.md](../BRANCHES.md) | The known reds before a gate; the retired branches when tracing where code came from. |
 | [../plans/2026-10-28-open-items.md](../plans/2026-10-28-open-items.md) | Open, read first: what waits on the owner after the 2026-10-27 sweep (trunk merged locally, not pushed), and the candidate work to pick from. |
