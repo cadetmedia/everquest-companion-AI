@@ -80,12 +80,17 @@ export function readPref(store: PrefStore, key: string): string | null {
   }
 }
 
+/** Fired on this window after a stored choice is saved: `storage` events reach only OTHER windows,
+ *  and the Map pins overlay's always-mounted feed must see a pick made on the tab at once. */
+export const SLAYER_PREFS_EVENT = 'eq-slayer-prefs'
+
 export function savePref(key: string, value: string, store: PrefStore = localStorage): void {
   try {
     store.setItem(key, value)
   } catch {
     // A full or forbidden store costs the choice its persistence, never the tab.
   }
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event(SLAYER_PREFS_EVENT))
 }
 
 export function loadPicks(store: PrefStore = localStorage): string[] {

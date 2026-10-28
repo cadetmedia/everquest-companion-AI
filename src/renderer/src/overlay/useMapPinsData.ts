@@ -1,9 +1,11 @@
 // useMapPinsData.ts — what the Map pins overlay needs from outside its window: the zone's map
-// (the same call and pack choice as the Maps tab) and the slim placed-mob catalog from main.
+// (the same call and pack choice as the Maps tab), the slim placed-mob catalog from main, and the
+// Achievements areas the main window writes (shared/slayerOverlay.ts).
 
 import { useEffect, useState } from 'react'
 import type { MapData } from '@shared/maps'
 import type { MobEntry } from '@shared/types'
+import { SLAYER_OVERLAY_KEY, parseSlayerOverlay, type SlayerOverlayPayload } from '@shared/slayerOverlay'
 import { PACK_PREFS_KEY, loadPackPrefs } from '../features/maps/useMapData'
 
 /** The slim placed-mob catalog from main, once; an empty list until it lands. */
@@ -65,4 +67,27 @@ export function useOverlayMapData(zone: string | null): MapData | null {
     }
   }, [zone, prefsRaw])
   return data
+}
+
+function readSlayer(): SlayerOverlayPayload | null {
+  try {
+    return parseSlayerOverlay(localStorage.getItem(SLAYER_OVERLAY_KEY))
+  } catch {
+    return null
+  }
+}
+
+/** The Achievements areas the main window last wrote, kept current through `storage` events. */
+export function useSlayerOverlay(): SlayerOverlayPayload | null {
+  const [payload, setPayload] = useState(readSlayer)
+  useEffect(() => {
+    const onStorage = (e: StorageEvent): void => {
+      if (e.key === SLAYER_OVERLAY_KEY || e.key === null) setPayload(readSlayer())
+    }
+    window.addEventListener('storage', onStorage)
+    return () => {
+      window.removeEventListener('storage', onStorage)
+    }
+  }, [])
+  return payload
 }

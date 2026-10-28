@@ -1,7 +1,7 @@
 // mapPinsLayers.tsx — what the Map pins overlay draws, and the chips that switch it (owner,
 // 2026-10-13): the map's lines, the points of interest (named mobs and map labels), the timer
-// pins, the tracked points. Remembered in localStorage for this machine, like the Maps tab's own
-// view choices.
+// pins, the tracked points; and the Achievements (Slayer) areas (owner, 2026-10-14). Remembered in
+// localStorage for this machine, like the Maps tab's own view choices.
 
 import { useCallback, useState, type CSSProperties, type JSX } from 'react'
 import { TRACK_COLOR } from '../features/maps/mapTrack'
@@ -11,16 +11,20 @@ export interface PinLayers {
   poi: boolean
   timers: boolean
   tracked: boolean
+  /** the picked Slayer counters' areas, as the Maps tab shades them */
+  achievements: boolean
 }
 
 const KEY = 'eq.maps.overlayLayers'
-const ALL_ON: PinLayers = { lines: true, poi: true, timers: true, tracked: true }
+const ALL_ON: PinLayers = { lines: true, poi: true, timers: true, tracked: true, achievements: true }
 const CHIPS: readonly (readonly [keyof PinLayers, string])[] = [
   ['lines', 'Map'],
   ['poi', 'Points'],
   ['timers', 'Timers'],
   ['tracked', 'Tracked']
 ]
+/** Offered only while the Achievements tab has picks to draw, as the Maps tab offers its switch. */
+const ACHIEVEMENTS_CHIP: readonly [keyof PinLayers, string] = ['achievements', 'Achievements']
 
 function load(): PinLayers {
   try {
@@ -31,7 +35,8 @@ function load(): PinLayers {
       lines: v.lines !== false,
       poi: v.poi !== false,
       timers: v.timers !== false,
-      tracked: v.tracked !== false
+      tracked: v.tracked !== false,
+      achievements: v.achievements !== false
     }
   } catch {
     return ALL_ON
@@ -121,6 +126,7 @@ function chipStyle(on: boolean): CSSProperties {
 
 export function LayerChips({
   layers,
+  achievements,
   onToggle,
   onFit,
   zoomed,
@@ -131,6 +137,8 @@ export function LayerChips({
   noDrag
 }: {
   layers: PinLayers
+  /** Offer the Achievements chip (there are picked counters to draw). */
+  achievements: boolean
   onToggle: (k: keyof PinLayers) => void
   /** Back to the whole-zone fit after a manual zoom; shown only while zoomed. */
   onFit: () => void
@@ -144,7 +152,7 @@ export function LayerChips({
 }): JSX.Element {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '2px 6px', flexWrap: 'wrap', ...noDrag }}>
-      {CHIPS.map(([k, label]) => (
+      {(achievements ? [...CHIPS, ACHIEVEMENTS_CHIP] : CHIPS).map(([k, label]) => (
         <button
           key={k}
           type="button"
