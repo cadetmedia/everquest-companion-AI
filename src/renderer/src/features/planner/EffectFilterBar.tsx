@@ -338,10 +338,10 @@ export default function EffectFilterBar({
       </TextField>
 
       <ToggleChip
-        label="Usable by these classes"
+        label="Helps these classes"
         on={filters.trioOnly}
         onToggle={() => setFilters({ ...filters, trioOnly: !filters.trioOnly })}
-        hint="Hide donors none of the classes in the filter can use"
+        hint="Hide donors none of the classes in the filter can wear, and effects that help none of them (an instrument's Resonance only helps a Bard)"
       />
 
       <UsableChip unusable={unusable} deityKnown={deityKnown} />

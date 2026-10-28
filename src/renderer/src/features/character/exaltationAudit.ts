@@ -25,7 +25,7 @@ import type { ClassAbbr } from '../../../../shared/classCombo'
 import type { FocusBenefit, GearRow } from '../../../../shared/planner/gear'
 import type { OwnedExaltation } from '../../../../shared/characterSheet'
 import { socketTypeOf } from '../../../../shared/planner/normalize'
-import { unusableReasons } from '../../../../shared/planner/usability'
+import { benefitsClasses, unusableReasons } from '../../../../shared/planner/usability'
 
 /** One exaltation owned in more copies than are socketed — stated, never commanded. */
 export interface DuplicateFinding {
@@ -129,8 +129,7 @@ export interface KindEffect {
  * known, helps (law 1). Every engine asks this one function before it offers a gem.
  */
 export function helps(eff: Pick<KindEffect, 'benefit'> | null, loadout: Loadout): boolean {
-  if (eff?.benefit === undefined || loadout.classes.length === 0) return true
-  return eff.benefit.classes.some((c) => loadout.classes.includes(c))
+  return benefitsClasses(eff?.benefit, loadout.classes)
 }
 
 /**

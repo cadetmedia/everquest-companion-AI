@@ -24,6 +24,7 @@
 
 import type { ClassAbbr } from '../classCombo'
 import type { EffectFacts } from './effectText'
+import type { FocusBenefit } from './gear'
 
 /**
  * Canonical equipment slots, normalized from the dirty wiki tokens (normalize.ts owns the
@@ -339,6 +340,9 @@ export interface PlannerDonor extends EffectFacts {
    * cannot use by it (owner, 2026-10-25).
    */
   deities?: string[]
+  /** who the focus can help, when the spell list proves a limit (`main/planner/focusBenefit.ts`);
+   *  absent = no limit proven, so it helps anyone (law 1). Focus rows only. */
+  benefit?: FocusBenefit
   socket: SocketType
   /** merge tier required to extract it (R1: focus +1, click +2, worn +3, proc +4) */
   tierRequired: ExtractTier

@@ -19,9 +19,10 @@
 
 import type { ClassAbbr } from '../classCombo'
 import { deityFits } from './deity'
+import type { FocusBenefit } from './gear'
 
 /** Which restriction a character fails. One entry per restriction, in this order. */
-export type UnusableKind = 'class' | 'deity' | 'level'
+export type UnusableKind = 'class' | 'benefit' | 'deity' | 'level'
 
 export interface UnusableReason {
   kind: UnusableKind
@@ -49,6 +50,21 @@ export interface Restricted {
   deities?: readonly string[]
   /** the effect's `Req Level` (`at Level N`); absent when the page stated none */
   reqLevel?: number
+  /** who the effect can HELP, when the spell list proves a limit; absent = anyone */
+  benefit?: FocusBenefit
+}
+
+/**
+ * CAN THIS EFFECT HELP THESE CLASSES - WORN IS NOT BENEFIT (Malkil via the owner, 2026-10-26: a
+ * bard instrument is "All/All, but it provides absolutely no benefit unless I have Bard in my
+ * loadout"; owner, 2026-10-27: "if they didn't select ALL for the classes, an ALL item that doesn't
+ * BENEFIT them is useless for them"). The ONE rule every class selector asks: the Character tab's
+ * socket advice, the Exaltations browser, the Gear tab. `benefit` comes from
+ * `main/planner/focusBenefit.ts`; none proven, or no class chosen, helps (law 1).
+ */
+export function benefitsClasses(benefit: FocusBenefit | undefined, classes: readonly ClassAbbr[]): boolean {
+  if (benefit === undefined || classes.length === 0) return true
+  return benefit.classes.some((c) => classes.includes(c))
 }
 
 /** `CAZIC THULE` → `Cazic Thule`: the folded key spelled for a sentence. */
@@ -67,6 +83,16 @@ function classReason(item: Restricted, who: Wearer): UnusableReason | null {
     kind: 'class',
     label: 'class',
     why: `Only ${item.classes.join(', ')} can use it - you are ${who.classes.join(', ')}.`
+  }
+}
+
+/** Wearable but useless: asked only once the class half passed, so a row never says both. */
+function benefitReason(item: Restricted, who: Wearer): UnusableReason | null {
+  if (item.benefit === undefined || benefitsClasses(item.benefit, who.classes)) return null
+  return {
+    kind: 'benefit',
+    label: 'no benefit',
+    why: `Its effect only helps ${item.benefit.needs} - you are ${who.classes.join(', ')}.`
   }
 }
 
@@ -91,12 +117,14 @@ function levelReason(item: Restricted, who: Wearer): UnusableReason | null {
 }
 
 /**
- * Every restriction this character fails, in a fixed order (class, deity, level); `[]` when the
- * item is usable or nothing known says otherwise. Shows ALL that apply, so a row can name each.
+ * Every restriction this character fails, in a fixed order (class or benefit, deity, level); `[]`
+ * when the item is usable or nothing known says otherwise. Shows ALL that apply, so a row can name
+ * each.
  */
 export function unusableReasons(item: Restricted, who: Wearer): UnusableReason[] {
   const out: UnusableReason[] = []
-  for (const reason of [classReason(item, who), deityReason(item, who), levelReason(item, who)]) {
+  const fit = classReason(item, who) ?? benefitReason(item, who)
+  for (const reason of [fit, deityReason(item, who), levelReason(item, who)]) {
     if (reason !== null) out.push(reason)
   }
   return out
