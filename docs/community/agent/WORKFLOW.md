@@ -133,6 +133,9 @@ disagree, RULES.md wins; fix this file.
   types only under tsx). A plain `C:/` path fails under ESM in an ad-hoc script; use `file:///`.
 - **Known unit flake:** `presenceWorker.test.mts` "THE WATCHER LOOKS AT THE WORLD ON ITS FIRST TICK"
   can fail under the full suite's load (2026-10-13) and passes alone; re-run before treating it as red.
+- **Known engine flake:** `engined` `tests/combat.rs` live-meter tests (4 of 11) fail when `cargo test`
+  runs alongside the unit suite (2026-10-28) and pass alone (`cargo test -p engined --test combat`);
+  run cargo test on its own before treating them as red.
 - **Known e2e reds/flakes:** `respawn-timers.e2e.mts` fails one step ("never claims the mob is
   standing there") on plain upstream main since 2026-08-17. `maps.e2e`, `engine-boots`,
   `engine-absent`, `sky-achievements`, `sky-reward-inference` can flake under parallel load; run
