@@ -6,6 +6,12 @@ use serde_json::json;
 /// Feeds `(seconds, text)` lines; an item given or offered is `GIVEN:<item>` / `OFFER:<item>|<npc>`,
 /// a finished trade `TRADE:<npc>`, a zone change `ZONE:<zone>` (Lake Nerius until one).
 fn feed(q: &mut QuestLogs, lines: &[(i64, &str)]) {
+    feed_knowing(q, lines, &[]);
+}
+
+/// `feed`, with the NPC names the fold knows (`QuestLogs::line`'s `known`).
+fn feed_knowing(q: &mut QuestLogs, lines: &[(i64, &str)], npcs: &[&str]) {
+    let known = |name: &str| npcs.iter().any(|n| n.eq_ignore_ascii_case(name));
     let mut zone = "Lake Nerius".to_string();
     for (s, text) in lines {
         let ts = 1_787_000_000_000 + s * 1000;
@@ -21,7 +27,7 @@ fn feed(q: &mut QuestLogs, lines: &[(i64, &str)]) {
             // A typed event (`expGain`) in the real fold, never an unparsed line.
             q.experience(ts);
         } else {
-            q.line(text, ts, Some(&zone), &format!("2026-10-22 t{s}"));
+            q.line(text, ts, Some(&zone), &format!("2026-10-22 t{s}"), &known);
         }
     }
 }
@@ -151,6 +157,30 @@ fn an_emote_with_a_quote_from_the_npc_addressed_is_its_line() {
     assert_eq!(step["givenMs"], json!([at(220)]));
     assert!(talk.iter().any(|t| t["text"] == json!("Greetings, my friend.  Welcome to the Temple of Ro.")), "{talk:?}");
     assert!(!talk.iter().any(|t| t["text"].as_str().unwrap().contains("Freeport Militia")), "an NPC not addressed is not this step's");
+}
+
+/// The 2026-10-23 review: an emote is the hailed NPC's only when the line's name is that NPC's whole
+/// name. `A gnoll pup` opens with `a gnoll`, so a line from the pup, a mob the fold knows, is not his;
+/// the gnoll's own emote is, whatever the case of its first letter.
+#[test]
+fn an_emote_from_a_longer_name_is_not_the_hailed_npcs() {
+    let mut q = played();
+    feed_knowing(
+        &mut q,
+        &[
+            (0, "You have been assigned the task 'Call for Aid'."),
+            (100, "You say, 'Hail, a gnoll'"),
+            (101, "A gnoll pup growls at you. 'Grr, you smell of the swamp.'"),
+            (102, "A gnoll scratches his ear. 'What do you want, little one?'"),
+            (110, "Your task 'Call for Aid' has been updated."),
+        ],
+        &["a gnoll", "a gnoll pup"],
+    );
+    let v = q.served(&quest_key("Call for Aid")).unwrap();
+    let talk = v["steps"][1]["talk"].as_array().unwrap();
+    let words: Vec<&str> = talk.iter().map(|t| t["text"].as_str().unwrap()).collect();
+    assert!(words.contains(&"What do you want, little one?"), "the gnoll's own emote: {words:?}");
+    assert!(!words.iter().any(|w| w.contains("smell of the swamp")), "the pup's emote is not the gnoll's: {words:?}");
 }
 
 #[test]

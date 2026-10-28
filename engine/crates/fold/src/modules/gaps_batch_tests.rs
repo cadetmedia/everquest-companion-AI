@@ -97,6 +97,44 @@ fn a_refused_hand_in_is_no_turn_in_but_the_item_is_still_filed() {
     assert!(curt.get("questFacts").is_none(), "Sir Mollin is no turn-in target: {curt}");
 }
 
+/// The 2026-10-23 review: a cancelled trade is no turn-in for the item quest facts, as for the quest
+/// log, whoever called it off; the next trade with that NPC counts only its own offers.
+#[test]
+fn a_cancelled_trade_is_no_turn_in_for_the_item_quest_facts() {
+    let mut m = module();
+    let offer = |item: &str, npc: &str| json!({ "kind": "offer", "item": item, "npc": npc, "raw": format!("[Thu Oct 22 23:41:53 2026] You offered 1 {item} to {npc}.") });
+    feed(&mut m, 1, offer("Spore Mushroom", "Forager Grikk"));
+    feed(&mut m, 2, line("You have cancelled the trade."));
+    feed(&mut m, 3, offer("Vial of Swamp Water", "Forager Grikk"));
+    feed(&mut m, 4, line("Forager Grikk has cancelled the trade."));
+    feed(&mut m, 5, offer("Huge Mushroom Head", "Forager Grikk"));
+    feed(&mut m, 6, json!({ "kind": "trade", "npc": "Forager Grikk" }));
+    for item in ["Spore Mushroom", "Vial of Swamp Water"] {
+        let r = row(&m, "item", item);
+        assert_eq!(r["kinds"], json!(["offered"]), "the item exists all the same");
+        assert!(r.get("questFacts").is_none(), "a cancelled offer is no turn-in: {r}");
+    }
+    let head = row(&m, "item", "Huge Mushroom Head");
+    assert_eq!(head["questFacts"]["turnedInTo"], json!([{ "npc": "Forager Grikk", "n": 1 }]));
+}
+
+/// The 2026-10-23 review: after a hail of `a gnoll`, an emote from `a gnoll pup` (a mob the log
+/// noted) is the pup's, so it joins no step of the gnoll's.
+#[test]
+fn an_emote_from_a_mob_the_log_noted_with_a_longer_name_is_not_the_hailed_npcs() {
+    let mut m = module();
+    feed(&mut m, 1, json!({ "kind": "zone", "zone": "Lake Nerius" }));
+    feed(&mut m, 2, json!({ "kind": "consider", "mob": "a gnoll pup", "level": 3 }));
+    feed(&mut m, 3, line("You say, 'Hail, a gnoll'"));
+    feed(&mut m, 4, line("A gnoll pup growls at you. 'Grr, you smell of the swamp.'"));
+    feed(&mut m, 5, line("A gnoll scratches his ear. 'What do you want, little one?'"));
+    feed(&mut m, 6, line("You have been assigned the task 'Something Fishy'."));
+    let q = row(&m, "quest", "Something Fishy");
+    let talk = q["quest"]["steps"][0]["talk"].to_string();
+    assert!(talk.contains("What do you want, little one?"), "the gnoll's own emote: {talk}");
+    assert!(!talk.contains("smell of the swamp"), "the pup's emote is not the gnoll's: {talk}");
+}
+
 #[test]
 fn every_task_the_log_names_is_a_quest_row_with_its_steps() {
     let mut m = module();

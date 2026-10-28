@@ -58,6 +58,8 @@ const ACHIEVE_MS: i64 = 15_000;
 const PLAYER_NAME: &str = "Soandso";
 /// The NPC that spoke just before the step.
 const SPOKE_MS: i64 = 10_000;
+/// Words a longer NPC name runs past the hailed one (`Lord Lyfyx` → `Lord Lyfyx of Burwood`).
+const LONGER_NAME_WORDS: usize = 3;
 /// An answer to the player's hail comes in the same second or the next (Doug: 0-1 s).
 const HAIL_ANSWER_MS: i64 = 3_000;
 /// Another player's hail and the NPC's answer to it, either order (Dorian's logged 1 s before Bacon's hail).
@@ -236,9 +238,17 @@ impl QuestLogs {
     }
 
     /// `<NPC> bows as a courtesy. ... 'Greetings ...'` from the NPC just addressed: its name and quote.
-    fn emote_of(&self, text: &str, ts: i64) -> Option<(String, String)> {
+    /// The line names no speaker apart from its words, so a longer name `known` to the fold that the
+    /// line opens with is that NPC's emote, not this one's (`A gnoll pup growls` after a hail of `a gnoll`).
+    fn emote_of(&self, text: &str, ts: i64, known: &dyn Fn(&str) -> bool) -> Option<(String, String)> {
         let (npc, _) = self.addressed.as_ref().filter(|(_, at)| ts - at <= TALK_MS)?;
-        let (_, quote) = text.strip_prefix(npc.as_str())?.strip_prefix(' ')?.split_once(" '")?;
+        // Case-blind, as a say line is: `A gnoll ...` for a hail of `a gnoll`.
+        let head = text.get(..npc.len()).filter(|h| h.eq_ignore_ascii_case(npc))?;
+        let (act, quote) = text[head.len()..].strip_prefix(' ')?.split_once(" '")?;
+        let words: Vec<&str> = act.split_whitespace().take(LONGER_NAME_WORDS).collect();
+        if (1..=words.len()).any(|n| known(&format!("{head} {}", words[..n].join(" ")))) {
+            return None;
+        }
         Some((npc.clone(), quote.strip_suffix('\'')?.to_string()))
     }
 
@@ -279,8 +289,9 @@ impl QuestLogs {
         self.threads.offer(npc, item);
     }
 
-    /// An unparsed line. A task line returns its quest and kind, for the row.
-    pub fn line(&mut self, text: &str, ts: i64, zone: Option<&str>, at: &str) -> Option<(String, &'static str)> {
+    /// An unparsed line. A task line returns its quest and kind, for the row. `known`: a name the fold
+    /// knows for an NPC (seen in the log or in the mob catalog).
+    pub fn line(&mut self, text: &str, ts: i64, zone: Option<&str>, at: &str, known: &dyn Fn(&str) -> bool) -> Option<(String, &'static str)> {
         self.trim(ts);
         self.threads.line(text, ts, at, zone);
         if self.zone.as_deref() != zone {
@@ -304,7 +315,7 @@ impl QuestLogs {
             let said = text.split_once(" says, '").map_or(text, |(_, s)| s.strip_suffix('\'').unwrap_or(s));
             self.npc_talk(name, said, ts, (zone, at));
             self.speaker(name, said, ts);
-        } else if let Some((name, said)) = self.emote_of(text, ts) {
+        } else if let Some((name, said)) = self.emote_of(text, ts, known) {
             self.npc_talk(&name, &said, ts, (zone, at));
             self.speaker(&name, &said, ts);
         } else {
@@ -483,7 +494,10 @@ impl GapsModule {
         let at = stamp_of(ev.raw()).unwrap_or_default();
         let text = message_text_of(ev.raw());
         let zone = self.zone.clone();
-        match self.quest_log.line(text, ev.ts(), zone.as_deref(), &at) {
+        // A mob the log noted or the catalog has: whose emote a line opening with its name is.
+        let (seen, names, knowledge) = (self.seen.get(&Domain::Mob), &self.mob_names, self.knowledge.as_deref());
+        let known = |name: &str| seen.is_some_and(|s| s.contains(&mob_key(name))) || knowledge.is_some_and(|k| names.known(k, name));
+        match self.quest_log.line(text, ev.ts(), zone.as_deref(), &at, &known) {
             Some((quest, kind)) => self.note(Domain::Quest, quest_key(&quest), &quest, false, kind, ev) | facts,
             None => facts,
         }
