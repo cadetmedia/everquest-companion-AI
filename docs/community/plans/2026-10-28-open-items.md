@@ -32,6 +32,10 @@ Tradeskill Ingredient rows, font reader, Map pins Achievements chip, docs housek
 
 ## Candidate work (owner to pick)
 
+- Count-pinned census tests (owner, 2026-10-28: "having random count tests is a bit dumb it forces us
+  to update the test every time because counts change"): replace exact corpus counts with
+  property checks or floors so a wiki delta stops turning tests red. Not urgent; a future change.
+
 - From the competitor scan 2026-10-27 (EQBuddy, eqltools, Loadout Legends, SEQO, eql-log-reader,
   eql-tooltip): death recap (easy), friends online from `/who` (easy), item lookup hotkey via the
   existing OCR (moderate), AA planner (data only), phone/tablet second screen (moderate, EQBuddy's

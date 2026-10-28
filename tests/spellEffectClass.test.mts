@@ -230,7 +230,8 @@ test('JOS-251 R3c: and `Root` itself — which no stem has ever matched — is i
   // reached the "Mez / root broke" group at all.
   assert.ok(!CC_STEMS.test('Root'), 'the stems really do miss it')
   assert.ok(holdRoster(RAW).has('root'))
-  assert.equal(names('root').length, 12, 'the castable, target-side root ladder')
+  // 13 since the 2026-10-28 delta: Greater Immobilize (PAL/CLR/SHM/NEC).
+  assert.equal(names('root').length, 13, 'the castable, target-side root ladder')
 })
 
 // ── R4: the grammar itself ──────────────────────────────────────────────────────────────────────
@@ -312,7 +313,7 @@ test('JOS-251 R4d: the per-class membership counts, pinned', () => {
       // second Bravura page is titled `Solon's Bewitching Bravura`, one song under a second raw key;
       // and the invisibility twin 49735 is titled `Invisibility versus Undead`, which folds with
       // 57190's `Versus` again - the 19 the JOS-440 paragraph above predicted for an upstream fix.
-      charm: 24, summonPet: 102, mez: 16, root: 24, snare: 31, slow: 33, haste: 45, fear: 15,
+      charm: 24, summonPet: 102, mez: 16, root: 25, snare: 31, slow: 33, haste: 45, fear: 15,
       stun: 92, blind: 12, pacify: 12, memblur: 17, invisibility: 19, feignDeath: 2,
       // JOS-318, the class the alert catalog reads. 67 rows / 66 canonical names.
       healOverTime: 66

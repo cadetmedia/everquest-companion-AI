@@ -184,7 +184,9 @@ test('the dead-lands gate actually removed something, and the count is measured 
   // blisters as the tears of Arlyxir rain upon them.`, the placeholder subject this gate leaves out.
   // 20 since its re-read: `Soul Orb` (`Soandso's soul shivers in pain.`) and `Funeral Pyre of Kelador`
   // (`Soandso is enveloped in a funeral pyre.`), both Necromancer, the same placeholder subject.
-  assert.equal(dead, 20, 'the measured population the `lands` gate now excludes')
+  // 22 since the 2026-10-28 delta: `Greater Immobilize` (`Soandso adheres to the ground.`) and
+  // `Night Fire` (`Soandso's blood boils through their skin.`), the same placeholder subject.
+  assert.equal(dead, 22, 'the measured population the `lands` gate now excludes')
 })
 
 test('`landsOnOther` always travels with the pattern it needs', () => {
