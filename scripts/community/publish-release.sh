@@ -113,13 +113,16 @@ EOF
 # its own installer's blockmap to download only what changed; the feed is the newest release, so
 # without this copy every update is the whole installer. Best effort: the first release, or a
 # previous release without one, simply means full downloads.
+# Only that version's OWN blockmap: the previous release also carries the one before it, and a
+# '*.exe.blockmap' pattern snowballed (test.35 shipped 16 of them, test.20 to test.35).
 extra=()
 prevdir=$(mktemp -d)
 trap 'rm -f "$notes"; rm -rf "$prevdir"' EXIT
 prev_tag=$(gh release view --repo "$repo_slug" --json tagName -q .tagName 2>/dev/null || true)
 if [ -n "$prev_tag" ] && [ "$prev_tag" != "$tag" ]; then
-  if gh release download "$prev_tag" --repo "$repo_slug" --pattern '*.exe.blockmap' --dir "$prevdir" >/dev/null 2>&1; then
-    for f in "$prevdir"/*.exe.blockmap; do [ -f "$f" ] && extra+=("$f"); done
+  prev_blockmap="everquest-companion-test-Setup-${prev_tag#community-}.exe.blockmap"
+  if gh release download "$prev_tag" --repo "$repo_slug" --pattern "$prev_blockmap" --dir "$prevdir" >/dev/null 2>&1; then
+    [ -f "$prevdir/$prev_blockmap" ] && extra+=("$prevdir/$prev_blockmap")
   fi
 fi
 if [ ${#extra[@]} -gt 0 ]; then
