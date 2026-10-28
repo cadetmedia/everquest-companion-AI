@@ -22,6 +22,7 @@ import { matchMob } from '../../../../shared/slayer/slayerMatch'
 import type { MobCap, SlayerMob, SlayerTarget } from '@shared/slayer/slayerPlan'
 import { keptMob } from '../../../../shared/slayer/slayerPlan'
 import { zoneShortNameFromCatalog } from '../../../../shared/zones'
+import { areaText, type SlayerOverlayArea } from '../../../../shared/slayerOverlay'
 import { mobPins } from '../maps/mobPins'
 
 /** Spawn points this close, in map units, belong to one area. */
@@ -30,6 +31,8 @@ export const LINK = 300
 export const PAD = 60
 /** The smallest circle drawn. */
 export const MIN_RADIUS = 90
+/** How many achievement names an area spells out before it counts the rest. */
+const NAMED = 2
 
 export interface SlayerArea {
   /** the circle, in map coordinates */
@@ -133,4 +136,16 @@ export function slayerAreas(
   return [...byGroup.values()]
     .map((members) => areaOf(members, order))
     .sort((a, b) => b.spawns - a.spawns || a.x - b.x || a.y - b.y)
+}
+
+/** The achievements an area serves, the first two by name and a count of the rest. */
+export function areaLabel(area: SlayerArea, names: ReadonlyMap<string, string>): string {
+  const distinct = [...new Set(area.targets.map((id) => names.get(id) ?? id))]
+  const more = distinct.length > NAMED ? ` +${String(distinct.length - NAMED)}` : ''
+  return `${distinct.slice(0, NAMED).join(', ')}${more}`
+}
+
+/** The areas as the Map pins overlay draws them: placed in map units, the Maps tab's text on each. */
+export function toOverlayAreas(areas: readonly SlayerArea[], names: ReadonlyMap<string, string>): SlayerOverlayArea[] {
+  return areas.map((a) => ({ x: a.x, y: a.y, r: a.r, text: areaText(areaLabel(a, names), a.spawns) }))
 }

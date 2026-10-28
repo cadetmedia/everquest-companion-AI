@@ -13,7 +13,7 @@ const base: MarkZoneInput = {
   fit: fitExtent(ext, 200, 200),
   w: 200,
   h: 200,
-  layers: { lines: true, poi: true, timers: true, tracked: true },
+  layers: { lines: true, poi: true, timers: true, tracked: true, achievements: true },
   labels: [],
   mobs: [{ key: 'a#0', name: 'A', x: 50, y: 50 }],
   timers: [],

@@ -11,85 +11,18 @@
 // colours and the wiki pins the warning tone; a third source gets a third colour, so nobody has
 // to ask where a mark came from.
 
-import { type JSX, useMemo, useState } from 'react'
+import { type JSX, useState } from 'react'
 import { Chip, useTheme } from '@mui/material'
-import { alpha } from '@mui/material/styles'
-import type { CharacterSnap } from '@shared/characterTypes'
 import type { ZoneShort } from '@shared/maps'
-import { metVersion } from '@shared/metInLog'
-import { useModule } from '../../lib/useModule'
+import { areaText } from '@shared/slayerOverlay'
+import { AreaCircle } from '../maps/AreaCircle'
 import type { MapViewport } from '../maps/useMapViewport'
-import { slayerAreas, type SlayerArea } from './slayerAreas'
-import { slayerCatalog, useSlayerData } from './slayerData'
-import {
-  NO_FACTION_HITS_KEY,
-  OUT_OF_ERA_KEY,
-  counterRows,
-  levelCap,
-  loadFlag,
-  loadMaxLevel,
-  loadPicks,
-  savePref
-} from './slayerRows'
+import { loadFlag, savePref } from './slayerRows'
+import { areaLabel } from './slayerAreas'
+import { useSlayerMapAreas } from './useSlayerMapAreas'
 
 /** The switch's stored state. Stored as HIDDEN so the layer shows until somebody turns it off. */
 export const MAP_AREAS_HIDDEN_KEY = 'eq.slayer.mapAreasHidden'
-
-/** How many achievement names an area spells out before it counts the rest. */
-const NAMED = 2
-
-function areaLabel(area: SlayerArea, names: ReadonlyMap<string, string>): string {
-  const distinct = [...new Set(area.targets.map((id) => names.get(id) ?? id))]
-  const more = distinct.length > NAMED ? ` +${String(distinct.length - NAMED)}` : ''
-  return `${distinct.slice(0, NAMED).join(', ')}${more}`
-}
-
-function AreaMark({
-  area,
-  vp,
-  label
-}: {
-  area: SlayerArea
-  vp: MapViewport
-  label: string
-}): JSX.Element {
-  const tone = useTheme().palette.info.main
-  const at = vp.toScreen(area.x, area.y)
-  const r = Math.abs(vp.toScreen(area.x + area.r, area.y).px - at.px)
-  return (
-    <div
-      data-testid="maps-slayer-area"
-      style={{
-        position: 'absolute',
-        left: at.px - r,
-        top: at.py - r,
-        width: 2 * r,
-        height: 2 * r,
-        borderRadius: '50%',
-        background: alpha(tone, 0.16),
-        border: `1px solid ${alpha(tone, 0.7)}`,
-        display: 'flex',
-        alignItems: 'flex-start',
-        justifyContent: 'center'
-      }}
-    >
-      <span
-        style={{
-          marginTop: -9,
-          padding: '0 6px',
-          borderRadius: 8,
-          fontSize: 11,
-          lineHeight: '18px',
-          whiteSpace: 'nowrap',
-          color: '#000',
-          background: alpha(tone, 0.92)
-        }}
-      >
-        {label} - {String(area.spawns)} {area.spawns === 1 ? 'spawn' : 'spawns'}
-      </span>
-    </div>
-  )
-}
 
 export default function SlayerMapLayer({
   zone,
@@ -98,30 +31,9 @@ export default function SlayerMapLayer({
   zone: ZoneShort
   vp: MapViewport
 }): JSX.Element | null {
-  const { record } = useSlayerData()
-  // The Achievements tab's level cap, faction switch and era switch, read as its plan reads them,
-  // so the shading and the zone list leave out the same mobs; and the log's evidence version,
-  // so a flagged mob the player met is shaded again when the evidence arrives.
-  const own = useModule<CharacterSnap>('character')?.level?.level
-  const maxLevel = levelCap(loadMaxLevel(), own)
-  const noFactionHits = loadFlag(NO_FACTION_HITS_KEY)
-  const outOfEra = loadFlag(OUT_OF_ERA_KEY)
-  const met = metVersion()
-  const cap = useMemo(
-    () => ({ maxLevel, noFactionHits, outOfEra, met }),
-    [maxLevel, noFactionHits, outOfEra, met]
-  )
+  const tone = useTheme().palette.info.main
+  const { areas, names } = useSlayerMapAreas(zone)
   const [hidden, setHidden] = useState(() => loadFlag(MAP_AREAS_HIDDEN_KEY))
-  const picked = useMemo(() => {
-    if (record === null) return []
-    const picks = new Set(loadPicks())
-    return counterRows(record, new Map()).filter((row) => picks.has(row.id))
-  }, [record])
-  const areas = useMemo(
-    () => slayerAreas(zone, slayerCatalog(), picked.map((row) => row.target), cap),
-    [zone, picked, cap]
-  )
-  const names = useMemo(() => new Map(picked.map((r) => [r.id, r.counter.achievement])), [picked])
   if (areas.length === 0) return null
   return (
     <div
@@ -129,14 +41,19 @@ export default function SlayerMapLayer({
       style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}
     >
       {!hidden &&
-        areas.map((area) => (
-          <AreaMark
-            key={`${String(area.x)},${String(area.y)}`}
-            area={area}
-            vp={vp}
-            label={areaLabel(area, names)}
-          />
-        ))}
+        areas.map((area) => {
+          const at = vp.toScreen(area.x, area.y)
+          return (
+            <AreaCircle
+              key={`${String(area.x)},${String(area.y)}`}
+              testId="maps-slayer-area"
+              at={at}
+              r={Math.abs(vp.toScreen(area.x + area.r, area.y).px - at.px)}
+              tone={tone}
+              text={areaText(areaLabel(area, names), area.spawns)}
+            />
+          )
+        })}
       <Chip
         size="small"
         data-testid="maps-slayer-switch"

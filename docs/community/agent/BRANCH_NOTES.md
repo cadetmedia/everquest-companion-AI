@@ -92,6 +92,13 @@ where one exists.
 - Auto-hide never hides the overlay while unlocked (2026-10-14): a hidden window draws no chip,
   so unlocked is the way back. Pinned and hidden, the Overlay menu's reset is. A new localStorage
   key the overlay keeps must start with `eq.maps.overlay` (`tests/mapPinsReset.test.mts` checks).
+- Achievements chip (2026-10-27): the main window works out the areas (`useSlayerMapAreas`, the one
+  reading the Maps tab layer also uses) for the log's zone and writes them to `eq.slayer.overlayAreas`
+  (`shared/slayerOverlay.ts`; main-window data, so a reset keeps it). Publisher mounted in
+  AppCelebrations only while `mapPins` is open, behind UNRELEASED (`unreleasedSlayerMap.tsx`). The
+  overlay never imports `features/slayer/` (the catalog trap; measured clean 2026-10-27). Its on/off
+  is `achievements` in `eq.maps.overlayLayers`. `savePref` fires `eq-slayer-prefs` so a pick on the
+  tab reaches the feed at once (`storage` events skip their own window).
 
 ## Bazaar tab (was bazaar-tab)
 

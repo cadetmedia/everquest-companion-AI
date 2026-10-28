@@ -47,6 +47,7 @@ import { questKey } from '../features/posky/keys'
 // fires the level-up toast, counting what it unlocked against the loadout AT THE DING'S ts.
 import { useLevelUpToast } from '../features/leveling/useLevelUpToast'
 import { UnreleasedGapsOverlayFeed, UnreleasedGlobalPaste } from '../unreleasedGaps'
+import { UnreleasedSlayerOverlayFeed } from '../unreleasedSlayerMap'
 
 const bossData = getBossData()
 
@@ -183,6 +184,8 @@ export default function AppCelebrations(): JSX.Element {
       {/* The Wiki Gaps overlay's rows while the Gaps tab is closed: on any tab, and only while the
           overlay is open (unreleasedGaps.tsx). */}
       <UnreleasedGapsOverlayFeed />
+      {/* The Map pins overlay's Achievements areas, only while that overlay is open. */}
+      <UnreleasedSlayerOverlayFeed />
       <UnreleasedGlobalPaste />
     </>
   )

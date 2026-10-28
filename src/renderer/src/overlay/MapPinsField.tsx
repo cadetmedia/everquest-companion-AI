@@ -1,12 +1,16 @@
 // MapPinsField.tsx — everything the Map pins overlay draws inside its window: the zone's lines,
-// the points of interest, the timer pins and the tracked points, each behind its own chip
-// (mapPinsLayers.tsx), all placed through ONE whole-zone fit (mapTrack.ts `fitExtent`).
+// the points of interest, the timer pins, the tracked points and the Achievements areas, each
+// behind its own chip (mapPinsLayers.tsx), all placed through ONE whole-zone fit (mapTrack.ts
+// `fitExtent`).
 //
 // A label near the right edge is drawn on the pin's LEFT, ending at the pin, so it never runs off
 // the window (owner, 2026-10-13).
 
 import { useMemo, useState, type CSSProperties, type JSX } from 'react'
 import type { MapData, MapPoint } from '@shared/maps'
+import type { SlayerOverlayArea } from '@shared/slayerOverlay'
+import { UNRELEASED } from '../devFlags'
+import { AreaCircle } from '../features/maps/AreaCircle'
 import { MapCanvas } from '../features/maps/MapCanvas'
 import { DEFAULT_LAYERS, viewRect } from '../features/maps/mapGeometry'
 import { TRACK_COLOR, placeInExtent, type ExtentFit, type TrackedPin, type TrackedPoint, type ZoneExtent } from '../features/maps/mapTrack'
@@ -20,6 +24,8 @@ const TEXT = 'rgba(255,255,255,0.88)'
 const SHADOW = '0 0 2px #000, 0 0 2px #000'
 const POI_COLOR = '#e8a43c'
 const TIMER_COLOR = '#ef5350'
+/** The Maps tab's area tone: the app theme's info colour (MUI dark `info.main`). */
+const AREA_COLOR = '#29b6f6'
 
 export type CopyPin = (name: string, pin: TrackedPin) => void
 
@@ -120,6 +126,8 @@ export interface MapPinsFieldProps {
   mobs: readonly CatalogPin[]
   timers: readonly TimerPin[]
   tracked: readonly TrackedPoint[]
+  /** the Achievements areas on this zone (shared/slayerOverlay.ts) */
+  areas: readonly SlayerOverlayArea[]
   nowMs: number
   onCopy: CopyPin
 }
@@ -133,6 +141,24 @@ function Lines({ data, ext, fit, w, h }: { data: MapData; ext: ZoneExtent; fit: 
     return { view, size, rect: viewRect(view, size) }
   }, [ext, fit.left, fit.top, fit.scale, w, h])
   return <MapCanvas lines={data.lines} vp={vp} layers={DEFAULT_LAYERS} ink={`${TRACK_COLOR}cc`} />
+}
+
+/** The picked Slayer counters' areas, drawn as the Maps tab draws them. Inert: no click, no pin. */
+function AreaMarks({ ext, fit, areas }: MapPinsFieldProps): JSX.Element {
+  return (
+    <>
+      {areas.map((a) => (
+        <AreaCircle
+          key={`${String(a.x)},${String(a.y)}`}
+          testId="map-pins-area"
+          at={placeInExtent(ext, fit, a)}
+          r={a.r * fit.scale}
+          tone={AREA_COLOR}
+          text={a.text}
+        />
+      ))}
+    </>
+  )
 }
 
 function PoiMarks(props: MapPinsFieldProps): JSX.Element {
@@ -233,6 +259,7 @@ export function MapPinsField(props: MapPinsFieldProps): JSX.Element {
   return (
     <>
       {layers.lines && data != null && <Lines data={data} ext={ext} fit={fit} w={w} h={h} />}
+      {UNRELEASED && layers.achievements && <AreaMarks {...props} />}
       {layers.poi && <PoiMarks {...props} />}
       {layers.timers && (
         <>

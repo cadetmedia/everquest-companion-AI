@@ -2,10 +2,11 @@
 //
 // WHAT IT DRAWS is the user's choice, one chip each (owner, 2026-10-13): the zone's lines from the
 // same map pack as the Maps tab, the points of interest (named mobs and map labels), the timer
-// pins, and the tracked points. The zone is fitted into the window the way the game's map shows a
-// whole zone (mapTrack.ts `fitExtent`; unlocked, scroll and drag zoom it by hand, the Fit chip
-// undoes that), so the user sizes the window to the map window's
-// parchment, checks the lines against the game's, and every pin is where the game draws that spot.
+// pins, the tracked points, and the Achievements tab's picked Slayer areas (owner, 2026-10-14).
+// The zone is fitted into the window the way the game's map shows a whole zone (mapTrack.ts
+// `fitExtent`; unlocked, scroll and drag zoom it by hand, the Fit chip undoes that), so the user
+// sizes the window to the map window's parchment, checks the lines against the game's, and every
+// pin is where the game draws that spot.
 //
 // UNLOCKED it is a faint frame with the chips under its header: drag it by the header, resize it
 // from the edges, click any mark to copy its `/waypoint` line. LOCKED it is click-through and only
@@ -19,6 +20,8 @@ import { useEffect, useMemo, useRef, useState, type JSX } from 'react'
 import type { CharacterSnap } from '@shared/types'
 import { EMPTY_RESPAWN_SNAP, type RespawnSnap } from '@shared/respawn'
 import { zoneShortName } from '@shared/zones'
+import { slayerOverlayAreasFor } from '@shared/slayerOverlay'
+import { UNRELEASED } from '../devFlags'
 import { OverlayHeader } from './OverlayHeader'
 import { useOverlayChrome } from './useOverlayChrome'
 import { FOOTER_ROW } from './overlayScale'
@@ -32,7 +35,7 @@ import { waypointCommand } from '../features/maps/waypoint'
 import { MapPinsField } from './MapPinsField'
 import { LayerChips, usePinLayers, usePinsBg, usePinsFollow, type PinLayers } from './mapPinsLayers'
 import { useGameMapShown, useHiddenMouse } from './useGameMapFollow'
-import { useMobPlaces, useOverlayMapData } from './useMapPinsData'
+import { useMobPlaces, useOverlayMapData, useSlayerOverlay } from './useMapPinsData'
 import { useOverlayView, type OverlayViewControls } from './useOverlayView'
 import { zoneMobPins, zoneTimerPins, zoneWatched } from '../features/maps/overlayPoints'
 
@@ -139,7 +142,11 @@ function useZoneMarks(zone: string | null, layers: PinLayers) {
   const mobs = useMemo(() => (layers.poi ? zoneMobPins(zone, catalog) : []), [zone, catalog, layers.poi])
   const timers = useMemo(() => zoneTimerPins(zone, respawn.rows, catalog), [zone, respawn.rows, catalog])
   const ext: ZoneExtent | undefined = data?.bounds ?? (zone == null ? undefined : state.extents[zone])
-  return { data, tracked, mobs, timers, ext }
+  // The Achievements areas the main window wrote for this zone (UNRELEASED, as the Maps tab's).
+  const slayer = useSlayerOverlay()
+  const areas = useMemo(() => slayerOverlayAreasFor(slayer, zone), [slayer, zone])
+  const slayerChip = UNRELEASED && (slayer?.picks ?? 0) > 0
+  return { data, tracked, mobs, timers, ext, areas, slayerChip }
 }
 
 function emptyNote(zone: string | null, ext: ZoneExtent | undefined): string | null {
@@ -202,6 +209,7 @@ function Corners({ fit }: { fit: ExtentFit }): JSX.Element {
  *  2026-10-13). */
 function PinsFooter({
   layers,
+  achievements,
   onToggle,
   zoom,
   bg,
@@ -209,6 +217,7 @@ function PinsFooter({
   noDrag
 }: {
   layers: PinLayers
+  achievements: boolean
   onToggle: (k: keyof PinLayers) => void
   zoom: OverlayViewControls
   bg: [number, (v: number) => void]
@@ -220,7 +229,7 @@ function PinsFooter({
       data-testid="map-pins-footer"
       style={{ ...FOOTER_ROW, ...BAR, bottom: 0, padding: 0, background: 'rgba(14,17,21,0.78)' }}
     >
-      <LayerChips layers={layers} onToggle={onToggle} onFit={zoom.reset} zoomed={zoom.view != null} follow={follow[0]} onFollow={follow[1]} bg={bg[0]} onBg={bg[1]} noDrag={noDrag} />
+      <LayerChips layers={layers} achievements={achievements} onToggle={onToggle} onFit={zoom.reset} zoomed={zoom.view != null} follow={follow[0]} onFollow={follow[1]} bg={bg[0]} onBg={bg[1]} noDrag={noDrag} />
     </div>
   )
 }
@@ -311,7 +320,7 @@ export default function MapPinsOverlay(): JSX.Element {
   const bg = usePinsBg()
   const { w, h } = useWindowSize()
   const zone = zoneShortName(who.zone)
-  const { data, tracked, mobs, timers, ext } = useZoneMarks(zone, layers)
+  const { data, tracked, mobs, timers, ext, areas, slayerChip } = useZoneMarks(zone, layers)
   const nowMs = useClock(layers.timers && timers.length > 0)
   const { copied, onCopy } = useCopy()
   const hostRef = useRef<HTMLDivElement>(null)
@@ -364,12 +373,12 @@ export default function MapPinsOverlay(): JSX.Element {
         // or not the bars are showing (pinned and not hovered, they are not, and nothing is cut).
         <div style={{ position: 'absolute', inset: 0, clipPath: clip }}>
           <Corners fit={fit} />
-          <MapPinsField ext={ext} fit={fit} w={w} h={h} data={data} layers={layers} mobs={mobs} timers={timers} tracked={tracked} nowMs={nowMs} onCopy={onCopy} />
+          <MapPinsField ext={ext} fit={fit} w={w} h={h} data={data} layers={layers} mobs={mobs} timers={timers} tracked={tracked} areas={areas} nowMs={nowMs} onCopy={onCopy} />
         </div>
       )}
       <PinsChrome heading={who.zone ?? 'Map pins'} count={tracked.length} chrome={chrome} shown={strip.shown} />
       {shownNote != null && <Note text={shownNote} />}
-      {!locked && <PinsFooter layers={layers} onToggle={toggleLayer} zoom={zoom} bg={bg} follow={[follow, toggleFollow]} noDrag={chrome.noDrag} />}
+      {!locked && <PinsFooter layers={layers} achievements={slayerChip} onToggle={toggleLayer} zoom={zoom} bg={bg} follow={[follow, toggleFollow]} noDrag={chrome.noDrag} />}
       {copied != null && <Note text={copied} bottom={locked ? CORNER_PX + 2 : 34} />}
     </div>
   )
