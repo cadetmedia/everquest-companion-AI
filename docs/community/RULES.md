@@ -90,6 +90,10 @@ move faster and pivot easier"). The per-feature branches, the recipe and the reb
     `cargo test --workspace` in `engine/`. Known reds are listed in BRANCHES.md; anything not on
     that list is a regression and the merge does not stand. A change to `electron`,
     `electron-builder`, `electron-vite` or `electron-builder.yml` also gets a real `npm run dist`.
+    A change that touches only documentation (Markdown under `docs/`, `CLAUDE.md`, a README)
+    merges without the gate, and no test may read those files, so a docs change never needs a
+    test fix (owner, 2026-10-28: "documentation changes should never require a test fix").
+    `AGENTS.md` is the exception: the creator's word-count test reads it (rule 14).
 
 12. **Every adoption is recorded.** A third-party PR that was looked at gets a row in
     `ADOPTIONS.md` whether it was adopted or deferred: number, title, author, the upstream head
