@@ -12,6 +12,21 @@ long gap. How to refresh the app's copy of the wiki: `DATA_REFRESH.md`.
   `scripts/sources/wikiApi.ts`.
 - The wiki's own API documentation: https://eqlwiki.com/API_Documentation (owner, 2026-10-28:
   keep it at hand). Opening it by hand is a wiki read: ledger line (`../wiki-usage/README.md`).
+  What it says (read 2026-10-28):
+  - Any tool may read, create and edit pages and upload screenshots with a normal wiki account:
+    `action=clientlogin` (interactive, challenges shown to the human) or a scoped Bot password
+    with `action=login`; then `action=edit` (`createonly=1`, or `nocreate=1` + `baserevid` +
+    `starttimestamp`; `assert=user`, `assertuser`, CSRF token, a summary) and `action=upload`.
+    No EOZ secret, special User-Agent or bot account is needed; no bot flag to skip review.
+  - `action=eqlmetadata`: read-only POST, `titles=` up to ~500 per call, returns `eraRevision`
+    and revision-aware page info. A batched alternative to per-page era/revision reads.
+  - `action=eozobservations` (extension EQLClientData, live since 2026-10-24): private,
+    attributed kill/loot observations stored in the wiki's own DB tables. Needs a confirmed-email
+    account with `eoz-submit-observations`; batches of up to 100 events, 12 batches/account/hour.
+    Events carry zone, npc, item, quantity, tier, instance, source kind; never player names, log
+    lines or coordinates. No public read endpoint; it changes no page and publishes no drop rate.
+  - Monster spawn locations use the log's order Y, X, Z (the `/loc` order).
+  Any of these from the app is a new network call: owner's sign-off first (RULES.md rule 15).
 - The wiki's GitHub repo: https://github.com/Maergoth/EQL-EOZ (third-party: read as data,
   nothing from it is run).
   - Its `dataset` branch, the data pack: https://github.com/Maergoth/EQL-EOZ/tree/dataset
