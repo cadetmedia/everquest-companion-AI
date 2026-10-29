@@ -450,7 +450,8 @@ impl EngineState {
     }
 
     /// Bind `name_key` into the attribution set. The one door, so "was this ever a pet?" has a
-    /// single answer and a player can never shadow one.
+    /// single answer and a player can never shadow one. A pet CLAIM moves the recorded row to the
+    /// pet's own row first (`ingest.rs bind_pet_claim`), so the retract here then finds nothing.
     pub fn note_pet(&mut self, name_key: &str) {
         self.pet_names.insert(name_key.to_string());
         self.ever_pet.insert(name_key.to_string());

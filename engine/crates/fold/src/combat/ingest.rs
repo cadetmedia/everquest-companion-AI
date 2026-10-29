@@ -305,6 +305,13 @@ fn bind_pet_claim(st: &mut EngineState, name: &str, ts: i64, via: &str) {
     };
     let (label, id) = (inst.label.clone(), inst.instance_id.clone());
     st.drain_retirements();
+    // ITS SWINGS BEFORE THIS LINE MOVE TO ITS ROW (owner, 2026-10-28: Venekn fought Master Yael as
+    // "another player" and then said "My leader is Drywrought"). `note_pet` would retract that row,
+    // which drops the damage from every fight it fought in; the claim is first-person and names the
+    // row, so it moves, as a group mate's pet's does on its leader line (`ally_pet_leader`). A mob a
+    // charm broadcast named was retracted then (`ingest_charm`), so a promote finds nothing to move.
+    let why = format!("claimed as your pet{}", claim_note(via));
+    st.rekey_other(&key, &routing::pet_source(&id, label.clone()), &why);
     st.note_pet(&key);
     // The claim is also the corroboration a provisional charm bind was waiting for.
     st.charm.note_pet_evidence(&key);
