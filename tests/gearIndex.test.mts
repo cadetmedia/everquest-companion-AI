@@ -174,7 +174,7 @@ test('the owner screenshot reproduces THROUGH THE ROW, not just through the bloc
   assert.ok(thelvorn && crown)
   const s = scaleGearRow(thelvorn, CHECKPOINT).stats
   assert.equal(s.DMG, 25)
-  assert.equal(s.WIS, 19) // floor(15 + round(4.125)), NOT 20
+  assert.equal(s.WIS, 19) // floor(15 + 4.125)
   assert.equal(s.WEIGHT, 2.3) // ceil-to-one-decimal of 2.2420…
   assert.equal(s.DELAY, 26) // delay never scales — which is why the ratio moves
   assert.equal(gearRatio(s)?.toFixed(2), '0.96')
@@ -182,7 +182,7 @@ test('the owner screenshot reproduces THROUGH THE ROW, not just through the bloc
   // The synthetic save is the one fact the vector cannot re-derive, so the row caches the answer.
   const c = scaleGearRow(crown, CHECKPOINT).stats
   assert.equal(c.SV_VOID, 2)
-  assert.equal(c.AC, 17) // floor(13 + round(3.575))
+  assert.equal(c.AC, 16) // floor(13 + 3.575): no inner rounding (2026-10-28)
   assert.equal(scaleGearRow(crown, { full: 0, fraction: 0 }).stats.SV_VOID, undefined)
 })
 

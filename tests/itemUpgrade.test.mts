@@ -125,7 +125,7 @@ test('the rounding helpers are Excel ROUND/ROUNDUP, not Math.round/Math.ceil', (
 test('Thelvorn at tier 2 + 3/4 reproduces all four screenshot numbers', () => {
   const s = scaleStatBlock(THELVORN, CHECKPOINT)
   assert.equal(s.dmg, 25) // 20 + floor(20 * 2.75 / 10)
-  assert.equal(statOf(s, 'WIS'), '+19') // floor(15 + round(4.125)), NOT 20
+  assert.equal(statOf(s, 'WIS'), '+19') // floor(15 + 4.125)
   assert.equal(s.weight, '2.3') // ceil-to-one-decimal of 2.2420…
   assert.equal(s.atkDelay, 26) // delay never scales
   assert.equal(damageRatio(s.dmg, s.atkDelay)?.toFixed(2), '0.96')
@@ -133,7 +133,8 @@ test('Thelvorn at tier 2 + 3/4 reproduces all four screenshot numbers', () => {
 
 test('Thelvorn: the whole-level DMG / WIS / WT / ratio tables', () => {
   const dmg = ['20', '22', '24', '26', '28', '30', '32', '34', '36', '38', '40']
-  const wis = ['15', '17', '18', '20', '21', '23', '24', '26', '27', '29', '30']
+  // The odd tiers moved 2026-10-28 (no inner rounding: the Bloodsoaked and Pyrosilk windows).
+  const wis = ['15', '16', '18', '19', '21', '22', '24', '25', '27', '28', '30']
   const wt = ['3.0', '2.8', '2.5', '2.2', '2.0', '1.7', '1.4', '1.2', '0.9', '0.6', '0.4']
   const ratio = ['0.77', '0.85', '0.92', '1.00', '1.08', '1.15', '1.23', '1.31', '1.38', '1.46', '1.54']
 
@@ -161,19 +162,19 @@ test('Thelvorn states ONE trigger field, so it never grows an SV VOID line', () 
 
 test('Crown of King Tranix at tier 2 + 3/4, synthetic SV VOID included', () => {
   const s = scaleStatBlock(CROWN, CHECKPOINT)
-  assert.equal(s.ac, 17) // floor(13 + round(3.575))
+  assert.equal(s.ac, 16) // floor(13 + 3.575)
   assert.equal(statOf(s, 'CHA'), '+19')
-  assert.equal(statOf(s, 'SV MAGIC'), '+26') // floor(20 + round(5.5)) — half AWAY from zero
+  assert.equal(statOf(s, 'SV MAGIC'), '+25') // floor(20 + 5.5): no inner rounding
   assert.equal(s.weight, '0.8')
   assert.deepEqual(
     s.saves.map((v) => `${v.key} ${v.value}`),
-    ['SV MAGIC +26', 'SV VOID +2']
+    ['SV MAGIC +25', 'SV VOID +2']
   )
 })
 
 test('Crown: the whole-level AC / CHA / SV MAGIC / WT tables and the SV VOID line', () => {
-  const ac = ['13', '14', '16', '17', '18', '20', '21', '22', '23', '25', '26']
-  const cha = ['15', '17', '18', '20', '21', '23', '24', '26', '27', '29', '30']
+  const ac = ['13', '14', '15', '16', '18', '19', '20', '22', '23', '24', '26']
+  const cha = ['15', '16', '18', '19', '21', '22', '24', '25', '27', '28', '30']
   const svm = ['20', '22', '24', '26', '28', '30', '32', '34', '36', '38', '40']
   const wt = ['1.0', '1.0', '0.9', '0.8', '0.7', '0.6', '0.5', '0.4', '0.3', '0.2', '0.2']
 
@@ -385,4 +386,29 @@ test('ONLY A WEAPON GAINS ACCURACY; AN ITEM STATING ITS OWN KEEPS IT', async () 
   assert.equal(scaleStatBlock(ring, { full: 3, fraction: 0 }).stats.some((s) => s.key === 'Accuracy'), false)
   const own = { ...TORTURER, stats: [{ key: 'Accuracy', value: '+4%' }, ...TORTURER.stats] }
   assert.deepEqual(scaleStatBlock(own, { full: 2, fraction: 0 }).stats.filter((s) => s.key === 'Accuracy'), [{ key: 'Accuracy', value: '+4%' }])
+})
+
+// ---- read off the game, 2026-10-28: the owner's item windows (eqlwiki/item screenshots) ----------
+// Base stats are the committed wiki pages. Each line here disagreed with the old rounding.
+
+test('BLOODSOAKED +1, PYROSILK +5, WINDSTRIKER +10: NO INNER ROUNDING, AC/HP/MANA/END QUALIFY VOID, A BOW GAINS ACCURACY', async () => {
+  const { scaleStatBlock } = await import('../src/shared/itemUpgrade')
+  // Bloodsoaked Gauntlets +1, Tier 1 0/2: AC 18, HP 143, Mana 104, End 104, SV. Void 1.
+  const gauntlets = parseStatsBlock(['Slot: HANDS<br>', 'AC: 17<br>', 'HP: +130 MANA: +95 END: +95<br>', 'Size: SMALL WT: 3.5<br>'].join('\n'))
+  const g = scaleStatBlock(gauntlets, { full: 1, fraction: 0 })
+  assert.equal(g.ac, 18)
+  assert.deepEqual(['HP', 'MANA', 'END'].map((k) => statOf(g, k)), ['+143', '+104', '+104'])
+  assert.equal(statOf(g, 'SV VOID'), '+1', 'AC, HP, Mana and End are the only stats, and the game draws Void')
+  assert.equal(g.weight, '3.2')
+  // Pyrosilk Robe +5, Tier 5 0/32: AC 19, STA 21, INT 19, DEX 14, CHA 18, SV Magic/Fire 15, SV Void 5.
+  const robe = parseStatsBlock(['Slot: CHEST<br>', 'AC: 13<br>', 'STA: +14 INT: +13 DEX: +9 CHA: +12<br>', 'SV FIRE: +10 SV MAGIC: +10<br>', 'Size: SMALL WT: 2.0<br>'].join('\n'))
+  const r = scaleStatBlock(robe, { full: 5, fraction: 0 })
+  assert.equal(r.ac, 19)
+  assert.deepEqual(['STA', 'INT', 'DEX', 'CHA', 'SV MAGIC', 'SV FIRE', 'SV VOID'].map((k) => statOf(r, k)), ['+21', '+19', '+14', '+18', '+15', '+15', '+5'])
+  assert.equal(r.weight, '1.1')
+  // Windstriker +10 (RANGE, its page states no Accuracy): Accuracy +25%, Range 300, Base Dmg 90.
+  const bow = parseStatsBlock(['Slot: RANGE<br>', 'Skill: Archery  Atk Delay: 60<br>', 'DMG: 45<br>', 'Range: 200<br>', 'STR: +5 AGI: +5 DEX: +5<br>', 'HP: +50<br>', 'Size: MEDIUM WT: 4.0<br>'].join('\n'))
+  const w = scaleStatBlock(bow, { full: 10, fraction: 0 })
+  assert.deepEqual(w.stats.find((s) => s.key === 'Accuracy'), { key: 'Accuracy', value: '+25%' })
+  assert.equal(w.dmg, 90)
 })
