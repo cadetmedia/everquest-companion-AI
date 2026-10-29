@@ -174,12 +174,18 @@ fn out_source(st: &mut EngineState, attacker: &str, kind: OutKind, ts: i64) -> S
                 Some(i) => i,
                 None => st.resolve(attacker, ts, true),
             };
-            SourceRef {
-                id: format!("pet:{}", inst.instance_id),
-                name: inst.label,
-                kind: SourceKind::Pet,
-            }
+            pet_source(&inst.instance_id, inst.label)
         }
+    }
+}
+
+/// Your pet's meter row: the one id its swings book under, and the one a claim moves its earlier
+/// recorded row to (`ingest.rs bind_pet_claim`).
+pub(crate) fn pet_source(instance_id: &str, label: String) -> SourceRef {
+    SourceRef {
+        id: format!("pet:{instance_id}"),
+        name: label,
+        kind: SourceKind::Pet,
     }
 }
 

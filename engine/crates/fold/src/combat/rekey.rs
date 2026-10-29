@@ -210,6 +210,36 @@ mod tests {
         assert_eq!(total(&st.zone_agg, "member:jeber"), None);
     }
 
+    /// Owner, 2026-10-28: YOUR pet's swings before its claim, across a zone line as in the owner's
+    /// log (Venekn fought, the group zoned, then it named its leader). Every fight it fought in keeps
+    /// them, on the pet's row, which "With its owner" draws under you.
+    #[test]
+    fn your_pets_claim_moves_its_recorded_rows_in_every_fight() {
+        let mut lines = fights();
+        lines.push(death(6, 201_000, "a ghost gill"));
+        lines.push(
+            r#"{"kind":"zone","seq":7,"ts":300000,"raw":"z","zone":"The Feerrott"}"#.to_string(),
+        );
+        lines.push(
+            r#"{"kind":"petClaim","seq":8,"ts":311000,"raw":"c","name":"Jeber","via":"leader"}"#
+                .to_string(),
+        );
+        let e = fold(&lines);
+        let st = e.st.borrow();
+        assert_eq!(st.history.len(), 2);
+        for (enc, want) in st.history.iter().zip([162, 219]) {
+            assert_eq!(total(&enc.agg, "member:jeber"), None);
+            let pets: Vec<_> = enc
+                .agg
+                .out
+                .iter()
+                .filter(|(id, _)| id.starts_with("pet:"))
+                .map(|(_, s)| (s.name.as_str(), s.total))
+                .collect();
+            assert_eq!(pets, vec![("Jeber", want)]);
+        }
+    }
+
     /// A leader line the ally model refuses (it names the player) keeps today's behaviour: the row
     /// recorded as another player is dropped, and no ally-pet row appears.
     #[test]

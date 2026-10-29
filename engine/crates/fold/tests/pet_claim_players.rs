@@ -200,3 +200,32 @@ fn a_summoned_group_mates_pet_keeps_its_row_past_a_zone_line() {
         "{rows:?}"
     );
 }
+
+/// Owner, 2026-10-28: Venekn fought Master Yael before it said its leader line, and those swings
+/// were booked as another player's row and then dropped by the claim. They move to the pet's row,
+/// so they show with you. The lines are the owner's log verbatim (Wed Oct 28 18:30).
+#[test]
+fn your_pets_swings_before_its_claim_move_to_its_row() {
+    let rows = rows(&fold(
+        &[
+            "[Wed Oct 28 18:30:27 2026] You strike Master Yael for 44 points of damage.",
+            "[Wed Oct 28 18:30:28 2026] Venekn slashes Master Yael for 209 points of damage.",
+            "[Wed Oct 28 18:30:28 2026] Venekn slashes Master Yael for 231 points of damage.",
+            "[Wed Oct 28 18:30:29 2026] You punch Master Yael for 103 points of damage.",
+            "[Wed Oct 28 18:30:29 2026] Venekn slashes Master Yael for 143 points of damage.",
+            "[Wed Oct 28 18:30:31 2026] Venekn cleaves Master Yael for 231 points of damage.",
+            "[Wed Oct 28 18:30:39 2026] Master Yael has been slain by Malkil!",
+            "[Wed Oct 28 18:33:17 2026] Venekn says, 'My leader is Drywrought.'",
+            "[Wed Oct 28 18:33:20 2026] Venekn slashes a flighty fiend for 176 points of damage.",
+        ],
+        &[],
+    ));
+    assert!(
+        rows.contains(&row("pet", "Venekn", 209 + 231 + 143 + 231 + 176)),
+        "{rows:?}"
+    );
+    assert!(
+        !rows.iter().any(|r| r.0 != "pet" && r.1 == "Venekn"),
+        "{rows:?}"
+    );
+}
