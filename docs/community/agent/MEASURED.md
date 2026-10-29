@@ -63,7 +63,12 @@ SK, others).
   elemental keys; `repairElementalDamage` re-parses stored blocks at load (`itemsDb.ts`), because
   `items.json` is one line with two copies and a data patch would conflict on every rebuild.
 - **Range: +10 flat per upgrade tier.** Mithril Champion Arrows 150 -> 220 at +7 (game), 250 at
-  +10; Blessed Champion Arrows 170 -> 270 at +10. Only arrows measured; bows assumed.
+  +10; Blessed Champion Arrows 170 -> 270 at +10. Bows too: Windstriker 200 -> 300 at +10 (2026-10-28).
+- **Primary stats over 10: `floor(base + base * effective / 10)`, no inner rounding** (2026-10-28,
+  game windows): Bloodsoaked Gauntlets +1 (0/2) Mana/End 95 -> 104, AC 17 -> 18; Pyrosilk Robe +5
+  (0/32) AC/INT 13 -> 19. The old `floor(base + round(...))` cannot give 104 from any base. AC, HP,
+  Mana and End qualify the synthetic SV Void (Bloodsoaked shows Void 1 with only those). A RANGE bow
+  gains Accuracy (Windstriker +10: +25%, its page states none).
 - **Penalties past -10 shrink 10% of |base| per tier**, reaching 0 at +10:
   `-10 <= base < 0` -> `min(0, base + full)`; `base < -10` ->
   `min(0, base + round(|base| * effective / 10))`. Stonemelder's Band DEX/AGI -35 reads 0 at +10.

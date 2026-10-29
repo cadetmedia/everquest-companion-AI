@@ -36,9 +36,11 @@
 // ============================================================================
 // `excelRound` is round-HALF-AWAY-FROM-ZERO, not JS `Math.round` (which is half-toward
 // +Infinity and so disagrees on every negative half). `excelRoundUp` is ceil-away-from-zero.
-// For a PRIMARY stat the increment rounds BEFORE it is added and the SUM is floored —
-// `floor(base + round(base * effective / 10))`, never `floor(base * (1 + effective/10))`:
-// WIS 15 at tier 2 + 3/4 is floor(15 + round(4.125)) = 19, and the one-step spelling says 20.
+// For a PRIMARY stat over 10 the increment is NOT rounded: `floor(base + base * effective / 10)`
+// (2026-10-28, the game's own windows: Bloodsoaked Gauntlets +1 at 0/2 read Mana and End 104 from
+// a base of 95, which the old `floor(base + round(...))` can never give (it says 105), and AC 18
+// from 17; Pyrosilk Robe +5 at 0/32 reads AC 19 and INT 19 from 13, where rounding said 20. The
+// wiki's own slider, `Maergoth/EQLWiki` ItemLevelSlider rules rev 4, has the same spelling).
 //
 // ============================================================================
 // THE FLOAT ARTIFACT (replicate, do not fix — pinned in the test)
@@ -198,7 +200,7 @@ export function upgradeStatClass(key: string): UpgradeStatClass {
  *   base == 0            → 0            (an absent stat stays absent)
  *   0 < base <= 10       → base + full  (FRACTION IGNORED — this is the "+1 per tier" the
  *                                        old research note mistook for a floor rule)
- *   base > 10            → floor(base + round(base * effective / 10))
+ *   base > 10            → floor(base + base * effective / 10)   (no inner rounding; see the header)
  *   -10 <= base < 0      → min(0, base + full)   penalties SHRINK toward zero, never past it
  *   base < -10           → min(0, base + round(|base| * effective / 10))
  *
@@ -213,7 +215,7 @@ export function scalePrimary(base: number, state: ItemUpgradeState): number {
   if (base < -10) return Math.min(0, base + excelRound((-base * effectiveLevel(s)) / 10, 0))
   if (base < 0) return Math.min(0, base + s.full)
   if (base <= 10) return base + s.full
-  return Math.floor(base + excelRound((base * effectiveLevel(s)) / 10, 0))
+  return Math.floor(base + (base * effectiveLevel(s)) / 10)
 }
 
 /** WEAPON DMG: `base + floor(base * effective / 10)` — +10% per level, and it reads the fraction. */
@@ -291,9 +293,12 @@ export function scaleWeight(base: number, state: ItemUpgradeState): number {
 
 /**
  * The upgrade grants a synthetic `SV VOID: +full` line to any upgraded item carrying at
- * least TWO distinct fields from this set. AC, HP and MP are deliberately NOT in it.
+ * least TWO distinct fields from this set. AC, HP, MP and END count (2026-10-28: Bloodsoaked
+ * Gauntlets +1 states only AC, HP, Mana and End and the game shows `SV. Void: 1`). The wiki's
+ * slider also counts the three regens; no window of ours shows that yet, so they stay out.
  */
 const VOID_TRIGGER_KEYS = new Set([
+  'AC', 'HP', 'MP', 'END',
   'STR', 'STA', 'INT', 'AGI', 'DEX', 'CHA', 'WIS',
   'SV_FIRE', 'SV_COLD', 'SV_POISON', 'SV_MAGIC', 'SV_DISEASE'
 ])
@@ -304,6 +309,7 @@ export function synthesizesVoidSave(block: ItemStatBlock, state: ItemUpgradeStat
   // An item that already states SV VOID keeps its own (scaled) line; we never draw a second.
   if (block.saves.some((s) => normalizeStatKey(s.key) === 'SV_VOID')) return false
   const seen = new Set<string>()
+  if ((block.ac ?? 0) > 0) seen.add('AC')
   for (const st of [...block.stats, ...block.saves]) {
     const k = normalizeStatKey(st.key)
     if (VOID_TRIGGER_KEYS.has(k)) seen.add(k)
@@ -360,10 +366,11 @@ function scaleRangeText(range: string | undefined, state: ItemUpgradeState): str
 const WHOLE_NUMBER = /^[0-9]+$/
 
 /**
- * A melee weapon: damage, a delay, and a PRIMARY or SECONDARY slot, the two measured. Ammo is not one
- * (the owner's +7 arrows show no Accuracy, tests/itemElementalDamage.test.mts); a bow is not measured.
+ * A weapon that gains Accuracy: damage, a delay, and a PRIMARY, SECONDARY or RANGE slot. Ammo is not
+ * one (the owner's +7 arrows show no Accuracy, tests/itemElementalDamage.test.mts); a bow is
+ * (2026-10-28: Windstriker +10, RANGE, reads `Accuracy: +25%` and its page states none).
  */
-const isMeleeWeapon = (block: ItemStatBlock): boolean => (block.dmg ?? 0) > 0 && block.atkDelay !== undefined && /\b(PRIMARY|SECONDARY)\b/i.test(block.slot ?? '')
+const isMeleeWeapon = (block: ItemStatBlock): boolean => (block.dmg ?? 0) > 0 && block.atkDelay !== undefined && /\b(PRIMARY|SECONDARY|RANGE)\b/i.test(block.slot ?? '')
 
 /** The stats with an upgraded melee weapon's `Accuracy: +X%` after them; an item stating its own keeps it. */
 function withWeaponAccuracy(block: ItemStatBlock, stats: ItemStat[], state: ItemUpgradeState): ItemStat[] {

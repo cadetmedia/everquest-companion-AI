@@ -176,6 +176,6 @@ test('the sum is of the SCALED halves, never a scaled sum', () => {
   // the e2e's slider step watches happen on the real corpus.
   const filters = { ...DEFAULT_GEAR_FILTERS, eraOnly: false }
   const ranked = gearTableRows(ROWS, CHECKPOINT, { filters, sort: { key: 'EFF_HP', dir: 'desc' } })
-  assert.deepEqual(ranked.map((r) => sortValue(r, 'EFF_HP')), [66, 66, 32, undefined, undefined])
+  assert.deepEqual(ranked.map((r) => sortValue(r, 'EFF_HP')), [66, 66, 31, undefined, undefined])
   assert.deepEqual(names(ranked).slice(0, 3), ['Belt of Stamina', 'Girdle of Vitality', 'Band of Health'])
 })

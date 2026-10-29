@@ -141,10 +141,10 @@ test('the Tier bar: a bar that holds together gives the progress; one that does 
   assert.match(tierBarFraction(['Tier4 16/32'], 4).note ?? '', /does not fit \+4/)
   // At the cap and at +0 there is no progress to read (`Tier: 10/10`, `Tier0 0/1`).
   assert.deepEqual(tierBarFraction(['Merge Place Tier: 10/10'], 10), {})
-  // The progress decides a stat over ten: STR 30 at +4 reads 42 at 0/16 and 45 at 15/16.
+  // The progress decides a stat over ten: STR 30 at +4 reads 42 at 0/16 and 44 at 15/16.
   const str = (f: number): string => windowText(scaleStatBlock({ flags: [], stats: [{ key: 'STR', value: '+30' }], saves: [], effects: [], exaltationSlots: [], extras: [] }, { full: 4, fraction: f }))
   assert.match(str(0), /STR: \+42/)
-  assert.match(str(15), /STR: \+45/)
+  assert.match(str(15), /STR: \+44/)
   assert.equal(delevel(str(15), 4, 15).block, '\nSTR: +30<br>')
   assert.equal(delevel(str(0), 4, 0).block, '\nSTR: +30<br>')
 })

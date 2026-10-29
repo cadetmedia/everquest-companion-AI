@@ -327,7 +327,7 @@ test('the acceptance case: a `Cloak of Flames +5` reads at +5 in EVERY stat it s
 
   // …and it is NOT haste-specific, which is the whole ruling. Every other stat the cloak states
   // scales by the same algorithm: a primary at or below 10 takes `+full`, one above 10 takes
-  // `floor(base + round(base * effective / 10))`.
+  // `floor(base + base * effective / 10)` (no inner rounding since 2026-10-28).
   assert.equal(totals5.ac, 15, 'AC 10 is a primary at the small-value rule: 10 + 5')
   assert.deepEqual(totals5.stats, [
     { label: 'Agility', total: 14, from: 1 },
@@ -335,7 +335,7 @@ test('the acceptance case: a `Cloak of Flames +5` reads at +5 in EVERY stat it s
     { label: 'HP', total: 75, from: 1 }
   ])
   assert.deepEqual(totals5.saves, [
-    { label: 'SV Fire', total: 23, from: 1 },
+    { label: 'SV Fire', total: 22, from: 1 },
     { label: 'SV Void', total: 5, from: 1 }
   ], 'an upgraded item carrying two trigger stats gains the synthetic SV VOID line')
 
