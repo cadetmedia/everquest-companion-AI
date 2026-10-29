@@ -102,6 +102,10 @@ pub struct ResistRowFile {
     pub week: Option<String>,
     pub resist: i64,
     pub land: i64,
+    /// Present only when the creature refused a cast as immune; a file from before 2026-10-28 has
+    /// none, and a row with none is written without it, so every older row reads back unchanged.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub immune: Option<i64>,
     pub dmg: Histogram,
     /// Present only when the row gave up on the histogram; `Some(false)` is not a shape either
     /// implementation writes.
@@ -175,6 +179,7 @@ impl ResistRowFile {
             week: spec.week.clone(),
             resist: row.resist,
             land: row.land,
+            immune: (row.immune > 0).then_some(row.immune),
             dmg: Histogram(row.dmg.clone()),
             variable: if row.variable { Some(true) } else { None },
             first_ts: row.first_ts,
@@ -212,6 +217,7 @@ impl ResistRowFile {
             },
             resist: self.resist,
             land: self.land,
+            immune: self.immune.unwrap_or(0),
             dmg: self.dmg.0,
             variable: self.variable == Some(true),
             first_ts: self.first_ts,

@@ -96,6 +96,7 @@ import type { LogEvent } from '../../shared/logEvents'
 import type { SpellDb } from '../data/spellDb'
 import type { ResistCasterKind, ResistFamily, ResistRow } from '../../shared/resistTypes'
 import { isoWeekKey } from '../../shared/resistDecay'
+import { IMMUNE_PAIR_MS, isImmunitySentence, messageTextOf } from '../../shared/resistImmunity'
 import { ResistBucket, type RowSpec } from './ledger'
 import { SongFold } from './songFold'
 import {
@@ -174,6 +175,8 @@ export class ResistFold {
   private readonly casts = new ArmedCasts()
   private dotSeen = new Set<string>()
   private deferred: Deferred | null = null
+  /** When the last immunity sentence printed, waiting for the resist line it explains. */
+  private immunePending: number | null = null
   /** Mob names both ways, memoised. The measurement behind the memo is in world.ts. */
   private readonly names = new MobNames()
 
@@ -248,6 +251,7 @@ export class ResistFold {
     this.casts.reset()
     this.dotSeen = new Set()
     this.deferred = null
+    this.immunePending = null
     this.names.reset()
   }
 
@@ -338,9 +342,23 @@ export class ResistFold {
       case 'charm':
         this.onEmote(ev.mob, ev.ts, ev.candidates?.map((c) => c.name))
         return
+      case 'unknown':
+        if (isImmunitySentence(messageTextOf(ev.raw))) this.immunePending = ev.ts
+        return
       default:
         return
     }
+  }
+
+  /**
+   * Does an immunity sentence explain this resist? Your own casts only — the game says `Your target
+   * is immune …` to the caster alone. Taking it clears it: one sentence explains one resist.
+   */
+  private takeImmunity(kind: ResistCasterKind, ts: number): boolean {
+    const at = this.immunePending
+    if (kind !== 'self' || at === null || ts - at < 0 || ts - at > IMMUNE_PAIR_MS) return false
+    this.immunePending = null
+    return true
   }
 
   private onConsider(mob: string, level: number | undefined): void {
@@ -512,19 +530,35 @@ export class ResistFold {
     const lineRank = spellRank(ev.spell)
     if (kind === 'self') this.cast.noteSongRank(spellKey, lineRank)
     this.names.remember(ev.target)
+    // AN IMMUNITY IS NOT A RESIST (shared/resistImmunity.ts): same row, counted where the estimate
+    // never reads, so the row and mob counts are what they were.
+    if (this.takeImmunity(kind, ev.ts)) {
+      const row = this.rowFor(this.resistObservation(kind, ev, spellKey, lineRank))
+      row.immune = (row.immune ?? 0) + 1
+      return
+    }
     if (this.songs.onResist(ev.target, spellKey, kind, ev.ts)) return
-    const level = this.casterLevel(kind, ev.caster)
+    this.rowFor(this.resistObservation(kind, ev, spellKey, lineRank)).resist += 1
+  }
+
+  /** The cast a `resisted` line reports, keyed as its row is: the line's rank beats the armed one. */
+  private resistObservation(
+    kind: ResistCasterKind,
+    ev: Extract<LogEvent, { kind: 'resist' }>,
+    spellKey: string,
+    lineRank: number
+  ): Observation {
     const cast = this.casts.ownedBy(kind, spellKey, ev.ts)
-    this.rowFor({
+    return {
       mob: ev.target,
       spellKey,
       family: 'cast',
       kind,
-      level,
+      level: this.casterLevel(kind, ev.caster),
       ts: ev.ts,
       rank: lineRank > 0 ? lineRank : (cast?.rank ?? 0),
       overchannel: this.cast.invocationFor(kind, cast),
-    }).resist += 1
+    }
   }
 
   /**

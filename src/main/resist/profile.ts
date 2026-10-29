@@ -229,7 +229,15 @@ export function mobResistProfile(displayName: string, deps: ProfileDeps): MobRes
     spellDataAvailable: spells !== null,
     spellDataNote: spells !== null ? null : spellDataNote(deps.spellStatus()),
     baselineFrozenAt: deps.frozenAt(),
+    immuneTo: immuneSpells(rows),
   }
+}
+
+/** The spells any of these rows says the creature was immune to, once each, sorted. */
+export function immuneSpells(rows: readonly ResistRow[]): string[] {
+  const out = new Set<string>()
+  for (const row of rows) if ((row.immune ?? 0) > 0) out.add(spellCanonKey(row.spellKey))
+  return [...out].sort()
 }
 
 /**

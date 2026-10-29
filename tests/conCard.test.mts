@@ -234,6 +234,7 @@ function profile(spec: Partial<MobResistProfile> = {}): MobResistProfile {
     spellDataAvailable: true,
     baselineFrozenAt: null,
     spellDataNote: null,
+    immuneTo: [],
     axes: [
       { axis: 'magic', estimate: est({ n: 600, nInformative: 600 }), tag: 'very resistant', benchmark: { level: 50, mobLevel: 53, atMobLevel: false, pPlain: 0.2, pOver: 0.9, tag: 'very resistant', guidance: 'may not land even with overchannel', atLo: { level: 50, mobLevel: 53, atMobLevel: false, pPlain: 0.3, pOver: 0.95, tag: 'very resistant', guidance: 'may not land even with overchannel' }, atHi: { level: 50, mobLevel: 53, atMobLevel: false, pPlain: 0.1, pOver: 0.85, tag: 'very resistant', guidance: 'may not land even with overchannel' } }, n: 600, nInformative: 600 },
       {
