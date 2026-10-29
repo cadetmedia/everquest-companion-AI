@@ -8,6 +8,7 @@ import type { CombatSnapshot } from '../src/shared/combat'
 import {
   ACTIVE_POLL_MS,
   IDLE_POLL_MS,
+  OVERLAY_PING_GAP_MS,
   WARM_MS,
   pollCombat,
   timeDriven,
@@ -18,7 +19,7 @@ const settled = { hydrating: false, inCombat: false, segments: [{ kind: 'fight' 
 const fighting = { hydrating: false, inCombat: true, segments: [{ kind: 'current' }] } as unknown as CombatSnapshot
 
 /** A window on a fake clock: `advance` fires each timer at its time; `fetchMs` is a read's round trip. */
-function fakeWindow(answer: () => CombatSnapshot, fetchMs = 0) {
+function fakeWindow(answer: () => CombatSnapshot, fetchMs = 0, pingGapMs?: number) {
   let t = 0
   let hidden = false
   let timers: { at: number; cb: () => void }[] = []
@@ -47,7 +48,8 @@ function fakeWindow(answer: () => CombatSnapshot, fetchMs = 0) {
     },
     (s) => answers.push(s),
     (cb) => ((ping = cb), () => (ping = null)),
-    env
+    env,
+    pingGapMs
   )
   const answers: CombatSnapshot[] = []
   const advance = async (ms: number): Promise<void> => {
@@ -177,4 +179,31 @@ test('stopped, it asks nothing more', async () => {
   await w.ping()
   await w.advance(5_000)
   assert.equal(w.asks(), before)
+})
+
+test('a meter overlay reads four times a second in a fight, on the 4 Hz ping (owner, 2026-10-28)', async () => {
+  const w = fakeWindow(() => fighting, 30, OVERLAY_PING_GAP_MS)
+  await w.advance(1000)
+  const before = w.asks()
+  for (let i = 0; i < 240; i++) {
+    await w.advance(250)
+    await w.ping()
+  }
+  assert.equal(w.asks() - before, 240, 'one read per ping: 4 a second for a minute')
+  w.stop()
+})
+
+test('a meter overlay with no new lines costs what it did: the fallback is not sped up', async () => {
+  const w = fakeWindow(() => fighting, 0, OVERLAY_PING_GAP_MS)
+  await w.advance(1000)
+  const before = w.asks()
+  await w.advance(60_000)
+  assert.equal(w.asks() - before, 60)
+  w.stop()
+  const idle = fakeWindow(() => settled, 0, OVERLAY_PING_GAP_MS)
+  await idle.advance(WARM_MS + 1000)
+  const quiet = idle.asks()
+  await idle.advance(60_000)
+  assert.equal(idle.asks() - quiet, 60_000 / IDLE_POLL_MS)
+  idle.stop()
 })
