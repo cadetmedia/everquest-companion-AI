@@ -1,5 +1,5 @@
 {
- "updatedAt": "2026-10-28T08:37:53.744Z",
+ "updatedAt": "2026-10-29T02:44:17.526Z",
  "redirects": [
   {
    "from": "1 Hand Blunt",
@@ -13698,6 +13698,10 @@
    "to": "Scars of Sigil"
   },
   {
+   "from": "Scars of the Indominable",
+   "to": "Scars of the Indomitable"
+  },
+  {
    "from": "Scars of velious",
    "to": "Scars of Velious"
   },
@@ -16712,6 +16716,10 @@
   {
    "from": "Undine spirit",
    "to": "An undine spirit"
+  },
+  {
+   "from": "Unfortunate news",
+   "to": "Unfortunate News"
   },
   {
    "from": "Unrest",

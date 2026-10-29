@@ -1,5 +1,5 @@
 {
-  "scrapedAt": "2026-10-28T08:37:53.737Z",
+  "scrapedAt": "2026-10-29T02:44:17.516Z",
   "source": "eqlwiki.com — Category:NPCs/Named Mobs/Merchants/Raid Encounters ∪ embeddedin Template:Namedmobpage/MerchantPage, filtered to pages opening a mob template + recentchanges delta (scripts/scrape-delta.mts)",
   "mobs": [
     {
@@ -1111,7 +1111,10 @@
       "factionAmounts": [
         "-2"
       ],
-      "image": "npc_a_blighted_cook.png"
+      "image": "npc_a_blighted_cook.png",
+      "commonDrops": [
+        "Ruby"
+      ]
     },
     {
       "page": "A blizzard dervish",
@@ -1910,8 +1913,7 @@
           "pct": 16
         }
       ],
-      "image": "npc_a_briar_snake.jpg",
-      "noImage": true
+      "image": "npc_a_briar_snake.png"
     },
     {
       "page": "A briarweb spider",
@@ -160388,8 +160390,7 @@
       "factionAmounts": [
         "-"
       ],
-      "image": "npc_kinool_goldsinger.png",
-      "noImage": true
+      "image": "npc_kinool_goldsinger.png"
     },
     {
       "page": "Kirak Vil",

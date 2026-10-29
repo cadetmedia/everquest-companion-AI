@@ -1,5 +1,5 @@
 {
-  "scrapedAt": "2026-10-28T08:37:53.737Z",
+  "scrapedAt": "2026-10-29T02:44:17.516Z",
   "source": "eqlwiki.com — Category:Quests + quest subcategories + recentchanges delta (scripts/scrape-delta.mts)",
   "quests": [
     {
@@ -16030,22 +16030,7 @@
       "giver": "Retainer Ozval",
       "minLevel": 55,
       "classes": [
-        "Berserker",
-        "Bard",
-        "Beastlord",
-        "Cleric",
-        "Druid",
-        "Enchanter",
-        "Magician",
-        "Monk",
-        "Necromancer",
-        "Paladin",
-        "Ranger",
-        "Rogue",
-        "Shaman",
-        "Shadow Knight",
-        "Warrior",
-        "Wizard"
+        "ALL"
       ],
       "relatedZones": [
         "Lake Nerius",
@@ -38385,30 +38370,29 @@
     {
       "name": "Unfortunate news",
       "page": "Unfortunate news",
+      "eraTag": "Classic",
       "startZone": "Finishing the quest Call for Aid",
       "classes": [
-        "Berserker",
-        "Bard",
-        "Beastlord",
-        "Cleric",
-        "Druid",
-        "Enchanter",
-        "Magician",
-        "Monk",
-        "Necromancer",
-        "Paladin",
-        "Ranger",
-        "Rogue",
-        "Shaman",
-        "Shadow Knight",
-        "Warrior",
-        "Wizard"
+        "ALL"
       ],
       "relatedZones": [
         "Lake Nerius"
       ],
       "relatedNpcs": [
         "Dorian G`Wyn"
+      ],
+      "requiredItems": [
+        "A Curt Dismissal",
+        "Exorbitant Commission",
+        "Ordination of Might"
+      ],
+      "expReward": true,
+      "factions": [
+        {
+          "name": "Nerius Trade Association",
+          "up": true,
+          "amount": 200
+        }
       ]
     },
     {
@@ -38417,22 +38401,7 @@
       "eraTag": "Classic",
       "startZone": "Finishing the quest Call for Aid",
       "classes": [
-        "Berserker",
-        "Bard",
-        "Beastlord",
-        "Cleric",
-        "Druid",
-        "Enchanter",
-        "Magician",
-        "Monk",
-        "Necromancer",
-        "Paladin",
-        "Ranger",
-        "Rogue",
-        "Shaman",
-        "Shadow Knight",
-        "Warrior",
-        "Wizard"
+        "ALL"
       ],
       "relatedZones": [
         "Lake Nerius"

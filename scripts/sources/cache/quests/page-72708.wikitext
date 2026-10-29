@@ -33,8 +33,8 @@
 {{CheckboxList}}
 * Obtain [[Defiled Fish Scales]] from the quest [[Something Fishy]].
 * Give [[Defiled Fish Scales]] to [[Dorian G`Wyn]] in [[Lake Nerius]].
-* Loot [[Putrid Bile]] from a [[fire drake]] in [[Lavastorm Mountains]].
-* Loot [[Imp Blood]] from a [[fire imp]] in [[Lavastorm Mountains]] ( or an [[imp protector]] in [[Nagafen's Lair]]. )
+* Loot [[Putrid Bile]] from a [[a fire drake]] in [[Lavastorm Mountains]].
+* Loot [[Imp Blood]] from a [[a fire imp]] in [[Lavastorm Mountains]] ( or an [[imp protector]] in [[Nagafen's Lair]]. )
 * Return to [[Dorian G`Wyn]] and give them [[Putrid Bile]] and [[Imp Blood]]
 * Tell [[Dorian G`Wyn]] "assist" and "two things"
 * Pick up [[Dusty Scroll Case]] in [[West Freeport]] from the table in the guard house on the wall of the [[West Commonlands]] gate
@@ -51,7 +51,8 @@ Hand [[Dorian G`Wyn]] the defiled fish scale that resulted from the quest [[Some
 
 : Dorian G`Wyn says, 'What's this now? Oh. Ohhh. Nikko was right to send you for help! This is extremely problematic to our cause. I may be able to mitigate the onset at least. If the underwater blighting is as strong as it is overland, slowing the progress may be all we can do. Alchemy is wonderful at many things, but it does require many and varied reagents. I'll start my study of these scales immediately, but I'll need you to fetch some supplies we will surely need if we're going to save the lake. Alchemical supplies come from a wide array of sources. For what we`re facing I will at least need some lava drake bile. Hmmm, also some Imp's blood. You should be able to source both north of here in the mountains.'
 
-Go to [[Lavastorm Mountains]] and loot a [[Imp Blood]] from a [[Fire Imp]], and a [[Fetid Bile]] from a [[Lava Drake]]
+Go to [[Lavastorm Mountains]] and loot a [[Imp Blood]] from a [[a fire imp]], and a [[Putrid Bile]] from a [[a fire drake]]<br>
+''The [[Imp Blood]] step can be completed when you remove an already looted [[Imp Blood]] from your bank previously dropped even from other sources like [[imp protector]] in [[Nagafen's Lair]] or [[Kindle]] in [[Solusek's Eye]].''
 
 Deliver those items to [[Dorian G`Wyn]]
 :Dorian G`Wyn says, 'Ahh, excellent! I've got a plan that I think will work, but it's going to take my full attention for some time. Saving the lake is critical but I also have several vital tasks that will now be unattended. I obviously can't leave this work half done, but its imperative to everyone here that the plans I've already set in motion succeed. I beseech thee, please [assist], for the sake of us all!'

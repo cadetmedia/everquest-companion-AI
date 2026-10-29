@@ -676,6 +676,10 @@
   "content": "<onlyinclude>{{Itempage\n|notes       = \n|itemname    = A Scarlet Stone\n|lucy_img_ID = 964\n|statsblock  = \nLORE ITEM<br>\nWT: 0.1  Size: TINY<br>\nClass: ALL<br>\nRace: ALL<br>\n|dropsfrom = \n\n[[Firiona Vie]]\n* [[a drolvarg scavenger]]\n** Dropped twice 2015/07/04: Called \"A Scarlet Stone\" which identifies as \"Sulfur Stone\"\n|relatedquests = \n\n* [[Monk Shackle Quests|Shackle of Bronze]]\n\n}}</onlyinclude>\n\n\n[[Category:Firiona Vie]]\n\n[[Category:Quest Items]]"
  },
  {
+  "title": "Scars of the Indominable",
+  "content": "{{Classic Era}}\n\n<onlyinclude>{{Itempage\n|itemname = Scars of the Indomitable\n|lucy_img_ID = 546\n|statsblock  = \nLore Equipped, No Trade<br>\nSlot: ARMS<br>\nAC: +22<br>\nSTA: +25  HP: +35  END: +45<br>\nSize: MEDIUM  WT: 4.0<br>\nClass: BER<br>\nRace: ALL<br>\n\n|notes = \n\n|dropsfrom = \n\n[[Nektropos Castle]]\n* [[The Juggernaught]]\n\n}}</onlyinclude>\n\n[[Category:Berserker Equipment]]\n\n[[Category:Arms]]\n\n[[Category:Nektropos Castle]]"
+ },
+ {
   "title": "Scribbled Prisoner's Note",
   "content": ""
  },
