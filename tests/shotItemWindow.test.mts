@@ -109,7 +109,7 @@ test('WINDSTRIKER: THREE COLUMNS, WEAPON LINES, EFFECTS; THE FOCUS GOES OUTSIDE 
   // ... and the window is +10 (D3): Weight's ceiling keeps it from one +0 value, so it alone is left `?`.
   assert.deepEqual(r.checks, [
     `This window is +10: its numbers are the upgraded item's, not the page's. "Use the +0 stats" takes back all but WT: 0.4, left as ? for you to fill.`,
-    'WT 0.4 at +10: any of 3.0 to 3.9 at +0 gives it, so it is left as ? for you to fill.',
+    'WT 0.4 at +10: any of 3.1 to 4.0 at +0 gives it, so it is left as ? for you to fill.',
     'DMG read as 920; the window\'s Ratio (1.5) and Delay (60) say 90.',
     "Focus effect Improved Healing III not written: the item's Focus Exaltation slot holds Idol of the Underking (Exaltation), and the window cannot tell its effect from the item's own. Check the item's page."
   ])

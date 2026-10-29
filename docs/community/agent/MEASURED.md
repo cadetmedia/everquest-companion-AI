@@ -68,7 +68,8 @@ SK, others).
   game windows): Bloodsoaked Gauntlets +1 (0/2) Mana/End 95 -> 104, AC 17 -> 18; Pyrosilk Robe +5
   (0/32) AC/INT 13 -> 19. The old `floor(base + round(...))` cannot give 104 from any base. AC, HP,
   Mana and End qualify the synthetic SV Void (Bloodsoaked shows Void 1 with only those). A RANGE bow
-  gains Accuracy (Windstriker +10: +25%, its page states none).
+  gains Accuracy (Windstriker +10: +25%, its page states none). Weight at a whole tier is exact
+  decimal arithmetic (Windstriker +10 reads 0.4 from 4.0; the double artifact said 0.5).
 - **Penalties past -10 shrink 10% of |base| per tier**, reaching 0 at +10:
   `-10 <= base < 0` -> `min(0, base + full)`; `base < -10` ->
   `min(0, base + round(|base| * effective / 10))`. Stonemelder's Band DEX/AGI -35 reads 0 at +10.
