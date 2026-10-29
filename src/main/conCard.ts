@@ -161,12 +161,12 @@ export function noteConsider(ev: ConsiderEvent, zone: string | undefined, now = 
  *     says the same thing from the other side.
  *   * WHICH CARD IS ON SCREEN, so a late second pass for a mob that has been replaced is dropped.
  */
-function openCard(base: ConCardPayload, key: string, now: number): boolean {
+function openCard(base: ConCardPayload, key: string, now: number, level?: ServedMobLevel): boolean {
   if (!getOverlayConfig('conCard').open) return false
   if (conCardSuppressed(closedAt.get(key), now)) return false
   showing = key
   sendToConCardOverlay(base)
-  enrich(base, key)
+  enrich(base, key, level)
   return true
 }
 
@@ -234,7 +234,8 @@ export async function noteEngineConCard(card: ServedConCard, now = Date.now()): 
   // crossed a socket to get here, so the await costs one more loopback hop to a process that has
   // finished folding — microseconds — against a card whose whole promise is the two seconds before
   // you decide to fight. `conCardServe.ts` narrates the outcome when this settles.
-  const { chips, spellData } = chipsFor(card.name, await servedMobLevel(card.name))
+  const level = await servedMobLevel(card.name)
+  const { chips, spellData } = chipsFor(card.name, level)
   const payload: ConCardPayload = {
     id: card.id,
     ts: card.at,
@@ -247,7 +248,7 @@ export async function noteEngineConCard(card: ServedConCard, now = Date.now()): 
   if (card.level !== undefined) payload.level = card.level
   if (card.zone !== undefined) payload.zone = card.zone
   if (card.rare === true) payload.rare = true
-  return openCard(payload, card.id, now)
+  return openCard(payload, card.id, now, level)
 }
 
 /**
@@ -262,14 +263,19 @@ export async function noteEngineConCard(card: ServedConCard, now = Date.now()): 
  * IT IS STILL A SEPARATE PASS RATHER THAN AN AWAIT ON THE EVENT PATH, and that is the whole design:
  * the card exists to be on screen the instant the line is parsed, and a payload that waited for a
  * 38 MB table would be a card that appeared late for the two seconds it is for.
+ *
+ * THE SECOND PASS USES THE FIRST PASS'S LEVEL (2026-10-28). It recomputed without one, read the mob
+ * at an even level, and re-sent: Cazic-Thule (60) showed fire only, because cold and poison land
+ * ~80% on an even-level mob and are not "resistant" there. `level` is what the first pass resolved
+ * (undefined on the TS hook path, which never had one).
  */
-function enrich(base: ConCardPayload, key: string): void {
+function enrich(base: ConCardPayload, key: string, level?: ServedMobLevel): void {
   void spellTable()
     .then(() => {
       // The player has conned something else since, or closed this card. Either way the newer
       // state is the true one and this answer is stale.
       if (showing !== key) return
-      const { chips, spellData } = chipsFor(base.name)
+      const { chips, spellData } = chipsFor(base.name, level)
       // Nothing to say when the table changed nothing — the first con of a launch is the case this
       // pass exists for, and a re-send restarts the card's hold (cardQueue `fresh`).
       if (spellData === base.spellData && JSON.stringify(chips) === JSON.stringify(base.chips)) return
