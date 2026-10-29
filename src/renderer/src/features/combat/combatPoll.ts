@@ -25,6 +25,11 @@
 //      idle reads as quickly as before), otherwise on the trailing edge, so the read after the
 //      fight's last line always starts after its ping and the meters end on the final numbers.
 //      In a fight that is the 1 s cadence alone: one read per window per second.
+//   4. THE METER OVERLAYS READ FOUR TIMES A SECOND (owner, 2026-10-28: "bump the dps overlay back up
+//      to 4 times a second instead of once"). An overlay passes `OVERLAY_PING_GAP_MS`: a ping may pull
+//      its next read to 250 ms after the last, matching main's 4 Hz ping. Only pings do; the
+//      fallback timer stays at `ACTIVE_POLL_MS`, so an overlay with no new lines costs what it did.
+//      The Combat tab and Overview keep one read a second.
 //
 // Sharing identical reads is main's job and already done there: `readShim.serveShared` joins an
 // identical `combat.snapshot` in flight, which is the fight + heal-fight overlays answering one
@@ -42,6 +47,8 @@ export const ACTIVE_POLL_MS = 1000
 export const IDLE_POLL_MS = 10_000
 /** How long after the last activity ping the poll stays at `ACTIVE_POLL_MS` regardless. */
 export const WARM_MS = 30_000
+/** The shortest gap a ping may pull a meter overlay's next read to (header, item 4): 4 reads a second. */
+export const OVERLAY_PING_GAP_MS = 250
 
 /** Does this answer change with the wall clock alone? (The header's list, item 2.) */
 export function timeDriven(s: CombatSnapshot): boolean {
@@ -84,14 +91,18 @@ export function browserEnv(): PollEnv {
 
 /**
  * Poll `fetch` under the three gates and hand each answer to `accept`. One request in flight at a
- * time (`coalesced`). `onActivity` subscribes to the `combat:activity` ping. Returns the stop.
+ * time (`coalesced`). `onActivity` subscribes to the `combat:activity` ping. `opts.pingGapMs` is the
+ * shortest gap a ping may pull the next read to (`ACTIVE_POLL_MS`, or `OVERLAY_PING_GAP_MS` for a
+ * meter overlay); `opts.env` is the window (a fake one in the tests). Returns the stop.
  */
 export function pollCombat(
   fetch: () => Promise<CombatSnapshot>,
   accept: (s: CombatSnapshot) => void,
   onActivity: (cb: () => void) => () => void,
-  env: PollEnv = browserEnv()
+  opts: { env?: PollEnv; pingGapMs?: number } = {}
 ): () => void {
+  const env = opts.env ?? browserEnv()
+  const pingGapMs = opts.pingGapMs ?? ACTIVE_POLL_MS
   let lastPing = env.now()
   let lastAsk = Number.NEGATIVE_INFINITY
   // Until the first answer says otherwise, assume time matters: the first second polls as before.
@@ -104,16 +115,17 @@ export function pollCombat(
     accept(s)
   })
   const gap = (): number => (warm || env.now() - lastPing < WARM_MS ? ACTIVE_POLL_MS : IDLE_POLL_MS)
-  // The one timer: read when the gap since the last read is up, else wait out the rest of it.
-  const tick = (): void => {
+  // The one timer: read when the gap since the last read is up, else wait out the rest of it. A
+  // ping's wait is measured with `pingGapMs`, and the timer it sets keeps that measure.
+  const tick = (min?: number): void => {
     cancel()
-    const wait = lastAsk + gap() - env.now()
+    const wait = lastAsk + Math.min(min ?? gap(), gap()) - env.now()
     if (wait <= 0 && !env.hidden()) run()
-    cancel = env.after(wait > 0 ? wait : gap(), tick)
+    cancel = wait > 0 ? env.after(wait, () => tick(min)) : env.after(gap(), () => tick())
   }
   const offPing = onActivity(() => {
     lastPing = env.now()
-    tick()
+    tick(pingGapMs)
   })
   const offVisible = env.onVisible(run)
   tick()

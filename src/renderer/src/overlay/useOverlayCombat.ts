@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { CombatSnapshot } from '@shared/combat'
 import { createFeed, keptSnapshot } from '../features/combat/combatFeed'
-import { pollCombat } from '../features/combat/combatPoll'
+import { OVERLAY_PING_GAP_MS, pollCombat } from '../features/combat/combatPoll'
 
 /**
  * Views the main-process combat engine for a floating overlay (Task #52; per-kind in Task #54).
@@ -38,11 +38,13 @@ export function useOverlayCombat(selectedId: string | undefined): CombatSnapshot
       if (alive) setSnap(v.snap)
     })
     // maxSegments modest: the overlay's selector lists recent fights, but the payload stays small.
-    // Hidden or idle, it asks less (combatPoll.ts); in a fight, once a second, pings included.
+    // Hidden or idle, it asks less (combatPoll.ts); in a fight, up to four times a second (owner,
+    // 2026-10-28), on main's 4 Hz activity ping.
     const stop = pollCombat(
       () => window.eqOverlay.getCombatSnapshot({ selectedId, maxSegments: 30 }),
       accept,
-      (cb) => window.eqOverlay.onCombatActivity(cb)
+      (cb) => window.eqOverlay.onCombatActivity(cb),
+      { pingGapMs: OVERLAY_PING_GAP_MS }
     )
     return () => {
       alive = false
