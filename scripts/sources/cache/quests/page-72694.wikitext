@@ -11,7 +11,7 @@
 | ?  Requires killing a level 55 mob to get drop for quest
 |-
 ! ''' Classes: '''
-| ALL / [[Berserker]], [[Bard]], [[Beastlord]], [[Cleric]], [[Druid]], [[Enchanter]], [[Magician]], [[Monk]], [[Necromancer]], [[Paladin]], [[Ranger]], [[Rogue]], [[Shaman]], [[Shadow Knight]], [[Warrior]], [[Wizard]]
+| ALL
 |-
 ! ''' Related Zones: '''
 | [[Lake Nerius]], [[Northern Felwithe]], [[Ak'Anon]]
@@ -26,7 +26,7 @@
 = Reward =
 
 <ul>
-<li>{{:ITEM_NAME}}</li>
+<li>Access to [[Nektropos Castle]]</li>
 </ul>
 
 = Summary =

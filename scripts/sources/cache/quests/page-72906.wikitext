@@ -8,7 +8,7 @@
 | ?
 |-
 ! ''' Classes: '''
-| ALL / [[Berserker]], [[Bard]], [[Beastlord]], [[Cleric]], [[Druid]], [[Enchanter]], [[Magician]], [[Monk]], [[Necromancer]], [[Paladin]], [[Ranger]], [[Rogue]], [[Shaman]], [[Shadow Knight]], [[Warrior]], [[Wizard]]
+| ALL
 |-
 ! ''' Related Zones: '''
 | [[Lake Nerius]]
