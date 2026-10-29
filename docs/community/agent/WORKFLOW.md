@@ -133,6 +133,11 @@ disagree, RULES.md wins; fix this file.
   types only under tsx). A plain `C:/` path fails under ESM in an ad-hoc script; use `file:///`.
 - **Known unit flake:** `presenceWorker.test.mts` "THE WATCHER LOOKS AT THE WORLD ON ITS FIRST TICK"
   can fail under the full suite's load (2026-10-13) and passes alone; re-run before treating it as red.
+- **CPU starvation looks like a dead engine** (2026-10-28): with the machine at 100% (the full unit
+  suite on every core, or another session's test runs), `engined` misses its 10 s port announce and its
+  health probes, the app restarts it in a loop and shows "The data engine started but never answered";
+  the presence watcher goes silent at the same moment. Check per-process CPU before blaming the engine.
+  Never run the full suite while the owner is playing unless they say so.
 - **Known engine flake:** `engined` `tests/combat.rs` live-meter tests (4 of 11) fail when `cargo test`
   runs alongside the unit suite (2026-10-28) and pass alone (`cargo test -p engined --test combat`);
   run cargo test on its own before treating them as red.
