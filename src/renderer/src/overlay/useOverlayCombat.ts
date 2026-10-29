@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { CombatSnapshot } from '@shared/combat'
 import { createFeed, keptSnapshot } from '../features/combat/combatFeed'
-import { browserEnv, OVERLAY_PING_GAP_MS, pollCombat } from '../features/combat/combatPoll'
+import { OVERLAY_PING_GAP_MS, pollCombat } from '../features/combat/combatPoll'
 
 /**
  * Views the main-process combat engine for a floating overlay (Task #52; per-kind in Task #54).
@@ -44,8 +44,7 @@ export function useOverlayCombat(selectedId: string | undefined): CombatSnapshot
       () => window.eqOverlay.getCombatSnapshot({ selectedId, maxSegments: 30 }),
       accept,
       (cb) => window.eqOverlay.onCombatActivity(cb),
-      browserEnv(),
-      OVERLAY_PING_GAP_MS
+      { pingGapMs: OVERLAY_PING_GAP_MS }
     )
     return () => {
       alive = false

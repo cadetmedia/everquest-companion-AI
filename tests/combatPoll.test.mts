@@ -48,8 +48,7 @@ function fakeWindow(answer: () => CombatSnapshot, fetchMs = 0, pingGapMs?: numbe
     },
     (s) => answers.push(s),
     (cb) => ((ping = cb), () => (ping = null)),
-    env,
-    pingGapMs
+    { env, pingGapMs }
   )
   const answers: CombatSnapshot[] = []
   const advance = async (ms: number): Promise<void> => {

@@ -91,17 +91,18 @@ export function browserEnv(): PollEnv {
 
 /**
  * Poll `fetch` under the three gates and hand each answer to `accept`. One request in flight at a
- * time (`coalesced`). `onActivity` subscribes to the `combat:activity` ping. `pingGapMs` is the
+ * time (`coalesced`). `onActivity` subscribes to the `combat:activity` ping. `opts.pingGapMs` is the
  * shortest gap a ping may pull the next read to (`ACTIVE_POLL_MS`, or `OVERLAY_PING_GAP_MS` for a
- * meter overlay). Returns the stop.
+ * meter overlay); `opts.env` is the window (a fake one in the tests). Returns the stop.
  */
 export function pollCombat(
   fetch: () => Promise<CombatSnapshot>,
   accept: (s: CombatSnapshot) => void,
   onActivity: (cb: () => void) => () => void,
-  env: PollEnv = browserEnv(),
-  pingGapMs: number = ACTIVE_POLL_MS
+  opts: { env?: PollEnv; pingGapMs?: number } = {}
 ): () => void {
+  const env = opts.env ?? browserEnv()
+  const pingGapMs = opts.pingGapMs ?? ACTIVE_POLL_MS
   let lastPing = env.now()
   let lastAsk = Number.NEGATIVE_INFINITY
   // Until the first answer says otherwise, assume time matters: the first second polls as before.
