@@ -43,13 +43,12 @@
 // wiki's own slider, `Maergoth/EQLWiki` ItemLevelSlider rules rev 4, has the same spelling).
 //
 // ============================================================================
-// THE FLOAT ARTIFACT (replicate, do not fix — pinned in the test)
+// WEIGHT AT A WHOLE TIER IS EXACT (2026-10-28; was a replicated float artifact)
 // ============================================================================
-// The weight curve is evaluated in IEEE754 doubles, and at full = 10 the subtraction lands
-// just ABOVE the exact decimal: `3.0 * (1 - 0.09 * 10)` is 0.30000000000000027, not 0.3, so
-// the ceiling-to-one-decimal returns 0.4 where exact-decimal math would return 0.3. 0.4 is
-// what the wiki slider displays. Same artifact at base 1.0 (0.2, not 0.1). Any
-// re-implementation in decimal/rational arithmetic would silently disagree with the source.
+// In IEEE754 doubles `4.0 * (1 - 0.09 * 10)` is 0.40000000000000036, which ceils to 0.5. The
+// game's Windstriker +10 reads 0.4 from its page's 4.0, and the wiki's slider (rules rev 3+)
+// now does whole tiers in exact decimals, so a whole tier is computed in integers here too.
+// A partial tier (fraction > 0) takes the log curve in doubles as before.
 
 import type { ItemStat, ItemStatBlock } from './itemStats'
 import { ITEM_MAX_TIER } from './itemStats'
@@ -286,6 +285,11 @@ export function scaleFlat(base: number, state: ItemUpgradeState): number {
 export function scaleWeight(base: number, state: ItemUpgradeState): number {
   const s = normalizeUpgradeState(state)
   if (s.full === 0 || base <= 0.1) return base
+  if (s.fraction === 0) {
+    // Exact: base in hundredths times (100 - 9 * full) percent, ceiled to tenths.
+    const hundredths = Math.round(base * 100)
+    if (Math.abs(hundredths - base * 100) < 1e-6) return Math.max(0, Math.ceil((hundredths * (100 - 9 * s.full)) / 1000) / 10)
+  }
   return Math.max(0, excelRoundUp(base * (1 - 0.09 * Math.log2(totalProgression(s))), 1))
 }
 

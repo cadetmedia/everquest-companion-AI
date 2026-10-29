@@ -491,11 +491,11 @@ test('the plus-state moves WHAT A ROW READS, and since JOS-302 never WHICH ROWS 
   assert.equal(atPlus.stats.WIS, 19)
 })
 
-test('a sort reads the SCALED numbers, non-linear curve and float artifact included', () => {
+test('a sort reads the SCALED numbers, non-linear curve included', () => {
   // WEIGHT is the one key whose curve is not linear in the tier (`scaleWeight` takes
-  // `totalProgression` through a log2), and phase 0 deliberately REPLICATES the IEEE754 artifact
-  // the wiki's own slider has — 3.0 at tier 10 ceils to 0.4 where exact decimal math says 0.3.
-  // A sort that re-derived weights any other way would disagree with the item page it came from.
+  // `totalProgression` through a log2). A whole tier is exact decimal arithmetic since 2026-10-28
+  // (3.0 at tier 10 is 0.3; the game's Windstriker +10 reads 0.4 from 4.0). A sort that
+  // re-derived weights any other way would disagree with the item page it came from.
   const byWeight = { key: 'WEIGHT', dir: 'asc' } as const
   const order = ['Cloth Cap', 'Crown of King Tranix', 'Wooden Club', 'Thelvorn, Blade of Light']
   assert.deepEqual(names(gearTableRows(ALL, BASE, { filters: filters(), sort: byWeight })), order)
@@ -505,7 +505,7 @@ test('a sort reads the SCALED numbers, non-linear curve and float artifact inclu
 
   const at10 = gearTableRows(ALL, { full: 10, fraction: 0 }, { filters: filters(), sort: byWeight })
   assert.deepEqual(names(at10), order, 'the ranking survives — every weight shrinks by the same curve')
-  assert.deepEqual(at10.map((r) => r.stats.WEIGHT), [0.1, 0.2, 0.3, 0.4])
+  assert.deepEqual(at10.map((r) => r.stats.WEIGHT), [0.1, 0.1, 0.2, 0.3])
 })
 
 // =================================================================================

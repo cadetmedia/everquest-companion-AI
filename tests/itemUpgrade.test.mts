@@ -135,7 +135,7 @@ test('Thelvorn: the whole-level DMG / WIS / WT / ratio tables', () => {
   const dmg = ['20', '22', '24', '26', '28', '30', '32', '34', '36', '38', '40']
   // The odd tiers moved 2026-10-28 (no inner rounding: the Bloodsoaked and Pyrosilk windows).
   const wis = ['15', '16', '18', '19', '21', '22', '24', '25', '27', '28', '30']
-  const wt = ['3.0', '2.8', '2.5', '2.2', '2.0', '1.7', '1.4', '1.2', '0.9', '0.6', '0.4']
+  const wt = ['3.0', '2.8', '2.5', '2.2', '2.0', '1.7', '1.4', '1.2', '0.9', '0.6', '0.3']
   const ratio = ['0.77', '0.85', '0.92', '1.00', '1.08', '1.15', '1.23', '1.31', '1.38', '1.46', '1.54']
 
   for (const full of WHOLE) {
@@ -176,7 +176,7 @@ test('Crown: the whole-level AC / CHA / SV MAGIC / WT tables and the SV VOID lin
   const ac = ['13', '14', '15', '16', '18', '19', '20', '22', '23', '24', '26']
   const cha = ['15', '16', '18', '19', '21', '22', '24', '25', '27', '28', '30']
   const svm = ['20', '22', '24', '26', '28', '30', '32', '34', '36', '38', '40']
-  const wt = ['1.0', '1.0', '0.9', '0.8', '0.7', '0.6', '0.5', '0.4', '0.3', '0.2', '0.2']
+  const wt = ['1.0', '1.0', '0.9', '0.8', '0.7', '0.6', '0.5', '0.4', '0.3', '0.2', '0.1']
 
   for (const full of WHOLE) {
     const s = scaleStatBlock(CROWN, at(full))
@@ -193,21 +193,22 @@ test('Crown: the whole-level AC / CHA / SV MAGIC / WT tables and the SV VOID lin
 // THE FLOAT ARTIFACT — replicate, do not fix
 // =================================================================================
 
-test('the tier-10 weight is an IEEE754 artifact, and this port keeps it', () => {
-  // The reference evaluates the curve in doubles. `0.09 * 10` lands just BELOW 0.9, so the
-  // remainder lands just ABOVE 0.1 and the product just above the exact decimal:
-  assert.equal(0.09 * 10 < 0.9, true)
+test('a whole-tier weight is exact decimal arithmetic, not the double artifact (2026-10-28)', () => {
+  // In doubles the product lands just above the exact decimal, and a ceiling would step up:
   assert.equal(3.0 * (1 - 0.09 * 10), 0.30000000000000027)
-  assert.equal(3.0 * (1 - 0.09 * 10) > 0.3, true)
-
-  // …so the ceiling-to-one-decimal steps to 0.4, where exact-decimal math would say 0.3.
-  assert.equal(excelRoundUp(0.3, 1), 0.3)
-  assert.equal(scaleWeight(3.0, at(10)), 0.4)
-  assert.equal(scaleStatBlock(THELVORN, at(10)).weight, '0.4')
-
-  // Same artifact one decade down: 1.0 ceils to 0.2, not the exact-decimal 0.1.
-  assert.equal(scaleWeight(1.0, at(10)), 0.2)
-  assert.equal(scaleStatBlock(CROWN, at(10)).weight, '0.2')
+  assert.equal(4.0 * (1 - 0.09 * 10) > 0.4, true)
+  // The game's Windstriker +10 reads 0.4 from its page's 4.0 (tests/fixtures/shots/windstriker-*.png).
+  assert.equal(scaleWeight(4.0, at(10)), 0.4)
+  assert.equal(scaleWeight(3.0, at(10)), 0.3)
+  assert.equal(scaleStatBlock(THELVORN, at(10)).weight, '0.3')
+  assert.equal(scaleWeight(1.0, at(10)), 0.1)
+  assert.equal(scaleStatBlock(CROWN, at(10)).weight, '0.1')
+  // Game windows the exact rule must keep: 3.5 at +1 reads 3.2, 2.0 at +5 reads 1.1, 0.5 at +10 0.1.
+  assert.equal(scaleWeight(3.5, at(1)), 3.2)
+  assert.equal(scaleWeight(2.0, at(5)), 1.1)
+  assert.equal(scaleWeight(0.5, at(10)), 0.1)
+  // A partial tier keeps the log curve: 3.0 at tier 2 + 3/4 is 2.2420..., ceiled to 2.3.
+  assert.equal(scaleWeight(3.0, CHECKPOINT), 2.3)
 })
 
 // =================================================================================

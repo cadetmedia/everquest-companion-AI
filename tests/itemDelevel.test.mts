@@ -19,7 +19,7 @@ test('AT THE CAP EVERY STAT TAKES BACK TO ONE BASE; THE UPGRADE\'S OWN SV VOID G
   assert.equal(heavy.block, '\nSTR: +5<br>\nSize: MEDIUM WT: ?<br>')
   assert.equal(heavy.exact, false)
   assert.deepEqual(heavy.inexact, ['WT: 0.4'])
-  assert.deepEqual(heavy.notes, ['WT 0.4 at +10: any of 3.0 to 3.9 at +0 gives it, so it is left as ? for you to fill.'])
+  assert.deepEqual(heavy.notes, ['WT 0.4 at +10: any of 3.1 to 4.0 at +0 gives it, so it is left as ? for you to fill.'])
 })
 
 test('THE INVERSE AGREES WITH THE FORWARD RULE: A BASE SCALED UP AND TAKEN BACK IS ITSELF', () => {
