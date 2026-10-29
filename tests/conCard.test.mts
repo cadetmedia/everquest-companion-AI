@@ -494,3 +494,15 @@ test('a mob name is capped and whitespace-folded before it can push a card off t
   assert.equal(cappedName('  A  lava   guardian '), 'A lava guardian')
   assert.equal(cappedName('x'.repeat(400)).length, 96)
 })
+
+test('THE SECOND PASS KEEPS THE MOB LEVEL THE FIRST PASS RESOLVED (2026-10-28, Cazic-Thule showed fire only)', async () => {
+  // Without it, `enrich` re-derived the chips at an even level and re-sent them over the right card:
+  // on a level 60 mob, cold and poison land ~80% at even level, so they read `normal` and dropped off.
+  const { readFileSync } = await import('node:fs')
+  const src = readFileSync(new URL('../src/main/conCard.ts', import.meta.url), 'utf8')
+  const enrichBody = src.slice(src.indexOf('function enrich('), src.indexOf('/** How long a mob key'))
+  assert.match(enrichBody, /function enrich\(base: ConCardPayload, key: string, level\?: ServedMobLevel\)/)
+  assert.match(enrichBody, /chipsFor\(base\.name, level\)/)
+  assert.match(src, /enrich\(base, key, level\)/)
+  assert.match(src, /return openCard\(payload, card\.id, now, level\)/)
+})

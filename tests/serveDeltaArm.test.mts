@@ -408,7 +408,7 @@ test('the engine card takes the engine’s HEADER, and the chips are still joine
   // table) has not landed — so `engined/src/concard.rs` honestly sends the five EMPTY chips.
   // Carrying those through would make every card under serve read "nothing seen yet" forever while
   // the app holds a ledger that can answer: a regression wearing a cutover's clothes.
-  assert.match(card, /const \{ chips, spellData \} = chipsFor\(card\.name, await servedMobLevel\(card\.name\)\)/)
+  assert.match(card, /const level = await servedMobLevel\(card\.name\)\s+const \{ chips, spellData \} = chipsFor\(card\.name, level\)/)
   const serve = code('../src/main/dataServer/conCardServe.ts')
   assert.doesNotMatch(serve, /chips/, 'the engine’s empty chips started being carried across')
   // …AND THE ONE INPUT THAT DID MOVE (JOS-497 item 1). The chips are still built here, off the
@@ -431,5 +431,5 @@ test('the suppression and the Preferences switch stay app-side, in ONE place for
   // copy of either gate is how two worlds come to disagree about what the person asked for.
   assert.equal((card.match(/conCardSuppressed\(closedAt\.get\(key\), now\)/g) ?? []).length, 1)
   assert.equal((card.match(/getOverlayConfig\('conCard'\)\.open/g) ?? []).length, 1)
-  assert.match(card, /return openCard\(payload, card\.id, now\)/)
+  assert.match(card, /return openCard\(payload, card\.id, now, level\)/)
 })
