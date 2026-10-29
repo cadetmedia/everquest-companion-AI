@@ -170,6 +170,13 @@ export interface ResistRow {
   week?: string
   resist: number
   land: number
+  /**
+   * Casts the game refused because the creature is IMMUNE to the spell's effect (`Your target is
+   * immune to root spells.`, `This NPC cannot be charmed.`), not because it rolled a resist. Counted
+   * on the row the resist would have used and never read by the estimate (owner, 2026-10-28; see
+   * `shared/resistImmunity.ts`). Absent means none, and every row from before then has none.
+   */
+  immune?: number
   /** damage value -> count. Keys are the decimal number as written. */
   dmg: Record<string, number>
   variable?: boolean
@@ -662,6 +669,12 @@ export interface MobResistProfile {
   spellDataNote: string | null
   /** When the shipped baseline was mined, for the "shipped data" wording. */
   baselineFrozenAt: string | null
+  /**
+   * The spells (canonical keys, sorted) the game said this creature is IMMUNE to, from rows with
+   * `immune` counts. A separate fact from every axis above: an immunity never reaches the estimate
+   * (owner, 2026-10-28; `shared/resistImmunity.ts`).
+   */
+  immuneTo: string[]
 }
 
 /**

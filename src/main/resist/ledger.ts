@@ -173,6 +173,7 @@ export function repoolAtWeek(rows: readonly ResistRow[], week: string): ResistRo
     }
     held.resist += moved.resist
     held.land += moved.land
+    if (moved.immune) held.immune = (held.immune ?? 0) + moved.immune
     for (const [value, count] of Object.entries(moved.dmg)) {
       held.dmg[value] = (held.dmg[value] ?? 0) + count
     }

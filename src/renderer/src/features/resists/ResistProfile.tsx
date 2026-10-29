@@ -301,7 +301,27 @@ export function ResistProfileBody({ profile }: { profile: MobResistProfile }): J
       {profile.axes.map((row) => (
         <AxisRow key={row.axis} row={row} />
       ))}
+      <ImmuneLine spells={profile.immuneTo} />
     </Box>
+  )
+}
+
+/** A canonical spell key (lower case, rank stripped) as words: `instill` -> `Instill`. */
+function spellWords(key: string): string {
+  return key.replace(/\b\w/g, (c) => c.toUpperCase())
+}
+
+/**
+ * WHAT THE GAME SAID IT IS IMMUNE TO, apart from every axis (owner, 2026-10-28: "immune to something
+ * is not a resist to that magic type ... it's a separate thing"). Those casts never reach a number
+ * above; this is where they are shown instead.
+ */
+function ImmuneLine({ spells }: { spells: readonly string[] }): JSX.Element | null {
+  if (spells.length === 0) return null
+  return (
+    <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }} data-testid="resist-immune">
+      Immune to: {spells.map(spellWords).join(', ')}
+    </Typography>
   )
 }
 

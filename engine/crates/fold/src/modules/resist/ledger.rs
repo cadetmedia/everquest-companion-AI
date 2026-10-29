@@ -187,6 +187,12 @@ pub struct ResistRow {
     pub spec: RowSpec,
     pub resist: i64,
     pub land: i64,
+    /// Casts the game refused because the creature is IMMUNE (`Your target is immune to root
+    /// spells.`, `This NPC cannot be charmed.`), not because it rolled a resist. They are counted
+    /// on the row the resist would have gone on and never reach the estimate: immunity is a fact
+    /// about the creature and the spell's effect, not about its resistance to the spell's axis
+    /// (owner, 2026-10-28). See `ImmunePending` in `mod.rs`.
+    pub immune: i64,
     /// The damage histogram, keyed by the decimal number the line printed.
     pub dmg: HashMap<String, i64>,
     /// The row gave up on the histogram — see `add_damage`.
@@ -260,6 +266,7 @@ impl ResistBucket {
                     spec,
                     resist: 0,
                     land: 0,
+                    immune: 0,
                     dmg: HashMap::new(),
                     variable: false,
                     first_ts: ts,
@@ -425,6 +432,7 @@ mod tests {
             },
             resist: 0,
             land: 0,
+            immune: 0,
             dmg: HashMap::new(),
             variable: false,
             first_ts: 0,

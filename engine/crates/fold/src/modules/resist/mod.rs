@@ -45,6 +45,8 @@
 
 pub mod cast_state;
 pub mod catalog;
+#[cfg(test)]
+mod immunity_tests;
 pub mod ledger;
 pub mod ledger_file;
 pub mod songs;
@@ -65,6 +67,49 @@ use world::{CasterIndex, DebuffWindows, MeleeContact, MobLevels, MobNames, Targe
 
 /// How long a deferred emote-landing waits to see whether a damage line cancels it.
 pub const LAND_DEFER_MS: i64 = 3_000;
+
+/// How far apart an immunity sentence and the `resisted your` line it explains may sit. The game
+/// prints them back to back in the same second (the owner's log: `Your target is immune to root
+/// spells.` then `C`rate resisted your Instill II!`, and eight `This NPC cannot be charmed.` lines
+/// each followed by `… resisted your Allure!` / `Beguile!`), so one second of slack is the line's
+/// own resolution and nothing more.
+pub const IMMUNE_PAIR_MS: i64 = 1_000;
+
+/// IS THIS LINE THE GAME SAYING THE TARGET IS IMMUNE TO THE WHOLE SPELL? (owner, 2026-10-28: "immune
+/// to something is not a resist to that magic type, it's a separate thing".)
+///
+/// The sentences are the client's own string table (`eqstr_us.txt` 239-244, 267, 612, 7019, 7029,
+/// 9243, 9245), none of which the parser claims, so they arrive as `unknown`. Each is followed by a
+/// `<mob> resisted your <Spell>!` for the same cast, which is the line this fold would otherwise
+/// count as a resist.
+///
+/// THE TWO "PORTION" SENTENCES ARE NOT IMMUNITIES TO THE SPELL. `Your target is immune to the stun
+/// portion of this effect.` is followed by the spell LANDING (the e2e fixture: `… stun portion …`
+/// then `You hit Lord Nagafen for 449 points of magic damage by Discordant Mind.`), and the memory
+/// blur sentence has the same shape. Arming on them would turn the next unrelated resist into an
+/// immunity.
+#[must_use]
+pub fn is_immunity_sentence(text: &str) -> bool {
+    if text.ends_with(" portion of this effect.") {
+        return false;
+    }
+    if text.starts_with("Your target is immune to ")
+        || text.starts_with("Your target cannot be mesmerized")
+    {
+        return true;
+    }
+    if text == "This NPC cannot be charmed." {
+        return true;
+    }
+    // `%1 is immune to Fade spells.` and its pull and gravitate siblings name the target first.
+    [
+        " is immune to Fade spells.",
+        " is immune to pull spells.",
+        " is immune to gravitate spells.",
+    ]
+    .iter()
+    .any(|tail| text.ends_with(tail))
+}
 
 /// The separator inside every composite key this module builds. A printable byte on purpose: a raw
 /// control byte makes git classify the file as binary. No EQ mob or spell name contains a pipe.
@@ -122,6 +167,9 @@ pub struct ResistFold {
     casts: ArmedCasts,
     dot_seen: HashSet<String>,
     deferred: Option<Deferred>,
+    /// The timestamp of the last immunity sentence, waiting for the `resisted your` line it
+    /// explains. Taken by that line, or left to go stale past `IMMUNE_PAIR_MS`.
+    immune_pending: Option<i64>,
     /// Mob names both ways, memoised. The measurement behind the memo is in `world.rs`.
     names: MobNames,
     /// Per-fold rather than module-scoped, so no verdict cache outlives a `Fold`.
@@ -158,6 +206,7 @@ impl ResistFold {
         self.casts.reset();
         self.dot_seen.clear();
         self.deferred = None;
+        self.immune_pending = None;
         self.names.reset();
     }
 
@@ -289,7 +338,28 @@ impl ResistFold {
                 let names = ev.has(Key::Candidates).then(|| candidate_names(ev));
                 self.on_emote(&mob, ev.ts(), names.as_deref(), bucket);
             }
+            Kind::Unknown
+                if is_immunity_sentence(crate::message_overlay::message_text_of(ev.raw())) =>
+            {
+                self.immune_pending = Some(ev.ts());
+            }
             _ => {}
+        }
+    }
+
+    /// Does an immunity sentence explain this resist line? Only your own casts: the game says
+    /// `Your target is immune …` to the caster alone, so nothing pairs it with anyone else's line.
+    /// Taking it clears it, so one sentence explains one resist.
+    fn take_immunity(&mut self, kind: CasterKind, ts: i64) -> bool {
+        if kind != CasterKind::SelfCast {
+            return false;
+        }
+        match self.immune_pending {
+            Some(at) if (0..=IMMUNE_PAIR_MS).contains(&(ts - at)) => {
+                self.immune_pending = None;
+                true
+            }
+            _ => false,
         }
     }
 
@@ -485,6 +555,13 @@ impl ResistFold {
         self.names.remember(&target);
         let mob = self.names.key(&target);
         let ts = ev.ts();
+        // AN IMMUNITY IS NOT A RESIST. Filed on the row the resist would have gone on, so the row
+        // and mob counts are what they were, and counted where the estimate never reads.
+        if self.take_immunity(kind, ts) {
+            let obs = self.resist_observation(kind, &caster, target, spell_key, line_rank, ts);
+            self.row_for(bucket, &obs).immune += 1;
+            return;
+        }
         let mut out = Vec::new();
         let handled = self.songs.on_resist(
             &target,
@@ -498,30 +575,42 @@ impl ResistFold {
         if handled {
             return;
         }
-        let level = self.caster_level(kind, &caster);
+        let obs = self.resist_observation(kind, &caster, target, spell_key, line_rank, ts);
+        self.row_for(bucket, &obs).resist += 1;
+    }
+
+    /// The cast a `resisted` line reports, as a row is keyed: the caster's level, and the rank and
+    /// invocation of the armed cast it joins (the line's own rank beats the armed one, because the
+    /// resist line is the one outcome line that often prints it).
+    fn resist_observation(
+        &mut self,
+        kind: CasterKind,
+        caster: &str,
+        target: String,
+        spell_key: String,
+        line_rank: i64,
+        ts: i64,
+    ) -> Observation {
+        let level = self.caster_level(kind, caster);
         let armed = self
             .casts
             .owned_by(kind, &spell_key, ts)
             .map(|a| (a.rank, a.overchannel));
         let overchannel = self.cast.invocation_for(kind, armed.map(|(_, oc)| oc));
-        self.row_for(
-            bucket,
-            &Observation {
-                mob: target,
-                spell_key,
-                family: Family::Cast,
-                kind,
-                level,
-                ts,
-                rank: if line_rank > 0 {
-                    line_rank
-                } else {
-                    armed.map_or(0, |(r, _)| r)
-                },
-                overchannel,
+        Observation {
+            mob: target,
+            spell_key,
+            family: Family::Cast,
+            kind,
+            level,
+            ts,
+            rank: if line_rank > 0 {
+                line_rank
+            } else {
+                armed.map_or(0, |(r, _)| r)
             },
-        )
-        .resist += 1;
+            overchannel,
+        }
     }
 
     /// The caster's level, by kind. Self is the session level; another player's is never stated
