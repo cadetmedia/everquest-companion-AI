@@ -116,6 +116,9 @@ export type View =
   | 'spells'
   | 'spellUpgrades'
   | 'spellLoadout'
+  // THE AI ASSISTANT (cadetmedia fork, adopted from jmoyers/everquest-companion#46): the chat over
+  // this character and its settings. A plain released tab, like Character since JOS-327.
+  | 'ai'
 
 export const VIEW_KEY = 'eq.view'
 export const DEFAULT_VIEW: View = 'overview'
@@ -175,7 +178,8 @@ export const VIEW_LABELS: Record<View, string> = {
   // both be right.
   spells: 'Spellbook',
   spellUpgrades: 'Upgrades',
-  spellLoadout: 'Loadout'
+  spellLoadout: 'Loadout',
+  ai: 'AI Assistant'
 }
 
 /** The Spells nav row's own name, which is the AREA's name and not its first tab's. */
@@ -224,6 +228,7 @@ const KNOWN_VIEWS: View[] = [
   // nothing. The contract test reads the splice and exempts its tenants from `TELEMETRY_VIEWS`
   // (tests/telemetryContract.test.mts).
   ...(UNRELEASED ? (['spells', 'spellUpgrades', 'spellLoadout'] as const) : []),
+  'ai',
   // Compile-time in a BUILD (`false ? [...] : []` folds away, taking the literal with it) and a
   // runtime read of the opt-in on a dev server — so a contributor's checkout, which has no
   // `EQ_OWNER_TOOLS`, bounces a persisted 'triage' to the default view instead of routing to a

@@ -410,3 +410,13 @@ test('the con card opens wide enough for THREE chip columns at the measured chip
   // …and not FOUR, which would be a card wider than the row it is supposed to draw.
   assert.equal(columns, 3, `${columns} columns — the card is wider than the chips it holds`)
 })
+
+test('the AI assistant holds no meter slot and opens at the left edge, vertically centred', () => {
+  assert.ok(!METER_KINDS.includes('ai'), 'a panel you type into must not consume a dock slot')
+  const area = { x: 0, y: 0, width: 1920, height: 1040 }
+  const b = defaultOverlayBounds('ai', area)
+  assert.deepEqual(b, { width: 420, height: 560, x: 16, y: 240 })
+  // A screen shorter than the panel still gets the whole window on it.
+  const small = defaultOverlayBounds('ai', { x: 0, y: 0, width: 1366, height: 400 })
+  assert.ok(small.y >= 0 && small.y + small.height <= 400)
+})
