@@ -54,7 +54,7 @@ export const TEST_BUILD = true
 // `-test`, NOT the official 'everquest-companion': a distinct dir is what gives the test
 // install its own store, caches and — because Chromium keys the single-instance lock off
 // the user-data dir — the ability to RUN BESIDE the official app instead of focusing it.
-const PROD_DIR_NAME = 'everquest-companion-test'
+const PROD_DIR_NAME = 'everquest-companion-ai'
 const DEV_DIR_NAME = 'everquest-companion-dev'
 /**
  * Source of the one-time seed: the OFFICIAL install's userData (upstream seeds from the

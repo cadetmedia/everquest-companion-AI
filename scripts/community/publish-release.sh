@@ -37,7 +37,7 @@ esac
 
 tag="community-$version"
 dir="release/$version"
-exe="everquest-companion-test-Setup-$version.exe"
+exe="everquest-companion-ai-Setup-$version.exe"
 [ -f "$dir/$exe" ] || fail "no installer at $dir/$exe; cut the build first (RELEASING.md step 1)"
 # The update feed (test.20 on): installs read test.yml (the channel file electron-builder names after 0.1.0-test.N) from the newest release, and the blockmap
 # lets them download only what changed. test.yml must name this version and this installer.
@@ -93,7 +93,7 @@ notes=$(mktemp)
 trap 'rm -f "$notes"' EXIT
 {
   cat <<EOF
-**EQ Legends Companion TEST $version**, a community build of [EQ Legends Companion](https://github.com/jmoyers/everquest-companion) with the fork's changes on top.
+**EQ Legends Companion AI $version**, a community build of [EQ Legends Companion](https://github.com/jmoyers/everquest-companion) with the fork's changes on top.
 
 **To install:** download \`$exe\` below and run it. The installer is not code-signed, so Windows shows "Windows protected your PC" the first time: click **More info**, then **Run anyway**. It installs beside the official app, not over it, and keeps its own settings.
 
@@ -120,7 +120,7 @@ prevdir=$(mktemp -d)
 trap 'rm -f "$notes"; rm -rf "$prevdir"' EXIT
 prev_tag=$(gh release view --repo "$repo_slug" --json tagName -q .tagName 2>/dev/null || true)
 if [ -n "$prev_tag" ] && [ "$prev_tag" != "$tag" ]; then
-  prev_blockmap="everquest-companion-test-Setup-${prev_tag#community-}.exe.blockmap"
+  prev_blockmap="everquest-companion-ai-Setup-${prev_tag#community-}.exe.blockmap"
   if gh release download "$prev_tag" --repo "$repo_slug" --pattern "$prev_blockmap" --dir "$prevdir" >/dev/null 2>&1; then
     [ -f "$prevdir/$prev_blockmap" ] && extra+=("$prevdir/$prev_blockmap")
   fi
@@ -147,5 +147,5 @@ if [ $publish -eq 0 ]; then
 fi
 
 gh release create "$tag" --repo "$repo_slug" --target "$target" --latest \
-  --title "EQ Legends Companion TEST $version" --notes-file "$notes" \
+  --title "EQ Legends Companion AI $version" --notes-file "$notes" \
   "$dir/$exe" "$dir/SHA256SUMS.txt" "$dir/test.yml" "$blockmap" "${extra[@]}"

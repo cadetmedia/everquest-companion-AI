@@ -170,35 +170,35 @@
 # %LOCALAPPDATA%\Programs\everquest-companion. Every install or update first runs the previous
 # version's uninstaller, which does `RMDir /r $INSTDIR`: a TEST update wiped the official app,
 # and an official update wiped ours. test.20 renames the package (fresh installs land in
-# everquest-companion-test), but initMultiUser reads the OLD InstallLocation from the registry,
+# everquest-companion-ai), but initMultiUser reads the OLD InstallLocation from the registry,
 # so an existing TEST install would keep updating into the shared folder.
 #
-# THE MOVE: when the recorded folder is the shared one, install into everquest-companion-test.
+# THE MOVE: when the recorded folder is the shared one, install into everquest-companion-ai.
 # The old copy is then removed one of two ways:
 #   * the official app is there too (its exe exists), or our old uninstaller is gone: delete only
 #     our two exes and forget our uninstall command, so uninstallOldVersion runs nothing and the
 #     official app's files are left alone;
 #   * otherwise the folder holds only our old copy, and the stock old-version uninstall removes it
 #     as it always has (its uninstaller is run with --updated, so settings are kept).
-# Settings live in %APPDATA%\everquest-companion-test either way and are never touched here.
+# Settings live in %APPDATA%\everquest-companion-ai either way and are never touched here.
 # Inserted from customInit, i.e. after initMultiUser has set $INSTDIR, where LogicLib and the
 # UNINSTALL_REGISTRY_KEY define exist.
 !macro eqLeaveSharedFolder
   ${If} $INSTDIR == "$LOCALAPPDATA\Programs\everquest-companion"
     ${If} ${FileExists} "$INSTDIR\EQ Legends Companion.exe"
-    ${OrIfNot} ${FileExists} "$INSTDIR\Uninstall EQ Legends Companion TEST.exe"
-      Delete "$INSTDIR\EQ Legends Companion TEST.exe"
+    ${OrIfNot} ${FileExists} "$INSTDIR\Uninstall EQ Legends Companion AI.exe"
+      Delete "$INSTDIR\EQ Legends Companion AI.exe"
       # Still there means it is running from the old folder: the stock running-app check below
       # looks in the NEW folder and would not see it. Stop before touching the registry.
-      ${If} ${FileExists} "$INSTDIR\EQ Legends Companion TEST.exe"
-        MessageBox MB_OK|MB_ICONEXCLAMATION|MB_TOPMOST|MB_SETFOREGROUND "Close EQ Legends Companion TEST (including its tray icon), then run this installer again." /SD IDOK
+      ${If} ${FileExists} "$INSTDIR\EQ Legends Companion AI.exe"
+        MessageBox MB_OK|MB_ICONEXCLAMATION|MB_TOPMOST|MB_SETFOREGROUND "Close EQ Legends Companion AI (including its tray icon), then run this installer again." /SD IDOK
         Quit
       ${EndIf}
-      Delete "$INSTDIR\Uninstall EQ Legends Companion TEST.exe"
+      Delete "$INSTDIR\Uninstall EQ Legends Companion AI.exe"
       DeleteRegValue HKCU "${UNINSTALL_REGISTRY_KEY}" "UninstallString"
       DeleteRegValue HKCU "${UNINSTALL_REGISTRY_KEY}" "QuietUninstallString"
     ${EndIf}
-    StrCpy $INSTDIR "$LOCALAPPDATA\Programs\everquest-companion-test"
+    StrCpy $INSTDIR "$LOCALAPPDATA\Programs\everquest-companion-ai"
   ${EndIf}
 !macroend
 
@@ -380,7 +380,7 @@ Var pid
 #    accidentally-empty define would be `RMDir /r "$APPDATA\"` - the entire roaming
 #    profile. TEST BUILD (this branch only, never a PR): it must stay in sync with
 #    PROD_DIR_NAME in src/main/channel.ts, which moves this build's userData to
-#    `%APPDATA%\everquest-companion-test`. NEVER widen this: `%APPDATA%\everquest-companion`
+#    `%APPDATA%\everquest-companion-ai`. NEVER widen this: `%APPDATA%\everquest-companion`
 #    is the OFFICIAL install's data (and the seed this build copies from),
 #    `%APPDATA%\eq-tools` is the pre-rename BACKUP, and `%APPDATA%\everquest-companion-dev`
 #    is the running dev app's data. None of them is ours to delete.
@@ -410,12 +410,12 @@ Var pid
   # Interactive uninstall. Yes (default button, and the /SD fallback) keeps everything.
   # Deliberately ONE line: this file has a history of "compiles clean, installer dies",
   # and a line continuation inside a macro body is not worth re-litigating.
-  MessageBox MB_YESNO|MB_ICONQUESTION|MB_DEFBUTTON1|MB_TOPMOST|MB_SETFOREGROUND "Keep your settings and history?$\r$\n$\r$\nThey'll be restored if you reinstall EQ Legends Companion TEST.$\r$\n(Choosing No deletes them permanently.)" /SD IDYES IDYES eqKeepUserData
+  MessageBox MB_YESNO|MB_ICONQUESTION|MB_DEFBUTTON1|MB_TOPMOST|MB_SETFOREGROUND "Keep your settings and history?$\r$\n$\r$\nThey'll be restored if you reinstall EQ Legends Companion AI.$\r$\n(Choosing No deletes them permanently.)" /SD IDYES IDYES eqKeepUserData
 
   ${If} $installMode == "all"
     SetShellVarContext current
   ${EndIf}
-  RMDir /r "$APPDATA\everquest-companion-test"
+  RMDir /r "$APPDATA\everquest-companion-ai"
   ${If} $installMode == "all"
     SetShellVarContext all
   ${EndIf}
