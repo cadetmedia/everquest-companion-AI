@@ -162,7 +162,7 @@ jobs:
           TESTS: ${{ steps.gate.outputs.tests }}
         run: |
           day=$(date -u +%F)
-          branch="data/wiki-delta-$day"
+          branch="data/wiki-delta-$day-run$GITHUB_RUN_NUMBER"  # unique: two runs can share a UTC day
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -b "$branch"
