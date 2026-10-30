@@ -167,7 +167,7 @@ function requestQuit(): void {
  */
 function buildMenu(prefs: CloseToTrayPrefs): Menu {
   return Menu.buildFromTemplate([
-    { label: 'Open EQ Legends Companion AI', click: restoreMainWindow },
+    { label: 'Open EQ Companion AI', click: restoreMainWindow },
     {
       label: 'Keep running in the tray when the window closes',
       type: 'checkbox',
@@ -308,7 +308,7 @@ function createTrayNoticeWindow(): BrowserWindow {
     backgroundMaterial: 'none',
     // The app's own background, so the first frame is never a white rectangle beside the taskbar.
     backgroundColor: '#0f1115',
-    title: 'EQ Legends Companion AI',
+    title: 'EQ Companion AI',
     // ONE definition of the trust boundary, for every window in this app (windows.ts).
     webPreferences: WEB_PREFERENCES(join(__dirname, '../preload/tray.js'))
   })
@@ -369,7 +369,7 @@ export function installCloseToTray(): void {
   try {
     const icon = nativeImage.createFromPath(trayIconAsset).resize({ width: 16, height: 16 })
     tray = new Tray(icon)
-    tray.setToolTip('EQ Legends Companion AI')
+    tray.setToolTip('EQ Companion AI')
     tray.on('click', restoreMainWindow)
     syncTrayMenu(getCloseToTray())
   } catch (err) {

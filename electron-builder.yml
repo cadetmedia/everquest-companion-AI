@@ -6,7 +6,7 @@
 # named after the package, not the product, so before that both apps shared one folder (and one
 # updater cache, which is also named after the package).
 appId: com.cadetmedia.everquest-companion-ai
-productName: EQ Legends Companion AI
+productName: EQ Companion AI
 copyright: Copyright © 2026 Josh Moyers
 
 directories:
@@ -239,5 +239,5 @@ nsis:
   deleteAppDataOnUninstall: false
   createDesktopShortcut: true
   createStartMenuShortcut: true
-  shortcutName: EQ Legends Companion AI
-  artifactName: everquest-companion-ai-Setup-${version}.${ext}
+  shortcutName: EQ Companion AI
+  artifactName: eq-companion-ai-Setup-${version}.${ext}

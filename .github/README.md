@@ -1,4 +1,4 @@
-# EQ Legends Companion AI
+# EQ Companion AI
 
 A Windows desktop companion for **EverQuest Legends** that reads the log file the game already
 writes and turns it into live views: a DPS meter, floating overlays, quest, loot and gear
@@ -17,7 +17,7 @@ memory is read, and nothing is automated or played for you.
 **Requires 64-bit Windows 10 or 11.**
 
 1. Go to the [**Releases page**](https://github.com/cadetmedia/everquest-companion-AI/releases/latest)
-   and download **`everquest-companion-ai-Setup-<version>.exe`** (under *Assets*).
+   and download **`eq-companion-ai-Setup-<version>.exe`** (under *Assets*).
 2. Run it. It is a one-click install: no admin prompt, no wizard, and it adds a desktop and
    Start-menu shortcut.
 3. Windows SmartScreen will say **"Windows protected your PC"** the first time, because the build
@@ -35,7 +35,7 @@ you have it.
 build quietly, and applies it when you close the app.
 
 **Checking the download** (optional): each release has `SHA256SUMS.txt`. In PowerShell,
-`Get-FileHash .\everquest-companion-ai-Setup-<version>.exe` should print the same value.
+`Get-FileHash .\eq-companion-ai-Setup-<version>.exe` should print the same value.
 
 ## Turning on the AI assistant
 

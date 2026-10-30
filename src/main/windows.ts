@@ -385,7 +385,7 @@ export function createMainWindow(): void {
     // native drag/double-click-maximize via -webkit-app-region on the bar. Keep
     // backgroundColor + min sizes + bounds so the rest of the window UX is intact.
     frame: false,
-    title: 'EQ Legends Companion AI',
+    title: 'EQ Companion AI',
     backgroundColor: '#0f1115',
     webPreferences: {
       ...WEB_PREFERENCES(join(__dirname, '../preload/index.js')),
