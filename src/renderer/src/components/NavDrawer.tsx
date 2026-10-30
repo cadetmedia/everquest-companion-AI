@@ -31,6 +31,7 @@ import MapIcon from '@mui/icons-material/Map'
 import SpaceDashboardIcon from '@mui/icons-material/SpaceDashboard'
 import CheckroomIcon from '@mui/icons-material/Checkroom'
 import FeedbackIcon from '@mui/icons-material/Feedback'
+import SmartToyIcon from '@mui/icons-material/SmartToy'
 // Dev-only, and its import goes with it: MUI's icon packages declare `sideEffects: false`, so
 // an icon whose only use sits inside a `false &&` branch is tree-shaken out with the branch.
 import RuleFolderIcon from '@mui/icons-material/RuleFolder'
@@ -214,6 +215,13 @@ const GROUPS: NavGroup[] = [
       // where you SET them, so it sits with the app's other configuration rather than the data.
       { view: 'timers', icon: <TimerIcon /> }
     ]
+  },
+// THE AI ASSISTANT (cadetmedia fork): its own heading, because it answers a different kind of
+// question from the three above - a typed one - and its tab holds the chat and its settings.
+{
+    id: 'ai',
+    heading: 'AI',
+    rows: [{ view: 'ai', icon: <SmartToyIcon /> }]
   }
 ]
 

@@ -48,6 +48,7 @@ import { registerShotIpc } from './shotIpc'
 import { registerShotCaptureIpc } from './shotCapture'
 import { registerGapQuestLiveIpc } from '../gapQuestLive'
 import { registerGapCopyLookupIpc } from '../gapCopyLookup'
+import { registerAiIpc } from './ai'
 // The celebration toast's producer channel. It lives beside the window it feeds (src/main/toast.ts)
 // rather than in this folder, because everything it does is window fan-out + item resolution.
 import { registerToastIpc } from '../toast'
@@ -94,6 +95,7 @@ export function registerIpc(): void {
   // Factions tab's log-evidence channel, adopting exactly the arrangement the comment above
   // describes the character sheet having outgrown.
   registerFactionsIpc()
+  registerAiIpc()
   registerWorldIpc()
   registerComboIpc()
   registerRosterIpc()

@@ -96,6 +96,14 @@ export const OVERLAY_MIN_SIZE: Size = { width: 140, height: 90 }
  * dragged or resized the strip keeps their geometry, and only sees the larger type.
  */
 const TOAST_SIZE: Size = { width: 560, height: 360 }
+
+/**
+ * THE AI ASSISTANT IS A PANEL YOU TYPE INTO, NOT A METER (cadetmedia fork). Taller than a meter so
+ * an answer and the ask box fit together, and it opens at the LEFT edge, vertically centred, away
+ * from the bottom-right meter stack: as a thirteenth stack slot it shrank every meter on a 1080p
+ * screen and overlapped Map pins on a small laptop.
+ */
+const AI_SIZE: Size = { width: 420, height: 560 }
 /** Gap from the top of the work area to the first card. */
 const TOAST_TOP = 12
 
@@ -184,6 +192,7 @@ export function overlayDefaultSize(kind: OverlayKind, workArea?: Bounds): Size {
   if (kind === 'toast') return { ...TOAST_SIZE }
   if (kind === 'alertBanner') return { ...BANNER_SIZE }
   if (kind === 'conCard') return { ...CON_CARD_SIZE }
+  if (kind === 'ai') return { ...AI_SIZE }
   return workArea ? meterSize(workArea) : { ...DEFAULT_SIZE }
 }
 
@@ -314,7 +323,7 @@ export function isStripKind(kind: OverlayKind): boolean {
  * None holds a slot in the meter grid, so none may consume an index either: adding one that did
  * would shift every meter's reserved slot out from under a user who has never opened it.
  */
-export const METER_KINDS: OverlayKind[] = OVERLAY_KINDS.filter((k) => !isStripKind(k))
+export const METER_KINDS: OverlayKind[] = OVERLAY_KINDS.filter((k) => !isStripKind(k) && k !== 'ai')
 
 // ============================================================================================
 // JOS-406 — A STRIP'S WINDOW IS ITS CARD, SO THE WINDOW SCALES WITH THE TEXT.
@@ -471,6 +480,7 @@ export function defaultOverlayBounds(kind: OverlayKind, workArea: Bounds): Bound
   if (kind === 'toast') return toastBounds(workArea)
   if (kind === 'alertBanner') return bannerBounds(workArea)
   if (kind === 'conCard') return conCardBounds(workArea)
+  if (kind === 'ai') return aiBounds(workArea)
   const size = overlayDefaultSize(kind, workArea)
   // No strip holds a slot in the meter stack, so none consumes an index (METER_KINDS).
   const idx = Math.max(0, METER_KINDS.indexOf(kind))
@@ -485,6 +495,13 @@ export function defaultOverlayBounds(kind: OverlayKind, workArea: Bounds): Bound
     x: Math.max(workArea.x, Math.min(x, workArea.x + workArea.width - size.width)),
     y: Math.max(workArea.y, Math.min(y, workArea.y + workArea.height - size.height))
   }
+}
+
+/** The assistant's first-open spot: the left edge, vertically centred, clamped to the work area. */
+function aiBounds(workArea: Bounds): Bounds {
+  const width = Math.min(AI_SIZE.width, workArea.width)
+  const height = Math.min(AI_SIZE.height, workArea.height)
+  return { width, height, x: workArea.x + Math.min(MARGIN, workArea.width - width), y: workArea.y + Math.round((workArea.height - height) / 2) }
 }
 
 /**
@@ -516,5 +533,6 @@ export const OVERLAY_TITLE: Partial<Record<OverlayKind, string>> = {
   conCard: 'Mob Card Overlay',
   mapPins: 'Map Pins Overlay',
   skyQuests: 'Sky Quest Overlay',
-  gaps: 'Wiki Gaps Overlay'
+  gaps: 'Wiki Gaps Overlay',
+  ai: 'AI Assistant Overlay'
 }

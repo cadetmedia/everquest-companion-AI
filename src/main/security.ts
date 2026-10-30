@@ -66,6 +66,10 @@ export interface ExternalLinkRule {
  *                          every build of this app already comes from (the updater's own feed,
  *                          src/main/updater.ts). github.com's ROOT, and every other owner and
  *                          repo on it, is refused like any host that is not on this list.
+ *   openrouter.ai        — TWO PATHS, not the host: `/keys` (paste a key) and
+ *                          `/collections/free-models` (what [Free] actually means). The rest of
+ *                          OpenRouter (arbitrary model cards, account billing, someone else's
+ *                          collection) stays shut.
  *
  * Adding an entry here is a deliberate decision to let renderer-supplied text cause the OS to
  * open something, and the narrowest entry that serves the link is the one to write. Deliberately
@@ -80,7 +84,9 @@ export const EXTERNAL_LINK_ALLOWLIST: readonly ExternalLinkRule[] = [
   { host: 'github.com', pathPrefix: '/jmoyers/everquest-companion' },
   // TEST build (this branch only, never a PR): the community fork's own repo, where its releases
   // live, scoped exactly like the original's.
-  { host: 'github.com', pathPrefix: '/cadetmedia/everquest-companion-AI' }
+  { host: 'github.com', pathPrefix: '/cadetmedia/everquest-companion-AI' },
+  { host: 'openrouter.ai', pathPrefix: '/keys' },
+  { host: 'openrouter.ai', pathPrefix: '/collections/free-models' }
 ]
 
 /** Every rule for a host: one host may carry several scoped subtrees (github.com does). */
