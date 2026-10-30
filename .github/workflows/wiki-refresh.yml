@@ -166,6 +166,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -b "$branch"
+          # The gate's typecheck rewrites the committed tsbuildinfo files; they are never part of a data change.
+          git checkout -- tsconfig.node.tsbuildinfo tsconfig.web.tsbuildinfo
           git add -A
           git commit -q -m "Data: weekly wiki delta $day" -m "$(tail -n 40 "$RUNNER_TEMP/data-diff.txt")"
           git push -u origin "$branch"
