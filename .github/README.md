@@ -39,23 +39,34 @@ build quietly, and applies it when you close the app.
 
 ## Turning on the AI assistant
 
-1. Get an API key from [OpenRouter](https://openrouter.ai/keys) (one account, many models; two of
-   the eight on offer are free, rate-limited).
-2. In the app, open **Preferences → AI Assistant**, paste the key, pick a model, tick the box
+1. Pick an AI provider and get a key from it:
+
+   | Provider | Cost | Get a key | Screenshots |
+   | --- | --- | --- | --- |
+   | **Google Gemini** | **free tier**, no card | [aistudio.google.com/apikey](https://aistudio.google.com/apikey) | yes |
+   | Claude (Anthropic) | pay as you go | [console.anthropic.com](https://console.anthropic.com/settings/keys) | yes |
+   | OpenAI | pay as you go | [platform.openai.com](https://platform.openai.com/api-keys) | yes |
+   | OpenRouter | two free models, the rest paid | [openrouter.ai/keys](https://openrouter.ai/keys) | no |
+
+2. In the app, open **Preferences → AI Assistant**, pick the provider, paste the key, tick the box
    saying you understand what is sent, and **Save**. The key is stored encrypted on your PC and
-   sent only to OpenRouter.
-3. Open **AI Assistant** in the side menu (under the **AI** heading). The bar under the chat shows
-   which model is answering and what the key has spent.
-4. Ask away: items, spells, mobs, your current fight, this zone, your buffs, loot, loadout and AA.
-   Answers come from the app's own data and your log, not from a live wiki fetch. For your bags or
-   spellbook, type `/outputfile inventory` or `/outputfile spellbook` in game first.
+   sent only to that provider. Saving loads the models your key can use (and swaps a retired model
+   for a current one). Each provider keeps its own key, so you can switch back and forth.
+3. Open **AI Assistant** in the side menu (under the **AI** heading) and ask away: items, spells,
+   mobs, your current fight, this zone, your buffs, loot, loadout and AA. Answers come from the
+   app's own data and your log, not from a live wiki fetch. For your bags or spellbook, type
+   `/outputfile inventory` or `/outputfile spellbook` in game first.
+4. **Ask about something on screen:** press 📷 (or **Ctrl+Shift+A** while the AI overlay is open),
+   drag a box around an item window, a quest or a mob, then ask, or just press Enter for "What is
+   this?". Esc cancels; a click without a drag takes the whole screen. The hotkey can be switched
+   off in Preferences.
 5. Want it over the game? Open the title bar's **Overlay** menu and tick **AI Assistant**. It opens
    at the left edge; drag it anywhere, and lock it (📌) to show just the last answer.
 
 What the assistant sends to the model: your question, a short recap of the last few minutes of
 combat and zone events, your character's name and server, zone, buffs, recent loot, your current
-fight (including the names in it), and an `/outputfile` dump when it needs one. Never raw log
-lines or chat.
+fight (including the names in it), an `/outputfile` dump when it needs one, and a screenshot only
+when you take one. Never raw log lines or chat.
 
 ## What else it adds to the official app
 

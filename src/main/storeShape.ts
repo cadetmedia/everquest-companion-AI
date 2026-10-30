@@ -23,6 +23,7 @@ import type { RespawnPrefs } from '../shared/respawn'
 import type { BazaarWatchlist } from '../shared/bazaarWatch'
 import type { SoundPackPrefs } from '../shared/soundPacks'
 import type { WindowBounds } from './store'
+import type { AiProvider } from '../shared/aiProviders'
 
 /**
  * One character's tail position at the last clean shutdown (JOS-57 scope addition). `at` is a wall
@@ -317,9 +318,18 @@ export interface StoreShape {
    */
   aiConfig?: {
     authType?: 'apikey' | 'subscription'
+    /** OpenRouter's key (the adopted PR's single provider); encrypted. */
     apiKey?: string
     consent: boolean
+    /** OpenRouter's model. */
     model?: string
+    /** cadetmedia fork: the chosen provider (absent = OpenRouter) and every other provider's
+     *  encrypted key and model. */
+    provider?: AiProvider
+    keys?: Partial<Record<AiProvider, string>>
+    models?: Partial<Record<AiProvider, string>>
+    /** The screen-capture hotkey while the AI overlay is open. Absent = on. */
+    captureHotkey?: boolean
     personalStyle?: string
     /** Opt-in live tips. Absent = off. */
     proactive?: boolean

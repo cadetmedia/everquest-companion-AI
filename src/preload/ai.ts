@@ -3,16 +3,23 @@ import { IPC } from '../shared/ipc'
 import type {
   AiChatTurn,
   AiConfigPayload,
+  AiConfigView,
   AiLiveStatus,
   AiPromptResult,
   AiStreamChunk,
   AiUsageSnap
 } from '../shared/aiChat'
 import type { AlertDef } from '../shared/alertTypes'
+import type { AiProvider } from '../shared/aiProviders'
 
 export const aiBridge = {
-  sendAiPrompt: (prompt: string, history: AiChatTurn[]): Promise<AiPromptResult> =>
-    ipcRenderer.invoke(IPC.aiSendPrompt, prompt, history),
+  sendAiPrompt: (prompt: string, history: AiChatTurn[], image?: string): Promise<AiPromptResult> =>
+    ipcRenderer.invoke(IPC.aiSendPrompt, prompt, history, image),
+  /** Drag a box over the screen; the picture as a data URL, or null when cancelled. */
+  captureForAi: (): Promise<{ image: string | null; error?: string }> => ipcRenderer.invoke(IPC.aiCapture),
+  /** A provider's live models for its saved key, and the one to use. */
+  listAiModels: (provider: AiProvider): Promise<{ models: string[]; picked: string; error?: string }> =>
+    ipcRenderer.invoke(IPC.aiModelsList, provider),
   getAiStatus: (): Promise<AiLiveStatus> => ipcRenderer.invoke(IPC.aiStatusGet),
   getAiUsage: (): Promise<AiUsageSnap> => ipcRenderer.invoke(IPC.aiUsageGet),
   onAiUsage: (cb: (u: AiUsageSnap) => void): (() => void) => {
@@ -32,14 +39,8 @@ export const aiBridge = {
     ipcRenderer.on(IPC.aiChunk, listener)
     return () => ipcRenderer.removeListener(IPC.aiChunk, listener)
   },
-  getAiConfig: (): Promise<{
-    authType?: 'apikey' | 'subscription'
-    apiKey?: string
-    consent: boolean
-    model?: string
-    personalStyle?: string
-    proactive?: boolean
-  }> => ipcRenderer.invoke(IPC.aiConfigGet),
+  /** The settings as a window may see them: which providers have a key, never a key. */
+  getAiConfig: (): Promise<AiConfigView> => ipcRenderer.invoke(IPC.aiConfigGet),
   setAiConfig: (payload: AiConfigPayload): Promise<void> => ipcRenderer.invoke(IPC.aiConfigSet, payload),
   getAiContext: (): Promise<string[]> => ipcRenderer.invoke(IPC.aiContextGet),
   saveAiDraftAlert: (def: AlertDef): Promise<{ ok: boolean; id: string }> =>

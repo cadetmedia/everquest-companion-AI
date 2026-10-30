@@ -3,6 +3,7 @@
 
 import type { AlertDef } from './alertTypes'
 import type { OutputKindId } from './outputs/kinds'
+import type { AiProvider } from './aiProviders'
 
 /** One-word live hint. Never a generic "looking it up." */
 const TOOL_HINT: Record<string, string> = {
@@ -42,11 +43,28 @@ export interface AiMentions {
 }
 
 export interface AiConfigPayload {
+  /** The key for `provider`. Empty means "keep the saved one": the renderer never holds a key. */
   apiKey: string
   consent: boolean
   model?: string
   personalStyle?: string
   proactive?: boolean
+  provider?: AiProvider
+  /** The screen-capture hotkey (only while the AI overlay is open). Absent = on. */
+  captureHotkey?: boolean
+}
+
+/** The config as a renderer sees it: which providers have a key, never the keys. */
+export interface AiConfigView {
+  provider: AiProvider
+  hasKey: Record<AiProvider, boolean>
+  models: Record<AiProvider, string>
+  consent: boolean
+  personalStyle?: string
+  proactive: boolean
+  captureHotkey: boolean
+  /** True when the chosen provider takes pictures (OpenRouter varies by model). */
+  vision: boolean
 }
 
 export interface AiDumpStatus {

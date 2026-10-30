@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!--
+      The AI capture SELECTOR (cadetmedia fork, from EQAI): a frozen picture of the screen with a
+      box to drag over it. CSP as cursor.html, plus img-src data: for that one picture.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src data:; font-src 'none'; connect-src 'self'; object-src 'none'; frame-src 'none'; child-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <title>Capture for the AI Assistant</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #000;
+        cursor: crosshair;
+        user-select: none;
+        font-family: system-ui, sans-serif;
+      }
+      #shot {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        filter: brightness(0.7);
+      }
+      #box {
+        position: absolute;
+        display: none;
+        border: 2px solid #d9b25f;
+        background: rgba(217, 178, 95, 0.12);
+        box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.35);
+      }
+      #hint {
+        position: absolute;
+        top: 16px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 6px 12px;
+        border-radius: 6px;
+        background: rgba(20, 20, 20, 0.85);
+        color: #f2f2f2;
+        font-size: 14px;
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body>
+    <img id="shot" alt="" />
+    <div id="box"></div>
+    <div id="hint">Drag a box around what to ask about - click for the whole screen - Esc to cancel</div>
+    <script type="module" src="/src/overlay/aiSelector.ts"></script>
+  </body>
+</html>

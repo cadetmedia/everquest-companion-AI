@@ -86,7 +86,11 @@ export const EXTERNAL_LINK_ALLOWLIST: readonly ExternalLinkRule[] = [
   // live, scoped exactly like the original's.
   { host: 'github.com', pathPrefix: '/cadetmedia/everquest-companion-AI' },
   { host: 'openrouter.ai', pathPrefix: '/keys' },
-  { host: 'openrouter.ai', pathPrefix: '/collections/free-models' }
+  { host: 'openrouter.ai', pathPrefix: '/collections/free-models' },
+  // cadetmedia fork: where Preferences > AI Assistant sends a player for a key, one page each.
+  { host: 'aistudio.google.com', pathPrefix: '/apikey' },
+  { host: 'console.anthropic.com', pathPrefix: '/settings/keys' },
+  { host: 'platform.openai.com', pathPrefix: '/api-keys' }
 ]
 
 /** Every rule for a host: one host may carry several scoped subtrees (github.com does). */

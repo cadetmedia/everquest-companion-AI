@@ -1,6 +1,7 @@
 import { type JSX, type KeyboardEvent, type Ref, useState } from 'react'
 import { Box, Chip, CircularProgress, Fade, IconButton, Paper, Stack, TextField, Typography } from '@mui/material'
 import SendIcon from '@mui/icons-material/Send'
+import PhotoCameraIcon from '@mui/icons-material/PhotoCamera'
 import type { AiFollowUp, AiLiveStatus, AiUsageSnap } from '@shared/aiChat'
 import { aiChatComposerPlaceholder, type AiChatPhase } from '@shared/aiSlash'
 import type { MobTarget } from '../mobs/mobTarget'
@@ -103,12 +104,76 @@ function Bubble(props: {
   )
 }
 
+/** A picture rides with the next question; a picture alone asks what it shows. */
+function questionFor(text: string, image: string | null): string {
+  const t = text.trim()
+  if (t) return t
+  return image ? 'What is this?' : ''
+}
+
+/** The ask box: text, the camera (cadetmedia fork) and the screenshot riding with the question. */
+function Composer({ loading, vision, onSend }: { loading: boolean; vision: boolean; onSend: (text: string, image?: string) => void }): JSX.Element {
+  const [input, setInput] = useState('')
+  const [image, setImage] = useState<string | null>(null)
+  const [captureNote, setCaptureNote] = useState('')
+  const canSend = !loading && questionFor(input, image) !== ''
+  const sendInput = (): void => {
+    if (!canSend) return
+    onSend(questionFor(input, image), image ?? undefined)
+    setInput('')
+    setImage(null)
+  }
+  const capture = (): void => {
+    setCaptureNote('')
+    void window.eq.captureForAi().then((r) => {
+      if (r.image) setImage(r.image)
+      else if (r.error) setCaptureNote(r.error)
+    })
+  }
+  return (
+    <Box sx={{ p: 1.5, borderTop: 1, borderColor: 'divider' }}>
+      {(image ?? captureNote) ? (
+        <Stack direction="row" spacing={1} sx={{ mb: 1, alignItems: 'center' }}>
+          {image ? <Chip size="small" label="Screenshot attached" onDelete={() => setImage(null)} data-testid="ai-image-chip" /> : null}
+          {captureNote ? <Typography variant="caption" color="error">{captureNote}</Typography> : null}
+        </Stack>
+      ) : null}
+      <Stack direction="row" spacing={1}>
+        <IconButton
+          onClick={capture}
+          disabled={loading || !vision}
+          aria-label={vision ? 'Capture the screen and ask about it (drag a box)' : 'Screenshots need Gemini, Claude or OpenAI (Preferences)'}
+          data-testid="ai-capture-button"
+        >
+          <PhotoCameraIcon />
+        </IconButton>
+        <TextField
+          fullWidth
+          size="small"
+          placeholder={image ? 'Screenshot attached - ask about it, or just press Enter' : aiChatComposerPlaceholder(loading, 'Ask about an item, spell, mob, or your loadout')}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e: KeyboardEvent) => {
+            if (e.key !== 'Enter' || e.shiftKey) return
+            e.preventDefault()
+            sendInput()
+          }}
+          disabled={loading}
+        />
+        <IconButton onClick={sendInput} disabled={!canSend} color="primary">
+          <SendIcon />
+        </IconButton>
+      </Stack>
+    </Box>
+  )
+}
+
 export function ChatColumn(props: {
   messages: ChatMessage[]
   loading: boolean
   status: AiLiveStatus
   dumpNotices: string[]
-  onSend: (text: string) => void
+  onSend: (text: string, image?: string) => void
   bottomRef: Ref<HTMLDivElement>
   onOpenLoot: (name: string) => void
   onOpenMob: (t: MobTarget) => void
@@ -116,28 +181,15 @@ export function ChatColumn(props: {
   onDropDraft: (msgIndex: number, draftId: string) => void
   usage: AiUsageSnap
   needsKey: boolean
+  /** The chosen provider takes pictures (OpenRouter's models vary, so its camera is off). */
+  vision: boolean
   phase: AiChatPhase
 }): JSX.Element {
-  const { messages, loading, status, dumpNotices, onSend, bottomRef, usage, needsKey, phase } = props
-  const [input, setInput] = useState('')
+  const { messages, loading, status, dumpNotices, onSend, bottomRef, usage, needsKey, vision, phase } = props
   const exchange = lastExchange(messages)
   const followUps = exchange ? followUpsFor(exchange.prompt, exchange.mentions, status) : []
   const askAgain = askAgainChips(dumpNotices, lastUserPrompt(messages))
   const starters = messages.length === 0 ? starterChipsFor(status) : []
-  const onKeyDown = (e: KeyboardEvent): void => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      if (input.trim()) {
-        onSend(input)
-        setInput('')
-      }
-    }
-  }
-  const sendInput = (): void => {
-    if (!input.trim()) return
-    onSend(input)
-    setInput('')
-  }
 
   return (
     <Paper
@@ -147,7 +199,7 @@ export function ChatColumn(props: {
       <Box sx={{ flex: 1, overflowY: 'auto', p: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
         {needsKey && (
           <Typography variant="body2" color="text.secondary" data-testid="ai-needs-key">
-            Open Preferences, paste an OpenRouter key. [Free] models cost $0.
+            Open Preferences &gt; AI Assistant: pick a provider (Gemini has a free tier) and paste its key.
           </Typography>
         )}
         {starters.length > 0 && (
@@ -175,25 +227,7 @@ export function ChatColumn(props: {
         <div ref={bottomRef} />
       </Box>
       <AIDumpCoach status={status} />
-      <Box sx={{ p: 1.5, borderTop: 1, borderColor: 'divider' }}>
-        <Stack direction="row" spacing={1}>
-          <TextField
-            fullWidth
-            size="small"
-            placeholder={aiChatComposerPlaceholder(
-              loading,
-              'Ask about an item, spell, mob, or your loadout'
-            )}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={onKeyDown}
-            disabled={loading}
-          />
-          <IconButton onClick={sendInput} disabled={loading || !input.trim()} color="primary">
-            <SendIcon />
-          </IconButton>
-        </Stack>
-      </Box>
+      <Composer loading={loading} vision={vision} onSend={onSend} />
       <AISpendBar usage={usage} phase={phase} />
     </Paper>
   )

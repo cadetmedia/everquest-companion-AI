@@ -2,6 +2,15 @@ import { type CSSProperties, type JSX } from 'react'
 import { aiChatComposerPlaceholder, slashGhost } from '@shared/aiSlash'
 
 const GOLD = '#d9b25f'
+const BTN: CSSProperties = {
+  flexShrink: 0,
+  background: 'rgba(217,178,95,0.18)',
+  color: GOLD,
+  border: '1px solid rgba(217,178,95,0.4)',
+  borderRadius: 4,
+  padding: '4px 8px',
+  fontSize: 11
+}
 const WRAP: CSSProperties = {
   display: 'flex',
   gap: 4,
@@ -46,13 +55,37 @@ const AREA: CSSProperties = {
   position: 'relative'
 }
 
+function placeholderFor(image: string | null, busy: boolean, empty: string): string {
+  return image ? 'Screenshot attached - ask about it, or just press Enter' : aiChatComposerPlaceholder(busy, empty)
+}
+
+/** The camera (cadetmedia fork): off while busy, or when the provider takes no pictures. */
+function CaptureButton({ off, vision, onCapture }: { off: boolean; vision: boolean; onCapture: () => void }): JSX.Element {
+  return (
+    <button
+      type="button"
+      data-testid="ai-overlay-capture"
+      disabled={off}
+      onClick={onCapture}
+      aria-label={vision ? 'Capture the screen (Ctrl+Shift+A) and ask about it' : 'Screenshots need Gemini, Claude or OpenAI (Preferences)'}
+      style={{ ...BTN, opacity: off ? 0.4 : 1, cursor: off ? 'default' : 'pointer' }}
+    >
+      📷
+    </button>
+  )
+}
+
 export function AiOverlayComposer({
   value,
   setValue,
   busy,
   onSend,
   noDrag,
-  empty
+  empty,
+  image,
+  clearImage,
+  vision,
+  onCapture
 }: {
   value: string
   setValue: (v: string) => void
@@ -60,11 +93,18 @@ export function AiOverlayComposer({
   onSend: () => void
   noDrag: React.CSSProperties
   empty: string
+  /** cadetmedia fork: a capture riding with the next question, and the camera button. */
+  image: string | null
+  clearImage: () => void
+  vision: boolean
+  onCapture: () => void
 }): JSX.Element {
   const ghost = slashGhost(value)
   const rest = ghost ? ghost.slice(value.length) : ''
+  const canSend = !busy && (value.trim() !== '' || image !== null)
   return (
     <div style={{ ...noDrag, ...WRAP }}>
+      <CaptureButton off={busy || !vision} vision={vision} onCapture={onCapture} />
       <div style={FIELD}>
         {rest ? (
           <div data-testid="ai-overlay-slash-ghost" style={GHOST}>
@@ -77,7 +117,7 @@ export function AiOverlayComposer({
           value={value}
           disabled={busy}
           rows={2}
-          placeholder={aiChatComposerPlaceholder(busy, empty)}
+          placeholder={placeholderFor(image, busy, empty)}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Tab' && ghost) {
@@ -92,22 +132,17 @@ export function AiOverlayComposer({
           style={AREA}
         />
       </div>
+      {image ? (
+        <button type="button" data-testid="ai-overlay-clear-image" onClick={clearImage} aria-label="Remove the screenshot" style={BTN}>
+          ✕📷
+        </button>
+      ) : null}
       <button
         type="button"
         data-testid="ai-overlay-send"
-        disabled={busy || !value.trim()}
+        disabled={!canSend}
         onClick={onSend}
-        style={{
-          flexShrink: 0,
-          background: 'rgba(217,178,95,0.18)',
-          color: GOLD,
-          border: '1px solid rgba(217,178,95,0.4)',
-          borderRadius: 4,
-          padding: '4px 8px',
-          cursor: busy || !value.trim() ? 'default' : 'pointer',
-          opacity: busy || !value.trim() ? 0.4 : 1,
-          fontSize: 11
-        }}
+        style={{ ...BTN, cursor: canSend ? 'pointer' : 'default', opacity: canSend ? 1 : 0.4 }}
       >
         Send
       </button>

@@ -19,7 +19,7 @@ function errText(err: unknown): string {
 export function useAiSend(
   messages: ChatMessage[],
   setMessages: (fn: (prev: ChatMessage[]) => ChatMessage[]) => void
-): { loading: boolean; send: (text: string) => void; phase: AiChatPhase } {
+): { loading: boolean; send: (text: string, image?: string) => void; phase: AiChatPhase } {
   const [loading, setLoading] = useState(false)
   const [phase, setPhase] = useState<AiChatPhase>('idle')
   const requestIdRef = useRef<string | null>(null)
@@ -45,18 +45,20 @@ export function useAiSend(
     }
   }, [setMessages])
 
-  const send = (text: string): void => {
+  const send = (text: string, image?: string): void => {
     const prompt = text.trim()
     if (!prompt || loading) return
     const history = historyFrom(messagesRef.current)
     requestIdRef.current = null
-    setMessages((prev) => [...prev, { role: 'user', text: prompt }, { role: 'ai', text: '', pending: true }])
+    // The picture goes to the model with this question only; the thread keeps a marker.
+    const shown = image ? `📷 ${prompt}` : prompt
+    setMessages((prev) => [...prev, { role: 'user', text: shown }, { role: 'ai', text: '', pending: true }])
     setLoading(true)
     setPhase('sent')
     queueMicrotask(() => {
       setPhase((p) => (p === 'sent' ? 'awaiting' : p))
     })
-    void window.eq.sendAiPrompt(prompt, history).then(
+    void window.eq.sendAiPrompt(prompt, history, image).then(
       (result) => {
         setMessages((prev) => finishAi(prev, result))
         setLoading(false)

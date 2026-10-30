@@ -235,7 +235,13 @@ test('THE GATE: PRESSES WITHIN THE DEBOUNCE ARE ONE; AN OLD MARKER LINE NEVER CA
   assert.equal(gate(t + 20_000, t + 20_000 + RECENT_MS + 1), false)
 })
 
-test('NO SYSTEM-WIDE KEY: the app registers no globalShortcut (owner, 2026-10-21: "avoid C")', () => {
+// THE ONE EXCEPTION (cadetmedia fork owner, 2026-10-29): the AI assistant's capture hotkey, held
+// ONLY while the AI overlay is open and switchable off in Preferences > AI Assistant
+// (src/main/ai/aiCapture.ts, docs/community/requirements/ai-assistant.md). Every other file
+// still may not register a system-wide key.
+const GLOBAL_SHORTCUT_EXEMPT = ['/src/main/ai/aiCapture.ts']
+
+test('NO SYSTEM-WIDE KEY: the app registers no globalShortcut (owner, 2026-10-21: "avoid C"), but the AI capture hotkey', () => {
   const under = (dir: URL): URL[] =>
     readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
       e.isDirectory() ? under(new URL(`${e.name}/`, dir)) : /\.tsx?$/.test(e.name) ? [new URL(e.name, dir)] : []
@@ -244,6 +250,7 @@ test('NO SYSTEM-WIDE KEY: the app registers no globalShortcut (owner, 2026-10-21
     for (const file of under(new URL(`../src/${dir}/`, import.meta.url))) {
       // Comments may say what was removed and why; code may not use it.
       const code = readFileSync(file, 'utf8').replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\/\/[^\n]*/g, ' ')
+      if (GLOBAL_SHORTCUT_EXEMPT.some((p) => file.pathname.endsWith(p))) continue
       assert.equal(/\bglobalShortcut\b/.test(code), false, file.pathname)
     }
   }

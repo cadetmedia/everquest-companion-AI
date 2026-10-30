@@ -19,11 +19,13 @@ export default function AIAssistantTab(props: {
   const { status, dumpNotices } = useAiStatus()
   const usage = useAiUsage(loading)
   const [needsKey, setNeedsKey] = useState(false)
+  const [vision, setVision] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     void window.eq.getAiConfig().then((c) => {
-      setNeedsKey(!c.apiKey)
+      setNeedsKey(!c.hasKey[c.provider])
+      setVision(c.vision)
     })
   }, [])
 
@@ -51,6 +53,7 @@ export default function AIAssistantTab(props: {
           onOpenAlerts={props.onOpenAlerts}
           usage={usage}
           needsKey={needsKey}
+          vision={vision}
           phase={phase}
           onDropDraft={(msgIndex, draftId) => {
             setMessages((prev) => dropDraft(prev, msgIndex, draftId))

@@ -9,14 +9,16 @@ import {
   type AiUsageSnap
 } from '../../shared/aiChat'
 import { AI_PROACTIVE_PARKED, aiHelpText } from '../../shared/aiSlash'
-import { aiModelBarLabel, resolveAiModel } from '../../shared/aiModels'
+import { aiModelBarLabel } from '../../shared/aiModels'
+import { AI_PROVIDER_INFO, isAiProvider, pickModel, type AiProvider } from '../../shared/aiProviders'
 import type { AlertDef, AlertTrigger } from '../../shared/alertTypes'
 import { IPC } from '../../shared/ipc'
 import { EQL_LORE } from '../data/eqlLore'
-import { getOpenRouterClient } from '../ai/AIClientFactory'
+import { getAiClient, listAiModels } from '../ai/AIClientFactory'
+import { aiConfigView, aiKey, aiModel, aiProvider, saveAiConfig } from '../ai/aiConfigStore'
+import { refreshAiHotkey, registerAiCaptureIpc } from '../ai/aiCapture'
 import { buildAiRecap, getLiveStatus } from '../ai/aiPlayerState'
 import { startAiProactive } from '../ai/aiProactiveHost'
-import { decryptString, encryptString } from '../ai/SecureStorage'
 import { saveAlert, settingsStore } from '../store'
 import { getMainWindow, getOverlayWindow } from '../windows'
 
@@ -61,38 +63,35 @@ ${recapBlock}
 Use tools for facts: get_output (honour empty and stale), get_fight, get_zone, get_buffs, get_recent_loot, get_loadout, get_aa, search_*. Do not invent bags, fights, or buffs.`
 }
 
+/** The chat bar's model name: OpenRouter's picker label, else the provider's model id. */
+function modelLabelFor(p: AiProvider): string {
+  return p === 'openrouter' ? aiModelBarLabel(aiModel(p)) : aiModel(p)
+}
+
+/** A provider's live models for its saved key, and the model to use from them (pickModel). */
+async function handleModelsList(_e: unknown, raw: unknown): Promise<{ models: string[]; picked: string; error?: string }> {
+  const p = isAiProvider(raw) ? raw : aiProvider()
+  try {
+    const models = await listAiModels(p, aiKey(p))
+    return { models, picked: pickModel(p, aiModel(p), models) }
+  } catch (e) {
+    return { models: [], picked: aiModel(p), error: e instanceof Error ? e.message : String(e) }
+  }
+}
+
 export function registerAiIpc(): void {
-  ipcMain.handle(IPC.aiConfigGet, () => {
-    const config = settingsStore.get('aiConfig')
-    if (!config) return { authType: 'apikey', consent: false, model: resolveAiModel(undefined) }
-    let apiKey = ''
-    if (config.apiKey) apiKey = decryptString(config.apiKey) ?? ''
-    return {
-      authType: 'apikey',
-      apiKey,
-      consent: config.consent,
-      model: resolveAiModel(config.model),
-      personalStyle: config.personalStyle,
-      proactive: config.proactive === true
-    }
-  })
+  ipcMain.handle(IPC.aiConfigGet, () => aiConfigView())
 
   ipcMain.handle(IPC.aiConfigSet, (_e, payload: AiConfigPayload) => {
-    const prev = settingsStore.get('aiConfig')
-    const apiKey = payload?.apiKey ?? ''
-    const encryptedKey = apiKey ? encryptString(apiKey) : undefined
-    settingsStore.set('aiConfig', {
-      authType: 'apikey',
-      apiKey: encryptedKey,
-      consent: payload?.consent ?? false,
-      model: resolveAiModel(payload?.model),
-      personalStyle: payload?.personalStyle,
-      proactive: payload?.proactive ?? prev?.proactive
-    })
-    const modelLabel = aiModelBarLabel(resolveAiModel(payload?.model))
-    pushUsage({ spendUsd: lastSpendUsd, modelLabel })
+    if (!payload || typeof payload !== 'object') throw new Error('Invalid AI settings.')
+    saveAiConfig({ ...payload, apiKey: typeof payload.apiKey === 'string' ? payload.apiKey : '' })
+    refreshAiHotkey()
+    pushUsage({ spendUsd: null, modelLabel: modelLabelFor(aiProvider()) })
     void handleUsageGet().then(pushUsage)
   })
+
+  ipcMain.handle(IPC.aiModelsList, handleModelsList)
+  registerAiCaptureIpc()
 
   ipcMain.handle(IPC.aiContextGet, () => buildAiRecap())
 
@@ -111,26 +110,23 @@ export function registerAiIpc(): void {
   startAiProactive()
 }
 
-let lastSpendUsd: number | null = null
-
 function sendUsage(wc: WebContents | undefined, snap: AiUsageSnap): void {
   if (!wc || wc.isDestroyed()) return
   wc.send(IPC.aiUsage, snap)
 }
 
 function pushUsage(snap: AiUsageSnap): void {
-  lastSpendUsd = snap.spendUsd
   sendUsage(getMainWindow()?.webContents, snap)
   const overlay = getOverlayWindow('ai')
   sendUsage(overlay && !overlay.isDestroyed() ? overlay.webContents : undefined, snap)
 }
 
 async function handleUsageGet(): Promise<AiUsageSnap> {
-  const config = settingsStore.get('aiConfig')
-  const modelLabel = aiModelBarLabel(resolveAiModel(config?.model))
-  const apiKey = config?.apiKey ? decryptString(config.apiKey) : ''
+  const p = aiProvider()
+  const modelLabel = modelLabelFor(p)
+  const apiKey = aiKey(p)
   if (!apiKey) return { spendUsd: null, modelLabel }
-  const spendUsd = await getOpenRouterClient(apiKey).getUsageUsd()
+  const spendUsd = await getAiClient(p, apiKey).getUsageUsd()
   return { spendUsd, modelLabel }
 }
 
@@ -153,10 +149,17 @@ function emitAiChunk(
   sendChunk(overlay && !overlay.isDestroyed() ? overlay.webContents : undefined, seen, payload)
 }
 
+/** A capture the renderer attaches: a PNG/JPEG data URL, capped so a bad payload cannot balloon. */
+function parseImage(raw: unknown): string | undefined {
+  if (typeof raw !== 'string' || raw.length > 12_000_000) return undefined
+  return /^data:image\/(png|jpeg);base64,[A-Za-z0-9+/=]+$/.test(raw) ? raw : undefined
+}
+
 async function handleSendPrompt(
   event: IpcMainInvokeEvent,
   prompt: unknown,
-  historyRaw: unknown
+  historyRaw: unknown,
+  imageRaw?: unknown
 ): Promise<AiPromptResult> {
   const text = typeof prompt === 'string' ? prompt : ''
   const cmd = text.trim().toLowerCase()
@@ -165,22 +168,24 @@ async function handleSendPrompt(
     return { text: AI_PROACTIVE_PARKED, drafts: [] }
   }
   const config = settingsStore.get('aiConfig')
-  if (!config || !config.consent || !config.apiKey) {
-    throw new Error('AI Assistant is not configured or consent is missing.')
+  const provider = aiProvider(config)
+  const apiKey = aiKey(provider, config)
+  if (!config?.consent || !apiKey) {
+    throw new Error(`AI Assistant is not set up: add a ${AI_PROVIDER_INFO[provider].label} key in Preferences > AI Assistant and tick the consent box.`)
   }
-  const apiKey = decryptString(config.apiKey)
-  if (!apiKey) throw new Error('OpenRouter API key is missing.')
-  const client = getOpenRouterClient(apiKey)
+  const client = getAiClient(provider, apiKey)
+  const model = aiModel(provider, config)
   if (text.trim() === '/model') {
-    const id = resolveAiModel(config.model)
-    return { text: `Current model: **${aiModelBarLabel(id)}** (\`${id}\`).`, drafts: [] }
+    return { text: `Current model: **${modelLabelFor(provider)}** (\`${model}\`) on ${AI_PROVIDER_INFO[provider].label}.`, drafts: [] }
   }
   if (text.trim() === '/usage') {
-    return { text: await client.getUsage(), drafts: [] }
+    const usd = await client.getUsageUsd()
+    return { text: usd == null ? `${AI_PROVIDER_INFO[provider].label} does not report spend here; check its own console.` : `**API usage on this key:** $${usd.toFixed(4)}`, drafts: [] }
   }
   const requestId = randomUUID()
   const result = await client.sendPrompt(systemPrompt(config.personalStyle, await buildAiRecap()), text, {
-    model: config.model,
+    model,
+    image: parseImage(imageRaw),
     history: parseHistory(historyRaw),
     onChunk: (chunk) => emitAiChunk(event.sender, requestId, chunk)
   })

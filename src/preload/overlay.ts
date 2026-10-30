@@ -22,7 +22,7 @@ import type { BuffAllowPrefs } from '../shared/buffAllow'
 import type { ToastPayload } from '../shared/toast'
 import type { AlertBannerPayload } from '../shared/alertBanner'
 import type { ConCardPayload } from '../shared/conCard'
-import type { AiChatTurn, AiLiveStatus, AiPromptResult, AiStreamChunk, AiUsageSnap } from '../shared/aiChat'
+import type { AiChatTurn, AiConfigView, AiLiveStatus, AiPromptResult, AiStreamChunk, AiUsageSnap } from '../shared/aiChat'
 
 export type { CombatSnapshot, SnapshotOpts, OverlayConfig, OverlayDrill, OverlayKind, MobKnowledge }
 
@@ -436,8 +436,20 @@ const overlayApi = {
 
   // ---- AI overlay (kind 'ai') — the main window's AI bridge is `window.eq`, which this
   // bundle does not get. Same channels, same names, so one send path cannot drift.
-  sendAiPrompt: (prompt: string, history: AiChatTurn[]): Promise<AiPromptResult> =>
-    ipcRenderer.invoke(IPC.aiSendPrompt, prompt, history),
+  sendAiPrompt: (prompt: string, history: AiChatTurn[], image?: string): Promise<AiPromptResult> =>
+    ipcRenderer.invoke(IPC.aiSendPrompt, prompt, history, image),
+  // cadetmedia fork: the screen capture, its hotkey (held while this overlay is open, main checks
+  // the setting), and the config without keys (which provider, whether it takes pictures).
+  getAiConfig: (): Promise<AiConfigView> => ipcRenderer.invoke(IPC.aiConfigGet),
+  captureForAi: (): Promise<{ image: string | null; error?: string }> => ipcRenderer.invoke(IPC.aiCapture),
+  armAiHotkey: (on: boolean): void => ipcRenderer.send(IPC.aiHotkeyArm, on),
+  onAiCaptured: (cb: (image: string) => void): (() => void) => {
+    const listener = (_e: unknown, image: unknown): void => {
+      if (typeof image === 'string') cb(image)
+    }
+    ipcRenderer.on(IPC.aiCaptured, listener)
+    return () => ipcRenderer.removeListener(IPC.aiCaptured, listener)
+  },
   getAiStatus: (): Promise<AiLiveStatus> => ipcRenderer.invoke(IPC.aiStatusGet),
   getAiUsage: (): Promise<AiUsageSnap> => ipcRenderer.invoke(IPC.aiUsageGet),
   onAiUsage: (cb: (u: AiUsageSnap) => void): (() => void) => {

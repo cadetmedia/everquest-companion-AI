@@ -29,6 +29,14 @@ export const IPC = {
   aiUsage: 'ai:usage',
   aiProactive: 'ai:proactive',
   aiChunk: 'ai:chunk',
+  // cadetmedia fork: the live model list for a provider, the screen capture, and the capture
+  // hotkey's arm/disarm (held only while the AI overlay is open) and its result push.
+  aiModelsList: 'ai:modelsList',
+  aiCapture: 'ai:capture',
+  aiHotkeyArm: 'ai:hotkeyArm',
+  aiCaptured: 'ai:captured',
+  aiSelectorImage: 'ai:selectorImage',
+  aiSelectorDone: 'ai:selectorDone',
 
   // ---- progress / inventory (per-character persisted state) ----
   getProgress: 'progress:get',

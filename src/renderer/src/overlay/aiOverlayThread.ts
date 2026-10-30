@@ -104,13 +104,14 @@ export async function runSend(
     setDraft: (s: string | null) => void
     streamBase: { current: AiStoredMessage[] | null }
     onFail: () => void
-  }
+  },
+  image?: string
 ): Promise<void> {
-  const withUser: AiStoredMessage[] = [...prior, { role: 'user', text: prompt }]
+  const withUser: AiStoredMessage[] = [...prior, { role: 'user', text: image ? `📷 ${prompt}` : prompt }]
   ctl.streamBase.current = withUser
   ctl.commit(withUser)
   try {
-    const result = await window.eqOverlay.sendAiPrompt(prompt, historyFrom(prior))
+    const result = await window.eqOverlay.sendAiPrompt(prompt, historyFrom(prior), image)
     ctl.commit([...withUser, aiRow(result)])
   } catch (err) {
     ctl.onFail()

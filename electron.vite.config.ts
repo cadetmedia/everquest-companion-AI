@@ -99,7 +99,9 @@ export default defineConfig({
           index: resolve(__dirname, 'src/preload/index.ts'),
           overlay: resolve(__dirname, 'src/preload/overlay.ts'),
           cursor: resolve(__dirname, 'src/preload/cursor.ts'),
-          tray: resolve(__dirname, 'src/preload/tray.ts')
+          tray: resolve(__dirname, 'src/preload/tray.ts'),
+          // cadetmedia fork: the AI capture selector's bridge (main/ai/aiCapture.ts).
+          selector: resolve(__dirname, 'src/preload/selector.ts')
         }
       }
     }
@@ -144,7 +146,8 @@ export default defineConfig({
           index: resolve(__dirname, 'src/renderer/index.html'),
           overlay: resolve(__dirname, 'src/renderer/overlay.html'),
           cursor: resolve(__dirname, 'src/renderer/cursor.html'),
-          tray: resolve(__dirname, 'src/renderer/tray.html')
+          tray: resolve(__dirname, 'src/renderer/tray.html'),
+          selector: resolve(__dirname, 'src/renderer/selector.html')
         }
       }
     }

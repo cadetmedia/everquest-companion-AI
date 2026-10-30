@@ -109,7 +109,7 @@ function AiFooter({
 export default function AiOverlay(): JSX.Element {
   const { locked, bgAlpha, textScale, hovering, patch, toggleLock, onEnter, onLeave, dragRegion, noDrag } =
     useOverlayChrome()
-  const { shown, toolHint, input, setInput, busy, usage, phase, send } = useAiOverlaySession()
+  const { shown, toolHint, input, setInput, busy, usage, phase, send, image, setImage, vision, capture } = useAiOverlaySession()
 
   return (
     <div
@@ -147,6 +147,10 @@ export default function AiOverlay(): JSX.Element {
           setValue={setInput}
           busy={busy}
           onSend={send}
+          image={image}
+          clearImage={() => setImage(null)}
+          vision={vision}
+          onCapture={capture}
           noDrag={noDrag}
           empty={AI_OVERLAY_EMPTY}
         />
