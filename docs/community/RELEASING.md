@@ -15,6 +15,10 @@ file stays `test.yml` whatever the version (electron-builder.yml pins the channe
 `0.1.0-test.N`: read it as the current version. The app is EQ Companion AI, installer
 `eq-companion-ai-Setup-<version>.exe`.
 
+A session that cannot push tags (the cloud agent's proxy refuses them) starts the release instead:
+Actions > community-release > Run workflow on `main_community` (or the API's workflow dispatch). The
+publish step's `gh release create --target` then creates `community-<version>` on that commit.
+
 The `0.1.0-test.N` installer that `main_community` produces (the TEST identity, which the retired
 `test-neutering` branch brought in), attached to a GitHub Release on the
 fork. Nothing about the build changes for the release; the TEST identity is what makes it safe to

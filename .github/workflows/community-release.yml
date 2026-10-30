@@ -24,6 +24,10 @@ name: community-release
 on:
   push:
     tags: ['community-*']
+  # Started by hand (Actions tab, or the API) on main_community: for a session whose network
+  # cannot push tags. The release step's `gh release create --target` then creates the tag
+  # community-<package.json version> on that commit, exactly as a pushed tag would have named it.
+  workflow_dispatch: {}
 
 permissions: {}
 
@@ -60,7 +64,12 @@ jobs:
         shell: bash
         run: |
           version=$(node -p "require('./package.json').version")
-          if [ "$GITHUB_REF_NAME" != "community-$version" ]; then
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            if [ "$GITHUB_REF_NAME" != "main_community" ]; then
+              echo "STOP: a hand-started release runs on main_community only, not $GITHUB_REF_NAME" >&2
+              exit 1
+            fi
+          elif [ "$GITHUB_REF_NAME" != "community-$version" ]; then
             echo "STOP: tag $GITHUB_REF_NAME does not match package.json version $version (expected community-$version)" >&2
             exit 1
           fi
