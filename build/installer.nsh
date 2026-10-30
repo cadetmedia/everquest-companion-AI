@@ -186,15 +186,15 @@
 !macro eqLeaveSharedFolder
   ${If} $INSTDIR == "$LOCALAPPDATA\Programs\everquest-companion"
     ${If} ${FileExists} "$INSTDIR\EQ Legends Companion.exe"
-    ${OrIfNot} ${FileExists} "$INSTDIR\Uninstall EQ Legends Companion AI.exe"
-      Delete "$INSTDIR\EQ Legends Companion AI.exe"
+    ${OrIfNot} ${FileExists} "$INSTDIR\Uninstall EQ Companion AI.exe"
+      Delete "$INSTDIR\EQ Companion AI.exe"
       # Still there means it is running from the old folder: the stock running-app check below
       # looks in the NEW folder and would not see it. Stop before touching the registry.
-      ${If} ${FileExists} "$INSTDIR\EQ Legends Companion AI.exe"
-        MessageBox MB_OK|MB_ICONEXCLAMATION|MB_TOPMOST|MB_SETFOREGROUND "Close EQ Legends Companion AI (including its tray icon), then run this installer again." /SD IDOK
+      ${If} ${FileExists} "$INSTDIR\EQ Companion AI.exe"
+        MessageBox MB_OK|MB_ICONEXCLAMATION|MB_TOPMOST|MB_SETFOREGROUND "Close EQ Companion AI (including its tray icon), then run this installer again." /SD IDOK
         Quit
       ${EndIf}
-      Delete "$INSTDIR\Uninstall EQ Legends Companion AI.exe"
+      Delete "$INSTDIR\Uninstall EQ Companion AI.exe"
       DeleteRegValue HKCU "${UNINSTALL_REGISTRY_KEY}" "UninstallString"
       DeleteRegValue HKCU "${UNINSTALL_REGISTRY_KEY}" "QuietUninstallString"
     ${EndIf}
@@ -410,7 +410,7 @@ Var pid
   # Interactive uninstall. Yes (default button, and the /SD fallback) keeps everything.
   # Deliberately ONE line: this file has a history of "compiles clean, installer dies",
   # and a line continuation inside a macro body is not worth re-litigating.
-  MessageBox MB_YESNO|MB_ICONQUESTION|MB_DEFBUTTON1|MB_TOPMOST|MB_SETFOREGROUND "Keep your settings and history?$\r$\n$\r$\nThey'll be restored if you reinstall EQ Legends Companion AI.$\r$\n(Choosing No deletes them permanently.)" /SD IDYES IDYES eqKeepUserData
+  MessageBox MB_YESNO|MB_ICONQUESTION|MB_DEFBUTTON1|MB_TOPMOST|MB_SETFOREGROUND "Keep your settings and history?$\r$\n$\r$\nThey'll be restored if you reinstall EQ Companion AI.$\r$\n(Choosing No deletes them permanently.)" /SD IDYES IDYES eqKeepUserData
 
   ${If} $installMode == "all"
     SetShellVarContext current

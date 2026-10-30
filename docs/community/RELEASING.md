@@ -9,6 +9,12 @@ through a work branch like any other.
 
 ## What a community release is
 
+Version numbers (cadetmedia fork, 2026-10-30): EQAI's scheme, `1.0.0-alpha.N` shown as "Alpha 1.N", then
+`1.0.0-beta.N`, then `1.0.0`; the first release is Alpha 1.0 (`community-1.0.0-alpha.0`). The update feed
+file stays `test.yml` whatever the version (electron-builder.yml pins the channel). Older notes below say
+`0.1.0-test.N`: read it as the current version. The app is EQ Companion AI, installer
+`eq-companion-ai-Setup-<version>.exe`.
+
 The `0.1.0-test.N` installer that `main_community` produces (the TEST identity, which the retired
 `test-neutering` branch brought in), attached to a GitHub Release on the
 fork. Nothing about the build changes for the release; the TEST identity is what makes it safe to

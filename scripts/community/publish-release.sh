@@ -30,14 +30,18 @@ done
 
 fail() { echo "STOP: $*" >&2; exit 1; }
 
+# This fork's builds are numbered like EQAI's: 1.0.0-alpha.N reads "Alpha 1.N", -beta.N "Beta 1.N",
+# and a plain X.Y.Z is itself. The update feed file is test.yml whatever the version (electron-builder.yml).
 case "$version" in
-  *-test.*) ;;
-  *) fail "version $version is not a 0.1.0-test.N build; only TEST builds are published from the fork" ;;
+  *-alpha.*) label="Alpha ${version%%.*}.${version##*.}" ;;
+  *-beta.*) label="Beta ${version%%.*}.${version##*.}" ;;
+  *-*) fail "version $version is not 1.0.0-alpha.N, 1.0.0-beta.N or X.Y.Z" ;;
+  *) label="$version" ;;
 esac
 
 tag="community-$version"
 dir="release/$version"
-exe="everquest-companion-ai-Setup-$version.exe"
+exe="eq-companion-ai-Setup-$version.exe"
 [ -f "$dir/$exe" ] || fail "no installer at $dir/$exe; cut the build first (RELEASING.md step 1)"
 # The update feed (test.20 on): installs read test.yml (the channel file electron-builder names after 0.1.0-test.N) from the newest release, and the blockmap
 # lets them download only what changed. test.yml must name this version and this installer.
@@ -72,8 +76,8 @@ git rev-parse -q --verify "$notes_ref" >/dev/null || notes_ref=origin/main_commu
 notes_commit=$(git log --format=%H --grep="^Test build $version:" -1 "$notes_ref")
 [ -n "$notes_commit" ] || fail "no 'Test build $version:' commit on main_community"
 # Each release lists only what changed since the one before. The cumulative list lives once, on
-# this fork's first release (test.39, EQ Legends Companion AI), and every later release links to it.
-first_tag=community-0.1.0-test.39
+# this fork's first release (Alpha 1.0, EQ Companion AI), and every later release links to it.
+first_tag=community-1.0.0-alpha.0
 if [ "$tag" != "$first_tag" ] && git log -1 --format=%b "$notes_commit" | grep -q '^WHAT THIS BUILD ADDS'; then
   fail "the $version notes repeat the cumulative WHAT THIS BUILD ADDS list; keep only what changed since the previous version (it is on $first_tag)"
 fi
@@ -93,7 +97,7 @@ notes=$(mktemp)
 trap 'rm -f "$notes"' EXIT
 {
   cat <<EOF
-**EQ Legends Companion AI $version**: [EQ Legends Companion](https://github.com/jmoyers/everquest-companion) by Josh Moyers, with the [community edition](https://github.com/kaltinril/everquest-companion)'s changes and an AI assistant on top.
+**EQ Companion AI $label** ($version): [EQ Legends Companion](https://github.com/jmoyers/everquest-companion) by Josh Moyers, with the [community edition](https://github.com/kaltinril/everquest-companion)'s changes and an AI assistant on top.
 
 **To install:** download \`$exe\` below and run it. The installer is not code-signed, so Windows shows "Windows protected your PC" the first time: click **More info**, then **Run anyway**. It installs beside the official app and the community TEST build, not over either, and keeps its own settings.
 
@@ -102,7 +106,7 @@ trap 'rm -f "$notes"' EXIT
 \`SHA256SUMS.txt\` holds the installer's checksum, to compare with \`Get-FileHash $exe\`.
 
 EOF
-  [ "$tag" = "$first_tag" ] || echo "Below is what changed since the previous build. Everything this build adds to the official app is listed on [0.1.0-test.39](https://github.com/$repo_slug/releases/tag/$first_tag), the first release."
+  [ "$tag" = "$first_tag" ] || echo "Below is what changed since the previous build. Everything this build adds to the official app is listed on [Alpha 1.0](https://github.com/$repo_slug/releases/tag/$first_tag), the first release."
   printf '\n---\n\n'
   git log -1 --format=%b "$notes_commit"
 } >"$notes"
@@ -120,7 +124,7 @@ prevdir=$(mktemp -d)
 trap 'rm -f "$notes"; rm -rf "$prevdir"' EXIT
 prev_tag=$(gh release view --repo "$repo_slug" --json tagName -q .tagName 2>/dev/null || true)
 if [ -n "$prev_tag" ] && [ "$prev_tag" != "$tag" ]; then
-  prev_blockmap="everquest-companion-ai-Setup-${prev_tag#community-}.exe.blockmap"
+  prev_blockmap="eq-companion-ai-Setup-${prev_tag#community-}.exe.blockmap"
   if gh release download "$prev_tag" --repo "$repo_slug" --pattern "$prev_blockmap" --dir "$prevdir" >/dev/null 2>&1; then
     [ -f "$prevdir/$prev_blockmap" ] && extra+=("$prevdir/$prev_blockmap")
   fi
@@ -147,5 +151,5 @@ if [ $publish -eq 0 ]; then
 fi
 
 gh release create "$tag" --repo "$repo_slug" --target "$target" --latest \
-  --title "EQ Legends Companion AI $version" --notes-file "$notes" \
+  --title "EQ Companion AI $label" --notes-file "$notes" \
   "$dir/$exe" "$dir/SHA256SUMS.txt" "$dir/test.yml" "$blockmap" "${extra[@]}"
