@@ -1,5 +1,5 @@
 {
-  "scrapedAt": "2026-10-29T07:43:17.455Z",
+  "scrapedAt": "2026-10-30T20:37:39.405Z",
   "source": "eqlwiki.com — Category:NPCs/Named Mobs/Merchants/Raid Encounters ∪ embeddedin Template:Namedmobpage/MerchantPage, filtered to pages opening a mob template + recentchanges delta (scripts/scrape-delta.mts)",
   "mobs": [
     {
@@ -30735,8 +30735,7 @@
         "Chunk of Meat",
         "Wolf Meat"
       ],
-      "image": "npc_a_jackal.png",
-      "noImage": true
+      "image": "npc_a_jackal.png"
     },
     {
       "page": "A Jeering Gargoyle",
@@ -36891,8 +36890,7 @@
         "Thick Grizzly Bear Skin",
         "Ruined Bear Pelt"
       ],
-      "image": "npc_a_marsh_bear.png",
-      "noImage": true
+      "image": "npc_a_marsh_bear.png"
     },
     {
       "page": "A marsh bear cub",
@@ -59714,8 +59712,7 @@
           "ew": -2210
         }
       ],
-      "image": "npc_a_widow_hatchling.png",
-      "noImage": true
+      "image": "npc_a_widow_hatchling.png"
     },
     {
       "page": "A Widow Hatchling (Toxxulia Forest)",
@@ -59730,8 +59727,7 @@
         "Spiderling Legs",
         "Spiderling Silk"
       ],
-      "image": "npc_a_widow_hatchling.png",
-      "noImage": true
+      "image": "npc_a_widow_hatchling.png"
     },
     {
       "page": "A Wightish Ancille",

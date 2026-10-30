@@ -37,7 +37,7 @@
 * Loot [[Imp Blood]] from a [[a fire imp]] in [[Lavastorm Mountains]] ( or an [[imp protector]] in [[Nagafen's Lair]]. )
 * Return to [[Dorian G`Wyn]] and give them [[Putrid Bile]] and [[Imp Blood]]
 * Tell [[Dorian G`Wyn]] "assist" and "two things"
-* Pick up [[Dusty Scroll Case]] in [[West Freeport]] from the table in the guard house on the wall of the [[West Commonlands]] gate
+* Pick up [[Dusty Scroll Case]] in [[West Freeport]] at location -119, 35, -6
 * Tell [[Ty`Klerr]] in [[Neriak - Foreign Quarter]] "Dorian", "ready", and "report" to receive [[Encoded Missive]]
 * Return to [[Lake Nerius]] and give [[Dorian G`Wyn]] both [[Dusty Scroll Case]] and [[Encoded Missive]]
 * Fish for a [[Fetid Lake Muck]] in [[Lake Nerius]]
