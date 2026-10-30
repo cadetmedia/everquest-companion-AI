@@ -30,12 +30,18 @@
 
 = Summary =
 {{CheckboxList}}
-**See what information about the [undead] you can gather from Yelayna
-**What insights about [Lake Nerius] might Konro have?
-**Blergagh seems like he [knows more] than hes letting on about. Ask him about [Dorian]
-**The banker, Neuven F`Lok, probably knows a lot if he knows how the [money] flows
-**The long winded 'The Great Zultor' may let slip useful info
-**Ask Nikko Canti about [Dorian]
+*See what information about the [undead] you can gather from Yelayna
+**Tell [[Yelayna]] in [[Lake Nerius]] "undead", "increased numbers", and "Everling's"
+*What insights about [Lake Nerius] might Konro have?
+**Tell [[Konro Strongfoot]] in [[Lake Nerius]] "lake nerius", "folk", and "hooded"
+*Blergagh seems like he [knows more] than hes letting on about. Ask him about [Dorian]
+** Tell [[Blergagh]] in [[Lake Nerius]] "dorian", and "smell"
+*The banker, Neuven F`Lok, probably knows a lot if he knows how the [money] flows
+** Tell [[Neuven F'Lok]] in [[Lake Nerius]] "money", "healthy", and "transients"
+*The long winded 'The Great Zultor' may let slip useful info
+** [[The Great Zultor]] in [[Lake Nerius]] "what else", "possibilities", "no knowable limit", "barriers", and "timeline"
+*Ask Nikko Canti about [Dorian]
+** [[Nikko Canti]] in [[Lake Nerius]] (back at lake) "dorian", and "others"
 {{End}}
 
 = Walkthrough =
