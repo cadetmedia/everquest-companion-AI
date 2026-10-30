@@ -11,6 +11,11 @@ run, the checks and what was kept). From then on refreshes are the delta only (o
 The wiki keeps about 90 days of changes, so a delta must run within 90 days of the last stamp; past
 that it refuses and only a full scrape is left (next one due before about 2027-01-16).
 
+Weekly, unattended (cadetmedia fork, 2026-10-30: "pulling a new fetch every Wed to get any new items that
+may have been added in the Tues patches"): `.github/workflows/wiki-refresh.yml` runs Wednesdays 23:17 UTC
+(and on demand from the Actions tab) and opens a `data/wiki-delta-<date>` pull request; a person clears
+any census reds on it and merges. Its item/mob/rendered caches live in the Actions cache; a run that
+finds none seeds them once with the full scrapers and keeps only their caches and ledger lines.
 The owner's word to run it is the trigger, and it is run then (owner, 2026-10-25). Before every
 release it runs too, with the GitHub pack compare (next sections). After a game patch or zone
 rework, suggest one once wiki editors have had a few days. The Gear

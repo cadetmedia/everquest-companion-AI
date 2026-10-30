@@ -1,0 +1,197 @@
+# Weekly wiki data refresh: every Wednesday, after Tuesday's game patch has had a day of wiki
+# edits, bring the committed wiki corpus up to date and open a pull request with the result.
+#
+# It runs the fork's own procedure (docs/community/agent/DATA_REFRESH.md) unattended:
+#   1. the EOZ pack compare (reads GitHub, never the wiki);
+#   2. scripts/scrape-delta.mts: only pages changed since the last stamp, 50 a request, one request
+#      a second, maxlag=5, backoff on 429/5xx (sources/deltaApi.ts), every request named in the
+#      User-Agent and counted in docs/community/wiki-usage/ledger.jsonl;
+#   3. data-diff + validate-data, and the compare again (`--release`: nothing left behind);
+#   4. the gate (typecheck, lint, the unit suite against known-reds.txt).
+# Nothing is merged or released here. Census tests are EXPECTED to go red when the wiki adds things
+# (DATA_REFRESH.md "Expect new reds, and clear them"), so a red gate still opens the pull request,
+# with the reds listed, for a person to clear before merging. A run with no data change opens nothing.
+#
+# THE CACHES. The item, mob and rendered-page caches are gitignored (tens of MB of raw wikitext),
+# but the delta's follow-ups rebuild mobFactions/mobRaces/respawns FROM the mob cache, and an empty
+# cache would write an empty faction list. So the caches live in the Actions cache between runs,
+# and a run that finds none seeds them first with the full item and mob scrapers (one time, ~600
+# batched requests at one a second), then throws away everything those scrapers wrote to tracked
+# files: they are run for their caches only, and the committed data stays the delta's to change.
+
+name: wiki-refresh
+
+on:
+  schedule:
+    # Wednesdays 23:17 UTC (4:17 pm Pacific): a full day after Tuesday's patch for wiki editors.
+    - cron: '17 23 * * 3'
+  workflow_dispatch: {}
+
+permissions: {}
+
+concurrency:
+  group: wiki-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    # Windows, like community-release.yml, so the gate's known reds are the same list.
+    runs-on: windows-latest
+    timeout-minutes: 150
+    permissions:
+      contents: write
+      pull-requests: write
+    defaults:
+      run:
+        shell: bash
+    env:
+      CACHE_ROOT: scripts/sources/cache
+      SEED_MARK: scripts/sources/cache/items/.ci-seeded
+    steps:
+      - name: Checkout main_community
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4 (v4.4.0)
+        with:
+          ref: main_community
+          fetch-depth: 1
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v4 (v4.4.0)
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm run deps:electron
+
+      - name: Restore the wiki caches
+        id: restore
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v4 (v4.3.0)
+        with:
+          path: |
+            scripts/sources/cache/items
+            scripts/sources/cache/mobs
+            scripts/sources/cache/rendered
+            scripts/sources/cache/eoz
+          key: wiki-caches-${{ github.run_id }}
+          restore-keys: wiki-caches-
+
+      - name: Seed the item and mob caches (first run only)
+        run: |
+          if [ -f "$SEED_MARK" ]; then echo "caches present, no seed needed"; exit 0; fi
+          ledger=docs/community/wiki-usage/ledger.jsonl
+          cp "$ledger" "$RUNNER_TEMP/ledger.jsonl"
+          npx tsx scripts/scrape-items.ts
+          npx tsx scripts/scrape-mobs.ts
+          # Their ledger lines are real traffic and are kept; every other tracked file they wrote
+          # goes back to the committed state (the caches are gitignored and stay).
+          tail -n +$(( $(wc -l < "$RUNNER_TEMP/ledger.jsonl") + 1 )) "$ledger" > "$RUNNER_TEMP/seed-lines.jsonl"
+          git checkout -- .
+          cat "$RUNNER_TEMP/seed-lines.jsonl" >> "$ledger"
+          touch "$SEED_MARK"
+
+      - name: Refuse to run on an empty mob cache
+        run: |
+          n=$(find "$CACHE_ROOT/mobs" "$CACHE_ROOT/items" -type f 2>/dev/null | wc -l)
+          echo "cached files: $n"
+          if [ "$n" -lt 200 ]; then
+            echo "STOP: the item/mob caches are missing or partial; the follow-ups would rebuild mob factions from nothing" >&2
+            exit 1
+          fi
+
+      - name: EOZ pack compare (before)
+        continue-on-error: true
+        run: npx tsx scripts/eoz-compare.mts | tee "$RUNNER_TEMP/eoz-before.txt"
+
+      - name: Delta scrape
+        run: npx tsx scripts/scrape-delta.mts 2>&1 | tee "$RUNNER_TEMP/delta.txt"
+
+      - name: Data diff and validation
+        id: check
+        run: |
+          npx tsx scripts/data-diff.mts > "$RUNNER_TEMP/data-diff.txt" 2>&1 || true
+          if npx tsx scripts/validate-data.mts > "$RUNNER_TEMP/validate.txt" 2>&1; then
+            echo "validate=passed" >> "$GITHUB_OUTPUT"
+          else
+            echo "validate=FAILED" >> "$GITHUB_OUTPUT"
+          fi
+          if npx tsx scripts/eoz-compare.mts --release > "$RUNNER_TEMP/eoz-after.txt" 2>&1; then
+            echo "behind=none" >> "$GITHUB_OUTPUT"
+          else
+            echo "behind=SOME PAGES STILL BEHIND" >> "$GITHUB_OUTPUT"
+          fi
+          if [ -z "$(git status --porcelain)" ]; then echo "changed=false" >> "$GITHUB_OUTPUT"; else echo "changed=true" >> "$GITHUB_OUTPUT"; fi
+
+      # Saved even when a later step fails, so the next week starts warm.
+      - name: Save the wiki caches
+        if: always()
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v4 (v4.3.0)
+        with:
+          path: |
+            scripts/sources/cache/items
+            scripts/sources/cache/mobs
+            scripts/sources/cache/rendered
+            scripts/sources/cache/eoz
+          key: wiki-caches-${{ github.run_id }}
+
+      - name: Gate
+        id: gate
+        if: steps.check.outputs.changed == 'true'
+        env:
+          NODE_OPTIONS: --max-old-space-size=8192
+        run: |
+          # bash cannot run a CRLF script; only the gate's own script needs LF (git sees no change).
+          sed -i 's/\r$//' scripts/community/*.sh
+          if npm run typecheck > "$RUNNER_TEMP/typecheck.txt" 2>&1; then echo "typecheck=passed"; else echo "typecheck=FAILED"; fi >> "$GITHUB_OUTPUT"
+          if npm run lint > "$RUNNER_TEMP/lint.txt" 2>&1; then echo "lint=passed"; else echo "lint=FAILED"; fi >> "$GITHUB_OUTPUT"
+          if bash scripts/community/known-reds.sh > "$RUNNER_TEMP/tests.txt" 2>&1; then
+            echo "tests=passed" >> "$GITHUB_OUTPUT"
+          else
+            echo "tests=RED (see below)" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Open the pull request
+        if: steps.check.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VALIDATE: ${{ steps.check.outputs.validate }}
+          BEHIND: ${{ steps.check.outputs.behind }}
+          TYPECHECK: ${{ steps.gate.outputs.typecheck }}
+          LINT: ${{ steps.gate.outputs.lint }}
+          TESTS: ${{ steps.gate.outputs.tests }}
+        run: |
+          day=$(date -u +%F)
+          branch="data/wiki-delta-$day"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$branch"
+          git add -A
+          git commit -q -m "Data: weekly wiki delta $day" -m "$(tail -n 40 "$RUNNER_TEMP/data-diff.txt")"
+          git push -u origin "$branch"
+          fence='```'
+          {
+            echo "Weekly wiki refresh ($day). Review, clear any census reds on this branch, then merge into \`main_community\`; the data ships with the next community release."
+            echo
+            echo "| Check | Result |"
+            echo "| --- | --- |"
+            echo "| validate-data | $VALIDATE |"
+            echo "| EOZ compare after | $BEHIND |"
+            echo "| typecheck | $TYPECHECK |"
+            echo "| lint | $LINT |"
+            echo "| unit suite (known reds) | $TESTS |"
+            echo
+            echo "<details><summary>data-diff</summary>"; echo; echo "$fence"; tail -n 150 "$RUNNER_TEMP/data-diff.txt"; echo "$fence"; echo "</details>"
+            echo "<details><summary>delta run</summary>"; echo; echo "$fence"; tail -n 80 "$RUNNER_TEMP/delta.txt"; echo "$fence"; echo "</details>"
+            echo "<details><summary>unit suite</summary>"; echo; echo "$fence"; tail -n 40 "$RUNNER_TEMP/tests.txt" 2>/dev/null; echo "$fence"; echo "</details>"
+          } > "$RUNNER_TEMP/body.md"
+          cp "$RUNNER_TEMP/body.md" "$GITHUB_STEP_SUMMARY"
+          # Needs Settings > Actions > General > "Allow GitHub Actions to create and approve pull
+          # requests". Without it the branch is still pushed and the summary says where.
+          if ! gh pr create --base main_community --head "$branch" --title "Data: weekly wiki delta $day" --body-file "$RUNNER_TEMP/body.md"; then
+            echo "::warning::Could not open the pull request (is 'Allow GitHub Actions to create pull requests' on?). Branch pushed: $branch"
+          fi
+
+      - name: Nothing changed
+        if: steps.check.outputs.changed != 'true'
+        run: echo "The wiki had no changes the data files keep; nothing to open." >> "$GITHUB_STEP_SUMMARY"

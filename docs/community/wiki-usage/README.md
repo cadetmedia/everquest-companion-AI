@@ -3,7 +3,7 @@
 Every request this project sends to eqlwiki.com, so it can be audited (owner, 2026-10-23: "i want to
 audit and make sure we are not using it more than we need to"; "he doesn't care for what reason we
 hit the EQLWiki, so i want to track it all"). Every request names the fork in its User-Agent:
-`everquest-companion/0.1 (+https://github.com/kaltinril/everquest-companion)`.
+`everquest-companion/0.1 (+https://github.com/cadetmedia/everquest-companion-AI)`.
 
 ## What writes here
 
