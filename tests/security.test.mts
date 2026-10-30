@@ -99,11 +99,11 @@ test('the github.com entry is scoped to THIS repo, not to the host (JOS-263)', (
   assert.equal(allowedExternalUrl('https://github.com/jmoyers/everquest-companionEVIL'), null)
   // TEST build: the community fork's repo is a second scoped subtree, not a widening.
   assert.equal(
-    allowedExternalUrl('https://github.com/kaltinril/everquest-companion/releases'),
-    'https://github.com/kaltinril/everquest-companion/releases'
+    allowedExternalUrl('https://github.com/cadetmedia/everquest-companion-AI/releases'),
+    'https://github.com/cadetmedia/everquest-companion-AI/releases'
   )
-  assert.equal(allowedExternalUrl('https://github.com/kaltinril'), null)
-  assert.equal(allowedExternalUrl('https://github.com/kaltinril/other'), null)
+  assert.equal(allowedExternalUrl('https://github.com/cadetmedia'), null)
+  assert.equal(allowedExternalUrl('https://github.com/cadetmedia/other'), null)
   // A path that only LOOKS like it is under the prefix: `..` (and its `%2e%2e` spelling) is
   // resolved away by `new URL()` before the check, so both of these arrive as `/other/repo`.
   assert.equal(allowedExternalUrl('https://github.com/jmoyers/everquest-companion/../../other/repo'), null)

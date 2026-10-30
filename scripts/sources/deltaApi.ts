@@ -15,7 +15,7 @@ import {
 import { hostOf, kindOf, recordWikiCall, type WikiCall } from './wikiLedger'
 
 const API = 'https://eqlwiki.com/api.php'
-const UA = 'eqcompanion-delta (+https://github.com/kaltinril/everquest-companion; one serialized req/s)'
+const UA = 'eqcompanion-delta (+https://github.com/cadetmedia/everquest-companion-AI; one serialized req/s)'
 const MAX_RETRIES = 5
 const BATCH = 50
 

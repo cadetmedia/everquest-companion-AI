@@ -20,10 +20,10 @@ import { hostOf, kindOf, recordWikiCall, type WikiCall } from './wikiLedger'
 export const EQL_API = 'https://eqlwiki.com/api.php'
 /** Who is calling and where to reach them: the fork runs these scrapes, so the fork is the contact
  *  (fork-only line, kept here off the upstream PR branch wiki-scraper-fixes). */
-export const USER_AGENT = 'everquest-companion/0.1 (+https://github.com/kaltinril/everquest-companion)'
+export const USER_AGENT = 'everquest-companion/0.1 (+https://github.com/cadetmedia/everquest-companion-AI)'
 /** The fork's address, on every request this process sends (owner, 2026-10-23: "make sure all our api
  *  calls always indicate they are coming from our github project"). */
-export const FORK_URL = 'https://github.com/kaltinril/everquest-companion'
+export const FORK_URL = 'https://github.com/cadetmedia/everquest-companion-AI'
 /** A caller's own User-Agent (scrape-bosses on the P99 wiki), with the fork's address added. */
 export const withForkUrl = (ua: string): string => (ua.includes(FORK_URL) ? ua : `${ua} (+${FORK_URL})`)
 /** The least time between one response and the next request. */

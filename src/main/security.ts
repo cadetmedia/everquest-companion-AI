@@ -80,7 +80,7 @@ export const EXTERNAL_LINK_ALLOWLIST: readonly ExternalLinkRule[] = [
   { host: 'github.com', pathPrefix: '/jmoyers/everquest-companion' },
   // TEST build (this branch only, never a PR): the community fork's own repo, where its releases
   // live, scoped exactly like the original's.
-  { host: 'github.com', pathPrefix: '/kaltinril/everquest-companion' }
+  { host: 'github.com', pathPrefix: '/cadetmedia/everquest-companion-AI' }
 ]
 
 /** Every rule for a host: one host may carry several scoped subtrees (github.com does). */

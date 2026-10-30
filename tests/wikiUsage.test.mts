@@ -32,7 +32,7 @@ test('each request is counted under its feature, with its bytes, and written to 
   const agents = stubFetch(() => new Response(body, { status: 200 }))
   const page = await createWikiClient('mob lookup').fetchPage('A Nektulos spiderling')
   assert.equal(page?.text, '{{Namedmobpage}}')
-  assert.match(agents[0], /github\.com\/kaltinril\/everquest-companion/)
+  assert.match(agents[0], /github\.com\/cadetmedia\/everquest-companion-AI/)
   assert.equal(agents[0], WIKI_UA)
   const lines = readFileSync(file, 'utf8').trim().split('\n').map((l) => JSON.parse(l))
   assert.equal(lines.length, 1)

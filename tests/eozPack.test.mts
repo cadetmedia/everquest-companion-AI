@@ -15,7 +15,7 @@ import { dataUrl, fakePack, makePng, stubGitHub } from './eozPackFixture.mts'
 
 const A = makePng(2, 2, 1)
 const B = makePng(40, 40, 2)
-const UA = 'everquest-companion test (+https://github.com/kaltinril/everquest-companion)'
+const UA = 'everquest-companion test (+https://github.com/cadetmedia/everquest-companion-AI)'
 
 function tempDir(): string {
   return mkdtempSync(join(tmpdir(), 'eqc-eoz-'))

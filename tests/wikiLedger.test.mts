@@ -69,8 +69,8 @@ test('every call names the fork: a caller\'s own User-Agent gains its address', 
   const inits = replies(t, () => new Response('{}', { status: 200 }))
   await wikiGet({ action: 'query', meta: 'siteinfo' }, 'https://wiki.project1999.com/api.php', 'Mozilla/5.0 everquest-companion/0.2 (personal raid tracker)')
   const ua = (inits[0].headers as Record<string, string>)['User-Agent']
-  assert.match(ua, /github\.com\/kaltinril\/everquest-companion/)
-  assert.match(USER_AGENT, /github\.com\/kaltinril\/everquest-companion/)
+  assert.match(ua, /github\.com\/cadetmedia\/everquest-companion-AI/)
+  assert.match(USER_AGENT, /github\.com\/cadetmedia\/everquest-companion-AI/)
   assert.equal(withForkUrl(USER_AGENT), USER_AGENT, 'never added twice')
   assert.equal(kindOf({ action: 'query', meta: 'siteinfo' }), 'query/siteinfo')
 })

@@ -59,13 +59,13 @@ import { WhatsNewDevRow } from './WhatsNewDevRow'
  * URL — and the `github.com` entries on `EXTERNAL_LINK_ALLOWLIST` (src/main/security.ts) are
  * scoped to a repo's subtree (JOS-263), so they open these links and nothing else on the host.
  * Keep each constant inside an allowlisted subtree (`jmoyers/everquest-companion/`, or in a TEST
- * build `kaltinril/everquest-companion/`); anywhere else silently fails to open.
+ * build `cadetmedia/everquest-companion-AI/`); anywhere else silently fails to open.
  *
  * It sits BELOW the scroll box rather than inside it: leaving the app is the last thing on offer
  * here, never the first, and a link that scrolled away with the history would be a door that
  * moves.
  */
-const GITHUB_RELEASES_URL = 'https://github.com/kaltinril/everquest-companion/releases'
+const GITHUB_RELEASES_URL = 'https://github.com/cadetmedia/everquest-companion-AI/releases'
 
 /**
  * TEST build (this branch only, never a PR): the original app's releases, still findable but only

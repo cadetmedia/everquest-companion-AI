@@ -9,7 +9,7 @@
 
 import { appendFileSync, renameSync, statSync } from 'fs'
 
-export const WIKI_UA = 'everquest-companion/0.1 (+https://github.com/kaltinril/everquest-companion)'
+export const WIKI_UA = 'everquest-companion/0.1 (+https://github.com/cadetmedia/everquest-companion-AI)'
 
 /** The ledger's size before it rotates to `<file>.1` (one older copy is kept). */
 const MAX_BYTES = 2 * 1024 * 1024

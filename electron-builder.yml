@@ -191,7 +191,7 @@ npmRebuild: false
 # test.yml whatever the version looks like (test.20 shipped with this same name).
 publish:
   - provider: generic
-    url: https://github.com/kaltinril/everquest-companion/releases/latest/download/
+    url: https://github.com/cadetmedia/everquest-companion-AI/releases/latest/download/
     channel: test
 
 win:

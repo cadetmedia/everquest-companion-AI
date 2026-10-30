@@ -8,7 +8,7 @@
 import { readPackIcons } from '../../src/main/eozIcons'
 import { refreshEozPack } from '../../src/main/eozPack'
 
-const UA = 'everquest-companion fetch-wiki-images (+https://github.com/kaltinril/everquest-companion)'
+const UA = 'everquest-companion fetch-wiki-images (+https://github.com/cadetmedia/everquest-companion-AI)'
 
 export interface PackIconOptions {
   /** The pack's cache (fetch-wiki-images: scripts/sources/cache/eoz, shared with eoz-compare). */

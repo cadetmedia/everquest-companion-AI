@@ -6,7 +6,7 @@
 // entry points are disabled and say where reports go instead, in one sentence shared by all of them.
 
 /** Where the community build takes reports. Plain text: the external-link allowlist is the creator's. */
-export const FORK_ISSUES = 'github.com/kaltinril/everquest-companion/issues'
+export const FORK_ISSUES = 'github.com/cadetmedia/everquest-companion-AI/issues'
 
 /** The note beside every disabled feedback control. */
 export const FORK_FEEDBACK_OFF =

@@ -11,7 +11,7 @@
 # .github/workflows/build.yml, which builds the official app and publishes toward his repo.
 set -euo pipefail
 
-repo_slug=kaltinril/everquest-companion
+repo_slug=cadetmedia/everquest-companion-AI
 repo=$(git rev-parse --show-toplevel)
 cd "$repo"
 

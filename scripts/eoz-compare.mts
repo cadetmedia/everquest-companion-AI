@@ -19,7 +19,7 @@ import { comparePack, packRevisions, releaseDecision, wikiTitle, type CompareRep
 import { readRevIndex, seedRevs, writeRevIndex } from './sources/revIndex'
 import { refreshEozPack, type EozManifest } from '../src/main/eozPack'
 
-const UA = 'everquest-companion eoz-compare (+https://github.com/kaltinril/everquest-companion)'
+const UA = 'everquest-companion eoz-compare (+https://github.com/cadetmedia/everquest-companion-AI)'
 
 interface Args {
   release: boolean
