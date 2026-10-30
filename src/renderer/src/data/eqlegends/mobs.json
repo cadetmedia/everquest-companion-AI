@@ -1,5 +1,5 @@
 {
-  "scrapedAt": "2026-10-30T20:37:39.405Z",
+  "scrapedAt": "2026-10-30T23:41:08.415Z",
   "source": "eqlwiki.com — Category:NPCs/Named Mobs/Merchants/Raid Encounters ∪ embeddedin Template:Namedmobpage/MerchantPage, filtered to pages opening a mob template + recentchanges delta (scripts/scrape-delta.mts)",
   "mobs": [
     {
@@ -88507,8 +88507,7 @@
         }
       ],
       "merchant": true,
-      "image": "npc_bull_crusher.png",
-      "noImage": true
+      "image": "npc_bull_crusher.png"
     },
     {
       "page": "Bulsgor",
