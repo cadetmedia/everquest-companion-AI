@@ -12,6 +12,7 @@ import { knowledgeBridge } from './knowledge'
 import { mapsBridge } from './maps'
 // The log-stream pushes — line / character rebuild / quiet-switch offer (preload/logStream.ts).
 import { logStreamBridge } from './logStream'
+import { aiBridge } from './ai'
 import type {
   AlertDef,
   AlertPrefs,
@@ -321,7 +322,6 @@ const api = {
   ...engineBridge,
   // …and the two what's-new methods (./releaseNotes.ts), for the same file-size reason.
   ...releaseNotesBridge,
-
   /**
    * Is this the headless integration-test channel (`EQ_E2E=1`, src/main/e2e.ts)?
    *
@@ -335,6 +335,7 @@ const api = {
    */
   isE2E: process.env.EQ_E2E === '1',
 
+  ...aiBridge,
   getCharacter: (): Promise<CharacterRef | null> => ipcRenderer.invoke(IPC.getCharacter),
   listCharacters: (): Promise<CharacterRef[]> => ipcRenderer.invoke(IPC.listCharacters),
   setCharacter: (logPath: string): Promise<SetCharacterResult> =>

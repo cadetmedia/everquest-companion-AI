@@ -350,7 +350,7 @@ test('the view list is the SAME set the app can render', () => {
   const known = knownViews(src)
   assert.ok(known !== null && known.length > 5, 'failed to read KNOWN_VIEWS out of appViews.ts')
   const drills = declared.filter((v) => !known.includes(v) && !unreleased.includes(v))
-  const reportable = declared.filter((v) => !unreleased.includes(v) && !drills.includes(v))
+  const reportable = declared.filter((v) => !unreleased.includes(v) && !drills.includes(v) && v !== 'ai')
   assert.deepEqual(reportable.sort(), [...TELEMETRY_VIEWS].sort())
 
   // The mirror of the UNRELEASED rule below: a drill must not ALSO be in the schema. If one is

@@ -72,8 +72,8 @@ git rev-parse -q --verify "$notes_ref" >/dev/null || notes_ref=origin/main_commu
 notes_commit=$(git log --format=%H --grep="^Test build $version:" -1 "$notes_ref")
 [ -n "$notes_commit" ] || fail "no 'Test build $version:' commit on main_community"
 # Each release lists only what changed since the one before. The cumulative list lives once, on
-# test.20 (the first release), and every later release links to it below.
-first_tag=community-0.1.0-test.20
+# this fork's first release (test.39, EQ Legends Companion AI), and every later release links to it.
+first_tag=community-0.1.0-test.39
 if [ "$tag" != "$first_tag" ] && git log -1 --format=%b "$notes_commit" | grep -q '^WHAT THIS BUILD ADDS'; then
   fail "the $version notes repeat the cumulative WHAT THIS BUILD ADDS list; keep only what changed since the previous version (it is on $first_tag)"
 fi
@@ -93,16 +93,16 @@ notes=$(mktemp)
 trap 'rm -f "$notes"' EXIT
 {
   cat <<EOF
-**EQ Legends Companion AI $version**, a community build of [EQ Legends Companion](https://github.com/jmoyers/everquest-companion) with the fork's changes on top.
+**EQ Legends Companion AI $version**: [EQ Legends Companion](https://github.com/jmoyers/everquest-companion) by Josh Moyers, with the [community edition](https://github.com/kaltinril/everquest-companion)'s changes and an AI assistant on top.
 
-**To install:** download \`$exe\` below and run it. The installer is not code-signed, so Windows shows "Windows protected your PC" the first time: click **More info**, then **Run anyway**. It installs beside the official app, not over it, and keeps its own settings.
+**To install:** download \`$exe\` below and run it. The installer is not code-signed, so Windows shows "Windows protected your PC" the first time: click **More info**, then **Run anyway**. It installs beside the official app and the community TEST build, not over either, and keeps its own settings.
 
 **Updates come from this page.** Once installed, the app checks this page every few hours, downloads a newer build quietly, and applies it when you close the app. It never installs the official app over itself, and the official app never replaces it.
 
 \`SHA256SUMS.txt\` holds the installer's checksum, to compare with \`Get-FileHash $exe\`.
 
 EOF
-  [ "$tag" = "$first_tag" ] || echo "Below is what changed since the previous build. Everything this build adds to the official app is listed on [TEST 0.1.0-test.20](https://github.com/$repo_slug/releases/tag/$first_tag), the first release."
+  [ "$tag" = "$first_tag" ] || echo "Below is what changed since the previous build. Everything this build adds to the official app is listed on [0.1.0-test.39](https://github.com/$repo_slug/releases/tag/$first_tag), the first release."
   printf '\n---\n\n'
   git log -1 --format=%b "$notes_commit"
 } >"$notes"

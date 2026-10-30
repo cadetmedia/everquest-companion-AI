@@ -1526,7 +1526,6 @@ export type LogEvent =
   | ItemMergeEvent
   | ItemMergeFailedEvent
   | ConsiderEvent
-  | PoisonProcEvent
-  | PoisonCoatEvent
-  | PoisonDryEvent
+  | PoisonProcEvent | PoisonCoatEvent | PoisonDryEvent
   | UnknownEvent
+
