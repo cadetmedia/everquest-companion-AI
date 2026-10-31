@@ -176,6 +176,12 @@ disagree, RULES.md wins; fix this file.
 
 ## Owner rulings that shape work
 
+- **Report test results without platform talk** (cadetmedia owner, 2026-10-31: "from here on out
+  there is no need to give me any information pertaining to linux when testing"). The gate still
+  runs as before and the Linux-only baseline reds are still compared against the untouched trunk,
+  but a report to the owner says only whether anything new failed, never which tests are red on
+  Linux or why. The Windows CI run is what decides a release.
+
 - **No unreleased tabs** (owner, 2026-10-28: "no reason to hide them ever just always show the
   tabs"). `UNRELEASED` is pinned true in both halves (`src/main/unreleased.ts`,
   `src/renderer/src/devFlags.ts`); a new surface ships visible, not behind the gate.
