@@ -57,8 +57,10 @@ build quietly, and applies it when you close the app.
    spellbook, type `/outputfile inventory` or `/outputfile spellbook` in game first.
 
    **Where answers come from, in order:**
-   1. **The app's own data and your log**, on your PC: its copy of the EverQuest Legends wiki and the
-      community [EverQuest Legends Compendium](https://docs.google.com/spreadsheets/d/e/2PACX-1vRi6Kj604QLMm7kkkjdZSqtogtMtNgq3n9qqc2kaUS_s4LJcMoHbdTl3ph5T93_qs6awfZD0E2I5KeO/pubhtml)
+   1. **The app's own data and your log**, on your PC, searched by the app itself first: a question
+      that names an item, mob or spell, or that the Compendium answers, is answered at once with no AI
+      call (press **Ask AI** for a written answer). Everything else goes to the AI, which searches the
+      app's copy of the EverQuest Legends wiki and the community [EverQuest Legends Compendium](https://docs.google.com/spreadsheets/d/e/2PACX-1vRi6Kj604QLMm7kkkjdZSqtogtMtNgq3n9qqc2kaUS_s4LJcMoHbdTl3ph5T93_qs6awfZD0E2I5KeO/pubhtml)
       guide by brutallstatic (credited and linked on every answer that uses it). Most questions stop here.
    2. If that has nothing: a web search of **your trusted sources** only (eqlwiki.com, the official
       site, r/EQLegends and the others in Preferences, which you can edit).

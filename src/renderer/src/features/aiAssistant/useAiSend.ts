@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { AI_HISTORY_CAP, type AiChatTurn } from '@shared/aiChat'
 import type { AiChatPhase } from '@shared/aiSlash'
+import { shownPrompt, type AiFollowScope, type AiScope } from '@shared/aiSources'
 import { eqOnAiChunk } from './aiEq'
 import type { ChatMessage } from './chatTypes'
 import { applyStreamChunk, failPendingAi, finishAi } from './streamApply'
@@ -12,6 +13,10 @@ function historyFrom(messages: ChatMessage[]): AiChatTurn[] {
     .map((m) => ({ role: m.role === 'ai' ? 'assistant' : 'user', text: m.text }))
 }
 
+function clearOffers<T extends { widenPrompt?: string; askAiPrompt?: string }>(m: T): T {
+  return m.widenPrompt || m.askAiPrompt ? { ...m, widenPrompt: undefined, askAiPrompt: undefined } : m
+}
+
 function errText(err: unknown): string {
   return err instanceof Error ? err.message : String(err)
 }
@@ -19,7 +24,7 @@ function errText(err: unknown): string {
 export function useAiSend(
   messages: ChatMessage[],
   setMessages: (fn: (prev: ChatMessage[]) => ChatMessage[]) => void
-): { loading: boolean; send: (text: string, image?: string) => void; widen: (prompt: string) => void; phase: AiChatPhase } {
+): { loading: boolean; send: (text: string, image?: string) => void; widen: (prompt: string, scope: AiFollowScope) => void; phase: AiChatPhase } {
   const [loading, setLoading] = useState(false)
   const [phase, setPhase] = useState<AiChatPhase>('idle')
   const requestIdRef = useRef<string | null>(null)
@@ -45,15 +50,15 @@ export function useAiSend(
     }
   }, [setMessages])
 
-  const run = (text: string, image?: string, scope: 'auto' | 'web' = 'auto'): void => {
+  const run = (text: string, image?: string, scope: AiScope = 'auto'): void => {
     const prompt = text.trim()
     if (!prompt || loading) return
     const history = historyFrom(messagesRef.current)
     requestIdRef.current = null
     // The picture goes to the model with this question only; the thread keeps a marker.
-    const shown = scope === 'web' ? `🌐 Search other sources: ${prompt}` : image ? `📷 ${prompt}` : prompt
-    // Whatever the answer, an earlier "Search other sources?" offer has been answered now.
-    setMessages((prev) => [...prev.map((m) => (m.widenPrompt ? { ...m, widenPrompt: undefined } : m)), { role: 'user', text: shown }, { role: 'ai', text: '', pending: true }])
+    const shown = shownPrompt(prompt, image, scope)
+    // Whatever the answer, an earlier "Search other sources?" or "Ask AI" offer has been answered now.
+    setMessages((prev) => [...prev.map(clearOffers), { role: 'user', text: shown }, { role: 'ai', text: '', pending: true }])
     setLoading(true)
     setPhase('sent')
     queueMicrotask(() => {
@@ -76,7 +81,7 @@ export function useAiSend(
   }
 
   const send = (text: string, image?: string): void => run(text, image)
-  /** The player's yes to "Search other sources?": the same question, the open web this time. */
-  const widen = (prompt: string): void => run(prompt, undefined, 'web')
+  /** "Ask AI" or "Search other sources": the same question, one step further this time. */
+  const widen = (prompt: string, scope: AiFollowScope): void => run(prompt, undefined, scope)
   return { loading, send, widen, phase }
 }

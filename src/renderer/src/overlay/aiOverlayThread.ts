@@ -11,6 +11,7 @@ import {
   type AiStreamChunk
 } from '@shared/aiChat'
 import type { AiChatPhase } from '@shared/aiSlash'
+import { shownPrompt, type AiScope } from '@shared/aiSources'
 
 export function lastAiAnswer(messages: readonly AiStoredMessage[]): string | undefined {
   for (let i = messages.length - 1; i >= 0; i--) {
@@ -102,6 +103,7 @@ function aiRow(result: AiPromptResult, prompt: string): AiStoredMessage {
   if (result.source) row.source = result.source
   if (result.citations?.length) row.citations = result.citations
   if (result.askToWiden) row.widenPrompt = prompt
+  if (result.offerAi) row.askAiPrompt = prompt
   return row
 }
 
@@ -114,12 +116,12 @@ export async function runSend(
     streamBase: { current: AiStoredMessage[] | null }
     onFail: () => void
   },
-  opts: { image?: string; scope?: 'auto' | 'web' } = {}
+  opts: { image?: string; scope?: AiScope } = {}
 ): Promise<void> {
   const { image, scope = 'auto' } = opts
-  const shown = scope === 'web' ? `🌐 Search other sources: ${prompt}` : image ? `📷 ${prompt}` : prompt
-  // Any earlier "Search other sources?" offer is answered by this send.
-  const answered = prior.map((m) => (m.widenPrompt ? { ...m, widenPrompt: undefined } : m))
+  const shown = shownPrompt(prompt, image, scope)
+  // Any earlier "Search other sources?" or "Ask AI" offer is answered by this send.
+  const answered = prior.map((m) => (m.widenPrompt || m.askAiPrompt ? { ...m, widenPrompt: undefined, askAiPrompt: undefined } : m))
   const withUser: AiStoredMessage[] = [...answered, { role: 'user', text: shown }]
   ctl.streamBase.current = withUser
   ctl.commit(withUser)

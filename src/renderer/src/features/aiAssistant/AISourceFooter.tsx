@@ -2,10 +2,11 @@
 // tagged by the app against the player's lists, and the "Search other sources?" choice.
 import { type JSX } from 'react'
 import { Box, Button, Chip, Stack, Typography } from '@mui/material'
-import type { AiAnswerSource, AiCitation, AiCitationTier } from '@shared/aiSources'
+import type { AiAnswerSource, AiCitation, AiCitationTier, AiFollowScope } from '@shared/aiSources'
 import type { ChatMessage } from './chatTypes'
 
 const SOURCE_LINE: Record<AiAnswerSource, string> = {
+  instant: "Found in the app's own data - no AI used",
   local: "From the app's wiki data, the Compendium and your log",
   trusted: 'From your trusted sources',
   web: 'From other sources - may not match EverQuest Legends',
@@ -42,11 +43,49 @@ function Citations({ list }: { list: readonly AiCitation[] }): JSX.Element {
   )
 }
 
-export function AISourceFooter({ msg, disabled, onWiden }: { msg: ChatMessage; disabled: boolean; onWiden: (prompt: string) => void }): JSX.Element | null {
+/** The one follow-up an answer offers: "Ask AI" after an instant answer, or "Search other sources". */
+function followUp(msg: ChatMessage): { prompt: string; scope: AiFollowScope; label: string } | null {
+  if (msg.askAiPrompt) return { prompt: msg.askAiPrompt, scope: 'ai', label: 'Ask AI' }
+  if (msg.widenPrompt) return { prompt: msg.widenPrompt, scope: 'web', label: 'Search other sources' }
+  return null
+}
+
+function FollowUpButton({
+  next,
+  disabled,
+  onWiden
+}: {
+  next: { prompt: string; scope: AiFollowScope; label: string }
+  disabled: boolean
+  onWiden: (prompt: string, scope: AiFollowScope) => void
+}): JSX.Element {
+  return (
+    <Button
+      size="small"
+      variant="outlined"
+      sx={{ mt: 1 }}
+      disabled={disabled}
+      onClick={() => onWiden(next.prompt, next.scope)}
+      data-testid={next.scope === 'ai' ? 'ai-ask-ai-button' : 'ai-widen-button'}
+    >
+      {next.label}
+    </Button>
+  )
+}
+
+export function AISourceFooter({
+  msg,
+  disabled,
+  onWiden
+}: {
+  msg: ChatMessage
+  disabled: boolean
+  onWiden: (prompt: string, scope: AiFollowScope) => void
+}): JSX.Element | null {
   if (msg.role !== 'ai' || msg.pending) return null
   const line = msg.source ? SOURCE_LINE[msg.source] : ''
-  const widen = msg.widenPrompt
-  if (!line && !msg.citations?.length && !widen) return null
+  const next = followUp(msg)
+  if (!line && !msg.citations?.length && !next) return null
   return (
     <Box sx={{ mt: 1 }} data-testid="ai-source-footer">
       {line ? (
@@ -55,11 +94,7 @@ export function AISourceFooter({ msg, disabled, onWiden }: { msg: ChatMessage; d
         </Typography>
       ) : null}
       {msg.citations?.length ? <Citations list={msg.citations} /> : null}
-      {widen ? (
-        <Button size="small" variant="outlined" sx={{ mt: 1 }} disabled={disabled} onClick={() => onWiden(widen)} data-testid="ai-widen-button">
-          Search other sources
-        </Button>
-      ) : null}
+      {next ? <FollowUpButton next={next} disabled={disabled} onWiden={onWiden} /> : null}
     </Box>
   )
 }

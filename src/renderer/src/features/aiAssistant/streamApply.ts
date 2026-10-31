@@ -65,8 +65,13 @@ export function applyStreamChunk(
 }
 
 /** The source fields a result puts on its bubble; `prompt` is what "Search other sources" re-asks. */
-function sourceFields(result: AiPromptResult, prompt?: string): Pick<ChatMessage, 'source' | 'citations' | 'widenPrompt'> {
-  return { source: result.source, citations: result.citations, widenPrompt: result.askToWiden ? prompt : undefined }
+function sourceFields(result: AiPromptResult, prompt?: string): Pick<ChatMessage, 'source' | 'citations' | 'widenPrompt' | 'askAiPrompt'> {
+  return {
+    source: result.source,
+    citations: result.citations,
+    widenPrompt: result.askToWiden ? prompt : undefined,
+    askAiPrompt: result.offerAi ? prompt : undefined
+  }
 }
 
 export function finishAi(messages: ChatMessage[], result: AiPromptResult, prompt?: string): ChatMessage[] {

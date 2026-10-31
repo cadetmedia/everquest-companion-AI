@@ -44,6 +44,8 @@ export interface AiPromptResult {
   citations?: AiCitation[]
   /** Nothing in the app's data or the trusted sources: offer "Search other sources?". */
   askToWiden?: boolean
+  /** The app answered from its own data with no AI call: offer "Ask AI" for a written answer. */
+  offerAi?: boolean
 }
 
 export interface AiMentions {
@@ -120,6 +122,8 @@ export interface AiStoredMessage {
   citations?: AiCitation[]
   /** The question to re-ask with other sources, when the player has not decided yet. */
   widenPrompt?: string
+  /** The question to put to the AI after an instant local answer, until the player decides. */
+  askAiPrompt?: string
 }
 
 export interface AiFollowUp {
@@ -178,7 +182,7 @@ function parseStoredDrafts(raw: unknown): AlertDef[] | undefined {
 
 function parseStoredRow(row: unknown): AiStoredMessage | null {
   if (!row || typeof row !== 'object') return null
-  const rec = row as { role?: unknown; text?: unknown; drafts?: unknown; mentions?: unknown; source?: unknown; citations?: unknown; widenPrompt?: unknown }
+  const rec = row as { role?: unknown; text?: unknown; drafts?: unknown; mentions?: unknown; source?: unknown; citations?: unknown; widenPrompt?: unknown; askAiPrompt?: unknown }
   if (rec.role !== 'user' && rec.role !== 'ai') return null
   if (typeof rec.text !== 'string') return null
   const msg: AiStoredMessage = { role: rec.role, text: rec.text, ...parseSourceFields(rec) }
@@ -212,6 +216,7 @@ function storedRow(m: AiStoredMessage): AiStoredMessage {
   if (m.source) row.source = m.source
   if (m.citations && m.citations.length > 0) row.citations = m.citations
   if (m.widenPrompt) row.widenPrompt = m.widenPrompt
+  if (m.askAiPrompt) row.askAiPrompt = m.askAiPrompt
   return row
 }
 

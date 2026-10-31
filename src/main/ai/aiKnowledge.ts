@@ -203,3 +203,14 @@ export function mobsInZone(zone: string): CompactMob[] {
   }
   return hits
 }
+
+export type EntityKind = 'item' | 'mob' | 'spell'
+
+/** Every item, mob and spell name the local data knows, for spotting one inside a question. */
+export function entityNames(): { kind: EntityKind; name: string }[] {
+  return [
+    ...itemRows.map((r) => ({ kind: 'item' as const, name: r.name })),
+    ...mobRows.map((r) => ({ kind: 'mob' as const, name: r.name })),
+    ...spellRows().map((r) => ({ kind: 'spell' as const, name: r.name }))
+  ]
+}

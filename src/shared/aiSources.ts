@@ -9,7 +9,21 @@
 // Citations are classified HERE, by the app, against the player's lists, so "trusted" is a fact the
 // app checked, not a claim the model made (EQAI's rule). Pure: shared by main, the renderer, tests.
 
-export type AiAnswerSource = 'local' | 'trusted' | 'web' | 'none'
+/** How a question is sent: `auto` the app's own lookup, then the AI's source order; `ai` straight
+ *  to the AI (the player's "Ask AI" after an instant answer); `web` the player's yes to other sources. */
+export type AiScope = 'auto' | 'ai' | 'web'
+/** The two follow-up buttons under an answer: "Ask AI" and "Search other sources". */
+export type AiFollowScope = Exclude<AiScope, 'auto'>
+
+/** What the thread shows for the player's question: a follow-up says which button was pressed. */
+export function shownPrompt(prompt: string, image: string | undefined, scope: AiScope): string {
+  if (scope === 'web') return `🌐 Search other sources: ${prompt}`
+  if (scope === 'ai') return `🤖 Ask AI: ${prompt}`
+  return image ? `📷 ${prompt}` : prompt
+}
+
+/** `instant`: the app's own lookup answered with no AI call (main/ai/aiLocalFirst.ts). */
+export type AiAnswerSource = 'instant' | 'local' | 'trusted' | 'web' | 'none'
 export type AiCitationTier = 'trusted' | 'close' | 'outside'
 
 export interface AiCitation {
@@ -137,13 +151,14 @@ export class SentinelGate {
 }
 
 /** The source fields of a stored chat row, validated: localStorage is read back as untrusted. */
-export function parseSourceFields(raw: { source?: unknown; citations?: unknown; widenPrompt?: unknown }): {
+export function parseSourceFields(raw: { source?: unknown; citations?: unknown; widenPrompt?: unknown; askAiPrompt?: unknown }): {
   source?: AiAnswerSource
   citations?: AiCitation[]
   widenPrompt?: string
+  askAiPrompt?: string
 } {
-  const out: { source?: AiAnswerSource; citations?: AiCitation[]; widenPrompt?: string } = {}
-  if (raw.source === 'local' || raw.source === 'trusted' || raw.source === 'web' || raw.source === 'none') out.source = raw.source
+  const out: { source?: AiAnswerSource; citations?: AiCitation[]; widenPrompt?: string; askAiPrompt?: string } = {}
+  if (raw.source === 'instant' || raw.source === 'local' || raw.source === 'trusted' || raw.source === 'web' || raw.source === 'none') out.source = raw.source
   if (Array.isArray(raw.citations)) {
     const list = raw.citations.flatMap((c: unknown): AiCitation[] => {
       if (!c || typeof c !== 'object') return []
@@ -155,5 +170,6 @@ export function parseSourceFields(raw: { source?: unknown; citations?: unknown; 
     if (list.length > 0) out.citations = list.slice(0, 12)
   }
   if (typeof raw.widenPrompt === 'string' && raw.widenPrompt.trim()) out.widenPrompt = raw.widenPrompt
+  if (typeof raw.askAiPrompt === 'string' && raw.askAiPrompt.trim()) out.askAiPrompt = raw.askAiPrompt
   return out
 }

@@ -20,6 +20,7 @@ import type { OverlayBgAlphaPrefs } from '../shared/overlayBgAlpha'
 import type { ScopeSelection } from '../shared/scopeSelection'
 import type { BuffAllowPrefs } from '../shared/buffAllow'
 import type { ToastPayload } from '../shared/toast'
+import type { AiScope } from '../shared/aiSources'
 import type { AlertBannerPayload } from '../shared/alertBanner'
 import type { ConCardPayload } from '../shared/conCard'
 import type { AiChatTurn, AiConfigView, AiLiveStatus, AiPromptResult, AiStreamChunk, AiUsageSnap } from '../shared/aiChat'
@@ -437,7 +438,7 @@ const overlayApi = {
   // ---- AI overlay (kind 'ai') — the main window's AI bridge is `window.eq`, which this
   // bundle does not get. Same channels, same names, so one send path cannot drift.
   /** `scope: 'web'` is the player's yes to "Search other sources?" (shared/aiSources.ts). */
-  sendAiPrompt: (prompt: string, history: AiChatTurn[], image?: string, scope?: 'auto' | 'web'): Promise<AiPromptResult> =>
+  sendAiPrompt: (prompt: string, history: AiChatTurn[], image?: string, scope?: AiScope): Promise<AiPromptResult> =>
     ipcRenderer.invoke(IPC.aiSendPrompt, prompt, history, image, scope),
   /** Open a citation the assistant returned; main opens only URLs it handed out. */
   openAiCitation: (url: string): void => ipcRenderer.send(IPC.aiOpenCitation, url),

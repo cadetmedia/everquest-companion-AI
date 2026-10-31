@@ -15,4 +15,6 @@ export interface ChatMessage {
   source?: AiAnswerSource
   citations?: AiCitation[]
   widenPrompt?: string
+  /** After an instant answer from the app's own data: the question "Ask AI" sends on. */
+  askAiPrompt?: string
 }

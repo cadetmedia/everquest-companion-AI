@@ -2,9 +2,10 @@
 // the pages it used, and the "Search other sources?" choice. MUI-free, like the rest of the overlay.
 import { type CSSProperties, type JSX } from 'react'
 import type { AiStoredMessage } from '@shared/aiChat'
-import type { AiAnswerSource, AiCitationTier } from '@shared/aiSources'
+import type { AiAnswerSource, AiCitationTier, AiFollowScope } from '@shared/aiSources'
 
 const LINE: Record<AiAnswerSource, string> = {
+  instant: "Found in the app's own data - no AI used",
   local: "From the app's wiki data, the Compendium and your log",
   trusted: 'From your trusted sources',
   web: 'From other sources - may not match EverQuest Legends',
@@ -17,11 +18,27 @@ const TIER: Record<AiCitationTier, { label: string; color: string }> = {
 }
 const SMALL: CSSProperties = { fontSize: 10, color: 'rgba(255,255,255,0.55)' }
 
-export function AiOverlaySources({ row, busy, onWiden, noDrag }: { row: AiStoredMessage | undefined; busy: boolean; onWiden: (prompt: string) => void; noDrag: CSSProperties }): JSX.Element | null {
+function followUp(row: AiStoredMessage): { prompt: string; scope: AiFollowScope; label: string } | null {
+  if (row.askAiPrompt) return { prompt: row.askAiPrompt, scope: 'ai', label: 'Ask AI' }
+  if (row.widenPrompt) return { prompt: row.widenPrompt, scope: 'web', label: 'Search other sources' }
+  return null
+}
+
+export function AiOverlaySources({
+  row,
+  busy,
+  onWiden,
+  noDrag
+}: {
+  row: AiStoredMessage | undefined
+  busy: boolean
+  onWiden: (prompt: string, scope: AiFollowScope) => void
+  noDrag: CSSProperties
+}): JSX.Element | null {
   if (!row) return null
   const line = row.source ? LINE[row.source] : ''
-  const widen = row.widenPrompt
-  if (!line && !row.citations?.length && !widen) return null
+  const next = followUp(row)
+  if (!line && !row.citations?.length && !next) return null
   return (
     <div data-testid="ai-overlay-sources" style={{ ...noDrag, padding: '4px 2px 0' }}>
       {line ? <div style={SMALL}>{line}</div> : null}
@@ -40,15 +57,15 @@ export function AiOverlaySources({ row, busy, onWiden, noDrag }: { row: AiStored
           </a>
         </div>
       ))}
-      {widen ? (
+      {next ? (
         <button
           type="button"
-          data-testid="ai-overlay-widen"
+          data-testid={next.scope === 'ai' ? 'ai-overlay-ask-ai' : 'ai-overlay-widen'}
           disabled={busy}
-          onClick={() => onWiden(widen)}
+          onClick={() => onWiden(next.prompt, next.scope)}
           style={{ marginTop: 4, background: 'rgba(217,178,95,0.18)', color: '#d9b25f', border: '1px solid rgba(217,178,95,0.4)', borderRadius: 4, padding: '3px 8px', fontSize: 11, cursor: busy ? 'default' : 'pointer' }}
         >
-          Search other sources
+          {next.label}
         </button>
       ) : null}
     </div>

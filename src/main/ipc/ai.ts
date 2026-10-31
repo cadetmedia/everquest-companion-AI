@@ -17,6 +17,7 @@ import { EQL_LORE } from '../data/eqlLore'
 import { getAiClient, listAiModels, type AiClient } from '../ai/AIClientFactory'
 import { aiConfigView, aiKey, aiModel, aiProvider, aiSourceLists, saveAiConfig } from '../ai/aiConfigStore'
 import { answerQuestion } from '../ai/aiAnswer'
+import { localFirstAnswer } from '../ai/aiLocalFirst'
 import type { AiCitation } from '../../shared/aiSources'
 import { refreshAiHotkey, registerAiCaptureIpc } from '../ai/aiCapture'
 import { buildAiRecap, getLiveStatus } from '../ai/aiPlayerState'
@@ -168,15 +169,34 @@ async function slashAnswer(cmd: string, provider: AiProvider, client: AiClient):
   return { text: usd == null ? `${AI_PROVIDER_INFO[provider].label} does not report spend here; check its own console.` : `**API usage on this key:** $${usd.toFixed(4)}`, drafts: [] }
 }
 
+/** The slash commands answered with fixed text, before anything else. */
+function fixedReply(cmd: string): AiPromptResult | null {
+  if (cmd === '/help') return { text: aiHelpText(), drafts: [] }
+  if (cmd === '/proactive' || cmd === '/proactive on' || cmd === '/proactive off') return { text: AI_PROACTIVE_PARKED, drafts: [] }
+  return null
+}
+
+/** Local first: the app's own lookup, with no model call and no key needed; null goes to the AI. */
+function quickAnswer(text: string, imageRaw: unknown, scopeRaw: unknown, emit: (c: Omit<AiStreamChunk, 'requestId'>) => void): AiPromptResult | null {
+  if (scopeRaw === 'ai' || scopeRaw === 'web' || parseImage(imageRaw)) return null
+  const quick = localFirstAnswer(text)
+  if (!quick) return null
+  rememberCitations(quick.citations)
+  emit({ kind: 'done', text: quick.text, drafts: quick.drafts })
+  return quick
+}
+
 /** Arguments as the preload sends them: prompt, history, then an optional image and scope. */
 async function handleSendPrompt(event: IpcMainInvokeEvent, ...args: unknown[]): Promise<AiPromptResult> {
   const [prompt, historyRaw, imageRaw, scopeRaw] = args
   const text = typeof prompt === 'string' ? prompt : ''
   const cmd = text.trim().toLowerCase()
-  if (cmd === '/help') return { text: aiHelpText(), drafts: [] }
-  if (cmd === '/proactive' || cmd === '/proactive on' || cmd === '/proactive off') {
-    return { text: AI_PROACTIVE_PARKED, drafts: [] }
-  }
+  const fixed = fixedReply(cmd)
+  if (fixed) return fixed
+  const requestId = randomUUID()
+  const emit = (chunk: Omit<AiStreamChunk, 'requestId'>): void => emitAiChunk(event.sender, requestId, chunk)
+  const quick = quickAnswer(text, imageRaw, scopeRaw, emit)
+  if (quick) return quick
   const config = settingsStore.get('aiConfig')
   const provider = aiProvider(config)
   const apiKey = aiKey(provider, config)
@@ -187,8 +207,6 @@ async function handleSendPrompt(event: IpcMainInvokeEvent, ...args: unknown[]): 
   const model = aiModel(provider, config)
   const slash = await slashAnswer(cmd, provider, client)
   if (slash) return slash
-  const requestId = randomUUID()
-  const emit = (chunk: Omit<AiStreamChunk, 'requestId'>): void => emitAiChunk(event.sender, requestId, chunk)
   try {
     const result = await answerQuestion({
       provider,

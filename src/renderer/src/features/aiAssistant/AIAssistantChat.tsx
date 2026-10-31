@@ -14,6 +14,7 @@ import type { ChatMessage } from './chatTypes'
 import { followUpsFor } from './followUps'
 import { starterChipsFor } from './starterChips'
 import { AISourceFooter } from './AISourceFooter'
+import type { AiFollowScope } from '@shared/aiSources'
 
 export type { ChatMessage }
 
@@ -74,7 +75,7 @@ function Bubble(props: {
   onOpenMob: (t: MobTarget) => void
   onOpenAlerts: () => void
   onDraftResolved: (id: string) => void
-  onWiden: (prompt: string) => void
+  onWiden: (prompt: string, scope: AiFollowScope) => void
   busy: boolean
 }): JSX.Element {
   const { msg } = props
@@ -184,7 +185,7 @@ export function ChatColumn(props: {
   onOpenAlerts: () => void
   onDropDraft: (msgIndex: number, draftId: string) => void
   /** The player's yes to "Search other sources?" (cadetmedia fork). */
-  onWiden: (prompt: string) => void
+  onWiden: (prompt: string, scope: AiFollowScope) => void
   usage: AiUsageSnap
   needsKey: boolean
   /** The chosen provider takes pictures (OpenRouter's models vary, so its camera is off). */

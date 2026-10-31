@@ -11,10 +11,11 @@ import type {
 } from '../shared/aiChat'
 import type { AlertDef } from '../shared/alertTypes'
 import type { AiProvider } from '../shared/aiProviders'
+import type { AiScope } from '../shared/aiSources'
 
 export const aiBridge = {
   /** `scope: 'web'` is the player's yes to "Search other sources?" (shared/aiSources.ts). */
-  sendAiPrompt: (prompt: string, history: AiChatTurn[], image?: string, scope?: 'auto' | 'web'): Promise<AiPromptResult> =>
+  sendAiPrompt: (prompt: string, history: AiChatTurn[], image?: string, scope?: AiScope): Promise<AiPromptResult> =>
     ipcRenderer.invoke(IPC.aiSendPrompt, prompt, history, image, scope),
   /** Open a citation the assistant returned; main opens only URLs it handed out. */
   openAiCitation: (url: string): void => ipcRenderer.send(IPC.aiOpenCitation, url),

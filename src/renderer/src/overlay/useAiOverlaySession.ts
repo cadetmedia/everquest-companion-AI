@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { AiStoredMessage, AiUsageSnap } from '@shared/aiChat'
 import type { AiChatPhase } from '@shared/aiSlash'
+import type { AiFollowScope, AiScope } from '@shared/aiSources'
 import {
   foldAiPhase,
   foldToolHint,
@@ -51,7 +52,7 @@ export function useAiOverlaySession(): {
   capture: () => void
   /** The newest answer row when nothing is streaming, for its sources and the widen offer. */
   last: AiStoredMessage | undefined
-  widen: (prompt: string) => void
+  widen: (prompt: string, scope: AiFollowScope) => void
 } {
   const [messages, commit] = useSharedThread()
   const [input, setInput] = useState('')
@@ -105,7 +106,7 @@ export function useAiOverlaySession(): {
     })
   }, [])
 
-  const ask = (prompt: string, pic: string | undefined, scope: 'auto' | 'web'): void => {
+  const ask = (prompt: string, pic: string | undefined, scope: AiScope): void => {
     setDraft('')
     draftRef.current = ''
     setToolHint(null)
@@ -135,8 +136,8 @@ export function useAiOverlaySession(): {
     setInput('')
     ask(prompt, pic, 'auto')
   }
-  const widen = (prompt: string): void => {
-    if (!inFlight.current) ask(prompt, undefined, 'web')
+  const widen = (prompt: string, scope: AiFollowScope): void => {
+    if (!inFlight.current) ask(prompt, undefined, scope)
   }
 
   const shown = draft !== null && draft !== '' ? draft : lastAiAnswer(messages)
