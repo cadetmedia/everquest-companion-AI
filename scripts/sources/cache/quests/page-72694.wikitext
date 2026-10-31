@@ -38,7 +38,7 @@
 * Tell [[Rylin Coil]] in [[Ak'Anon]], at (1469, -190), '''"Ozval sent me"''' to receive the [[Exquisite Gem Setter]]. Put it in your bags before leaving.
 * Give the sapphire and gem setter to [[Retainer Ozval]].
 * Hail the [[High Priestess of Ulkorruuk]] on the second floor of the normal, non-instanced [[Plane of Hate]], at (-90, 287, 127), and say '''"swear"'''. Do not hide or sneak; put the [[Blessing of the Betrayer]] in your bags.
-* Deliver the blessing to [[Retainer Ozval]], then follow the path north and click the gates to enter [[Nektropos Castle]].
+* Deliver the blessing (At level 46 or higher) to [[Retainer Ozval]], then follow the path north and click the gates to enter [[Nektropos Castle]].
 {{End}}
 
 = Walkthrough =
@@ -112,6 +112,7 @@ After the final turn-in, follow the path north from [[Retainer Ozval]] and click
 
 * The ring-mob instance suggestion applies to [[Lake Nerius]] only. The [[High Priestess of Ulkorruuk]] blessing must be obtained in the normal, non-instanced [[Plane of Hate]].
 * Coordinates above retain both the documented underwater ring spawn and the reported nearby approach waypoint; click a coordinate to copy a '''/way''' command.
+* Make sure you are not under level 46 (Switching to Half Dark Elf for origin for example) when doing the final hand-in. It will take the item and say that you are too low to complete.
 
 = Related Quests =
 
