@@ -4,9 +4,12 @@
 import type { AlertDef } from './alertTypes'
 import type { OutputKindId } from './outputs/kinds'
 import type { AiProvider } from './aiProviders'
+import { parseSourceFields, type AiAnswerSource, type AiCitation } from './aiSources'
 
 /** One-word live hint. Never a generic "looking it up." */
 const TOOL_HINT: Record<string, string> = {
+  web_trusted: 'your trusted sources',
+  web_open: 'other sources',
   search_items: 'items',
   search_spells: 'spells',
   search_mobs: 'mobs',
@@ -34,6 +37,12 @@ export interface AiPromptResult {
   text: string
   drafts: AlertDef[]
   mentions?: AiMentions
+  /** cadetmedia fork: which step of the source order answered (shared/aiSources.ts). */
+  source?: AiAnswerSource
+  /** The web pages a web step used, tiered by the app against the player's lists. */
+  citations?: AiCitation[]
+  /** Nothing in the app's data or the trusted sources: offer "Search other sources?". */
+  askToWiden?: boolean
 }
 
 export interface AiMentions {
@@ -52,6 +61,9 @@ export interface AiConfigPayload {
   provider?: AiProvider
   /** The screen-capture hotkey (only while the AI overlay is open). Absent = on. */
   captureHotkey?: boolean
+  /** The source lists, one entry per line (shared/aiSources.ts). */
+  trustedSources?: string[]
+  closeSources?: string[]
 }
 
 /** The config as a renderer sees it: which providers have a key, never the keys. */
@@ -65,6 +77,8 @@ export interface AiConfigView {
   captureHotkey: boolean
   /** True when the chosen provider takes pictures (OpenRouter varies by model). */
   vision: boolean
+  trustedSources: string[]
+  closeSources: string[]
 }
 
 export interface AiDumpStatus {
@@ -101,6 +115,10 @@ export interface AiStoredMessage {
   text: string
   drafts?: AlertDef[]
   mentions?: AiMentions
+  source?: AiAnswerSource
+  citations?: AiCitation[]
+  /** The question to re-ask with other sources, when the player has not decided yet. */
+  widenPrompt?: string
 }
 
 export interface AiFollowUp {
@@ -159,10 +177,10 @@ function parseStoredDrafts(raw: unknown): AlertDef[] | undefined {
 
 function parseStoredRow(row: unknown): AiStoredMessage | null {
   if (!row || typeof row !== 'object') return null
-  const rec = row as { role?: unknown; text?: unknown; drafts?: unknown; mentions?: unknown }
+  const rec = row as { role?: unknown; text?: unknown; drafts?: unknown; mentions?: unknown; source?: unknown; citations?: unknown; widenPrompt?: unknown }
   if (rec.role !== 'user' && rec.role !== 'ai') return null
   if (typeof rec.text !== 'string') return null
-  const msg: AiStoredMessage = { role: rec.role, text: rec.text }
+  const msg: AiStoredMessage = { role: rec.role, text: rec.text, ...parseSourceFields(rec) }
   const drafts = parseStoredDrafts(rec.drafts)
   const mentions = parseStoredMentions(rec.mentions)
   if (drafts) msg.drafts = drafts
@@ -190,6 +208,9 @@ function storedRow(m: AiStoredMessage): AiStoredMessage {
   const row: AiStoredMessage = { role: m.role, text: m.text }
   if (m.drafts && m.drafts.length > 0) row.drafts = m.drafts
   if (m.mentions) row.mentions = m.mentions
+  if (m.source) row.source = m.source
+  if (m.citations && m.citations.length > 0) row.citations = m.citations
+  if (m.widenPrompt) row.widenPrompt = m.widenPrompt
   return row
 }
 

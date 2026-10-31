@@ -5,6 +5,7 @@
 import type { AiConfigPayload, AiConfigView } from '../../shared/aiChat'
 import { resolveAiModel } from '../../shared/aiModels'
 import { AI_DEFAULT_PROVIDER, AI_PROVIDER_INFO, AI_PROVIDERS, isAiProvider, nonEmpty, type AiProvider } from '../../shared/aiProviders'
+import { DEFAULT_CLOSE_SOURCES, DEFAULT_TRUSTED_SOURCES } from '../../shared/aiSources'
 import { settingsStore } from '../store'
 import { decryptString, encryptString } from './SecureStorage'
 
@@ -50,7 +51,16 @@ export function aiConfigView(): AiConfigView {
     personalStyle: cfg?.personalStyle,
     proactive: cfg?.proactive === true,
     captureHotkey: cfg?.captureHotkey !== false,
-    vision: AI_PROVIDER_INFO[provider].vision
+    vision: AI_PROVIDER_INFO[provider].vision,
+    ...aiSourceLists(cfg)
+  }
+}
+
+/** The player's source lists, or the defaults while they have never saved one. */
+export function aiSourceLists(cfg = readStored()): { trustedSources: string[]; closeSources: string[] } {
+  return {
+    trustedSources: cfg?.trustedSources ?? [...DEFAULT_TRUSTED_SOURCES],
+    closeSources: cfg?.closeSources ?? [...DEFAULT_CLOSE_SOURCES]
   }
 }
 
@@ -79,7 +89,16 @@ export function saveAiConfig(payload: AiConfigPayload): void {
     provider,
     consent: payload.consent,
     personalStyle: payload.personalStyle,
-    proactive: payload.proactive ?? prev?.proactive,
-    captureHotkey: payload.captureHotkey ?? prev?.captureHotkey
+    ...keptFields(payload, prev)
   })
+}
+
+/** The settings a save leaves as they were unless it names them. */
+function keptFields(payload: AiConfigPayload, prev: Stored | undefined): Pick<Stored, 'proactive' | 'captureHotkey' | 'trustedSources' | 'closeSources'> {
+  return {
+    proactive: payload.proactive ?? prev?.proactive,
+    captureHotkey: payload.captureHotkey ?? prev?.captureHotkey,
+    trustedSources: payload.trustedSources ?? prev?.trustedSources,
+    closeSources: payload.closeSources ?? prev?.closeSources
+  }
 }

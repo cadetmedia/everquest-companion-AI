@@ -11,6 +11,7 @@ import { formatAiSpend } from '@shared/aiModels'
 import { aiChatPhaseColor, aiChatPhaseLabel, type AiChatPhase } from '@shared/aiSlash'
 import { AiOverlayComposer } from './AiOverlayComposer'
 import { AiOverlayMarkdown } from './AiOverlayMarkdown'
+import { AiOverlaySources } from './AiOverlaySources'
 import { BgAlphaSlider } from './BgAlphaSlider'
 import { OverlayHeader } from './OverlayHeader'
 import { FOOTER_ROW, OverlayContent } from './overlayScale'
@@ -109,7 +110,7 @@ function AiFooter({
 export default function AiOverlay(): JSX.Element {
   const { locked, bgAlpha, textScale, hovering, patch, toggleLock, onEnter, onLeave, dragRegion, noDrag } =
     useOverlayChrome()
-  const { shown, toolHint, input, setInput, busy, usage, phase, send, image, setImage, vision, capture } = useAiOverlaySession()
+  const { shown, toolHint, input, setInput, busy, usage, phase, send, image, setImage, vision, capture, last, widen } = useAiOverlaySession()
 
   return (
     <div
@@ -139,6 +140,7 @@ export default function AiOverlay(): JSX.Element {
 
       <OverlayContent textScale={textScale}>
         <AnswerPane text={shown} hint={toolHint} />
+        <AiOverlaySources row={last} busy={busy} onWiden={widen} noDrag={noDrag} />
       </OverlayContent>
 
       {!locked && (

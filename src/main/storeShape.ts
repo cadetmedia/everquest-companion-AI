@@ -330,6 +330,9 @@ export interface StoreShape {
     models?: Partial<Record<AiProvider, string>>
     /** The screen-capture hotkey while the AI overlay is open. Absent = on. */
     captureHotkey?: boolean
+    /** The source lists for the assistant's web steps (shared/aiSources.ts). Absent = defaults. */
+    trustedSources?: string[]
+    closeSources?: string[]
     personalStyle?: string
     /** Opt-in live tips. Absent = off. */
     proactive?: boolean

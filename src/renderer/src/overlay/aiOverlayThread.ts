@@ -20,6 +20,12 @@ export function lastAiAnswer(messages: readonly AiStoredMessage[]): string | und
   return undefined
 }
 
+/** The newest answer row, with its source fields (cadetmedia fork). */
+export function lastAiRow(messages: readonly AiStoredMessage[]): AiStoredMessage | undefined {
+  for (let i = messages.length - 1; i >= 0; i--) if (messages[i]?.role === 'ai') return messages[i]
+  return undefined
+}
+
 export function historyFrom(messages: readonly AiStoredMessage[]): AiChatTurn[] {
   return messages.slice(-AI_HISTORY_CAP).map((m) => ({
     role: m.role === 'ai' ? 'assistant' : 'user',
@@ -89,10 +95,13 @@ export function useSharedThread(): [AiStoredMessage[], (next: AiStoredMessage[])
   return [messages, commit]
 }
 
-function aiRow(result: AiPromptResult): AiStoredMessage {
+function aiRow(result: AiPromptResult, prompt: string): AiStoredMessage {
   const row: AiStoredMessage = { role: 'ai', text: result.text }
   if (result.drafts.length > 0) row.drafts = result.drafts
   if (result.mentions) row.mentions = result.mentions
+  if (result.source) row.source = result.source
+  if (result.citations?.length) row.citations = result.citations
+  if (result.askToWiden) row.widenPrompt = prompt
   return row
 }
 
@@ -105,14 +114,18 @@ export async function runSend(
     streamBase: { current: AiStoredMessage[] | null }
     onFail: () => void
   },
-  image?: string
+  opts: { image?: string; scope?: 'auto' | 'web' } = {}
 ): Promise<void> {
-  const withUser: AiStoredMessage[] = [...prior, { role: 'user', text: image ? `📷 ${prompt}` : prompt }]
+  const { image, scope = 'auto' } = opts
+  const shown = scope === 'web' ? `🌐 Search other sources: ${prompt}` : image ? `📷 ${prompt}` : prompt
+  // Any earlier "Search other sources?" offer is answered by this send.
+  const answered = prior.map((m) => (m.widenPrompt ? { ...m, widenPrompt: undefined } : m))
+  const withUser: AiStoredMessage[] = [...answered, { role: 'user', text: shown }]
   ctl.streamBase.current = withUser
   ctl.commit(withUser)
   try {
-    const result = await window.eqOverlay.sendAiPrompt(prompt, historyFrom(prior), image)
-    ctl.commit([...withUser, aiRow(result)])
+    const result = await window.eqOverlay.sendAiPrompt(prompt, historyFrom(prior), image, scope)
+    ctl.commit([...withUser, aiRow(result, prompt)])
   } catch (err) {
     ctl.onFail()
     ctl.commit([...withUser, { role: 'ai', text: failText(err) }])

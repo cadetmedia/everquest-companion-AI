@@ -436,8 +436,11 @@ const overlayApi = {
 
   // ---- AI overlay (kind 'ai') — the main window's AI bridge is `window.eq`, which this
   // bundle does not get. Same channels, same names, so one send path cannot drift.
-  sendAiPrompt: (prompt: string, history: AiChatTurn[], image?: string): Promise<AiPromptResult> =>
-    ipcRenderer.invoke(IPC.aiSendPrompt, prompt, history, image),
+  /** `scope: 'web'` is the player's yes to "Search other sources?" (shared/aiSources.ts). */
+  sendAiPrompt: (prompt: string, history: AiChatTurn[], image?: string, scope?: 'auto' | 'web'): Promise<AiPromptResult> =>
+    ipcRenderer.invoke(IPC.aiSendPrompt, prompt, history, image, scope),
+  /** Open a citation the assistant returned; main opens only URLs it handed out. */
+  openAiCitation: (url: string): void => ipcRenderer.send(IPC.aiOpenCitation, url),
   // cadetmedia fork: the screen capture, its hotkey (held while this overlay is open, main checks
   // the setting), and the config without keys (which provider, whether it takes pictures).
   getAiConfig: (): Promise<AiConfigView> => ipcRenderer.invoke(IPC.aiConfigGet),

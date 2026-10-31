@@ -53,9 +53,18 @@ build quietly, and applies it when you close the app.
    sent only to that provider. Saving loads the models your key can use (and swaps a retired model
    for a current one). Each provider keeps its own key, so you can switch back and forth.
 3. Open **AI Assistant** in the side menu (under the **AI** heading) and ask away: items, spells,
-   mobs, your current fight, this zone, your buffs, loot, loadout and AA. Answers come from the
-   app's own data and your log, not from a live wiki fetch. For your bags or spellbook, type
-   `/outputfile inventory` or `/outputfile spellbook` in game first.
+   mobs, your current fight, this zone, your buffs, loot, loadout and AA. For your bags or
+   spellbook, type `/outputfile inventory` or `/outputfile spellbook` in game first.
+
+   **Where answers come from, in order:**
+   1. **The app's own wiki data and your log**, on your PC. Most questions stop here.
+   2. If that has nothing: a web search of **your trusted sources** only (eqlwiki.com, the official
+      site, r/EQLegends and the others in Preferences, which you can edit).
+   3. If they have nothing either, the assistant **asks first**: press **Search other sources** to
+      let it look anywhere. Those pages are tagged *classic EQ* or *other*, since Legends may differ.
+
+   Every answer says which step it came from, and web answers list the pages they used. Web search
+   needs Gemini, Claude or OpenAI.
 4. **Ask about something on screen:** press 📷 (or **Ctrl+Shift+A** while the AI overlay is open),
    drag a box around an item window, a quest or a mob, then ask, or just press Enter for "What is
    this?". Esc cancels; a click without a drag takes the whole screen. The hotkey can be switched

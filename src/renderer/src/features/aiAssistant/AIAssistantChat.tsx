@@ -13,6 +13,7 @@ import { AIMarkdown } from './AIMarkdown'
 import type { ChatMessage } from './chatTypes'
 import { followUpsFor } from './followUps'
 import { starterChipsFor } from './starterChips'
+import { AISourceFooter } from './AISourceFooter'
 
 export type { ChatMessage }
 
@@ -73,6 +74,8 @@ function Bubble(props: {
   onOpenMob: (t: MobTarget) => void
   onOpenAlerts: () => void
   onDraftResolved: (id: string) => void
+  onWiden: (prompt: string) => void
+  busy: boolean
 }): JSX.Element {
   const { msg } = props
   const waiting = msg.role === 'ai' && msg.pending === true && msg.text.length === 0
@@ -99,6 +102,7 @@ function Bubble(props: {
             onResolved={props.onDraftResolved}
           />
         ))}
+        <AISourceFooter msg={msg} disabled={props.busy} onWiden={props.onWiden} />
       </Paper>
     </Box>
   )
@@ -179,6 +183,8 @@ export function ChatColumn(props: {
   onOpenMob: (t: MobTarget) => void
   onOpenAlerts: () => void
   onDropDraft: (msgIndex: number, draftId: string) => void
+  /** The player's yes to "Search other sources?" (cadetmedia fork). */
+  onWiden: (prompt: string) => void
   usage: AiUsageSnap
   needsKey: boolean
   /** The chosen provider takes pictures (OpenRouter's models vary, so its camera is off). */
@@ -214,6 +220,8 @@ export function ChatColumn(props: {
                 onOpenMob={props.onOpenMob}
                 onOpenAlerts={props.onOpenAlerts}
                 onDraftResolved={(id) => props.onDropDraft(i, id)}
+                onWiden={props.onWiden}
+                busy={loading}
               />
             </div>
           </Fade>

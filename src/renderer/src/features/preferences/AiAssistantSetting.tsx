@@ -4,6 +4,7 @@ import SmartToyIcon from '@mui/icons-material/SmartToy'
 import type { AiConfigView } from '@shared/aiChat'
 import { AI_MODEL_OPTIONS } from '@shared/aiModels'
 import { AI_PROVIDER_INFO, AI_PROVIDERS, type AiProvider } from '@shared/aiProviders'
+import { parseSourceList } from '@shared/aiSources'
 import type { PrefSection } from './PreferencesView'
 
 export function aiAssistantSection(): PrefSection {
@@ -95,6 +96,27 @@ function ModelField(props: { provider: AiProvider; model: string; live: readonly
   )
 }
 
+/** The trusted and classic-EQ lists for the assistant's web steps (shared/aiSources.ts). */
+function SourcesField({ trusted, close, onTrusted, onClose }: { trusted: string; close: string; onTrusted: (v: string) => void; onClose: (v: string) => void }): JSX.Element {
+  return (
+    <Stack spacing={0.5}>
+      <Typography variant="body2" fontWeight="bold">Trusted sources</Typography>
+      <Typography variant="caption" color="text.secondary">
+        Questions are answered from the app&apos;s own wiki data first. Only when that has nothing does the
+        assistant search these sites, and only after you say yes does it look anywhere else. One per
+        line: a site, or a site with a path to trust just that part (reddit.com/r/EQLegends).
+      </Typography>
+      <TextField size="small" multiline minRows={3} value={trusted} onChange={(e) => onTrusted(e.target.value)} fullWidth data-testid="ai-trusted-sources" />
+      <Typography variant="body2" fontWeight="bold" sx={{ pt: 1 }}>Classic EverQuest sources</Typography>
+      <Typography variant="caption" color="text.secondary">
+        Usually right for Legends, but drops, spawns and timers may differ. Their pages are tagged
+        &quot;classic EQ&quot; when other sources are searched.
+      </Typography>
+      <TextField size="small" multiline minRows={1} value={close} onChange={(e) => onClose(e.target.value)} fullWidth data-testid="ai-close-sources" />
+    </Stack>
+  )
+}
+
 function StyleField({ value, onChange }: { value: string; onChange: (v: string) => void }): JSX.Element {
   return (
     <Stack spacing={0.5}>
@@ -123,6 +145,8 @@ export function AiAssistantSetting(): JSX.Element {
   const [personalStyle, setPersonalStyle] = useState('')
   const [consent, setConsent] = useState(false)
   const [hotkey, setHotkey] = useState(true)
+  const [trusted, setTrusted] = useState('')
+  const [close, setClose] = useState('')
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState('')
 
@@ -133,6 +157,8 @@ export function AiAssistantSetting(): JSX.Element {
     setPersonalStyle(cfg.personalStyle ?? '')
     setConsent(cfg.consent)
     setHotkey(cfg.captureHotkey)
+    setTrusted(cfg.trustedSources.join('\n'))
+    setClose(cfg.closeSources.join('\n'))
   }, [cfg])
 
   /** Fetch the key's live models; resolves with the model to use (a retired one swapped out). */
@@ -159,7 +185,7 @@ export function AiAssistantSetting(): JSX.Element {
   const hasKey = Boolean(cfg?.hasKey[provider])
   const handleSave = (): void => {
     if (!consent) return
-    const base = { provider, apiKey: '', consent, personalStyle, captureHotkey: hotkey }
+    const base = { provider, apiKey: '', consent, personalStyle, captureHotkey: hotkey, trustedSources: parseSourceList(trusted), closeSources: parseSourceList(close) }
     setSaveError('')
     void window.eq
       .setAiConfig({ ...base, apiKey, model })
@@ -197,6 +223,7 @@ export function AiAssistantSetting(): JSX.Element {
         label={<Typography variant="body2">Ctrl+Shift+A captures the screen while the AI overlay is open</Typography>}
       />
 
+      <SourcesField trusted={trusted} close={close} onTrusted={setTrusted} onClose={setClose} />
       <StyleField value={personalStyle} onChange={setPersonalStyle} />
 
       <FormControlLabel

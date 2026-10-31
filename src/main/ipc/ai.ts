@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { ipcMain, type IpcMainInvokeEvent, type WebContents } from 'electron'
+import { ipcMain, shell, type IpcMainInvokeEvent, type WebContents } from 'electron'
 import {
   AI_HISTORY_CAP,
   type AiChatTurn,
@@ -14,8 +14,10 @@ import { AI_PROVIDER_INFO, isAiProvider, pickModel, type AiProvider } from '../.
 import type { AlertDef, AlertTrigger } from '../../shared/alertTypes'
 import { IPC } from '../../shared/ipc'
 import { EQL_LORE } from '../data/eqlLore'
-import { getAiClient, listAiModels } from '../ai/AIClientFactory'
-import { aiConfigView, aiKey, aiModel, aiProvider, saveAiConfig } from '../ai/aiConfigStore'
+import { getAiClient, listAiModels, type AiClient } from '../ai/AIClientFactory'
+import { aiConfigView, aiKey, aiModel, aiProvider, aiSourceLists, saveAiConfig } from '../ai/aiConfigStore'
+import { answerQuestion } from '../ai/aiAnswer'
+import type { AiCitation } from '../../shared/aiSources'
 import { refreshAiHotkey, registerAiCaptureIpc } from '../ai/aiCapture'
 import { buildAiRecap, getLiveStatus } from '../ai/aiPlayerState'
 import { startAiProactive } from '../ai/aiProactiveHost'
@@ -91,6 +93,7 @@ export function registerAiIpc(): void {
   })
 
   ipcMain.handle(IPC.aiModelsList, handleModelsList)
+  ipcMain.on(IPC.aiOpenCitation, openCitation)
   registerAiCaptureIpc()
 
   ipcMain.handle(IPC.aiContextGet, () => buildAiRecap())
@@ -155,12 +158,19 @@ function parseImage(raw: unknown): string | undefined {
   return /^data:image\/(png|jpeg);base64,[A-Za-z0-9+/=]+$/.test(raw) ? raw : undefined
 }
 
-async function handleSendPrompt(
-  event: IpcMainInvokeEvent,
-  prompt: unknown,
-  historyRaw: unknown,
-  imageRaw?: unknown
-): Promise<AiPromptResult> {
+/** The slash commands that need no model call; null for anything else. */
+async function slashAnswer(cmd: string, provider: AiProvider, client: AiClient): Promise<AiPromptResult | null> {
+  if (cmd === '/model') {
+    return { text: `Current model: **${modelLabelFor(provider)}** (\`${aiModel(provider)}\`) on ${AI_PROVIDER_INFO[provider].label}.`, drafts: [] }
+  }
+  if (cmd !== '/usage') return null
+  const usd = await client.getUsageUsd()
+  return { text: usd == null ? `${AI_PROVIDER_INFO[provider].label} does not report spend here; check its own console.` : `**API usage on this key:** $${usd.toFixed(4)}`, drafts: [] }
+}
+
+/** Arguments as the preload sends them: prompt, history, then an optional image and scope. */
+async function handleSendPrompt(event: IpcMainInvokeEvent, ...args: unknown[]): Promise<AiPromptResult> {
+  const [prompt, historyRaw, imageRaw, scopeRaw] = args
   const text = typeof prompt === 'string' ? prompt : ''
   const cmd = text.trim().toLowerCase()
   if (cmd === '/help') return { text: aiHelpText(), drafts: [] }
@@ -175,20 +185,53 @@ async function handleSendPrompt(
   }
   const client = getAiClient(provider, apiKey)
   const model = aiModel(provider, config)
-  if (text.trim() === '/model') {
-    return { text: `Current model: **${modelLabelFor(provider)}** (\`${model}\`) on ${AI_PROVIDER_INFO[provider].label}.`, drafts: [] }
-  }
-  if (text.trim() === '/usage') {
-    const usd = await client.getUsageUsd()
-    return { text: usd == null ? `${AI_PROVIDER_INFO[provider].label} does not report spend here; check its own console.` : `**API usage on this key:** $${usd.toFixed(4)}`, drafts: [] }
-  }
+  const slash = await slashAnswer(cmd, provider, client)
+  if (slash) return slash
   const requestId = randomUUID()
-  const result = await client.sendPrompt(systemPrompt(config.personalStyle, await buildAiRecap()), text, {
-    model,
-    image: parseImage(imageRaw),
-    history: parseHistory(historyRaw),
-    onChunk: (chunk) => emitAiChunk(event.sender, requestId, chunk)
-  })
-  void handleUsageGet().then(pushUsage)
-  return result
+  const emit = (chunk: Omit<AiStreamChunk, 'requestId'>): void => emitAiChunk(event.sender, requestId, chunk)
+  try {
+    const result = await answerQuestion({
+      provider,
+      key: apiKey,
+      model,
+      client,
+      baseSystem: systemPrompt(config.personalStyle, await buildAiRecap()),
+      text,
+      image: parseImage(imageRaw),
+      history: parseHistory(historyRaw),
+      ...listsOf(),
+      scope: scopeRaw === 'web' ? 'web' : 'auto',
+      emit
+    })
+    rememberCitations(result.citations)
+    emit({ kind: 'done', text: result.text, drafts: result.drafts, mentions: result.mentions })
+    return result
+  } catch (e) {
+    emit({ kind: 'error', error: e instanceof Error ? e.message : String(e) })
+    throw e
+  } finally {
+    void handleUsageGet().then(pushUsage)
+  }
+}
+
+function listsOf(): { trusted: string[]; close: string[] } {
+  const l = aiSourceLists()
+  return { trusted: l.trustedSources, close: l.closeSources }
+}
+
+// ---- citation links -------------------------------------------------------------------------------
+// The external-link allowlist (security.ts) cannot name every site a search may cite, so a citation
+// opens through here instead, and ONLY if main itself handed that exact URL out as a citation.
+const citedUrls = new Set<string>()
+
+function rememberCitations(list: readonly AiCitation[] | undefined): void {
+  for (const c of list ?? []) if (/^https:\/\//i.test(c.url)) citedUrls.add(c.url)
+  for (const old of citedUrls) {
+    if (citedUrls.size <= 500) break
+    citedUrls.delete(old)
+  }
+}
+
+function openCitation(_e: unknown, url: unknown): void {
+  if (typeof url === 'string' && citedUrls.has(url)) void shell.openExternal(url)
 }

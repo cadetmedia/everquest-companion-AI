@@ -19,7 +19,7 @@ function errText(err: unknown): string {
 export function useAiSend(
   messages: ChatMessage[],
   setMessages: (fn: (prev: ChatMessage[]) => ChatMessage[]) => void
-): { loading: boolean; send: (text: string, image?: string) => void; phase: AiChatPhase } {
+): { loading: boolean; send: (text: string, image?: string) => void; widen: (prompt: string) => void; phase: AiChatPhase } {
   const [loading, setLoading] = useState(false)
   const [phase, setPhase] = useState<AiChatPhase>('idle')
   const requestIdRef = useRef<string | null>(null)
@@ -45,22 +45,23 @@ export function useAiSend(
     }
   }, [setMessages])
 
-  const send = (text: string, image?: string): void => {
+  const run = (text: string, image?: string, scope: 'auto' | 'web' = 'auto'): void => {
     const prompt = text.trim()
     if (!prompt || loading) return
     const history = historyFrom(messagesRef.current)
     requestIdRef.current = null
     // The picture goes to the model with this question only; the thread keeps a marker.
-    const shown = image ? `📷 ${prompt}` : prompt
-    setMessages((prev) => [...prev, { role: 'user', text: shown }, { role: 'ai', text: '', pending: true }])
+    const shown = scope === 'web' ? `🌐 Search other sources: ${prompt}` : image ? `📷 ${prompt}` : prompt
+    // Whatever the answer, an earlier "Search other sources?" offer has been answered now.
+    setMessages((prev) => [...prev.map((m) => (m.widenPrompt ? { ...m, widenPrompt: undefined } : m)), { role: 'user', text: shown }, { role: 'ai', text: '', pending: true }])
     setLoading(true)
     setPhase('sent')
     queueMicrotask(() => {
       setPhase((p) => (p === 'sent' ? 'awaiting' : p))
     })
-    void window.eq.sendAiPrompt(prompt, history, image).then(
+    void window.eq.sendAiPrompt(prompt, history, image, scope).then(
       (result) => {
-        setMessages((prev) => finishAi(prev, result))
+        setMessages((prev) => finishAi(prev, result, prompt))
         setLoading(false)
         setPhase('idle')
         requestIdRef.current = null
@@ -74,5 +75,8 @@ export function useAiSend(
     )
   }
 
-  return { loading, send, phase }
+  const send = (text: string, image?: string): void => run(text, image)
+  /** The player's yes to "Search other sources?": the same question, the open web this time. */
+  const widen = (prompt: string): void => run(prompt, undefined, 'web')
+  return { loading, send, widen, phase }
 }

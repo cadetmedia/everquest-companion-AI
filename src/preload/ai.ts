@@ -13,8 +13,11 @@ import type { AlertDef } from '../shared/alertTypes'
 import type { AiProvider } from '../shared/aiProviders'
 
 export const aiBridge = {
-  sendAiPrompt: (prompt: string, history: AiChatTurn[], image?: string): Promise<AiPromptResult> =>
-    ipcRenderer.invoke(IPC.aiSendPrompt, prompt, history, image),
+  /** `scope: 'web'` is the player's yes to "Search other sources?" (shared/aiSources.ts). */
+  sendAiPrompt: (prompt: string, history: AiChatTurn[], image?: string, scope?: 'auto' | 'web'): Promise<AiPromptResult> =>
+    ipcRenderer.invoke(IPC.aiSendPrompt, prompt, history, image, scope),
+  /** Open a citation the assistant returned; main opens only URLs it handed out. */
+  openAiCitation: (url: string): void => ipcRenderer.send(IPC.aiOpenCitation, url),
   /** Drag a box over the screen; the picture as a data URL, or null when cancelled. */
   captureForAi: (): Promise<{ image: string | null; error?: string }> => ipcRenderer.invoke(IPC.aiCapture),
   /** A provider's live models for its saved key, and the one to use. */

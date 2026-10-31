@@ -15,7 +15,7 @@ export default function AIAssistantTab(props: {
   onOpenAlerts: () => void
 }): JSX.Element {
   const [messages, setMessages] = useAiChat()
-  const { loading, send, phase } = useAiSend(messages, setMessages)
+  const { loading, send, widen, phase } = useAiSend(messages, setMessages)
   const { status, dumpNotices } = useAiStatus()
   const usage = useAiUsage(loading)
   const [needsKey, setNeedsKey] = useState(false)
@@ -47,6 +47,7 @@ export default function AIAssistantTab(props: {
           status={status}
           dumpNotices={dumpNotices}
           onSend={send}
+          onWiden={widen}
           bottomRef={bottomRef}
           onOpenLoot={onOpenLoot}
           onOpenMob={props.onOpenMob}

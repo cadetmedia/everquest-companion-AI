@@ -64,11 +64,16 @@ export function applyStreamChunk(
   return next ? replaceAt(messages, idx, next) : messages
 }
 
-export function finishAi(messages: ChatMessage[], result: AiPromptResult): ChatMessage[] {
+/** The source fields a result puts on its bubble; `prompt` is what "Search other sources" re-asks. */
+function sourceFields(result: AiPromptResult, prompt?: string): Pick<ChatMessage, 'source' | 'citations' | 'widenPrompt'> {
+  return { source: result.source, citations: result.citations, widenPrompt: result.askToWiden ? prompt : undefined }
+}
+
+export function finishAi(messages: ChatMessage[], result: AiPromptResult, prompt?: string): ChatMessage[] {
   const pending = lastPendingAi(messages)
   const idx = pending >= 0 ? pending : lastIndex(messages, (m) => m.role === 'ai')
   if (idx < 0) {
-    return [...messages, { role: 'ai', text: result.text, drafts: result.drafts, mentions: result.mentions }]
+    return [...messages, { role: 'ai', text: result.text, drafts: result.drafts, mentions: result.mentions, ...sourceFields(result, prompt) }]
   }
   const cur = messages[idx]
   return replaceAt(messages, idx, {
@@ -77,7 +82,8 @@ export function finishAi(messages: ChatMessage[], result: AiPromptResult): ChatM
     toolHint: undefined,
     text: result.text || cur.text,
     drafts: result.drafts.length > 0 ? result.drafts : cur.drafts,
-    mentions: result.mentions ?? cur.mentions
+    mentions: result.mentions ?? cur.mentions,
+    ...sourceFields(result, prompt)
   })
 }
 

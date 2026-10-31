@@ -5,11 +5,36 @@ import {
   foldAiPhase,
   foldToolHint,
   lastAiAnswer,
+  lastAiRow,
   loadChat,
   nextDraft,
   runSend,
   useSharedThread
 } from './aiOverlayThread'
+
+/**
+ * cadetmedia fork: the capture hotkey is held exactly while this overlay is open (main checks the
+ * setting), and a capture from it, or from the camera button, rides with the next question.
+ */
+function useAiCapture(): { image: string | null; setImage: (v: string | null) => void; vision: boolean; capture: () => void } {
+  const [image, setImage] = useState<string | null>(null)
+  const [vision, setVision] = useState(false)
+  useEffect(() => {
+    void window.eqOverlay.getAiConfig().then((c) => setVision(c.vision)).catch(() => undefined)
+    window.eqOverlay.armAiHotkey(true)
+    const off = window.eqOverlay.onAiCaptured(setImage)
+    return () => {
+      off()
+      window.eqOverlay.armAiHotkey(false)
+    }
+  }, [])
+  const capture = (): void => {
+    void window.eqOverlay.captureForAi().then((r) => {
+      if (r.image) setImage(r.image)
+    })
+  }
+  return { image, setImage, vision, capture }
+}
 
 export function useAiOverlaySession(): {
   shown: string | undefined
@@ -24,6 +49,9 @@ export function useAiOverlaySession(): {
   setImage: (v: string | null) => void
   vision: boolean
   capture: () => void
+  /** The newest answer row when nothing is streaming, for its sources and the widen offer. */
+  last: AiStoredMessage | undefined
+  widen: (prompt: string) => void
 } {
   const [messages, commit] = useSharedThread()
   const [input, setInput] = useState('')
@@ -31,8 +59,7 @@ export function useAiOverlaySession(): {
   const [toolHint, setToolHint] = useState<string | null>(null)
   const [usage, setUsage] = useState<AiUsageSnap>({ spendUsd: null, modelLabel: '' })
   const [phase, setPhase] = useState<AiChatPhase>('idle')
-  const [image, setImage] = useState<string | null>(null)
-  const [vision, setVision] = useState(false)
+  const { image, setImage, vision, capture } = useAiCapture()
   const busy = draft !== null
   const inFlight = useRef(false)
   const draftRef = useRef<string | null>(null)
@@ -50,24 +77,6 @@ export function useAiOverlaySession(): {
       commitRef.current([...cur, { role: 'ai', text }])
     })
   }, [])
-
-  // cadetmedia fork: the capture hotkey is held exactly while this overlay is open (main checks the
-  // setting), and a capture from it, or from the camera button, rides with the next question.
-  useEffect(() => {
-    void window.eqOverlay.getAiConfig().then((c) => setVision(c.vision)).catch(() => undefined)
-    window.eqOverlay.armAiHotkey(true)
-    const off = window.eqOverlay.onAiCaptured(setImage)
-    return () => {
-      off()
-      window.eqOverlay.armAiHotkey(false)
-    }
-  }, [])
-
-  const capture = (): void => {
-    void window.eqOverlay.captureForAi().then((r) => {
-      if (r.image) setImage(r.image)
-    })
-  }
 
   useEffect(() => {
     const get = window.eqOverlay.getAiUsage
@@ -96,12 +105,7 @@ export function useAiOverlaySession(): {
     })
   }, [])
 
-  const send = (): void => {
-    const prompt = input.trim() || (image ? 'What is this?' : '')
-    if (!prompt || inFlight.current) return
-    const pic = image ?? undefined
-    setImage(null)
-    setInput('')
+  const ask = (prompt: string, pic: string | undefined, scope: 'auto' | 'web'): void => {
     setDraft('')
     draftRef.current = ''
     setToolHint(null)
@@ -120,9 +124,22 @@ export function useAiOverlaySession(): {
         if (v === null) setPhase((p) => (p === 'error' ? p : 'idle'))
       },
       onFail: () => setPhase('error')
-    }, pic)
+    }, { image: pic, scope })
+  }
+
+  const send = (): void => {
+    const prompt = input.trim() || (image ? 'What is this?' : '')
+    if (!prompt || inFlight.current) return
+    const pic = image ?? undefined
+    setImage(null)
+    setInput('')
+    ask(prompt, pic, 'auto')
+  }
+  const widen = (prompt: string): void => {
+    if (!inFlight.current) ask(prompt, undefined, 'web')
   }
 
   const shown = draft !== null && draft !== '' ? draft : lastAiAnswer(messages)
-  return { shown, toolHint, input, setInput, busy, usage, phase, send, image, setImage, vision, capture }
+  const last = draft === null ? lastAiRow(messages) : undefined
+  return { shown, toolHint, input, setInput, busy, usage, phase, send, image, setImage, vision, capture, last, widen }
 }

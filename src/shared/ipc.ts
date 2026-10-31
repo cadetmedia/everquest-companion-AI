@@ -37,6 +37,7 @@ export const IPC = {
   aiCaptured: 'ai:captured',
   aiSelectorImage: 'ai:selectorImage',
   aiSelectorDone: 'ai:selectorDone',
+  aiOpenCitation: 'ai:openCitation',
 
   // ---- progress / inventory (per-character persisted state) ----
   getProgress: 'progress:get',
