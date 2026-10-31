@@ -6,7 +6,7 @@ import type { AiAnswerSource, AiCitation, AiCitationTier } from '@shared/aiSourc
 import type { ChatMessage } from './chatTypes'
 
 const SOURCE_LINE: Record<AiAnswerSource, string> = {
-  local: "From the app's wiki data and your log",
+  local: "From the app's wiki data, the Compendium and your log",
   trusted: 'From your trusted sources',
   web: 'From other sources - may not match EverQuest Legends',
   none: ''

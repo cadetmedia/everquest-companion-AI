@@ -44,6 +44,15 @@ export const AI_TOOLS: AITool[] = [
   {
     type: 'function',
     function: {
+      name: 'search_guides',
+      description:
+        'Search the EverQuest Legends Compendium, a community guide by brutallstatic: leveling and mote grinding spots, endgame and raiding, dungeon crawls, Plane of Sky, Banestrike, DDD bards, class combos, macros, FAQ and patch notes. Offline. Use it for how-to and strategy questions; use search_items/search_mobs/search_spells for exact stats and drops.',
+      parameters: queryParam
+    }
+  },
+  {
+    type: 'function',
+    function: {
       name: 'get_output',
       description:
         'Read a /outputfile dump (inventory, spellbook, factions, guild, raid, achievements). Returns empty, updatedAt, stale, and a note. If empty, tell them to type the command in game. If stale, say the list may be out of date. Do not invent bags. Do not ask them to paste.',

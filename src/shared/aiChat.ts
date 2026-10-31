@@ -13,6 +13,7 @@ const TOOL_HINT: Record<string, string> = {
   search_items: 'items',
   search_spells: 'spells',
   search_mobs: 'mobs',
+  search_guides: 'the Compendium',
   get_loadout: 'loadout',
   get_aa: 'aa',
   get_output: 'output',

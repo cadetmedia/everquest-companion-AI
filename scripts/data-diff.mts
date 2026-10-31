@@ -17,6 +17,7 @@ const DEFAULT_FILES = [
   'src/main/data/spells.json',
   'src/main/data/spellLines.json',
   'src/main/data/respawns.json',
+  'src/main/data/compendium.json',
   'src/renderer/src/data/eqlegends/mobs.json',
   'src/renderer/src/data/eqlegends/quests.json',
   'src/renderer/src/data/eqlegends/mobFactions.json',

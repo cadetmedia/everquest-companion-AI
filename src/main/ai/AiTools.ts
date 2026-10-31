@@ -1,5 +1,6 @@
 import { getDefaultSoundPackId } from '../storeSoundPacks'
 import { searchItems, searchMobs, searchSpells } from './aiKnowledge'
+import { guidesToolResult } from './aiCompendium'
 import { draftAlert, type DraftAlertArgs } from './aiDraftAlert'
 import {
   getAaSummary,
@@ -51,6 +52,7 @@ const HANDLERS: Record<string, (args: Record<string, unknown>) => string | Promi
   search_items: (args) => searchJson('item', asString(args.query), searchItems(asString(args.query))),
   search_spells: (args) => searchJson('spell', asString(args.query), searchSpells(asString(args.query))),
   search_mobs: (args) => searchJson('mob', asString(args.query), searchMobs(asString(args.query))),
+  search_guides: (args) => guidesToolResult(asString(args.query)),
   get_output: (args) => JSON.stringify(getOutputDump(asString(args.kind))),
   get_loadout: async () => JSON.stringify(await getLoadoutSummary()),
   get_aa: async () => JSON.stringify(await getAaSummary()),

@@ -6,8 +6,9 @@
 #   2. scripts/scrape-delta.mts: only pages changed since the last stamp, 50 a request, one request
 #      a second, maxlag=5, backoff on 429/5xx (sources/deltaApi.ts), every request named in the
 #      User-Agent and counted in docs/community/wiki-usage/ledger.jsonl;
-#   3. data-diff + validate-data, and the compare again (`--release`: nothing left behind);
-#   4. the gate (typecheck, lint, the unit suite against known-reds.txt).
+#   3. scripts/scrape-compendium.mts: the community Compendium sheet, one request, rewritten only on change;
+#   4. data-diff + validate-data, and the compare again (`--release`: nothing left behind);
+#   5. the gate (typecheck, lint, the unit suite against known-reds.txt).
 # Nothing is merged or released here. Census tests are EXPECTED to go red when the wiki adds things
 # (DATA_REFRESH.md "Expect new reds, and clear them"), so a red gate still opens the pull request,
 # with the reds listed, for a person to clear before merging. A run with no data change opens nothing.
@@ -107,6 +108,12 @@ jobs:
       - name: Delta scrape
         run: npx tsx scripts/scrape-delta.mts 2>&1 | tee "$RUNNER_TEMP/delta.txt"
 
+      # The EverQuest Legends Compendium (a community guide sheet by brutallstatic): one request for
+      # the published workbook. A failure here never stops the wiki refresh; the old copy stays.
+      - name: Compendium sheet
+        continue-on-error: true
+        run: npx tsx scripts/scrape-compendium.mts 2>&1 | tee "$RUNNER_TEMP/compendium.txt"
+
       - name: Data diff and validation
         id: check
         run: |
@@ -182,6 +189,7 @@ jobs:
             echo "| typecheck | $TYPECHECK |"
             echo "| lint | $LINT |"
             echo "| unit suite (known reds) | $TESTS |"
+            echo "| Compendium sheet | $(tail -n 1 "$RUNNER_TEMP/compendium.txt" 2>/dev/null || echo 'not run') |"
             echo
             echo "<details><summary>data-diff</summary>"; echo; echo "$fence"; tail -n 150 "$RUNNER_TEMP/data-diff.txt"; echo "$fence"; echo "</details>"
             echo "<details><summary>delta run</summary>"; echo; echo "$fence"; tail -n 80 "$RUNNER_TEMP/delta.txt"; echo "$fence"; echo "</details>"

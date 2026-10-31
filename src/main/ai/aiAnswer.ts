@@ -14,6 +14,7 @@ import {
   type AiCitation
 } from '../../shared/aiSources'
 import type { AiClient } from './AIClientFactory'
+import { compendium } from './aiCompendium'
 import { webSearch, WebSearchUnsupported, type WebSearchArgs } from './aiWebSearch'
 
 type Emit = (c: Omit<AiStreamChunk, 'requestId'>) => void
@@ -41,8 +42,10 @@ export const NOTHING_ANYWHERE_TEXT = "I couldn't find a reliable answer to that 
 
 const LOCAL_RULE = `
 SOURCE ORDER - STEP 1, THE APP'S OWN DATA:
-Answer only from the tools and the recap above: they hold the app's copy of the EverQuest Legends wiki
-and the player's own log. If answering needs a game fact they do not provide, reply with exactly
+Answer only from the tools and the recap above: they hold the app's copy of the EverQuest Legends wiki,
+the EverQuest Legends Compendium (a community guide, search_guides) and the player's own log. For
+how-to, strategy, grinding and endgame questions, check search_guides as well as the wiki tools, and
+when you use it say the advice is from the Compendium. If answering needs a game fact they do not provide, reply with exactly
 ${NOT_IN_LOCAL_DATA} and nothing else: the app will then search the player's trusted sources. Never
 answer game facts from general or classic EverQuest knowledge.`
 
@@ -77,11 +80,23 @@ function gatedEmit(emit: Emit): { gate: SentinelGate; inner: Emit } {
   return { gate, inner }
 }
 
+/** The Compendium's link, credited on an answer whose local step searched it. */
+export const COMPENDIUM_CITATION: AiCitation = {
+  url: compendium.url,
+  title: `${compendium.title} (${compendium.author})`,
+  tier: 'trusted'
+}
+
 async function localStep(a: AnswerArgs): Promise<AiPromptResult | null> {
   const { inner } = gatedEmit(a.emit)
-  const r = await a.client.sendPrompt(`${a.baseSystem}\n${LOCAL_RULE}`, a.text, { model: a.model, image: a.image, history: a.history, onChunk: inner })
+  let usedGuides = false
+  const onChunk: Emit = (c) => {
+    if (c.kind === 'tool' && c.tool === 'search_guides') usedGuides = true
+    inner(c)
+  }
+  const r = await a.client.sendPrompt(`${a.baseSystem}\n${LOCAL_RULE}`, a.text, { model: a.model, image: a.image, history: a.history, onChunk })
   if (saysNotFound(r.text, NOT_IN_LOCAL_DATA) && r.drafts.length === 0) return null
-  return { ...r, source: 'local' }
+  return usedGuides ? { ...r, source: 'local', citations: [COMPENDIUM_CITATION] } : { ...r, source: 'local' }
 }
 
 async function webStep(a: AnswerArgs, open: boolean): Promise<{ text: string; citations: AiCitation[] } | null> {
