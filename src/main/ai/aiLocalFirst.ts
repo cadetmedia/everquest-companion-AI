@@ -22,6 +22,7 @@ import {
 const NEEDS_AI =
   /\b(my|me|mine|i'?m|i'?ve|i'?d|we|our|us|current(ly)?|right now|here|this (fight|zone|group|character)|should|better|best|worth|vs\.?|versus|compare|recommend|why|explain|upgrade|plan|build|rotation|help me)\b/i
 const MAX_WORDS = 8
+const COMPENDIUM_CITATION: AiCitation = { url: compendium.url, title: `${compendium.title} (${compendium.author})`, tier: 'trusted' }
 
 const KIND_CUES: [EntityKind, RegExp][] = [
   ['spell', /\b(spell|cast|mana|class(es)?|level do|scroll|buff|duration)\b/i],
@@ -147,10 +148,7 @@ function compendiumAnswer(question: string): { text: string; citations: AiCitati
     .map((l) => l.trim())
     .filter(Boolean)
     .join('\n\n')
-  return {
-    text: `**From the EverQuest Legends Compendium - ${hit.tab}:**\n\n${body}`,
-    citations: [{ url: compendium.url, title: `${compendium.title} (${compendium.author})`, tier: 'trusted' }]
-  }
+  return { text: `**From the EverQuest Legends Compendium - ${hit.tab}:**\n\n${body}`, citations: [COMPENDIUM_CITATION] }
 }
 
 /** The app's own answer to `question`, or null when it should go to the AI. */
@@ -167,4 +165,53 @@ export function localFirstAnswer(question: string): AiPromptResult | null {
   }
   if (!found) return null
   return { text: found.text, drafts: [], source: 'instant', citations: found.citations, offerAi: true }
+}
+
+export const NO_KEY_NOTHING_TEXT =
+  "Nothing in the app's data matched that. For AI answers, add a key in Preferences > AI Assistant (Gemini has a free tier)."
+
+const NAME_LIST_CAP = 8
+
+/** Names holding every word of the question: a partial name ("fungus tunic") still finds the item. */
+function namesMatching(question: string): { kind: EntityKind; name: string }[] {
+  const terms = queryTerms(question).filter((t) => t.length >= 3)
+  if (terms.length === 0) return []
+  const out: { kind: EntityKind; name: string }[] = []
+  for (const e of entityNames()) {
+    const name = e.name.toLowerCase().replace(/['’]/g, '')
+    if (terms.every((t) => name.includes(t))) out.push(e)
+    if (out.length >= NAME_LIST_CAP) break
+  }
+  return out
+}
+
+function compendiumPassages(question: string): { text: string; citations: AiCitation[] } | null {
+  const hits = searchCompendium(question).slice(0, 2)
+  if (hits.length === 0) return null
+  const parts = hits.map((h) => `**Compendium - ${h.tab}:**\n\n${h.text.split('\n').map((l) => l.trim()).filter(Boolean).join('\n\n')}`)
+  return { text: parts.join('\n\n---\n\n'), citations: [COMPENDIUM_CITATION] }
+}
+
+/**
+ * With no AI set up, every question is the app's to answer (owner, 2026-11-01: the search must
+ * work without an AI): a named item, mob or spell, else the closest Compendium passages, else
+ * the names that hold the question's words, else a plain "nothing matched". Never null.
+ */
+export function localOnlyAnswer(question: string): AiPromptResult {
+  const q = question.trim()
+  const named = namedIn(q)
+  let found: { text: string; citations: AiCitation[] } | null = null
+  if (named) {
+    const kind = pickKind(q, named.hits.map((h) => h.kind))
+    found = entityAnswer(kind, named.hits.find((h) => h.kind === kind)?.name ?? named.key)
+  }
+  found ??= compendiumPassages(q)
+  if (!found) {
+    const names = namesMatching(q)
+    if (names.length > 0) {
+      found = { text: `**In the app's data:**\n\n${names.map((n) => `- ${n.name} (${n.kind})`).join('\n')}\n\nAsk about one by name for its details.`, citations: [] }
+    }
+  }
+  if (!found) return { text: NO_KEY_NOTHING_TEXT, drafts: [], source: 'instant' }
+  return { text: found.text, drafts: [], source: 'instant', citations: found.citations }
 }

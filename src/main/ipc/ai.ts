@@ -17,7 +17,7 @@ import { EQL_LORE } from '../data/eqlLore'
 import { getAiClient, listAiModels, type AiClient } from '../ai/AIClientFactory'
 import { aiConfigView, aiKey, aiModel, aiProvider, aiSourceLists, saveAiConfig } from '../ai/aiConfigStore'
 import { answerQuestion } from '../ai/aiAnswer'
-import { localFirstAnswer } from '../ai/aiLocalFirst'
+import { localFirstAnswer, localOnlyAnswer } from '../ai/aiLocalFirst'
 import type { AiCitation } from '../../shared/aiSources'
 import { refreshAiHotkey, registerAiCaptureIpc } from '../ai/aiCapture'
 import { buildAiRecap, getLiveStatus } from '../ai/aiPlayerState'
@@ -180,10 +180,13 @@ function fixedReply(cmd: string): AiPromptResult | null {
 function quickAnswer(text: string, imageRaw: unknown, scopeRaw: unknown, emit: (c: Omit<AiStreamChunk, 'requestId'>) => void): AiPromptResult | null {
   if (scopeRaw === 'ai' || scopeRaw === 'web' || parseImage(imageRaw)) return null
   const quick = localFirstAnswer(text)
-  if (!quick) return null
-  rememberCitations(quick.citations)
-  emit({ kind: 'done', text: quick.text, drafts: quick.drafts })
-  return quick
+  return quick ? finishLocal(quick, emit) : null
+}
+
+function finishLocal(result: AiPromptResult, emit: (c: Omit<AiStreamChunk, 'requestId'>) => void): AiPromptResult {
+  rememberCitations(result.citations)
+  emit({ kind: 'done', text: result.text, drafts: result.drafts })
+  return result
 }
 
 /** Arguments as the preload sends them: prompt, history, then an optional image and scope. */
@@ -195,14 +198,13 @@ async function handleSendPrompt(event: IpcMainInvokeEvent, ...args: unknown[]): 
   if (fixed) return fixed
   const requestId = randomUUID()
   const emit = (chunk: Omit<AiStreamChunk, 'requestId'>): void => emitAiChunk(event.sender, requestId, chunk)
-  const quick = quickAnswer(text, imageRaw, scopeRaw, emit)
-  if (quick) return quick
   const config = settingsStore.get('aiConfig')
   const provider = aiProvider(config)
   const apiKey = aiKey(provider, config)
-  if (!config?.consent || !apiKey) {
-    throw new Error(`AI Assistant is not set up: add a ${AI_PROVIDER_INFO[provider].label} key in Preferences > AI Assistant and tick the consent box.`)
-  }
+  // No AI set up: the app's own data answers every question, never an error, and offers no AI.
+  if (!config?.consent || !apiKey) return finishLocal(localOnlyAnswer(text), emit)
+  const quick = quickAnswer(text, imageRaw, scopeRaw, emit)
+  if (quick) return quick
   const client = getAiClient(provider, apiKey)
   const model = aiModel(provider, config)
   const slash = await slashAnswer(cmd, provider, client)

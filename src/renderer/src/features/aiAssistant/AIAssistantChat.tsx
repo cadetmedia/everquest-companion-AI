@@ -206,7 +206,7 @@ export function ChatColumn(props: {
       <Box sx={{ flex: 1, overflowY: 'auto', p: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
         {needsKey && (
           <Typography variant="body2" color="text.secondary" data-testid="ai-needs-key">
-            Open Preferences &gt; AI Assistant: pick a provider (Gemini has a free tier) and paste its key.
+            No AI key yet: questions are answered from the app's own data (wiki and Compendium). For AI answers, open Preferences &gt; AI Assistant, pick a provider (Gemini has a free tier) and paste its key.
           </Typography>
         )}
         {starters.length > 0 && (

@@ -60,3 +60,15 @@ test('an instant answer and its pending Ask AI offer survive a reload', () => {
   const back = parseAiChat(serializeAiChat([{ role: 'ai', text: 'x', source: 'instant', askAiPrompt: 'what drops bone chips' }]))
   assert.deepEqual(back, [{ role: 'ai', text: 'x', source: 'instant', askAiPrompt: 'what drops bone chips' }])
 })
+
+test('with no AI set up, every question gets the app data, never an error', async () => {
+  const { localOnlyAnswer, NO_KEY_NOTHING_TEXT } = await import('../src/main/ai/aiLocalFirst')
+  const mine = localOnlyAnswer('is fungus covered scale tunic good for my warrior')
+  assert.match(mine.text, /\*\*Fungus Covered Scale Tunic\*\*/)
+  assert.equal(mine.offerAi, undefined)
+  assert.match(localOnlyAnswer('should I do dungeon crawls solo or in a group').text, /Compendium - Dungeon Crawls/)
+  assert.match(localOnlyAnswer('fungus tunic').text, /Fungus Covered Scale Tunic \(item\)/)
+  const none = localOnlyAnswer('zzqx wobble')
+  assert.equal(none.text, NO_KEY_NOTHING_TEXT)
+  assert.equal(none.source, 'instant')
+})
