@@ -1,5 +1,5 @@
 {
-  "scrapedAt": "2026-10-31T18:20:50.445Z",
+  "scrapedAt": "2026-11-01T17:29:52.542Z",
   "source": "eqlwiki.com — Category:NPCs/Named Mobs/Merchants/Raid Encounters ∪ embeddedin Template:Namedmobpage/MerchantPage, filtered to pages opening a mob template + recentchanges delta (scripts/scrape-delta.mts)",
   "mobs": [
     {
@@ -98162,6 +98162,13 @@
       "drops": [
         "Ancient Signet Ring of House Everling",
         "Angler's Finery"
+      ],
+      "loc": [
+        {
+          "ns": 2640,
+          "ew": 1226,
+          "z": -120
+        }
       ],
       "image": "npc_corrupted_kedgespawn.png"
     },
