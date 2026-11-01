@@ -65,8 +65,9 @@ export function applyStreamChunk(
 }
 
 /** The source fields a result puts on its bubble; `prompt` is what "Search other sources" re-asks. */
-function sourceFields(result: AiPromptResult, prompt?: string): Pick<ChatMessage, 'source' | 'citations' | 'widenPrompt' | 'askAiPrompt'> {
+function sourceFields(result: AiPromptResult, prompt?: string): Pick<ChatMessage, 'source' | 'citations' | 'widenPrompt' | 'askAiPrompt' | 'needsAiSetup'> {
   return {
+    needsAiSetup: result.needsAiSetup,
     source: result.source,
     citations: result.citations,
     widenPrompt: result.askToWiden ? prompt : undefined,

@@ -17,7 +17,7 @@ import { EQL_LORE } from '../data/eqlLore'
 import { getAiClient, listAiModels, type AiClient } from '../ai/AIClientFactory'
 import { aiConfigView, aiKey, aiModel, aiProvider, aiSourceLists, saveAiConfig } from '../ai/aiConfigStore'
 import { answerQuestion } from '../ai/aiAnswer'
-import { localFirstAnswer, localOnlyAnswer } from '../ai/aiLocalFirst'
+import { localFirstAnswer, noAiAnswer } from '../ai/aiLocalFirst'
 import type { AiCitation } from '../../shared/aiSources'
 import { refreshAiHotkey, registerAiCaptureIpc } from '../ai/aiCapture'
 import { buildAiRecap, getLiveStatus } from '../ai/aiPlayerState'
@@ -202,7 +202,7 @@ async function handleSendPrompt(event: IpcMainInvokeEvent, ...args: unknown[]): 
   const provider = aiProvider(config)
   const apiKey = aiKey(provider, config)
   // No AI set up: the app's own data answers every question, never an error, and offers no AI.
-  if (!config?.consent || !apiKey) return finishLocal(localOnlyAnswer(text), emit)
+  if (!config?.consent || !apiKey) return finishLocal(noAiAnswer(text), emit)
   const quick = quickAnswer(text, imageRaw, scopeRaw, emit)
   if (quick) return quick
   const client = getAiClient(provider, apiKey)

@@ -104,6 +104,7 @@ function aiRow(result: AiPromptResult, prompt: string): AiStoredMessage {
   if (result.citations?.length) row.citations = result.citations
   if (result.askToWiden) row.widenPrompt = prompt
   if (result.offerAi) row.askAiPrompt = prompt
+  if (result.needsAiSetup) row.needsAiSetup = true
   return row
 }
 

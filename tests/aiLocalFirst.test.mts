@@ -61,14 +61,32 @@ test('an instant answer and its pending Ask AI offer survive a reload', () => {
   assert.deepEqual(back, [{ role: 'ai', text: 'x', source: 'instant', askAiPrompt: 'what drops bone chips' }])
 })
 
-test('with no AI set up, every question gets the app data, never an error', async () => {
-  const { localOnlyAnswer, NO_KEY_NOTHING_TEXT } = await import('../src/main/ai/aiLocalFirst')
-  const mine = localOnlyAnswer('is fungus covered scale tunic good for my warrior')
+test('with no AI set up, a question the data answers is answered as usual, with no warning and no Ask AI', async () => {
+  const { noAiAnswer } = await import('../src/main/ai/aiLocalFirst')
+  for (const q of ['what drops bone chips', 'Lodizal', 'what level is Spirit of Wolf', 'what limitations does DDD have']) {
+    const r = noAiAnswer(q)
+    assert.equal(r.source, 'instant', q)
+    assert.equal(r.needsAiSetup, undefined, q)
+    assert.equal(r.offerAi, undefined, q)
+  }
+})
+
+test('with no AI set up, a question that needs the AI gets what the data holds plus the set-up warning', async () => {
+  const { noAiAnswer, NOTHING_LOCAL_TEXT } = await import('../src/main/ai/aiLocalFirst')
+  const mine = noAiAnswer('is fungus covered scale tunic good for my warrior')
   assert.match(mine.text, /\*\*Fungus Covered Scale Tunic\*\*/)
-  assert.equal(mine.offerAi, undefined)
-  assert.match(localOnlyAnswer('should I do dungeon crawls solo or in a group').text, /Compendium - Dungeon Crawls/)
-  assert.match(localOnlyAnswer('fungus tunic').text, /Fungus Covered Scale Tunic \(item\)/)
-  const none = localOnlyAnswer('zzqx wobble')
-  assert.equal(none.text, NO_KEY_NOTHING_TEXT)
-  assert.equal(none.source, 'instant')
+  assert.equal(mine.needsAiSetup, true)
+  assert.match(noAiAnswer('should I do dungeon crawls solo or in a group').text, /Compendium - Dungeon Crawls/)
+  assert.match(noAiAnswer('fungus tunic').text, /Fungus Covered Scale Tunic \(item\)/)
+  const none = noAiAnswer('zzqx wobble')
+  assert.equal(none.text, NOTHING_LOCAL_TEXT)
+  assert.equal(none.source, 'none')
+  assert.equal(none.needsAiSetup, true)
+  assert.match(noAiAnswer('Is Lodizal worth camping for my warrior?').text, /\*\*Lodizal\*\* - level 60/)
+  assert.equal(noAiAnswer('What should I do next?').text, NOTHING_LOCAL_TEXT)
+})
+
+test('the set-up warning survives a reload', () => {
+  const back = parseAiChat(serializeAiChat([{ role: 'ai', text: 'x', source: 'instant', needsAiSetup: true }]))
+  assert.deepEqual(back, [{ role: 'ai', text: 'x', source: 'instant', needsAiSetup: true }])
 })

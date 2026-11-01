@@ -17,4 +17,6 @@ export interface ChatMessage {
   widenPrompt?: string
   /** After an instant answer from the app's own data: the question "Ask AI" sends on. */
   askAiPrompt?: string
+  /** The question needed the AI and none is set up: show the set-up warning. */
+  needsAiSetup?: boolean
 }

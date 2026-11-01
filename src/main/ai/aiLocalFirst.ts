@@ -63,12 +63,22 @@ function namedIn(question: string): { key: string; hits: { kind: EntityKind; nam
       const gram = words.slice(i, i + len).join(' ')
       const hits = idx.get(gram) ?? (gram.endsWith('s') ? idx.get(gram.slice(0, -1)) : undefined)
       if (!hits) continue
-      // One common word ("cloak", "totem") is not a name unless the question is little else.
-      if (len === 1 && words.length > 4) continue
+      // One common word ("cloak", "totem") is not a name unless the question is little else, or
+      // it is written as a name mid-sentence ("Is Lodizal worth it?").
+      if (len === 1 && words.length > 4 && !capitalisedInside(question, gram)) continue
       return { key: gram, hits }
     }
   }
   return null
+}
+
+/** True when `word` appears capitalised after the question's first word: a proper name. */
+function capitalisedInside(question: string, word: string): boolean {
+  const rest = question.trim().split(/\s+/).slice(1)
+  return rest.some((w) => {
+    const bare = w.replace(/[^A-Za-z0-9'’]/g, '')
+    return bare.toLowerCase().replace(/['’]/g, '') === word && /^[A-Z]/.test(bare)
+  })
 }
 
 function pickKind(question: string, kinds: readonly EntityKind[]): EntityKind {
@@ -167,51 +177,58 @@ export function localFirstAnswer(question: string): AiPromptResult | null {
   return { text: found.text, drafts: [], source: 'instant', citations: found.citations, offerAi: true }
 }
 
-export const NO_KEY_NOTHING_TEXT =
-  "Nothing in the app's data matched that. For AI answers, add a key in Preferences > AI Assistant (Gemini has a free tier)."
+export const NOTHING_LOCAL_TEXT = "The app's own data has nothing on that."
 
 const NAME_LIST_CAP = 8
 
 /** Names holding every word of the question: a partial name ("fungus tunic") still finds the item. */
 function namesMatching(question: string): { kind: EntityKind; name: string }[] {
-  const terms = queryTerms(question).filter((t) => t.length >= 3)
+  const terms = queryTerms(question).filter((t) => t.length >= 4)
   if (terms.length === 0) return []
   const out: { kind: EntityKind; name: string }[] = []
   for (const e of entityNames()) {
-    const name = e.name.toLowerCase().replace(/['’]/g, '')
-    if (terms.every((t) => name.includes(t))) out.push(e)
+    // Whole words or their starts: "next" must not find "Guard Nextloxtl".
+    const words = norm(e.name).split(' ')
+    if (terms.every((t) => words.some((w) => w === t || (t.length >= 5 && w.startsWith(t))))) out.push(e)
     if (out.length >= NAME_LIST_CAP) break
   }
   return out
 }
 
 function compendiumPassages(question: string): { text: string; citations: AiCitation[] } | null {
+  // One loose word ("next") matches half the sheet; a passage needs two words of the question.
+  if (queryTerms(question).length < 2) return null
   const hits = searchCompendium(question).slice(0, 2)
   if (hits.length === 0) return null
   const parts = hits.map((h) => `**Compendium - ${h.tab}:**\n\n${h.text.split('\n').map((l) => l.trim()).filter(Boolean).join('\n\n')}`)
   return { text: parts.join('\n\n---\n\n'), citations: [COMPENDIUM_CITATION] }
 }
 
-/**
- * With no AI set up, every question is the app's to answer (owner, 2026-11-01: the search must
- * work without an AI): a named item, mob or spell, else the closest Compendium passages, else
- * the names that hold the question's words, else a plain "nothing matched". Never null.
- */
-export function localOnlyAnswer(question: string): AiPromptResult {
-  const q = question.trim()
+/** The closest the app's data comes to a question it cannot fully answer, or null. */
+function partialLocal(q: string): { text: string; citations: AiCitation[] } | null {
   const named = namedIn(q)
-  let found: { text: string; citations: AiCitation[] } | null = null
   if (named) {
     const kind = pickKind(q, named.hits.map((h) => h.kind))
-    found = entityAnswer(kind, named.hits.find((h) => h.kind === kind)?.name ?? named.key)
+    const hit = entityAnswer(kind, named.hits.find((h) => h.kind === kind)?.name ?? named.key)
+    if (hit) return hit
   }
-  found ??= compendiumPassages(q)
-  if (!found) {
-    const names = namesMatching(q)
-    if (names.length > 0) {
-      found = { text: `**In the app's data:**\n\n${names.map((n) => `- ${n.name} (${n.kind})`).join('\n')}\n\nAsk about one by name for its details.`, citations: [] }
-    }
-  }
-  if (!found) return { text: NO_KEY_NOTHING_TEXT, drafts: [], source: 'instant' }
-  return { text: found.text, drafts: [], source: 'instant', citations: found.citations }
+  const passages = compendiumPassages(q)
+  if (passages) return passages
+  const names = namesMatching(q)
+  if (names.length === 0) return null
+  return { text: `**In the app's data:**\n\n${names.map((n) => `- ${n.name} (${n.kind})`).join('\n')}\n\nAsk about one by name for its details.`, citations: [] }
+}
+
+/**
+ * With no AI set up (owner, 2026-11-01): a question the app's data answers is answered exactly as
+ * with an AI. One that needs the AI gets whatever the data does hold plus `needsAiSetup`, which the
+ * windows show as a warning to set the AI up: never an error. Never null.
+ */
+export function noAiAnswer(question: string): AiPromptResult {
+  const q = question.trim()
+  const direct = localFirstAnswer(q)
+  if (direct) return { ...direct, offerAi: undefined }
+  const partial = partialLocal(q)
+  if (!partial) return { text: NOTHING_LOCAL_TEXT, drafts: [], source: 'none', needsAiSetup: true }
+  return { text: partial.text, drafts: [], source: 'instant', citations: partial.citations, needsAiSetup: true }
 }

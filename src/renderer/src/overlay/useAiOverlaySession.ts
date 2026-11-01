@@ -93,7 +93,12 @@ export function useAiOverlaySession(): {
 
   useEffect(() => {
     return window.eqOverlay.onAiChunk((chunk) => {
-      if (chunk.kind === 'token' || chunk.kind === 'error' || chunk.kind === 'done') {
+      // A finished stream this window is not waiting on (the main window's, or this window's own
+      // "done" landing after the reply, as an instant local answer does) must not hold the lock.
+      if ((chunk.kind === 'done' || chunk.kind === 'error') && !inFlight.current) {
+        draftRef.current = null
+        setDraft(null)
+      } else if (chunk.kind === 'token' || chunk.kind === 'error' || chunk.kind === 'done') {
         draftRef.current = nextDraft(draftRef.current ?? '', chunk)
         setDraft(draftRef.current)
         if (inFlight.current && streamBase.current && draftRef.current) {

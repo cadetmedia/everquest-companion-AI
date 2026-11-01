@@ -1,7 +1,8 @@
 // Under each answer: where it came from (shared/aiSources.ts), the pages a web answer used,
 // tagged by the app against the player's lists, and the "Search other sources?" choice.
 import { type JSX } from 'react'
-import { Box, Button, Chip, Stack, Typography } from '@mui/material'
+import { Alert, Box, Button, Chip, Stack, Typography } from '@mui/material'
+import { AI_SETUP_WARNING } from '@shared/aiChat'
 import type { AiAnswerSource, AiCitation, AiCitationTier, AiFollowScope } from '@shared/aiSources'
 import type { ChatMessage } from './chatTypes'
 
@@ -50,6 +51,19 @@ function followUp(msg: ChatMessage): { prompt: string; scope: AiFollowScope; lab
   return null
 }
 
+/** Anything under the answer besides the source line: pages, a follow-up, the set-up warning. */
+function hasExtras(msg: ChatMessage): boolean {
+  return Boolean(msg.citations?.length) || followUp(msg) !== null || msg.needsAiSetup === true
+}
+
+function SetupWarning(): JSX.Element {
+  return (
+    <Alert severity="warning" variant="outlined" sx={{ mt: 1, py: 0 }} data-testid="ai-setup-warning">
+      {AI_SETUP_WARNING}
+    </Alert>
+  )
+}
+
 function FollowUpButton({
   next,
   disabled,
@@ -85,7 +99,7 @@ export function AISourceFooter({
   if (msg.role !== 'ai' || msg.pending) return null
   const line = msg.source ? SOURCE_LINE[msg.source] : ''
   const next = followUp(msg)
-  if (!line && !msg.citations?.length && !next) return null
+  if (!line && !hasExtras(msg)) return null
   return (
     <Box sx={{ mt: 1 }} data-testid="ai-source-footer">
       {line ? (
@@ -94,6 +108,7 @@ export function AISourceFooter({
         </Typography>
       ) : null}
       {msg.citations?.length ? <Citations list={msg.citations} /> : null}
+      {msg.needsAiSetup ? <SetupWarning /> : null}
       {next ? <FollowUpButton next={next} disabled={disabled} onWiden={onWiden} /> : null}
     </Box>
   )

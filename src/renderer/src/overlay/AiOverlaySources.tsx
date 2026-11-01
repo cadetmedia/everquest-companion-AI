@@ -1,7 +1,7 @@
 // The overlay's half of the source order (shared/aiSources.ts): where the last answer came from,
 // the pages it used, and the "Search other sources?" choice. MUI-free, like the rest of the overlay.
 import { type CSSProperties, type JSX } from 'react'
-import type { AiStoredMessage } from '@shared/aiChat'
+import { AI_SETUP_WARNING, type AiStoredMessage } from '@shared/aiChat'
 import type { AiAnswerSource, AiCitationTier, AiFollowScope } from '@shared/aiSources'
 
 const LINE: Record<AiAnswerSource, string> = {
@@ -24,6 +24,18 @@ function followUp(row: AiStoredMessage): { prompt: string; scope: AiFollowScope;
   return null
 }
 
+function hasExtras(row: AiStoredMessage): boolean {
+  return Boolean(row.citations?.length) || followUp(row) !== null || row.needsAiSetup === true
+}
+
+function SetupWarning(): JSX.Element {
+  return (
+    <div data-testid="ai-overlay-setup-warning" style={{ marginTop: 4, fontSize: 11, color: '#e8d24a' }}>
+      ⚠ {AI_SETUP_WARNING}
+    </div>
+  )
+}
+
 export function AiOverlaySources({
   row,
   busy,
@@ -38,7 +50,7 @@ export function AiOverlaySources({
   if (!row) return null
   const line = row.source ? LINE[row.source] : ''
   const next = followUp(row)
-  if (!line && !row.citations?.length && !next) return null
+  if (!line && !hasExtras(row)) return null
   return (
     <div data-testid="ai-overlay-sources" style={{ ...noDrag, padding: '4px 2px 0' }}>
       {line ? <div style={SMALL}>{line}</div> : null}
@@ -57,6 +69,7 @@ export function AiOverlaySources({
           </a>
         </div>
       ))}
+      {row.needsAiSetup ? <SetupWarning /> : null}
       {next ? (
         <button
           type="button"

@@ -34,6 +34,10 @@ export interface AiChatTurn {
   text: string
 }
 
+/** Shown under an answer when the question needed the AI and none is set up. A warning, not an error. */
+export const AI_SETUP_WARNING =
+  'AI is not set up, so this needs AI for a full answer. Add a key in Preferences > AI Assistant (Gemini has a free tier) and tick the consent box.'
+
 export interface AiPromptResult {
   text: string
   drafts: AlertDef[]
@@ -46,6 +50,8 @@ export interface AiPromptResult {
   askToWiden?: boolean
   /** The app answered from its own data with no AI call: offer "Ask AI" for a written answer. */
   offerAi?: boolean
+  /** The question needs the AI and none is set up: the windows show a set-up warning, not an error. */
+  needsAiSetup?: boolean
 }
 
 export interface AiMentions {
@@ -124,6 +130,7 @@ export interface AiStoredMessage {
   widenPrompt?: string
   /** The question to put to the AI after an instant local answer, until the player decides. */
   askAiPrompt?: string
+  needsAiSetup?: boolean
 }
 
 export interface AiFollowUp {
@@ -186,6 +193,7 @@ function parseStoredRow(row: unknown): AiStoredMessage | null {
   if (rec.role !== 'user' && rec.role !== 'ai') return null
   if (typeof rec.text !== 'string') return null
   const msg: AiStoredMessage = { role: rec.role, text: rec.text, ...parseSourceFields(rec) }
+  if ((rec as { needsAiSetup?: unknown }).needsAiSetup === true) msg.needsAiSetup = true
   const drafts = parseStoredDrafts(rec.drafts)
   const mentions = parseStoredMentions(rec.mentions)
   if (drafts) msg.drafts = drafts
@@ -217,6 +225,7 @@ function storedRow(m: AiStoredMessage): AiStoredMessage {
   if (m.citations && m.citations.length > 0) row.citations = m.citations
   if (m.widenPrompt) row.widenPrompt = m.widenPrompt
   if (m.askAiPrompt) row.askAiPrompt = m.askAiPrompt
+  if (m.needsAiSetup) row.needsAiSetup = true
   return row
 }
 
