@@ -1,5 +1,5 @@
 {
-  "scrapedAt": "2026-11-01T17:29:52.542Z",
+  "scrapedAt": "2026-11-05T03:30:27.628Z",
   "source": "eqlwiki.com — Category:Quests + quest subcategories + recentchanges delta (scripts/scrape-delta.mts)",
   "quests": [
     {
@@ -375,7 +375,8 @@
       "page": "Alchemical Solution",
       "eraTag": "Classic",
       "startZone": "Lake Nerius",
-      "giver": "Dorian G`Wym",
+      "giver": "Dorian G`Wyn",
+      "minLevel": 10,
       "classes": [
         "ALL"
       ],
@@ -383,7 +384,7 @@
         "Lavastorm Mountains"
       ],
       "relatedNpcs": [
-        "NPC_NAME"
+        "Ty`Klerr"
       ],
       "requiredItems": [
         "Defiled Fish Scales",
@@ -16039,6 +16040,7 @@
       ],
       "relatedNpcs": [
         "Retainer Ozval",
+        "Corrupted Kedgespawn",
         "Rylin Coil",
         "Merchant Tyslin (North Felwithe)"
       ],
@@ -32859,7 +32861,8 @@
         "Regurgitonic",
         "Bayle List I",
         "Bayle List II",
-        "Bayle List III"
+        "Bayle List III",
+        "Mammoth's Hide"
       ]
     },
     {
