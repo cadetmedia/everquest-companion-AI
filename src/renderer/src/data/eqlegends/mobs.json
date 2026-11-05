@@ -1,5 +1,5 @@
 {
-  "scrapedAt": "2026-11-01T17:29:52.542Z",
+  "scrapedAt": "2026-11-05T03:30:27.628Z",
   "source": "eqlwiki.com — Category:NPCs/Named Mobs/Merchants/Raid Encounters ∪ embeddedin Template:Namedmobpage/MerchantPage, filtered to pages opening a mob template + recentchanges delta (scripts/scrape-delta.mts)",
   "mobs": [
     {
@@ -14827,8 +14827,7 @@
       "zones": [
         "Various Zones"
       ],
-      "image": "npc_a_fish.png",
-      "noImage": true
+      "image": "npc_a_fish.png"
     },
     {
       "page": "A flighty fiend",
@@ -28987,8 +28986,7 @@
         "-30",
         "10"
       ],
-      "image": "npc_a_hatchling.png",
-      "noImage": true
+      "image": "npc_a_hatchling.png"
     },
     {
       "page": "A Hatebone Drake",
@@ -35674,8 +35672,7 @@
       "factionAmounts": [
         "-30"
       ],
-      "image": "npc_a_lizardman_mystic.png",
-      "noImage": true
+      "image": "npc_a_lizardman_mystic.png"
     },
     {
       "page": "A lizard man warrior",
@@ -37545,8 +37542,7 @@
         "Fire Beetle Eye",
         "Fire Beetle Leg"
       ],
-      "image": "npc_a_minor_scarab.png",
-      "noImage": true
+      "image": "npc_a_minor_scarab.png"
     },
     {
       "page": "A Minotaur",
@@ -68571,7 +68567,10 @@
       "factionAmounts": [
         "-2"
       ],
-      "image": "npc_an_embalmed_vicar.png"
+      "image": "npc_an_embalmed_vicar.png",
+      "commonDrops": [
+        "Ruby"
+      ]
     },
     {
       "page": "An Ember Hornet",
@@ -119813,11 +119812,11 @@
         "Rogues of the White Rose"
       ],
       "factionAmounts": [
-        "-30",
-        "-30",
-        "-30",
-        "-100",
-        "1"
+        "-50",
+        "-40",
+        "-10",
+        "-200",
+        "-40"
       ],
       "image": "npc_frostbite.png"
     },
@@ -126935,6 +126934,7 @@
         "Nagafen's Lair"
       ],
       "drops": [
+        "Box of Abu-Kar",
         "Bronze Helm",
         "Bronze Mask",
         "Bronze Collar",
@@ -126980,9 +126980,6 @@
         "Jade Earring",
         "Pearl"
       ],
-      "otherNames": [
-        "A Greater Kobold"
-      ],
       "factions": [
         "Kobolds of Fire Pit",
         "Solusek Mining Co"
@@ -126991,7 +126988,10 @@
         "-3",
         "5"
       ],
-      "image": "npc_greater_kobold.png"
+      "image": "npc_greater_kobold.png",
+      "otherNames": [
+        "A Greater Kobold"
+      ]
     },
     {
       "page": "Greater kobold shaman",
@@ -132023,8 +132023,7 @@
         "-30",
         "10"
       ],
-      "image": "npc_guard_dykalin.png",
-      "noImage": true
+      "image": "npc_guard_dykalin.png"
     },
     {
       "page": "Guard E`Brona",
@@ -154534,6 +154533,23 @@
       "image": "npc_jeet.png"
     },
     {
+      "page": "Jeim",
+      "eraTag": "Classic",
+      "name": "Jeim",
+      "level": "50",
+      "zones": [
+        "Rathe Mountains"
+      ],
+      "loc": [
+        {
+          "ns": 1662,
+          "ew": -834
+        }
+      ],
+      "merchant": true,
+      "image": "npc_jeim.png"
+    },
+    {
       "page": "Jekca Mucktail",
       "name": "Jekca Mucktail",
       "level": "12",
@@ -160062,8 +160078,7 @@
           "pct": 100
         }
       ],
-      "image": "npc_kindra_farseer.png",
-      "noImage": true
+      "image": "npc_kindra_farseer.png"
     },
     {
       "page": "King Ak`Anon",
@@ -190816,8 +190831,7 @@
         "-30",
         "-30"
       ],
-      "image": "npc_philicia_drinn.png",
-      "noImage": true
+      "image": "npc_philicia_drinn.png"
     },
     {
       "page": "Philip Tallman",
@@ -197365,8 +197379,7 @@
         "-30",
         "-30"
       ],
-      "image": "npc_rell_ostodl.png",
-      "noImage": true
+      "image": "npc_rell_ostodl.png"
     },
     {
       "page": "Rem Knarjon",
@@ -212236,8 +212249,7 @@
         "10",
         "10"
       ],
-      "image": "npc_sir_edwin_motte.png",
-      "noImage": true
+      "image": "npc_sir_edwin_motte.png"
     },
     {
       "page": "Sir Folon",
@@ -234590,6 +234602,7 @@
     },
     {
       "page": "Ty`Klerr",
+      "eraTag": "Classic",
       "name": "Ty`Klerr",
       "level": "50",
       "zones": [
@@ -234605,8 +234618,7 @@
           "z": 5
         }
       ],
-      "image": "npc_name.png",
-      "noImage": true
+      "image": "npc_ty`klerr.png"
     },
     {
       "page": "Tycyn Fe`Dhar",
@@ -239670,8 +239682,7 @@
         }
       ],
       "merchant": true,
-      "image": "npc_viira_bali.png",
-      "noImage": true
+      "image": "npc_viira_bali.png"
     },
     {
       "page": "Vilefang",

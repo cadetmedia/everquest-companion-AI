@@ -17,7 +17,7 @@
 | [[Lake Nerius]], [[Northern Felwithe]], [[Ak'Anon]]
 |-
 ! ''' Related NPCs: '''
-| [[Retainer Ozval]], [[Rylin Coil]], [[Merchant Tyslin (North Felwithe)]]
+| [[Retainer Ozval]], [[Corrupted Kedgespawn]], [[Rylin Coil]], [[Merchant Tyslin (North Felwithe)]]
 |-
 ! ''' Required Faction: '''
 | Dubious / Apprehensive / Indifferent / Amiable / Kindly / Warmly / Ally at all/some steps

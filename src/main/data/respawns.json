@@ -1,6 +1,6 @@
 {
  "source": "eqlwiki.com — |respawn_time on every page in the committed mob catalog",
- "scrapedAt": "2026-11-01",
+ "scrapedAt": "2026-11-05",
  "rows": [
   {
    "key": "a alchemist`s acolyte",
@@ -1016,6 +1016,12 @@
    "key": "corrupted barracuda",
    "page": "Corrupted barracuda",
    "text": "Triggered"
+  },
+  {
+   "key": "corrupted kedgespawn",
+   "page": "Corrupted Kedgespawn",
+   "text": "12 minutes",
+   "seconds": 720
   },
   {
    "key": "councilor juliash lockhear",
