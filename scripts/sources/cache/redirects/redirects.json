@@ -1,5 +1,5 @@
 {
- "updatedAt": "2026-11-01T17:29:52.546Z",
+ "updatedAt": "2026-11-12T04:03:08.685Z",
  "redirects": [
   {
    "from": "1 Hand Blunt",
@@ -4148,6 +4148,10 @@
   {
    "from": "Arch magi",
    "to": "The ghoul arch magus"
+  },
+  {
+   "from": "Archeologist Pack",
+   "to": "Archaeologist Pack"
   },
   {
    "from": "Archery",
@@ -10424,6 +10428,10 @@
   {
    "from": "Lizard meat",
    "to": "Lizard Meat"
+  },
+  {
+   "from": "Loaf of bread",
+   "to": "Loaf of Bread"
   },
   {
    "from": "Loam Encrusted Armor",

@@ -1,5 +1,5 @@
 {
-  "scrapedAt": "2026-11-01T17:29:52.542Z",
+  "scrapedAt": "2026-11-12T04:03:08.682Z",
   "source": "eqlwiki.com — Category:Quests + quest subcategories + recentchanges delta (scripts/scrape-delta.mts)",
   "quests": [
     {
@@ -375,7 +375,8 @@
       "page": "Alchemical Solution",
       "eraTag": "Classic",
       "startZone": "Lake Nerius",
-      "giver": "Dorian G`Wym",
+      "giver": "Dorian G`Wyn",
+      "minLevel": 10,
       "classes": [
         "ALL"
       ],
@@ -383,7 +384,7 @@
         "Lavastorm Mountains"
       ],
       "relatedNpcs": [
-        "NPC_NAME"
+        "Ty`Klerr"
       ],
       "requiredItems": [
         "Defiled Fish Scales",
@@ -16039,6 +16040,7 @@
       ],
       "relatedNpcs": [
         "Retainer Ozval",
+        "Corrupted Kedgespawn",
         "Rylin Coil",
         "Merchant Tyslin (North Felwithe)"
       ],
@@ -18945,20 +18947,22 @@
         },
         {
           "name": "Guards of Qeynos",
-          "up": true
-        },
-        {
-          "name": "Knights of Truth",
-          "up": true
-        },
-        {
-          "name": "The Freeport Militia",
-          "up": false
+          "up": true,
+          "amount": 5
         },
         {
           "name": "Corrupt Qeynos Guards",
           "up": false,
           "amount": -3
+        },
+        {
+          "name": "The Freeport Militia",
+          "up": false,
+          "amount": -3
+        },
+        {
+          "name": "Knights of Truth",
+          "up": true
         }
       ]
     },
@@ -21253,7 +21257,33 @@
         "Mojax Hikspin",
         "Sir Lucan D`Lere"
       ],
-      "expReward": true
+      "expReward": true,
+      "factions": [
+        {
+          "name": "The Freeport Militia",
+          "up": true
+        },
+        {
+          "name": "Coalition of Tradefolk Underground",
+          "up": true
+        },
+        {
+          "name": "Knights of Truth",
+          "up": false
+        },
+        {
+          "name": "Priests of Marr",
+          "up": false
+        },
+        {
+          "name": "Dismal Rage",
+          "up": true
+        },
+        {
+          "name": "Opal Dark Briar",
+          "up": true
+        }
+      ]
     },
     {
       "name": "Messages For Neriak",
@@ -38399,12 +38429,9 @@
       "name": "Unfortunate News",
       "page": "Unfortunate News",
       "eraTag": "Classic",
-      "startZone": "Finishing the quest Call for Aid",
+      "startZone": "Lake Nerius",
       "classes": [
         "ALL"
-      ],
-      "relatedZones": [
-        "Lake Nerius"
       ],
       "relatedNpcs": [
         "Dorian G`Wyn"
@@ -39704,6 +39731,38 @@
       ],
       "requiredItems": [
         "Werewolf Pelt"
+      ]
+    },
+    {
+      "name": "What Happened Here?",
+      "page": "What Happened Here?",
+      "startZone": "New Sebilis Expedition",
+      "giver": "Commander Riteb (Warrior Guildmaster)",
+      "minLevel": 1,
+      "classes": [
+        "Beastlord",
+        "Monk",
+        "Necromancer",
+        "Shadow Knight",
+        "Shaman",
+        "Warrior"
+      ],
+      "relatedNpcs": [
+        "Defector Jabitzu",
+        "Orator Zikorisy",
+        "Flaming Wraith"
+      ],
+      "rewards": [
+        {
+          "name": "New Sebilisian Bindings"
+        }
+      ],
+      "factions": [
+        {
+          "name": "New Sebilisian Expedition",
+          "up": true,
+          "amount": 250
+        }
       ]
     },
     {

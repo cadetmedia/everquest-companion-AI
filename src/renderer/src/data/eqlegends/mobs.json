@@ -1,5 +1,5 @@
 {
-  "scrapedAt": "2026-11-01T17:29:52.542Z",
+  "scrapedAt": "2026-11-12T04:03:08.682Z",
   "source": "eqlwiki.com — Category:NPCs/Named Mobs/Merchants/Raid Encounters ∪ embeddedin Template:Namedmobpage/MerchantPage, filtered to pages opening a mob template + recentchanges delta (scripts/scrape-delta.mts)",
   "mobs": [
     {
@@ -501,8 +501,7 @@
         "Barbed Bone Chips",
         "Bone Barbs"
       ],
-      "image": "npc_a_barbed_bone_skeleton.png",
-      "noImage": true
+      "image": "npc_a_barbed_bone_skeleton.png"
     },
     {
       "page": "A barbed succulent",
@@ -969,8 +968,7 @@
       "notices": [
         "delete",
         "DNE"
-      ],
-      "noImage": true
+      ]
     },
     {
       "page": "A black reaver",
@@ -7320,8 +7318,7 @@
         "Northern Desert of Ro",
         "Southern Desert of Ro"
       ],
-      "image": "npc_a_coyote.png",
-      "noImage": true
+      "image": "npc_a_coyote.png"
     },
     {
       "page": "A Cracked Skeleton",
@@ -9976,8 +9973,7 @@
         "Rusty Weapons",
         "Short Beer",
         "Silver Amulet"
-      ],
-      "noImage": true
+      ]
     },
     {
       "page": "A Dervish Thug",
@@ -14214,8 +14210,7 @@
         "-3",
         "1"
       ],
-      "image": "npc_a_ferocious_kobold.png",
-      "noImage": true
+      "image": "npc_a_ferocious_kobold.png"
     },
     {
       "page": "A Festering Hag",
@@ -14827,8 +14822,7 @@
       "zones": [
         "Various Zones"
       ],
-      "image": "npc_a_fish.png",
-      "noImage": true
+      "image": "npc_a_fish.png"
     },
     {
       "page": "A flighty fiend",
@@ -21425,8 +21419,7 @@
       "zones": [
         "South Ro"
       ],
-      "image": "npc_a_giant_rattlesnake.png",
-      "noImage": true
+      "image": "npc_a_giant_rattlesnake.png"
     },
     {
       "page": "A Giant Scarab",
@@ -21534,8 +21527,7 @@
           "pct": 100
         }
       ],
-      "image": "npc_a_giant_skeleton.png",
-      "noImage": true
+      "image": "npc_a_giant_skeleton.png"
     },
     {
       "page": "A Giant Snake (Blackburrow)",
@@ -28213,8 +28205,7 @@
         "Medium Quality Bear Skin",
         "High Quality Bear Skin"
       ],
-      "image": "npc_a_grizzly_bear.png",
-      "noImage": true
+      "image": "npc_a_grizzly_bear.png"
     },
     {
       "page": "A Guard",
@@ -28987,8 +28978,7 @@
         "-30",
         "10"
       ],
-      "image": "npc_a_hatchling.png",
-      "noImage": true
+      "image": "npc_a_hatchling.png"
     },
     {
       "page": "A Hatebone Drake",
@@ -33021,8 +33011,7 @@
         "1",
         "1"
       ],
-      "image": "npc_a_kobold_runt.png",
-      "noImage": true
+      "image": "npc_a_kobold_runt.png"
     },
     {
       "page": "A kobold runt (Steamfont)",
@@ -33048,8 +33037,7 @@
         "-30",
         "10"
       ],
-      "image": "npc_a_kobold_runt.png",
-      "noImage": true
+      "image": "npc_a_kobold_runt.png"
     },
     {
       "page": "A Kobold Scout",
@@ -33200,8 +33188,7 @@
         "10",
         "10"
       ],
-      "image": "npc_a_kobold_sentry.png",
-      "noImage": true
+      "image": "npc_a_kobold_sentry.png"
     },
     {
       "page": "A Kobold Shaman",
@@ -33314,8 +33301,7 @@
         "+",
         "+"
       ],
-      "image": "npc_a_kobold_wanderer.png",
-      "noImage": true
+      "image": "npc_a_kobold_wanderer.png"
     },
     {
       "page": "A Kobold Watcher",
@@ -34208,8 +34194,7 @@
           "pct": 100
         }
       ],
-      "image": "npc_a_large_rattlesnake.png",
-      "noImage": true
+      "image": "npc_a_large_rattlesnake.png"
     },
     {
       "page": "A large scorpion",
@@ -34440,8 +34425,7 @@
         "Spiderling Eye",
         "Spider Silk"
       ],
-      "image": "npc_a_large_widow.png",
-      "noImage": true
+      "image": "npc_a_large_widow.png"
     },
     {
       "page": "A large wisp",
@@ -35674,8 +35658,7 @@
       "factionAmounts": [
         "-30"
       ],
-      "image": "npc_a_lizardman_mystic.png",
-      "noImage": true
+      "image": "npc_a_lizardman_mystic.png"
     },
     {
       "page": "A lizard man warrior",
@@ -36078,8 +36061,7 @@
       "notices": [
         "delete",
         "DNE"
-      ],
-      "noImage": true
+      ]
     },
     {
       "page": "A lizardman scout",
@@ -36284,8 +36266,7 @@
         "-30",
         "10"
       ],
-      "image": "npc_a_lizardman_watcher.png",
-      "noImage": true
+      "image": "npc_a_lizardman_watcher.png"
     },
     {
       "page": "A Loathling Lich",
@@ -36686,8 +36667,7 @@
           "pct": 7
         }
       ],
-      "image": "npc_a_madman.png",
-      "noImage": true
+      "image": "npc_a_madman.png"
     },
     {
       "page": "A Magician",
@@ -37545,8 +37525,7 @@
         "Fire Beetle Eye",
         "Fire Beetle Leg"
       ],
-      "image": "npc_a_minor_scarab.png",
-      "noImage": true
+      "image": "npc_a_minor_scarab.png"
     },
     {
       "page": "A Minotaur",
@@ -39720,8 +39699,7 @@
         "Rusty Long Sword",
         "Zombie Skin"
       ],
-      "image": "npc_a_parched_zombie.png",
-      "noImage": true
+      "image": "npc_a_parched_zombie.png"
     },
     {
       "page": "A passage of flame",
@@ -42033,8 +42011,7 @@
         "Puma Skin",
         "Ruined Cat Pelt"
       ],
-      "image": "npc_a_puma.png",
-      "noImage": true
+      "image": "npc_a_puma.png"
     },
     {
       "page": "A Putrid Skeleton",
@@ -42874,8 +42851,7 @@
           "pct": 100
         }
       ],
-      "image": "npc_a_rattlesnake.png",
-      "noImage": true
+      "image": "npc_a_rattlesnake.png"
     },
     {
       "page": "A ravenous brute",
@@ -47528,8 +47504,7 @@
         "+",
         "+"
       ],
-      "image": "npc_a_scouting_kobold.png",
-      "noImage": true
+      "image": "npc_a_scouting_kobold.png"
     },
     {
       "page": "A Scrawny Gnoll",
@@ -51389,8 +51364,7 @@
           "ew": -1704
         }
       ],
-      "image": "npc_a_skeletal_monk.png",
-      "noImage": true
+      "image": "npc_a_skeletal_monk.png"
     },
     {
       "page": "A skeletal soldier",
@@ -66750,8 +66724,7 @@
           "pct": 34
         }
       ],
-      "image": "npc_an_armadillo.png",
-      "noImage": true
+      "image": "npc_an_armadillo.png"
     },
     {
       "page": "An Armored Shadow",
@@ -72416,8 +72389,7 @@
           "pct": 100
         }
       ],
-      "image": "npc_an_infected_rat.png",
-      "noImage": true
+      "image": "npc_an_infected_rat.png"
     },
     {
       "page": "An Initiate Familiar",
@@ -78012,8 +77984,7 @@
         "-30",
         "-30"
       ],
-      "image": "npc_atheki_norkhitter.png",
-      "noImage": true
+      "image": "npc_atheki_norkhitter.png"
     },
     {
       "page": "Atheling Plague",
@@ -79108,8 +79079,7 @@
       "factionAmounts": [
         "-30"
       ],
-      "image": "npc_banaf_norkhitter.jpg",
-      "noImage": true
+      "image": "npc_banaf_norkhitter.jpg"
     },
     {
       "page": "Bandl McMarrin",
@@ -82246,8 +82216,7 @@
           "ew": 404
         }
       ],
-      "image": "npc_beno_targnarle.png",
-      "noImage": true
+      "image": "npc_beno_targnarle.png"
     },
     {
       "page": "Berane Constarg",
@@ -93786,8 +93755,7 @@
           "pct": 33
         }
       ],
-      "image": "npc_cleaner_vii.png",
-      "noImage": true
+      "image": "npc_cleaner_vii.png"
     },
     {
       "page": "Cleaner X",
@@ -105365,8 +105333,7 @@
           "ew": 304
         }
       ],
-      "image": "npc_diggins.png",
-      "noImage": true
+      "image": "npc_diggins.png"
     },
     {
       "page": "Diggory",
@@ -120211,8 +120178,7 @@
         "-30",
         "10"
       ],
-      "image": "npc_furtog_ogrebane.png",
-      "noImage": true
+      "image": "npc_furtog_ogrebane.png"
     },
     {
       "page": "Fyrefly",
@@ -129926,8 +129892,7 @@
         "+",
         "+"
       ],
-      "image": "npc_guard_brendyl.png",
-      "noImage": true
+      "image": "npc_guard_brendyl.png"
     },
     {
       "page": "Guard Briarstorm",
@@ -132023,8 +131988,7 @@
         "-30",
         "10"
       ],
-      "image": "npc_guard_dykalin.png",
-      "noImage": true
+      "image": "npc_guard_dykalin.png"
     },
     {
       "page": "Guard E`Brona",
@@ -132879,8 +132843,7 @@
         "+",
         "+"
       ],
-      "image": "npc_guard_fintran.png",
-      "noImage": true
+      "image": "npc_guard_fintran.png"
     },
     {
       "page": "Guard Fireblight",
@@ -141129,8 +141092,7 @@
         "+",
         "+"
       ],
-      "image": "npc_guard_stoutman.png",
-      "noImage": true
+      "image": "npc_guard_stoutman.png"
     },
     {
       "page": "Guard Streamtree",
@@ -149217,8 +149179,7 @@
       "drops": [
         "Iced Bone Chips"
       ],
-      "image": "npc_ice_bone_skeleton.png",
-      "noImage": true
+      "image": "npc_ice_bone_skeleton.png"
     },
     {
       "page": "Ice Boned Skeleton (Befallen)",
@@ -152171,8 +152132,7 @@
         "-30",
         "-30"
       ],
-      "image": "npc_innkeep_valon.png",
-      "noImage": true
+      "image": "npc_innkeep_valon.png"
     },
     {
       "page": "Innkeep Wuleran",
@@ -157150,8 +157110,7 @@
         "-30",
         "-30"
       ],
-      "image": "npc_kalamin_norkhitter.png",
-      "noImage": true
+      "image": "npc_kalamin_norkhitter.png"
     },
     {
       "page": "Kalatrina Plossen",
@@ -160062,8 +160021,7 @@
           "pct": 100
         }
       ],
-      "image": "npc_kindra_farseer.png",
-      "noImage": true
+      "image": "npc_kindra_farseer.png"
     },
     {
       "page": "King Ak`Anon",
@@ -190816,8 +190774,7 @@
         "-30",
         "-30"
       ],
-      "image": "npc_philicia_drinn.png",
-      "noImage": true
+      "image": "npc_philicia_drinn.png"
     },
     {
       "page": "Philip Tallman",
@@ -197365,8 +197322,7 @@
         "-30",
         "-30"
       ],
-      "image": "npc_rell_ostodl.png",
-      "noImage": true
+      "image": "npc_rell_ostodl.png"
     },
     {
       "page": "Rem Knarjon",
@@ -212236,8 +212192,7 @@
         "10",
         "10"
       ],
-      "image": "npc_sir_edwin_motte.png",
-      "noImage": true
+      "image": "npc_sir_edwin_motte.png"
     },
     {
       "page": "Sir Folon",
@@ -239670,8 +239625,7 @@
         }
       ],
       "merchant": true,
-      "image": "npc_viira_bali.png",
-      "noImage": true
+      "image": "npc_viira_bali.png"
     },
     {
       "page": "Vilefang",

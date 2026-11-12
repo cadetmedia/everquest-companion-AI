@@ -438,7 +438,7 @@ Every class gets access to a unique Class AA list. The full set of Class AAs ava
 |}
 
 == Special AAs ==
-Special AAs require achievements to unlock.
+Special AAs require either an achievement to unlock or using the [[Reincarnation System]].
 
 {| class="wikitable sortable"
 ! colspan="4" | Special AAs
@@ -446,6 +446,72 @@ Special AAs require achievements to unlock.
 ! Name !! Ranks !! Cost !! Description
 |-
 | Banestrike || 4 || 0 || This passive ability improves the base damage of your melee attacks and the power of your damaging and healing abilities by 2/4/?/?%. Complete Slayer achievements to progress this ability. Requirements: Level 1.
+|-
+| Class Reincarnation: Bard || 3 || 0 || This passive ability increases your movement speed by 3%.
+|-
+| Class Reincarnation: Beastlord || 3 || 0 || This passive ability reduces your pet's attack delay by 3%.
+|-
+| Class Reincarnation: Berserker || 3 || 0 || This passive ability reduces your endurance costs by 3%.
+|-
+| Class Reincarnation: Cleric || 3 || 0 || This passive ability reduces the mana cost of all healing spells by 2%.
+|-
+| Class Reincarnation: Druid || 3 || 0 || This passive ability reduces the cast time of all spells by 2%.
+|-
+| Class Reincarnation: Enchanter || 3 || 0 || This passive ability reduces the mana cost of any non-damaging detrimental spell by 3%.
+|-
+| Class Reincarnation: Magician || 3 || 0 || This passive ability increases the damage of your pets by 3%.
+|-
+| Class Reincarnation: Monk || 3 || 0 || This passive ability increases your chance to dodge by 2%.
+|-
+| Class Reincarnation: Necromancer || 3 || 0 || This passive ability reduces the cost of damage over time spells by 2%.
+|-
+| Class Reincarnation: Paladin || 3 || 0 || This passive ability increases the effectiveness of incoming instant duration healing spells by 3%.
+|-
+| Class Reincarnation: Ranger || 3 || 0 || This passive ability increases your chance to hit by 3%.
+|-
+| Class Reincarnation: Rogue || 3 || 0 || This passive ability increases the damage of activated skill abilities by 3%. This applies to Backstab, Bash, Cleave, Dragon Punch, Eagle Strike, Flying Kick, Frenzy, Kick, Reave, Round Kick, Smite, and Tiger Claw. 
+|-
+| Class Reincarnation: Shadow Knight || 3 || 0 || This passive ability increases the damage of your casted instant duration lifetap spells by 3%.
+|-
+| Class Reincarnation: Shaman || 3 || 0 || This passive ability reduces the mana cost of all beneficial spells that do not contain a heal component by 3%. 
+|-
+| Class Reincarnation: Warrior || 3 || 0 || This passive ability reduces incoming melee damage by 2%. 
+|-
+| Class Reincarnation: Wizard || 3 || 0 || This passive ability reduces the mana cost of direct damage spells by 2%.
+|-
+| Class Reincarnation: Barbarian || 3 || 0 || This passive ability reduces incoming cold damage by 3%.
+|-
+| Class Reincarnation: Dark Elf || 3 || 0 || This passive ability reduces incoming fire damage by 3%. 
+|-
+| Class Reincarnation: Dwarf || 3 || 0 || This passive ability increases your chance to resist fear spells by 10%. 
+|-
+| Class Reincarnation: Erudite || 3 || 0 || This passive ability increases your mana regeneration by 2. 
+|-
+| Class Reincarnation: Froglok || 3 || 0 || This passive ability will increase your jump power by 10% and your hitpoint regeneration by 1. 
+|-
+| Class Reincarnation: Gnome || 3 || 0 || This passive ability grants you an additional 10% chance to resist charm and mesmerization spells. 
+|-
+| Class Reincarnation: Half Dark Elf || 3 || 0 || This passive ability will increase the range of your tracking and map awareness by 10%. 
+|-
+| Class Reincarnation: Half Elf || 3 || 0 || This passive ability increases your base stat caps and all resists by 3. 
+|-
+| Class Reincarnation: Halfling || 3 || 0 || This passive ability will mitigate the effects of any negative movement speed effect by 15%.
+|-
+| Class Reincarnation: High Elf || 3 || 0 || This passive ability reduces incoming magic damage by 3%. 
+|-
+| Class Reincarnation: Human || 3 || 0 || This passive ability increases your base stat caps by 5. 
+|-
+| Class Reincarnation: Iksar || 3 || 0 || This passive ability increases your hitpoint regeneration by 2 and your base armor class by 5. 
+|-
+| Class Reincarnation: Kerran || 3 || 0 || This passive ability will increase your endurance regeneration by 2 and grants an additional 10 points to your Safe Fall skill. 
+|-
+| Class Reincarnation: Ogre || 3 || 0 || This passive ability increases your chance to resist any stun by 10%. 
+|-
+| Class Reincarnation: Troll || 3 || 0 || This passive ability increases your hitpoint regeneration by 3.
+|-
+| Class Reincarnation: Wood Elf || 3 || 0 || This passive ability will increase the range of your spells and ranged attacks by 10 units. 
+|-
+| Reincarnation: Completionist || 3 || 0 || This passive ability increases the damage of your melee by 1%. You can raise your rank in this ability by completing all Class Reincarnations. 
 |}
 
 [[Category:Character]]

@@ -2,7 +2,7 @@
  "title": "EverQuest Legends Compendium",
  "author": "brutallstatic",
  "url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRi6Kj604QLMm7kkkjdZSqtogtMtNgq3n9qqc2kaUS_s4LJcMoHbdTl3ph5T93_qs6awfZD0E2I5KeO/pubhtml",
- "fetchedAt": "2026-10-31",
+ "fetchedAt": "2026-11-12",
  "tabs": [
   {
    "name": "Welcome",
@@ -16,6 +16,32 @@
     "https://www.youtube.com/user/brutallstatic",
     "This guide is regularly updated throughout the week, specifically on Tuesdays during downtime (and, of course, when we have a patch). If you want something specifically added, improved, etc., please reach out to me.",
     "The guide will be updated after the October 22 patch for Nektropos Castle, just give me a few days to gather information and format it. :)"
+   ]
+  },
+  {
+   "name": "Rulers of Kunark",
+   "rows": [
+    "Ruler of Kunark is launching on DECEMBER 8, 2026!!!",
+    "Producer's letter: https://www.everquestlegends.com/news/eql-kunark-producers-letter",
+    "Rulers of Kunark information: https://www.everquestlegends.com/rulers-of-kunark",
+    "Most of what is listed below is found in the links above.",
+    "The level cap has been raised to 55, and every class Epic quest has been reworked to remove the bottlenecks.",
+    "Every zone on Kunark has been revamped.",
+    "• Cabilis stands whole again, East and West joined as one city beneath the new Vekin Palace.",
+    "• New endgame raid content including newly reworked versions of Veeshan's Peak and Karnor's Castle.",
+    "• Tomar's Terrorfields stands where Firiona Vie once did, and the drolvarg do not share it.",
+    "• The Overthere has been substantially reshaped.",
+    "Reincarnation",
+    "Reincarnation is the cornerstone feature of the Kunark expansion. It provides players an alternative to other endgame content and the opportunity to explore new areas of the game while improving their max level characters. Once every class and the race in your loadout reach max level, you can reincarnate. Your loadout returns to level 1, and in exchange you earn a bonus ability rank for each class and race you were playing. Each class and race has its own three-rank line: the first two ranks are passive bonuses, and the third adds an activated ability. Your first reincarnation also turns your attribute hard caps into soft caps, and every reincarnation after that raises them further, with no upper limit. Each cycle takes a little longer than the last, so there's always something to work toward, at whatever pace suits you.",
+    "Artes",
+    "Multiclassing is at the heart of Legends, and Artes take it further. One Arte that will almost certainly get some attention is the Summoner Arte, which will allow you to command up to three pets at once, one for each pet class in your loadout. Eligible pet classes are mage, necromancer, enchanter, and beastlord. Many other exciting and powerful Artes will also be available. Artes will be available to unlock once Kunark launches, and we'll share more about them before launch.",
+    "Spell Merging and +11 Items",
+    "Your best gear and spells can now go past +10. Reaching +11 takes a special item found only in Kunark's raids, and every +11 item will gain a new exaltation slot with its own new effect.",
+    "Auction House",
+    "The Auction House replaces the Bazaar from EverQuest. In EverQuest Legends, you do not need to be logged in to sell items to other players. Simply list an item with an Auction House vendor, set your price, and your items will be available to purchase even after you log off. Buyers anywhere on your server can search and buy it instantly, and their purchase arrives by parcel. Your listings will stay up as long as you log in at least once a month.",
+    "Collections",
+    "Collections reward you for gathering sets of items from across an expansion, organized into chapters, from a zone's treasures to a full class armor set. Complete sets, chapters, and whole expansions to earn titles, cosmetics, and conveniences. Moreover, the Collections window doubles as extra storage for the items you've gathered.",
+    "Pre-Order Today (https://www.everquestlegends.com/rulers-of-kunark)"
    ]
   },
   {
@@ -42,6 +68,12 @@
    "rows": [
     "I'll do my best to keep a list of important updates from the devs on this tab so you can always review what's been discussed/changed recently.",
     "Please note that if I link to a Reddit post, I'm likely not the one who wrote it.",
+    "November 10 Patch Notes (RIP DDD) (https://www.everquestlegends.com/patch-notes/eql-update-notes-11-10-2026)",
+    "November 4 Hotfix Notes (https://www.everquestlegends.com/patch-notes/eql-hotfix-notes-11-4-2026)",
+    "November 3 Hotfix Notes (https://www.everquestlegends.com/patch-notes/eql-hotfix-notes-11-3-2026)",
+    "October 29 Hotfix Notes (https://www.everquestlegends.com/patch-notes/eql-update-notes-10-29-2026)",
+    "October 27 Patch Notes (https://www.everquestlegends.com/patch-notes/eql-update-notes-10-27-2026)",
+    "October 23 Hotfix Notes (https://www.everquestlegends.com/patch-notes/eql-update-notes-10-23-2026)",
     "October 22 Patch Notes (https://old.reddit.com/r/EQLegends/comments/1xcs0tw/patch_notes_october_22_2026/)",
     "October 13 Patch Notes (https://old.reddit.com/r/EQLegends/comments/1x4yt02/patch_notes_1013/)",
     "October 1 Dev Comments (https://old.reddit.com/r/EQLegends/comments/1wvhuwm/big_revelatory_dev_comments_dump_from_discord_oct/)",
@@ -54,6 +86,18 @@
     "September 1 Patch Notes (https://old.reddit.com/r/EQLegends/comments/1w4bk69/natch_potes_9126/)",
     "August 25 Patch Notes (https://old.reddit.com/r/EQLegends/comments/1vxmk0h/natch_potes_august_25_2026/)",
     "August 22 Dev Stream Recap (https://old.reddit.com/r/EQLegends/comments/1vvsvch/august_22nd_dev_stream_recap/)"
+   ]
+  },
+  {
+   "name": "RivervaleStatic",
+   "rows": [
+    "Are you looking for a home in-game? Want to spend time with dozens upon dozens of active EQL players?",
+    "Static on Rivervale is an extremely active and accommodating guild (i.e., 60+ weekday players, 100+ weekend players) that welcomes any and all players regardless of level, experience, etc.",
+    "Perhaps you started on a different server with a group of friends. Maybe now you're all alone. Or, maybe, you're just taking your first steps in EQL, and you want to know where you, too, can find a fun, active community of polite and considerate players.",
+    "We constantly give away raid loot, bags, platinum, and more. We run Dungeon Crawls and raids with whoever is online. You get the idea.",
+    "As I like to say, \"The best time to plant a tree was 20 years ago. The second-best time is now. Similarly, the best time to have started on Rivervale was July 28. The second-best time is right now. Reroll and join us, you won't regret it.\" :)",
+    "Anyone online can invite, so just do a /who all \"static\" and get in the guild as soon as possible. The only requirement is to be kind, be polite, be considerate, and don't stir up trouble. Tall order, I know.",
+    "See you in Norrath!"
    ]
   },
   {
@@ -180,8 +224,8 @@
     "Below, is a list of popular and potent class combos for bossing and grinding motes. Use the links to access the recommendations for BiS, rotations, and so on.",
     "I will be updating the list and these guides weekly, so keep checking back for more. And, of course, if anything seems odd, off, or incorrect, please contact me.",
     "I'm currently building out the BiS recommendations and everything else, so the links will be active soon.™",
-    "Bard / Cleric / Druid (https://docs.google.com/spreadsheets/d/e/2PACX-1vQ3ljek_tsKy2bZMKeV_JnJcwlc44BQc_Zeq1qvj6S1z_Hx-KwUXvM9BBhYY_PeeRv0QQUBBS51PkXR/pubhtml)",
-    "Bard / Cleric / Shaman (https://docs.google.com/spreadsheets/d/e/2PACX-1vTrC_1aXfPsFHQaY4LZWe71x5ApWHTLH3-PpfX7DSp6Y2u2kgRpiYFLqPo5jYy0zGzqfUN8p2TDEfWU/pubhtml)",
+    "Bard / Cleric / Druid (https://docs.google.com/spreadsheets/d/e/2PACX-1vQ3ljek_tsKy2bZMKeV_JnJcwlc44BQc_Zeq1qvj6S1z_Hx-KwUXvM9BBhYY_PeeRv0QQUBBS51PkXR/pubhtml) | DDD has been nerfed, don't invest in this loadout until we know more about the new meta, assuming you care about min/max AoE damage.",
+    "Bard / Cleric / Shaman (https://docs.google.com/spreadsheets/d/e/2PACX-1vTrC_1aXfPsFHQaY4LZWe71x5ApWHTLH3-PpfX7DSp6Y2u2kgRpiYFLqPo5jYy0zGzqfUN8p2TDEfWU/pubhtml) | DDD has been nerfed, don't invest in this loadout until we know more about the new meta, assuming you care about min/max AoE damage.",
     "Bard / X / Wizard (primarily for Banestrike farming) (https://docs.google.com/spreadsheets/d/e/2PACX-1vQD_cnchyKOQdSExIMythJCfyeNpPFc7KFwPC7sc1E69MEC7Z-8X6JBMMihNXp8RMva7VFjGPd-tEI5/pubhtml)",
     "Enchanter / Monk / Paladin (https://docs.google.com/spreadsheets/d/e/2PACX-1vTh4t-gVdWne0tzAqJI0lEQF1VdGnuIJBQm3Xk6e-7CJIsJwSX9Id2EMwsRHwFCUG0D1PzBgg0dr3d9/pubhtml)",
     "Ranger / Shadow Knight / Shaman (https://docs.google.com/spreadsheets/d/e/2PACX-1vQ-8Ivta8BqkwOZLluusGTLRd0w6VvGe-7tA10pepqEN1R2q6B4FRqgqJCRfFUPcMLNudTIOxPeJcWi/pubhtml)"
@@ -192,6 +236,8 @@
    "rows": [
     "Bard's get a song at level 43 - Denon's Desperate Dirge (DDD) - that catapults it to the top of the charts for ST and AoE. Let's explore what that means.",
     "A lot more info can be found in the \"Class Guides\" tab, so make sure you review the various builds I've outlined, and don't hesitate to ask questions or point out any flaws.",
+    "As of the November 10th patch, DDD has been nerfed and we don't know exactly how things look quite yet. More info the come soon.™",
+    "\"Denon's Desperate Dirge can now only land on the same target once every 2 ticks (12-17 seconds).\"",
     "What makes DDD so powerful?",
     "Normally, a Bard's DDD song is limited by their mana pool and lack of mana regeneration. Those problems do not exist in EQL, so when you pair a Bard with classes that can push your mana pool to 8,000 or higher, you're able to cast DDD over, and over, and over, again and again. On top of that, there are also further interations with AAs that allow it to crit more often, which means that builds that lean into DDD are able to absolutely destroy what they come up against, both bosses and packs of trash.",
     "What limitations does DDD have?",
