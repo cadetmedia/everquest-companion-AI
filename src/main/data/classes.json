@@ -1,5 +1,5 @@
 {
-  "scrapedAt": "2026-10-18T09:08:59.560Z",
+  "scrapedAt": "2026-11-12T04:03:13.960Z",
   "names": {
     "BER": "Berserker",
     "BRD": "Bard",
@@ -1112,6 +1112,134 @@
         1
       ]
     },
+    "Class Reincarnation: Barbarian": {
+      "group": "special",
+      "activated": false
+    },
+    "Class Reincarnation: Bard": {
+      "group": "special",
+      "activated": false
+    },
+    "Class Reincarnation: Beastlord": {
+      "group": "special",
+      "activated": false
+    },
+    "Class Reincarnation: Berserker": {
+      "group": "special",
+      "activated": false
+    },
+    "Class Reincarnation: Cleric": {
+      "group": "special",
+      "activated": false
+    },
+    "Class Reincarnation: Dark Elf": {
+      "group": "special",
+      "activated": false
+    },
+    "Class Reincarnation: Druid": {
+      "group": "special",
+      "activated": false
+    },
+    "Class Reincarnation: Dwarf": {
+      "group": "special",
+      "activated": false
+    },
+    "Class Reincarnation: Enchanter": {
+      "group": "special",
+      "activated": false
+    },
+    "Class Reincarnation: Erudite": {
+      "group": "special",
+      "activated": false
+    },
+    "Class Reincarnation: Froglok": {
+      "group": "special",
+      "activated": false
+    },
+    "Class Reincarnation: Gnome": {
+      "group": "special",
+      "activated": false
+    },
+    "Class Reincarnation: Half Dark Elf": {
+      "group": "special",
+      "activated": false
+    },
+    "Class Reincarnation: Half Elf": {
+      "group": "special",
+      "activated": false
+    },
+    "Class Reincarnation: Halfling": {
+      "group": "special",
+      "activated": false
+    },
+    "Class Reincarnation: High Elf": {
+      "group": "special",
+      "activated": false
+    },
+    "Class Reincarnation: Human": {
+      "group": "special",
+      "activated": false
+    },
+    "Class Reincarnation: Iksar": {
+      "group": "special",
+      "activated": false
+    },
+    "Class Reincarnation: Kerran": {
+      "group": "special",
+      "activated": false
+    },
+    "Class Reincarnation: Magician": {
+      "group": "special",
+      "activated": false
+    },
+    "Class Reincarnation: Monk": {
+      "group": "special",
+      "activated": false
+    },
+    "Class Reincarnation: Necromancer": {
+      "group": "special",
+      "activated": false
+    },
+    "Class Reincarnation: Ogre": {
+      "group": "special",
+      "activated": false
+    },
+    "Class Reincarnation: Paladin": {
+      "group": "special",
+      "activated": false
+    },
+    "Class Reincarnation: Ranger": {
+      "group": "special",
+      "activated": false
+    },
+    "Class Reincarnation: Rogue": {
+      "group": "special",
+      "activated": false
+    },
+    "Class Reincarnation: Shadow Knight": {
+      "group": "special",
+      "activated": false
+    },
+    "Class Reincarnation: Shaman": {
+      "group": "special",
+      "activated": false
+    },
+    "Class Reincarnation: Troll": {
+      "group": "special",
+      "activated": false
+    },
+    "Class Reincarnation: Warrior": {
+      "group": "special",
+      "activated": false
+    },
+    "Class Reincarnation: Wizard": {
+      "group": "special",
+      "activated": false
+    },
+    "Class Reincarnation: Wood Elf": {
+      "group": "special",
+      "activated": false
+    },
     "Combat Agility": {
       "group": "general",
       "activated": false,
@@ -1832,6 +1960,10 @@
       "levels": [
         1
       ]
+    },
+    "Reincarnation: Completionist": {
+      "group": "special",
+      "activated": false
     },
     "Scribble Notes": {
       "group": "class",
