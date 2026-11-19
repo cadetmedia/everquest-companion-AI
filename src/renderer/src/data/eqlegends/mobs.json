@@ -1,5 +1,5 @@
 {
-  "scrapedAt": "2026-11-01T17:29:52.542Z",
+  "scrapedAt": "2026-11-19T04:13:11.377Z",
   "source": "eqlwiki.com — Category:NPCs/Named Mobs/Merchants/Raid Encounters ∪ embeddedin Template:Namedmobpage/MerchantPage, filtered to pages opening a mob template + recentchanges delta (scripts/scrape-delta.mts)",
   "mobs": [
     {
@@ -501,8 +501,7 @@
         "Barbed Bone Chips",
         "Bone Barbs"
       ],
-      "image": "npc_a_barbed_bone_skeleton.png",
-      "noImage": true
+      "image": "npc_a_barbed_bone_skeleton.png"
     },
     {
       "page": "A barbed succulent",
@@ -969,8 +968,7 @@
       "notices": [
         "delete",
         "DNE"
-      ],
-      "noImage": true
+      ]
     },
     {
       "page": "A black reaver",
@@ -2045,8 +2043,7 @@
       "image": "npc_a_brittle_skeleton.png",
       "commonDrops": [
         "Bone Chips"
-      ],
-      "noImage": true
+      ]
     },
     {
       "page": "A broken golem",
@@ -2895,8 +2892,7 @@
       "otherNames": [
         "A caimen"
       ],
-      "image": "npc_a_caiman.png",
-      "noImage": true
+      "image": "npc_a_caiman.png"
     },
     {
       "page": "A Carrion Bat",
@@ -5631,8 +5627,7 @@
         "-30",
         "-30"
       ],
-      "image": "npc_a_clockwork_bowyer.png",
-      "noImage": true
+      "image": "npc_a_clockwork_bowyer.png"
     },
     {
       "page": "A Clockwork Brewmaster",
@@ -5719,8 +5714,7 @@
         "-30",
         "-30"
       ],
-      "image": "npc_a_clockwork_fletcher.png",
-      "noImage": true
+      "image": "npc_a_clockwork_fletcher.png"
     },
     {
       "page": "A Clockwork Grocer",
@@ -7320,8 +7314,7 @@
         "Northern Desert of Ro",
         "Southern Desert of Ro"
       ],
-      "image": "npc_a_coyote.png",
-      "noImage": true
+      "image": "npc_a_coyote.png"
     },
     {
       "page": "A Cracked Skeleton",
@@ -7621,8 +7614,7 @@
         "Chunk of Meat",
         "Gator Meat"
       ],
-      "image": "npc_a_crocodile.png",
-      "noImage": true
+      "image": "npc_a_crocodile.png"
     },
     {
       "page": "A crocodile (Lake Rathe)",
@@ -9728,8 +9720,7 @@
         "Small Cloth Sleeves",
         "Small Cloth Veil",
         "Small Cloth Wristband"
-      ],
-      "noImage": true
+      ]
     },
     {
       "page": "A Decaying Skeleton",
@@ -9976,8 +9967,7 @@
         "Rusty Weapons",
         "Short Beer",
         "Silver Amulet"
-      ],
-      "noImage": true
+      ]
     },
     {
       "page": "A Dervish Thug",
@@ -13955,8 +13945,7 @@
         "Piece of Rat Fur",
         "Rat Whiskers"
       ],
-      "image": "npc_a_female_rat.png",
-      "noImage": true
+      "image": "npc_a_female_rat.png"
     },
     {
       "page": "A Feral Amalgam",
@@ -14214,8 +14203,7 @@
         "-3",
         "1"
       ],
-      "image": "npc_a_ferocious_kobold.png",
-      "noImage": true
+      "image": "npc_a_ferocious_kobold.png"
     },
     {
       "page": "A Festering Hag",
@@ -14827,8 +14815,7 @@
       "zones": [
         "Various Zones"
       ],
-      "image": "npc_a_fish.png",
-      "noImage": true
+      "image": "npc_a_fish.png"
     },
     {
       "page": "A flighty fiend",
@@ -21090,8 +21077,7 @@
           "pct": 100
         }
       ],
-      "image": "npc_a_giant_briar_snake.jpg",
-      "noImage": true
+      "image": "npc_a_giant_briar_snake.png"
     },
     {
       "page": "A giant cave bat",
@@ -21192,8 +21178,7 @@
         "10",
         "10"
       ],
-      "image": "npc_a_giant_diseased_rat.png",
-      "noImage": true
+      "image": "npc_a_giant_diseased_rat.png"
     },
     {
       "page": "A giant frenzied leech",
@@ -21425,8 +21410,7 @@
       "zones": [
         "South Ro"
       ],
-      "image": "npc_a_giant_rattlesnake.png",
-      "noImage": true
+      "image": "npc_a_giant_rattlesnake.png"
     },
     {
       "page": "A Giant Scarab",
@@ -21534,8 +21518,7 @@
           "pct": 100
         }
       ],
-      "image": "npc_a_giant_skeleton.png",
-      "noImage": true
+      "image": "npc_a_giant_skeleton.png"
     },
     {
       "page": "A Giant Snake (Blackburrow)",
@@ -21871,6 +21854,25 @@
       ],
       "image": "npc_a_giant_wooly_spider.png",
       "noImage": true
+    },
+    {
+      "page": "A giant yellow recluse",
+      "eraTag": "Classic",
+      "name": "a giant yellow recluse",
+      "level": "8-9",
+      "zones": [
+        "Steamfont Mountains"
+      ],
+      "drops": [
+        "Spider Legs"
+      ],
+      "loc": [
+        {
+          "ns": 301,
+          "ew": -1463
+        }
+      ],
+      "image": "npc_a_giant_yellow_recluse.png"
     },
     {
       "page": "A giant yellowjacket",
@@ -23654,8 +23656,7 @@
         "Rusty Warhammer",
         "Rusty Rapier"
       ],
-      "image": "npc_a_gnome_skeleton.png",
-      "noImage": true
+      "image": "npc_a_gnome_skeleton.png"
     },
     {
       "page": "A Gnome Slave",
@@ -25066,6 +25067,24 @@
       "noImage": true
     },
     {
+      "page": "A goblin janitor",
+      "eraTag": "Classic",
+      "name": "A goblin janitor",
+      "level": "7",
+      "zones": [
+        "Runnyeye"
+      ],
+      "loc": [
+        {
+          "ns": -169,
+          "ew": 14,
+          "z": -128
+        }
+      ],
+      "image": "?",
+      "noImage": true
+    },
+    {
       "page": "A Goblin Knight",
       "eraTag": "Classic",
       "name": "a goblin knight",
@@ -25609,8 +25628,7 @@
         "5",
         "5"
       ],
-      "image": "npc_a_goblin_peon.png",
-      "noImage": true
+      "image": "npc_a_goblin_peon.png"
     },
     {
       "page": "A goblin pit fighter",
@@ -28156,6 +28174,59 @@
       "noImage": true
     },
     {
+      "page": "A Grikbar Kobold",
+      "eraTag": "Classic",
+      "name": "a grikbar kobold",
+      "level": "3-5",
+      "zones": [
+        "Steamfont Mountains"
+      ],
+      "drops": [
+        "Ale",
+        "Bead Necklace",
+        "Belt Pouch",
+        "Cloth Armor",
+        "Hematite",
+        "Iron Ration",
+        "Malachite",
+        "Mead",
+        "Ration",
+        "Silver Stud",
+        "Small Box",
+        "Small Cloth Armor",
+        "Steamfont Spring Water"
+      ],
+      "loc": [
+        {
+          "ns": -364,
+          "ew": 1682
+        }
+      ],
+      "image": "npc_a_grikbar_kobold.png"
+    },
+    {
+      "page": "A Grikbar Shaman",
+      "eraTag": "Classic",
+      "name": "a grikbar shaman",
+      "level": "4-5",
+      "zones": [
+        "Steamfont Mountains"
+      ],
+      "drops": [
+        "Cloth Armor",
+        "Rusty Weapons",
+        "Small Box",
+        "Steamfont Spring Water"
+      ],
+      "loc": [
+        {
+          "ns": -350,
+          "ew": 1685
+        }
+      ],
+      "image": "npc_a_grikbar_shaman.png"
+    },
+    {
       "page": "A Grinning Gargoyle",
       "name": "a grinning gargoyle",
       "level": "24",
@@ -28213,8 +28284,7 @@
         "Medium Quality Bear Skin",
         "High Quality Bear Skin"
       ],
-      "image": "npc_a_grizzly_bear.png",
-      "noImage": true
+      "image": "npc_a_grizzly_bear.png"
     },
     {
       "page": "A Guard",
@@ -28987,8 +29057,7 @@
         "-30",
         "10"
       ],
-      "image": "npc_a_hatchling.png",
-      "noImage": true
+      "image": "npc_a_hatchling.png"
     },
     {
       "page": "A Hatebone Drake",
@@ -33021,8 +33090,7 @@
         "1",
         "1"
       ],
-      "image": "npc_a_kobold_runt.png",
-      "noImage": true
+      "image": "npc_a_kobold_runt.png"
     },
     {
       "page": "A kobold runt (Steamfont)",
@@ -33048,8 +33116,7 @@
         "-30",
         "10"
       ],
-      "image": "npc_a_kobold_runt.png",
-      "noImage": true
+      "image": "npc_a_kobold_runt.png"
     },
     {
       "page": "A Kobold Scout",
@@ -33104,8 +33171,7 @@
         "-30",
         "10"
       ],
-      "image": "npc_a_kobold_scout.png",
-      "noImage": true
+      "image": "npc_a_kobold_scout.png"
     },
     {
       "page": "A kobold scout (Toxxulia)",
@@ -33140,8 +33206,7 @@
         "Pristine Kobold Pelt",
         "Useless Cloth Cap"
       ],
-      "image": "npc_a_kobold_scout.png",
-      "noImage": true
+      "image": "npc_a_kobold_scout.png"
     },
     {
       "page": "A Kobold Sentinel",
@@ -33200,8 +33265,7 @@
         "10",
         "10"
       ],
-      "image": "npc_a_kobold_sentry.png",
-      "noImage": true
+      "image": "npc_a_kobold_sentry.png"
     },
     {
       "page": "A Kobold Shaman",
@@ -33314,8 +33378,7 @@
         "+",
         "+"
       ],
-      "image": "npc_a_kobold_wanderer.png",
-      "noImage": true
+      "image": "npc_a_kobold_wanderer.png"
     },
     {
       "page": "A Kobold Watcher",
@@ -33505,8 +33568,36 @@
         "-30",
         "10"
       ],
-      "image": "npc_a_krag_elder.png",
-      "noImage": true
+      "image": "npc_a_krag_elder.png"
+    },
+    {
+      "page": "A krag warrior",
+      "eraTag": "Classic",
+      "name": "a krag warrior",
+      "level": "9-10",
+      "zones": [
+        "Steamfont Mountains"
+      ],
+      "drops": [
+        "Aviak Talon",
+        "Bronze Weapons",
+        "Rusty Weapons"
+      ],
+      "loc": [
+        {
+          "ns": 386,
+          "ew": 1835
+        }
+      ],
+      "factions": [
+        "Krag",
+        "Storm Guard"
+      ],
+      "factionAmounts": [
+        "-10",
+        "+"
+      ],
+      "image": "npc_a_krag_warrior.png"
     },
     {
       "page": "A krom zek spy",
@@ -34208,8 +34299,7 @@
           "pct": 100
         }
       ],
-      "image": "npc_a_large_rattlesnake.png",
-      "noImage": true
+      "image": "npc_a_large_rattlesnake.png"
     },
     {
       "page": "A large scorpion",
@@ -34440,8 +34530,7 @@
         "Spiderling Eye",
         "Spider Silk"
       ],
-      "image": "npc_a_large_widow.png",
-      "noImage": true
+      "image": "npc_a_large_widow.png"
     },
     {
       "page": "A large wisp",
@@ -34497,6 +34586,22 @@
       ],
       "image": "npc_a_large_wooly_spider.png",
       "noImage": true
+    },
+    {
+      "page": "A large yellow recluse",
+      "eraTag": "Classic",
+      "name": "a large yellow recluse",
+      "level": "7",
+      "zones": [
+        "Steamfont Mountains"
+      ],
+      "loc": [
+        {
+          "ns": 969,
+          "ew": -251
+        }
+      ],
+      "image": "npc_a_large_yellow_recluse.png"
     },
     {
       "page": "A large yellowjacket",
@@ -34975,8 +35080,7 @@
           "ew": -1458
         }
       ],
-      "image": "npc_a_lesser_ebon_drake.png",
-      "noImage": true
+      "image": "npc_a_lesser_ebon_drake.png"
     },
     {
       "page": "A Lesser Guardian",
@@ -35674,8 +35778,7 @@
       "factionAmounts": [
         "-30"
       ],
-      "image": "npc_a_lizardman_mystic.png",
-      "noImage": true
+      "image": "npc_a_lizardman_mystic.png"
     },
     {
       "page": "A lizard man warrior",
@@ -36078,8 +36181,7 @@
       "notices": [
         "delete",
         "DNE"
-      ],
-      "noImage": true
+      ]
     },
     {
       "page": "A lizardman scout",
@@ -36284,8 +36386,7 @@
         "-30",
         "10"
       ],
-      "image": "npc_a_lizardman_watcher.png",
-      "noImage": true
+      "image": "npc_a_lizardman_watcher.png"
     },
     {
       "page": "A Loathling Lich",
@@ -36686,8 +36787,7 @@
           "pct": 7
         }
       ],
-      "image": "npc_a_madman.png",
-      "noImage": true
+      "image": "npc_a_madman.png"
     },
     {
       "page": "A Magician",
@@ -37545,8 +37645,7 @@
         "Fire Beetle Eye",
         "Fire Beetle Leg"
       ],
-      "image": "npc_a_minor_scarab.png",
-      "noImage": true
+      "image": "npc_a_minor_scarab.png"
     },
     {
       "page": "A Minotaur",
@@ -38124,8 +38223,7 @@
       "factionAmounts": [
         "-30"
       ],
-      "image": "npc_a_mountain_brownie.png",
-      "noImage": true
+      "image": "npc_a_mountain_brownie.png"
     },
     {
       "page": "A mountain giant brae",
@@ -38660,10 +38758,12 @@
         }
       ],
       "factions": [
-        "Host of Nektropos"
+        "Host of Nektropos",
+        "The Everling Dynasty"
       ],
       "factionAmounts": [
-        "-2"
+        "-2",
+        "+"
       ],
       "image": "npc_a_mutilated_attendant.png"
     },
@@ -39720,8 +39820,7 @@
         "Rusty Long Sword",
         "Zombie Skin"
       ],
-      "image": "npc_a_parched_zombie.png",
-      "noImage": true
+      "image": "npc_a_parched_zombie.png"
     },
     {
       "page": "A passage of flame",
@@ -42033,8 +42132,7 @@
         "Puma Skin",
         "Ruined Cat Pelt"
       ],
-      "image": "npc_a_puma.png",
-      "noImage": true
+      "image": "npc_a_puma.png"
     },
     {
       "page": "A Putrid Skeleton",
@@ -42874,8 +42972,7 @@
           "pct": 100
         }
       ],
-      "image": "npc_a_rattlesnake.png",
-      "noImage": true
+      "image": "npc_a_rattlesnake.png"
     },
     {
       "page": "A ravenous brute",
@@ -43063,6 +43160,27 @@
       "noImage": true
     },
     {
+      "page": "A reanimated chaplain",
+      "eraTag": "Classic",
+      "name": "a reanimated chaplain",
+      "level": "48-49",
+      "zones": [
+        "Nektropos Castle"
+      ],
+      "factions": [
+        "Host of Nektropos",
+        "The Everling Dynasty"
+      ],
+      "factionAmounts": [
+        "-2",
+        "+"
+      ],
+      "image": "npc_a_reanimated_chaplain.png",
+      "commonDrops": [
+        "Ruby"
+      ]
+    },
+    {
       "page": "A Reanimated Conscript",
       "name": "a Reanimated Conscript",
       "level": "48-53",
@@ -43215,6 +43333,32 @@
         "-2"
       ],
       "image": "npc_a_reanimated_servant.png"
+    },
+    {
+      "page": "A rebel clockwork",
+      "eraTag": "Classic",
+      "name": "a rebel clockwork",
+      "level": "8",
+      "zones": [
+        "Steamfont Mountains"
+      ],
+      "drops": [
+        "Mechanical Light Emitter",
+        "Saltpeter"
+      ],
+      "loc": [
+        {
+          "ns": 1476,
+          "ew": -1650
+        }
+      ],
+      "factions": [
+        "Defective Clockwork"
+      ],
+      "factionAmounts": [
+        "-2"
+      ],
+      "image": "npc_a_rebel_clockwork.png"
     },
     {
       "page": "A reconstructed justiciar",
@@ -44034,8 +44178,7 @@
       "factionAmounts": [
         "-30"
       ],
-      "image": "npc_a_runaway_clockwork.png",
-      "noImage": true
+      "image": "npc_a_runaway_clockwork.png"
     },
     {
       "page": "A Runnyeye Conscript",
@@ -47528,8 +47671,7 @@
         "+",
         "+"
       ],
-      "image": "npc_a_scouting_kobold.png",
-      "noImage": true
+      "image": "npc_a_scouting_kobold.png"
     },
     {
       "page": "A Scrawny Gnoll",
@@ -51320,6 +51462,9 @@
       "zones": [
         "Befallen"
       ],
+      "drops": [
+        "Rusty Mining Pick"
+      ],
       "factions": [
         "Befallen Inhabitants"
       ],
@@ -51389,8 +51534,7 @@
           "ew": -1704
         }
       ],
-      "image": "npc_a_skeletal_monk.png",
-      "noImage": true
+      "image": "npc_a_skeletal_monk.png"
     },
     {
       "page": "A skeletal soldier",
@@ -52179,12 +52323,7 @@
           "pct": 100
         }
       ],
-      "image": "npc_a_small_coyote.png",
-      "notices": [
-        "delete",
-        "DNE"
-      ],
-      "noImage": true
+      "image": "npc_a_small_coyote.png"
     },
     {
       "page": "A small mountain lion",
@@ -52203,8 +52342,7 @@
       "notices": [
         "delete",
         "DNE"
-      ],
-      "noImage": true
+      ]
     },
     {
       "page": "A smelly slave",
@@ -54222,11 +54360,10 @@
         "Russet Oxide",
         "Swirling Mist"
       ],
+      "image": "npc_a_steam_elemental.png",
       "otherNames": [
         "Steam Elemental"
-      ],
-      "image": "BST 2793 222223.jpg",
-      "noImage": true
+      ]
     },
     {
       "page": "A steel golem",
@@ -60558,8 +60695,7 @@
           "pct": 100
         }
       ],
-      "image": "npc_a_young_ebon_drake.png",
-      "noImage": true
+      "image": "npc_a_young_ebon_drake.png"
     },
     {
       "page": "A young gorilla",
@@ -63812,8 +63948,7 @@
         "10",
         "10"
       ],
-      "image": "npc_aglthin_dasmore.png",
-      "noImage": true
+      "image": "npc_aglthin_dasmore.png"
     },
     {
       "page": "Agryn Moonfield",
@@ -66750,8 +66885,7 @@
           "pct": 34
         }
       ],
-      "image": "npc_an_armadillo.png",
-      "noImage": true
+      "image": "npc_an_armadillo.png"
     },
     {
       "page": "An Armored Shadow",
@@ -67280,12 +67414,7 @@
           "ew": -1488
         }
       ],
-      "image": "npc_an_ebon_drakeling.png",
-      "notices": [
-        "delete",
-        "DNE"
-      ],
-      "noImage": true
+      "image": "npc_an_ebon_drakeling.png"
     },
     {
       "page": "An ebon wing hatchling",
@@ -72416,8 +72545,7 @@
           "pct": 100
         }
       ],
-      "image": "npc_an_infected_rat.png",
-      "noImage": true
+      "image": "npc_an_infected_rat.png"
     },
     {
       "page": "An Initiate Familiar",
@@ -77518,6 +77646,27 @@
       "noImage": true
     },
     {
+      "page": "Arthikus",
+      "eraTag": "Classic",
+      "name": "Arthikus",
+      "level": "33",
+      "zones": [
+        "Oasis of Marr"
+      ],
+      "drops": [
+        "Blackrock Lichen",
+        "Embalming Dust",
+        "Rusty Weapons"
+      ],
+      "loc": [
+        {
+          "ns": -1337,
+          "ew": 704
+        }
+      ],
+      "image": "npc_arthikus.png"
+    },
+    {
       "page": "Arthon Spiritsight",
       "name": "Arthon Spiritsight",
       "level": "30",
@@ -78012,8 +78161,7 @@
         "-30",
         "-30"
       ],
-      "image": "npc_atheki_norkhitter.png",
-      "noImage": true
+      "image": "npc_atheki_norkhitter.png"
     },
     {
       "page": "Atheling Plague",
@@ -79108,8 +79256,7 @@
       "factionAmounts": [
         "-30"
       ],
-      "image": "npc_banaf_norkhitter.jpg",
-      "noImage": true
+      "image": "npc_banaf_norkhitter.jpg"
     },
     {
       "page": "Bandl McMarrin",
@@ -82246,8 +82393,7 @@
           "ew": 404
         }
       ],
-      "image": "npc_beno_targnarle.png",
-      "noImage": true
+      "image": "npc_beno_targnarle.png"
     },
     {
       "page": "Berane Constarg",
@@ -87349,8 +87495,7 @@
           "pct": 100
         }
       ],
-      "image": "npc_brona_frugrin.png",
-      "noImage": true
+      "image": "npc_brona_frugrin.png"
     },
     {
       "page": "Bronin Higginsbot",
@@ -89359,6 +89504,22 @@
         "10"
       ],
       "image": "npc_byl_babbinsbort.png"
+    },
+    {
+      "page": "Byrola Bendil",
+      "eraTag": "Classic",
+      "name": "Byrola Bendil",
+      "level": "1-3",
+      "zones": [
+        "Steamfont Mountains"
+      ],
+      "loc": [
+        {
+          "ns": -137,
+          "ew": -469
+        }
+      ],
+      "image": "npc_byrola_bendil.png"
     },
     {
       "page": "Byzar Bloodforge",
@@ -92522,8 +92683,7 @@
       "factionAmounts": [
         "-30"
       ],
-      "image": "npc_charlotte.png",
-      "noImage": true
+      "image": "npc_charlotte.png"
     },
     {
       "page": "Charlotte Diggs",
@@ -93786,8 +93946,7 @@
           "pct": 33
         }
       ],
-      "image": "npc_cleaner_vii.png",
-      "noImage": true
+      "image": "npc_cleaner_vii.png"
     },
     {
       "page": "Cleaner X",
@@ -97225,8 +97384,7 @@
       "factionAmounts": [
         "-30"
       ],
-      "image": "npc_cognoggin.png",
-      "noImage": true
+      "image": "npc_cognoggin.jpg"
     },
     {
       "page": "Coldain Outcast",
@@ -99171,8 +99329,7 @@
       "factionAmounts": [
         "-30"
       ],
-      "image": "npc_crisyn.png",
-      "noImage": true
+      "image": "npc_crisyn.png"
     },
     {
       "page": "Cronte Deloru",
@@ -101069,8 +101226,7 @@
         }
       ],
       "merchant": true,
-      "image": "npc_cyria_lorewhisper.png",
-      "noImage": true
+      "image": "npc_cyria_lorewhisper.png"
     },
     {
       "page": "Cyrla Shadowstepper",
@@ -101645,6 +101801,23 @@
       ],
       "image": "npc_danaria_hollin.png",
       "noImage": true
+    },
+    {
+      "page": "Dandalek Swillslammer",
+      "name": "Dandalek Swillslammer",
+      "level": "40",
+      "zones": [
+        "Butcherblock Mountains"
+      ],
+      "loc": [
+        {
+          "ns": 2957,
+          "ew": -203,
+          "z": 0
+        }
+      ],
+      "merchant": true,
+      "image": "npc_dandalek_swillslammer.png"
     },
     {
       "page": "Danilla Delucic",
@@ -105365,8 +105538,7 @@
           "ew": 304
         }
       ],
-      "image": "npc_diggins.png",
-      "noImage": true
+      "image": "npc_diggins.png"
     },
     {
       "page": "Diggory",
@@ -106855,8 +107027,7 @@
       "factionAmounts": [
         "-30"
       ],
-      "image": "npc_doran_glosglen.png",
-      "noImage": true
+      "image": "npc_doran_glosglen.png"
     },
     {
       "page": "Doran Vargnus",
@@ -108531,8 +108702,7 @@
         "5",
         "5"
       ],
-      "image": "npc_driver_bryggin.png",
-      "noImage": true
+      "image": "npc_driver_bryggin.png"
     },
     {
       "page": "Drixiv Arcut",
@@ -108918,8 +109088,7 @@
           "pct": 5
         }
       ],
-      "image": "npc_dry_bones_skeleton.png",
-      "noImage": true
+      "image": "npc_dry_bones_skeleton.png"
     },
     {
       "page": "Duga",
@@ -111532,8 +111701,7 @@
         "-30",
         "10"
       ],
-      "image": "npc_elmion_hendrys.png",
-      "noImage": true
+      "image": "npc_elmion_hendrys.png"
     },
     {
       "page": "Elna Kelpweaver",
@@ -114121,8 +114289,7 @@
       "factionAmounts": [
         "-30"
       ],
-      "image": "npc_faldor_hendrys.png",
-      "noImage": true
+      "image": "npc_faldor_hendrys.png"
     },
     {
       "page": "Falia Frikniller",
@@ -115424,8 +115591,7 @@
         "-30",
         "-30"
       ],
-      "image": "npc_finkel_rardobaen.png",
-      "noImage": true
+      "image": "npc_finkel_rardobaen.png"
     },
     {
       "page": "Finlay Kitoran",
@@ -116455,8 +116621,7 @@
         "-30",
         "-30"
       ],
-      "image": "npc_fodin_frugrin.jpg",
-      "noImage": true
+      "image": "npc_fodin_frugrin.png"
     },
     {
       "page": "Fogerty Bottlenip",
@@ -116928,8 +117093,7 @@
         "-30",
         "10"
       ],
-      "image": "npc_forpar_fizfla.png",
-      "noImage": true
+      "image": "npc_forpar_fizfla.png"
     },
     {
       "page": "Founy Jestands",
@@ -117146,8 +117310,7 @@
           "ew": -442
         }
       ],
-      "image": "npc_frebin_tinderhue.png",
-      "noImage": true
+      "image": "npc_frebin_tinderhue.png"
     },
     {
       "page": "Freed Fimplefur",
@@ -117175,8 +117338,7 @@
         "-30",
         "-30"
       ],
-      "image": "npc_freed_fimplefur.png",
-      "noImage": true
+      "image": "npc_freed_fimplefur.png"
     },
     {
       "page": "Frekka Alebringer",
@@ -120211,8 +120373,7 @@
         "-30",
         "10"
       ],
-      "image": "npc_furtog_ogrebane.png",
-      "noImage": true
+      "image": "npc_furtog_ogrebane.png"
     },
     {
       "page": "Fyrefly",
@@ -120921,8 +121082,7 @@
       "factionAmounts": [
         "-30"
       ],
-      "image": "npc_gann_dunbull.png",
-      "noImage": true
+      "image": "npc_gann_dunbull.png"
     },
     {
       "page": "Gans Paust",
@@ -121879,8 +122039,7 @@
         "-30",
         "-30"
       ],
-      "image": "npc_genda_minyte.png",
-      "noImage": true
+      "image": "npc_genda_minyte.png"
     },
     {
       "page": "Gende Reldari",
@@ -123564,8 +123723,7 @@
         "-30",
         "-30"
       ],
-      "image": "npc_glen_garginburr.png",
-      "noImage": true
+      "image": "npc_glen_garginburr.png"
     },
     {
       "page": "Glendl Vargnus",
@@ -125390,6 +125548,32 @@
       ],
       "image": "npc_gord_smith.png",
       "noImage": true
+    },
+    {
+      "page": "Gorehorn",
+      "eraTag": "Classic",
+      "name": "Gorehorn",
+      "level": "14",
+      "zones": [
+        "Steamfont Mountains"
+      ],
+      "loc": [
+        {
+          "ns": 1575,
+          "ew": 1708
+        }
+      ],
+      "factions": [
+        "Meldrath",
+        "Gem Choppers",
+        "King Ak`Anon"
+      ],
+      "factionAmounts": [
+        "-5",
+        "+",
+        "7"
+      ],
+      "image": "npc_gorehorn.png"
     },
     {
       "page": "Gorenaire",
@@ -129105,8 +129289,7 @@
         "-30",
         "10"
       ],
-      "image": "npc_guard_armandin.png",
-      "noImage": true
+      "image": "npc_guard_armandin.png"
     },
     {
       "page": "Guard Ashmod",
@@ -129926,8 +130109,7 @@
         "+",
         "+"
       ],
-      "image": "npc_guard_brendyl.png",
-      "noImage": true
+      "image": "npc_guard_brendyl.png"
     },
     {
       "page": "Guard Briarstorm",
@@ -130094,8 +130276,7 @@
         "-30",
         "10"
       ],
-      "image": "npc_guard_burr.png",
-      "noImage": true
+      "image": "npc_guard_burr.png"
     },
     {
       "page": "Guard Butal",
@@ -130492,8 +130673,7 @@
         "-30",
         "10"
       ],
-      "image": "npc_guard_clendin.png",
-      "noImage": true
+      "image": "npc_guard_clendin.png"
     },
     {
       "page": "Guard Cloten",
@@ -131856,8 +132036,7 @@
         "-30",
         "10"
       ],
-      "image": "npc_guard_dunil.png",
-      "noImage": true
+      "image": "npc_guard_dunil.png"
     },
     {
       "page": "Guard Dunix",
@@ -132023,8 +132202,7 @@
         "-30",
         "10"
       ],
-      "image": "npc_guard_dykalin.png",
-      "noImage": true
+      "image": "npc_guard_dykalin.png"
     },
     {
       "page": "Guard E`Brona",
@@ -132879,8 +133057,7 @@
         "+",
         "+"
       ],
-      "image": "npc_guard_fintran.png",
-      "noImage": true
+      "image": "npc_guard_fintran.png"
     },
     {
       "page": "Guard Fireblight",
@@ -133795,8 +133972,7 @@
         "-30",
         "10"
       ],
-      "image": "npc_guard_grae.png",
-      "noImage": true
+      "image": "npc_guard_grae.png"
     },
     {
       "page": "Guard Greedin",
@@ -134059,8 +134235,7 @@
         "-30",
         "10"
       ],
-      "image": "npc_guard_haendar.png",
-      "noImage": true
+      "image": "npc_guard_haendar.png"
     },
     {
       "page": "Guard Haldin",
@@ -134230,8 +134405,7 @@
         "-30",
         "10"
       ],
-      "image": "npc_guard_hartt.png",
-      "noImage": true
+      "image": "npc_guard_hartt.png"
     },
     {
       "page": "Guard Helminth",
@@ -140013,9 +140187,6 @@
           "pct": 100
         }
       ],
-      "otherNames": [
-        "Guard Rundel"
-      ],
       "factions": [
         "Kazon Stormhammer",
         "Merchants of Kaladim",
@@ -140030,8 +140201,10 @@
         "-30",
         "10"
       ],
-      "image": "npc_guard_rundel.png",
-      "noImage": true
+      "image": "npc_guard_rundul.png",
+      "otherNames": [
+        "Guard Rundel"
+      ]
     },
     {
       "page": "Guard Rylin",
@@ -140064,8 +140237,7 @@
         "-30",
         "10"
       ],
-      "image": "npc_guard_rylin.png",
-      "noImage": true
+      "image": "npc_guard_rylin.png"
     },
     {
       "page": "Guard Rysis",
@@ -141129,8 +141301,7 @@
         "+",
         "+"
       ],
-      "image": "npc_guard_stoutman.png",
-      "noImage": true
+      "image": "npc_guard_stoutman.png"
     },
     {
       "page": "Guard Streamtree",
@@ -146154,8 +146325,7 @@
           "pct": 50
         }
       ],
-      "image": "npc_happ_findlefinn.png",
-      "noImage": true
+      "image": "npc_happ_findlefinn.png"
     },
     {
       "page": "Harban Ranflash",
@@ -146713,6 +146883,26 @@
       ],
       "image": "npc_hechaeva.png",
       "noImage": true
+    },
+    {
+      "page": "Hector the highway bandit",
+      "eraTag": "Classic",
+      "name": "Hector the highway bandit",
+      "level": "13",
+      "zones": [
+        "Steamfont Mountains"
+      ],
+      "drops": [
+        "Fine Steel Weapons",
+        "Hector's Severed Head"
+      ],
+      "loc": [
+        {
+          "ns": -726,
+          "ew": 102
+        }
+      ],
+      "image": "npc_hector_the_highway_bandit.png"
     },
     {
       "page": "Hefax Tinmar",
@@ -149028,8 +149218,7 @@
           "pct": 50
         }
       ],
-      "image": "npc_hurgo_felcind.png",
-      "noImage": true
+      "image": "npc_hurgo_felcind.png"
     },
     {
       "page": "Hurrieta Ironforge",
@@ -149217,8 +149406,7 @@
       "drops": [
         "Iced Bone Chips"
       ],
-      "image": "npc_ice_bone_skeleton.png",
-      "noImage": true
+      "image": "npc_ice_bone_skeleton.png"
     },
     {
       "page": "Ice Boned Skeleton (Befallen)",
@@ -150410,6 +150598,22 @@
         "5"
       ],
       "image": "npc_ilanic's_skeleton.png"
+    },
+    {
+      "page": "Ilisiv Gantrau",
+      "eraTag": "Classic",
+      "name": "Ilisiv Gantrau",
+      "level": "65",
+      "zones": [
+        "Toxxulia Forest"
+      ],
+      "loc": [
+        {
+          "ns": 1150,
+          "ew": -296
+        }
+      ],
+      "image": "npc_ilisiv_gantrau.png"
     },
     {
       "page": "Illie Roln",
@@ -152171,8 +152375,7 @@
         "-30",
         "-30"
       ],
-      "image": "npc_innkeep_valon.png",
-      "noImage": true
+      "image": "npc_innkeep_valon.png"
     },
     {
       "page": "Innkeep Wuleran",
@@ -153748,8 +153951,7 @@
         "-5",
         "-5"
       ],
-      "image": "npc_jail_clerk_maryl.png",
-      "noImage": true
+      "image": "npc_jail_clerk_maryl.png"
     },
     {
       "page": "Jailer Mkrarrg",
@@ -154022,8 +154224,7 @@
           "pct": 100
         }
       ],
-      "image": "npc_jalen_goldsinger.png",
-      "noImage": true
+      "image": "npc_jalen_goldsinger.png"
     },
     {
       "page": "Jali Kaliio",
@@ -154952,6 +155153,26 @@
       "outOfEra": true,
       "image": "npc_jennus_lyklobar.png",
       "noImage": true
+    },
+    {
+      "page": "Jerald the highway bandit",
+      "eraTag": "Classic",
+      "name": "Jerald the highway bandit",
+      "level": "13",
+      "zones": [
+        "Steamfont Mountains"
+      ],
+      "drops": [
+        "Fine Steel Weapons",
+        "Jerald's Severed Head"
+      ],
+      "loc": [
+        {
+          "ns": -693,
+          "ew": 124
+        }
+      ],
+      "image": "npc_jerald_the_highway_bandit.png"
     },
     {
       "page": "Jerigozia",
@@ -157150,8 +157371,7 @@
         "-30",
         "-30"
       ],
-      "image": "npc_kalamin_norkhitter.png",
-      "noImage": true
+      "image": "npc_kalamin_norkhitter.png"
     },
     {
       "page": "Kalatrina Plossen",
@@ -160062,8 +160282,7 @@
           "pct": 100
         }
       ],
-      "image": "npc_kindra_farseer.png",
-      "noImage": true
+      "image": "npc_kindra_farseer.png"
     },
     {
       "page": "King Ak`Anon",
@@ -171779,9 +171998,6 @@
           "ew": -871
         }
       ],
-      "otherNames": [
-        "Naggy"
-      ],
       "factions": [
         "Nagafen",
         "Vox",
@@ -171792,7 +172008,10 @@
         "-30",
         "10"
       ],
-      "image": "npc_lord_nagafen.png"
+      "image": "npc_lord_nagafen.png",
+      "otherNames": [
+        "Naggy"
+      ]
     },
     {
       "page": "Lord Nethryn",
@@ -175124,8 +175343,7 @@
       "factionAmounts": [
         "-"
       ],
-      "image": "npc_mantrek_needlebender.png",
-      "noImage": true
+      "image": "npc_mantrek_needlebender.png"
     },
     {
       "page": "Mar Sedder",
@@ -175704,7 +175922,12 @@
       "image": "npc_marrowbane.png",
       "commonDrops": [
         "Bronze Two Handed Sword",
-        "Raw-Hide Skullcap"
+        "Raw-Hide Skullcap",
+        "Raw-hide Boots",
+        "Bronze Mace",
+        "Bronze Long Sword",
+        "Raw-hide Wristbands",
+        "Bronze Battle Axe"
       ]
     },
     {
@@ -175973,8 +176196,7 @@
         }
       ],
       "merchant": true,
-      "image": "npc_martyn_firechaser.png",
-      "noImage": true
+      "image": "npc_martyn_firechaser.png"
     },
     {
       "page": "Marus Kemson",
@@ -177925,12 +178147,6 @@
       "zones": [
         "Greater Faydark"
       ],
-      "loc": [
-        {
-          "ns": 420,
-          "ew": 373
-        }
-      ],
       "merchant": true,
       "image": "npc_merchant_legweien.png"
     },
@@ -178896,6 +179112,22 @@
       "noImage": true
     },
     {
+      "page": "Metallurgist Mirakzin",
+      "eraTag": "Classic",
+      "name": "Metallurgist Mirakzin",
+      "level": "61",
+      "zones": [
+        "Steamfont Mountains"
+      ],
+      "loc": [
+        {
+          "ns": -1933,
+          "ew": 1394
+        }
+      ],
+      "image": "npc_metallurgist_mirakzin.png"
+    },
+    {
       "page": "Metha Wintersong",
       "name": "Metha Wintersong",
       "level": "30",
@@ -179521,8 +179753,7 @@
         "7",
         "10"
       ],
-      "image": "npc_minotaur_guard.png",
-      "noImage": true
+      "image": "npc_minotaur_guard.png"
     },
     {
       "page": "Minotaur Hero",
@@ -179635,6 +179866,16 @@
       "merchant": true,
       "image": "npc_minya_coldtoes.png",
       "noImage": true
+    },
+    {
+      "page": "Mip Sprocket",
+      "eraTag": "Classic",
+      "name": "Mip Sprocket",
+      "level": "60",
+      "zones": [
+        "Steamfont Mountains"
+      ],
+      "image": "npc_mip_sprocket.png"
     },
     {
       "page": "Mira Sayer",
@@ -180350,6 +180591,24 @@
         "10"
       ],
       "image": "npc_mojax_hikspin.png"
+    },
+    {
+      "page": "Mojo the Tainted",
+      "eraTag": "Classic",
+      "name": "Mojo the Tainted",
+      "level": "30",
+      "zones": [
+        "Ocean of Tears"
+      ],
+      "loc": [
+        {
+          "ns": -1188,
+          "ew": -8716,
+          "z": 52
+        }
+      ],
+      "image": "npc_name.png",
+      "noImage": true
     },
     {
       "page": "Moldering Ape",
@@ -184216,8 +184475,7 @@
           "pct": 100
         }
       ],
-      "image": "npc_nilit_druzlit.png",
-      "noImage": true
+      "image": "npc_nilit_druzlit.png"
     },
     {
       "page": "Nilit's contraption",
@@ -188627,8 +188885,7 @@
         "-30",
         "-30"
       ],
-      "image": "npc_oren_furdenbline.png",
-      "noImage": true
+      "image": "npc_oren_furdenbline.png"
     },
     {
       "page": "Orex Nolus",
@@ -190816,8 +191073,7 @@
         "-30",
         "-30"
       ],
-      "image": "npc_philicia_drinn.png",
-      "noImage": true
+      "image": "npc_philicia_drinn.png"
     },
     {
       "page": "Philip Tallman",
@@ -195988,8 +196244,7 @@
           "pct": 50
         }
       ],
-      "image": "npc_ranzall_netcaster.png",
-      "noImage": true
+      "image": "npc_ranzall_netcaster.png"
     },
     {
       "page": "Raotin Teawel",
@@ -196954,16 +197209,14 @@
         "Raw-Hide Cloak",
         "Runed Shawl",
         "Snakeskin Gloves",
-        "Raw-hide Gorget"
+        "Raw-hide Gorget",
+        "Sharp Claws"
       ],
       "loc": [
         {
           "ns": 89,
           "ew": -147
         }
-      ],
-      "otherNames": [
-        "Refugee spiltpaw"
       ],
       "factions": [
         "Sabertooths of Blackburrow",
@@ -196977,7 +197230,10 @@
         "5",
         "5"
       ],
-      "image": "npc_refugee_splitpaw.png"
+      "image": "npc_refugee_splitpaw.png",
+      "otherNames": [
+        "Refugee spiltpaw"
+      ]
     },
     {
       "page": "Refugee Splitpaw (Monk)",
@@ -197365,8 +197621,7 @@
         "-30",
         "-30"
       ],
-      "image": "npc_rell_ostodl.png",
-      "noImage": true
+      "image": "npc_rell_ostodl.png"
     },
     {
       "page": "Rem Knarjon",
@@ -197430,6 +197685,26 @@
       ],
       "image": "npc_ren_pinemyer.jpg",
       "noImage": true
+    },
+    {
+      "page": "Renaldo the highway bandit",
+      "eraTag": "Classic",
+      "name": "Renaldo the highway bandit",
+      "level": "13",
+      "zones": [
+        "Steamfont Mountains"
+      ],
+      "drops": [
+        "Fine Steel Weapons",
+        "Renaldo's Severed Head"
+      ],
+      "loc": [
+        {
+          "ns": -677,
+          "ew": 103
+        }
+      ],
+      "image": "npc_renaldo_the_highway_bandit.png"
     },
     {
       "page": "Rendallen Ironforge",
@@ -198851,8 +199126,7 @@
       "factionAmounts": [
         "-"
       ],
-      "image": "npc_rogue_cleaner.png",
-      "noImage": true
+      "image": "npc_rogue_cleaner.png"
     },
     {
       "page": "Rogue Clockwork",
@@ -200399,8 +200673,7 @@
       "factionAmounts": [
         "-30"
       ],
-      "image": "npc_runaway_clockwork.png",
-      "noImage": true
+      "image": "npc_runaway_clockwork.png"
     },
     {
       "page": "Runethar Hamest",
@@ -202341,6 +202614,23 @@
       ],
       "image": "npc_scraps.png",
       "noImage": true
+    },
+    {
+      "page": "Scribe Biddlegorb",
+      "eraTag": "Classic",
+      "name": "Scribe Biddlegorb",
+      "level": "50",
+      "zones": [
+        "Rathe Mountains"
+      ],
+      "loc": [
+        {
+          "ns": -1870,
+          "ew": 2091
+        }
+      ],
+      "merchant": true,
+      "image": "npc_scribe_biddlegorb.png"
     },
     {
       "page": "Scrounge",
@@ -211251,8 +211541,7 @@
         "5",
         "3"
       ],
-      "image": "npc_shintar_vinlail.png",
-      "noImage": true
+      "image": "npc_shintar_vinlail.png"
     },
     {
       "page": "Shintl Lowbrew",
@@ -212236,8 +212525,7 @@
         "10",
         "10"
       ],
-      "image": "npc_sir_edwin_motte.png",
-      "noImage": true
+      "image": "npc_sir_edwin_motte.png"
     },
     {
       "page": "Sir Folon",
@@ -212654,7 +212942,7 @@
     {
       "page": "Sir Lucan Dlere",
       "eraTag": "Classic",
-      "name": "Sir Lucan Dlere",
+      "name": "Sir Lucan D'Lere",
       "level": "48",
       "zones": [
         "West Freeport"
@@ -212685,8 +212973,7 @@
         "200",
         "200"
       ],
-      "image": "npc_sir_lucan_d`lere.png",
-      "noImage": true
+      "image": "npc_sir_lucan_d`lere.png"
     },
     {
       "page": "Sir Mollin",
@@ -214567,18 +214854,18 @@
         "Misty Thicket"
       ],
       "drops": [
-        "Froglok Leg",
         "Bloodstone",
+        "Cat's Eye Agate",
+        "Froglok Leg",
         "Lapis Lazuli"
       ],
       "factions": [
         "Frogloks of Kunark"
       ],
       "factionAmounts": [
-        "-30"
+        "-50"
       ],
-      "image": "npc_slaythe.png",
-      "noImage": true
+      "image": "npc_slaythe.png"
     },
     {
       "page": "Slaythe the Slayer",
@@ -223932,7 +224219,7 @@
       ],
       "factions": [
         "Host of Nektropos",
-        "Everling Dynasty"
+        "The Everling Dynasty"
       ],
       "factionAmounts": [
         "-2",
@@ -228059,8 +228346,7 @@
         "-30",
         "-30"
       ],
-      "image": "npc_torodrane_frompwaddle.png",
-      "noImage": true
+      "image": "npc_torodrane_frompwaddle.png"
     },
     {
       "page": "Torth Largefoot",
@@ -228812,8 +229098,7 @@
         }
       ],
       "merchant": true,
-      "image": "npc_tran_lilspin.png",
-      "noImage": true
+      "image": "npc_tran_lilspin.png"
     },
     {
       "page": "Tranala",
@@ -228963,6 +229248,56 @@
       "merchant": true,
       "image": "npc_transan.png",
       "noImage": true
+    },
+    {
+      "page": "Translocator Fithop",
+      "name": "Translocator Fithop",
+      "level": "1",
+      "zones": [
+        "Butcherblock Mountains"
+      ],
+      "loc": [
+        {
+          "ns": 1350,
+          "ew": 3264,
+          "z": 10
+        }
+      ],
+      "image": "npc_translocator_fithop.png"
+    },
+    {
+      "page": "Translocator Narrik",
+      "name": "Translocator Narrik",
+      "zones": [
+        "Ocean of Tears"
+      ],
+      "loc": [
+        {
+          "ns": 264,
+          "ew": -9202,
+          "z": 3
+        }
+      ],
+      "image": "npc_translocator_narrik.png"
+    },
+    {
+      "page": "Translocator Setikan",
+      "name": "Translocator Setikan",
+      "level": "1",
+      "zones": [
+        "East Freeport"
+      ],
+      "drops": [
+        "None"
+      ],
+      "loc": [
+        {
+          "ns": -25,
+          "ew": -1032,
+          "z": -53
+        }
+      ],
+      "image": "npc_translocator_setikan.png"
     },
     {
       "page": "Trantor Everhot",
@@ -229781,6 +230116,28 @@
       ],
       "image": "npc_trooper_agash.png",
       "noImage": true
+    },
+    {
+      "page": "Trooper Axlia",
+      "eraTag": "Classic",
+      "name": "Trooper Axlia",
+      "level": "50",
+      "zones": [
+        "Northern Desert of Ro"
+      ],
+      "loc": [
+        {
+          "ns": 2284,
+          "ew": -745
+        }
+      ],
+      "factions": [
+        "New Sebilisian Expedition"
+      ],
+      "factionAmounts": [
+        "-100"
+      ],
+      "image": "npc_trooper_axlia.png"
     },
     {
       "page": "Trooper Azalin",
@@ -233290,6 +233647,31 @@
       ],
       "image": "npc_trooper_tygar.png",
       "noImage": true
+    },
+    {
+      "page": "Trooper Tygin",
+      "eraTag": "Classic",
+      "name": "Trooper Tygin",
+      "level": "50",
+      "zones": [
+        "Northern Desert of Ro"
+      ],
+      "loc": [
+        {
+          "ns": 2207,
+          "ew": -725
+        }
+      ],
+      "factions": [
+        "New Sebilisian Expedition"
+      ],
+      "factionAmounts": [
+        "-100"
+      ],
+      "image": "npc_trooper_tygin.png",
+      "commonDrops": [
+        "Finely Crafted Shan`Tok"
+      ]
     },
     {
       "page": "Trooper Uthmytel",
@@ -236903,7 +237285,7 @@
           "z": 4
         }
       ],
-      "noImage": true
+      "image": "Varish Balinsky.png"
     },
     {
       "page": "Varithyx",
@@ -237247,8 +237629,7 @@
           "ew": 963
         }
       ],
-      "image": "npc_veisha_fathomwalker.png",
-      "noImage": true
+      "image": "npc_veisha_fathomwalker.png"
     },
     {
       "page": "Vekis",
@@ -239670,8 +240051,7 @@
         }
       ],
       "merchant": true,
-      "image": "npc_viira_bali.png",
-      "noImage": true
+      "image": "npc_viira_bali.png"
     },
     {
       "page": "Vilefang",
@@ -239819,7 +240199,8 @@
       "loc": [
         {
           "ns": 411,
-          "ew": 91
+          "ew": 90,
+          "z": 18
         }
       ],
       "image": "npc_vira.png"
@@ -243943,8 +244324,7 @@
         "5",
         "5"
       ],
-      "image": "npc_watchman_mylz.png",
-      "noImage": true
+      "image": "npc_watchman_mylz.png"
     },
     {
       "page": "Watchman Myriin",
@@ -245601,8 +245981,7 @@
         "10",
         "10"
       ],
-      "image": "npc_winex_kloktik.png",
-      "noImage": true
+      "image": "npc_winex_kloktik.png"
     },
     {
       "page": "Winlar Tanner",

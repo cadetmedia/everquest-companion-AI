@@ -1,6 +1,6 @@
 {
  "source": "eqlwiki.com — |respawn_time on every page in the committed mob catalog",
- "scrapedAt": "2026-11-01",
+ "scrapedAt": "2026-11-19",
  "rows": [
   {
    "key": "a alchemist`s acolyte",
@@ -238,6 +238,11 @@
    "page": "A goblin jailmaster",
    "text": "22 minutes",
    "seconds": 1320
+  },
+  {
+   "key": "a goblin janitor",
+   "page": "A goblin janitor",
+   "text": "?"
   },
   {
    "key": "a goblin scryer",
@@ -1016,6 +1021,12 @@
    "key": "corrupted barracuda",
    "page": "Corrupted barracuda",
    "text": "Triggered"
+  },
+  {
+   "key": "corrupted kedgespawn",
+   "page": "Corrupted Kedgespawn",
+   "text": "12 minutes",
+   "seconds": 720
   },
   {
    "key": "councilor juliash lockhear",
@@ -2658,14 +2669,14 @@
    "seconds": 420
   },
   {
-   "key": "sir lucan d`lere",
-   "page": "Sir Lucan D`Lere",
+   "key": "sir lucan d'lere",
+   "page": "Sir Lucan Dlere",
    "text": "7 hours",
    "seconds": 25200
   },
   {
-   "key": "sir lucan dlere",
-   "page": "Sir Lucan Dlere",
+   "key": "sir lucan d`lere",
+   "page": "Sir Lucan D`Lere",
    "text": "7 hours",
    "seconds": 25200
   },
