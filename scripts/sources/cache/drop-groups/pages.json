@@ -80,6 +80,10 @@
   "content": "{{Classic Era}}\n<onlyinclude>{{Itempage\n|notes       = Haste value scales as you level from 30 to 50, maxing out at 50.\n|itemname    = Executioner's Axe\n|lucy_img_ID = 1164\n|statsblock  = \nLore, Attunable<br>\nSlot: PRIMARY<br>\nSkill: 2H Slashing  Atk Delay: 50<br>\nDMG: 25 <br>\nEffect:  [[Haste]] (Combat, Casting Time: Instant) at Level 30<br>\nWT: 8.5  Size: LARGE<br>\nClass: WAR BER<br>\nRace: ALL<br>\n\n|merchant_value = 190p 4g 7s 6c\n\n|dropsfrom = \n\n[[Lower Guk]]\n\n* [[a ghoul executioner]]\n\n}}</onlyinclude>\n\n[[Category:Berserker Equipment]]\n[[Category:Warrior Equipment]]\n[[Category:Primary]]\n[[Category:2H Slashing]]\n[[Category:Lower Guk]]"
  },
  {
+  "title": "Archeologist Pack",
+  "content": "<onlyinclude>{{Itempage\n|notes       = {{Item Lore Missing}}\n|itemname    = Archaeologist Pack\n|lucy_img_ID = 884\n|statsblock  = \nLORE ITEM<br>\nWT: 0.4  Weight Reduction: 25%<br>\nCapacity: 6  Size Capacity: LARGE<br>\n|dropsfrom = \n\n[[Permafrost]]\n\n* [[a goblin archeologist]]\n\n}}</onlyinclude>\n\n[[Category:Containers]]\n\n[[Category:Weight Reduction]]\n[[Category:Permafrost]]"
+ },
+ {
   "title": "Balanced Fer'Esh",
   "content": "{{Kunark Era}}\n\n<onlyinclude>{{Itempage\n|notes       = \n|merchant_value = 2p 1g 8s 3c with 111 Charisma\n|itemname    = Balanced Fer`Esh\n|lucy_img_ID = 1174\n|statsblock  = \nSlot: PRIMARY SECONDARY<br>\nSkill: 1H Slashing  Atk Delay: 30<br>\nDMG: 5 <br>\nWT: 7.5  Size: MEDIUM<br>\nClass: WAR PAL RNG SHD DRU BRD ROG<br>\nRace: ALL<br>\n|dropsfrom = \n\n[[Field of Bone]]\n\n* [[a lesser charbone skeleton]]\n* [[an iksar manslayer]]\n\n[[Howling Stones]]\n\n* [[a sepulcher skeleton]]\n* [[greater plaguebone]]\n* [[greater war boned skeleton]]\n\n[[Kurn's Tower]]\n\n* [[lesser icebone skeleton]]\n\n[[Lake of Ill Omen]]\n\n* [[charbone skeleton]]\n* [[icebone skeleton]]\n\n[[Warsliks Woods]]\n\n* [[iksar pariah]]\n\n}}</onlyinclude>\n\n[[Category:Bard Equipment]]\n[[Category:Druid Equipment]]\n[[Category:Paladin Equipment]]\n[[Category:Ranger Equipment]]\n[[Category:Rogue Equipment]]\n[[Category:Shadow Knight Equipment]]\n[[Category:Warrior Equipment]]\n[[Category:Primary]]\n[[Category:Secondary]]\n[[Category:1H Slashing]]"
  },
@@ -509,7 +513,7 @@
  },
  {
   "title": "Monster Summoning II",
-  "content": "{{Classic Era}}\n{{Spellpagesmart|\n\n| spellname = Monster Summoning II\n| spellicon = 38\n| description = Conjures a pet in the form of a local monster to aid you in battle.\n\n| classes = \n\n* [[Magician]] - Level 50\n\n| slots = \n\n{{SpellSlotRow | 1 | Summon Pet: Level 42 [[Monster Summoning II Summon|Monster]] }}\n\n| skill = [[Skill Conjuration | Conjuration]]\n\n| mana = 200\n| range =  \n| casting_time = 10.00\n| fizzle_time = 1.50\n| recast_time = 1.50\n| duration = Instant\n| target_type = Self\n| spell_type = Pet\n| resist = Unresistable\n\n| other = \n\n* '''Reagent:''' [[Malachite]]\n\n| msg_cast_on_you =  \n| msg_cast_on_other =  \n| msg_wears_off =  \n\n| where_to_obtain = \n\n<ul>\n<li>[[Magician#Spell Vendors|Magician Spell Vendors]]</li>\n</ul>\n}}"
+  "content": "{{Classic Era}}\n{{Spellpagesmart|\n\n| spellname = Monster Summoning II\n| spellicon = 38\n| description = Conjures a pet in the form of a local monster to aid you in battle.\n\n| classes = \n\n* [[Magician]] - Level 50\n\n| slots = \n\n{{SpellSlotRow | 1 | Summon Pet: Level 41 [[Monster Summoning II Summon|Monster]] }}\n\n| skill = [[Skill Conjuration | Conjuration]]\n\n| mana = 200\n| range =  \n| casting_time = 10.00\n| fizzle_time = 1.50\n| recast_time = 1.50\n| duration = Instant\n| target_type = Self\n| spell_type = Pet\n| resist = Unresistable\n\n| other = \n\n* '''Reagent:''' [[Malachite]]\n\n| msg_cast_on_you =  \n| msg_cast_on_other =  \n| msg_wears_off =  \n\n| where_to_obtain = \n\n<ul>\n<li>[[Magician#Spell Vendors|Magician Spell Vendors]]</li>\n</ul>\n}}"
  },
  {
   "title": "Monster Summoning III",
