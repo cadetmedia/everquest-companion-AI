@@ -23,7 +23,7 @@ Except for Balanced Stance, all stances require endurance when their effect acti
 | BER&nbsp;BRD&nbsp;BST<br>MNK&nbsp;PAL&nbsp;RNG<br>ROG&nbsp;SHD&nbsp;WAR
 |-
 | Berserker
-| <section begin="Berserker" />While this stance is active, attack speed and combat skill recharge rate is doubled and your chance to hit and combat skill damage is increased by 25%. Every point of damage dealt consumes half that amount in endurance, with a reduction based on your [[Strategy]] skill. You also take 8.3% of outgoing damage to yourself. Bonus damage from critical hits and similar effects do not cost endurance.<section end="Berserker" />
+| <section begin="Berserker" />Your attack speed and combat skill recharge rate are more than doubled, and both your chance to hit and your combat skill damage are increased by 25%. Every point of damage dealt consumes half that amount in endurance with a reduction based on your [[Strategy]] skill.<section end="Berserker" />
 | BER
 |-
 | Channeler
